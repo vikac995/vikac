@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v1.1.0)
+# Vikač High Kikač — install guide (v1.2.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -7,7 +7,7 @@ This folder is the whole app. Put it on any HTTPS address and add it to your pho
 1. Go to github.com and sign in (create a free account if you don't have one).
 2. Top-right **+** → **New repository**. Name: `vikac`. Public. Tick **Add a README file**. Click **Create repository**.
 3. On the repository page click **Add file** → **Upload files**.
-4. Open this folder on your computer and drag **everything inside it** (index.html, manifest.webmanifest, sw.js, the three icon PNGs, the `font` folder and the `img` folder) into the upload area. Dragging the two folders keeps their structure — that matters.
+4. Open this folder on your computer and drag the files inside it (index.html, manifest.webmanifest, sw.js, the three icon PNGs) into the upload area. Since v1.2.0 the fonts and photos are built into index.html, so there are no folders to upload.
 5. Click **Commit changes** at the bottom.
 6. Repository **Settings** → left menu **Pages** → under *Build and deployment* set **Source: Deploy from a branch**, **Branch: main**, folder **/ (root)** → **Save**.
 7. Wait 1–2 minutes, refresh the Pages settings page: it shows your address, `https://YOURNAME.github.io/vikac/`.
@@ -35,7 +35,4 @@ When a new version arrives, upload the new files to the same repository (Add fil
 | manifest.webmanifest | tells Android it's an installable app, full screen, orange icon |
 | sw.js | offline cache; its version string changes on every release |
 | icon-*.png | app icons |
-| src/hero.js | the character drawing (part of index.html after build) |
-| font/ | the title font (Bangers), bundled so it works offline |
-| img/ | the stretching-routine photos |
-| src/, build.sh | source parts the app is built from; harmless if uploaded, not needed on the phone |
+| src/, build.sh, font/, img/ | source parts the app is built from (fonts and photos are already inside index.html); not needed on the phone |
