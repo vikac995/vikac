@@ -214,7 +214,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.1.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1177,6 +1177,7 @@ function profileHtml() {
       <div class="muted" id="derived"></div><div style="height:8px"></div>
       <button class="btn" data-savep>Save changes</button></div>
     <div class="card"><h3>App</h3><div class="muted" style="margin:0 0 10px">Version ${APP_VERSION} · ${stand ? 'installed, full screen' : 'running in the browser — use Chrome menu → Add to Home screen for full screen'}</div>
+      <button class="btn" data-update style="margin-bottom:10px">Check for updates</button>
       <div class="row"><button class="btn sec" data-intro>Replay intro</button><button class="btn ghost" data-reset>Reset everything</button></div></div>
   </div>${nav('profile')}`;
 }
@@ -1188,6 +1189,7 @@ function bindProfile() {
   $('[data-restore]').onclick = () => $('#restoreFile').click();
   $('#restoreFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { try { const o = JSON.parse(rd.result); if (!o.project || !o.days) throw 0; if (confirm('Replace all current data with this backup?')) { S = o; save(); toast('Restored'); render(); } } catch (err) { toast('Not a valid backup file'); } }; rd.readAsText(f); };
   $('[data-intro]').onclick = () => playIntro(() => render());
+  $('[data-update]').onclick = async () => { toast('Checking…'); try { const reg = await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } const r = await fetch('index.html', { cache: 'no-cache' }); const t = await r.text(); const m = t.match(/APP_VERSION = '([^']+)'/); if (m && m[1] !== APP_VERSION) { toast('Version ' + m[1] + ' found — reloading'); setTimeout(() => location.reload(), 800); } else toast('You have the latest version (' + APP_VERSION + ')'); } catch (e) { toast('Offline — try again later'); } };
   $('[data-reset]').onclick = () => { if (confirm('Delete ALL data? Back up first!') && confirm('Really? This cannot be undone.')) { S = { project: null, days: {}, readings: {}, sessions: [], targets: {}, meta: { schema: 1, lastBackup: null, introSeen: true } }; save(); R.stack = []; render(); } };
 }
 
