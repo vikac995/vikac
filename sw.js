@@ -1,7 +1,7 @@
 /* Vikač High Kikač service worker — bump CACHE on every release */
-const CACHE = 'vikac-v1.0.0';
+const CACHE = 'vikac-v1.1.0';
 const ASSETS = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png',
-  'font/bangers-latin.woff2', 'font/bangers-latin-ext.woff2',
+  'font/bangers-latin.woff2', 'font/bangers-latin-ext.woff2', 'font/barlowc-latin-700.woff2', 'font/barlowc-latin-ext-700.woff2', 'font/barlowc-latin-600.woff2', 'font/barlowc-latin-ext-600.woff2',
   'img/stretch4.jpg', 'img/stretch6.jpg', 'img/stretch7a.jpg', 'img/stretch7b.jpg', 'img/stretch8a.jpg', 'img/stretch8b.jpg', 'img/stretch8c.jpg'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
