@@ -215,7 +215,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.2.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1240,12 +1240,26 @@ function playIntro(done) {
   el.querySelector('.skip').onclick = end; frame(0); raf = requestAnimationFrame(loop); setTimeout(end, 3900);
 }
 
+/* ---------- Phone back button: always stays inside the app ---------- */
+function armBack() { try { history.pushState({ vikac: 1 }, ''); } catch (e) {} }
+window.addEventListener('popstate', () => {
+  const ov = document.querySelector('.modalbg'), dr = document.querySelector('.dragon'), it = document.querySelector('.intro');
+  if (ov) ov.close ? ov.close() : ov.remove();
+  else if (dr) dr.remove();
+  else if (it) it.querySelector('.skip').click();
+  else if (R.stack.length) back();
+  else if (R.screen !== 'today') { R.stack = []; R.date = today(); go('today', {}, false); }
+  else if (R.date !== today()) { R.date = today(); render(); }
+  armBack(); // keep one history entry in reserve so the next press is ours too
+});
+
 /* ---------- Boot ---------- */
 (async function boot() {
   await load();
   const start = () => { R.date = today(); render(); };
   if (!S.meta.introSeen) { S.meta.introSeen = true; save(); render(); playIntro(start); } else start();
   document.addEventListener('visibilitychange', () => { if (!document.hidden && R.screen === 'today' && R.date !== today() && R.stack.length === 0) { R.date = today(); render(); } });
+  armBack();
   if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} }
 })();
 </script>
