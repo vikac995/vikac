@@ -215,7 +215,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '1.2.1';
+const APP_VERSION = '1.2.3';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -505,11 +505,11 @@ function metricStatus(id, date) {
   // action line
   if (def.dir < 0 && id === 'weight') {
     const kcal = Math.round(Math.abs(diff) * 7700 / Math.max(1, o.daysLeft));
-    if (Math.abs(diff) <= tol) o.action = 'Within the band. Keep the −' + p.deficit + ' and re-check in a week.';
-    else if (diff > 0) o.action = kcal < 100 ? 'Only ' + f(diff) + ' above the line, inside noise. Keep going, re-check in a week.' : 'You are ' + f(diff) + ' above the line. To land on the goal by ' + fmtShort(p.endDate) + ' you need about ' + kcal + ' kcal/day more deficit, or accept landing ' + f(diff) + ' higher.';
-    else o.action = o.state === 'fast' ? 'Losing faster than 1 % of bodyweight a week risks muscle. Add about ' + Math.min(kcal, 300) + ' kcal/day, keep protein at ' + p.protein + ' g.' : 'Ahead by ' + f(-diff) + '. Nothing to fix — just don\'t chase it.';
-  } else if (def.dir < 0) o.action = diff > tol ? 'Fat is lagging. Check the weigh-in conditions first (morning, fasted); then look at calorie accuracy.' : 'On track. The scale\'s fat number is noisy; trust the 7-day average.';
-  else o.action = diff < -tol ? 'Muscle reading is dropping. Hit ' + p.protein + ' g protein, keep the heavy sets heavy, sleep. BIA also dips when dehydrated — drink.' : 'Muscle holding. Keep the heavy sets heavy.';
+    if (Math.abs(diff) <= tol) o.action = 'On plan. Keep going.';
+    else if (diff > 0) o.action = kcal < 100 ? f(diff) + ' above the line — nothing to change yet.' : f(diff) + ' above the line. About ' + kcal + ' kcal/day less would bring you back on it.';
+    else o.action = o.state === 'fast' ? 'Too fast for keeping muscle. Eat about ' + Math.min(kcal, 300) + ' kcal/day more.' : 'Ahead by ' + f(-diff) + '. Nice.';
+  } else if (def.dir < 0) o.action = diff > tol ? 'Lagging a bit. Keep the deficit honest.' : 'On track.';
+  else o.action = diff < -tol ? 'Dropping. Protein, heavy sets, sleep.' : 'Holding. Keep the heavy sets heavy.';
   return o;
 }
 
@@ -825,7 +825,7 @@ function setupHtml() {
   const inp = (k, label, v, step) => `<div class="field"><label>${label}</label><input name="${k}" type="number" step="${step || 0.1}" inputmode="decimal" value="${v == null ? '' : v}"></div>`;
   return `<div class="screen">
     <div class="center" style="margin:14px 0 20px"><div class="title" style="font-size:58px">Vikač</div><div class="title" style="font-size:42px;margin-top:6px">High Kikač</div></div>
-    <div class="funline">Name the mission, set the dates, and we're off. Takes a minute.</div>
+    <div class="funline">Name the mission, set the dates, and we're off.</div>
     <div class="card"><h3>Your project</h3>
       <div class="field"><label>Name</label><input name="name" value="${esc(d.name)}"></div>
       <div class="row"><div class="field"><label>Start (Day 1)</label><input name="startDate" type="date" value="${d.startDate}"></div><div class="field"><label>End (final weigh-in)</label><input name="endDate" type="date" value="${d.endDate}"></div></div>
@@ -839,7 +839,6 @@ function setupHtml() {
       <div class="row">${inp('visceral', 'Visceral fat (rating)', s.visceral, 1)}${inp('water', 'Body water (%)', s.water)}</div>
       <div class="row">${inp('height', 'Height (cm)', d.height, 1)}${inp('age', 'Age', d.age, 0.5)}</div>
       ${inp('waterDrop', 'Expected early water drop (kg)', d.waterDrop)}
-      <div class="muted">The water drop is the glycogen/water loss of the first week that the plan line accounts for. 0.3–1.0 is normal; 0 for a pure straight line.</div>
     </div>
     <button class="btn" id="startBtn">Start the project</button>
     <div style="height:20px"></div>
@@ -847,7 +846,7 @@ function setupHtml() {
 }
 function readForm(root) { const o = {}; root.querySelectorAll('input,textarea,select').forEach(i => { o[i.name] = i.type === 'number' ? num(i.value) : i.value; }); return o; }
 function bindSetup() {
-  const upd = () => { const o = readForm(app); const Dd = o.startDate && o.endDate ? diffDays(o.startDate, o.endDate) : 0; const goal = o.weight && o.deficit && Dd > 0 ? o.weight - o.deficit * Dd / 7700 : null; $('#derived').innerHTML = Dd > 0 && goal ? `<b>${Dd} days</b> of deficit → goal weight <b class="or">${goal.toFixed(1)} kg</b> (${(o.deficit * Dd / 7700).toFixed(2)} kg of fat at 7,700 kcal/kg, ${((o.weight - goal) / Dd * 7 / o.weight * 100).toFixed(2)} % of bodyweight per week)` : 'Enter dates, weight and deficit.'; };
+  const upd = () => { const o = readForm(app); const Dd = o.startDate && o.endDate ? diffDays(o.startDate, o.endDate) : 0; const goal = o.weight && o.deficit && Dd > 0 ? o.weight - o.deficit * Dd / 7700 : null; $('#derived').innerHTML = Dd > 0 && goal ? `<b>${Dd} days</b> → goal weight <b class="or">${goal.toFixed(1)} kg</b>` : ''; };
   app.querySelectorAll('input').forEach(i => i.oninput = upd); upd();
   $('#startBtn').onclick = () => {
     const o = readForm(app);
@@ -860,10 +859,15 @@ function bindSetup() {
 
 /* ---------- Today ---------- */
 const FUN = [
-  [0, 'Day one! The bag has no idea what\'s coming.'], [.08, 'Warm-up phase. Water weight is leaving the chat.'], [.2, 'Rhythm found. The scale is starting to believe you.'],
-  [.35, 'A third down. Pants are getting suspicious.'], [.5, 'Halfway! No retreat, no surrender.'], [.65, 'Downhill from here, and you\'re lighter for it.'], [.8, 'Final stretch loading…'], [.9, 'Final boss week. Lock in gang!'], [1, 'Final weigh-in. Step on it like you mean it.'],
+  [.2, 'Rhythm found. The scale is starting to believe you.'], [.35, 'A third down. Pants are getting suspicious.'], [.5, 'Halfway! No retreat, no surrender.'],
+  [.65, 'Downhill from here, and you\'re lighter for it.'], [.8, 'Final stretch loading…'], [.9, 'Final boss week. Lock in gang!'],
 ];
-function funLine(info) { const fr = info.t / D(); let l = FUN[0][1]; for (const [f, s] of FUN) if (fr >= f) l = s; return l; }
+function funLine(info) {
+  if (info.idx === 1) return 'Day one! The bag has no idea what\'s coming.';
+  if (info.phase === 'final') return 'Final weigh-in. Step on it like you mean it.';
+  if (info.idx <= 5) return 'Warm-up phase. Water weight is leaving the chat.';
+  const fr = info.t / D(); let l = 'Settling in. Keep stacking good days.'; for (const [f, s] of FUN) if (fr >= f) l = s; return l;
+}
 function itemSub(date, it) {
   let sub = it.sub; const d = S.days[date] || { done: {} };
   if (it.id === 'weigh' && S.readings[date]) sub = S.readings[date].weight + ' kg logged' + (S.readings[date].fat ? ' · ' + S.readings[date].fat + ' % fat' : '');
@@ -892,7 +896,7 @@ function todayHtml() {
   const last = S.meta.lastBackup ? diffDays(S.meta.lastBackup.slice(0, 10), today()) : null;
   const bk = (last == null && Object.keys(S.days).length > 2) || (last != null && last >= 7) ? `<div class="warnbox" data-nav="profile">${last == null ? 'No backup yet.' : 'Last backup ' + last + ' days ago.'} Tap to back up your data.</div>` : '';
   return `<div class="screen">${head}
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><button class="pill" data-day="-1">‹ ${fmtShort(addDays(date, -1))}</button>${date !== today() ? '<button class="pill or" data-day="0">Today</button>' : ''}<button class="pill" data-day="1">${fmtShort(addDays(date, 1))} ›</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><button class="pill" data-day="-1">‹ ${fmtShort(addDays(date, -1))}</button>${date === today() ? '<span class="pill or">Today</span>' : `<button class="pill" data-day="0" title="Back to today">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)} <span style="opacity:.55">· ↩</span></button>`}<button class="pill" data-day="1">${fmtShort(addDays(date, 1))} ›</button></div>
     ${bk}${body}
   </div>${nav('today')}`;
 }
@@ -922,7 +926,7 @@ function showDragon() {
 }
 function showBalls(date) {
   const db = dragonBalls(date);
-  modal(`<h3>Dragon balls — ${fmtShort(date)}</h3><div class="muted">floor(7 × ${db.earned} / ${db.avail}) = <b class="or">${db.balls}</b></div><div class="kv" style="margin-top:10px">${db.rows.map(r => `<span>${esc(r.label)}<br><span class="muted small">${esc(r.note)}</span></span><b class="${r.pts >= r.max ? 'ok' : r.pts > 0 ? 'warn' : 'muted'}">${r.pts}/${r.max}</b>`).join('')}</div><button class="btn sec" data-close>Close</button>`);
+  modal(`<h3>Dragon balls — ${fmtShort(date)}</h3><div class="cond" style="font-size:18px">${db.balls} of 7</div><div class="kv" style="margin-top:10px">${db.rows.map(r => `<span>${esc(r.label)}<br><span class="muted small">${esc(r.note)}</span></span><b class="${r.pts >= r.max ? 'ok' : r.pts > 0 ? 'warn' : 'muted'}">${r.pts}/${r.max}</b>`).join('')}</div><button class="btn sec" data-close>Close</button>`);
 }
 
 /* ---------- Calendar ---------- */
@@ -984,7 +988,7 @@ function weighHtml() {
       <div class="row">${inp('fat', 'Body fat (%)')}${inp('muscle', 'Muscle mass (kg)')}</div>
       <div class="row">${inp('skeletal', 'Skeletal muscle (kg)')}${inp('visceral', 'Visceral fat', 1)}</div>
       <div class="row">${inp('water', 'Body water (%)')}<div class="field"><label>&nbsp;</label><div class="muted">${lr ? 'Last: ' + lr.v + ' kg on ' + fmtShort(lr.date) : 'First reading'}</div></div></div>
-      <div class="muted">Same conditions every day: after the toilet, before food or drink. The app uses a 7-day average, so one odd day doesn't matter.</div>
+      <div class="muted">Morning, after the toilet, before food.</div>
     </div>
     <button class="btn" id="saveW">Save reading</button>
     ${S.readings[date] ? '<div style="height:10px"></div><button class="btn ghost" id="delW">Delete this reading</button>' : ''}
@@ -1047,7 +1051,7 @@ function hangHtml() {
     <div class="card"><div class="field"><label>Best single hang (seconds)</label><input name="best" type="number" inputmode="numeric" value="${h.best || ''}"></div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">${[30, 45, 60, 90].map(v => `<button class="btn sec sm" data-pre="${v}">${v} s</button>`).join('')}</div>
     <div class="field"><label>Total hang time (seconds, default 180)</label><input name="total" type="number" inputmode="numeric" value="${h.total || ''}" placeholder="180"></div>
-    <div class="muted">${hist.length ? 'Last 7 days best: ' + Math.max(...hist) + ' s' : 'No history yet — today is the baseline.'}</div></div>
+    <div class="muted">${hist.length ? 'Last 7 days best: ' + Math.max(...hist) + ' s' : ''}</div></div>
     <button class="btn" id="saveH">Save</button></div>`;
 }
 function bindHang() { const date = R.params.date || R.date; app.querySelectorAll('[data-pre]').forEach(b => b.onclick = () => { app.querySelector('[name=best]').value = b.dataset.pre; }); $('#saveH').onclick = () => { const o = readForm(app); if (!o.best) return toast('Enter your best hang'); day(date).hang = { best: o.best, total: o.total || 180 }; save(); toast('Hang logged. Posture gang!'); back(); }; }
@@ -1071,7 +1075,7 @@ function bindStretch() {
   });
   $('#doneS').onclick = () => { day(date).done.stretch = true; save(); toast('Stretching done. Kicks incoming!'); back(); };
 }
-function mobilityHtml() { const date = R.params.date || R.date; return `<div class="screen">${topbar('Kick mobility warm-up', fmtDate(date))}<div class="card"><h3>Placeholder</h3><div class="muted">Send the routine (photos or a doc like the stretching one) and it goes here with timers, like the stretching screen.</div></div><button class="btn" onclick="day('${date}').done.mobility=true;save();toast('Mobility done!');back()">Mark done</button></div>`; }
+function mobilityHtml() { const date = R.params.date || R.date; return `<div class="screen">${topbar('Kick mobility warm-up', fmtDate(date))}<div class="card"><div class="muted">Routine coming soon.</div></div><button class="btn" onclick="day('${date}').done.mobility=true;save();toast('Mobility done!');back()">Mark done</button></div>`; }
 
 /* ---------- Nutrition ---------- */
 function nutritionHtml() {
@@ -1085,9 +1089,9 @@ function nutritionHtml() {
     <button class="btn" id="saveN">Save</button></div>`;
 }
 function nutritionCalcHtml(nc, p) {
-  if (!nc) return `<div class="muted">Target = BMR ${p.bmr} + band − ${p.deficit}. Enter calories to see the balance.</div>`;
+  if (!nc) return `<div class="muted">Enter calories to see your target and balance.</div>`;
   const barW = Math.min(100, nc.prot / p.protein * 100);
-  return `<div class="kv"><span>Target intake</span><b>${nc.target} kcal${nc.bandAssumed ? ' <span class="muted small">(band assumed ' + nc.band + ')</span>' : ''}</b><span>Eaten</span><b>${nc.balance + p.bmr + nc.band}</b><span>Balance for the day</span><b class="${nc.cls}">${nc.balance > 0 ? '+' : ''}${nc.balance} kcal</b><span>Protein</span><b class="${nc.ppts === 1 ? 'ok' : nc.ppts ? 'warn' : 'bad'}">${nc.prot} / ${p.protein} g</b></div>
+  return `<div class="kv"><span>Target intake</span><b>${nc.target} kcal</b><span>Eaten</span><b>${nc.balance + p.bmr + nc.band}</b><span>Balance for the day</span><b class="${nc.cls}">${nc.balance > 0 ? '+' : ''}${nc.balance} kcal</b><span>Protein</span><b class="${nc.ppts === 1 ? 'ok' : nc.ppts ? 'warn' : 'bad'}">${nc.prot} / ${p.protein} g</b></div>
     <div style="height:10px;background:#EADFCF;border:1.5px solid var(--ink);border-radius:5px;overflow:hidden;margin:4px 0 10px"><div style="width:${barW}%;height:100%;background:${nc.ppts === 1 ? 'var(--ok)' : 'var(--or)'}"></div></div>
     <div class="${nc.cls}" style="font-weight:800">${esc(nc.verdict)}</div>`;
 }
@@ -1111,7 +1115,7 @@ function metricBar(st, date) {
 }
 function exerciseBar(name, date) {
   const type = exType(name), hist = exerciseHistory(name); const tgt = S.targets[name] || (type === 'max' ? 1.25 : 1.03);
-  if (!hist.length) return `<div class="beam" data-ex="${esc(name)}"><div class="hd"><span class="n">${esc(name)}</span><span class="g">not logged yet</span></div>${beamSvg({ frac: 0, state: 'nodata', left: '—', right: type === 'max' ? 'GOAL +25 %' : 'GOAL HOLD / +3 %' })}<div class="st muted">Log it in a workout to start the beam.</div></div>`;
+  if (!hist.length) return `<div class="beam" data-ex="${esc(name)}"><div class="hd"><span class="n">${esc(name)}</span><span class="g">not logged yet</span></div>${beamSvg({ frac: 0, state: 'nodata', left: '—', right: type === 'max' ? 'GOAL +25 %' : 'GOAL HOLD / +3 %' })}<div class="st muted">Not logged yet.</div></div>`;
   const first = hist[0].v, last = hist[hist.length - 1].v, goal = first * tgt, span = goal - first;
   const frac = span > 0 ? Math.max(0, (last - first) / span) : 1;
   const lastSess = S.sessions.filter(s => s.finished && s.ex.some(e => e.n === name && exScore(e, type).v > 0)).sort((a, b) => a.date < b.date ? 1 : -1)[0];
@@ -1134,14 +1138,13 @@ function dashHtml() {
   const other = R.tab !== 'other' ? '' : `<div class="beam"><div class="hd"><span class="n">Dead hangs — best hang</span><span class="g">${hangs.length} logs</span></div>${hangs.length ? beamSvg({ frac: Math.min(1, Math.max(0, (hangs[hangs.length - 1].v - hangs[0].v) / (hangs[0].v * 0.25))), timeFrac: tOf(date) / D(), state: hangs.length > 1 && hangs[hangs.length - 1].v < hangs[0].v * 0.95 ? 'slow' : 'zone', left: hangs[0].v + ' s', right: 'GOAL ' + Math.round(hangs[0].v * 1.25) + ' s' }) + '<div class="st ok">' + hangs[0].v + ' s → ' + hangs[hangs.length - 1].v + ' s best.</div>' : beamSvg({ frac: 0, state: 'nodata', left: '—', right: 'GOAL +25 %' }) + '<div class="st muted">No hangs logged yet.</div>'}</div>
     <div class="card flat"><div class="cond">Muay Thai</div><div class="muted">${Object.keys(S.days).filter(d => S.days[d].mt && S.days[d].mt.minutes).length} sessions · ${Object.keys(S.days).reduce((a, d) => a + (S.days[d].mt && +S.days[d].mt.minutes || 0), 0)} min total</div></div>`;
   return `<div class="screen">${band('Dashboard', esc(p.name))}
-    <div class="avatar" data-avatar>${heroSvg({ level: fs.level, slim, size: 120 })}<div><div class="score">${fs.score}</div><div class="lvl">${fs.name}</div><div class="muted small">Fitness score · tap to see what moved it</div></div></div>
+    <div class="avatar" data-avatar>${heroSvg({ level: fs.level, slim, size: 120 })}<div><div class="score">${fs.score}</div><div class="lvl">${fs.name}</div><div class="muted small">Tap for details</div></div></div>
     <div class="sec-h">Body</div>${body}
     <div class="sec-h">Training</div>
     <div class="tabs">${Object.keys(groups).map(k => `<button data-tab="${k}" class="${R.tab === k ? 'on' : ''}">${groups[k]}</button>`).join('')}</div>
     ${names.map(n => exerciseBar(n, date)).join('')}${other}
     <div class="sec-h">Science check</div>
-    <div class="card"><div class="kv"><span>Days with nutrition logged</span><b>${sc.loggedDays}</b><span>Logged balance so far</span><b>${sc.totalBalance > 0 ? '+' : ''}${Math.round(sc.totalBalance)} kcal</b><span>Loss the calorie log predicts</span><b>${sc.predictedLoss.toFixed(2)} kg</b><span>Scale says lost (7-day avg)</span><b>${sc.lost == null ? '—' : sc.lost.toFixed(2) + ' kg'}</b><span>Real kcal per kg lost</span><b>${sc.kcalPerKg == null ? 'need more data' : sc.kcalPerKg.toLocaleString() + ' (plan: 7,700)'}</b></div>
-    <div class="muted small">Well above 7,700 means you're eating more than you log or the band overestimates; well below means water/glycogen or lean mass is going too.</div></div>
+    <div class="card"><div class="kv"><span>Days with nutrition logged</span><b>${sc.loggedDays}</b><span>Logged balance so far</span><b>${sc.totalBalance > 0 ? '+' : ''}${Math.round(sc.totalBalance)} kcal</b><span>Loss the calorie log predicts</span><b>${sc.predictedLoss.toFixed(2)} kg</b><span>Scale says lost (7-day avg)</span><b>${sc.lost == null ? '—' : sc.lost.toFixed(2) + ' kg'}</b><span>Real kcal per kg lost</span><b>${sc.kcalPerKg == null ? 'need more data' : sc.kcalPerKg.toLocaleString() + ' (plan: 7,700)'}</b></div></div>
     <button class="btn sec" data-csv>Export readings as CSV</button>
   </div>${nav('dash')}`;
 }
@@ -1150,7 +1153,7 @@ function bindDash() {
   app.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { R.tab = b.dataset.tab; render(); });
   app.querySelectorAll('[data-metric]').forEach(el => el.onclick = () => metricTooltip(el.dataset.metric, date));
   app.querySelectorAll('[data-ex]').forEach(el => el.onclick = () => exerciseExpand(el.dataset.ex, date));
-  $('[data-avatar]').onclick = () => { const fs = fitnessScore(date); modal(`<h3>What moved the needle</h3><div class="cond" style="font-size:18px">${fs.score} (${fs.name})</div><div class="kv" style="margin-top:10px">${fs.parts.map(p => `<span>${esc(p.label)}<br><span class="muted small">${esc(p.note)} · counts ${Math.round(p.w * 100)} %</span></span><b class="${p.v >= 80 ? 'ok' : p.v >= 50 ? 'warn' : 'bad'}" style="text-align:right">${p.v}<br><span class="muted small" style="font-weight:400">${levelName(p.v)}</span></b>`).join('')}</div><button class="btn sec" data-close>Close</button>`); };
+  $('[data-avatar]').onclick = () => { const fs = fitnessScore(date); modal(`<h3>What moved the needle</h3><div class="cond" style="font-size:18px">${fs.score} (${fs.name})</div><div class="kv" style="margin-top:10px">${fs.parts.map(p => `<span>${esc(p.label)}<br><span class="muted small">${esc(p.note)}</span></span><b class="${p.v >= 80 ? 'ok' : p.v >= 50 ? 'warn' : 'bad'}" style="text-align:right">${p.v}<br><span class="muted small" style="font-weight:400">${levelName(p.v)}</span></b>`).join('')}</div><button class="btn sec" data-close>Close</button>`); };
   $('[data-csv]').onclick = () => { const rows = [['date', 'weight', 'fat', 'muscle', 'skeletal', 'visceral', 'water', 'kcal', 'protein', 'band', 'balance', 'balls']]; const dates = new Set([...Object.keys(S.readings), ...Object.keys(S.days)]); [...dates].sort().forEach(d => { const r = S.readings[d] || {}, n = (S.days[d] || {}).nutrition || {}, nc = nutritionCalc(d); rows.push([d, r.weight, r.fat, r.muscle, r.skeletal, r.visceral, r.water, n.kcal, n.protein, n.band, nc ? nc.balance : '', tOf(d) >= 0 ? dragonBalls(d).balls : ''].map(x => x == null ? '' : x)); }); download('vikac-readings-' + today() + '.csv', rows.map(r => r.join(',')).join('\n'), 'text/csv'); };
 }
 function metricTooltip(id, date) {
@@ -1159,8 +1162,8 @@ function metricTooltip(id, date) {
   const dots = readingsUpTo(date, 7).reverse().map(x => x.r[id]).filter(v => v != null && v !== '');
   const mn = Math.min(...dots), mx = Math.max(...dots), rng = mx - mn || 1;
   modal(`<h3>${def.label}</h3>
-    <div class="kv"><span>Plan says today</span><b>${f(st.exp)}</b><span>You are (7-day avg)</span><b class="${st.cls}">${f(st.cur)}</b><span>Difference</span><b>${st.diff == null ? '—' : (st.diff > 0 ? '+' : '') + st.diff.toFixed(def.dec) + u}</b><span>Tolerance band</span><b>±${st.tol}${u}</b><span>Goal on ${fmtShort(P().endDate)}</span><b>${f(st.goal)}</b><span>Projected (14-day trend)</span><b>${st.proj == null ? 'need 14 days' : f(st.proj)}</b>${st.r14 != null ? `<span>Trend</span><b>${(st.r14 * 7 > 0 ? '+' : '') + (st.r14 * 7).toFixed(2)}${u}/week</b>` : ''}</div>
-    ${dots.length ? `<div class="muted small">Last ${dots.length} readings</div><div class="dots">${dots.map(v => `<i style="height:${10 + (v - mn) / rng * 18}px" title="${v}"></i>`).join('')}</div>` : ''}
+    <div class="kv"><span>Plan says today</span><b>${f(st.exp)}</b><span>You are</span><b class="${st.cls}">${f(st.cur)}</b><span>Goal on ${fmtShort(P().endDate)}</span><b>${f(st.goal)}</b><span>Heading for</span><b>${st.proj == null ? '—' : f(st.proj)}</b></div>
+    ${dots.length ? `<div class="dots">${dots.map(v => `<i style="height:${10 + (v - mn) / rng * 18}px" title="${v}"></i>`).join('')}</div>` : ''}
     <div class="${st.cls}" style="font-weight:800;margin-top:6px">${esc(st.text)}</div>
     ${st.action ? `<div style="margin-top:8px">${esc(st.action)}</div>` : ''}
     <button class="btn sec" style="margin-top:12px" data-close>Close</button>`);
@@ -1176,7 +1179,7 @@ function exerciseExpand(name, date) {
     <div class="dots">${hist.map(h => `<i style="height:${8 + (h.v - mn) / rng * 20}px"></i>`).join('')}</div>
     <div class="${v.cls}" style="font-weight:800;margin:8px 0">${esc(v.text)}</div>${ctx}
     <div style="margin-top:8px">${esc(contextSentence(name, e, lastSess.date, lastSess.id))}</div>
-    <div class="field" style="margin-top:12px"><label>Goal multiplier for this exercise (1.03 = +3 %)</label><input type="number" step="0.01" id="tgt" value="${S.targets[name] || (type === 'max' ? 1.25 : 1.03)}"></div>
+    <div class="field" style="margin-top:12px"><label>Goal (1.03 = +3 %)</label><input type="number" step="0.01" id="tgt" value="${S.targets[name] || (type === 'max' ? 1.25 : 1.03)}"></div>
     <button class="btn sec" id="saveT">Save goal & close</button>`, bg => { bg.querySelector('#saveT').onclick = () => { const v = num(bg.querySelector('#tgt').value); if (v) S.targets[name] = v; save(); bg.close(); render(); }; });
 }
 
@@ -1187,7 +1190,7 @@ function profileHtml() {
   const inp = (k, label, v, step, type) => `<div class="field"><label>${label}</label><input name="${k}" type="${type || 'number'}" step="${step || 0.1}" inputmode="decimal" value="${v == null ? '' : v}"></div>`;
   const stand = window.matchMedia('(display-mode: standalone)').matches;
   return `<div class="screen">${band('Profile', esc(p.name))}
-    <div class="card"><h3>Backup</h3><div class="muted" style="margin:0 0 10px">${S.meta.lastBackup ? 'Last backup ' + fmtDate(S.meta.lastBackup.slice(0, 10)) : 'No backup yet.'} The file holds everything; drop it in Google Drive.</div>
+    <div class="card"><h3>Backup</h3><div class="muted" style="margin:0 0 10px">${S.meta.lastBackup ? 'Last backup ' + fmtDate(S.meta.lastBackup.slice(0, 10)) : 'No backup yet.'}</div>
       <div class="row"><button class="btn" data-backup>Backup now</button><button class="btn sec" data-restore>Restore</button></div><input type="file" accept="application/json,.json" id="restoreFile" style="display:none"></div>
     <div class="card"><h3>Project</h3>
       <div class="field"><label>Name</label><input name="name" value="${esc(p.name)}"></div>
@@ -1202,7 +1205,7 @@ function profileHtml() {
       <div class="row">${inp('height', 'Height', p.height, 1)}${inp('age', 'Age', p.age, 0.5)}</div>
       <div class="muted" id="derived"></div><div style="height:8px"></div>
       <button class="btn" data-savep>Save changes</button></div>
-    <div class="card"><h3>App</h3><div class="muted" style="margin:0 0 10px">Version ${APP_VERSION} · ${stand ? 'installed, full screen' : 'running in the browser — use Chrome menu → Add to Home screen for full screen'}</div>
+    <div class="card"><h3>App</h3><div class="muted" style="margin:0 0 10px">Version ${APP_VERSION}</div>
       <button class="btn" data-update style="margin-bottom:10px">Check for updates</button>
       <div class="row"><button class="btn sec" data-intro>Replay intro</button><button class="btn ghost" data-reset>Reset everything</button></div></div>
   </div>${nav('profile')}`;
