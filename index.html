@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content">
 <title>Trening</title>
 <meta name="theme-color" content="#0E0F12">
 <meta name="color-scheme" content="dark">
@@ -1139,6 +1139,41 @@ button.srow:active{background:var(--s2)}
 .mfoot .btn.dline{margin-top:0}
 .modal.fixh{height:min(76vh,640px)}
 .modalbg.hudm .modal>.mfoot{border-top-color:rgba(160,255,130,.22)}
+/* ============ logging sheets ============ */
+.logsh .shd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}.logsh .shd .h1{font-size:34px}.logsh .shd .cond{font-size:13px}
+.logsh .lgbox{background:var(--paper2);border:1.5px solid var(--line2);border-radius:18px;padding:12px 12px 14px}
+.logsh .lgbox .stp.lg{margin-top:4px}
+.logsh .card{background:var(--paper2)}
+.logsh .tgc{padding:12px 12px 10px}.logsh .tgc .lab4{text-align:left;margin-bottom:8px}
+.logsh details.adv{margin-top:8px}.logsh details.adv[open] summary{margin-bottom:4px}
+.logsh .link.dl{color:var(--bad);width:100%;justify-content:center;margin-top:4px}
+.logsh #fillStatus{min-height:16px;margin:6px 0 0}
+.logsh .mobrow{display:flex;align-items:center;gap:14px;background:var(--paper2);border:1.5px solid var(--line2);border-radius:18px;padding:14px}
+.logsh .mobrow .mobic{width:64px;height:64px;border-radius:18px;margin:0;flex:none}.logsh .mobrow .mobic svg{width:36px;height:36px}
+.mfoot .btn svg{width:18px;height:18px}
+/* ============ number pad ============ */
+.kpad{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#121318;border-top:1px solid var(--line2);padding:8px 8px calc(8px + var(--sab));box-shadow:0 -12px 32px rgba(0,0,0,.5);transform:translateY(105%);transition:transform .26s cubic-bezier(.3,0,.8,.15);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.kpad.on{transform:none;transition:transform .32s cubic-bezier(.05,.7,.1,1)}
+.kpg{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;max-width:560px;margin:0 auto}
+.kpg button{height:54px;border-radius:12px;background:var(--s2);color:var(--ink);font-family:'BarlowC',sans-serif;font-weight:700;font-size:26px;display:flex;align-items:center;justify-content:center;transition:background .08s,transform .08s}
+.kpg button:active{background:var(--s3);transform:scale(.96)}
+.kpg button.ks{background:#1C1D23;color:var(--ink2);font-size:28px}.kpg button svg{width:26px;height:26px}
+.kpg button.kok{background:var(--or);color:#120c05;font-size:18px;letter-spacing:.08em;text-transform:uppercase}
+.kpg button.kok:active{background:var(--or2)}
+.kpg button:disabled{opacity:.3}
+body.kpopen #app{padding-bottom:calc(var(--kb,280px) + 80px)}
+.modalbg.sheetbg{transition:padding-bottom .3s cubic-bezier(.2,.8,.2,1)}
+.modalbg.sheetbg.kplift{padding-bottom:var(--kb,280px)}
+.modalbg.sheetbg.kplift .modal{max-height:calc(94vh - var(--kb,280px))}
+input[data-num]{cursor:pointer;caret-color:transparent;-webkit-user-select:none;user-select:none}
+input[data-num].kpon{border-color:var(--or)!important;box-shadow:0 0 0 3px rgba(254,127,12,.25)}
+input[data-num].kpfresh{color:var(--or2)}
+.stp.kpon,.affix.kpon{border-color:var(--or);box-shadow:0 0 0 3px rgba(254,127,12,.25)}
+.stp input[data-num].kpon,.affix input[data-num].kpon{box-shadow:none;border-color:transparent!important}
+.hudscr .stp.kpon{border-color:#8dff6a;box-shadow:0 0 0 3px rgba(141,255,106,.22)}.hudscr input[data-num].kpfresh{color:#b8ff9e}
+body.kpopen .toast{bottom:calc(var(--kb,280px) + 14px)}
+.botbar{transition:bottom .3s cubic-bezier(.2,.8,.2,1)}
+body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 </style>
 </head>
 <body>
@@ -1146,7 +1181,7 @@ button.srow:active{background:var(--s2)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.4.1';
+const APP_VERSION = '4.5.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2744,7 +2779,7 @@ let toastTimer = null;
 // One toast at a time: a new message reuses the pill (no re-entry animation); it fades out before it is removed
 function toast(msg, ms) { let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.classList.remove('out'); t.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.add('out'); toastTimer = setTimeout(() => t.remove(), 200); }, ms || 1800); }
 // Navigation: a pushed screen slides in from the right, going back slides in from the left, tabs cross-fade
-function go(screen, params, push, anim) { const pushed = push !== false && R.screen !== screen; if (pushed) R.stack.push({ screen: R.screen, params: R.params, date: R.date, y: window.scrollY }); R.screen = screen; R.params = params || {}; render(anim || (pushed ? 'right' : 'fade')); window.scrollTo(0, 0); }
+function go(screen, params, push, anim) { if (LOG_SHEETS[screen]) return openLogSheet(screen, (params || {}).date); const pushed = push !== false && R.screen !== screen; if (pushed) R.stack.push({ screen: R.screen, params: R.params, date: R.date, y: window.scrollY }); R.screen = screen; R.params = params || {}; render(anim || (pushed ? 'right' : 'fade')); window.scrollTo(0, 0); }
 // Going back lands where you were: same screen, same day, same scroll position
 function back() { const s = R.stack.pop(); if (s) { R.screen = s.screen; R.params = s.params; if (s.date) R.date = s.date; render('left'); window.scrollTo(0, s.y || 0); } else go('today', {}, false, 'left'); }
 // Entrance animation for a freshly rendered element: 'right' | 'left' | 'fade' | 'up'
@@ -2770,7 +2805,7 @@ function modal(html, onbind) {
   const feet = m.querySelectorAll('.mbody [data-foot]'); if (feet.length) { const f = document.createElement('div'); f.className = 'mfoot'; feet.forEach(x => f.appendChild(x)); m.appendChild(f); }
   let closed = false;
   const close = () => {
-    if (closed) return; closed = true; bg.classList.remove('drag'); bg.classList.add('out'); unlockBody();
+    if (closed) return; closed = true; if (KP.inp && bg.contains(KP.inp)) kpClose(); bg.classList.remove('drag'); bg.classList.add('out'); unlockBody();
     if (prev && prev.focus && !/INPUT|TEXTAREA|SELECT/.test(prev.tagName) && document.body.contains(prev)) try { prev.focus({ preventScroll: true }); } catch (e) {}
     const done = () => { if (bg.isConnected) bg.remove(); };
     m.addEventListener('transitionend', e => { if (e.target === m && e.propertyName === (bg.classList.contains('sheetbg') ? 'transform' : 'opacity')) done(); });
@@ -2851,9 +2886,11 @@ function applyUnits(root) {
   });
 }
 function render(anim) {
-  stopTimers();
+  stopTimers(); if (KP.inp && app.contains(KP.inp)) kpClose();
+  if (LOG_SHEETS[R.screen]) R.screen = 'today';   // logging lives in sheets now
+  if (R.screen === 'band' || R.screen === 'backup') R.screen = 'profile';
   if (!S.project) { app.innerHTML = setupHtml(); bindSetup(); applyUnits(app); animate(app.querySelector('.screen'), anim); return; }
-  const sc = { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, exfile: exfileHtml, project: projectHtml, past: pastHtml, band: bandHtml, cloud: cloudHtml, backup: backupHtml, profile: profileHtml, workout: workoutHtml, weigh: weighHtml, hang: hangHtml, mt: mtHtml, stretch: stretchHtml, mobility: mobilityHtml, nutrition: nutritionHtml, import: importHtml, batch: batchHtml }[R.screen] || todayHtml;
+  const sc = { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, exfile: exfileHtml, project: projectHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[R.screen] || todayHtml;
   if (syncTips()) save();
   let html, failed = false; try { html = sc(); } catch (e) { html = errorScreen(e); failed = true; }
   app.innerHTML = html; setTimeout(() => applyUnits(app), 0);
@@ -2861,7 +2898,7 @@ function render(anim) {
   animate(app.querySelector('.screen'), anim);
   app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (R.screen === b.dataset.nav && !R.stack.length && !app.querySelector('.errscr')) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); if (b.classList.contains('plchip')) R.stab = 'scan'; go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
-  const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, exfile: bindExfile, project: bindProject, past: bindPast, band: bindBandPage, cloud: bindCloud, backup: bindBackup, profile: bindProfile, workout: bindWorkout, weigh: bindWeigh, hang: bindHang, mt: bindMT, stretch: bindStretch, mobility: bindMobility, nutrition: bindNutrition, import: bindImport, batch: bindBatch }[R.screen];
+  const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, exfile: bindExfile, project: bindProject, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
   R._prevScreen = R._curScreen; R._curScreen = R.screen;
   // the scouter paints the phone's status bar green
   const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = R.screen === 'dash' || R.screen === 'exfile' ? '#0a2e12' : '#0E0F12';
@@ -2883,7 +2920,7 @@ function noFill(i) { i.setAttribute('enterkeyhint', 'done'); i.setAttribute('aut
 function toNumText(i) {
   if (i.dataset.num) return; const st = i.getAttribute('step'), whole = st != null && st !== '' && st !== 'any' && Number.isInteger(+st);
   i.dataset.num = '1'; if (!i.getAttribute('inputmode')) i.setAttribute('inputmode', whole ? 'numeric' : 'decimal');
-  i.type = 'text'; noFill(i);
+  i.type = 'text'; i.readOnly = true; noFill(i);
 }
 new MutationObserver(ms => { for (const m of ms) for (const n of m.addedNodes) { if (n.nodeType !== 1) continue; if (n.tagName === 'INPUT' && n.type === 'number') toNumText(n); else if (n.querySelectorAll) n.querySelectorAll('input[type=number]').forEach(toNumText); } }).observe(document.documentElement, { childList: true, subtree: true });
 document.addEventListener('input', e => { const t = e.target; if (t && t.dataset && t.dataset.num && /,/.test(t.value)) { const p = t.selectionStart; t.value = t.value.replace(/,/g, '.'); try { t.setSelectionRange(p, p); } catch (er) {} } }, true);
@@ -3220,6 +3257,7 @@ function titleLines(name) {
 if ('scrollRestoration' in history) history.scrollRestoration = 'manual';   // the app restores scroll itself; the browser must not jump on back
 function armBack() { try { history.pushState({ vikac: 1 }, ''); } catch (e) {} }
 window.addEventListener('popstate', () => {
+  if (KP.inp) { kpClose(); armBack(); return; }
   const ov = topModal(), dr = document.querySelector('.dragon');
   if (ov) ov.close ? ov.close() : ov.remove();
   else if (dr) dr.remove();
@@ -3518,7 +3556,7 @@ function bindWorkout() {
     // finishing an exercise folds it up and opens the next one, once you are out of its fields
     const maybeAdvance = () => { if (e.done || s.finished) return; if (!exComplete(e, type)) return; e.done = true; save(); vib(20); paintProgress();
       // a "New PB!" gets its moment before the card folds
-      const go2 = () => { const ae = document.activeElement; if (ae && box.contains(ae) && /INPUT|TEXTAREA/.test(ae.tagName)) return; if (R._woOpen !== i) return; if (Date.now() - (box._popAt || 0) < 1200) return setTimeout(go2, 250); const nx = s.ex.findIndex((x, j) => j > i && !x.done); setOpen(nx); };
+      const go2 = () => { const ae = document.activeElement; if ((ae && box.contains(ae) && /INPUT|TEXTAREA/.test(ae.tagName)) || kpActiveIn(box)) return; if (R._woOpen !== i) return; if (Date.now() - (box._popAt || 0) < 1200) return setTimeout(go2, 250); const nx = s.ex.findIndex((x, j) => j > i && !x.done); setOpen(nx); };
       setTimeout(go2, 800); };
     box._pbSeen = entryPB(e, type);
     const pbCheck = inpEl => { clearTimeout(box._pbT); box._pbT = setTimeout(() => {
@@ -3595,41 +3633,11 @@ const field4 = (name, label, val, ph, step) => `<div class="field"><label>${labe
 const daysAgo = (d, date) => { const g = diffDays(d, date); return g <= 0 ? 'today' : g === 1 ? 'yesterday' : g + ' days ago'; };
 
 /* ---------- Weigh-in ---------- */
-function weighChart(date) {
-  const pts = []; for (let i = 7; i >= 0; i--) { const d = addDays(date, -i), r = S.readings[d]; if (r && r.weight) pts.push([d, +r.weight]); }
-  if (pts.length < 2) return '';
-  const W = 352, H = 92, vs = pts.map(p => p[1]), mn = Math.min(...vs) - .2, mx = Math.max(...vs) + .2, x = i => 14 + i * (W - 28) / (pts.length - 1), y = v => 10 + (mx - v) / (mx - mn) * (H - 36);
-  const lab = d => d === today() ? 'TODAY' : WD[parse(d).getDay()].slice(0, 3).toUpperCase();
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block">${pts.map((p, i) => `<text x="${x(i)}" y="${H - 4}" fill="#6F6B65" font-size="10" text-anchor="middle" font-family="BarlowC" font-weight="700">${lab(p[0])}</text>`).join('')}
-    <polyline points="${pts.map((p, i) => x(i) + ',' + y(p[1])).join(' ')}" fill="none" stroke="#FE7F0C" stroke-width="2.5" stroke-linejoin="round"/>
-    ${pts.map((p, i) => { const last = i === pts.length - 1; return `<circle cx="${x(i)}" cy="${y(p[1])}" r="${last ? 5 : 3}" fill="${last ? '#FE7F0C' : '#F4EFE8'}"/>${last || i === 0 ? `<text x="${x(i) + (i ? -8 : 8)}" y="${y(p[1]) - 8}" fill="#F4EFE8" font-size="11" text-anchor="${i ? 'end' : 'start'}" font-family="BarlowC" font-weight="700">${p[1]}</text>` : ''}`; }).join('')}</svg>`;
-}
 function weighReply(date, v) {
   const lr = lastReading('weight', addDays(date, -1)); if (v == null || !lr) return '';
   const d = +(v - lr.v).toFixed(1), pace = rate14('weight', addDays(date, -1)), wk = pace != null ? pace * 7 : null;
   const a = d === 0 ? `<span class="mut">● same as ${daysAgo(lr.date, date)}</span>` : `<span class="${d < 0 ? 'okc' : 'badc'}">${d < 0 ? '▼' : '▲'} ${Math.abs(d)} vs ${daysAgo(lr.date, date)}</span>`;
   return a + (wk != null ? `<span class="mut">·</span><span class="${wk < 0 ? 'okc' : 'badc'}">${wk > 0 ? '+' : '−'}${Math.abs(wk).toFixed(2)} kg / week</span>` : '');
-}
-function weighHtml() {
-  const date = R.params.date || R.date, r = S.readings[date] || {}, lr = lastReading('weight', addDays(date, -1)), last = k => { const x = lastReading(k, addDays(date, -1)); return x ? x.v : ''; };
-  const pace = rate14('weight', addDays(date, -1));
-  return `<div class="screen bar">${topbar('Weigh-in', shortD(date))}
-    <div class="card lgc"><div class="lab4">Weight</div>${bigStepper('weight', r.weight, lr ? lr.v : '83.3', 0.1, 'kg', lr ? `Last ${lr.v} kg · ${daysAgo(lr.date, date)} · tap the number to type` : 'Tap the number to type')}<div class="reply" id="wreply">${weighReply(date, r.weight != null ? +r.weight : null)}</div></div>
-    <div class="secl"><span>From the scale</span><span>optional</span></div>
-    <div class="grid4">${field4('fat', 'Body fat %', r.fat, last('fat'))}${field4('muscle', 'Muscle kg', r.muscle, last('muscle'))}${field4('skeletal', 'Skeletal kg', r.skeletal, last('skeletal'))}${field4('visceral', 'Visceral', r.visceral, last('visceral'), 1)}${field4('water', 'Water %', r.water, last('water'))}</div>
-    ${weighChart(date) ? `<div class="secl"><span>Last 7 days</span><span>${pace != null ? 'trend ' + (pace * 7 > 0 ? '+' : '−') + Math.abs(pace * 7).toFixed(2) + ' kg / week' : ''}</span></div><div class="card" style="padding:10px 12px">${weighChart(date)}</div>` : ''}
-    <div class="muted center" id="fillStatus" style="margin:10px 0 0;min-height:18px"></div>
-    ${S.readings[date] ? '<button class="btn ghost" id="delW">Delete this reading</button>' : ''}
-  </div><input type="file" accept="image/*" id="fillFile" hidden>
-  <div class="botbar"><button class="btn sec" data-fill style="flex:.8">${IC4.cam}Screenshot</button><button class="btn" id="saveW">Save</button></div>`;
-}
-function bindWeigh() {
-  const date = R.params.date || R.date;
-  wireSteppers(app, inp => { if (inp.name === 'weight') $('#wreply').innerHTML = weighReply(date, inp.value === '' ? null : +inp.value); });
-  const ff = $('#fillFile'); app.querySelector('[data-fill]').onclick = () => ff.click();
-  ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, app, $('#fillStatus'), 'scale', res => { if (res.late != null) R._fillLate = res.late; const w = app.querySelector('[name=weight]'); w.dispatchEvent(new Event('input')); }); ff.value = ''; };
-  $('#saveW').onclick = () => { const o = readForm(app); if (!o.weight) return toast('Weight is required'); const prev = S.readings[date] || {}; S.readings[date] = { weight: o.weight, fat: o.fat, muscle: o.muscle, skeletal: o.skeletal, visceral: o.visceral, water: o.water, late: R._fillLate != null ? R._fillLate : prev.late != null ? prev.late : (date === today() && new Date().getHours() >= 12) }; R._fillLate = null; save(); const tr = current('weight', date), pace = rate14('weight', date); toast(o.weight + ' kg saved' + (tr != null && readingsUpTo(date, 10).length >= 4 ? ' · trend ' + tr.toFixed(1) + (pace != null ? ' (' + (pace * 7 > 0 ? '+' : '') + (pace * 7).toFixed(1) + '/wk)' : '') : ''), 2600); vib(30); back(); };
-  const d = $('#delW'); if (d) d.onclick = async () => { if (!await ask('Delete this reading?', 'The weigh-in for ' + shortD(date) + ' is removed.', 'Delete', true)) return; delete S.readings[date]; save(); back(); };
 }
 
 /* ---------- Nutrition ---------- */
@@ -3645,68 +3653,12 @@ function nutritionCalcHtml(nc, p, date) {
   if (nc) h += `<div class="kv" style="margin:8px 0 0"><span>Balance for the day</span><b class="${nc.cls}">${nc.balance > 0 ? '+' : ''}${fmtN(nc.balance)} kcal</b></div><div class="${nc.cls}" style="font-weight:700;font-size:14px;margin-top:6px">${esc(nc.verdict)}</div>`;
   return h;
 }
-function nutritionHtml() {
-  const date = R.params.date || R.date, n = day(date).nutrition || {}, p = P(), nc = nutritionCalc(date), bk = bandKcal(date);
-  const last = S.health && S.health.last ? new Date(S.health.last).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : null;
-  return `<div class="screen bar">${topbar('Nutrition', shortD(date))}
-    <div class="card"><div class="lab4" style="text-align:left;margin-bottom:8px" id="tgtlab">Today's targets · BMR ${fmtN(p.bmr)} + ${bk.src === 'band' ? 'band' : bk.src === 'hand' ? 'typed' : 'default'} ${fmtN(bk.v)} − ${fmtN(p.deficit)}</div><div class="tg4" id="tgt">${targetHtml(date)}</div></div>
-    <div class="secl"><span>Eaten</span><span></span></div>
-    <div class="grid4"><div class="field"><label>Calories eaten</label><input name="kcal" type="number" inputmode="numeric" value="${n.kcal || ''}"></div><div class="field"><label>Protein (g)</label><input name="protein" type="number" inputmode="numeric" value="${n.protein || ''}"></div>
-      <div class="field"><label>Carbs (g)</label><input name="carbs" type="number" inputmode="numeric" value="${n.carbs == null ? '' : n.carbs}"></div><div class="field"><label>Fat (g)</label><input name="fat" type="number" inputmode="numeric" value="${n.fat == null ? '' : n.fat}"></div></div>
-    <div class="secl"><span>Band</span>${bandCfg() ? `<button class="sy" data-bandpull>${IC4.sync}${last || 'Sync'}</button>` : '<span></span>'}</div>
-    <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" value="${n.band == null ? '' : n.band}" placeholder="${bk.src === 'band' ? bandDay(date).active : p.bandDefault}"></div>
-    <div class="muted small" style="margin:-6px 2px 0">${bk.src === 'band' && (n.band == null || n.band === '') ? 'From the band — type a number to override it' : bk.src === 'hand' ? 'Typed by hand — clear it to use the band' : 'No band data for this day yet — the project default is used'}</div>
-    <div class="card" id="calc" style="margin-top:12px">${nutritionCalcHtml(nc, p, date)}</div>
-    <div class="muted center" id="fillStatus" style="margin:10px 0 0;min-height:18px"></div>
-    ${n.kcal || n.protein || n.carbs || n.fat ? '<button class="btn ghost" id="delN">Delete this entry</button>' : ''}
-  </div><input type="file" accept="image/*" id="fillFile" hidden>
-  <div class="botbar"><button class="btn sec" data-fill style="flex:.8">${IC4.cam}Screenshot</button><button class="btn" id="saveN">Save</button></div>`;
-}
-function bindNutrition() {
-  const date = R.params.date || R.date;
-  const bp = $('[data-bandpull]'); if (bp) bp.onclick = async () => {
-    bp.lastChild.textContent = 'Syncing…'; const keep = {}; app.querySelectorAll('input[name]').forEach(i => keep[i.name] = i.value);
-    const r = await bandFetch(); if (!r.ok) { toast(r.error, 2400); bp.lastChild.textContent = 'Sync'; return; }
-    render(); app.querySelectorAll('input[name]').forEach(i => { if (keep[i.name] != null) { i.value = keep[i.name]; i.dispatchEvent(new Event('input', { bubbles: true })); } });
-    toast(r.changed ? 'Band data updated' : 'Already up to date', 1800); };
-  const upd = () => { const o = readForm(app), prev = day(date).nutrition || {}; day(date).nutrition = { kcal: o.kcal, protein: o.protein, carbs: o.carbs, fat: o.fat, band: o.band, src: prev.src };
-    $('#calc').innerHTML = nutritionCalcHtml(nutritionCalc(date), P(), date); $('#tgt').innerHTML = targetHtml(date); const p = P(), bk = bandKcal(date); $('#tgtlab').textContent = `Today's targets · BMR ${fmtN(p.bmr)} + ${bk.src === 'band' ? 'band' : bk.src === 'hand' ? 'typed' : 'default'} ${fmtN(bk.v)} − ${fmtN(p.deficit)}`; };
-  app.querySelectorAll('input[name]').forEach(i => i.oninput = upd);
-  const ff = $('#fillFile'); app.querySelector('[data-fill]').onclick = () => ff.click();
-  ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, app, $('#fillStatus'), 'mfp', () => upd()); ff.value = ''; };
-  $('#saveN').onclick = () => { upd(); save(); toast('Saved!'); vib(30); back(); };
-  const dn = $('#delN'); if (dn) dn.onclick = async () => { if (!await ask('Delete this entry?', 'Calories and macros for ' + shortD(date) + ' are removed.', 'Delete', true)) return; const d = day(date); delete d.nutrition; if (d.done) d.done.nutrition = false; save(); toast('Entry deleted'); back(); };
-}
 
 /* ---------- Muay Thai ---------- */
 function mtSessionTime(date) {
   const h = bandDay(date); if (!h || !h.workouts) return null; const ws = h.workouts.filter(w => MT_TYPES.test(w.type || '') && w.start); if (!ws.length) return null;
   const hm = t => new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Zagreb' });
   const a = ws[0].start, last = ws[ws.length - 1], b = new Date(+new Date(last.start) + (+last.min || 0) * 60000).toISOString(); return hm(a) + ' – ' + hm(b);
-}
-function mtHtml() {
-  const date = R.params.date || R.date, m = day(date).mt || {}, past = [];
-  for (const d in S.days) { const x = S.days[d].mt; if (x && x.minutes && d >= P().startDate && d <= today()) past.push(x); }
-  const tot = past.reduce((a, x) => a + (+x.minutes || 0), 0), tk = past.reduce((a, x) => a + (+x.kcal || 0), 0), tm = mtSessionTime(date);
-  return `<div class="screen bar">${topbar('Muay Thai', shortD(date))}
-    <div class="card lgc"><div class="lab4">Minutes</div>${bigStepper('minutes', m.minutes, '60', 5, 'min')}
-      ${m.src === 'band' ? `<div class="center" style="margin-top:12px"><span class="src">${IC4.watch}From the band${tm ? ' · ' + tm : ''}</span></div>` : ''}
-      <div class="chips" style="justify-content:center;margin:12px 0 0">${[30, 45, 60, 90].map(v => `<button class="pill" data-pre="${v}">${v}</button>`).join('')}</div></div>
-    <div class="grid4" style="margin-top:12px"><div class="field"><label>Calories burned</label><input name="kcal" type="number" inputmode="numeric" value="${m.kcal || ''}" placeholder="${m.src === 'band' ? 'from the band' : '—'}"></div><div class="field"><label>Note</label><input name="note" value="${esc(m.note || '')}" placeholder="Pads, sparring…"></div></div>
-    ${m.src === 'band' ? '<div class="muted small center" style="margin-top:-4px">Change minutes or kcal to override the band.</div>' : ''}
-    ${m.minutes || (day(date).done || {}).mt ? '<button class="btn ghost" id="clearM" style="margin-top:6px">Clear this session</button>' : ''}
-    ${past.length ? `<div class="secl" style="margin-top:18px"><span>This project</span><span></span></div><div class="tiles3"><div class="card"><div class="lab4">Sessions</div><b class="bang">${past.length}</b></div><div class="card"><div class="lab4">Minutes</div><b class="bang">${fmtN(tot)}</b></div><div class="card"><div class="lab4">${tk ? 'kcal' : 'Average'}</div><b class="bang">${tk ? fmtN(tk) : Math.round(tot / past.length)}</b></div></div>` : ''}
-  </div><div class="botbar"><button class="btn" id="saveM">Save</button></div>`;
-}
-function bindMT() {
-  const date = R.params.date || R.date; wireSteppers(app);
-  app.querySelectorAll('[data-pre]').forEach(b => b.onclick = () => { const i = app.querySelector('[name=minutes]'); i.value = b.dataset.pre; i.dispatchEvent(new Event('input')); });
-  $('#saveM').onclick = () => { const o = readForm(app); if (!o.minutes) return toast('Enter minutes'); const prev = day(date).mt || {};
-    const kcalHand = o.kcal != null && +o.kcal !== +(prev.kcal || 0) ? true : prev.kcalSrc === 'hand';
-    day(date).mt = { minutes: o.minutes, kcal: o.kcal || null, kcalSrc: kcalHand && o.kcal ? 'hand' : undefined, note: o.note, src: prev.src === 'band' && +prev.minutes === +o.minutes ? 'band' : undefined };
-    save(); toast('Logged. Sawadee!'); vib(30); back(); };
-  const cl = $('#clearM'); if (cl) cl.onclick = async () => { if (!await ask('Clear this session?', 'Minutes and kcal for ' + shortD(date) + ' are removed and the day shows Muay Thai as not done. The band fills it again on its next sync unless you type your own.', 'Clear', true)) return;
-    const d = day(date); d.mt = { minutes: null, kcal: null, src: 'cleared', note: '' }; if (d.done) d.done.mt = false; save(); toast('Cleared'); back(); };
 }
 
 /* ---------- Dead hangs ---------- */
@@ -3720,33 +3672,8 @@ function hangHint(date, v) {
   const pb = hangPB(), wk = []; for (let i = 1; i <= 7; i++) { const h = (S.days[addDays(date, -i)] || {}).hang; if (h && h.best) wk.push(+h.best); }
   return [v ? '= ' + fmtSecs(+v) : null, pb ? `<span class="pbtag">${TROPHY}PB</span> <b class="goldc">${fmtSecs(pb.v)}</b>` : null, wk.length ? 'week best ' + fmtSecs(Math.max(...wk)) : null].filter(Boolean).join(' · ');
 }
-function hangHtml() {
-  const date = R.params.date || R.date, h = day(date).hang || {}, wk = []; for (let i = 1; i <= 7; i++) { const x = (S.days[addDays(date, -i)] || {}).hang; if (x && x.best) wk.push(+x.best); }
-  return `<div class="screen bar">${topbar('Dead hangs', shortD(date))}
-    <div class="card lgc"><div class="lab4">Best single hang</div>${bigStepper('best', h.best, wk.length ? Math.max(...wk) : '45', 5, 's')}<div class="lghint" id="hhint">${hangHint(date, h.best)}</div>
-      <div class="chips" style="justify-content:center;margin:12px 0 0">${[30, 45, 60, 90].map(v => `<button class="pill" data-pre="${v}">${v} s</button>`).join('')}</div></div>
-    <div class="secl"><span>Total hang time</span><span>seconds</span></div>${smallStepper('total', h.total, '180', 10)}
-    ${hangBars(date) ? `<div class="secl"><span>Last 7 days</span><span>best</span></div><div class="card" style="padding:10px 10px 8px">${hangBars(date)}</div>` : ''}
-  </div><div class="botbar"><button class="btn" id="saveH">Save</button></div>`;
-}
-function bindHang() {
-  const date = R.params.date || R.date;
-  wireSteppers(app, inp => { if (inp.name === 'best') $('#hhint').innerHTML = hangHint(date, inp.value); });
-  app.querySelectorAll('[data-pre]').forEach(b => b.onclick = () => { const i = app.querySelector('[name=best]'); i.value = b.dataset.pre; i.dispatchEvent(new Event('input')); });
-  $('#saveH').onclick = () => { const o = readForm(app); if (!o.best) return toast('Enter your best hang'); day(date).hang = { best: o.best, total: o.total || 180 }; save(); toast('Hang logged. Posture gang!'); vib(30); back(); };
-}
 
 /* ---------- Kick mobility ---------- */
-function mobilityHtml() {
-  const date = R.params.date || R.date, done = isDone(date, 'mobility'), recent = [];
-  for (let i = 1; i <= 24 && recent.length < 3; i++) { const d = addDays(date, -i); if (d < P().startDate) break; const inf = dayInfo(d); if (inf.items && inf.items.some(it => it.id === 'mobility')) recent.push([d, inf]); }
-  return `<div class="screen bar">${topbar('Kick mobility', shortD(date))}
-    <div class="mobic">${IC4.kick}</div>
-    <div class="card center" style="padding:18px 16px"><div class="cond" style="font-size:18px">Your usual warm-up</div><div class="muted" style="font-size:14px;margin-top:6px">Range of motion routine · tick it off when it's done.</div></div>
-    ${recent.length ? `<div class="secl"><span>Before this</span><span>days 2 · 4 · 6</span></div><ul class="todo">${recent.map(([d, inf]) => { const dn = isDone(d, 'mobility'); return `<li class="${dn ? 'done bonus' : 'bonus'}"><span class="st ${dn ? '' : 'circ'}">${dn ? IC4.check : ''}</span><div class="lab"><div class="t" style="text-decoration:none">${shortD(d)}</div><div class="s">Cycle ${inf.cycleNum} · ${esc(dayType(inf).label)}</div></div></li>`; }).join('')}</ul>` : ''}
-  </div><div class="botbar"><button class="btn big ${done ? 'sec' : ''}" id="doneM">${done ? 'Done ✓' : 'Mark done'}</button></div>`;
-}
-function bindMobility() { const date = R.params.date || R.date; $('#doneM').onclick = () => { const d = day(date); if (isDone(date, 'mobility')) { d.done.mobility = false; save(); render(); return; } d.done.mobility = true; save(); toast('Mobility done!'); vib(30); back(); }; }
 
 /* ---------- Stretching ---------- */
 function stretchRing() { const s = STRETCH[player.idx], R0 = 40, c = 2 * Math.PI * R0, f = s ? player.left / s.d : 0; return `<svg viewBox="0 0 92 92"><circle cx="46" cy="46" r="${R0}" fill="none" stroke="#2c2620" stroke-width="7"/><circle id="pring" cx="46" cy="46" r="${R0}" fill="none" stroke="#FE7F0C" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 46 46)" style="filter:drop-shadow(0 0 5px rgba(254,127,12,.8))"/></svg>`; }
@@ -3941,6 +3868,183 @@ function daySheet(d) {
     const dg = b.querySelector('[data-dragon]'); if (dg) dg.onclick = () => { b.close(); setTimeout(showDragon, 200); };
     const art = b.querySelector('.dsb'); if (art && pl.cd === 8 && cyc.summoned) art.onclick = () => { b.close(); setTimeout(showDragon, 200); };
     const od = b.querySelector('[data-od]'); if (od) od.onclick = () => { b.close(); R.date = d; go('today', {}); };
+  });
+}
+
+/* ============ The app's own number pad ============
+   Number boxes never open the phone's keyboard: Chrome and the phone's autofill (passwords, cards, addresses) ride on the
+   keyboard, so the only sure way to keep them out is not to call it. Tapping a number opens this pad instead: digits, a
+   decimal point where the box takes one, ⌫, − / + by the box's step, and Next (the next box) or Done. The first key replaces
+   the number (like a selected field), later keys add to it. The boxes stay real inputs, so every form keeps working. */
+const KP = { el: null, inp: null, fresh: false, h: 0 };
+function kpBuild() {
+  if (KP.el) return KP.el;
+  const k = (v, cls, lab) => `<button type="button" class="${cls || ''}" data-k="${v}">${lab || v}</button>`;
+  const el = document.createElement('div'); el.className = 'kpad'; el.setAttribute('role', 'group'); el.setAttribute('aria-label', 'Number pad');
+  el.innerHTML = `<div class="kpg">${k(1)}${k(2)}${k(3)}${k('bk', 'ks', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></svg>')}
+    ${k(4)}${k(5)}${k(6)}${k('-', 'ks', '−')}${k(7)}${k(8)}${k(9)}${k('+', 'ks', '+')}
+    ${k('.', 'kdot')}${k(0)}${k('hide', 'ks', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>')}${k('ok', 'kok', 'Done')}</div>`;
+  el.addEventListener('pointerdown', e => e.preventDefault());           // never steals focus, never closes itself
+  el.addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b) kpKey(b.dataset.k); });
+  document.body.appendChild(el); KP.el = el; return el;
+}
+const kpDec = i => i.getAttribute('inputmode') !== 'numeric';
+function kpScope(i) { return i.closest('.ex') || i.closest('.modal') || app; }
+function kpNext(i) { const all = [...kpScope(i).querySelectorAll('input[data-num]')].filter(x => !x.disabled && x.getClientRects().length && !x.closest('.collapse:not(.open)') && !x.closest('details:not([open])')); const n = all.indexOf(i); return n >= 0 ? all[n + 1] || null : null; }
+// an empty set starts − / + from the set above it
+function kpPrevSame(i) { if (!i.dataset.f) return null; const all = [...kpScope(i).querySelectorAll(`input[data-f="${i.dataset.f}"]`)], n = all.indexOf(i); for (let k = n - 1; k >= 0; k--) if (all[k].value !== '') return +all[k].value; return null; }
+function kpActiveIn(el) { return !!(KP.inp && el && el.contains(KP.inp)); }
+function kpOpen(i) {
+  if (!i || !i.dataset.num) return; const el = kpBuild(), was = KP.inp;
+  if (was && was !== i) kpLeave(was);
+  KP.inp = i; KP.fresh = true; i.classList.add('kpon', 'kpfresh'); const st = i.closest('.stp,.affix'); if (st) st.classList.add('kpon');
+  el.querySelector('.kdot').disabled = !kpDec(i); el.querySelector('.kok').textContent = kpNext(i) ? 'Next' : 'Done';
+  el.classList.add('on'); document.body.classList.add('kpopen'); document.body.classList.toggle('kpbar', !i.closest('.ex'));   // forms keep Save above the pad; a workout keeps its sets in view KP.h = el.offsetHeight || 280; document.documentElement.style.setProperty('--kb', KP.h + 'px');
+  const sh = i.closest('.modalbg'); document.querySelectorAll('.modalbg.kplift').forEach(b => { if (b !== sh) b.classList.remove('kplift'); }); if (sh) sh.classList.add('kplift');
+  setTimeout(() => kpReveal(i), sh ? 240 : 30); vib(4);
+}
+// keep the box in sight above the pad
+function kpReveal(i) {
+  if (KP.inp !== i) return; const r = i.getBoundingClientRect(), bb = document.body.classList.contains('kpbar') && app.querySelector('.botbar'), lim = window.innerHeight - KP.h - (bb ? bb.offsetHeight : 0) - 14, sh = i.closest('.mbody');
+  if (sh) { const sr = sh.getBoundingClientRect(); if (r.bottom > sr.bottom - 6 || r.top < sr.top) i.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); return; }
+  if (r.bottom > lim) window.scrollBy({ top: r.bottom - lim + 8, behavior: 'smooth' }); else if (r.top < 70) window.scrollBy({ top: r.top - 90, behavior: 'smooth' });
+}
+function kpLeave(i) { i.classList.remove('kpon', 'kpfresh'); const st = i.closest('.stp,.affix'); if (st) st.classList.remove('kpon'); i.dispatchEvent(new Event('change', { bubbles: true })); i.dispatchEvent(new FocusEvent('blur')); }
+function kpClose() {
+  if (!KP.inp) return; const i = KP.inp; KP.inp = null; kpLeave(i);
+  if (KP.el) KP.el.classList.remove('on'); document.body.classList.remove('kpopen', 'kpbar'); document.querySelectorAll('.modalbg.kplift').forEach(b => b.classList.remove('kplift'));
+}
+function kpSet(v) { const i = KP.inp; i.value = v; i.dispatchEvent(new Event('input', { bubbles: true })); }
+function kpKey(k) {
+  const i = KP.inp; if (!i) return; let v = KP.fresh ? '' : i.value; vib(4);
+  if (k === 'hide') return kpClose();
+  if (k === 'ok') { const n = kpNext(i); return n ? kpOpen(n) : kpClose(); }
+  if (k === '+' || k === '-') { const step = +i.step || 1, dec = (String(step).split('.')[1] || '').length, base = i.value !== '' ? +i.value : i.placeholder !== '' && !isNaN(+i.placeholder) ? +i.placeholder : kpPrevSame(i);
+    let x = base == null ? (k === '+' ? step : 0) : base + (k === '+' ? step : -step); x = Math.max(0, +x.toFixed(dec)); KP.fresh = true; i.classList.add('kpfresh'); return kpSet(String(x)); }
+  if (k === 'bk') v = KP.fresh ? '' : v.slice(0, -1);
+  else if (k === '.') { if (!kpDec(i) || v.includes('.')) return; v = (v || '0') + '.'; }
+  else { if (v.replace('.', '').length >= 6) return; v = v === '0' ? String(k) : v + k; }
+  KP.fresh = false; i.classList.remove('kpfresh'); kpSet(v);
+}
+// a tap on a number box opens the pad (and never the keyboard); a tap anywhere else closes it
+document.addEventListener('mousedown', e => { const t = e.target; if (t && t.dataset && t.dataset.num) e.preventDefault(); }, true);
+// (a tap, not a scroll: scrolling the page leaves the pad open, like the phone's keyboard)
+document.addEventListener('click', e => { const t = e.target; if (t && t.dataset && t.dataset.num && t.tagName === 'INPUT') return kpOpen(t);
+  if (!KP.inp || (KP.el && KP.el.contains(t))) return; const st = KP.inp.closest('.stp'); if (st && st.contains(t)) { KP.fresh = true; KP.inp.classList.add('kpfresh'); return; } kpClose(); }, true);
+document.addEventListener('focusin', e => { const t = e.target; if (t && t.dataset && t.dataset.num) { t.blur(); kpOpen(t); } }, true);
+document.addEventListener('keydown', e => { if (!KP.inp) return; const k = e.key;
+  if (/^[0-9]$/.test(k)) kpKey(+k); else if (k === '.' || k === ',') kpKey('.'); else if (k === 'Backspace') kpKey('bk'); else if (k === 'Enter' || k === 'Tab') kpKey('ok'); else if (k === 'Escape') kpClose(); else if (k === 'ArrowUp') kpKey('+'); else if (k === 'ArrowDown') kpKey('-'); else return;
+  e.preventDefault(); e.stopPropagation(); }, true);
+
+/* ============ Logging in bottom sheets: weigh-in, nutrition, dead hangs, Muay Thai, kick mobility ============
+   Opened from Today, the + menu, Journey and the Scouter; the screen underneath stays where it was and updates on Save.
+   (go('weigh' | 'nutrition' | 'hang' | 'mt' | 'mobility', { date }) opens the sheet, so every old link keeps working.) */
+const LOG_SHEETS = { weigh: weighSheet, nutrition: nutritionSheet, hang: hangSheet, mt: mtSheet, mobility: mobilitySheet };
+function openLogSheet(kind, date) { const f = LOG_SHEETS[kind]; if (!f) return; const closing = document.querySelector('.modalbg.out'); setTimeout(() => f(date || R.date), closing ? 150 : 0); }
+function logSheet(title, date, body, foot, onbind) {
+  return modal(`<div class="hdl"></div><div class="shd"><span class="h1">${title}</span><span class="cond muted">${shortD(date)}</span></div>${body}<div data-foot class="sfoot">${foot}</div>`, b => { b.classList.remove('hudm'); b.classList.add('sheetbg', 'logsh'); onbind(b); });
+}
+// after a save: the screen underneath shows it (Today ticks the item and celebrates a ball), scroll kept
+function afterLog() { if (R.screen === 'today') return refreshToday(true); const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); }
+
+/* ---------- Weigh-in ---------- */
+function weighSheet(date) {
+  const r = S.readings[date] || {}, lr = lastReading('weight', addDays(date, -1)), last = k => { const x = lastReading(k, addDays(date, -1)); return x ? x.v : ''; };
+  const comp = ['fat', 'muscle', 'skeletal', 'visceral', 'water'].some(k => r[k] != null && r[k] !== '');
+  const body = `<div class="lgbox">${bigStepper('weight', r.weight, lr ? lr.v : '83.3', 0.1, 'kg', lr ? `Last ${lr.v} kg · ${daysAgo(lr.date, date)}` : '')}<div class="reply" id="wreply">${weighReply(date, r.weight != null ? +r.weight : null)}</div></div>
+    <details class="adv" ${comp ? 'open' : ''}><summary>From the scale · optional</summary><div class="grid4">${field4('fat', 'Body fat %', r.fat, last('fat'))}${field4('muscle', 'Muscle kg', r.muscle, last('muscle'))}${field4('skeletal', 'Skeletal kg', r.skeletal, last('skeletal'))}${field4('visceral', 'Visceral', r.visceral, last('visceral'), 1)}${field4('water', 'Water %', r.water, last('water'))}</div></details>
+    <div class="muted center small" id="fillStatus"></div>${S.readings[date] ? '<button class="link dl" data-del>Delete this reading</button>' : ''}<input type="file" accept="image/*" id="fillFile" hidden>`;
+  logSheet('Weigh-in', date, body, `<div class="row"><button class="btn sec" data-fill>${IC4.cam}Screenshot</button><button class="btn" data-save>Save</button></div>`, b => {
+    let late = null;
+    wireSteppers(b, inp => { if (inp.name === 'weight') b.querySelector('#wreply').innerHTML = weighReply(date, inp.value === '' ? null : +inp.value); });
+    const ff = b.querySelector('#fillFile'); b.querySelector('[data-fill]').onclick = () => ff.click();
+    ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, b, b.querySelector('#fillStatus'), 'scale', res => { if (res.late != null) late = res.late; const dt = b.querySelector('details'); if (dt) dt.open = true; b.querySelector('[name=weight]').dispatchEvent(new Event('input')); }); ff.value = ''; };
+    b.querySelector('[data-save]').onclick = () => {
+      const o = readForm(b); if (!o.weight) return toast('Weight is required'); const prev = S.readings[date] || {};
+      S.readings[date] = { weight: o.weight, fat: o.fat, muscle: o.muscle, skeletal: o.skeletal, visceral: o.visceral, water: o.water, late: late != null ? late : prev.late != null ? prev.late : (date === today() && new Date().getHours() >= 12) }; save();
+      const tr = current('weight', date), pace = rate14('weight', date); b.close(); afterLog(); vib(30);
+      toast(o.weight + ' kg saved' + (tr != null && readingsUpTo(date, 10).length >= 4 ? ' · trend ' + tr.toFixed(1) + (pace != null ? ' (' + (pace * 7 > 0 ? '+' : '') + (pace * 7).toFixed(1) + '/wk)' : '') : ''), 2600);
+    };
+    const d = b.querySelector('[data-del]'); if (d) d.onclick = async () => { if (!await ask('Delete this reading?', 'The weigh-in for ' + shortD(date) + ' is removed.', 'Delete', true)) return; delete S.readings[date]; save(); b.close(); afterLog(); };
+  });
+}
+
+/* ---------- Nutrition ---------- */
+function nutritionSheet(date) {
+  const n = (S.days[date] || {}).nutrition || {}, p = P(), bk = bandKcal(date), has = n.kcal || n.protein || n.carbs || n.fat;
+  const last = S.health && S.health.last ? new Date(S.health.last).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : null;
+  const tl = k => `BMR ${fmtN(p.bmr)} + ${k.src === 'band' ? 'band' : k.src === 'hand' ? 'typed' : 'default'} ${fmtN(k.v)} − ${fmtN(p.deficit)}`;
+  const body = `<div class="card tgc"><div class="lab4" id="tgtlab">${tl(bk)}</div><div class="tg4" id="tgt">${targetHtml(date)}</div></div>
+    <div class="grid4" style="margin-top:12px"><div class="field"><label>Calories eaten</label><input name="kcal" type="number" inputmode="numeric" value="${n.kcal || ''}"></div><div class="field"><label>Protein (g)</label><input name="protein" type="number" inputmode="numeric" value="${n.protein || ''}"></div>
+      <div class="field"><label>Carbs (g)</label><input name="carbs" type="number" inputmode="numeric" value="${n.carbs == null ? '' : n.carbs}"></div><div class="field"><label>Fat (g)</label><input name="fat" type="number" inputmode="numeric" value="${n.fat == null ? '' : n.fat}"></div></div>
+    <div class="secl" style="margin-top:4px"><span>Band</span>${bandCfg() ? `<button class="sy" data-bandpull>${IC4.sync}${last || 'Sync'}</button>` : '<span></span>'}</div>
+    <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" value="${n.band == null ? '' : n.band}" placeholder="${bk.src === 'band' ? bandDay(date).active : p.bandDefault}"></div>
+    <div class="muted small" style="margin:-6px 2px 0" id="bandnote">${bk.src === 'band' && (n.band == null || n.band === '') ? 'From the band — type a number to override it' : bk.src === 'hand' ? 'Typed by hand — clear it to use the band' : 'No band data for this day yet — the project default is used'}</div>
+    <div class="card" id="calc" style="margin-top:12px">${nutritionCalcHtml(nutritionCalc(date), p, date)}</div>
+    <div class="muted center small" id="fillStatus"></div>${has ? '<button class="link dl" data-del>Delete this entry</button>' : ''}<input type="file" accept="image/*" id="fillFile" hidden>`;
+  logSheet('Nutrition', date, body, `<div class="row"><button class="btn sec" data-fill>${IC4.cam}Screenshot</button><button class="btn" data-save>Save</button></div>`, b => {
+    const d = () => day(date);
+    // what the numbers would do, shown live; nothing is kept until Save
+    const entry = () => { const o = readForm(b), prev = d().nutrition || {}; return { kcal: o.kcal, protein: o.protein, carbs: o.carbs, fat: o.fat, band: o.band, src: prev.src }; };
+    const upd = () => { const keep = d().nutrition; d().nutrition = entry();
+      try { b.querySelector('#calc').innerHTML = nutritionCalcHtml(nutritionCalc(date), P(), date); b.querySelector('#tgt').innerHTML = targetHtml(date); b.querySelector('#tgtlab').textContent = tl(bandKcal(date)); }
+      finally { if (keep === undefined) delete d().nutrition; else d().nutrition = keep; } };
+    b.querySelectorAll('input[name]').forEach(i => i.addEventListener('input', upd));
+    const bp = b.querySelector('[data-bandpull]'); if (bp) bp.onclick = async () => { bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); bp.lastChild.textContent = r.ok ? new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Sync'; if (!r.ok) return toast(r.error, 2400);
+      const k = bandKcal(date), bi = b.querySelector('[name=band]'); if (k.src === 'band') bi.placeholder = (bandDay(date) || {}).active || bi.placeholder; upd(); toast(r.changed ? 'Band data updated' : 'Already up to date', 1800); };
+    const ff = b.querySelector('#fillFile'); b.querySelector('[data-fill]').onclick = () => ff.click();
+    ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, b, b.querySelector('#fillStatus'), 'mfp', () => upd()); ff.value = ''; };
+    b.querySelector('[data-save]').onclick = () => { const e = entry(); if ([e.kcal, e.protein, e.carbs, e.fat, e.band].every(v => v == null)) return toast('Enter what you ate'); d().nutrition = e; save(); b.close(); afterLog(); toast('Saved!'); vib(30); };
+    const dl = b.querySelector('[data-del]'); if (dl) dl.onclick = async () => { if (!await ask('Delete this entry?', 'Calories and macros for ' + shortD(date) + ' are removed.', 'Delete', true)) return; const x = d(); delete x.nutrition; if (x.done) x.done.nutrition = false; save(); b.close(); afterLog(); toast('Entry deleted'); };
+  });
+}
+
+/* ---------- Muay Thai ---------- */
+function mtSheet(date) {
+  const m = (S.days[date] || {}).mt || {}, past = [];
+  for (const d in S.days) { const x = S.days[d].mt; if (x && x.minutes && d >= P().startDate && d <= today()) past.push(x); }
+  const tot = past.reduce((a, x) => a + (+x.minutes || 0), 0), tk = past.reduce((a, x) => a + (+x.kcal || 0), 0), tm = mtSessionTime(date);
+  const body = `<div class="lgbox">${bigStepper('minutes', m.minutes, '60', 5, 'min')}
+      ${m.src === 'band' ? `<div class="center" style="margin-top:10px"><span class="src">${IC4.watch}From the band${tm ? ' · ' + tm : ''}</span></div>` : ''}
+      <div class="chips" style="justify-content:center;margin:12px 0 0">${[30, 45, 60, 90].map(v => `<button class="pill" data-pre="${v}">${v} min</button>`).join('')}</div></div>
+    <div class="grid4" style="margin-top:12px"><div class="field"><label>Calories burned</label><input name="kcal" type="number" inputmode="numeric" value="${m.kcal || ''}" placeholder="${m.src === 'band' ? 'from the band' : '—'}"></div><div class="field"><label>Note</label><input name="note" value="${esc(m.note || '')}" placeholder="Pads, sparring…" maxlength="80"></div></div>
+    ${m.src === 'band' ? '<div class="muted small center" style="margin-top:-4px">Change minutes or kcal to override the band.</div>' : ''}
+    ${past.length ? `<div class="secl" style="margin-top:14px"><span>This project</span><span>${past.length} session${past.length === 1 ? '' : 's'} · ${fmtN(tot)} min${tk ? ' · ' + fmtN(tk) + ' kcal' : ''}</span></div>` : ''}
+    ${m.minutes || ((S.days[date] || {}).done || {}).mt ? '<button class="link dl" data-clear>Clear this session</button>' : ''}`;
+  logSheet('Muay Thai', date, body, '<button class="btn" data-save>Save</button>', b => {
+    wireSteppers(b);
+    b.querySelectorAll('[data-pre]').forEach(x => x.onclick = () => { const i = b.querySelector('[name=minutes]'); i.value = x.dataset.pre; i.dispatchEvent(new Event('input')); });
+    b.querySelector('[data-save]').onclick = () => { const o = readForm(b); if (!o.minutes) return toast('Enter minutes'); const prev = day(date).mt || {};
+      const kcalHand = o.kcal != null && +o.kcal !== +(prev.kcal || 0) ? true : prev.kcalSrc === 'hand';
+      day(date).mt = { minutes: o.minutes, kcal: o.kcal || null, kcalSrc: kcalHand && o.kcal ? 'hand' : undefined, note: o.note, src: prev.src === 'band' && +prev.minutes === +o.minutes ? 'band' : undefined };
+      save(); b.close(); afterLog(); toast('Logged. Sawadee!'); vib(30); };
+    const cl = b.querySelector('[data-clear]'); if (cl) cl.onclick = async () => { if (!await ask('Clear this session?', 'Minutes and kcal for ' + shortD(date) + ' are removed and the day shows Muay Thai as not done. The band fills it again on its next sync unless you type your own.', 'Clear', true)) return;
+      const d = day(date); d.mt = { minutes: null, kcal: null, src: 'cleared', note: '' }; if (d.done) d.done.mt = false; save(); b.close(); afterLog(); toast('Cleared'); };
+  });
+}
+
+/* ---------- Dead hangs ---------- */
+function hangSheet(date) {
+  const h = (S.days[date] || {}).hang || {}, wk = []; for (let i = 1; i <= 7; i++) { const x = (S.days[addDays(date, -i)] || {}).hang; if (x && x.best) wk.push(+x.best); }
+  const body = `<div class="lgbox"><div class="lab4">Best single hang</div>${bigStepper('best', h.best, wk.length ? Math.max(...wk) : '45', 5, 's')}<div class="lghint" id="hhint">${hangHint(date, h.best)}</div>
+      <div class="chips" style="justify-content:center;margin:12px 0 0">${[30, 45, 60, 90].map(v => `<button class="pill" data-pre="${v}">${v} s</button>`).join('')}</div></div>
+    <div class="secl"><span>Total hang time</span><span>seconds</span></div>${smallStepper('total', h.total, '180', 10)}
+    ${hangBars(date) ? `<div class="secl"><span>Last 7 days</span><span>best</span></div><div class="card" style="padding:10px 10px 8px">${hangBars(date)}</div>` : ''}`;
+  logSheet('Dead hangs', date, body, '<button class="btn" data-save>Save</button>', b => {
+    wireSteppers(b, inp => { if (inp.name === 'best') b.querySelector('#hhint').innerHTML = hangHint(date, inp.value); });
+    b.querySelectorAll('[data-pre]').forEach(x => x.onclick = () => { const i = b.querySelector('[name=best]'); i.value = x.dataset.pre; i.dispatchEvent(new Event('input')); });
+    b.querySelector('[data-save]').onclick = () => { const o = readForm(b); if (!o.best) return toast('Enter your best hang'); day(date).hang = { best: o.best, total: o.total || 180 }; save(); b.close(); afterLog(); toast('Hang logged. Posture gang!'); vib(30); };
+  });
+}
+
+/* ---------- Kick mobility ---------- */
+function mobilitySheet(date) {
+  const done = isDone(date, 'mobility'), recent = [];
+  for (let i = 1; i <= 24 && recent.length < 3; i++) { const d = addDays(date, -i); if (d < P().startDate) break; const inf = dayInfo(d); if (inf.items && inf.items.some(it => it.id === 'mobility')) recent.push([d, inf]); }
+  const body = `<div class="mobrow"><span class="mobic">${IC4.kick}</span><div><div class="cond" style="font-size:18px">Your usual warm-up</div><div class="muted" style="font-size:14px;margin-top:3px">Range of motion routine · tick it off when it's done.</div></div></div>
+    ${recent.length ? `<div class="secl"><span>Before this</span><span>days 2 · 4 · 6</span></div><div class="xl" style="margin-top:0">${recent.map(([d, inf]) => { const dn = isDone(d, 'mobility'); return `<div class="xr"><span class="ok5 ${dn ? 'on b' : ''}">${dn ? IC4.check : ''}</span><span class="n">${shortD(d)}<small>Cycle ${inf.cycleNum} · ${esc(dayType(inf).label)}</small></span></div>`; }).join('')}</div>` : ''}`;
+  logSheet('Kick mobility', date, body, `<button class="btn ${done ? 'sec' : ''}" data-save>${done ? 'Done ✓ · tap to undo' : 'Mark done'}</button>`, b => {
+    b.querySelector('[data-save]').onclick = () => { const d = day(date); d.done = d.done || {}; if (isDone(date, 'mobility')) { d.done.mobility = false; save(); b.close(); afterLog(); toast('Mobility not done'); return; } d.done.mobility = true; save(); b.close(); afterLog(); toast('Mobility done!'); vib(30); };
   });
 }
 
@@ -4325,12 +4429,12 @@ function profileHtml() {
       ${arch.length ? srow({ ic: 'box', t: 'Past projects', s: arch.length + ' · ' + esc(arch.map(b => b.project.name).join(', ')), go: 'past' }) : srow({ ic: 'box', t: 'Past projects', s: 'None yet', plain: true, cls: 'off' })}
       ${srow({ ic: 'plus', t: 'New project', s: 'the current one moves to Past projects', act: 'newp' })}</div>
     <div class="sgl">Sync</div><div class="sgrp">
-      ${srow({ ic: 'watch', t: 'Band sync', s: bc ? 'Steps and kcal · ' + (h.last ? agoTxt(h.last) : 'waiting for data') : 'Not connected', chip: bc ? (h.last ? ['on', 'On'] : ['warn', 'Waiting']) : ['off', 'Off'], go: 'band' })}
+      ${srow({ ic: 'watch', t: 'Band sync', s: bc ? 'Steps and kcal · ' + (h.last ? agoTxt(h.last) : 'waiting for data') : 'Not connected', chip: bc ? (h.last ? ['on', 'On'] : ['warn', 'Waiting']) : ['off', 'Off'], act: 'band' })}
       ${srow({ ic: 'cloud', t: 'Cloud backup', s: esc(gs.text), chip: cc, go: 'cloud' })}</div>
     <div class="sgl">Data</div><div class="sgrp">
       ${srow({ ic: 'image', t: 'Read screenshots', s: 'Xiaomi or MFP, one or many', act: 'shots' })}
       ${srow({ ic: 'fork', t: 'MFP export', s: 'Fill every unlogged day', act: 'mfp' })}
-      ${srow({ ic: 'file', t: 'Backup file', s: (S.meta.lastBackup ? 'Last ' + shortD(S.meta.lastBackup.slice(0, 10)) : 'No file backup yet') + ' · restore · CSV', go: 'backup' })}</div>
+      ${srow({ ic: 'file', t: 'Backup file', s: (S.meta.lastBackup ? 'Last ' + shortD(S.meta.lastBackup.slice(0, 10)) : 'No file backup yet') + ' · restore · CSV', act: 'backup' })}</div>
     <div class="sgl">App · v${APP_VERSION}</div><div class="sgrp">
       ${srow({ ic: 'sync', t: 'Check for updates', act: 'update', cls: 'upd' })}
       ${srow({ ic: 'trash', t: 'Reset everything', s: 'every project and log on this phone', act: 'reset', cls: 'danger' })}</div>
@@ -4340,7 +4444,7 @@ function profileHtml() {
 function bindProfile() {
   app.querySelectorAll('[data-sgo]').forEach(b => b.onclick = () => go(b.dataset.sgo, {}));
   const sf = $('#shotFiles'), mf = $('#mfpFile');
-  const act = { newp: startNewProjectFlow, shots: () => sf.click(), mfp: () => mf.click(), update: checkUpdates, reset: resetEverything };
+  const act = { newp: startNewProjectFlow, shots: () => sf.click(), mfp: () => mf.click(), update: checkUpdates, reset: resetEverything, band: bandSheet, backup: backupSheet };
   app.querySelectorAll('[data-act]').forEach(b => b.onclick = () => act[b.dataset.act](b));
   sf.onchange = () => { const files = Array.from(sf.files || []); sf.value = ''; if (!files.length) return; if (files.length === 1) go('import', { file: files[0] }); else startBatch(files); };
   mf.onchange = async () => {
@@ -4422,25 +4526,26 @@ function pastProjectModal(id) {
   });
 }
 
-/* ---------- Band sync ---------- */
-function bandHtml() {
+/* ---------- Band sync (a sheet) ---------- */
+function setSheet(title, chip, body, onbind) { return modal(`<div class="hdl"></div><div class="shd"><span class="h1">${title}</span>${chip || '<span></span>'}</div>${body}`, b => { b.classList.add('sheetbg', 'logsh'); onbind(b); }); }
+function settingsRefresh() { if (R.screen !== 'profile') return; const y = window.scrollY; render(); window.scrollTo(0, y); }
+function bandSheet() {
   const c = bandCfg(), h = S.health || {};
-  if (!c) return `<div class="screen">${topbar('Band sync', 'Not connected')}
-    <div class="lead4">Steps, active calories and workouts from the Xiaomi band, every 30 minutes — they fill the band kcal, the Muay Thai sessions and the Scouter.</div>
+  if (!c) return setSheet('Band sync', '<span class="sch off">Off</span>', `<div class="lead4">Steps, active calories and workouts from the Xiaomi band, every 30 minutes — they fill the band kcal, the Muay Thai sessions and the Scouter.</div>
     <div class="field"><label>Inbox address</label><input id="bandurl" placeholder="https://trening-band.yourname.workers.dev" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url"></div>
     <div class="field"><label>Key</label><input id="bandkey" type="password" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
-    <button class="btn" data-bandconnect>Connect</button></div>${nav('profile')}`;
+    <button class="btn" data-bandconnect data-foot>Connect</button>`, b => {
+    b.querySelector('[data-bandconnect]').onclick = async e => { const btn = e.currentTarget, url = b.querySelector('#bandurl').value.trim(), key = b.querySelector('#bandkey').value.trim(); if (!/^https:\/\//.test(url) || !key) return toast('Enter the inbox address and key');
+      bandSetCfg({ url, key }); btn.textContent = 'Checking…'; const r = await bandFetch(); if (!r.ok) { bandSetCfg(null); btn.textContent = 'Connect'; return toast(r.error, 2600); } b.close(); settingsRefresh(); toast(r.last ? 'Connected · band data found' : 'Connected · waiting for the first band data', 2600); };
+  });
   const t = bandDay(today()) || {}, host = (() => { try { return new URL(c.url).host; } catch (e) { return c.url; } })();
-  return `<div class="screen">${topbar('Band sync', h.last ? 'On' : 'Waiting for the first data')}
-    <div class="sgrp">${kvr('Band data received', agoTxt(h.last))}${kvr('Last checked', agoTxt(h.fetched))}${kvr('Today', (t.steps != null ? fmtN(t.steps) + ' steps' : '— steps') + ' · ' + (t.active != null ? t.active + ' kcal' : '— kcal'))}${kvr('Inbox', esc(host))}</div>
-    <div class="row" style="margin-top:14px"><button class="btn sec" data-bandsync>${IC4.sync}Sync now</button><button class="btn sec" data-banddisc>Disconnect</button></div>
-    <div class="lead4" style="margin-top:14px">Band → Mi Fitness → Health Connect → the inbox app sends new data every 30 minutes; the app picks it up when it is open.</div></div>${nav('profile')}`;
-}
-function bindBandPage() {
-  const c = $('[data-bandconnect]'); if (c) c.onclick = async () => { const url = $('#bandurl').value.trim(), key = $('#bandkey').value.trim(); if (!/^https:\/\//.test(url) || !key) return toast('Enter the inbox address and key');
-    bandSetCfg({ url, key }); c.textContent = 'Checking…'; const r = await bandFetch(); if (!r.ok) { bandSetCfg(null); c.textContent = 'Connect'; return toast(r.error, 2600); } toast(r.last ? 'Connected · band data found' : 'Connected · waiting for the first band data', 2600); render(); };
-  const sy = $('[data-bandsync]'); if (sy) sy.onclick = async () => { sy.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); toast(r.ok ? (r.changed ? 'Band data updated' : 'Band data up to date') : r.error, 2200); render(); };
-  const dc = $('[data-banddisc]'); if (dc) dc.onclick = async () => { if (await ask('Disconnect band sync?', 'Data already synced stays in the app.', 'Disconnect')) { bandSetCfg(null); render(); } };
+  setSheet('Band sync', h.last ? '<span class="sch on">On</span>' : '<span class="sch warn">Waiting</span>', `<div class="sgrp" id="bandkv">${kvr('Band data received', agoTxt(h.last))}${kvr('Last checked', agoTxt(h.fetched))}${kvr('Today', (t.steps != null ? fmtN(t.steps) + ' steps' : '— steps') + ' · ' + (t.active != null ? t.active + ' kcal' : '— kcal'))}${kvr('Inbox', esc(host))}</div>
+    <div class="lead4" style="margin-top:12px">Band → Mi Fitness → Health Connect → the inbox app sends new data every 30 minutes; the app picks it up when it is open.</div>
+    <div class="row" data-foot><button class="btn sec" data-banddisc>Disconnect</button><button class="btn" data-bandsync>${IC4.sync}Sync now</button></div>`, b => {
+    b.querySelector('[data-bandsync]').onclick = async e => { const btn = e.currentTarget; btn.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); btn.lastChild.textContent = 'Sync now'; toast(r.ok ? (r.changed ? 'Band data updated' : 'Band data up to date') : r.error, 2200);
+      const h2 = S.health || {}, t2 = bandDay(today()) || {}; b.querySelector('#bandkv').innerHTML = kvr('Band data received', agoTxt(h2.last)) + kvr('Last checked', agoTxt(h2.fetched)) + kvr('Today', (t2.steps != null ? fmtN(t2.steps) + ' steps' : '— steps') + ' · ' + (t2.active != null ? t2.active + ' kcal' : '— kcal')) + kvr('Inbox', esc(host)); settingsRefresh(); };
+    b.querySelector('[data-banddisc]').onclick = async () => { b.close(); if (await ask('Disconnect band sync?', 'Data already synced stays in the app.', 'Disconnect')) { bandSetCfg(null); settingsRefresh(); } };
+  });
 }
 
 /* ---------- Cloud backup ---------- */
@@ -4476,21 +4581,19 @@ function bindCloud() {
   const dc = $('[data-ghdisconnect]'); if (dc) dc.onclick = async () => { if (await ask('Disconnect cloud backup?', 'The data on GitHub stays there; this phone just stops syncing.', 'Disconnect')) { ghDisconnect(); render(); } };
 }
 
-/* ---------- Backup file ---------- */
-function backupHtml() {
-  return `<div class="screen">${topbar('Backup file', S.meta.lastBackup ? 'Last ' + shortD(S.meta.lastBackup.slice(0, 10)) : 'No file backup yet')}
-    <div class="lead4">One file with everything — every project, log and workout. Keep one somewhere safe now and then, or restore one onto a new phone.</div>
+/* ---------- Backup file (a sheet) ---------- */
+function backupSheet() {
+  setSheet('Backup file', `<span class="cond muted" style="font-size:13px">${S.meta.lastBackup ? 'Last ' + shortD(S.meta.lastBackup.slice(0, 10)) : 'none yet'}</span>`, `<div class="lead4">One file with everything — every project, log and workout. Keep one somewhere safe now and then, or restore one onto a new phone.</div>
     <div class="sgrp">${srow({ ic: 'file', tone: 'or', t: 'Back up now', s: 'downloads vikac-backup-' + today() + '.json', act: 'backup' })}${srow({ ic: 'restore', t: 'Restore from a file', s: 'replaces everything on this phone', act: 'restore' })}${srow({ ic: 'table', t: 'Export readings as CSV', s: 'weigh-ins and nutrition, one row a day', act: 'csv' })}</div>
-    <input type="file" accept="application/json,.json" id="restoreFile" hidden></div>${nav('profile')}`;
-}
-function bindBackup() {
-  const act = {
-    backup: () => { S.meta.lastBackup = new Date().toISOString(); save(); download('vikac-backup-' + today() + '.json', JSON.stringify(S, null, 1)); toast('Backup downloaded'); render(); },
-    restore: () => $('#restoreFile').click(),
-    csv: () => { const rows = [['date', 'weight', 'fat', 'muscle', 'skeletal', 'visceral', 'water', 'kcal', 'protein', 'band', 'balance', 'balls']]; const dates = new Set([...Object.keys(S.readings), ...Object.keys(S.days)]); [...dates].sort().forEach(d => { const r = S.readings[d] || {}, n = (S.days[d] || {}).nutrition || {}, nc = nutritionCalc(d); rows.push([d, r.weight, r.fat, r.muscle, r.skeletal, r.visceral, r.water, n.kcal, n.protein, n.band, nc ? nc.balance : '', tOf(d) >= 0 ? dragonBalls(d).balls : ''].map(x => x == null ? '' : x)); }); download('vikac-readings-' + today() + '.csv', rows.map(r => r.join(',')).join('\n'), 'text/csv'); toast('CSV downloaded'); },
-  };
-  app.querySelectorAll('[data-act]').forEach(b => b.onclick = () => act[b.dataset.act]());
-  $('#restoreFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = async () => { let o; try { o = JSON.parse(rd.result); if (!o.days || !('project' in o)) throw 0; } catch (err) { return toast('Not a valid backup file'); } if (await ask('Restore this backup?', 'Everything on this phone is replaced by the backup file.', 'Restore')) { S = o; if (!Array.isArray(S.archive)) S.archive = []; save(); toast('Restored'); R.stack = []; R.date = today(); go('today', {}, false, 'fade'); } }; rd.readAsText(f); e.target.value = ''; };
+    <input type="file" accept="application/json,.json" id="restoreFile" hidden>`, b => {
+    const act = {
+      backup: () => { S.meta.lastBackup = new Date().toISOString(); save(); download('vikac-backup-' + today() + '.json', JSON.stringify(S, null, 1)); toast('Backup downloaded'); b.close(); settingsRefresh(); },
+      restore: () => b.querySelector('#restoreFile').click(),
+      csv: () => { const rows = [['date', 'weight', 'fat', 'muscle', 'skeletal', 'visceral', 'water', 'kcal', 'protein', 'band', 'balance', 'balls']]; const dates = new Set([...Object.keys(S.readings), ...Object.keys(S.days)]); [...dates].sort().forEach(d => { const r = S.readings[d] || {}, n = (S.days[d] || {}).nutrition || {}, nc = nutritionCalc(d); rows.push([d, r.weight, r.fat, r.muscle, r.skeletal, r.visceral, r.water, n.kcal, n.protein, n.band, nc ? nc.balance : '', tOf(d) >= 0 ? dragonBalls(d).balls : ''].map(x => x == null ? '' : x)); }); download('vikac-readings-' + today() + '.csv', rows.map(r => r.join(',')).join('\n'), 'text/csv'); toast('CSV downloaded'); },
+    };
+    b.querySelectorAll('[data-act]').forEach(x => x.onclick = () => act[x.dataset.act]());
+    b.querySelector('#restoreFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = async () => { let o; try { o = JSON.parse(rd.result); if (!o.days || !('project' in o)) throw 0; } catch (err) { return toast('Not a valid backup file'); } b.close(); if (await ask('Restore this backup?', 'Everything on this phone is replaced by the backup file.', 'Restore')) { S = o; if (!Array.isArray(S.archive)) S.archive = []; save(); toast('Restored'); R.stack = []; R.date = today(); go('today', {}, false, 'fade'); } }; rd.readAsText(f); e.target.value = ''; };
+  });
 }
 
 /* ---------- New project: name and dates, then the starting point ---------- */
