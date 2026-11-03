@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v4.2.2)
+# Vikač High Kikač — install guide (v4.3.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -24,7 +24,7 @@ Settings shows the **current project** (name, dates, deficit, goal) with Edit, *
 
 ## 4. Earning the ball, and the report card
 
-On a training day the ball needs the session and the nutrition entry (required, ball badge in the corner, green tick); the weigh-in, hangs, stretching and mobility are bonus (blue tick). On a rest day everything is required. Progress → Overview grades Training, Nutrition and Stretch as done ÷ possible so far on the American scale (A+ ≥ 97, A ≥ 93, A− ≥ 90, B+ ≥ 87 … D− ≥ 60, F below), and the Today screen shows the same grades as of the day you are looking at.
+On a training day the ball needs the session and the nutrition entry (required, ball badge in the corner, green tick); the weigh-in, hangs, stretching and mobility are bonus (blue tick). On a rest day everything is required. Scouter → Scan grades Training, Nutrition and Stretch as done ÷ possible so far on the American scale (A+ ≥ 97, A ≥ 93, A− ≥ 90, B+ ≥ 87 … D− ≥ 60, F below), and the Today screen shows the same grades as of the day you are looking at.
 
 ## 5. Keeping your data safe
 
@@ -54,7 +54,7 @@ The weigh-in form can read the Mi Fitness share image instead of you typing six 
 
 **Many at once:** share several screenshots to Trening in one go, or Settings → **Read screenshots** and pick them. Each is read and logged to the day it shows — "Today", "Tomorrow", "Yesterday" or the date in MFP's header, the date printed on the Mi Fitness card — so food can be logged days ahead. Rows that could not be read (no date, unknown image) say *Check*; tap one to set the date or numbers by hand. Empty MFP days are skipped.
 
-**Macros:** nutrition keeps calories, protein, carbs and fat. Targets per day: protein as set (≈2.2 g/kg), fat 0.65 g/kg of current weight (never under 0.5 g/kg — the floor for hormones, per Helms 2014's 20–30 % of calories), carbs take whatever energy remains after the deficit, so they rise on days with more band kcal. Progress shows the 7-day averages against the targets.
+**Macros:** nutrition keeps calories, protein, carbs and fat. Targets per day: protein as set (≈2.2 g/kg), fat 0.65 g/kg of current weight (never under 0.5 g/kg — the floor for hormones, per Helms 2014's 20–30 % of calories), carbs take whatever energy remains after the deficit, so they rise on days with more band kcal. Scouter → Food shows the 7-day (or whole-project) averages against the targets, each day's calories against that day's target and the days protein was hit.
 
 **Catching up several days:** MFP → More → Settings → **File Export** → pick the period → Export. MFP emails a link to a zip; open the link on the phone, download the zip, then in Trening **Settings → Read from MFP export** and pick it (the Nutrition-Summary CSV on its own also works). Every project day that isn't logged by hand gets its calories and protein; days you typed yourself are left alone, earlier imports are refreshed, and today is skipped unless it's after 21:00 (exports are usually taken mid-day).
 
@@ -68,7 +68,7 @@ Upload PNGs to the repository next to index.html and they replace the drawn art;
 | --- | --- | --- |
 | lift-push.png, lift-legs.png, lift-pull.png, lift-mt.png, lift-rest.png | the training tile at the top of Today: the character doing the day's main lift (bench press, squat, deadlift), kicking the bag (Muay Thai) or sleeping under a tree (rest). Optional animation: extra frames lift-push-2.png … lift-push-8.png, played as a flip-book (0.42 s per frame). Until these exist the tile borrows hero-beam.png / hero-0.png | 600 × 600 |
 | lift-done.png | the thumbs-up shown when the day's training is done (the tile turns green and shrinks). Until it exists the tile uses hero-4.png | 600 × 600 |
-| hero-0.png … hero-4.png | the standing character at levels 0–4 (Soft, Getting there, Lean, Shredded, Powered up); shown on Progress, level follows the score | 600 × 900 |
+| hero-0.png … hero-4.png | the standing character at levels 0–4 (Soft, Getting there, Lean, Shredded, Powered up); shown on the Scouter, level follows the power level | 600 × 900 |
 | hero-aura.png | optional: the "powered up" aura on its own, drawn in the same 600 × 900 frame as hero-4; the app pulses it behind hero-4 | 600 × 900 |
 | hero-bolts.png | optional: lightning bolts on their own, same frame; the app flickers them over hero-4 | 600 × 900 |
 | hero-beam.png | the character firing the beam when you tick a card; facing right. With beam.png present: the pose alone, square, hands at the right edge (46 px on screen). Without beam.png: the old style, beam baked in, 900 × 600 | 600 × 600 |

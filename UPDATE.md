@@ -1,6 +1,6 @@
-# What to do now — updating to v4.2.2
+# What to do now — updating to v4.3.0
 
-This zip is the complete app at v4.2.2 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v4.3.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v4.2.2 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.2.2 found — reloading".
+1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.3.0 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The phone's own bar under the app (orange before 4.0, dark now) and the app name come with the home-screen icon: Chrome refreshes them by itself within a few days, or right away when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -40,6 +40,7 @@ Nothing else changes: same address, same key, the bucket and the data stay. Work
 
 ## E. What changed since the version on your phone
 
+- v4.3.0 — **Trening 4, stage 4: the Scouter** replaces Progress (bottom bar: Scouter). It stays green, with tabs. **Scan:** power level with the character, six vitals with their 7-day trend (weight, body fat, muscle, average kcal and protein, steps), this cycle's dragon radar and the report card; tap the power level for the breakdown, a vital for its tab, the radar for Journey. **Body:** the weight trend against the plan's zone with every weigh-in, the projection to 31 Dec and the goal (2W / 1M / All), pace vs plan, then body fat, muscle, skeletal, visceral and water since day 1 and the science check. **Food:** averages vs targets (7 days or the whole project), each day's calories against that day's target, protein days hit, where the targets come from and the band's 7-day steps and active kcal. **Training:** lifts, Muay Thai minutes and kcal, PBs, strength since day 1 for Push / Pull / Legs, every session newest first (tap to open it) and the dead hangs. **Records:** personal bests and highest volume; tap a lift for its **exercise file** — PB, best volume, every session across all projects on a chart, the latest verdict, your goal for the project (− % +) and the full history with notes. The scan plays in full the first time you open it each day, after that just a quick sweep. Tips and the other pop-ups opened here are green too.
 - v4.2.2 — No autofill on any field: Chrome's password / card / address bar above the keyboard is switched off for every box in the app.
 - v4.2.1 — Muay Thai can always be reopened: tap its tile (or "Open Muay Thai" on any day in Journey) to change minutes and kcal, or **Clear this session** to mark it not done (the band then leaves that day alone). Every past day in Journey can reopen its workout. Once the dragon is summoned, day 8 says **Dragon summoned** everywhere and tapping its tile (or the dragon on its day sheet) plays the summoning again. Every pop-up has a close button pinned in its corner, so long ones (like the power level) never need scrolling to close. The tips pop-up keeps its height while a tip flies out.
 - v4.2.0 — **Trening 4, stage 3: Journey** replaces Calendar. **Path:** every day of the project on one winding path, balls and dragons where you earned them, cycle banners, you standing on today; it opens with today in view. **Plan:** this cycle and the next, day by day, with the lifting time. **Month:** the calendar with the season scenes, balls earned and the day types. Tap any day for its sheet: days ahead show the workout (every exercise with last time and PB), the targets and what earns the ball; past days show everything you logged. **Fixes:** going back keeps your scroll position; leaving the app and coming back keeps the screen and day you were on (also when Android closed the app in the background); only a new calendar day moves Today along. Workout: kg steps by 0.5; exercise cards slide open and shut; finishing a workout takes you back where you came from with the summary on top. The same everywhere: saving a log, finishing the stretching routine or a batch of screenshots returns you to the screen you came from, and a ball completed there is celebrated when you land on Today. A weigh-in or a finished workout now counts even when nothing else was logged that day yet. Dark keyboard background.
