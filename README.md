@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v2.3.0)
+# Vikač High Kikač — install guide (v2.4.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -62,13 +62,17 @@ Reading happens on the phone (tesseract.js) — the image is never uploaded anyw
 
 ## 8. Your own artwork
 
-Upload PNGs to the repository next to index.html and they replace the drawn art; delete a file to go back to the built-in drawing for that piece. Transparent background, no padding tricks needed — the app scales them. Every file is optional and independent (you can replace only the dragon, or only the winter scene). A re-uploaded PNG shows on the next open — no version bump needed. The sheet `art-spec-sheet.png` and the zip `art-reference-current.zip` (sent with v2.3.0) hold the current drawings at these exact sizes to trace or redesign over.
+Upload PNGs to the repository next to index.html and they replace the drawn art; delete a file to go back to the built-in drawing for that piece. Transparent background, no padding tricks needed — the app scales them. Every file is optional and independent (you can replace only the dragon, or only the winter scene). A re-uploaded PNG shows on the next open — no version bump needed. The sheet `art-spec-sheet.png` and the zip `art-reference-current.zip` (sent with v2.3.0 and v2.4.0) hold the current drawings at these exact sizes to trace or redesign over.
 
 | File | What | Size |
 | --- | --- | --- |
 | hero-0.png … hero-4.png | the standing character at levels 0–4 (Soft, Getting there, Lean, Shredded, Powered up); shown on Progress, level follows the score | 600 × 900 |
-| hero-beam.png | the kamehameha pose that flies across a card when you tick it; facing right, beam to the right | 900 × 600 |
-| dragon.png | the dragon: summon badge (greyed when locked, faded when waiting) and the celebration | 900 × 600 |
+| hero-aura.png | optional: the "powered up" aura on its own, drawn in the same 600 × 900 frame as hero-4; the app pulses it behind hero-4 | 600 × 900 |
+| hero-bolts.png | optional: lightning bolts on their own, same frame; the app flickers them over hero-4 | 600 × 900 |
+| hero-beam.png | the character firing the beam when you tick a card; facing right. With beam.png present: the pose alone, square, hands at the right edge (46 px on screen). Without beam.png: the old style, beam baked in, 900 × 600 | 600 × 600 |
+| beam.png | optional: the beam itself, travelling left → right (faint tail left, bright head right); the app stretches it from the character's hands to the end of the card, then the burst lands | 1200 × 150 |
+| dragon.png | the dragon for the celebration (floats over a pulsing glow); also the summon badge when dragon-badge.png is missing | 900 × 600 |
+| dragon-badge.png | optional: the dragon coiled into a circle for the summon badge (26–124 px on screen; the app adds the dashed ring, padlock and grey/faded states) | 300 × 300 |
 | ball-1.png … ball-7.png | the seven dragon balls (1 to 7 stars): the strip on Today, the badge in a card's corner, the pop-up | 300 × 300 |
 | ball-1-hollow.png … ball-7-hollow.png | optional: the "not yet earned" look of each ball. Without these the app fades and desaturates the full ball instead. All seven or none. | 300 × 300 |
 | season-autumn.png, season-winter.png, season-spring.png, season-summer.png | the figure beside the month name in the Calendar (leaf pile, snowman, cherry tree, parasol). Draw it standing on the bottom edge of the image; the right-hand copy is mirrored by the app | 300 × 300 |

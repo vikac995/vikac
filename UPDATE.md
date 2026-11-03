@@ -1,6 +1,6 @@
-# What to do now — updating to v2.3.0
+# What to do now — updating to v2.4.0
 
-This zip is the complete app at v2.3.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v2.4.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v2.3.0 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 2.3.0 found — reloading".
+1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 2.4.0 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The app name on the home screen only changes when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -30,6 +30,7 @@ From then on, Settings shows "Saved to GitHub … ago". If the phone is ever los
 
 ## D. What changed since the version on your phone
 
+- v2.4.0 — **Art built for animation.** New optional layers: `hero-aura.png` and `hero-bolts.png` (pulsing aura and flickering lightning behind/over hero-4 on Progress), `beam.png` (the tick animation becomes character → beam stretching across the card → burst; `hero-beam.png` is then the pose alone, 600 × 600), `dragon-badge.png` (a square coiled dragon for the summon badge instead of squeezing dragon.png). The summon celebration now floats the dragon over a pulsing glow; the "summon today" badge pulses. All still optional — nothing changes until a file is uploaded.
 - v2.3.0 — **Everything redrawable.** Besides the character and dragon, these now swap for your own PNGs too: `ball-1.png` … `ball-7.png` (300×300; optional `ball-N-hollow.png` for the not-yet-earned look), `season-autumn/winter/spring/summer.png` (300×300, figure standing on the bottom edge, the right-hand one is mirrored by the app) and `ground-autumn/winter/spring/summer.png` (288×72, tiled sideways). Each file is independent — upload what you have, the rest stays drawn. README section 8 has the full table. The current drawings are in `art-reference-current.zip` and `art-spec-sheet.png` (sent separately, not needed on the phone).
 - v2.2.1 — **Your own artwork.** Drop PNGs next to index.html and the app uses them instead of the drawn ones: `hero-0.png` … `hero-4.png` (standing character, levels Soft → Powered up, 600×900, transparent), `hero-beam.png` (the kamehameha pose that flies across a ticked card, 900×600, facing right), `dragon.png` (900×600). Any file that is missing keeps the built-in drawing. Re-uploading a PNG shows up on the next open without a version bump. Also: calendar figures stand on the ground; the phone's back button on a pop-up just closes it without the page jumping. v2.2.1: one tap deletes a whole nutrition entry.
 - v2.2.1 — **Required vs bonus.** On training days the session and nutrition earn the dragon ball (ball badge in the card's corner, hollow until done, required cards sit on top with a heavier outline, green tick); everything else is bonus (blue tick). Rest days: everything required. A one-line **report card** under the band grades Training, Nutrition and Stretch so far on the American scale (A+ … F) plus an overall grade. **Progress** is split into Overview / Body / Nutrition / Training tabs: Overview has the score, movers, report card and one-line summaries; Nutrition shows each day of the last week as bars against its target, with a Log nutrition button when nothing is logged. Bottom navigation: the active tab is just coloured, no bar. v2.2.1: grades count every day up to the one you are viewing (today included, so they climb as you tick), Progress tabs swipe left/right, no keyboard pops up until you tap a box, tighter Body cards, each Nutrition card carries its own daily target (e.g. 180 g daily, 2.16 g/kg). v2.2.1: the Progress title and tabs stay pinned while you scroll; the Nutrition tab fits on one screen.

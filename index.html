@@ -60,7 +60,7 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .collapse.open{grid-template-rows:1fr}
 .collapse>div{overflow:hidden;min-height:0}
 #player{display:contents}
-@media (prefers-reduced-motion:reduce){.a-right,.a-left,.a-fade,.a-up,.modalbg,.modal,.toast,.dragon{animation:none!important}.collapse{transition:none}}
+@media (prefers-reduced-motion:reduce){.a-right,.a-left,.a-fade,.a-up,.modalbg,.modal,.toast,.dragon,.dglow,.dragonimg,.herostack img,.badge{animation:none!important}.collapse{transition:none}}
 @keyframes snap{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 /* header band */
 .band{position:relative;margin:-10px -14px 14px;padding:calc(12px + var(--sat)) 18px 24px;min-height:calc(84px + var(--sat));background:var(--or);background-image:radial-gradient(rgba(0,0,0,.14) 1.5px,transparent 1.6px);background-size:10px 10px;color:#fff;clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),0 100%);border-bottom:3px solid var(--ink)}
@@ -191,6 +191,13 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .burst{position:absolute;right:60px;top:50%;width:46px;height:46px;transform:translateY(-50%) scale(0);pointer-events:none}
 .burst.play{animation:burst .6s ease-out forwards}
 @keyframes burst{0%{transform:translateY(-50%) scale(0);opacity:1}60%{transform:translateY(-50%) scale(1.2);opacity:1}100%{transform:translateY(-50%) scale(1.4);opacity:0}}
+.beamfx{position:absolute;left:104px;right:78px;top:50%;height:26px;transform:translateY(-50%) scaleX(0);transform-origin:left center;opacity:0;pointer-events:none;z-index:1}
+.beamfx img{display:block;width:100%;height:100%}
+.beamfx.play{animation:beamfx .8s ease-out forwards}
+@keyframes beamfx{0%{opacity:0;transform:translateY(-50%) scaleX(0)}14%{opacity:1;transform:translateY(-50%) scaleX(.02)}42%{opacity:1;transform:translateY(-50%) scaleX(1)}78%{opacity:1;transform:translateY(-50%) scaleX(1)}100%{opacity:0;transform:translateY(-50%) scaleX(1)}}
+.beamfx+.burst.play{animation-delay:.28s}
+.badge.ready{animation:readyPulse 1.8s ease-in-out infinite}
+@keyframes readyPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 /* dragon balls */
 .balls{display:flex;justify-content:center;gap:8px;margin:16px 0 6px}
 .ball{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff8 0,#fff0 40%),radial-gradient(circle at 50% 50%,#FFB347,#FE7F0C 60%,#C25400);border:2.5px solid var(--ink);box-shadow:2px 2px 0 var(--ink);position:relative;transition:all .3s}
@@ -287,6 +294,12 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .avatar.progress{align-items:flex-start;padding:12px 14px}
 .avatar.progress>svg{width:84px;height:126px}
 .avatar>img.heroimg{flex:none;object-fit:contain;object-position:bottom}
+.herostack{flex:none;position:relative}
+.herostack img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;object-position:bottom}
+.herostack img.aura{animation:auraPulse .9s ease-in-out infinite;transform-origin:50% 62%}
+.herostack img.bolts{animation:boltFlick .5s steps(2,end) infinite}
+@keyframes auraPulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.06);opacity:1}}
+@keyframes boltFlick{0%{opacity:1}50%{opacity:.15}100%{opacity:1}}
 .zap img{display:block}
 .avatar.progress .pr{flex:1;min-width:0}
 .avatar.progress .top{display:flex;align-items:baseline;gap:8px}
@@ -372,6 +385,11 @@ details.adv[open] summary::before{transform:rotate(90deg)}
 @keyframes toastin{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
 .dragon{position:fixed;inset:0;z-index:80;background:rgba(255,246,234,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;animation:snap .3s}
 .dragon svg{width:min(92vw,440px);height:auto}
+.dragon>*{position:relative;z-index:1}
+.dragon .dglow{position:absolute;left:50%;top:50%;width:min(120vw,600px);height:min(120vw,600px);margin:min(-60vw,-300px) 0 0 min(-60vw,-300px);border-radius:50%;background:radial-gradient(circle,rgba(255,212,0,.6) 0,rgba(254,127,12,.28) 42%,rgba(255,246,234,0) 70%);animation:dglow 1.6s ease-in-out infinite;z-index:0;pointer-events:none}
+@keyframes dglow{0%,100%{transform:scale(.92);opacity:.8}50%{transform:scale(1.06);opacity:1}}
+.dragon img.dragonimg{animation:dfloat 2.4s ease-in-out infinite;filter:drop-shadow(0 10px 0 rgba(27,27,27,.12))}
+@keyframes dfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
 .dragon .msg{font-family:'Bangers',Impact,sans-serif;font-size:44px;color:var(--or);-webkit-text-stroke:1.2px var(--ink);paint-order:stroke;text-shadow:3px 3px 0 var(--ink);letter-spacing:.04em;margin-top:6px}
 hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 .warnbox{background:var(--warnsoft);border:2px solid var(--ink);border-radius:10px;padding:8px 12px;font-size:14px;color:var(--ink);margin-bottom:12px;font-weight:600;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:8px;min-height:44px}
@@ -391,7 +409,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.4.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1639,30 +1657,42 @@ function dragonSvg() { return dragonArt({ segs: [[16, 156, 60, 96, 112, 206, 156
    landscape 3:2, facing right), dragon.png (landscape 3:2), ball-1.png … ball-7.png (square; optional ball-N-hollow.png
    for the uncollected look), season-<autumn|winter|spring|summer>.png (square figure standing at the bottom edge; the
    right-hand one is mirrored), ground-<season>.png (a tile repeated sideways, 4:1). Missing files → the built-in SVG art. */
-const ART_FILES = ['hero', 'dragon', 'balls', 'ballsHollow', 'season-autumn', 'season-winter', 'season-spring', 'season-summer', 'ground-autumn', 'ground-winter', 'ground-spring', 'ground-summer'];
+const ART_FILES = ['hero', 'heroAura', 'heroBolts', 'beam', 'dragon', 'dragonBadge', 'balls', 'ballsHollow', 'season-autumn', 'season-winter', 'season-spring', 'season-summer', 'ground-autumn', 'ground-winter', 'ground-spring', 'ground-summer'];
 const ART = {};
 try { const a = JSON.parse(localStorage.getItem('vikac.art') || '{}'); for (const k of ART_FILES) ART[k] = !!a[k]; } catch (e) { for (const k of ART_FILES) ART[k] = false; }
 // Which custom PNGs exist on the server (checked on every open): hero-0.png stands for the set hero-0…4 + hero-beam,
 // ball-1.png for ball-1…7, ball-1-hollow.png for the optional hollow set; seasons and grounds are per file
 function probeArt(done) {
   const test = src => new Promise(ok => { const im = new Image(); im.onload = () => ok(true); im.onerror = () => ok(false); im.src = src + '?v=' + Date.now(); });
-  const files = { hero: 'hero-0.png', dragon: 'dragon.png', balls: 'ball-1.png', ballsHollow: 'ball-1-hollow.png' }; for (const k of ART_FILES) if (!files[k]) files[k] = k + '.png';
+  const files = { hero: 'hero-0.png', heroAura: 'hero-aura.png', heroBolts: 'hero-bolts.png', beam: 'beam.png', dragon: 'dragon.png', dragonBadge: 'dragon-badge.png', balls: 'ball-1.png', ballsHollow: 'ball-1-hollow.png' }; for (const k of ART_FILES) if (!files[k]) files[k] = k + '.png';
   Promise.all(ART_FILES.map(k => test(files[k]))).then(res => { let changed = false; ART_FILES.forEach((k, i) => { if (ART[k] !== res[i]) changed = true; ART[k] = res[i]; }); try { localStorage.setItem('vikac.art', JSON.stringify(ART)); } catch (e) {} if (changed && done) done(); });
 }
 // The standing character: a PNG when one is uploaded, else the drawn one
-function heroArt(o) { o = o || {}; if (ART.hero) { const lv = Math.max(0, Math.min(4, o.level == null ? 2 : o.level)); return `<img class="heroimg" src="hero-${lv}.png" alt="" style="width:${o.size || 84}px;height:${Math.round((o.size || 84) * 1.5)}px">`; } return heroSvg(o); }
-function beamHeroArt() { return ART.hero ? `<img src="hero-beam.png" alt="" style="width:60px;height:40px;object-fit:contain">` : `<svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg>`; }
-function dragonBigArt() { return ART.dragon ? `<img src="dragon.png" alt="" style="width:min(92vw,440px);height:auto">` : dragonSvg(); }
+function heroArt(o) {
+  o = o || {}; if (!ART.hero) return heroSvg(o);
+  const lv = Math.max(0, Math.min(4, o.level == null ? 2 : o.level)), w = o.size || 84, h = Math.round(w * 1.5);
+  if (lv === 4 && (ART.heroAura || ART.heroBolts)) { // powered up: the aura layer pulses behind, the lightning layer flickers on top
+    return `<div class="herostack" style="width:${w}px;height:${h}px">${ART.heroAura ? '<img class="aura" src="hero-aura.png" alt="">' : ''}<img src="hero-4.png" alt="">${ART.heroBolts ? '<img class="bolts" src="hero-bolts.png" alt="">' : ''}</div>`;
+  }
+  return `<img class="heroimg" src="hero-${lv}.png" alt="" style="width:${w}px;height:${h}px">`;
+}
+// The character that fires across a card when it is ticked. With beam.png the pose is shown alone (square) and the beam is its own stretching layer
+function beamHeroArt() { return ART.hero ? (ART.beam ? `<img src="hero-beam.png" alt="" style="width:46px;height:46px;object-fit:contain">` : `<img src="hero-beam.png" alt="" style="width:60px;height:40px;object-fit:contain">`) : `<svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg>`; }
+function beamFxHtml() { return ART.hero && ART.beam ? '<div class="beamfx"><img src="beam.png" alt=""></div>' : ''; }
+function dragonBigArt() { return ART.dragon ? `<img class="dragonimg" src="dragon.png" alt="" style="width:min(92vw,440px);height:auto">` : dragonSvg(); }
+// Summon badge. state: 'ready' (faded, pulsing — waiting for day 8) | 'done' (full colour) | 'locked' (grey, padlock)
 function dragonBadgeSvg(o) {
   o = o || {}; const st = o.state || 'ready', size = o.size || 84;
+  const ring = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="position:absolute;left:0;top:0"><circle cx="50" cy="50" r="47" fill="none" stroke="#1B1B1B" stroke-width="3" stroke-dasharray="6 5"/>${st === 'locked' ? '<rect x="40" y="46" width="20" height="16" rx="3" fill="#fff" stroke="#1B1B1B" stroke-width="2.5"/><path d="M44 46 v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="#1B1B1B" stroke-width="2.5"/>' : ''}</svg>`;
   if (ART.dragon) {
-    const img = `<img src="dragon.png" alt="" style="width:${size}px;height:${size}px;object-fit:contain;${st === 'locked' ? 'filter:grayscale(1);opacity:.7' : st === 'ready' ? 'opacity:.4' : ''}">`;
+    const src = ART.dragonBadge ? 'dragon-badge.png' : 'dragon.png';
+    const img = `<img src="${src}" alt="" style="width:${size}px;height:${size}px;object-fit:contain;display:block;${st === 'locked' ? 'filter:grayscale(1);opacity:.7' : st === 'ready' ? 'opacity:.45' : ''}">`;
     if (st === 'done') return img;
-    return `<div style="position:relative;width:${size}px;height:${size}px;display:inline-block">${img}<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="position:absolute;left:0;top:0"><circle cx="50" cy="50" r="47" fill="none" stroke="#1B1B1B" stroke-width="3" stroke-dasharray="6 5"/>${st === 'locked' ? '<rect x="40" y="46" width="20" height="16" rx="3" fill="#fff" stroke="#1B1B1B" stroke-width="2.5"/><path d="M44 46 v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="#1B1B1B" stroke-width="2.5"/>' : ''}</svg></div>`;
+    return `<div class="badge ${st}" style="position:relative;width:${size}px;height:${size}px;display:inline-block">${img}${ring}</div>`;
   }
   const art = dragonArt({ segs: [[14, 92, 70, 118, 118, 60, 76, 30], [76, 30, 40, 4, 8, 44, 48, 62]], box: '-13.5 -13 142 142', maxW: 14, headScale: 0.62, headTilt: -14, legs: [[18, 1], [40, -1]], mode: st === 'locked' ? 'grey' : 'color', size });
   if (st === 'done') return art;
-  return `<div style="position:relative;width:${size}px;height:${size}px;display:inline-block"><div style="opacity:${st === 'locked' ? .7 : .4}">${art}</div><svg viewBox="0 0 100 100" width="${size}" height="${size}" style="position:absolute;left:0;top:0"><circle cx="50" cy="50" r="47" fill="none" stroke="#1B1B1B" stroke-width="3" stroke-dasharray="6 5"/>${st === 'locked' ? '<rect x="40" y="46" width="20" height="16" rx="3" fill="#fff" stroke="#1B1B1B" stroke-width="2.5"/><path d="M44 46 v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="#1B1B1B" stroke-width="2.5"/>' : ''}</svg></div>`;
+  return `<div class="badge ${st}" style="position:relative;width:${size}px;height:${size}px;display:inline-block"><div style="opacity:${st === 'locked' ? .7 : .4}">${art}</div>${ring}</div>`;
 }
 
 // Star dragon ball: an orange glass orb with 1–7 stars. state: 'full' (collected) | 'hollow' (still to earn) | 'dim' (missed/locked)
@@ -1916,7 +1946,7 @@ function listHtml(info, date) {
   return `${overviewHtml(date)}<ul class="todo">${info.items.map(it => {
     const dn = isDone(date, it.id), tag = it.id === 'workout' ? tagHtml(PROGRAM.workouts[it.key].group, PROGRAM.workouts[it.key].group) : it.id === 'mt' ? tagHtml('mt', 'MT') : '';
     const cyc = cycleOf(date), star = cyc && !cyc.summonDay ? cyc.star : 7;
-    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}">${it.req ? `<span class="reqball">${ballSvg({ stars: star, state: dn ? 'full' : 'hollow', size: 30 })}</span>` : ''}<div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap">${beamHeroArt()}</div><div class="burst">${burstSvg()}</div></li>`;
+    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}">${it.req ? `<span class="reqball">${ballSvg({ stars: star, state: dn ? 'full' : 'hollow', size: 30 })}</span>` : ''}<div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap">${beamHeroArt()}</div>${beamFxHtml()}<div class="burst">${burstSvg()}</div></li>`;
   }).join('')}</ul>`;
 }
 // Put the white highlight under the current box; animated = glide there
@@ -1973,7 +2003,7 @@ function bindToday() {
     const li = c.closest('li'), id = li.dataset.item, d = day(date);
     if (li.classList.contains('done')) { d.done[id] = false; if (['workout', 'weigh', 'nutrition', 'hang', 'mt'].includes(id) && isDone(date, id)) { toast('Logged data keeps it done — clear it inside'); return; } li.classList.remove('done'); const rb = li.querySelector('.reqball'); if (rb) rb.innerHTML = ballSvg({ stars: (cycleOf(date) || {}).star || 7, state: 'hollow', size: 30 }); save(); refreshCycle(); const ov = app.querySelector('.overview'); if (ov) ov.outerHTML = overviewHtml(date); return; }
     d.done[id] = true; save(); li.classList.add('done'); const rb = li.querySelector('.reqball'); if (rb) rb.innerHTML = ballSvg({ stars: (cycleOf(date) || {}).star || 7, state: 'full', size: 30 });
-    const z = li.querySelector('.zap'), bu = li.querySelector('.burst'); z.classList.remove('play'); bu.classList.remove('play'); void z.offsetWidth; z.classList.add('play'); bu.classList.add('play');
+    const z = li.querySelector('.zap'), bu = li.querySelector('.burst'), bf = li.querySelector('.beamfx'); z.classList.remove('play'); bu.classList.remove('play'); if (bf) bf.classList.remove('play'); void z.offsetWidth; z.classList.add('play'); bu.classList.add('play'); if (bf) bf.classList.add('play');
     vib(30); refreshCycle(true); const ov = app.querySelector('.overview'); if (ov) ov.outerHTML = overviewHtml(date);
   });
   app.querySelectorAll('[data-open-item]').forEach(el => el.onclick = () => { const li = el.closest('li'), id = li.dataset.item; let key = li.dataset.key; if (id === 'workout') { const ex = S.sessions.find(x => x.date === date); if (ex) key = ex.key; } go(id, { date, key }); });
@@ -1996,7 +2026,7 @@ function refreshCycle(pop) {
   }
 }
 function showDragon() {
-  const el = document.createElement('div'); el.className = 'dragon'; el.innerHTML = dragonBigArt() + '<div class="msg">The dragon answers!</div>';
+  const el = document.createElement('div'); el.className = 'dragon'; el.innerHTML = '<div class="dglow"></div>' + dragonBigArt() + '<div class="msg">The dragon answers!</div>';
   el.onclick = () => el.remove(); document.body.appendChild(el); vib([60, 40, 60, 40, 120]); setTimeout(() => { if (el.parentNode) el.remove(); }, 6500);
 }
 function showBalls(date) {
