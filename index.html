@@ -178,24 +178,20 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .todo li.future .chk{border-style:dashed;border-color:#B9A990;background:transparent}
 .todo .lab{flex:1;min-width:0;padding:2px 0}
 .todo .lab .t{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:18px;position:relative;display:inline-block;transition:opacity .25s;line-height:1.1}
-.todo .lab .t::after{content:"";position:absolute;left:-2px;right:-2px;top:52%;height:4px;background:var(--beam);border-radius:2px;transform:scaleX(0);transform-origin:left;transition:transform .35s ease-out .25s;box-shadow:0 0 6px var(--beam)}
+.todo .lab .t::after{content:"";position:absolute;left:-2px;right:-2px;top:52%;height:4px;background:var(--beam);border-radius:2px;transform:scaleX(0);transform-origin:left;transition:transform .24s linear .1s;box-shadow:0 0 6px var(--beam)}
 .todo li.done .lab .t{opacity:.45}
 .todo li.done .lab .t::after{transform:scaleX(1)}
 .todo .lab .s{font-size:12.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .todo .go{color:var(--ink);font-size:22px;padding:0 6px;font-weight:700}
 .wtag{display:inline-block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border-radius:5px;color:#fff;vertical-align:middle;margin-left:6px;line-height:16px}
 .wtag.push{background:#E05A00}.wtag.pull{background:#1C6DD0}.wtag.legs{background:#1E8E3E}.wtag.mt{background:#C2185B}.wtag.rest{background:#8A8A8A}
-.zap{position:absolute;left:52px;top:50%;height:40px;width:70px;transform:translate(-20px,-50%);pointer-events:none;opacity:0}
-.zap.play{animation:zap .75s ease-out forwards}
-@keyframes zap{0%{opacity:0;transform:translate(-24px,-50%) scale(.6)}15%{opacity:1;transform:translate(0,-50%) scale(1)}70%{opacity:1;transform:translate(6px,-50%) scale(1)}100%{opacity:0;transform:translate(12px,-50%) scale(1)}}
-.burst{position:absolute;right:60px;top:50%;width:46px;height:46px;transform:translateY(-50%) scale(0);pointer-events:none}
-.burst.play{animation:burst .6s ease-out forwards}
-@keyframes burst{0%{transform:translateY(-50%) scale(0);opacity:1}60%{transform:translateY(-50%) scale(1.2);opacity:1}100%{transform:translateY(-50%) scale(1.4);opacity:0}}
-.beamfx{position:absolute;left:104px;right:78px;top:50%;height:26px;transform:translateY(-50%) scaleX(0);transform-origin:left center;opacity:0;pointer-events:none;z-index:1}
-.beamfx img{display:block;width:100%;height:100%}
+.zap{position:absolute;left:14px;top:12px;height:46px;width:46px;pointer-events:none;opacity:0;z-index:2}
+.zap>*{display:block;width:100%!important;height:100%!important}
+.zap.play{animation:zap .8s ease-out forwards}
+@keyframes zap{0%{opacity:0;transform:translateX(-14px) scale(.7)}14%{opacity:1;transform:none}75%{opacity:1;transform:none}100%{opacity:0;transform:none}}
+.beamfx{position:absolute;left:60px;top:20px;width:120px;height:16px;transform:scaleX(0);transform-origin:left center;opacity:0;pointer-events:none;z-index:1;background-repeat:no-repeat}
 .beamfx.play{animation:beamfx .8s ease-out forwards}
-@keyframes beamfx{0%{opacity:0;transform:translateY(-50%) scaleX(0)}14%{opacity:1;transform:translateY(-50%) scaleX(.02)}42%{opacity:1;transform:translateY(-50%) scaleX(1)}78%{opacity:1;transform:translateY(-50%) scaleX(1)}100%{opacity:0;transform:translateY(-50%) scaleX(1)}}
-.beamfx+.burst.play{animation-delay:.28s}
+@keyframes beamfx{0%{opacity:0;transform:scaleX(0)}12%{opacity:1;transform:scaleX(0)}42%{opacity:1;transform:scaleX(1)}75%{opacity:1;transform:scaleX(1)}100%{opacity:0;transform:scaleX(1)}}
 .badge.ready{animation:readyPulse 1.8s ease-in-out infinite}
 @keyframes readyPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
 /* dragon balls */
@@ -413,7 +409,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.4.4';
+const APP_VERSION = '2.4.5';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1682,7 +1678,7 @@ function heroArt(o) {
 }
 // The character that fires across a card when it is ticked. With beam.png the pose is shown alone (square) and the beam is its own stretching layer
 function beamHeroArt() { return ART.heroBeam ? (ART.beam ? `<img src="hero-beam.png" alt="" style="width:46px;height:46px;object-fit:contain">` : `<img src="hero-beam.png" alt="" style="width:60px;height:40px;object-fit:contain">`) : `<svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg>`; }
-function beamFxHtml() { return ART.heroBeam && ART.beam ? '<div class="beamfx"><img src="beam.png" alt=""></div>' : ''; }
+function beamFxHtml() { return ART.heroBeam && ART.beam ? '<div class="beamfx"></div>' : ''; }
 function dragonBigArt() { return ART.dragon ? `<img class="dragonimg" src="dragon.png" alt="" style="width:min(92vw,440px);height:auto">` : dragonSvg(); }
 // Summon badge. state: 'ready' (faded, pulsing — waiting for day 8) | 'done' (full colour) | 'locked' (grey, padlock)
 function dragonBadgeSvg(o) {
@@ -1946,11 +1942,12 @@ function overviewHtml(date) {
   return `<div class="overview">${cell('training', 'Training')}${cell('nutrition', 'Nutrition')}${cell('stretch', 'Stretch')}<div class="ov all ${rc.overall.of ? '' : 'off'}"><b>${rc.overall.grade}</b><span>Overall</span><small>${Math.round(rc.overall.pct || 0)} %</small></div></div>`;
 }
 function listHtml(info, date) {
+  if (ART.heroBeam && (!_artGeom || _artGeom.hands[0] === 0.96)) { _artGeom = null; artGeom(); }
   const future = date > today();
   return `${overviewHtml(date)}<ul class="todo">${info.items.map(it => {
     const dn = isDone(date, it.id), tag = it.id === 'workout' ? tagHtml(PROGRAM.workouts[it.key].group, PROGRAM.workouts[it.key].group) : it.id === 'mt' ? tagHtml('mt', 'MT') : '';
     const cyc = cycleOf(date), star = cyc && !cyc.summonDay ? cyc.star : 7;
-    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}">${it.req ? `<span class="reqball">${ballSvg({ stars: star, state: dn ? 'full' : 'hollow', size: 30 })}</span>` : ''}<div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap">${beamHeroArt()}</div>${beamFxHtml()}<div class="burst">${burstSvg()}</div></li>`;
+    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}">${it.req ? `<span class="reqball">${ballSvg({ stars: star, state: dn ? 'full' : 'hollow', size: 30 })}</span>` : ''}<div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap">${beamHeroArt()}</div>${beamFxHtml()}</li>`;
   }).join('')}</ul>`;
 }
 // Put the white highlight under the current box; animated = glide there
@@ -2007,7 +2004,7 @@ function bindToday() {
     const li = c.closest('li'), id = li.dataset.item, d = day(date);
     if (li.classList.contains('done')) { d.done[id] = false; if (['workout', 'weigh', 'nutrition', 'hang', 'mt'].includes(id) && isDone(date, id)) { toast('Logged data keeps it done — clear it inside'); return; } li.classList.remove('done'); const rb = li.querySelector('.reqball'); if (rb) rb.innerHTML = ballSvg({ stars: (cycleOf(date) || {}).star || 7, state: 'hollow', size: 30 }); save(); refreshCycle(); const ov = app.querySelector('.overview'); if (ov) ov.outerHTML = overviewHtml(date); return; }
     d.done[id] = true; save(); li.classList.add('done'); const rb = li.querySelector('.reqball'); if (rb) rb.innerHTML = ballSvg({ stars: (cycleOf(date) || {}).star || 7, state: 'full', size: 30 });
-    const z = li.querySelector('.zap'), bu = li.querySelector('.burst'), bf = li.querySelector('.beamfx'); z.classList.remove('play'); bu.classList.remove('play'); if (bf) bf.classList.remove('play'); void z.offsetWidth; z.classList.add('play'); bu.classList.add('play'); if (bf) bf.classList.add('play');
+    fireBeam(li);
     vib(30); refreshCycle(true); const ov = app.querySelector('.overview'); if (ov) ov.outerHTML = overviewHtml(date);
   });
   app.querySelectorAll('[data-open-item]').forEach(el => el.onclick = () => { const li = el.closest('li'), id = li.dataset.item; let key = li.dataset.key; if (id === 'workout') { const ex = S.sessions.find(x => x.date === date); if (ex) key = ex.key; } go(id, { date, key }); });
@@ -2028,6 +2025,33 @@ function refreshCycle(pop) {
     const key = cyc.summonDay ? 'summon' : 'ball', flag = day(R.date).celebrated || {};
     if (!flag[key]) { flag[key] = true; day(R.date).celebrated = flag; save(); if (cyc.summoned) showDragon(); else { vib([40, 60, 40, 60, 120]); toast(cyc.star + '-star dragon ball collected!', 2400); } }
   }
+}
+// Tick animation: the character's hands sit exactly at the start of the title's strike-through line and the beam
+// travels along that line to its end, growing in step with the strike-through (both from 0.1 s to 0.34 s)
+function fireBeam(li) {
+  const z = li.querySelector('.zap'), bf = li.querySelector('.beamfx'), t = li.querySelector('.lab .t'); if (!z || !t) return;
+  const lr = li.getBoundingClientRect(), tr = t.getBoundingClientRect(), bl = parseFloat(getComputedStyle(li).borderLeftWidth) || 0, bt = parseFloat(getComputedStyle(li).borderTopWidth) || 0;
+  const lineY = tr.top - lr.top - bt + tr.height * 0.52 + 2, lineX0 = tr.left - lr.left - bl - 2, lineX1 = tr.right - lr.left - bl + 2;
+  const g = artGeom(), zs = 46, hx = g.hands[0] * zs, hy = g.hands[1] * zs;
+  z.style.left = (lineX0 - hx) + 'px'; z.style.top = (lineY - hy) + 'px';
+  if (bf) { const h = 16, w = Math.max(10, lineX1 - lineX0), cw = w / (g.beam[1] - g.beam[0]);
+    bf.style.left = lineX0 + 'px'; bf.style.top = (lineY - h / 2) + 'px'; bf.style.width = w + 'px'; bf.style.height = h + 'px';
+    bf.style.backgroundImage = 'url(beam.png)'; bf.style.backgroundSize = cw + 'px ' + (h / (g.beam[3] - g.beam[2])) + 'px'; bf.style.backgroundPosition = (-g.beam[0] * cw) + 'px ' + (-g.beam[2] * h / (g.beam[3] - g.beam[2])) + 'px'; }
+  z.classList.remove('play'); if (bf) bf.classList.remove('play'); void z.offsetWidth; z.classList.add('play'); if (bf) bf.classList.add('play');
+}
+// Where the hands are in hero-beam.png and where the beam's visible part is in beam.png (fractions of the file), measured once from the pixels
+let _artGeom = null;
+function artGeom() {
+  if (_artGeom) return _artGeom;
+  const def = { hands: [0.96, 0.42], beam: [0, 1, 0, 1] }; _artGeom = def;
+  const scan = (src, fn) => { const im = new Image(); im.onload = () => { try { const c = document.createElement('canvas'); c.width = im.naturalWidth; c.height = im.naturalHeight; const x = c.getContext('2d'); x.drawImage(im, 0, 0); fn(x.getImageData(0, 0, c.width, c.height), c.width, c.height); } catch (e) {} }; im.src = src; };
+  if (ART.heroBeam) scan('hero-beam.png', (d, W, H) => { // the hands: rightmost opaque pixels in the upper 60 % of the figure
+    let top = H, bot = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x += 4) if (d.data[(y * W + x) * 4 + 3] > 128) { top = Math.min(top, y); bot = Math.max(bot, y); break; }
+    let bx = 0, by = 0; const lim = top + (bot - top) * 0.6; for (let y = top; y < lim; y++) for (let x = W - 1; x > bx; x--) if (d.data[(y * W + x) * 4 + 3] > 128) { bx = x; by = y; break; }
+    let sy = 0, n = 0; for (let y = top; y < lim; y++) for (let x = Math.max(0, bx - W * 0.08); x <= bx; x++) if (d.data[(y * W + Math.round(x)) * 4 + 3] > 128) { sy += y; n++; }
+    _artGeom.hands = [(bx - W * 0.03) / W, (n ? sy / n : by) / H]; });
+  if (ART.beam) scan('beam.png', (d, W, H) => { let x0 = W, x1 = 0, y0 = H, y1 = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d.data[(y * W + x) * 4 + 3] > 60) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } if (x1 > x0) _artGeom.beam = [x0 / W, (x1 + 1) / W, y0 / H, (y1 + 1) / H]; });
+  return _artGeom;
 }
 function showDragon() {
   const el = document.createElement('div'); el.className = 'dragon'; el.innerHTML = '<div class="dglow"></div>' + dragonBigArt() + '<div class="msg">The dragon answers!</div>';
