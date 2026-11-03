@@ -283,6 +283,33 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .player .info .sd{font-size:13px;color:var(--ink2)}
 .player .btn.sm{min-height:40px;padding:4px 10px;width:74px}
 /* avatar */
+.scouter{cursor:pointer;position:relative;margin-bottom:14px;border:2.5px solid var(--ink);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;
+ background:radial-gradient(120% 90% at 30% 55%,#1f6b2a 0,#0d3a16 55%,#06210c 100%);color:#b8ff9e;font-family:'BarlowC',sans-serif}
+.scouter::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(150,255,120,.07) 0 1px,transparent 1px 4px);pointer-events:none;z-index:3}
+.scouter::after{content:"";position:absolute;inset:6px;border:1.5px solid rgba(160,255,130,.55);border-radius:10px;clip-path:polygon(0 0,100% 0,100% 100%,0 100%);pointer-events:none;z-index:3}
+.sc-top{display:flex;justify-content:space-between;padding:10px 14px 0;font-size:10px;letter-spacing:.18em;opacity:.75;position:relative;z-index:2}
+.sc-body{display:flex;gap:6px;padding:0 10px 0 4px;position:relative;z-index:2}
+.sc-hero{width:150px;height:205px;flex:none;position:relative;align-self:flex-end}
+.sc-hero .glow{position:absolute;left:50%;bottom:8px;width:150px;height:150px;margin-left:-75px;border-radius:50%;background:radial-gradient(circle,rgba(140,255,110,.55),rgba(140,255,110,0) 68%)}
+.sc-hero>img,.sc-hero>.herostack,.sc-hero>svg{position:absolute!important;left:0;bottom:0;width:150px!important;height:225px!important;object-fit:contain;object-position:bottom}
+.sc-hero .ring{position:absolute;left:50%;top:44px;width:56px;height:56px;margin-left:-28px;border:1.5px solid rgba(180,255,150,.8);border-radius:50%;box-shadow:0 0 8px rgba(140,255,110,.8)}
+.sc-hero .ring::before,.sc-hero .ring::after{content:"";position:absolute;background:rgba(180,255,150,.8)}
+.sc-hero .ring::before{left:50%;top:-8px;bottom:-8px;width:1px}.sc-hero .ring::after{top:50%;left:-8px;right:-8px;height:1px}
+.sc-data{flex:1;min-width:0;padding:6px 4px 12px}
+.sc-lab{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.12em;border:1.5px solid rgba(180,255,150,.75);border-bottom:0;border-radius:6px 6px 0 0;padding:2px 8px}
+.sc-num{font-family:'Courier New',monospace;font-weight:700;font-size:40px;line-height:1;letter-spacing:.04em;color:#d6ffc4;text-shadow:0 0 6px #6dff4f,0 0 14px #2fd82a;border:1.5px solid rgba(180,255,150,.75);border-radius:0 8px 8px 8px;padding:6px 10px 4px;background:rgba(0,0,0,.25)}
+.sc-bar{display:flex;gap:2px;margin:8px 0 2px;height:10px}
+.sc-bar i{flex:1;background:rgba(160,255,130,.15);border-radius:1px}.sc-bar i.on{background:#8dff6a;box-shadow:0 0 5px #6dff4f}
+.sc-scale{display:flex;justify-content:space-between;font-size:10px;opacity:.7;letter-spacing:.08em}
+.sc-status{margin:10px 0 8px;display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#eaffde;border:2px solid #8dff6a;border-radius:10px;padding:5px 12px;background:rgba(20,80,25,.7);box-shadow:0 0 10px rgba(110,255,80,.45),inset 0 0 8px rgba(110,255,80,.25)}
+.sc-status.warn{border-color:#ffd84d;color:#fff6cf;box-shadow:0 0 10px rgba(255,210,60,.45),inset 0 0 8px rgba(255,210,60,.2)}
+.sc-why{font-family:Inter,sans-serif;font-size:12px;opacity:.8;margin:-2px 0 8px}
+.sc-scan{font-family:'Courier New',monospace;font-size:12.5px;line-height:1.55}
+.sc-scan div{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(160,255,130,.25)}
+.sc-scan b{color:#eaffde}.sc-scan .g{color:#8dff6a}.sc-scan .r{color:#ff8a7a}.sc-scan .y{color:#ffd84d}
+.sc-foot{display:flex;align-items:center;gap:6px;padding:0 14px 10px;font-size:10px;letter-spacing:.2em;opacity:.7;position:relative;z-index:2}
+.sc-foot .chev{color:#8dff6a;opacity:1;letter-spacing:-2px;font-size:13px}
+@media (max-width:380px){.sc-hero{width:118px}.sc-hero>img,.sc-hero>.herostack,.sc-hero>svg{width:118px!important;height:177px!important}.sc-hero .glow{width:118px;height:118px;margin-left:-59px}.sc-num{font-size:32px}.sc-scan{font-size:11.5px}.sc-status{font-size:15px}}
 .avatar{display:flex;gap:10px;align-items:center;margin-bottom:14px;background:#fff;border:2.5px solid var(--ink);border-radius:12px;box-shadow:var(--shadow);padding:10px 14px;position:relative;overflow:hidden}
 .avatar::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 25% 50%,var(--orsoft) 0,transparent 55%)}
 .avatar>*{position:relative}
@@ -409,7 +436,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.4.5';
+const APP_VERSION = '2.5.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -888,6 +915,30 @@ function fitnessScore(date) {
   const level = score == null ? 1 : score >= 95 ? 4 : score >= 80 ? 3 : score >= 60 ? 2 : score >= 40 ? 1 : 0;
   const why = [body == null ? 'no readings yet' : body >= 90 ? 'body on plan' : 'body off the line', strength == null ? 'strength untested' : strength >= 70 ? 'strength holding' : 'strength slipping', n ? perfect + '/' + n + ' perfect days' : null].filter(Boolean).join(' · ');
   return { score, level, name: score == null ? 'Day one' : levelName(score), parts, why };
+}
+// Power level: how far the body has come from the starting point to the planned goal (7-day trend of weight and
+// body fat), shown DBZ-style from 300 on day one to 9001 at the goal. The character stage follows the same progress;
+// the status says how it is going (pace vs plan, perfect days).
+function powerLevel(date) {
+  const ps = [];
+  for (const id of ['weight', 'fat']) { const st = metricStatus(id, date); if (!st || st.cur == null || st.start === st.goal) continue; ps.push((st.start - st.cur) / (st.start - st.goal)); }
+  let prog = ps.length ? Math.max(0, Math.min(1, ps.reduce((a, b) => a + b, 0) / ps.length)) : 0;
+  if (prog >= 0.98) prog = 1;   // within scale noise of the goal counts as reached
+  const pl = prog >= 1 ? 9001 : Math.round(300 * Math.pow(30, prog));
+  const stage = prog >= 1 ? 4 : prog >= .75 ? 3 : prog >= .5 ? 2 : prog >= .25 ? 1 : 0;
+  const fs = fitnessScore(date), ws = metricStatus('weight', date), t = tOf(date);
+  let perfect = 0, n = 0, streak = 0, broken = false;
+  for (let i = 0; i < 7; i++) { const d = addDays(date, -i); if (tOf(d) < 0 || d > today()) continue; const done = dayCompletion(d) === 'done'; if (d === today() && !done) continue; n++; if (done) perfect++; }
+  for (let i = 0; i < 60; i++) { const d = addDays(date, -i); if (tOf(d) < 0) break; const done = dayCompletion(d) === 'done'; if (d === today() && !done) continue; if (done && !broken) streak++; else break; }
+  const missed = n - perfect, state = ws ? ws.state : 'nodata';
+  let status = 'Powering up', warn = false, why;
+  if (prog >= 1) { status = "It's over 9000"; why = 'Goal reached — full power.'; }
+  else if (t <= 2 || state === 'nodata') { why = t <= 0 ? 'Day one — the scan starts here.' : 'Scan running — first readings coming in.'; }
+  else if (state === 'ahead') { status = 'Surging'; why = 'Ahead of plan' + (n ? ' · ' + perfect + ' of ' + n + ' perfect days' : ''); }
+  else if (state === 'fast') { status = 'Surging'; warn = true; why = 'Dropping faster than planned — eat a bit more'; }
+  else if (state === 'zone' && missed <= 1) { why = 'On pace' + (n ? ' · ' + perfect + ' of ' + n + ' perfect days' : ''); }
+  else { const reasons = []; if (state === 'slow') reasons.push('weight behind plan'); if (missed >= 2) reasons.push(missed + ' missed days'); status = (state === 'slow' && missed >= 3) || (fs.score != null && fs.score < 55) ? 'Recharge' : 'Charging'; warn = true; why = reasons.length ? reasons.join(' · ').replace(/^./, c => c.toUpperCase()) : 'Slightly off the line'; }
+  return { prog, pl, stage, status, warn, why, streak, perfect, n };
 }
 // What has moved lately, for the Progress tile: each body metric over the last 7 days, each lift's last verdict,
 // perfect days. state good/bad/flat, arrow ↑ ↓ ●. Which ones to show depends on the overall direction.
@@ -2494,6 +2545,23 @@ function weekBars(date, get, target, color) {
   const cells = []; for (let i = 6; i >= 0; i--) { const d = addDays(date, -i); const v = get(d); const h = v == null ? 0 : Math.max(6, Math.min(100, v / target * 100)); cells.push(`<div class="wb"><div class="col"><i style="height:${h}%;background:${v == null ? 'transparent' : color}"></i></div><span>${WD[parse(d).getDay()].slice(0, 1)}</span></div>`); }
   return `<div class="weekbars">${cells.join('')}</div>`;
 }
+// The Progress tile as a scouter read-out: character, power level, progress to the goal, status, scan rows
+function scouterHtml(date, sg) {
+  const pw = powerLevel(date), bars = Array.from({ length: 20 }, (_, i) => `<i class="${i < Math.round(pw.prog * 20) ? 'on' : ''}"></i>`).join('');
+  const rows = []; for (const k of ['weight', 'fat', 'muscle']) { const x = sg.all.find(y => y.key === k); const def = METRIC_DEFS.find(m => m.id === k); const cur = current(k, date);
+    if (cur == null) continue; const u = def.unit === '%' ? ' %' : def.unit ? ' ' + def.unit : '';
+    const arrow = x ? (x.arrow === '↓' ? '▼' : x.arrow === '↑' ? '▲' : '●') : '—', d = x ? x.delta.replace(/^[+-]/, '').replace(/ ?(kg|%)$/, '') : '';
+    rows.push([def.label.toUpperCase(), cur.toFixed(def.dec) + u, arrow + (x ? d : ''), x ? (x.state === 'good' ? 'g' : x.state === 'bad' ? 'r' : 'y') : 'y']); }
+  rows.push(['STREAK', pw.streak + (pw.streak === 1 ? ' day' : ' days'), '', pw.streak ? 'g' : 'r']);
+  const info = dayInfo(date), heroL = heroArt({ level: pw.stage, size: 150 });
+  return `<div class="scouter" data-avatar><div class="sc-top"><span>SCOUTER · ${info.phase === 'pre' ? 'PRE-START' : 'DAY ' + Math.min(D(), Math.max(1, info.idx)) + '/' + D()}</span><span>DATA SCAN ▮▮▮</span></div>
+    <div class="sc-body"><div class="sc-hero"><div class="glow"></div>${heroL}<div class="ring"></div></div>
+    <div class="sc-data"><span class="sc-lab">POWER LEVEL</span><div class="sc-num">${pw.pl.toLocaleString('en-US')}</div>
+      <div class="sc-bar">${bars}</div><div class="sc-scale"><span>START</span><span>${Math.round(pw.prog * 100)} %</span><span>GOAL 9001</span></div>
+      <div class="sc-status ${pw.warn ? 'warn' : ''}">${esc(pw.status)} …</div><div class="sc-why">${esc(pw.why)}</div>
+      <div class="sc-scan">${rows.map(r => `<div><span>${r[0]}</span><span><b>${esc(r[1])}</b> <span class="${r[3]}">${esc(r[2])}</span></span></div>`).join('')}</div></div></div>
+    <div class="sc-foot"><span class="chev">▶▶▶</span><span>TAP FOR FULL SCAN</span></div></div>`;
+}
 function dashHtml() {
   const date = today(), fs = fitnessScore(date), p = P(), tab = R.ptab || 'overview';
   const wst = metricStatus('weight', date), slim = wst && wst.cur != null ? Math.max(0, Math.min(1, (wst.start - wst.cur) / (wst.start - wst.goal))) : 0;
@@ -2503,7 +2571,7 @@ function dashHtml() {
     const sigs = sg.list.length ? `<div class="sigs">${sg.list.map(x => `<span class="sig ${x.state}"><b>${x.arrow}</b>${esc(x.label)} <span class="v">${esc(x.value)}</span>${x.delta ? `<small>${esc(x.delta)}</small>` : ''}</span>`).join('')}</div>` : '<div class="muted small" style="margin-top:6px">Log a weigh-in or a workout and the movers show up here.</div>';
     const row = (k, lab) => `<div class="mrow"><span class="l">${lab}</span><div class="bar"><i style="width:${rc[k].pct || 0}%"></i></div><span class="n"><b class="grade">${rc[k].grade}</b><small> ${rc[k].done}/${rc[k].of}</small></span></div>`;
     const lastW = lastReading('weight', date), lastSess = S.sessions.filter(x => x.finished).sort((a, b) => a.date < b.date ? 1 : -1)[0];
-    body = `<div class="avatar progress" data-avatar>${heroArt({ level: fs.level, slim, size: 150 })}<div class="pr"><div class="top"><span class="score">${fs.score == null ? '—' : fs.score}</span><span class="lvl">${esc(fs.name)}</span></div><div class="why">${esc(fs.why)}</div>${sigs}<div class="muted small" style="margin-top:6px">Tap for details</div></div></div>
+    body = scouterHtml(date, sg) + `
       <div class="card"><div class="hd"><span class="cond" style="font-size:16px">Report card</span><span class="cond" style="font-size:16px">Overall <b class="grade" style="font-size:24px;color:var(--or2)">${rc.overall.grade}</b></span></div>
         ${row('training', 'Training')}${row('nutrition', 'Nutrition')}${row('stretch', 'Stretch')}
         <div class="muted small" style="margin-top:6px">${rc.days.done} of ${rc.days.of} days perfect so far.</div></div>
@@ -2552,10 +2620,10 @@ function bindDash() {
   app.querySelectorAll('[data-metric]').forEach(el => el.onclick = () => metricTooltip(el.dataset.metric, date));
   app.querySelectorAll('[data-ex]').forEach(el => el.onclick = () => exerciseExpand(el.dataset.ex, date));
   const av = $('[data-avatar]'); if (av) av.onclick = () => { const fs = fitnessScore(date), sg = signals(date);
-    modal(`<h3>Progress ${fs.score == null ? '' : fs.score}</h3><div class="muted">${esc(fs.why)}</div>
+    modal(`<h3>Power level ${powerLevel(date).pl.toLocaleString('en-US')}</h3><div class="muted">${esc(powerLevel(date).why)} · ${Math.round(powerLevel(date).prog * 100)} % of the way from start to goal</div><div class="eyebrow" style="margin-top:14px">How you're doing · ${fs.score == null ? '—' : fs.score}/100</div><div class="muted small">${esc(fs.why)}</div>
       <div class="kv" style="margin:14px 0 6px">${fs.parts.map(p => `<span><b style="font-weight:700">${esc(p.label)}</b><br><span class="muted small">${esc(p.text)}</span></span><span class="chip ${p.cls === 'ok' ? 'ok' : p.cls === 'warn' ? 'warn' : 'muted'}">${esc(p.status || '—')}</span>`).join('')}</div>
       ${sg.all.length ? `<div class="eyebrow" style="margin-top:14px">Last 7 days</div><div class="kv">${sg.all.map(x => `<span>${esc(x.label)}<br><span class="muted small">${esc(x.value)}${x.delta ? ' · ' + esc(x.delta) : ''}</span></span><b class="${x.state === 'good' ? 'ok' : x.state === 'bad' ? 'bad' : 'warn'}" style="font-size:18px">${x.arrow}</b>`).join('')}</div>` : ''}
-      <div class="muted small" style="margin-top:12px">Score = body on plan (50 %) + strength held (30 %) + perfect days (20 %). Green ↓ on things that should fall and green ↑ on things that should rise; yellow ● means no real change this week.</div>
+      <div class="muted small" style="margin-top:12px">Power level = how far your 7-day weight and body-fat trend has moved from the start toward the goal (300 → 9001). Score = body on plan (50 %) + strength held (30 %) + perfect days (20 %). Green ↓ on things that should fall and green ↑ on things that should rise; yellow ● means no real change this week.</div>
       <button class="btn sec" data-close>Close</button>`); };
 }
 function metricTooltip(id, date) {
