@@ -42,6 +42,7 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 input.big{font-family:'Bangers',Impact,sans-serif;font-size:34px;letter-spacing:.04em;padding:6px 14px;text-align:center}
 label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:13px;color:var(--ink2);margin:0 0 4px}
 .field{margin-bottom:12px}
+.bandsync{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px}.bandsync .link{margin:0;white-space:nowrap}
 .bandtoday .btiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
 .bandtoday .bt{background:var(--paper2);border:1.5px solid var(--ink);border-radius:9px;padding:7px 4px;text-align:center}
 .bandtoday .bt b{display:block;font-family:'Bangers',Impact,sans-serif;font-size:21px;letter-spacing:.03em;line-height:1.1}
@@ -467,7 +468,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.8.1';
+const APP_VERSION = '2.8.2';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2615,7 +2616,7 @@ function nutritionHtml() {
     <div class="card">
       <div class="row"><div class="field"><label>Calories eaten</label><input name="kcal" type="number" inputmode="numeric" value="${n.kcal || ''}"></div><div class="field"><label>Protein (g)</label><input name="protein" type="number" inputmode="numeric" value="${n.protein || ''}"></div></div>
       <div class="row"><div class="field"><label>Carbs (g)</label><input name="carbs" type="number" inputmode="numeric" value="${n.carbs == null ? '' : n.carbs}"></div><div class="field"><label>Fat (g)</label><input name="fat" type="number" inputmode="numeric" value="${n.fat == null ? '' : n.fat}"></div></div>
-      <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" value="${n.band == null ? '' : n.band}" placeholder="${bandKcal(date).src === 'band' ? bandDay(date).active : p.bandDefault}">${bandKcal(date).src === 'band' && (n.band == null || n.band === '') ? '<div class="muted small" style="margin-top:4px">From the band · leave empty to keep it synced</div>' : ''}</div>
+      <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" value="${n.band == null ? '' : n.band}" placeholder="${bandKcal(date).src === 'band' ? bandDay(date).active : p.bandDefault}">${bandCfg() ? `<div class="bandsync"><span class="muted small">${bandKcal(date).src === 'band' && (n.band == null || n.band === '') ? 'From the band' : 'Band'}${S.health && S.health.last ? ' · updated ' + new Date(S.health.last).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : ''}</span><button class="link" data-bandpull>↻ Sync from band</button></div>` : ''}</div>
       <div id="calc">${nutritionCalcHtml(nc, p, date)}</div>
     </div>
     <button class="btn sec" data-fill>Fill from export</button><input type="file" accept="image/*" id="fillFile" hidden>
@@ -2634,6 +2635,11 @@ function nutritionCalcHtml(nc, p, date) {
     <div class="${nc.cls}" style="font-weight:800">${esc(nc.verdict)}</div>`;
 }
 function bindNutrition() {
+  const bp = $('[data-bandpull]'); if (bp) bp.onclick = async () => {
+    bp.textContent = 'Syncing…'; const keep = {}; app.querySelectorAll('input[name]').forEach(i => keep[i.name] = i.value);
+    const r = await bandFetch(); if (!r.ok) { toast(r.error, 2400); bp.textContent = '↻ Sync from band'; return; }
+    render(); app.querySelectorAll('input[name]').forEach(i => { if (keep[i.name] != null) { i.value = keep[i.name]; i.dispatchEvent(new Event('input', { bubbles: true })); } });
+    toast(r.changed ? 'Band data updated' : 'Already up to date', 1800); };
   const date = R.params.date || R.date;
   const upd = () => { const o = readForm(app), prev = day(date).nutrition || {}; day(date).nutrition = { kcal: o.kcal, protein: o.protein, carbs: o.carbs, fat: o.fat, band: o.band, src: prev.src }; $('#calc').innerHTML = nutritionCalcHtml(nutritionCalc(date), P(), date); $('#tgt').innerHTML = targetHtml(date); };
   app.querySelectorAll('input').forEach(i => i.oninput = upd);
