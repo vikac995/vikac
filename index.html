@@ -291,9 +291,11 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .avatar::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 25% 50%,var(--orsoft) 0,transparent 55%)}
 .avatar>*{position:relative}
 .avatar svg{width:124px;height:186px;flex:none;overflow:visible}
-.avatar.progress{align-items:flex-start;padding:12px 14px}
-.avatar.progress>svg{width:84px;height:126px}
+.avatar.progress{align-items:stretch;padding:12px 14px 12px 8px;gap:8px}
+.avatar.progress>svg{width:150px;height:225px;align-self:flex-end;margin-bottom:-12px}
 .avatar>img.heroimg{flex:none;object-fit:contain;object-position:bottom}
+.avatar.progress>img.heroimg,.avatar.progress>.herostack{align-self:flex-end;margin-bottom:-12px}
+@media (max-width:380px){.avatar.progress>svg,.avatar.progress>img.heroimg,.avatar.progress>.herostack{width:112px!important;height:168px!important}.avatar.progress .sig{font-size:12px;padding:3px 6px}.avatar.progress .sig b{font-size:13px}}
 .herostack{flex:none;position:relative}
 .herostack img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;object-position:bottom}
 .herostack img.aura{animation:auraPulse .9s ease-in-out infinite;transform-origin:50% 62%}
@@ -322,7 +324,7 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .wb span{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:10px;color:var(--muted);margin-top:2px}
 .ov{padding:4px 2px}.ov b{font-size:20px}
 .sigs{display:flex;flex-wrap:wrap;gap:6px}
-.sig{display:inline-flex;align-items:baseline;gap:4px;border:1.5px solid var(--ink);border-radius:8px;padding:4px 8px;font-size:13px;background:#fff;line-height:1.2}
+.sig{display:inline-flex;align-items:baseline;gap:4px;white-space:nowrap;border:1.5px solid var(--ink);border-radius:8px;padding:4px 8px;font-size:13px;background:#fff;line-height:1.2}
 .sig b{font-size:14px}.sig .v{font-weight:700}.sig small{color:var(--muted);font-size:11px}
 .sig.good{border-color:var(--ok);color:var(--ok);background:var(--oksoft)}.sig.bad{border-color:var(--bad);color:var(--bad);background:var(--badsoft)}.sig.flat{border-color:var(--warn);color:var(--warn);background:var(--warnsoft)}
 .mrow{display:grid;grid-template-columns:62px 1fr auto;align-items:center;gap:10px;margin:6px 0}
@@ -409,7 +411,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.4.1';
+const APP_VERSION = '2.4.2';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -720,9 +722,9 @@ function groupSummary(group, date) {
 const METRIC_DEFS = [
   { id: 'weight', label: 'Weight', unit: 'kg', dec: 1, dir: -1 },
   { id: 'fat', label: 'Body fat', unit: '%', dec: 1, dir: -1 },
-  { id: 'muscle', label: 'Muscle mass', unit: 'kg', dec: 1, dir: 1 },
-  { id: 'skeletal', label: 'Skeletal muscle', unit: 'kg', dec: 1, dir: 1 },
-  { id: 'visceral', label: 'Visceral fat', unit: '', dec: 0, dir: -1, avg: 14 },
+  { id: 'muscle', label: 'Muscle mass', short: 'Muscle', unit: 'kg', dec: 1, dir: 1 },
+  { id: 'skeletal', label: 'Skeletal muscle', short: 'Skeletal', unit: 'kg', dec: 1, dir: 1 },
+  { id: 'visceral', label: 'Visceral fat', short: 'Visceral', unit: '', dec: 0, dir: -1, avg: 14 },
 ];
 function expected(id, t) {
   const p = P(), s = p.start, r = rate(), Dd = D();
@@ -899,7 +901,7 @@ function signals(date) {
     const d = cur - ref, u = def.unit === '%' ? ' %' : def.unit ? ' ' + def.unit : '';
     const arrow = d > flat[id] ? '↑' : d < -flat[id] ? '↓' : '●';
     const state = arrow === '●' ? 'flat' : (def.dir < 0 ? (arrow === '↓' ? 'good' : 'bad') : (arrow === '↑' ? 'good' : 'bad'));
-    out.push({ key: id, label: def.label, value: cur.toFixed(def.dec) + u, delta: (d > 0 ? '+' : '') + d.toFixed(def.dec) + u, arrow, state, when: lr.date, order: 0 });
+    out.push({ key: id, label: def.short || def.label, value: cur.toFixed(def.dec) + u, delta: (d > 0 ? '+' : '') + d.toFixed(def.dec) + u, arrow, state, when: lr.date, order: 0 });
   }
   const since = addDays(date, -8), seen = new Set();
   for (const sx of S.sessions.filter(x => x.finished && x.date > since && x.date <= date).sort((a, b) => a.date < b.date ? 1 : -1)) for (const e of sx.ex) {
@@ -2475,7 +2477,7 @@ function dashHtml() {
     const sigs = sg.list.length ? `<div class="sigs">${sg.list.map(x => `<span class="sig ${x.state}"><b>${x.arrow}</b>${esc(x.label)} <span class="v">${esc(x.value)}</span>${x.delta ? `<small>${esc(x.delta)}</small>` : ''}</span>`).join('')}</div>` : '<div class="muted small" style="margin-top:6px">Log a weigh-in or a workout and the movers show up here.</div>';
     const row = (k, lab) => `<div class="mrow"><span class="l">${lab}</span><div class="bar"><i style="width:${rc[k].pct || 0}%"></i></div><span class="n"><b class="grade">${rc[k].grade}</b><small> ${rc[k].done}/${rc[k].of}</small></span></div>`;
     const lastW = lastReading('weight', date), lastSess = S.sessions.filter(x => x.finished).sort((a, b) => a.date < b.date ? 1 : -1)[0];
-    body = `<div class="avatar progress" data-avatar>${heroArt({ level: fs.level, slim, size: 84 })}<div class="pr"><div class="top"><span class="score">${fs.score == null ? '—' : fs.score}</span><span class="lvl">${esc(fs.name)}</span></div><div class="why">${esc(fs.why)}</div>${sigs}<div class="muted small" style="margin-top:6px">Tap for details</div></div></div>
+    body = `<div class="avatar progress" data-avatar>${heroArt({ level: fs.level, slim, size: 150 })}<div class="pr"><div class="top"><span class="score">${fs.score == null ? '—' : fs.score}</span><span class="lvl">${esc(fs.name)}</span></div><div class="why">${esc(fs.why)}</div>${sigs}<div class="muted small" style="margin-top:6px">Tap for details</div></div></div>
       <div class="card"><div class="hd"><span class="cond" style="font-size:16px">Report card</span><span class="cond" style="font-size:16px">Overall <b class="grade" style="font-size:24px;color:var(--or2)">${rc.overall.grade}</b></span></div>
         ${row('training', 'Training')}${row('nutrition', 'Nutrition')}${row('stretch', 'Stretch')}
         <div class="muted small" style="margin-top:6px">${rc.days.done} of ${rc.days.of} days perfect so far.</div></div>
