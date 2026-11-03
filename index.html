@@ -468,7 +468,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.9.1';
+const APP_VERSION = '2.9.2';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2082,7 +2082,10 @@ function bindSetup() {
 
 /* ---------- Today ---------- */
 // Move the viewed day by n (0 = back to today), staying inside the project
-function shiftDay(n) { const p = P(), d = n === 0 ? today() : addDays(R.date, n); if (n !== 0 && (d < p.startDate || d > p.endDate)) return; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; patchToday(dir); }
+function shiftDay(n) { const p = P(); let d = n === 0 ? today() : addDays(R.date, n);
+  if (n > 0 && R.date < p.startDate) d = p.startDate;                       // from the countdown screen, swipe left → Day 1
+  if (n < 0 && d < p.startDate) { if (today() < p.startDate) d = today(); else return; }   // from Day 1, swipe right → back to the countdown
+  if (d > p.endDate) return; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; patchToday(dir); }
 function itemSub(date, it) {
   let sub = it.sub; const d = S.days[date] || { done: {} };
   if (it.id === 'weigh') { const r = S.readings[date]; if (r) sub = r.weight + ' kg' + (r.fat ? ' · ' + r.fat + ' % fat' : ''); else { const lr = lastReading('weight', addDays(date, -1)); sub = lr ? 'Last ' + lr.v + ' kg' : 'Log the scale'; } }
@@ -2157,7 +2160,7 @@ function patchToday(dir) {
 function todayHtml() {
   const date = R.date, info = dayInfo(date), p = P(), td = today();
   let body = '', head;
-  if (info.phase === 'pre') { head = band(`T-${-info.t}`, 'days to go', null, true); body = `<div class="funline">Day 1 is ${fmtDate(p.startDate)}.</div><button class="btn sec" data-open="weigh">Log a weigh-in</button>`; }
+  if (info.phase === 'pre') { head = band(`T-${-info.t}`, 'days to go', null, true); body = `<div class="funline">Day 1 is ${fmtDate(p.startDate)}.</div><button class="btn sec" data-open="weigh">Log a weigh-in</button><button class="btn sec" data-goto="${p.startDate}" style="margin-top:10px">See Day 1 ›</button>`; }
   else if (info.phase === 'post') { head = band('Finished', fmtDate(p.endDate), null, true); body = `<div class="funline">Finished on ${fmtDate(p.endDate)} — Progress has the verdict.</div><button class="btn" data-newp>Start a new project</button><button class="link" data-nav="profile" style="margin-top:8px">Extend it in Settings</button>`; }
   else {
     const cyc = cycleOf(date); R._cycNum = cyc.num;
@@ -2182,7 +2185,7 @@ function bindToday() {
   placeCursor(false);
   const vc = app.querySelector('[data-viewcal]'); if (vc) vc.onclick = () => { R.calSel = date; R.calMonth = date.slice(0, 7); go('cal'); };
   const np = app.querySelector('[data-newp]'); if (np) np.onclick = startNewProjectFlow;
-  if (dayInfo(date).items) bindSwipe(app.querySelector('.screen'), () => shiftDay(1), () => shiftDay(-1));
+  if (dayInfo(date).items || dayInfo(date).phase === 'pre') bindSwipe(app.querySelector('.screen'), () => shiftDay(1), () => shiftDay(-1));
   app.querySelectorAll('[data-chk]').forEach(c => c.onclick = () => {
     if (future) return toast('That day hasn\'t happened yet');
     const li = c.closest('li'), id = li.dataset.item, d = day(date);
