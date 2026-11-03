@@ -291,13 +291,18 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .avatar.progress .score{font-family:'Bangers',Impact,sans-serif;font-size:40px;line-height:1;color:var(--or);-webkit-text-stroke:1px var(--ink);paint-order:stroke;text-shadow:2px 2px 0 var(--ink)}
 .avatar.progress .lvl{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:16px}
 .avatar.progress .why{font-size:13px;color:var(--muted);margin:2px 0 8px}
-.ptabs{display:flex;gap:0;margin:-2px 0 14px;border-bottom:2.5px solid var(--ink)}
+.phead{position:sticky;top:0;z-index:15;margin:-10px -14px 12px;padding:0 14px;background:var(--paper);background-image:radial-gradient(rgba(27,27,27,.07) 1px,transparent 1.1px);background-size:10px 10px}
+.phead .band{margin:0 -14px 0}
+.ptabs{display:flex;gap:0;margin:0;border-bottom:2.5px solid var(--ink)}
 .ptabs button{flex:1;padding:10px 0 8px;font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px;color:var(--muted);border-bottom:4px solid transparent;margin-bottom:-2.5px}
 .ptabs button.on{color:var(--ink);border-bottom-color:var(--or)}
 .link-card{cursor:pointer}.link-card .go{font-size:24px;color:var(--muted);line-height:1}
-.weekbars{display:flex;gap:6px;align-items:flex-end;margin-top:6px}
-.card.nut{padding:10px 12px}
-.wb{flex:1;text-align:center}.wb .col{height:40px;border-radius:8px;background:#F1E7D8;border:1.5px solid var(--line);display:flex;align-items:flex-end;overflow:hidden}
+.weekbars{display:flex;gap:5px;align-items:flex-end;margin-top:4px}
+.card.nut{padding:8px 12px 7px;margin-bottom:10px}
+.card.nut .hd .cond{font-size:14px}
+.card.nut .hd .muted{font-size:12px}
+.card.nut .small{font-size:11.5px}
+.wb{flex:1;text-align:center}.wb .col{height:32px;border-radius:8px;background:#F1E7D8;border:1.5px solid var(--line);display:flex;align-items:flex-end;overflow:hidden}
 .wb .col i{display:block;width:100%;border-radius:6px 6px 0 0}
 .wb span{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:10px;color:var(--muted);margin-top:2px}
 .ov{padding:4px 2px}.ov b{font-size:20px}
@@ -384,7 +389,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.1.1';
+const APP_VERSION = '2.1.2';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2412,7 +2417,7 @@ function dashHtml() {
     body = `<div class="avatar progress" data-avatar>${heroSvg({ level: fs.level, slim, size: 84 })}<div class="pr"><div class="top"><span class="score">${fs.score == null ? '—' : fs.score}</span><span class="lvl">${esc(fs.name)}</span></div><div class="why">${esc(fs.why)}</div>${sigs}<div class="muted small" style="margin-top:6px">Tap for details</div></div></div>
       <div class="card"><div class="hd"><span class="cond" style="font-size:16px">Report card</span><span class="cond" style="font-size:16px">Overall <b class="grade" style="font-size:24px;color:var(--or2)">${rc.overall.grade}</b></span></div>
         ${row('training', 'Training')}${row('nutrition', 'Nutrition')}${row('stretch', 'Stretch')}
-        <div class="muted small" style="margin-top:6px">${rc.days.done} of ${rc.days.of} days perfect · a day counts once it is over, so today never drags the grade down.</div></div>
+        <div class="muted small" style="margin-top:6px">${rc.days.done} of ${rc.days.of} days perfect so far.</div></div>
       <div class="card link-card" data-ptab="body"><div class="hd"><span class="cond" style="font-size:16px">Body</span><span class="go">›</span></div><div class="muted">${wst && wst.cur != null ? wst.cur.toFixed(1) + ' kg · ' + (wst.cur - wst.start > 0 ? '+' : '') + (wst.cur - wst.start).toFixed(1) + ' kg since start · plan ' + wst.exp.toFixed(1) : 'No weigh-in yet'}${lastW ? ' · last ' + fmtShort(lastW.date) : ''}</div></div>
       <div class="card link-card" data-ptab="nutrition"><div class="hd"><span class="cond" style="font-size:16px">Nutrition</span><span class="go">›</span></div><div class="muted">${ia ? ia.kcal + ' kcal · P ' + ia.protein + (ia.carbs != null ? ' · C ' + ia.carbs : '') + (ia.fat != null ? ' · F ' + ia.fat : '') + ' — ' + ia.days + '-day average' : 'Nothing logged yet'}</div>${ia ? '' : '<button class="btn sec sm" data-lognut style="margin-top:8px">Log nutrition</button>'}</div>
       <div class="card link-card" data-ptab="training"><div class="hd"><span class="cond" style="font-size:16px">Training</span><span class="go">›</span></div><div class="muted">${lastSess ? 'Last session ' + PROGRAM.workouts[lastSess.key].name + ' · ' + fmtShort(lastSess.date) + ' · ' + rc.training.done + ' of ' + rc.training.of + ' sessions done' : 'No session finished yet'}</div></div>`;
@@ -2442,8 +2447,8 @@ function dashHtml() {
     ${unlogged.length ? `<div class="card flat"><div class="muted" style="margin-bottom:6px">Not logged yet</div><div class="chips">${unlogged.map(n => `<span class="chip muted">${esc(n)}</span>`).join('')}</div></div>` : ''}</div>`;
   }
   const ptabs = [['overview', 'Overview'], ['body', 'Body'], ['nutrition', 'Nutrition'], ['training', 'Training']];
-  return `<div class="screen">${band('Progress', '')}
-    <div class="ptabs">${ptabs.map(([k, l]) => `<button data-ptab="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+  return `<div class="screen"><div class="phead">${band('Progress', '')}
+    <div class="ptabs">${ptabs.map(([k, l]) => `<button data-ptab="${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div></div>
     <div id="pbody">${body}</div>
   </div>${nav('dash')}`;
 }
