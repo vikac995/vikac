@@ -286,6 +286,8 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .avatar svg{width:124px;height:186px;flex:none;overflow:visible}
 .avatar.progress{align-items:flex-start;padding:12px 14px}
 .avatar.progress>svg{width:84px;height:126px}
+.avatar>img.heroimg{flex:none;object-fit:contain;object-position:bottom}
+.zap img{display:block}
 .avatar.progress .pr{flex:1;min-width:0}
 .avatar.progress .top{display:flex;align-items:baseline;gap:8px}
 .avatar.progress .score{font-family:'Bangers',Impact,sans-serif;font-size:40px;line-height:1;color:var(--or);-webkit-text-stroke:1px var(--ink);paint-order:stroke;text-shadow:2px 2px 0 var(--ink)}
@@ -318,10 +320,10 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .lvl{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px}
 /* calendar */
 .cal{touch-action:pan-y;background:#fff;border:2.5px solid var(--ink);border-radius:12px;padding:12px;box-shadow:var(--shadow);margin-bottom:14px}
-.cal .mh{display:flex;align-items:flex-end;justify-content:space-between;gap:4px;margin-bottom:0;padding-bottom:2px}
+.cal .mh{display:flex;align-items:flex-end;justify-content:space-between;gap:4px;margin-bottom:0;padding-bottom:0}
 .cal .mh .m{flex:1;min-width:0;text-align:center;font-family:'Bangers',Impact,sans-serif;font-size:28px;letter-spacing:.04em;line-height:.9;padding-bottom:4px}
 .cal .mh .m small{display:block;font-size:17px;color:var(--or2);margin-top:3px}
-.cal .mh .season{flex:none;margin:0 2px}
+.cal .mh .season{flex:none;margin:0 2px -4px;display:block}
 .cal .ground{border-radius:6px;margin-bottom:12px;box-shadow:inset 0 2px 0 rgba(27,27,27,.15);border:1.5px solid var(--ink)}
 .cal .mh button{align-self:center;width:44px;height:44px;border:2px solid var(--ink);border-radius:8px;background:#fff;font-size:20px;font-weight:700;box-shadow:2px 2px 0 var(--ink)}
 .cal .mh button:disabled{opacity:.3;box-shadow:none}
@@ -389,7 +391,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.1.2';
+const APP_VERSION = '2.3.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1632,8 +1634,32 @@ function dragonArt(o) {
 }
 function dragonSvg() { return dragonArt({ segs: [[16, 156, 60, 96, 112, 206, 156, 132], [156, 132, 192, 70, 226, 126, 266, 106]], box: '-10 -20 380 240', maxW: 24, headScale: 1, stars: true, bob: true }); }
 // Compact emblem for the summon slot: the same dragon coiled into a loop. state: 'ready' (outline, waiting) | 'done' (colour) | 'locked' (grey)
+/* ---------- Custom art: drop PNGs next to index.html and they replace the drawn character and dragon ----------
+   hero-0.png … hero-4.png (standing, levels Soft → Powered up, portrait 2:3), hero-beam.png (the kamehameha pose,
+   landscape 3:2, facing right), dragon.png (landscape 3:2), ball-1.png … ball-7.png (square; optional ball-N-hollow.png
+   for the uncollected look), season-<autumn|winter|spring|summer>.png (square figure standing at the bottom edge; the
+   right-hand one is mirrored), ground-<season>.png (a tile repeated sideways, 4:1). Missing files → the built-in SVG art. */
+const ART_FILES = ['hero', 'dragon', 'balls', 'ballsHollow', 'season-autumn', 'season-winter', 'season-spring', 'season-summer', 'ground-autumn', 'ground-winter', 'ground-spring', 'ground-summer'];
+const ART = {};
+try { const a = JSON.parse(localStorage.getItem('vikac.art') || '{}'); for (const k of ART_FILES) ART[k] = !!a[k]; } catch (e) { for (const k of ART_FILES) ART[k] = false; }
+// Which custom PNGs exist on the server (checked on every open): hero-0.png stands for the set hero-0…4 + hero-beam,
+// ball-1.png for ball-1…7, ball-1-hollow.png for the optional hollow set; seasons and grounds are per file
+function probeArt(done) {
+  const test = src => new Promise(ok => { const im = new Image(); im.onload = () => ok(true); im.onerror = () => ok(false); im.src = src + '?v=' + Date.now(); });
+  const files = { hero: 'hero-0.png', dragon: 'dragon.png', balls: 'ball-1.png', ballsHollow: 'ball-1-hollow.png' }; for (const k of ART_FILES) if (!files[k]) files[k] = k + '.png';
+  Promise.all(ART_FILES.map(k => test(files[k]))).then(res => { let changed = false; ART_FILES.forEach((k, i) => { if (ART[k] !== res[i]) changed = true; ART[k] = res[i]; }); try { localStorage.setItem('vikac.art', JSON.stringify(ART)); } catch (e) {} if (changed && done) done(); });
+}
+// The standing character: a PNG when one is uploaded, else the drawn one
+function heroArt(o) { o = o || {}; if (ART.hero) { const lv = Math.max(0, Math.min(4, o.level == null ? 2 : o.level)); return `<img class="heroimg" src="hero-${lv}.png" alt="" style="width:${o.size || 84}px;height:${Math.round((o.size || 84) * 1.5)}px">`; } return heroSvg(o); }
+function beamHeroArt() { return ART.hero ? `<img src="hero-beam.png" alt="" style="width:60px;height:40px;object-fit:contain">` : `<svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg>`; }
+function dragonBigArt() { return ART.dragon ? `<img src="dragon.png" alt="" style="width:min(92vw,440px);height:auto">` : dragonSvg(); }
 function dragonBadgeSvg(o) {
   o = o || {}; const st = o.state || 'ready', size = o.size || 84;
+  if (ART.dragon) {
+    const img = `<img src="dragon.png" alt="" style="width:${size}px;height:${size}px;object-fit:contain;${st === 'locked' ? 'filter:grayscale(1);opacity:.7' : st === 'ready' ? 'opacity:.4' : ''}">`;
+    if (st === 'done') return img;
+    return `<div style="position:relative;width:${size}px;height:${size}px;display:inline-block">${img}<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="position:absolute;left:0;top:0"><circle cx="50" cy="50" r="47" fill="none" stroke="#1B1B1B" stroke-width="3" stroke-dasharray="6 5"/>${st === 'locked' ? '<rect x="40" y="46" width="20" height="16" rx="3" fill="#fff" stroke="#1B1B1B" stroke-width="2.5"/><path d="M44 46 v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="#1B1B1B" stroke-width="2.5"/>' : ''}</svg></div>`;
+  }
   const art = dragonArt({ segs: [[14, 92, 70, 118, 118, 60, 76, 30], [76, 30, 40, 4, 8, 44, 48, 62]], box: '-13.5 -13 142 142', maxW: 14, headScale: 0.62, headTilt: -14, legs: [[18, 1], [40, -1]], mode: st === 'locked' ? 'grey' : 'color', size });
   if (st === 'done') return art;
   return `<div style="position:relative;width:${size}px;height:${size}px;display:inline-block"><div style="opacity:${st === 'locked' ? .7 : .4}">${art}</div><svg viewBox="0 0 100 100" width="${size}" height="${size}" style="position:absolute;left:0;top:0"><circle cx="50" cy="50" r="47" fill="none" stroke="#1B1B1B" stroke-width="3" stroke-dasharray="6 5"/>${st === 'locked' ? '<rect x="40" y="46" width="20" height="16" rx="3" fill="#fff" stroke="#1B1B1B" stroke-width="2.5"/><path d="M44 46 v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="#1B1B1B" stroke-width="2.5"/>' : ''}</svg></div>`;
@@ -1644,6 +1670,7 @@ const STAR_LAYOUTS = { 1: [[0, 0]], 2: [[-0.42, -0.42], [0.42, 0.42]], 3: [[0, -
 function starPath(cx, cy, r) { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; d += (i ? 'L' : 'M') + (cx + rr * Math.cos(a)).toFixed(2) + ' ' + (cy + rr * Math.sin(a)).toFixed(2); } return d + 'Z'; }
 function ballSvg(o) {
   o = o || {}; const n = Math.max(1, Math.min(7, o.stars || 1)), st = o.state || 'full', size = o.size || 84, id = 'b' + Math.random().toString(36).slice(2, 7);
+  if (ART.balls) { const src = st === 'hollow' && ART.ballsHollow ? `ball-${n}-hollow.png` : `ball-${n}.png`; const fx = st === 'dim' ? 'filter:grayscale(1);opacity:.5' : st === 'hollow' && !ART.ballsHollow ? 'filter:saturate(.15);opacity:.45' : ''; return `<img src="${src}" alt="" style="width:${size}px;height:${size}px;object-fit:contain;display:block;${fx}">`; }
   const dim = st === 'dim', hollow = st === 'hollow';
   const sr = n === 1 ? 16 : n <= 3 ? 11 : n <= 5 ? 9.5 : 8.5, spread = n === 1 ? 0 : 24;
   const stars = STAR_LAYOUTS[n].map(([x, y]) => `<path d="${starPath(50 + x * spread * (n >= 6 ? 1.05 : 1), 50 + y * spread * (n >= 6 ? 1.05 : 1), sr)}" fill="${hollow || dim ? 'none' : '#FFE68A'}" stroke="${dim ? '#9A9A9A' : hollow ? '#D45E00' : '#8A3A00'}" stroke-width="${hollow ? 2.4 : 1.8}" stroke-linejoin="round" opacity="${hollow ? .9 : 1}"/>`).join('');
@@ -1698,9 +1725,11 @@ function seasonSide(season, flip) {
     g = `<g transform="rotate(-8 30 24)">${wedges.join('')}<path d="M6 24 A24 24 0 0 1 54 24 Q48 27 42 24 Q36 27 30 24 Q24 27 18 24 Q12 27 6 24 Z" fill="none" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/><path d="M30 24 L30 50" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/><circle cx="30" cy="0" r="2.2" fill="#FE7F0C" stroke="${INK}" stroke-width="1.5"/></g>
       <circle cx="49" cy="44" r="6" fill="#fff" stroke="${INK}" stroke-width="1.8"/><path d="M43 44 A6 6 0 0 1 49 38 L49 44 Z" fill="#1C6DD0"/><path d="M49 38 A6 6 0 0 1 55 44 L49 44 Z" fill="#E8542C"/><path d="M49 50 A6 6 0 0 1 43 44 L49 44 Z" fill="#FFD166"/>`;
   }
+  if (ART['season-' + season]) return `<img class="season" src="season-${season}.png" alt="" style="width:52px;height:52px;object-fit:contain;object-position:bottom;${flip ? 'transform:scaleX(-1)' : ''}">`;
   return `<svg viewBox="-2 -6 64 58" class="season ${season}" width="52" height="52" style="overflow:visible;${flip ? 'transform:scaleX(-1)' : ''}">${g}</svg>`;
 }
 function seasonGround(season) {
+  if (ART['ground-' + season]) return `<div class="ground" style="height:18px;background:url(ground-${season}.png) repeat-x center / auto 100%"></div>`;
   const id = 'gr' + season; let tile = '';
   if (season === 'autumn') tile = `<rect width="72" height="18" fill="#D9A45B"/><path d="M0 3 Q18 0 36 3 T72 3 V18 H0 Z" fill="#C98F4A"/>${leafPath(6, 9, 9, -20, '#E8542C')}${leafPath(26, 12, 8, 15, '#F2A33A')}${leafPath(46, 8, 9, -5, '#B5541C')}${leafPath(60, 13, 7, 30, '#FFD166')}`;
   else if (season === 'winter') tile = `<rect width="72" height="18" fill="#DCE9F6"/><path d="M0 6 Q12 0 24 6 Q36 12 48 6 Q60 0 72 6 V18 H0 Z" fill="#F6FAFF"/><path d="M0 6 Q12 0 24 6 Q36 12 48 6 Q60 0 72 6" fill="none" stroke="#B9CFE6" stroke-width="1.2"/><circle cx="14" cy="12" r="1" fill="#B9CFE6"/><circle cx="40" cy="14" r="1" fill="#B9CFE6"/><circle cx="60" cy="11" r="1" fill="#B9CFE6"/>`;
@@ -1887,7 +1916,7 @@ function listHtml(info, date) {
   return `${overviewHtml(date)}<ul class="todo">${info.items.map(it => {
     const dn = isDone(date, it.id), tag = it.id === 'workout' ? tagHtml(PROGRAM.workouts[it.key].group, PROGRAM.workouts[it.key].group) : it.id === 'mt' ? tagHtml('mt', 'MT') : '';
     const cyc = cycleOf(date), star = cyc && !cyc.summonDay ? cyc.star : 7;
-    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}">${it.req ? `<span class="reqball">${ballSvg({ stars: star, state: dn ? 'full' : 'hollow', size: 30 })}</span>` : ''}<div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap"><svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg></div><div class="burst">${burstSvg()}</div></li>`;
+    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}">${it.req ? `<span class="reqball">${ballSvg({ stars: star, state: dn ? 'full' : 'hollow', size: 30 })}</span>` : ''}<div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap">${beamHeroArt()}</div><div class="burst">${burstSvg()}</div></li>`;
   }).join('')}</ul>`;
 }
 // Put the white highlight under the current box; animated = glide there
@@ -1967,7 +1996,7 @@ function refreshCycle(pop) {
   }
 }
 function showDragon() {
-  const el = document.createElement('div'); el.className = 'dragon'; el.innerHTML = dragonSvg() + '<div class="msg">The dragon answers!</div>';
+  const el = document.createElement('div'); el.className = 'dragon'; el.innerHTML = dragonBigArt() + '<div class="msg">The dragon answers!</div>';
   el.onclick = () => el.remove(); document.body.appendChild(el); vib([60, 40, 60, 40, 120]); setTimeout(() => { if (el.parentNode) el.remove(); }, 6500);
 }
 function showBalls(date) {
@@ -2342,7 +2371,8 @@ function nutritionHtml() {
     </div>
     <button class="btn sec" data-fill>Fill from export</button><input type="file" accept="image/*" id="fillFile" hidden>
     <div class="muted center" id="fillStatus" style="margin:6px 0 10px;min-height:18px"></div>
-    <button class="btn" id="saveN">Save</button></div>`;
+    <button class="btn" id="saveN">Save</button>
+    ${n.kcal || n.protein || n.carbs || n.fat ? '<div style="height:10px"></div><button class="btn ghost" id="delN">Delete this entry</button>' : ''}</div>`;
 }
 function nutritionCalcHtml(nc, p, date) {
   if (!nc) return '';
@@ -2361,6 +2391,7 @@ function bindNutrition() {
   const ff = $('#fillFile'); app.querySelector('[data-fill]').onclick = () => ff.click();
   ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, app, $('#fillStatus'), 'mfp', () => upd()); ff.value = ''; };
   $('#saveN').onclick = () => { upd(); save(); toast('Saved!'); vib(30); back(); };
+  const dn = $('#delN'); if (dn) dn.onclick = () => { const d = day(date); delete d.nutrition; if (d.done) d.done.nutrition = false; save(); toast('Entry deleted'); back(); };
 }
 
 /* ---------- Dashboard ---------- */
@@ -2414,7 +2445,7 @@ function dashHtml() {
     const sigs = sg.list.length ? `<div class="sigs">${sg.list.map(x => `<span class="sig ${x.state}"><b>${x.arrow}</b>${esc(x.label)} <span class="v">${esc(x.value)}</span>${x.delta ? `<small>${esc(x.delta)}</small>` : ''}</span>`).join('')}</div>` : '<div class="muted small" style="margin-top:6px">Log a weigh-in or a workout and the movers show up here.</div>';
     const row = (k, lab) => `<div class="mrow"><span class="l">${lab}</span><div class="bar"><i style="width:${rc[k].pct || 0}%"></i></div><span class="n"><b class="grade">${rc[k].grade}</b><small> ${rc[k].done}/${rc[k].of}</small></span></div>`;
     const lastW = lastReading('weight', date), lastSess = S.sessions.filter(x => x.finished).sort((a, b) => a.date < b.date ? 1 : -1)[0];
-    body = `<div class="avatar progress" data-avatar>${heroSvg({ level: fs.level, slim, size: 84 })}<div class="pr"><div class="top"><span class="score">${fs.score == null ? '—' : fs.score}</span><span class="lvl">${esc(fs.name)}</span></div><div class="why">${esc(fs.why)}</div>${sigs}<div class="muted small" style="margin-top:6px">Tap for details</div></div></div>
+    body = `<div class="avatar progress" data-avatar>${heroArt({ level: fs.level, slim, size: 84 })}<div class="pr"><div class="top"><span class="score">${fs.score == null ? '—' : fs.score}</span><span class="lvl">${esc(fs.name)}</span></div><div class="why">${esc(fs.why)}</div>${sigs}<div class="muted small" style="margin-top:6px">Tap for details</div></div></div>
       <div class="card"><div class="hd"><span class="cond" style="font-size:16px">Report card</span><span class="cond" style="font-size:16px">Overall <b class="grade" style="font-size:24px;color:var(--or2)">${rc.overall.grade}</b></span></div>
         ${row('training', 'Training')}${row('nutrition', 'Nutrition')}${row('stretch', 'Stretch')}
         <div class="muted small" style="margin-top:6px">${rc.days.done} of ${rc.days.of} days perfect so far.</div></div>
@@ -2630,6 +2661,7 @@ function titleLines(name) {
   return { l1, l2, size };
 }
 /* ---------- Phone back button: always stays inside the app ---------- */
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';   // the app restores scroll itself; the browser must not jump on back
 function armBack() { try { history.pushState({ vikac: 1 }, ''); } catch (e) {} }
 window.addEventListener('popstate', () => {
   const ov = document.querySelector('.modalbg'), dr = document.querySelector('.dragon');
@@ -2645,6 +2677,7 @@ window.addEventListener('popstate', () => {
 (async function boot() {
   await load();
   if (S.project && seedStartReading()) save();
+  probeArt(() => render());   // custom PNG art appears as soon as the files are on the server
   const start = () => { R.date = today(); render(); };
   // An image shared from the Xiaomi app arrives through the service worker (see sw.js) as ?share=1
   let shared = [];

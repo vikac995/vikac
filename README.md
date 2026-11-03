@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v2.1.2)
+# Vikač High Kikač — install guide (v2.3.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -60,7 +60,24 @@ The weigh-in form can read the Mi Fitness share image instead of you typing six 
 
 Reading happens on the phone (tesseract.js) — the image is never uploaded anywhere. The first use downloads the reader (about 6 MB: `tess.js`, `tess-worker.js`, `tess-core.wasm.js`, `eng.traineddata.gz`); after that it works offline. The weight is cross-checked against fat-free weight + fat mass from the same image, so a misread digit shows up as a warning.
 
-## 8. Updating the app
+## 8. Your own artwork
+
+Upload PNGs to the repository next to index.html and they replace the drawn art; delete a file to go back to the built-in drawing for that piece. Transparent background, no padding tricks needed — the app scales them. Every file is optional and independent (you can replace only the dragon, or only the winter scene). A re-uploaded PNG shows on the next open — no version bump needed. The sheet `art-spec-sheet.png` and the zip `art-reference-current.zip` (sent with v2.3.0) hold the current drawings at these exact sizes to trace or redesign over.
+
+| File | What | Size |
+| --- | --- | --- |
+| hero-0.png … hero-4.png | the standing character at levels 0–4 (Soft, Getting there, Lean, Shredded, Powered up); shown on Progress, level follows the score | 600 × 900 |
+| hero-beam.png | the kamehameha pose that flies across a card when you tick it; facing right, beam to the right | 900 × 600 |
+| dragon.png | the dragon: summon badge (greyed when locked, faded when waiting) and the celebration | 900 × 600 |
+| ball-1.png … ball-7.png | the seven dragon balls (1 to 7 stars): the strip on Today, the badge in a card's corner, the pop-up | 300 × 300 |
+| ball-1-hollow.png … ball-7-hollow.png | optional: the "not yet earned" look of each ball. Without these the app fades and desaturates the full ball instead. All seven or none. | 300 × 300 |
+| season-autumn.png, season-winter.png, season-spring.png, season-summer.png | the figure beside the month name in the Calendar (leaf pile, snowman, cherry tree, parasol). Draw it standing on the bottom edge of the image; the right-hand copy is mirrored by the app | 300 × 300 |
+| ground-autumn.png, ground-winter.png, ground-spring.png, ground-summer.png | the strip of ground under the month header, repeated sideways — make the left and right edges meet | 288 × 72 |
+| icon-192.png, icon-512.png, icon-512-maskable.png | the home-screen icon (maskable: keep the subject inside the middle 80 %) | 192 / 512 / 512 |
+
+Not replaceable by file (drawn around your art): the ring and padlock on the summon badge, the grey/faded states, the bottom navigation icons, charts and bars.
+
+## 9. Updating the app
 
 When a new version arrives, upload the new files to the same repository (Add file → Upload files, same names, Commit). The phone picks up the new version the next time you open the app while online. Your data is untouched by updates.
 
