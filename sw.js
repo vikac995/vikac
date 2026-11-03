@@ -1,5 +1,5 @@
 /* Vikač High Kikač service worker — bump CACHE on every release */
-const CACHE = 'vikac-v1.9.0';
+const CACHE = 'vikac-v2.0.0';
 const ASSETS = ['index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(ASSETS.map(a => c.add(a).catch(() => null)))).then(() => self.skipWaiting()));
@@ -13,7 +13,7 @@ self.addEventListener('fetch', e => {
   // Web Share Target: the Xiaomi app posts the export image here; stash it and open the app
   if (e.request.method === 'POST' && url.pathname.endsWith('/share')) {
     e.respondWith((async () => {
-      try { const fd = await e.request.formData(); const f = fd.get('image'); if (f) { const c = await caches.open('vikac-share'); await c.put('shared-image', new Response(f, { headers: { 'Content-Type': f.type || 'image/png' } })); } } catch (err) {}
+      try { const fd = await e.request.formData(); const files = fd.getAll('image').filter(f => f && f.size); const c = await caches.open('vikac-share'); for (const k of await c.keys()) await c.delete(k); let i = 0; for (const f of files) await c.put('shared-' + String(i++).padStart(2, '0'), new Response(f, { headers: { 'Content-Type': f.type || 'image/png' } })); } catch (err) {}
       return Response.redirect('./?share=1', 303);
     })());
     return;

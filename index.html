@@ -87,8 +87,10 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .ring84{width:84px;height:84px}
 .cstrip{display:flex;align-items:center;justify-content:center;gap:5px;margin:12px 0 0}
 .cstrip .arrow{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.35);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--ink)}
-.cstrip .box{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.35);border:2px solid rgba(27,27,27,.35);display:flex;align-items:center;justify-content:center;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;color:rgba(27,27,27,.55);position:relative}
-.cstrip .box.cur{background:#fff;border-color:var(--ink);color:var(--ink);box-shadow:2px 2px 0 var(--ink);transform:scale(1.08)}
+.cstrip .boxes{display:flex;gap:5px;position:relative}
+.cstrip .cursor{position:absolute;top:0;height:30px;border-radius:7px;background:#fff;border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);transform:scale(1.08);transition:left .28s cubic-bezier(.2,.8,.2,1),width .28s;box-sizing:border-box;z-index:0;pointer-events:none}
+.cstrip .box{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.35);border:2px solid rgba(27,27,27,.35);display:flex;align-items:center;justify-content:center;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;color:rgba(27,27,27,.55);position:relative;z-index:1;transition:color .2s,border-color .2s}
+.cstrip .box.cur{background:transparent;border-color:transparent;color:var(--ink)}
 .cstrip .box.done::after{content:"";position:absolute;right:-4px;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--ok);border:1.5px solid var(--ink)}
 .cstrip .box.miss::after{content:"";position:absolute;right:-4px;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--badsoft);border:1.5px solid var(--ink)}
 .cstrip .box.part::after{content:"";position:absolute;right:-4px;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--yel);border:1.5px solid var(--ink)}
@@ -200,6 +202,10 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .daychip{min-width:36px;padding:7px 0;text-align:center;font-size:14px}
 .eyebrow{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:var(--muted);margin-bottom:6px}
 .pastlist{display:flex;flex-direction:column;gap:8px}
+.brows{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.brow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px solid var(--ink);border-radius:10px;background:#fff;min-height:60px;box-shadow:var(--shadow-sm)}
+.brow img{width:44px;height:44px;object-fit:cover;object-position:top;border:1.5px solid var(--ink);border-radius:6px;background:#222;flex:none}
+.brow .bi{flex:1;min-width:0}.brow .t{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:15px}.brow .s{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pastrow{display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:#fff;min-height:52px}
 .pastrow .go{font-size:24px;color:var(--muted);margin-left:auto}
 .btn.danger{background:#fff;color:var(--bad);border-color:var(--bad)}
@@ -260,6 +266,21 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .avatar::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 25% 50%,var(--orsoft) 0,transparent 55%)}
 .avatar>*{position:relative}
 .avatar svg{width:124px;height:186px;flex:none;overflow:visible}
+.avatar.progress{align-items:flex-start;padding:12px 14px}
+.avatar.progress>svg{width:84px;height:126px}
+.avatar.progress .pr{flex:1;min-width:0}
+.avatar.progress .top{display:flex;align-items:baseline;gap:8px}
+.avatar.progress .score{font-family:'Bangers',Impact,sans-serif;font-size:40px;line-height:1;color:var(--or);-webkit-text-stroke:1px var(--ink);paint-order:stroke;text-shadow:2px 2px 0 var(--ink)}
+.avatar.progress .lvl{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:16px}
+.avatar.progress .why{font-size:13px;color:var(--muted);margin:2px 0 8px}
+.sigs{display:flex;flex-wrap:wrap;gap:6px}
+.sig{display:inline-flex;align-items:baseline;gap:4px;border:1.5px solid var(--ink);border-radius:8px;padding:4px 8px;font-size:13px;background:#fff;line-height:1.2}
+.sig b{font-size:14px}.sig .v{font-weight:700}.sig small{color:var(--muted);font-size:11px}
+.sig.good{border-color:var(--ok);color:var(--ok);background:var(--oksoft)}.sig.bad{border-color:var(--bad);color:var(--bad);background:var(--badsoft)}.sig.flat{border-color:var(--warn);color:var(--warn);background:var(--warnsoft)}
+.mrow{display:grid;grid-template-columns:62px 1fr auto;align-items:center;gap:10px;margin:6px 0}
+.mrow .l{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:12px;color:var(--ink2)}
+.mrow .bar{height:10px;background:#EADFCF;border:1.5px solid var(--ink);border-radius:5px;overflow:hidden}.mrow .bar i{display:block;height:100%;background:var(--or)}
+.mrow .n{font-family:'BarlowC',sans-serif;font-weight:700;font-size:15px;min-width:76px;text-align:right}.mrow .n small{color:var(--muted);font-weight:600}
 .score{font-family:'Bangers',Impact,sans-serif;font-size:56px;color:var(--or);-webkit-text-stroke:1.2px var(--ink);paint-order:stroke;text-shadow:3px 3px 0 var(--ink);line-height:1;letter-spacing:.03em}
 .lvl{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px}
 /* calendar */
@@ -325,7 +346,8 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 .kpi .v{font-family:'Bangers',Impact,sans-serif;font-size:30px;letter-spacing:.04em;line-height:1}
 .kpi .l{font-size:13px;color:var(--muted)}
 .target{display:flex;justify-content:space-around;text-align:center;background:var(--paper2);border:2px dashed #D9B68E;border-radius:10px;padding:10px;margin-bottom:12px}
-.target .v{font-family:'Bangers',Impact,sans-serif;font-size:30px;letter-spacing:.04em;line-height:1;color:var(--or2)}
+.target .v{font-family:'Bangers',Impact,sans-serif;font-size:26px;letter-spacing:.04em;line-height:1;color:var(--or2)}
+.target .v small{font-size:14px;margin-left:1px}
 .target .l{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:12px;color:var(--ink2)}
 </style>
 </head>
@@ -334,7 +356,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '2.0.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -749,26 +771,59 @@ function exerciseHistory(name) {
 function allExerciseNames(group) { const set = []; for (const k in PROGRAM.workouts) { const w = PROGRAM.workouts[k]; if (group && w.group !== group) continue; for (const e of w.ex) if (!set.includes(e.n)) set.push(e.n); } return set; }
 
 /* ---------- Fitness score ---------- */
+// Progress score 0–100 (drives the character's level): body on plan 50 %, strength held 30 %, perfect days 20 %.
+// Parts are explained in words with the real numbers; anything without data is left out instead of guessed.
 function fitnessScore(date) {
-  const parts = [];
-  // body 50
+  const parts = [], p = P();
   const weights = { weight: 40, fat: 25, muscle: 25, visceral: 10 }; let bw = 0, bs = 0;
-  for (const id in weights) { const st = metricStatus(id, date); if (!st) continue; bw += weights[id]; let v = 40; if (st.state === 'zone' || st.state === 'ahead') v = 100; else if (st.state === 'slow' || st.state === 'fast') v = 50; else { const lr = lastReading(id, date); v = lr && diffDays(lr.date, date) <= 3 ? 60 : 40; } bs += v * weights[id]; parts.push({ label: st.def.label, v: v, w: weights[id] / 100 * 0.5, note: { zone: 'in the zone', ahead: 'ahead of plan', slow: 'behind plan', fast: 'too fast', nodata: 'no readings yet' }[st.state] || st.state }); }
-  const body = bw ? bs / bw : 50;
-  // strength 30: last 8 days of finished sessions
+  for (const id in weights) {
+    const st = metricStatus(id, date); if (!st) continue;
+    const def = st.def, u = def.unit === '%' ? ' %' : def.unit ? ' ' + def.unit : '', f = v => v.toFixed(def.dec) + u;
+    if (st.cur == null) { parts.push({ key: id, label: def.label, text: 'no readings yet', status: '', cls: 'muted' }); continue; }
+    bw += weights[id]; const good = st.state === 'zone' || st.state === 'ahead'; bs += (good ? 100 : 50) * weights[id];
+    const word = { zone: def.dir < 0 ? 'on plan' : 'holding', ahead: def.dir < 0 ? 'ahead of plan' : 'gaining', slow: def.dir < 0 ? 'behind plan' : 'dropping', fast: 'too fast' }[st.state] || '';
+    parts.push({ key: id, label: def.label, text: f(st.cur) + ' · plan ' + f(st.exp), status: word, cls: good ? 'ok' : 'warn' });
+  }
+  const body = bw ? bs / bw : null;
   const since = addDays(date, -8); let good = 0, tot = 0;
-  for (const s of S.sessions.filter(s => s.finished && s.date > since && s.date <= date)) for (const e of s.ex) { const v = verdictFor(e.n, e, s.date, s.id); if (v.state === 'none' || v.state === 'base') continue; tot++; if (v.state !== 'down') good++; }
+  for (const sx of S.sessions.filter(x => x.finished && x.date > since && x.date <= date)) for (const e of sx.ex) { const v = verdictFor(e.n, e, sx.date, sx.id); if (v.state === 'none' || v.state === 'base') continue; tot++; if (v.state !== 'down') good++; }
   const hangs = []; for (let i = 0; i < 8; i++) { const d = S.days[addDays(date, -i)]; if (d && d.hang && d.hang.best) hangs.push(+d.hang.best); }
   if (hangs.length >= 2) { tot++; if (hangs[0] >= hangs[hangs.length - 1]) good++; }
-  const strength = tot ? good / tot * 100 : 60;
-  parts.push({ label: 'Strength kept or gained', v: Math.round(strength), w: 0.3, note: tot ? good + '/' + tot + ' exercises in the last cycle' : 'no sessions yet' });
-  // consistency 20
-  let sum = 0, n = 0; for (let i = 0; i < 7; i++) { const d = addDays(date, -i); if (tOf(d) < 0) continue; sum += dragonBalls(d).balls; n++; }
-  const cons = n ? sum / n / 7 * 100 : 50;
-  parts.push({ label: 'Consistency (dragon balls, 7 days)', v: Math.round(cons), w: 0.2, note: n ? (sum / n).toFixed(1) + ' balls/day' : '' });
-  const score = Math.round(body * 0.5 + strength * 0.3 + cons * 0.2);
-  const level = score >= 95 ? 4 : score >= 80 ? 3 : score >= 60 ? 2 : score >= 40 ? 1 : 0;
-  return { score, level, name: levelName(score), parts };
+  const strength = tot ? good / tot * 100 : null;
+  parts.push({ key: 'strength', label: 'Strength', text: tot ? good + ' of ' + tot + ' lifts held or improved this cycle' : 'no comparable sessions yet', status: tot ? (good === tot ? 'all held' : good / tot >= .7 ? 'mostly held' : 'slipping') : '', cls: tot ? (good / tot >= .7 ? 'ok' : 'warn') : 'muted' });
+  let perfect = 0, n = 0; for (let i = 0; i < 7; i++) { const d = addDays(date, -i); if (tOf(d) < 0 || d > today()) continue; const done = dayCompletion(d) === 'done'; if (d === today() && !done) continue; n++; if (done) perfect++; }
+  const cons = n ? perfect / n * 100 : null;
+  parts.push({ key: 'days', label: 'Perfect days', text: n ? perfect + ' of the last ' + n + (n === 1 ? ' day' : ' days') : 'none yet', status: n ? (perfect === n ? 'flawless' : perfect / n >= .7 ? 'solid' : 'patchy') : '', cls: n ? (perfect / n >= .7 ? 'ok' : 'warn') : 'muted' });
+  const comps = [[body, .5], [strength, .3], [cons, .2]].filter(c => c[0] != null);
+  const score = comps.length ? Math.round(comps.reduce((a, c) => a + c[0] * c[1], 0) / comps.reduce((a, c) => a + c[1], 0)) : null;
+  const level = score == null ? 1 : score >= 95 ? 4 : score >= 80 ? 3 : score >= 60 ? 2 : score >= 40 ? 1 : 0;
+  const why = [body == null ? 'no readings yet' : body >= 90 ? 'body on plan' : 'body off the line', strength == null ? 'strength untested' : strength >= 70 ? 'strength holding' : 'strength slipping', n ? perfect + '/' + n + ' perfect days' : null].filter(Boolean).join(' · ');
+  return { score, level, name: score == null ? 'Day one' : levelName(score), parts, why };
+}
+// What has moved lately, for the Progress tile: each body metric over the last 7 days, each lift's last verdict,
+// perfect days. state good/bad/flat, arrow ↑ ↓ ●. Which ones to show depends on the overall direction.
+function signals(date) {
+  const out = [], flat = { weight: .2, fat: .3, muscle: .3, skeletal: .3, visceral: .5, water: .5 }, p = P();
+  for (const def of METRIC_DEFS) {
+    const id = def.id, cur = current(id, date), lr = lastReading(id, date); if (cur == null || !lr) continue;
+    let ref = current(id, addDays(date, -7)); if (ref == null) { const s0 = p.start[id]; if (s0 == null || s0 === '') continue; ref = +s0; }
+    const d = cur - ref, u = def.unit === '%' ? ' %' : def.unit ? ' ' + def.unit : '';
+    const arrow = d > flat[id] ? '↑' : d < -flat[id] ? '↓' : '●';
+    const state = arrow === '●' ? 'flat' : (def.dir < 0 ? (arrow === '↓' ? 'good' : 'bad') : (arrow === '↑' ? 'good' : 'bad'));
+    out.push({ key: id, label: def.label, value: cur.toFixed(def.dec) + u, delta: (d > 0 ? '+' : '') + d.toFixed(def.dec) + u, arrow, state, when: lr.date, order: 0 });
+  }
+  const since = addDays(date, -8), seen = new Set();
+  for (const sx of S.sessions.filter(x => x.finished && x.date > since && x.date <= date).sort((a, b) => a.date < b.date ? 1 : -1)) for (const e of sx.ex) {
+    if (seen.has(e.n)) continue; const v = verdictFor(e.n, e, sx.date, sx.id); if (v.state === 'none' || v.state === 'base') continue; seen.add(e.n);
+    out.push({ key: 'ex:' + e.n, label: e.n, value: v.now ? v.now.label : '', delta: v.pct != null ? (v.pct > 0 ? '+' : '') + v.pct.toFixed(1) + ' %' : '', arrow: v.state === 'down' ? '↓' : v.state === 'held' ? '●' : '↑', state: v.state === 'down' ? 'bad' : 'good', when: sx.date, order: 1 });
+  }
+  let perfect = 0, n = 0, last = null; for (let i = 0; i < 7; i++) { const d = addDays(date, -i); if (tOf(d) < 0 || d > today()) continue; const done = dayCompletion(d) === 'done'; if (d === today() && !done) continue; n++; if (done) { perfect++; last = last || d; } }
+  if (n) out.push({ key: 'days', label: 'Perfect days', value: perfect + '/' + n, delta: '', arrow: '●', state: perfect / n >= .85 ? 'good' : perfect / n >= .5 ? 'flat' : 'bad', when: last || date, order: 2 });
+  const goods = out.filter(x => x.state === 'good').length, bads = out.filter(x => x.state === 'bad').length;
+  const mood = goods > bads ? 'up' : bads > goods ? 'down' : 'flat';
+  const rank = x => (mood === 'up' ? (x.state === 'good' ? 0 : x.state === 'flat' ? 1 : 2) : mood === 'down' ? (x.state === 'bad' ? 0 : x.state === 'flat' ? 1 : 2) : 0);
+  out.sort((a, b) => rank(a) - rank(b) || (a.when < b.when ? 1 : a.when > b.when ? -1 : 0) || a.order - b.order);
+  return { mood, list: out.slice(0, 4), all: out };
 }
 
 const LEVEL_NAMES = ['Soft', 'Getting there', 'Lean', 'Shredded', 'Powered up'];
@@ -786,6 +841,21 @@ function streak(date) {
 function exComplete(e, type) { if (type === 'max') return +e.reps > 0; return e.sets.length > 0 && e.sets.every(st => +st.kg > 0 && +st.reps > 0); }
 // what to eat today, before anything is logged (uses the band value if entered, else the default)
 function nutritionTarget(date) { const p = P(), n = (S.days[date] || {}).nutrition || {}; const band = n.band == null || n.band === '' ? p.bandDefault : +n.band; return { kcal: p.bmr + band - p.deficit, protein: p.protein, band }; }
+// Daily macros for the cut: protein as set (≈2.2 g/kg), fat 0.65 g/kg of body weight (Helms 2014: 20–30 % of kcal,
+// never below 0.5 g/kg), carbs take whatever energy is left — they rise on days with more band kcal
+function macroTargets(date) {
+  const p = P(), tg = nutritionTarget(date), w = current('weight', date) || +p.start.weight || 80;
+  const fatMin = Math.round(0.5 * w), fat = Math.max(fatMin, Math.min(Math.round(0.65 * w), Math.round(tg.kcal * 0.35 / 9)));
+  const carbs = Math.max(40, Math.round((tg.kcal - p.protein * 4 - fat * 9) / 4));
+  return { kcal: tg.kcal, protein: p.protein, fat, carbs, band: tg.band, perKg: { protein: +(p.protein / w).toFixed(2), fat: +(fat / w).toFixed(2), carbs: +(carbs / w).toFixed(2) } };
+}
+// Average intake over the last n logged days ending at date
+function intakeAverage(date, n) {
+  const rows = []; for (let i = 0; i < n; i++) { const d = addDays(date, -i); const x = (S.days[d] || {}).nutrition; if (x && x.kcal) rows.push(x); }
+  if (!rows.length) return null;
+  const avg = k => Math.round(rows.reduce((a, r) => a + (+r[k] || 0), 0) / rows.length), has = k => rows.filter(r => r[k] != null && r[k] !== '').length;
+  return { days: rows.length, kcal: avg('kcal'), protein: avg('protein'), carbs: has('carbs') ? Math.round(rows.filter(r => r.carbs != null && r.carbs !== '').reduce((a, r) => a + +r.carbs, 0) / has('carbs')) : null, fat: has('fat') ? Math.round(rows.filter(r => r.fat != null && r.fat !== '').reduce((a, r) => a + +r.fat, 0) / has('fat')) : null };
+}
 
 /* ---------- Energy balance physiology (Hall 2008 / Forbes) ---------- */
 const KCAL_FAT = 9440, KCAL_LEAN = 1816;           // per kg of fat tissue / lean tissue (Hall 2008: 39.5 and 7.6 MJ/kg)
@@ -917,7 +987,7 @@ function ocrLoad(onStatus) {
   return ocrLoading;
 }
 // Load an image file into a canvas: min(R,G,B) keeps white text bright on the teal/black card, then invert + gamma for the grey captions
-function ocrPrepare(file, width, cropFrac, gamma) {
+function ocrPrepare(file, width, cropFrac, gamma, thresh) {
   return new Promise((ok, err) => {
     const img = new Image(); const url = URL.createObjectURL(file);
     img.onload = () => {
@@ -929,7 +999,7 @@ function ocrPrepare(file, width, cropFrac, gamma) {
       let sum = 0; for (let i = 0; i < p.length; i += 16) sum += Math.min(p[i], p[i + 1], p[i + 2]);
       const dark = sum / (p.length / 16) < 128;   // dark theme: light text on dark → invert; light theme: leave as is
       const lut = new Uint8Array(256); for (let v = 0; v < 256; v++) lut[v] = Math.round(255 * Math.pow(v / 255, gamma || 2.4));
-      for (let i = 0; i < p.length; i += 4) { const m = Math.min(p[i], p[i + 1], p[i + 2]); const v = lut[dark ? 255 - m : Math.max(p[i], p[i + 1], p[i + 2])]; p[i] = p[i + 1] = p[i + 2] = v; p[i + 3] = 255; }
+      for (let i = 0; i < p.length; i += 4) { const m = Math.min(p[i], p[i + 1], p[i + 2]); const v = thresh ? (m >= thresh ? 0 : 255) : lut[dark ? 255 - m : Math.max(p[i], p[i + 1], p[i + 2])]; p[i] = p[i + 1] = p[i + 2] = v; p[i + 3] = 255; }
       ctx.putImageData(d, 0, 0);
       ok({ canvas: c, scale: sc, imgW: img.width, imgH: img.height });
     };
@@ -947,7 +1017,17 @@ async function readImage(file, onStatus) {
   const r1 = await w.recognize(main.canvas, {}, { blocks: true });
   const words = ocrWords(r1.data), kind = classifyWords(words);
   if (kind === 'mfp') {
-    const m = parseMfpShot(words, main.canvas.width, main.canvas.height); m.kind = 'mfp'; m.debugWords = words;
+    let m = parseMfpShot(words, main.canvas.width, main.canvas.height); m.kind = 'mfp'; m.debugWords = words;
+    // MFP draws coloured rings and bars around its numbers: a second pass keeps only the near-white text and reads
+    // it as sparse text, which finds the ring total and the macro columns the layout pass skips
+    try {
+      const t2 = await ocrPrepare(file, 900, null, 1, 170);
+      await w.setParameters({ tessedit_pageseg_mode: '11' });
+      const r2 = await w.recognize(t2.canvas, {}, { blocks: true });
+      const words2 = ocrWords(r2.data), m2 = parseMfpShot(words2, t2.canvas.width, t2.canvas.height);
+      for (const k of ['kcal', 'protein', 'carbs', 'fat']) if (m2.values[k] != null) m.values[k] = m2.values[k];
+      if (!m.date && m2.date) m.date = m2.date; m.debugWords2 = words2;
+    } catch (e) {}
     if (!m.date) { // the big "Today / Yesterday / date" header is often skipped in the main pass: look at it separately, smaller
       try { const top = await ocrPrepare(file, 500, 0.12, 1); await w.setParameters({ tessedit_pageseg_mode: '11' }); const r2 = await w.recognize(top.canvas, {}, { blocks: true }); m.date = mfpDateFromText(ocrWords(r2.data).map(x => ocrNorm(x.text)).join(' ')); m.debugTop = ocrWords(r2.data).map(x => x.text); } catch (e) {}
     }
@@ -1014,7 +1094,7 @@ function classifyWords(words) {
   const t = words.map(w => ocrNorm(w.text)).join(' ');
   const hits = list => list.filter(k => t.includes(k)).length;
   const scale = hits(['skeletal', 'visceral', 'bmi', 'bone', 'muscle', 'fat-free', 'composition', 'metabolic']);
-  const mfp = hits(['calories', 'carbs', 'breakfast', 'lunch', 'dinner', 'snacks', 'diary', 'totals', 'remaining', 'cal ', 'kcal']);
+  const mfp = hits(['calories', 'carbs', 'breakfast', 'lunch', 'dinner', 'snacks', 'diary', 'totals', 'remaining', 'log food', 'copy from', 'view diary']);
   if (scale >= 2 && scale >= mfp) return 'scale';
   if (mfp >= 2) return 'mfp';
   return 'unknown';
@@ -1036,20 +1116,27 @@ function parseMfpShot(words, W, H) {
   if (tot && head) {
     const col = name => { const w = head.words.find(x => ocrWordIs(x.text, name)); return w ? (w.x0 + w.x1) / 2 : null; };
     const pick = cx => { if (cx == null) return null; const c = tot.words.filter(w => num(w.text) != null).sort((a, b) => Math.abs((a.x0 + a.x1) / 2 - cx) - Math.abs((b.x0 + b.x1) / 2 - cx))[0]; return c ? num(c.text) : null; };
-    values.kcal = pick(col('calories')); values.protein = pick(col('protein'));
+    values.kcal = pick(col('calories')); values.protein = pick(col('protein')); values.carbs = pick(col('carbs')); values.fat = pick(col('fat'));
   }
   if (values.kcal == null) {
-    const below = (name, range) => { // the first number on the nearest line under the label, left-aligned with it
+    // Today screen: the number sits under its label ("Calories" / "1,842 cal"); diary summary: the number sits above
+    // its label ("6g" / "Carbs", "74" over "cal" in the ring). Try below, then above, nearest first, aligned by x.
+    const near = (name, range, dir) => {
       const labs = ws.filter(w => ocrWordIs(w.text, name)).sort((a, b) => a.y0 - b.y0);
       for (const lab of labs) {
-        const cands = ws.filter(w => w.y0 >= lab.y1 - lab.h * 0.3 && w.y0 - lab.y1 <= lab.h * 3.2 && w.x0 >= lab.x0 - lab.h * 1.5 && w.x0 <= lab.x0 + lab.h * 4 && num(w.text) != null).sort((a, b) => a.y0 - b.y0 || a.x0 - b.x0);
+        const cx = (lab.x0 + lab.x1) / 2;
+        const cands = ws.filter(w => num(w.text) != null && (dir === 'below' ? (w.y0 >= lab.y1 - lab.h * 0.3 && w.y0 - lab.y1 <= lab.h * 3.2 && w.x0 >= lab.x0 - lab.h * 1.5 && w.x0 <= lab.x0 + lab.h * 4) : (w.y1 <= lab.y0 + lab.h * 0.3 && lab.y0 - w.y1 <= lab.h * 3.2 && Math.abs((w.x0 + w.x1) / 2 - cx) <= lab.h * 3)))
+          .sort((a, b) => dir === 'below' ? (a.y0 - b.y0 || a.x0 - b.x0) : (b.y1 - a.y1 || a.x0 - b.x0));
         for (const c of cands) { const v = num(c.text); if (v >= range[0] && v <= range[1]) return v; }
       }
       return null;
     };
-    values.kcal = below('calories', [50, 15000]); values.protein = below('protein', [1, 800]);
+    const get = (name, range) => { let v = near(name, range, 'below'); if (v == null) v = near(name, range, 'above'); return v; };
+    values.kcal = get('calories', [0, 15000]); if (values.kcal == null) values.kcal = near('cal', [0, 15000], 'above');
+    values.protein = get('protein', [0, 800]); values.carbs = get('carbs', [0, 1500]); values.fat = get('fat', [0, 500]);
   }
-  if (values.kcal != null) values.kcal = Math.round(values.kcal); if (values.protein != null) values.protein = Math.round(values.protein);
+  for (const k of ['kcal', 'protein', 'carbs', 'fat']) if (values[k] != null) values[k] = Math.round(values[k]);
+  if (values.kcal == null && ['protein', 'carbs', 'fat'].every(k => values[k] === 0)) values.kcal = 0;   // an empty day in MFP
   // which day: "Today", "Yesterday" or a date in the header
   const date = mfpDateFromText(ws.filter(w => w.y0 < H * 0.15).map(w => ocrNorm(w.text)).join(' '));
   return { values, date, late: null, notes };
@@ -1057,14 +1144,17 @@ function parseMfpShot(words, W, H) {
 function mfpDateFromText(top) {
   const td = today();
   if (/yesterday/.test(top)) return addDays(td, -1);
-  if (/today/.test(top)) return td;
+  if (/tomorrow/.test(top)) return addDays(td, 1);
+  if (/\btoday\b/.test(top)) return td;
   const MN = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
-  const m1 = top.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})\b/), m2 = top.match(/\b(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/);
+  const m1 = top.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?,?\s+(\d{1,2})\b/), m2 = top.match(/\b(\d{1,2})\.?\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/);
   const mo = m1 ? MN.indexOf(m1[1]) + 1 : m2 ? MN.indexOf(m2[2]) + 1 : 0, dd = m1 ? +m1[2] : m2 ? +m2[1] : 0;
-  if (!mo || !dd) return null;
-  const y = +td.slice(0, 4); let c = y + '-' + pad(mo) + '-' + pad(dd); if (c > addDays(td, 1)) c = (y - 1) + c.slice(4); return c;
+  if (!mo || !dd || dd > 31) return null;
+  const y = +td.slice(0, 4), cands = [y - 1, y, y + 1].map(yy => yy + '-' + pad(mo) + '-' + pad(dd));
+  return cands.sort((a, b) => Math.abs(diffDays(td, a)) - Math.abs(diffDays(td, b)))[0];
 }
 function ocrNumber(t) {
+  if (/^[oO0]g$/.test(String(t).trim())) return 0;   // "0g" read as the letter O
   const m = ocrNorm(t).match(/^-?(\d{1,3}(?:,\d{3})+|\d+)(?:[.,](\d+))?/); if (!m) return null;
   let s = m[1].replace(/,/g, ''); if (m[2] != null) { if (m[2].length === 3 && !m[1].includes(',') && !t.includes('.')) s += m[2]; else s += '.' + m[2].slice(0, 1); }
   return parseFloat(s);
@@ -1191,14 +1281,14 @@ async function readMfpFile(file) {
 // Write the days into the project: hand-logged days are kept, earlier imports are refreshed, today only late in the evening
 function applyMfpDays(days) {
   const p = P(), td = today(), now = new Date(), res = { filled: 0, updated: 0, kept: 0, skippedToday: false, first: null, last: null };
-  const last = td < p.endDate ? td : p.endDate;
+  const last = p.endDate;   // days logged ahead in MFP are welcome too
   for (const d of Object.keys(days).sort()) {
     if (d < p.startDate || d > last) continue;
     if (d === td && now.getHours() < 21) { res.skippedToday = true; continue; }
     const v = days[d]; if (!v.kcal) continue;
     const cur = day(d).nutrition;
     if (cur && cur.kcal && cur.src !== 'mfp') { res.kept++; continue; }
-    const next = { kcal: Math.round(v.kcal), protein: Math.round(v.protein), band: cur ? cur.band : undefined, src: 'mfp' };
+    const next = { kcal: Math.round(v.kcal), protein: Math.round(v.protein), carbs: Math.round(v.carbs), fat: Math.round(v.fat), band: cur ? cur.band : undefined, src: 'mfp' };
     if (cur && cur.src === 'mfp') { if (cur.kcal === next.kcal && cur.protein === next.protein) continue; res.updated++; } else res.filled++;
     day(d).nutrition = next; res.first = res.first || d; res.last = d;
   }
@@ -1505,7 +1595,7 @@ function burstSvg() { return `<svg viewBox="0 0 50 50"><path d="M25 2 L29 16 L42
 const ICONS = {
   today: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l4 4L20 5"/><path d="M4 19h16"/></svg>',
   cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
-  dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 19V11M10 19V5M16 19v-8M22 19H2"/></svg>',
+  dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2M20 12h2M6 8v8M18 8v8M9 6v12M15 6v12M9 12h6"/><path d="M4 9.5v5M20 9.5v5"/></svg>',
   profile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
   settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="#1B1B1B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>',
@@ -1564,7 +1654,7 @@ function back() { const s = R.stack.pop(); if (s) { R.screen = s.screen; R.param
 function animate(el, anim) { if (!el || !anim) return; el.classList.remove('a-right', 'a-left', 'a-fade', 'a-up'); void el.offsetWidth; el.classList.add('a-' + anim); }
 // Horizontal swipe → onLeft / onRight; touches starting at the screen edges are left to the phone's back gesture
 function bindSwipe(el, onLeft, onRight) {
-  if (!el) return; let sx = 0, sy = 0, live = false;
+  if (!el || el._swipe) return; el._swipe = true; let sx = 0, sy = 0, live = false;
   el.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; live = sx > 24 && sx < window.innerWidth - 24; }, { passive: true });
   el.addEventListener('touchend', e => { if (!live) return; live = false; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) (dx < 0 ? onLeft : onRight)(); }, { passive: true });
 }
@@ -1594,7 +1684,7 @@ function nav(on) {
   return `<div class="nav">
     <button data-nav="today" class="${on === 'today' ? 'on' : ''}">${ICONS.today}Today</button>
     <button data-nav="cal" class="${on === 'cal' ? 'on' : ''}">${ICONS.cal}Calendar</button>
-    <button data-nav="dash" class="${on === 'dash' ? 'on' : ''}">${ICONS.dash}Dashboard</button>
+    <button data-nav="dash" class="${on === 'dash' ? 'on' : ''}">${ICONS.dash}Progress</button>
     <button data-nav="profile" class="${on === 'profile' ? 'on' : ''}">${ICONS.settings}Settings</button>
   </div>`;
 }
@@ -1607,12 +1697,12 @@ const inp = (k, label, v, step, type) => `<div class="field"><label>${label}</la
 function render(anim) {
   stopTimers();
   if (!S.project) { app.innerHTML = setupHtml(); bindSetup(); animate(app.querySelector('.screen'), anim); return; }
-  const sc = { today: todayHtml, cal: calHtml, dash: dashHtml, profile: profileHtml, workout: workoutHtml, weigh: weighHtml, hang: hangHtml, mt: mtHtml, stretch: stretchHtml, mobility: mobilityHtml, nutrition: nutritionHtml, import: importHtml }[R.screen] || todayHtml;
+  const sc = { today: todayHtml, cal: calHtml, dash: dashHtml, profile: profileHtml, workout: workoutHtml, weigh: weighHtml, hang: hangHtml, mt: mtHtml, stretch: stretchHtml, mobility: mobilityHtml, nutrition: nutritionHtml, import: importHtml, batch: batchHtml }[R.screen] || todayHtml;
   app.innerHTML = sc();
   animate(app.querySelector('.screen'), anim);
   app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (R.screen === b.dataset.nav && !R.stack.length) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
-  const binder = { today: bindToday, cal: bindCal, dash: bindDash, profile: bindProfile, workout: bindWorkout, weigh: bindWeigh, hang: bindHang, mt: bindMT, stretch: bindStretch, mobility: bindMobility, nutrition: bindNutrition, import: bindImport }[R.screen];
+  const binder = { today: bindToday, cal: bindCal, dash: bindDash, profile: bindProfile, workout: bindWorkout, weigh: bindWeigh, hang: bindHang, mt: bindMT, stretch: bindStretch, mobility: bindMobility, nutrition: bindNutrition, import: bindImport, batch: bindBatch }[R.screen];
   if (binder) binder();
 }
 let timers = [];
@@ -1680,7 +1770,7 @@ function bindSetup() {
 
 /* ---------- Today ---------- */
 // Move the viewed day by n (0 = back to today), staying inside the project
-function shiftDay(n) { const p = P(), d = n === 0 ? today() : addDays(R.date, n); if (n !== 0 && (d < p.startDate || d > p.endDate)) return; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; render(dir); window.scrollTo(0, 0); }
+function shiftDay(n) { const p = P(), d = n === 0 ? today() : addDays(R.date, n); if (n !== 0 && (d < p.startDate || d > p.endDate)) return; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; patchToday(dir); }
 function itemSub(date, it) {
   let sub = it.sub; const d = S.days[date] || { done: {} };
   if (it.id === 'weigh') { const r = S.readings[date]; if (r) sub = r.weight + ' kg' + (r.fat ? ' · ' + r.fat + ' % fat' : ''); else { const lr = lastReading('weight', addDays(date, -1)); sub = lr ? 'Last ' + lr.v + ' kg' : 'Log the scale'; } }
@@ -1708,27 +1798,56 @@ function bigBallHtml(cyc) {
   const art = cyc.summonDay ? dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 124 }) : ballSvg({ stars: cyc.star, state: cyc.todayDone ? 'full' : 'hollow', size: 124 });
   return `<div class="bigball" data-bigball><div class="art" id="bigart">${art}</div></div>`;
 }
+// Pieces of the Today screen that change with the viewed day (the band background, arrows and boxes stay put)
+function cycTopHtml(cyc, info, date) {
+  const td = today(), pct = info.t / D() * 100;
+  return `<div class="slot" data-slot><div class="art" id="slotart">${slotArt(cyc)}</div><div class="cap" id="slotcap">${slotCap(cyc)}</div></div>
+        <div class="mid"><div class="c">Cycle ${cyc.num}</div><div class="d">Day ${cyc.cd}/${cyc.days.length}</div><div class="dt">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)}${date === td ? ' · today' : ''}</div></div>
+        <div class="slot"><div class="art">${ringSvg(pct, '#1F6B3F', 84)}</div><div class="cap">${info.phase === 'final' ? 'Final weigh-in' : 'Day ' + info.idx + '/' + D()}</div></div>`;
+}
+function boxClass(x, cyc, td) { return `box ${x.cd === cyc.cd ? 'cur' : ''} ${x.date === td ? 'today' : ''} ${x.date < td || x.date === td ? (x.comp === 'done' ? 'done' : x.comp === 'part' ? 'part' : x.date < td ? 'miss' : '') : ''}`; }
+function boxesHtml(cyc) { const td = today(); return `<i class="cursor" id="cursor"></i>` + cyc.days.map(x => `<button class="${boxClass(x, cyc, td)}" data-goto="${x.date}" title="${x.type.label}">${x.cd}</button>`).join(''); }
+function tagsHtml(cyc, date) { const td = today(), dtp = cyc.type, col = DAYTYPES[dtp.k].color; return `<span class="daytype"><i style="background:${col}"></i>${esc(dtp.label)}</span>${date !== td ? `<button class="pill" data-day="0">↩ Today</button>` : ''}<button class="pill" data-viewcal>View in Calendar</button>`; }
+function listHtml(info, date) {
+  const future = date > today();
+  return `<ul class="todo">${info.items.map(it => {
+    const dn = isDone(date, it.id), tag = it.id === 'workout' ? tagHtml(PROGRAM.workouts[it.key].group, PROGRAM.workouts[it.key].group) : it.id === 'mt' ? tagHtml('mt', 'MT') : '';
+    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}" data-item="${it.id}" data-key="${it.key || ''}"><div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap"><svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg></div><div class="burst">${burstSvg()}</div></li>`;
+  }).join('')}</ul>`;
+}
+// Put the white highlight under the current box; animated = glide there
+function placeCursor(animated) {
+  const cur = app.querySelector('#boxes .box.cur'), c = $('#cursor'); if (!cur || !c) return;
+  if (!animated) c.style.transition = 'none';
+  c.style.left = cur.offsetLeft + 'px'; c.style.width = cur.offsetWidth + 'px';
+  if (!animated) { void c.offsetWidth; c.style.transition = ''; }
+}
+// Day change on the Today screen: the band stays, only the day's content moves (cursor glides, texts fade, list slides)
+function patchToday(dir) {
+  const date = R.date, info = dayInfo(date);
+  if (R.screen !== 'today' || !info.items || !app.querySelector('.band.cyc')) { render(dir); window.scrollTo(0, 0); return; }
+  const cyc = cycleOf(date), top = $('#cyctop'), boxes = $('#boxes'), tags = $('#tags'), list = $('#list'), big = $('#bigwrap');
+  top.innerHTML = cycTopHtml(cyc, info, date); animate(top, 'fade');
+  if (cyc.num !== R._cycNum) { boxes.innerHTML = boxesHtml(cyc); animate(boxes, 'fade'); placeCursor(false); }
+  else { const td = today(); boxes.querySelectorAll('.box').forEach((b, i) => { b.className = boxClass(cyc.days[i], cyc, td); }); placeCursor(true); }
+  tags.innerHTML = tagsHtml(cyc, date); animate(tags, 'fade');
+  list.innerHTML = listHtml(info, date); animate(list, dir);
+  big.innerHTML = bigBallHtml(cyc); animate(big, 'fade');
+  R._cycNum = cyc.num; bindToday(); window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 function todayHtml() {
-  const date = R.date, info = dayInfo(date), p = P(), future = date > today(), td = today();
+  const date = R.date, info = dayInfo(date), p = P(), td = today();
   let body = '', head;
   if (info.phase === 'pre') { head = band(`T-${-info.t}`, 'days to go', null, true); body = `<div class="funline">Day 1 is ${fmtDate(p.startDate)}.</div><button class="btn sec" data-open="weigh">Log a weigh-in</button>`; }
-  else if (info.phase === 'post') { head = band('Finished', fmtDate(p.endDate), null, true); body = `<div class="funline">Finished on ${fmtDate(p.endDate)} — the Dashboard has the verdict.</div><button class="btn" data-newp>Start a new project</button><button class="link" data-nav="profile" style="margin-top:8px">Extend it in Settings</button>`; }
+  else if (info.phase === 'post') { head = band('Finished', fmtDate(p.endDate), null, true); body = `<div class="funline">Finished on ${fmtDate(p.endDate)} — Progress has the verdict.</div><button class="btn" data-newp>Start a new project</button><button class="link" data-nav="profile" style="margin-top:8px">Extend it in Settings</button>`; }
   else {
-    const cyc = cycleOf(date), pct = info.t / D() * 100, dtp = cyc.type, col = DAYTYPES[dtp.k].color;
+    const cyc = cycleOf(date); R._cycNum = cyc.num;
     head = `<div class="band cyc">
-      <div class="cyc-top">
-        <div class="slot" data-slot><div class="art" id="slotart">${slotArt(cyc)}</div><div class="cap" id="slotcap">${slotCap(cyc)}</div></div>
-        <div class="mid"><div class="c">Cycle ${cyc.num}</div><div class="d">Day ${cyc.cd}/${cyc.days.length}</div><div class="dt">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)}${date === td ? ' · today' : ''}</div></div>
-        <div class="slot"><div class="art">${ringSvg(pct, '#1F6B3F', 84)}</div><div class="cap">${info.phase === 'final' ? 'Final weigh-in' : 'Day ' + info.idx + '/' + D()}</div></div>
-      </div>
-      <div class="cstrip"><button class="arrow" data-day="-1" aria-label="Previous day">‹</button>${cyc.days.map(x => `<button class="box ${x.cd === cyc.cd ? 'cur' : ''} ${x.date === td ? 'today' : ''} ${x.date < td || x.date === td ? (x.comp === 'done' ? 'done' : x.comp === 'part' ? 'part' : x.date < td ? 'miss' : '') : ''}" data-goto="${x.date}" title="${x.type.label}">${x.cd}</button>`).join('')}<button class="arrow" data-day="1" aria-label="Next day">›</button></div>
-      <div class="tags"><span class="daytype"><i style="background:${col}"></i>${esc(dtp.label)}</span>${date !== td ? `<button class="pill" data-day="0">↩ Today</button>` : ''}<button class="pill" data-viewcal>View in Calendar</button></div>
+      <div class="cyc-top" id="cyctop">${cycTopHtml(cyc, info, date)}</div>
+      <div class="cstrip"><button class="arrow" data-day="-1" aria-label="Previous day">‹</button><div class="boxes" id="boxes">${boxesHtml(cyc)}</div><button class="arrow" data-day="1" aria-label="Next day">›</button></div>
+      <div class="tags" id="tags">${tagsHtml(cyc, date)}</div>
     </div>`;
-    body = `<ul class="todo">${info.items.map(it => {
-        const dn = isDone(date, it.id), tag = it.id === 'workout' ? tagHtml(PROGRAM.workouts[it.key].group, PROGRAM.workouts[it.key].group) : it.id === 'mt' ? tagHtml('mt', 'MT') : '';
-        return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}" data-item="${it.id}" data-key="${it.key || ''}"><div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap"><svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg></div><div class="burst">${burstSvg()}</div></li>`;
-      }).join('')}</ul>
-      ${bigBallHtml(cyc)}`;
+    body = `<div id="list">${listHtml(info, date)}</div><div id="bigwrap">${bigBallHtml(cyc)}</div>`;
   }
   const last = S.meta.lastBackup ? diffDays(S.meta.lastBackup.slice(0, 10), today()) : null, gst = ghStatus();
   let bk = '';
@@ -1740,7 +1859,8 @@ function bindToday() {
   const date = R.date, future = date > today();
   R._lastDone = dayCompletion(date) === 'done';
   app.querySelectorAll('[data-day]').forEach(b => b.onclick = () => shiftDay(+b.dataset.day));
-  app.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => { const d = b.dataset.goto; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; render(dir); });
+  app.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => { const d = b.dataset.goto; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; patchToday(dir); });
+  placeCursor(false);
   const vc = app.querySelector('[data-viewcal]'); if (vc) vc.onclick = () => { R.calSel = date; R.calMonth = date.slice(0, 7); go('cal'); };
   const np = app.querySelector('[data-newp]'); if (np) np.onclick = startNewProjectFlow;
   if (dayInfo(date).items) bindSwipe(app.querySelector('.screen'), () => shiftDay(1), () => shiftDay(-1));
@@ -1764,6 +1884,7 @@ function refreshCycle(pop) {
   const sa = $('#slotart'), sc = $('#slotcap'), ba = $('#bigart'); if (sa) sa.innerHTML = slotArt(cyc); if (sc) sc.textContent = slotCap(cyc);
   const bb = app.querySelector('[data-bigball]'); if (bb) bb.outerHTML = bigBallHtml(cyc); const bb2 = app.querySelector('[data-bigball]'); if (bb2) bb2.onclick = () => showBalls(R.date);
   const cur = app.querySelector('.cstrip .box.cur'); if (cur) { cur.classList.remove('done', 'part', 'miss'); cur.classList.add(cyc.todayDone ? 'done' : dayCompletion(R.date) === 'part' ? 'part' : 'miss'); }
+  placeCursor(false);
   if (cyc.todayDone && pop && !was) {
     const art = $('#bigart'); if (art) { art.classList.add('pop'); }
     const key = cyc.summonDay ? 'summon' : 'ball', flag = day(R.date).celebrated || {};
@@ -1883,7 +2004,7 @@ async function runFill(file, root, statusEl, expect, onDone) {
     const res = await readImage(file, status);
     if (res.kind !== expect && res.kind !== 'unknown') { status(''); return toast(res.kind === 'scale' ? 'That is a scale card — use Fill from export on the weigh-in screen' : 'That is a MyFitnessPal screenshot — use it on the nutrition screen', 3500); }
     const n = expect === 'scale' ? fillReadingForm(root, res.values || {}) : fillNutritionForm(root, res.values || {});
-    status(n ? 'Filled ' + n + ' of ' + (expect === 'scale' ? 6 : 2) + ' values — check them, then Save' : 'Nothing recognised — is this the right screenshot?');
+    status(n ? 'Filled ' + n + ' of ' + (expect === 'scale' ? 6 : 4) + ' values — check them, then Save' : 'Nothing recognised — is this the right screenshot?');
     if (res.notes && res.notes.length) toast(res.notes[0], 3200);
     onDone && onDone(res);
   } catch (e) { status(''); toast('Could not read the image: ' + (e.message || e), 3500); }
@@ -1906,6 +2027,7 @@ function importHtml() {
   if (kind === 'scale') form = `${dateField}<label style="text-align:center">Weight (kg)</label><input class="big" name="weight" type="number" step="0.1" inputmode="decimal" placeholder="—"><div style="height:14px"></div>
       <div class="row">${inp('fat', 'Body fat %', '')}${inp('muscle', 'Muscle kg', '')}</div><div class="row">${inp('skeletal', 'Skeletal kg', '')}${inp('visceral', 'Visceral', '', 1)}</div><div class="row">${inp('water', 'Water %', '')}<div class="field"></div></div>`;
   else if (kind === 'mfp') form = `${dateField}<div class="row"><div class="field"><label>Calories eaten</label><input name="kcal" type="number" inputmode="numeric"></div><div class="field"><label>Protein (g)</label><input name="protein" type="number" inputmode="numeric"></div></div>
+      <div class="row"><div class="field"><label>Carbs (g)</label><input name="carbs" type="number" inputmode="numeric"></div><div class="field"><label>Fat (g)</label><input name="fat" type="number" inputmode="numeric"></div></div>
       <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" placeholder="${p ? p.bandDefault : ''}"></div>`;
   else if (kind === 'unknown') form = `<div class="muted" style="margin-top:8px">This doesn't look like a Mi Fitness card or a MyFitnessPal screenshot. Try it anyway as:</div><div class="row" style="margin-top:10px"><button class="btn sec" data-as="scale">Weigh-in</button><button class="btn sec" data-as="mfp">Nutrition</button></div>`;
   return `<div class="screen">${topbar('Fill from export', kind === 'scale' ? 'Weigh-in' : kind === 'mfp' ? 'Nutrition' : 'Shared image')}
@@ -1930,7 +2052,7 @@ function bindImport() {
   }
   app.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { R.params.result = Object.assign({}, r, { kind: b.dataset.as, values: r.values || {} }); render(); });
   const n = r.kind === 'scale' ? fillReadingForm(app, r.values || {}) : r.kind === 'mfp' ? fillNutritionForm(app, r.values || {}) : 0;
-  const want = r.kind === 'scale' ? 6 : 2;
+  const want = r.kind === 'scale' ? 6 : 4;
   $('#fillStatus').textContent = r.kind === 'unknown' ? 'Not recognised' : n ? 'Filled ' + n + ' of ' + want + ' values' + (r.date ? ' · ' + fmtShort(r.date) : '') + ' — check them, then Save' : 'Nothing recognised — type the values or Cancel';
   if (r.notes && r.notes.length && !r._noted) { r._noted = true; toast(r.notes[0], 3200); }
   const sv = $('#impSave'); if (!sv) return;
@@ -1944,13 +2066,77 @@ function bindImport() {
     } else {
       if (!o.kcal) return toast('Calories are required');
       const prev = day(date).nutrition || {};
-      day(date).nutrition = { kcal: o.kcal, protein: o.protein, band: o.band == null ? prev.band : o.band, src: 'mfp-shot' };
+      day(date).nutrition = { kcal: o.kcal, protein: o.protein, carbs: o.carbs, fat: o.fat, band: o.band == null ? prev.band : o.band, src: 'mfp-shot' };
       save(); toast(o.kcal + ' kcal saved for ' + fmtShort(date), 2200);
     }
+    if (R.params.row && R.batch) { const row = R.batch.rows[R.params.row.i]; row.status = 'saved'; row.date = date; row.kind = r.kind; row.values = o; row.note = 'edited'; back(); return; }
     R.stack = []; R.date = dayInfo(date).items ? date : today(); go('today', {}, false);
   };
 }
-function fillNutritionForm(root, values) { let n = 0; for (const k of ['kcal', 'protein']) { const el = root.querySelector('[name=' + k + ']'); if (el && values[k] != null) { el.value = values[k]; n++; } } return n; }
+function fillNutritionForm(root, values) { let n = 0; for (const k of ['kcal', 'protein', 'carbs', 'fat']) { const el = root.querySelector('[name=' + k + ']'); if (el && values[k] != null) { el.value = values[k]; n++; } } return n; }
+/* ---------- Read many screenshots at once: each one is logged to the day it shows ---------- */
+function rowSummary(row) {
+  const v = row.values || {};
+  if (row.kind === 'scale') return [v.weight != null ? v.weight + ' kg' : null, v.fat != null ? v.fat + ' % fat' : null, v.muscle != null ? v.muscle + ' kg muscle' : null].filter(Boolean).join(' · ') || 'no values';
+  if (row.kind === 'mfp') return [v.kcal != null ? v.kcal + ' kcal' : null, v.protein != null ? 'P ' + v.protein : null, v.carbs != null ? 'C ' + v.carbs : null, v.fat != null ? 'F ' + v.fat : null].filter(Boolean).join(' · ') || 'no values';
+  return 'not recognised';
+}
+function rowHtml(row) {
+  const chip = row.status === 'saved' ? ['ok', 'Saved'] : row.status === 'check' ? ['warn', 'Check'] : row.status === 'skipped' ? ['muted', 'Skipped'] : ['muted', 'Reading…'];
+  const title = row.status === 'reading' ? 'Reading…' : (row.date ? WD[parse(row.date).getDay()].slice(0, 3) + ' ' + fmtShort(row.date) : 'No date') + (row.kind === 'scale' ? ' · Weigh-in' : row.kind === 'mfp' ? ' · Nutrition' : '');
+  return `<img src="${row.thumb}" alt=""><div class="bi"><div class="t">${esc(title)}</div><div class="s">${esc(row.status === 'reading' ? '' : rowSummary(row) + (row.note ? ' · ' + row.note : ''))}</div></div><span class="chip ${chip[0]}">${chip[1]}</span>`;
+}
+function batchHtml() {
+  const b = R.batch; if (!b || !b.rows.length) return `<div class="screen">${topbar('Read screenshots', '')}<div class="muted">Nothing to read.</div><button class="btn sec" data-back>Back</button></div>`;
+  const saved = b.rows.filter(r => r.status === 'saved').length, done = b.rows.every(r => r.status !== 'reading');
+  return `<div class="screen">${topbar('Read screenshots', done ? saved + ' of ' + b.rows.length + ' logged' : 'Reading ' + b.rows.length + ' images…')}
+    <div class="brows">${b.rows.map(r => `<div class="brow" data-row="${r.i}" id="brow${r.i}">${rowHtml(r)}</div>`).join('')}</div>
+    <div class="muted small" style="margin:8px 0 12px">Tap a row to change the date or the numbers. Screenshots are logged to the day shown on them.</div>
+    <button class="btn" id="batchDone">Done</button></div>`;
+}
+function startBatch(files) {
+  R.batch = { rows: files.map((f, i) => ({ i, file: f, thumb: URL.createObjectURL(f), status: 'reading', kind: null, date: null, values: null, note: '', late: null })), running: false };
+  go('batch', {}, false); runBatch();
+}
+async function runBatch() {
+  const b = R.batch; if (!b || b.running) return; b.running = true;
+  for (const row of b.rows) {
+    if (row.status !== 'reading') continue;
+    try {
+      const res = await readImage(row.file, t => { if (row.status !== 'reading') return; const el = $('#brow' + row.i + ' .s'); if (el) el.textContent = t; });
+      row.kind = res.kind; row.date = res.date; row.values = res.values || {}; row.late = res.late; row.result = res;
+      applyBatchRow(row);
+    } catch (e) { row.status = 'check'; row.note = e.message || 'could not read'; }
+    const el = $('#brow' + row.i); if (el) { el.innerHTML = rowHtml(row); animate(el, 'fade'); }
+    const sub = app.querySelector('.topbar .s'); if (sub) sub.textContent = b.rows.every(r => r.status !== 'reading') ? b.rows.filter(r => r.status === 'saved').length + ' of ' + b.rows.length + ' logged' : 'Reading ' + b.rows.length + ' images…';
+  }
+  b.running = false; if (b.rows.some(r => r.status === 'saved')) { save(); vib(30); }
+}
+// Log one read screenshot: a scale card becomes that day's reading, an MFP screenshot that day's nutrition
+function applyBatchRow(row) {
+  const v = row.values || {}, p = P();
+  if (!row.date) { row.status = 'check'; row.note = 'no date found'; return; }
+  if (row.kind === 'scale') {
+    if (v.weight == null) { row.status = 'check'; row.note = 'no weight read'; return; }
+    const prev = S.readings[row.date]; day(row.date);
+    S.readings[row.date] = { weight: v.weight, fat: v.fat, muscle: v.muscle, skeletal: v.skeletal, visceral: v.visceral, water: v.water, late: row.late != null ? row.late : (prev && prev.late) || false };
+    row.status = 'saved'; row.note = prev ? 'replaced' : (row.result && row.result.notes && row.result.notes.length ? row.result.notes[0] : '');
+  } else if (row.kind === 'mfp') {
+    if (v.kcal == null) { row.status = 'check'; row.note = 'no calories read'; return; }
+    if (v.kcal === 0) { row.status = 'skipped'; row.note = 'nothing logged in MFP yet'; return; }
+    if (p && (row.date < p.startDate || row.date > p.endDate)) { row.status = 'skipped'; row.note = 'outside the project'; return; }
+    const prev = day(row.date).nutrition || {};
+    day(row.date).nutrition = { kcal: v.kcal, protein: v.protein, carbs: v.carbs, fat: v.fat, band: prev.band, src: 'mfp-shot' };
+    row.status = 'saved'; row.note = prev.kcal ? 'replaced' : '';
+  } else { row.status = 'check'; row.note = 'not recognised'; }
+}
+function bindBatch() {
+  const b = R.batch;
+  app.querySelectorAll('[data-row]').forEach(el => el.onclick = () => { const row = b.rows[+el.dataset.row]; if (!row || row.status === 'reading') return; const res = Object.assign({}, row.result || { kind: row.kind || 'unknown', values: row.values || {}, notes: [] }, { date: row.date, kind: row.kind || 'unknown' }); go('import', { file: row.file, result: res, row }); });
+  const dn = $('#batchDone'); if (dn) dn.onclick = () => { b.rows.forEach(r => { try { URL.revokeObjectURL(r.thumb); } catch (e) {} }); R.batch = null; R.stack = []; R.date = today(); go('today', {}, false, 'fade'); };
+  const bk = app.querySelector('[data-back]'); if (bk) bk.onclick = back;
+  if (b && b.rows.some(r => r.status === 'reading')) runBatch();
+}
 /* ---------- Workout ---------- */
 function getSession(date, key) {
   let s = S.sessions.find(x => x.date === date && x.key === key);
@@ -2068,29 +2254,34 @@ function runPlayer(date) {
 function stopPlayer() { player.on = false; if (player.timer) clearInterval(player.timer); player.timer = null; }
 
 /* ---------- Nutrition ---------- */
+function targetHtml(date) { const mt = macroTargets(date); return `<div><div class="v">${mt.kcal}</div><div class="l">kcal</div></div><div><div class="v">${mt.protein}<small>g</small></div><div class="l">protein</div></div><div><div class="v">${mt.carbs}<small>g</small></div><div class="l">carbs</div></div><div><div class="v">${mt.fat}<small>g</small></div><div class="l">fat</div></div>`; }
 function nutritionHtml() {
-  const date = R.params.date || R.date, n = day(date).nutrition || {}, p = P(), nc = nutritionCalc(date), tg = nutritionTarget(date);
+  const date = R.params.date || R.date, n = day(date).nutrition || {}, p = P(), nc = nutritionCalc(date);
   return `<div class="screen">${topbar('Nutrition', fmtDate(date))}
-    <div class="target" id="tgt"><div><div class="v">${tg.kcal}</div><div class="l">kcal to eat</div></div><div><div class="v">${tg.protein} g</div><div class="l">protein</div></div></div>
+    <div class="target" id="tgt">${targetHtml(date)}</div>
     <div class="card">
       <div class="row"><div class="field"><label>Calories eaten</label><input name="kcal" type="number" inputmode="numeric" value="${n.kcal || ''}" autofocus></div><div class="field"><label>Protein (g)</label><input name="protein" type="number" inputmode="numeric" value="${n.protein || ''}"></div></div>
+      <div class="row"><div class="field"><label>Carbs (g)</label><input name="carbs" type="number" inputmode="numeric" value="${n.carbs == null ? '' : n.carbs}"></div><div class="field"><label>Fat (g)</label><input name="fat" type="number" inputmode="numeric" value="${n.fat == null ? '' : n.fat}"></div></div>
       <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" value="${n.band == null ? '' : n.band}" placeholder="${p.bandDefault}"></div>
-      <div id="calc">${nutritionCalcHtml(nc, p)}</div>
+      <div id="calc">${nutritionCalcHtml(nc, p, date)}</div>
     </div>
     <button class="btn sec" data-fill>Fill from export</button><input type="file" accept="image/*" id="fillFile" hidden>
     <div class="muted center" id="fillStatus" style="margin:6px 0 10px;min-height:18px"></div>
     <button class="btn" id="saveN">Save</button></div>`;
 }
-function nutritionCalcHtml(nc, p) {
+function nutritionCalcHtml(nc, p, date) {
   if (!nc) return '';
-  const barW = Math.min(100, nc.prot / p.protein * 100);
-  return `<div class="kv"><span>Balance for the day</span><b class="${nc.cls}">${nc.balance > 0 ? '+' : ''}${nc.balance} kcal</b><span>Protein</span><b class="${nc.ppts === 1 ? 'ok' : nc.ppts ? 'warn' : 'bad'}">${nc.prot} / ${p.protein} g</b></div>
-    <div style="height:10px;background:#EADFCF;border:1.5px solid var(--ink);border-radius:5px;overflow:hidden;margin:4px 0 10px"><div style="width:${barW}%;height:100%;background:${nc.ppts === 1 ? 'var(--ok)' : 'var(--or)'}"></div></div>
+  const mt = macroTargets(date), n = day(date).nutrition || {};
+  const bar = (have, want, cls) => `<div style="height:8px;background:#EADFCF;border:1.5px solid var(--ink);border-radius:4px;overflow:hidden;margin:2px 0 8px"><div style="width:${Math.min(100, (have || 0) / want * 100)}%;height:100%;background:var(--${cls})"></div></div>`;
+  const macro = (k, lab, want, tolPct) => { const have = n[k] == null || n[k] === '' ? null : +n[k]; if (have == null) return ''; const off = Math.abs(have - want) / want; const cls = off <= tolPct ? 'ok' : off <= tolPct * 2 ? 'warn' : 'bad'; return `<div class="kv" style="margin:0"><span>${lab}</span><b class="${cls}">${have} / ${want} g</b></div>${bar(have, want, cls === 'ok' ? 'ok' : 'or')}`; };
+  return `<div class="kv"><span>Balance for the day</span><b class="${nc.cls}">${nc.balance > 0 ? '+' : ''}${nc.balance} kcal</b></div>
+    <div class="kv" style="margin:0"><span>Protein</span><b class="${nc.ppts === 1 ? 'ok' : nc.ppts ? 'warn' : 'bad'}">${nc.prot} / ${p.protein} g</b></div>${bar(nc.prot, p.protein, nc.ppts === 1 ? 'ok' : 'or')}
+    ${macro('carbs', 'Carbs', mt.carbs, .15)}${macro('fat', 'Fat', mt.fat, .2)}
     <div class="${nc.cls}" style="font-weight:800">${esc(nc.verdict)}</div>`;
 }
 function bindNutrition() {
   const date = R.params.date || R.date;
-  const upd = () => { const o = readForm(app); day(date).nutrition = { kcal: o.kcal, protein: o.protein, band: o.band }; $('#calc').innerHTML = nutritionCalcHtml(nutritionCalc(date), P()); const tg = nutritionTarget(date); $('#tgt .v').textContent = tg.kcal; };
+  const upd = () => { const o = readForm(app), prev = day(date).nutrition || {}; day(date).nutrition = { kcal: o.kcal, protein: o.protein, carbs: o.carbs, fat: o.fat, band: o.band, src: prev.src }; $('#calc').innerHTML = nutritionCalcHtml(nutritionCalc(date), P(), date); $('#tgt').innerHTML = targetHtml(date); };
   app.querySelectorAll('input').forEach(i => i.oninput = upd);
   const ff = $('#fillFile'); app.querySelector('[data-fill]').onclick = () => ff.click();
   ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, app, $('#fillStatus'), 'mfp', () => upd()); ff.value = ''; };
@@ -2153,9 +2344,16 @@ function dashHtml() {
       <div><div class="v">${sc.kcalPerKg == null ? '—' : sc.kcalPerKg.toLocaleString() + ' kcal'}</div><div class="l">${sc.kcalPerKg == null ? 'cost of 1 kg lost — shows after the first 0.5 kg' : 'cost of 1 kg lost · plan 7,700'}</div></div>
       <div><div class="v">${Math.min(ph.endMin, ph.endMax).toFixed(1)}–${Math.max(ph.endMin, ph.endMax).toFixed(1)} kg</div><div class="l">where physiology lands you on ${fmtShort(p.endDate)} if the deficit holds · plan ${ph.planEnd}</div></div>
     </div></div>`;
-  return `<div class="screen">${band('Dashboard', '')}
-    <div class="avatar" data-avatar>${heroSvg({ level: fs.level, slim, size: 124 })}<div><div class="score">${fs.score}</div><div class="lvl">${fs.name}</div><div class="muted small">Tap for details</div></div></div>
+  const sg = signals(date), mt = macroTargets(date), ia = intakeAverage(date, 7);
+  const sigs = sg.list.length ? `<div class="sigs">${sg.list.map(x => `<span class="sig ${x.state}"><b>${x.arrow}</b>${esc(x.label)} <span class="v">${esc(x.value)}</span>${x.delta ? `<small>${esc(x.delta)}</small>` : ''}</span>`).join('')}</div>` : '<div class="muted small" style="margin-top:6px">Log a weigh-in or a workout and the movers show up here.</div>';
+  const macroRow = (k, lab) => { const have = ia ? ia[k] : null, want = mt[k]; const pct = have == null ? 0 : Math.min(100, have / want * 100); return `<div class="mrow"><span class="l">${lab}</span><div class="bar"><i style="width:${pct}%"></i></div><span class="n">${have == null ? '—' : have}<small> / ${want}${k === 'kcal' ? '' : ' g'}</small></span></div>`; };
+  const nutri = `<div class="card"><div class="hd"><span class="cond" style="font-size:16px">${ia ? 'Last ' + ia.days + (ia.days === 1 ? ' day' : ' days') + ' · average' : 'Nothing logged yet'}</span><span class="muted">targets today</span></div>
+      ${macroRow('kcal', 'kcal')}${macroRow('protein', 'Protein')}${macroRow('carbs', 'Carbs')}${macroRow('fat', 'Fat')}
+      <div class="muted small" style="margin-top:8px">Protein ${mt.perKg.protein} g/kg · fat ${mt.perKg.fat} g/kg (floor 0.5) · carbs take the rest and rise on days with more band kcal.</div></div>`;
+  return `<div class="screen">${band('Progress', '')}
+    <div class="avatar progress" data-avatar>${heroSvg({ level: fs.level, slim, size: 84 })}<div class="pr"><div class="top"><span class="score">${fs.score == null ? '—' : fs.score}</span><span class="lvl">${esc(fs.name)}</span></div><div class="why">${esc(fs.why)}</div>${sigs}<div class="muted small" style="margin-top:6px">Tap for details</div></div></div>
     <div class="sec-h">Body</div>${body}
+    <div class="sec-h">Nutrition</div>${nutri}
     <div class="sec-h">Training</div>
     <div class="tabs">${Object.keys(groups).map(k => `<button data-tab="${k}" class="${R.tab === k ? 'on' : ''}">${groups[k]}</button>`).join('')}</div>
     <div id="training">${R.tab !== 'other' ? groupBar(R.tab, date) : ''}${logged.map(n => exerciseBar(n, date)).join('')}${other}
@@ -2169,7 +2367,12 @@ function bindDash() {
   const mb = app.querySelector('[data-more]'); if (mb) mb.onclick = () => { R.moreBody = !R.moreBody; $('#morebody').classList.toggle('open', R.moreBody); mb.textContent = R.moreBody ? 'Hide skeletal & visceral' : 'Show skeletal & visceral'; };
   app.querySelectorAll('[data-metric]').forEach(el => el.onclick = () => metricTooltip(el.dataset.metric, date));
   app.querySelectorAll('[data-ex]').forEach(el => el.onclick = () => exerciseExpand(el.dataset.ex, date));
-  $('[data-avatar]').onclick = () => { const fs = fitnessScore(date); modal(`<h3>What moved the needle</h3><div class="cond" style="font-size:18px">${fs.score} (${fs.name})</div><div class="kv" style="margin-top:10px">${fs.parts.map(p => `<span>${esc(p.label)}<br><span class="muted small">${esc(p.note)}</span></span><b class="${p.v >= 80 ? 'ok' : p.v >= 50 ? 'warn' : 'bad'}" style="text-align:right">${p.v}<br><span class="muted small" style="font-weight:400">${levelName(p.v)}</span></b>`).join('')}</div><button class="btn sec" data-close>Close</button>`); };
+  $('[data-avatar]').onclick = () => { const fs = fitnessScore(date), sg = signals(date);
+    modal(`<h3>Progress ${fs.score == null ? '' : fs.score}</h3><div class="muted">${esc(fs.why)}</div>
+      <div class="kv" style="margin:14px 0 6px">${fs.parts.map(p => `<span><b style="font-weight:700">${esc(p.label)}</b><br><span class="muted small">${esc(p.text)}</span></span><span class="chip ${p.cls === 'ok' ? 'ok' : p.cls === 'warn' ? 'warn' : 'muted'}">${esc(p.status || '—')}</span>`).join('')}</div>
+      ${sg.all.length ? `<div class="eyebrow" style="margin-top:14px">Last 7 days</div><div class="kv">${sg.all.map(x => `<span>${esc(x.label)}<br><span class="muted small">${esc(x.value)}${x.delta ? ' · ' + esc(x.delta) : ''}</span></span><b class="${x.state === 'good' ? 'ok' : x.state === 'bad' ? 'bad' : 'warn'}" style="font-size:18px">${x.arrow}</b>`).join('')}</div>` : ''}
+      <div class="muted small" style="margin-top:12px">Score = body on plan (50 %) + strength held (30 %) + perfect days (20 %). Green ↓ on things that should fall and green ↑ on things that should rise; yellow ● means no real change this week.</div>
+      <button class="btn sec" data-close>Close</button>`); };
 }
 function metricTooltip(id, date) {
   const st = metricStatus(id, date), def = st.def, u = def.unit === '%' ? ' %' : def.unit ? ' ' + def.unit : '';
@@ -2233,6 +2436,8 @@ function profileHtml() {
     <div class="card"><h3>Backup file</h3><div class="muted" style="margin:0 0 10px">${S.meta.lastBackup ? 'Last file backup ' + fmtDate(S.meta.lastBackup.slice(0, 10)) : 'No file backup yet.'}</div>
       <div class="row"><button class="btn" data-backup>Backup now</button><button class="btn sec" data-restore>Restore</button></div><input type="file" accept="application/json,.json" id="restoreFile" style="display:none">
       <button class="link" data-csv style="margin-top:6px">Export readings as CSV</button></div>
+    <div class="card"><h3>Screenshots</h3><div class="muted" style="margin:0 0 10px">Share one or many screenshots from the Xiaomi or MyFitnessPal app to Trening, or pick them here. Each one is logged to the day it shows — Today, Tomorrow or the date in its header — so food can be logged days ahead.</div>
+      <button class="btn sec" data-shots>Read screenshots</button><input type="file" accept="image/*" multiple id="shotFiles" style="display:none"></div>
     <div class="card"><h3>MyFitnessPal</h3><div class="muted" style="margin:0 0 10px">Daily: screenshot MFP's Today screen and share it to Trening. Catching up: MFP → More → Settings → File export emails you a zip — read it here and every unlogged day gets its calories and protein.</div>
       <button class="btn sec" data-mfp>Read from MFP export</button><input type="file" accept=".zip,.csv,application/zip,application/x-zip-compressed,text/csv" id="mfpFile" style="display:none"></div>
     <div class="card"><div class="hd"><h3>App</h3><span class="muted">v${APP_VERSION}</span></div>
@@ -2286,6 +2491,8 @@ function bindCloud() {
 }
 function bindProfile() {
   bindCloud();
+  const sf = $('#shotFiles'); app.querySelector('[data-shots]').onclick = () => sf.click();
+  sf.onchange = () => { const files = Array.from(sf.files || []); sf.value = ''; if (!files.length) return; if (files.length === 1) go('import', { file: files[0] }); else startBatch(files); };
   const mf = $('#mfpFile'); app.querySelector('[data-mfp]').onclick = () => mf.click();
   mf.onchange = async () => {
     const f = mf.files && mf.files[0]; mf.value = ''; if (!f) return;
@@ -2344,9 +2551,11 @@ window.addEventListener('popstate', () => {
   await load();
   const start = () => { R.date = today(); render(); };
   // An image shared from the Xiaomi app arrives through the service worker (see sw.js) as ?share=1
-  let shared = null;
-  if (/[?&]share=1/.test(location.search)) { try { history.replaceState(null, '', './'); const c = await caches.open('vikac-share'); const r = await c.match('shared-image'); if (r) { shared = await r.blob(); await c.delete('shared-image'); } } catch (e) {} }
-  if (shared && S.project) { R.stack = []; go('import', { file: shared }, false); } else start();
+  let shared = [];
+  if (/[?&]share=1/.test(location.search)) { try { history.replaceState(null, '', './'); const c = await caches.open('vikac-share'); const keys = (await c.keys()).sort((a, b) => a.url < b.url ? -1 : 1); for (const k of keys) { const r = await c.match(k); if (r) shared.push(await r.blob()); await c.delete(k); } } catch (e) {} }
+  if (shared.length === 1 && S.project) { R.stack = []; go('import', { file: shared[0] }, false); }
+  else if (shared.length > 1 && S.project) { R.stack = []; startBatch(shared); }
+  else start();
   document.addEventListener('visibilitychange', () => { if (!document.hidden && R.screen === 'today' && R.date !== today() && R.stack.length === 0) { R.date = today(); render(); } });
   armBack();
   if (ghOn() && GH.pending) setTimeout(() => syncNow({ quiet: true }), 2500);
