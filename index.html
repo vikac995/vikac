@@ -42,6 +42,31 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 input.big{font-family:'Bangers',Impact,sans-serif;font-size:34px;letter-spacing:.04em;padding:6px 14px;text-align:center}
 label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:13px;color:var(--ink2);margin:0 0 4px}
 .field{margin-bottom:12px}
+/* tips */
+.sc-top{align-items:center}.sc-top>span:first-child{opacity:.75}
+.sc-top .tips{font-family:'BarlowC',sans-serif;font-weight:700;letter-spacing:.12em;font-size:13px;border-radius:7px;padding:3px 9px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;position:relative;z-index:4}
+.sc-top .tips.none{color:#d9ffcb;background:rgba(0,0,0,.25);border:1.5px solid rgba(180,255,150,.45)}
+.sc-top .tips.new{color:#1B1B1B;background:#FFD84D;border:2px solid #1B1B1B;box-shadow:0 0 0 3px rgba(255,216,77,.35),0 0 14px rgba(255,216,77,.9);animation:tipPulse 1.1s ease-in-out infinite}
+.sc-top .tips.seen{color:#FFD84D;background:rgba(0,0,0,.25);border:1.5px solid #FFD84D}
+.sc-top .tips i{font-style:normal;display:inline-flex;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center;font-size:11px;font-family:Georgia,serif;font-weight:700}
+.sc-top .tips.none i{border:1.5px solid #d9ffcb}.sc-top .tips.new i{background:#1B1B1B;color:#FFD84D}.sc-top .tips.seen i{border:1.5px solid #FFD84D}
+@keyframes tipPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 3px rgba(255,216,77,.35),0 0 10px rgba(255,216,77,.7)}50%{transform:scale(1.06);box-shadow:0 0 0 5px rgba(255,216,77,.25),0 0 22px rgba(255,216,77,1)}}
+.nav button[data-nav=dash]{position:relative}
+.nbadge{position:absolute;top:2px;left:calc(50% + 6px);min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#E03A2F;color:#fff;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;line-height:16px;border:2px solid #fff;box-shadow:0 0 0 1.5px #1B1B1B;letter-spacing:0;text-align:center;box-sizing:border-box}
+.tiphd{display:flex;justify-content:space-between;align-items:baseline}.tiphd .link{margin:0}
+.tipwrap{position:relative;margin-bottom:10px;border-radius:10px}.tipwrap.sw{overflow:hidden}
+.tipwrap .under{position:absolute;inset:0;border-radius:10px;background:#E03A2F;color:#fff;display:none;align-items:center;justify-content:flex-end;padding-right:18px;font-family:'BarlowC',sans-serif;font-weight:700;letter-spacing:.06em}.tipwrap.sw .under{display:flex}
+.tip{position:relative;z-index:1;border:2px solid var(--ink);border-radius:10px;padding:10px 40px 10px 12px;background:#FFF6EA;touch-action:pan-y}
+.tip .x{position:absolute;right:8px;top:8px;width:26px;height:26px;border-radius:50%;border:1.5px solid var(--ink);background:#fff;font-weight:700;line-height:20px;text-align:center;font-size:15px;padding:0;color:var(--ink)}
+.hist{border:1.5px solid #CFC4B5;border-radius:10px;padding:9px 12px;margin-bottom:8px;background:#fff}
+.hist .meta{display:flex;justify-content:space-between;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:#8A8078;margin-bottom:3px}
+.hist .st{border-radius:5px;padding:0 6px}.hist .st.d{background:#EEE7DD;color:#6E645A}.hist .st.a{background:#FFE8A3;color:#6A5000}.hist .st.r{background:var(--oksoft);color:var(--ok)}
+.hist .tx{font-size:13.5px;line-height:1.4;color:#3A332D}.hist .h{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:15px;color:var(--ink)}
+.sec2{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:12px;color:#8A8078;margin:14px 0 8px}
+/* workout header: vibration toggle */
+.wohd{display:flex;align-items:center;gap:12px}
+.vibt{width:40px;height:40px;border-radius:10px;border:2px solid #B9B0A5;background:#F1ECE5;color:#A39A8F;display:flex;align-items:center;justify-content:center;padding:0}
+.vibt.on{border-color:var(--ink);background:var(--or);color:#fff;box-shadow:2px 2px 0 var(--ink)}
 .bandsync{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px}.bandsync .link{margin:0;white-space:nowrap}
 .bandtoday .btiles{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}
 .bandtoday .bt{background:var(--paper2);border:1.5px solid var(--ink);border-radius:9px;padding:7px 4px;text-align:center}
@@ -91,6 +116,7 @@ input::placeholder{color:#c4bbb1}
 .collapse.open{grid-template-rows:1fr}
 .collapse>div{overflow:hidden;min-height:0}
 #player{display:contents}
+@media (prefers-reduced-motion:reduce){.sc-top .tips.new{animation:none}}
 @media (prefers-reduced-motion:reduce){.a-right,.a-left,.a-fade,.a-up,.modalbg,.modal,.toast,.dragon,.dglow,.dragonimg,.herostack img,.badge{animation:none!important}.collapse{transition:none}}
 @keyframes snap{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 /* header band */
@@ -461,6 +487,31 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 .target .v{font-family:'Bangers',Impact,sans-serif;font-size:26px;letter-spacing:.04em;line-height:1;color:var(--or2)}
 .target .v small{font-size:14px;margin-left:1px}
 .target .l{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:12px;color:var(--ink2)}
+/* compact pinned Today header */
+.band.cyc{position:sticky;top:0;z-index:15;padding:calc(8px + var(--sat)) 12px 16px;margin-bottom:10px}
+.band.cyc .cyc-top .slot{width:68px}.band.cyc .cyc-top .slot .art{width:56px;height:56px}
+.band.cyc .cyc-top .slot .cap{font-size:10.5px;margin-top:2px}
+.band.cyc .cyc-top .mid .c{font-size:28px}.band.cyc .cyc-top .mid .d{font-size:21px;margin-top:1px}.band.cyc .cyc-top .mid .dt{font-size:11.5px;margin-top:2px}
+.band.cyc .cstrip{margin-top:8px;gap:4px}.band.cyc .cstrip .arrow{width:28px;height:28px;font-size:15px}.band.cyc .cstrip .boxes{gap:4px}.band.cyc .cstrip .box,.band.cyc .cstrip .cursor{width:26px;height:26px;font-size:12px}
+.band.cyc .tags{margin-top:8px;gap:6px}.band.cyc .tags .pill,.band.cyc .tags .daytype{font-size:12px;padding:4px 10px}
+.tro{width:15px;height:15px;vertical-align:-2px;flex:none}
+.pbtag{display:inline-flex;align-items:center;gap:3px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;letter-spacing:.06em;background:#FFE9A6;color:#6B4A00;border:1.5px solid #B7860B;border-radius:6px;padding:0 6px 0 4px;line-height:18px;vertical-align:1px}
+.last .pbtag{margin:0 4px 0 10px}.last .pbv{display:inline-block}
+.pbv.bump{animation:pbBump .5s ease-out}@keyframes pbBump{0%{transform:scale(1)}40%{transform:scale(1.25);color:#B7860B}100%{transform:scale(1)}}
+.ex{position:relative}
+.pbpop{position:absolute;z-index:6;pointer-events:none;display:inline-flex;align-items:center;gap:5px;font-family:'Bangers',Impact,sans-serif;font-size:19px;letter-spacing:.05em;color:#1B1B1B;background:linear-gradient(#FFE27A,#F5B90F);border:2px solid #1B1B1B;border-radius:9px;padding:2px 10px 1px 7px;box-shadow:2px 2px 0 #1B1B1B,0 0 14px rgba(245,185,15,.8);animation:pbPop 1.7s ease-out forwards}
+.pbpop .tro{width:19px;height:19px}
+@keyframes pbPop{0%{opacity:0;transform:translateY(8px) scale(.6) rotate(-4deg)}14%{opacity:1;transform:translateY(0) scale(1.15) rotate(-4deg)}24%{transform:scale(1) rotate(-4deg)}78%{opacity:1;transform:translateY(-2px) rotate(-4deg)}100%{opacity:0;transform:translateY(-12px) rotate(-4deg)}}
+.reccard .rechd{display:flex;align-items:center;gap:8px;font-family:'Bangers',Impact,sans-serif;font-size:26px;letter-spacing:.04em;color:#B7860B;-webkit-text-stroke:.6px #6B4A00;line-height:1}.reccard .rechd .tro{width:30px;height:30px}
+.reccard .rtabs{display:flex;gap:6px;margin:12px 0 4px;background:#F3ECE2;border-radius:10px;padding:4px}
+.reccard .rtabs button{flex:1;text-align:center;font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px;padding:7px 0;border-radius:8px;color:#8A8078;background:none;border:2px solid transparent}
+.reccard .rtabs button.on{background:#fff;color:var(--ink);border-color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.reccard .row2{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;border-top:1px dashed #E3D7C6}.reccard .grp+.row2{border-top:0}
+.reccard .nm{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:15px}.reccard .v{font-family:'BarlowC',sans-serif;font-weight:700;font-size:16px;text-align:right;white-space:nowrap}
+.reccard .sub{font-size:12px;color:#8A8078;font-family:Inter,sans-serif;font-weight:400;text-transform:none;letter-spacing:0}
+.reccard .grp{font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;color:#8A8078;text-transform:uppercase;margin:12px 0 2px}
+.reccard .new{display:inline-block;font-size:11px;background:#FFE9A6;color:#6B4A00;border:1.5px solid #B7860B;border-radius:5px;padding:0 5px;margin-left:5px;vertical-align:2px}
+.reccard .top{background:#FFF6E0;border:1.5px solid #E7C76A;border-radius:10px;padding:8px 12px;margin:10px 0 4px;display:flex;justify-content:space-between;align-items:baseline}
 </style>
 </head>
 <body>
@@ -468,7 +519,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.9.3';
+const APP_VERSION = '3.1.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -601,6 +652,7 @@ function idbGet() {
 function idbPut(v) { try { if (idb) idb.transaction('kv', 'readwrite').objectStore('kv').put(v, 'state'); } catch (e) {} }
 /* ---------- Band sync: Xiaomi band → Mi Fitness → Health Connect → HC Webhook → Cloudflare inbox → here ---------- */
 const BAND_LS = 'vikac.band';
+const MT_TYPES = /box|martial|kick|muay|thai/i;
 function bandCfg() { try { return JSON.parse(localStorage.getItem(BAND_LS) || 'null'); } catch (e) { return null; } }
 function bandSetCfg(c) { try { if (c) localStorage.setItem(BAND_LS, JSON.stringify(c)); else localStorage.removeItem(BAND_LS); } catch (e) {} }
 function bandDay(date) { return S.health && S.health.days && S.health.days[date] || null; }
@@ -620,8 +672,11 @@ async function bandFetch() {
     const j = await r.json(), before = JSON.stringify(S.health && S.health.days || {});
     S.health = S.health || { days: {} }; Object.assign(S.health.days, j.days || {}); S.health.last = j.last || S.health.last; S.health.fetched = new Date().toISOString();
     // a boxing / martial-arts / kickboxing session of 20+ min recorded by the band ticks that day's Muay Thai
+    // Muay Thai days: the minutes come from the band's boxing / martial-arts sessions, unless typed by hand
     for (const d in j.days || {}) { if (!P() || d < P().startDate || d > P().endDate) continue; const info = dayInfo(d); if (!info.items || !info.items.some(it => it.id === 'mt')) continue;
-      if ((j.days[d].workouts || []).some(w => /box|martial|kick|muay|thai/i.test(w.type) && w.min >= 20) && !day(d).done.mt) day(d).done.mt = true; }
+      const min = (j.days[d].workouts || []).filter(w => MT_TYPES.test(w.type || '')).reduce((a, w) => a + (+w.min || 0), 0); if (!min) continue;
+      const cur = day(d).mt; if (cur && cur.minutes && cur.src !== 'band') continue; if (cur && cur.src === 'band' && +cur.minutes === min) continue;
+      day(d).mt = { minutes: min, note: cur ? cur.note : '', src: 'band' }; }
     const changed = JSON.stringify(S.health.days) !== before; save(); return { ok: true, changed, last: S.health.last };
   } catch (e) { return { ok: false, error: 'Inbox not reachable' }; }
 }
@@ -651,9 +706,9 @@ async function load() {
 
 /* ---------- Projects: the live one plus past ones, each a self-contained bundle ---------- */
 function ensureArchive() { if (!Array.isArray(S.archive)) S.archive = []; }
-function bundleCurrent() { return { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), project: S.project, days: S.days, readings: S.readings, sessions: S.sessions, targets: S.targets, archivedAt: new Date().toISOString(), summary: projectSummary() }; }
-function loadBundle(b) { S.project = b.project; S.days = b.days || {}; S.readings = b.readings || {}; S.sessions = b.sessions || []; S.targets = b.targets || {}; }
-function clearLive() { S.project = null; S.days = {}; S.readings = {}; S.sessions = []; S.targets = {}; }
+function bundleCurrent() { return { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), project: S.project, days: S.days, readings: S.readings, sessions: S.sessions, targets: S.targets, tips: S.tips || { log: [] }, archivedAt: new Date().toISOString(), summary: projectSummary() }; }
+function loadBundle(b) { S.project = b.project; S.days = b.days || {}; S.readings = b.readings || {}; S.sessions = b.sessions || []; S.targets = b.targets || {}; S.tips = b.tips || { log: [] }; }
+function clearLive() { S.project = null; S.days = {}; S.readings = {}; S.sessions = []; S.targets = {}; S.tips = { log: [] }; }
 // Park the live project under past projects (with everything logged) and leave the app ready for a new one
 function archiveCurrent() { ensureArchive(); if (!S.project) return null; const b = bundleCurrent(); S.archive.unshift(b); clearLive(); return b; }
 // Make a past project live again; the current live one (if any) is parked in its place
@@ -976,6 +1031,60 @@ function exerciseHistory(name) {
 }
 function allExerciseNames(group) { const set = []; for (const k in PROGRAM.workouts) { const w = PROGRAM.workouts[k]; if (group && w.group !== group) continue; for (const e of w.ex) if (!set.includes(e.n)) set.push(e.n); } return set; }
 
+/* ---------- Records: personal bests and highest volume, across every project (live + past) ----------
+   PB: heaviest weight in a set; bodyweight exercises (pull-ups, chins, push-ups, dips — weighted or not) and the 5-min
+   finishers count most reps. Volume: most kg moved in one session (sets × reps × kg); bodyweight: most reps in one session. */
+function allBundles() { ensureArchive(); return [{ id: 'live', project: S.project, sessions: S.sessions, days: S.days, readings: S.readings }].concat(S.archive.map(b => ({ id: b.id, project: b.project, sessions: b.sessions || [], days: b.days || {}, readings: b.readings || {}, tips: b.tips, targets: b.targets }))); }
+function allSessions() { const out = []; for (const b of allBundles()) for (const x of b.sessions || []) out.push(x); return out; }
+function isBW(name) { return (EQUIP[name] || '').split(' ').includes('bw'); }
+function pbKind(name, type) { return type === 'max' ? 'reps' : isBW(name) ? 'setreps' : 'kg'; }
+function entryPB(e, type, kind) {   // the record value of one logged exercise entry, or 0
+  if (!e) return 0; kind = kind || pbKind(e.n, type);
+  if (kind === 'reps') return +e.reps || 0;
+  let best = 0; for (const st of e.sets || []) { const kg = +st.kg || 0, r = +st.reps || 0; if (!r) continue; const v = kind === 'setreps' ? r : kg; if (v > best) best = v; }
+  return best;
+}
+function entryVolume(e, type) { if (!e || type === 'max') return 0; const bw = isBW(e.n); let v = 0; for (const st of e.sets || []) { const r = +st.reps || 0; if (r) v += bw ? r : r * (+st.kg || 0); } return v; }
+function typeIn(s, name) { const w = PROGRAM.workouts[s.key]; const d = w && w.ex.find(x => x.n === name); return d ? d.type : exType(name); }
+// Best value for one exercise (and type family: 'max' vs sets), optionally ignoring one session
+function exPB(name, type, excludeId) {
+  const fam = type === 'max'; let best = null;
+  for (const s of allSessions()) { if (s.id === excludeId) continue; const e = (s.ex || []).find(x => x.n === name); if (!e) continue; const t = typeIn(s, name); if ((t === 'max') !== fam) continue;
+    const v = entryPB(e, t); if (v > 0 && (!best || v > best.v || (v === best.v && s.date < best.date))) best = { v, date: s.date }; }
+  return best;
+}
+function fmtPB(name, type, v) { const k = pbKind(name, type); return k === 'kg' ? (+v).toLocaleString('en-US') + ' kg' : v + ' reps'; }
+function fmtSecs(sec) { sec = Math.round(+sec || 0); return sec >= 60 ? Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0') : sec + ' s'; }
+function hangPB() { let best = null; for (const b of allBundles()) for (const d in b.days || {}) { const h = b.days[d].hang; if (h && +h.best > 0 && (!best || +h.best > best.v)) best = { v: +h.best, date: d }; } return best; }
+// Run fn with a past project temporarily live (for day-based numbers like streaks), then restore
+function withBundle(b, fn) {
+  if (b.id === 'live') return fn(); const keep = { project: S.project, days: S.days, readings: S.readings, sessions: S.sessions, targets: S.targets, tips: S.tips };
+  try { S.project = b.project; S.days = b.days || {}; S.readings = b.readings || {}; S.sessions = b.sessions || []; S.targets = b.targets || {}; S.tips = b.tips || { log: [] }; return fn(); }
+  finally { Object.assign(S, keep); }
+}
+function longestStreak() {
+  let best = null;
+  for (const b of allBundles()) { if (!b.project) continue; withBundle(b, () => { const p = P(), last = today() < p.endDate ? today() : p.endDate; let run = 0;
+    for (let i = 0; i <= D(); i++) { const d = addDays(p.startDate, i); if (d > last) break; if (dayCompletion(d) === 'done') { run++; if (!best || run > best.v) best = { v: run, date: d }; } else if (d !== today()) run = 0; } }); }
+  return best;
+}
+function lowestWeight12m() { const from = addDays(today(), -365); let best = null; for (const b of allBundles()) for (const d in b.readings || {}) { const w = +(b.readings[d] || {}).weight; if (d >= from && w > 0 && (!best || w < best.v)) best = { v: w, date: d }; } return best; }
+function records() {
+  const groups = [['push', 'Push'], ['pull', 'Pull'], ['legs', 'Legs']], pb = [], vol = [], recent = addDays(today(), -7);
+  for (const [g, gl] of groups) for (const name of allExerciseNames(g)) {
+    const types = new Set(); for (const k in PROGRAM.workouts) { const w = PROGRAM.workouts[k]; if (w.group !== g) continue; const d = w.ex.find(x => x.n === name); if (d) types.add(d.type === 'max' ? 'max' : 'sets'); }
+    const both = types.size > 1;
+    for (const fam of types) { const t = fam === 'max' ? 'max' : 'main', r = exPB(name, t); if (r) pb.push({ group: gl, name: name + (both && fam === 'max' ? ' (5 min)' : ''), v: fmtPB(name, t, r.v), isNew: r.date > recent });
+      if (fam === 'sets') { let bv = null; for (const s of allSessions()) { const e = (s.ex || []).find(x => x.n === name); if (!e || typeIn(s, name) === 'max') continue; const v = entryVolume(e, typeIn(s, name)); if (v > 0 && (!bv || v > bv.v)) bv = { v, date: s.date }; }
+        if (bv) vol.push({ group: gl, name, v: isBW(name) ? bv.v + ' reps' : Math.round(bv.v).toLocaleString('en-US') + ' kg', isNew: bv.date > recent }); } }
+  }
+  const h = hangPB(); if (h) pb.push({ group: 'Other', name: 'Dead hang', v: fmtSecs(h.v), isNew: h.date > recent });
+  const st = longestStreak(); if (st && st.v) pb.push({ group: 'Other', name: 'Longest perfect streak', v: st.v + (st.v === 1 ? ' day' : ' days') });
+  const lw = lowestWeight12m(); if (lw) { const [y, m, d] = lw.date.split('-'); pb.push({ group: 'Body', name: 'Lowest weight', sub: 'past 12 months', v: lw.v.toFixed(1) + ' kg (' + d + '/' + m + '/' + y.slice(2) + ')' }); }
+  let big = null; for (const s of allSessions()) { let v = 0; for (const e of s.ex || []) if (!isBW(e.n)) v += entryVolume(e, typeIn(s, e.n)); if (v > 0 && (!big || v > big.v)) big = { v, date: s.date, name: (PROGRAM.workouts[s.key] || {}).name || 'Workout' }; }
+  return { pb, vol, big };
+}
+
 /* ---------- Fitness score ---------- */
 // Progress score 0–100 (drives the character's level): body on plan 50 %, strength held 30 %, perfect days 20 %.
 // Parts are explained in words with the real numbers; anything without data is left out instead of guessed.
@@ -1108,6 +1217,42 @@ function tdeeEstimate(date, windowDays) {
   const meanIntake = intake / n, tdee = meanIntake - fit.slope * 7700;
   return { ok: true, days: n, tdee: Math.round(tdee), assumed: Math.round(p.bmr + bandSum / n), meanIntake: Math.round(meanIntake), slopeWeek: fit.slope * 7 };
 }
+
+/* ---------- Tips: suggestions built from the data; each has a stable id so a dismissed tip stays dismissed
+   until its numbers change. S.tips.log keeps every tip of the project (status active / dismissed / resolved). ---------- */
+function computeTips(date) {
+  const p = P(), out = [], t = tOf(date); if (!p || t < 0) return out;
+  const r10 = v => Math.round(v / 10) * 10;
+  // 1. real burn vs the plan (needs 10+ logged days and a weight trend)
+  const te = tdeeEstimate(date);
+  if (te.ok) { const diff = te.tdee - te.assumed;
+    if (Math.abs(diff) >= 150) { const bandAvg = te.assumed - p.bmr, aim = r10(te.tdee - p.deficit);
+      out.push({ id: 'kcal:' + Math.round(diff / 100), h: 'Calories', text: `Your real burn is about ${te.tdee.toLocaleString('en-US')} kcal/day, the plan assumes ${te.assumed.toLocaleString('en-US')}. To keep the −${p.deficit} deficit, aim for about ${aim.toLocaleString('en-US')} kcal a day${diff < 0 && bandAvg > 100 ? ' — the band\'s calories are probably counted too high' : ''}.` }); } }
+  // 2. weight dropping faster than 1 % a week
+  const ws = metricStatus('weight', date);
+  if (ws && ws.state === 'fast') { const wk = rate14('weight', date); out.push({ id: 'fast:' + Math.floor(t / 7), h: 'Pace', text: `Weight is dropping ${wk != null ? Math.abs(wk * 7).toFixed(1) + ' kg' : 'more than 1 %'} a week — faster than planned. About 150–200 kcal more a day protects muscle.` }); }
+  // 3. protein under target on several of the last 7 logged days
+  let pd = 0, under = 0, psum = 0;
+  for (let i = 1; i <= 7; i++) { const d = addDays(date, -i); if (tOf(d) < 0) break; const n = (S.days[d] || {}).nutrition; if (!n || !n.kcal) continue; pd++; psum += +n.protein || 0; if ((+n.protein || 0) < p.protein - 10) under++; }
+  if (pd >= 4 && under >= 3) out.push({ id: 'prot:' + Math.floor(t / 7), h: 'Protein', text: `Under ${p.protein} g on ${under} of the last ${pd} logged days (average ${Math.round(psum / pd)} g). Protein is what keeps the muscle on a cut.` });
+  // 4. no weigh-in for 3+ days
+  const lr = lastReading('weight', date), gap = lr ? diffDays(lr.date, date) : t + 1;
+  if (t >= 3 && gap >= 3 && !(S.readings[date] && S.readings[date].weight)) out.push({ id: 'weigh:' + (lr ? lr.date : 'none'), h: 'Weigh-in', text: lr ? `Last weigh-in was ${gap} days ago. The trend needs one most mornings to stay accurate.` : `No weigh-in yet. The trend needs one most mornings to stay accurate.` });
+  // 5. muscle trending down
+  const ms = metricStatus('muscle', date);
+  if (ms && ms.state === 'slow') out.push({ id: 'muscle:' + Math.floor(t / 7), h: 'Muscle', text: `Muscle mass is trending down (${ms.cur.toFixed(1)} kg, plan ${ms.exp.toFixed(1)}). Hit ${p.protein} g protein every day and keep the heavy sets heavy.` });
+  return out;
+}
+// Bring S.tips.log in line with today's tips; returns true when something changed
+function syncTips() {
+  if (!S.project) return false; S.tips = S.tips || { log: [] };
+  const td = today(), live = computeTips(td < P().endDate ? td : P().endDate), ids = new Set(live.map(x => x.id)); let ch = false;
+  for (const tp of live) { const e = S.tips.log.find(x => x.id === tp.id); if (!e) { S.tips.log.unshift({ id: tp.id, date: td, h: tp.h, text: tp.text, status: 'active', seen: false }); ch = true; } else if (e.status === 'resolved') { e.status = 'active'; e.seen = false; e.text = tp.text; e.date = td; ch = true; } else if (e.status === 'active' && e.text !== tp.text) { e.text = tp.text; ch = true; } }
+  for (const e of S.tips.log) if (e.status === 'active' && !ids.has(e.id)) { e.status = 'resolved'; ch = true; }
+  return ch;
+}
+function activeTips() { return ((S.tips || {}).log || []).filter(x => x.status === 'active'); }
+function unseenTips() { return activeTips().filter(x => !x.seen).length; }
 
 /* ---------- Science check ---------- */
 function scienceCheck(date) {
@@ -1931,6 +2076,9 @@ function bodyBeamHtml(o) {
     <img class="hero" src="hero-beam.png" alt="">
     ${ef != null ? `<span class="plan" style="left:calc(44px + (100% - 44px) * ${ef.toFixed(4)})">PLAN</span>` : ''}</div>`;
 }
+
+/* ---------- Trophy (records / PB) ---------- */
+const TROPHY = '<svg class="tro" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="trog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE27A"/><stop offset=".55" stop-color="#F5B90F"/><stop offset="1" stop-color="#C98A00"/></linearGradient></defs><path d="M7 3h10v5a5 5 0 0 1-10 0z" fill="url(#trog)" stroke="#1B1B1B" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H4.2v1.6A3.4 3.4 0 0 0 7.6 10M17 5h2.8v1.6A3.4 3.4 0 0 1 16.4 10" fill="none" stroke="#1B1B1B" stroke-width="1.6" stroke-linecap="round"/><path d="M12 13v3.5" stroke="#1B1B1B" stroke-width="1.8"/><path d="M8.5 21h7l-.8-3.2H9.3z" fill="#E0A100" stroke="#1B1B1B" stroke-width="1.5" stroke-linejoin="round"/><path d="M9.2 4.6v3" stroke="#FFF6CC" stroke-width="1.3" stroke-linecap="round"/></svg>';
 /* ============ UI ============ */
 const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1976,7 +2124,7 @@ function nav(on) {
   return `<div class="nav">
     <button data-nav="today" class="${on === 'today' ? 'on' : ''}">${ICONS.today}Today</button>
     <button data-nav="cal" class="${on === 'cal' ? 'on' : ''}">${ICONS.cal}Calendar</button>
-    <button data-nav="dash" class="${on === 'dash' ? 'on' : ''}">${ICONS.dash}Progress</button>
+    <button data-nav="dash" class="${on === 'dash' ? 'on' : ''}">${ICONS.dash}Progress${unseenTips() ? `<span class="nbadge">${unseenTips()}</span>` : ''}</button>
     <button data-nav="profile" class="${on === 'profile' ? 'on' : ''}">${ICONS.settings}Settings</button>
   </div>`;
 }
@@ -2010,13 +2158,23 @@ function render(anim) {
   stopTimers();
   if (!S.project) { app.innerHTML = setupHtml(); bindSetup(); applyUnits(app); animate(app.querySelector('.screen'), anim); return; }
   const sc = { today: todayHtml, cal: calHtml, dash: dashHtml, profile: profileHtml, workout: workoutHtml, weigh: weighHtml, hang: hangHtml, mt: mtHtml, stretch: stretchHtml, mobility: mobilityHtml, nutrition: nutritionHtml, import: importHtml, batch: batchHtml }[R.screen] || todayHtml;
+  if (syncTips()) save();
   app.innerHTML = sc(); setTimeout(() => applyUnits(app), 0);
+  keepAwake(R.screen === 'workout');
   animate(app.querySelector('.screen'), anim);
   app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (R.screen === b.dataset.nav && !R.stack.length) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
   const binder = { today: bindToday, cal: bindCal, dash: bindDash, profile: bindProfile, workout: bindWorkout, weigh: bindWeigh, hang: bindHang, mt: bindMT, stretch: bindStretch, mobility: bindMobility, nutrition: bindNutrition, import: bindImport, batch: bindBatch }[R.screen];
   if (binder) binder();
 }
+// Screen stays on while a workout is open (re-acquired when the app comes back to the front)
+let wakeLock = null, wantAwake = false;
+function keepAwake(on) {
+  wantAwake = on;
+  if (on && !wakeLock && 'wakeLock' in navigator && document.visibilityState === 'visible') navigator.wakeLock.request('screen').then(l => { wakeLock = l; l.addEventListener('release', () => { wakeLock = null; }); if (!wantAwake) { l.release(); } }).catch(() => {});
+  if (!on && wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && wantAwake) keepAwake(true); });
 let timers = [];
 function stopTimers() { timers.forEach(t => clearInterval(t)); timers = []; }
 
@@ -2088,9 +2246,9 @@ function shiftDay(n) { const p = P(); let d = n === 0 ? today() : addDays(R.date
   if (d > p.endDate) return; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; patchToday(dir); }
 function itemSub(date, it) {
   let sub = it.sub; const d = S.days[date] || { done: {} };
-  if (it.id === 'weigh') { const r = S.readings[date]; if (r) sub = r.weight + ' kg' + (r.fat ? ' · ' + r.fat + ' % fat' : ''); else { const lr = lastReading('weight', addDays(date, -1)); sub = lr ? 'Last ' + lr.v + ' kg' : 'Log the scale'; } }
+  if (it.id === 'weigh') { const r = S.readings[date]; if (r) sub = r.weight + ' kg' + (r.fat ? ' · ' + r.fat + ' % fat' : ''); else { const lr = lastReading('weight', addDays(date, -1)); if (lr) { const g = diffDays(lr.date, date); sub = 'Last ' + lr.v + ' kg · ' + (g <= 1 ? 'yesterday' : g + ' days ago'); } else sub = 'Log the scale'; } }
   if (it.id === 'nutrition') { const n = d.nutrition; if (n && n.kcal) sub = n.kcal + ' kcal · ' + (n.protein || 0) + ' g protein' + (n.carbs != null && n.carbs !== '' ? ' · C ' + n.carbs : '') + (n.fat != null && n.fat !== '' ? ' · F ' + n.fat : ''); else { const tg = nutritionTarget(date); sub = 'Target ' + tg.kcal + ' kcal · ' + tg.protein + ' g protein'; } }
-  if (it.id === 'hang') sub = d.hang && d.hang.best ? 'Best ' + d.hang.best + ' s' : '3 min total · log your best hang';
+  if (it.id === 'hang') { const h = hangPB(); sub = h ? 'PB ' + fmtSecs(h.v) : 'No PB yet'; }
   if (it.id === 'mt' && d.mt && d.mt.minutes) sub = d.mt.minutes + ' min' + (d.mt.note ? ' · ' + d.mt.note : '');
   if (it.id === 'workout') { const s = S.sessions.find(x => x.date === date); if (s) sub = (s.finished ? 'Finished · ' : '') + s.ex.filter(e => e.done).length + '/' + s.ex.length + ' exercises'; }
   if (it.id === 'stretch') sub = STRETCH.length + ' steps · ' + Math.round(STRETCH.reduce((a, x) => a + x.d * (x.sides || 1), 0) / 60) + ' min';
@@ -2103,8 +2261,8 @@ function ringSvg(pct, color, size) {
 }
 function slotArt(cyc) {
   if (!cyc) return '';
-  if (cyc.summonDay) return dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 84 });
-  return ballSvg({ stars: cyc.star, state: cyc.todayDone ? 'full' : 'hollow', size: 84 });
+  if (cyc.summonDay) return dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 56 });
+  return ballSvg({ stars: cyc.star, state: cyc.todayDone ? 'full' : 'hollow', size: 56 });
 }
 function slotCap(cyc) { if (!cyc) return ''; if (cyc.summonDay) return cyc.summoned ? 'Dragon summoned' : cyc.canSummon ? 'Summon today' : cyc.earned + '/7 · no summon'; return cyc.earned + '/7 collected'; }
 // The big slot at the bottom of the list: this day's ball (or the dragon on day 8) — the art says it all
@@ -2118,11 +2276,11 @@ function cycTopHtml(cyc, info, date) {
   const td = today(), pct = info.t / D() * 100;
   return `<div class="slot" data-slot><div class="art" id="slotart">${slotArt(cyc)}</div><div class="cap" id="slotcap">${slotCap(cyc)}</div></div>
         <div class="mid"><div class="c">Cycle ${cyc.num}</div><div class="d">Day ${cyc.cd}/${cyc.days.length}</div><div class="dt">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)}${date === td ? ' · today' : ''}</div></div>
-        <div class="slot"><div class="art">${ringSvg(pct, '#1F6B3F', 84)}</div><div class="cap">${info.phase === 'final' ? 'Final weigh-in' : 'Day ' + info.idx + '/' + D()}</div></div>`;
+        <div class="slot"><div class="art">${ringSvg(pct, '#1F6B3F', 56)}</div><div class="cap">${info.phase === 'final' ? 'Final weigh-in' : 'Day ' + info.idx + '/' + D()}</div></div>`;
 }
 function boxClass(x, cyc, td) { return `box ${x.cd === cyc.cd ? 'cur' : ''} ${x.date === td ? 'today' : ''} ${x.date < td || x.date === td ? (x.comp === 'done' ? 'done' : x.comp === 'part' ? 'part' : x.date < td ? 'miss' : '') : ''}`; }
 function boxesHtml(cyc) { const td = today(); return `<i class="cursor" id="cursor"></i>` + cyc.days.map(x => `<button class="${boxClass(x, cyc, td)}" data-goto="${x.date}" title="${x.type.label}">${x.cd}</button>`).join(''); }
-function tagsHtml(cyc, date) { const td = today(), dtp = cyc.type, col = DAYTYPES[dtp.k].color; return `<span class="daytype"><i style="background:${col}"></i>${esc(dtp.label)}</span>${date !== td ? `<button class="pill" data-day="0">↩ Today</button>` : ''}<button class="pill" data-viewcal>View in Calendar</button>`; }
+function tagsHtml(cyc, date) { const td = today(), dtp = cyc.type, col = DAYTYPES[dtp.k].color; return `<span class="daytype"><i style="background:${col}"></i>${esc(dtp.label)}</span>${date !== td ? `<button class="pill" data-day="0">↩ Today</button>` : ''}<button class="pill" data-viewcal>Calendar</button>`; }
 // One line under the band: the report card up to this day (grades per category, American scale)
 function overviewHtml(date) {
   const rc = reportCard(date), cell = (k, lab) => `<div class="ov ${rc[k].of ? '' : 'off'}"><b>${rc[k].grade}</b><span>${lab}</span><small>${rc[k].done}/${rc[k].of}</small></div>`;
@@ -2134,7 +2292,7 @@ function listHtml(info, date) {
   return `${overviewHtml(date)}<ul class="todo">${info.items.map(it => {
     const dn = isDone(date, it.id), tag = it.id === 'workout' ? tagHtml(PROGRAM.workouts[it.key].group, PROGRAM.workouts[it.key].group) : it.id === 'mt' ? tagHtml('mt', 'MT') : '';
     const cyc = cycleOf(date), star = cyc && !cyc.summonDay ? cyc.star : 7;
-    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}">${it.req ? `<span class="reqball">${ballSvg({ stars: star, state: dn ? 'full' : 'hollow', size: 30 })}</span>` : ''}<div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap">${beamHeroArt()}</div>${beamFxHtml()}</li>`;
+    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}">${it.req ? `<span class="reqball">${ballSvg({ stars: star, state: dn ? 'full' : 'hollow', size: 30 })}</span>` : ''}<div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${(it.id === 'hang' && hangPB() ? `<span class="pbtag">${TROPHY}PB</span> ${fmtSecs(hangPB().v)}` : esc(itemSub(date, it)))}</div></div><div class="go" data-open-item>›</div><div class="zap">${beamHeroArt()}</div>${beamFxHtml()}</li>`;
   }).join('')}</ul>`;
 }
 // Put the white highlight under the current box; animated = glide there
@@ -2285,7 +2443,7 @@ function calHtml() {
   }
   let list = '';
   for (let d = 1; d <= dim; d++) { const ds = Y + '-' + pad(M) + '-' + pad(d), info = dayInfo(ds); if (!info.items) continue; const tag = workoutTag(info), c = dayCompletion(ds); list += `<li class="${ds === td ? 'today' : ''}" data-cal="${ds}"><span class="n">${info.idx}</span><span class="w">${tag.t}<small>${fmtShort(ds)}</small></span><span class="st ${c === 'done' ? 'ok' : c === 'part' ? 'warn' : c === 'miss' ? 'bad' : 'muted'}">${c === 'done' ? '✓' : c === 'part' ? '½' : c === 'miss' ? '–' : '○'}</span></li>`; }
-  return `<div class="screen">${band('Calendar', '', `<div class="big">${nailed}<small>%</small></div><div class="sub">days nailed</div>`)}
+  return `<div class="screen"><div class="phead">${band('Calendar', '', `<div class="big">${nailed}<small>%</small></div><div class="sub">days nailed</div>`)}</div>
     <div class="cal">
       <div class="mh"><button data-cm="-1" ${R.calMonth <= startM ? 'disabled' : ''} aria-label="Previous month">‹</button>${seasonSide(seasonOf(M), false)}<div class="m">${MONTHS[M - 1]}<small>${Y}</small></div>${seasonSide(seasonOf(M), true)}<button data-cm="1" ${R.calMonth >= endM ? 'disabled' : ''} aria-label="Next month">›</button></div>
       ${seasonGround(seasonOf(M))}
@@ -2514,14 +2672,25 @@ function bindVideo(box, name) {
     vb.hidden = false; btn.textContent = '▼ Hide video'; const v = vb.querySelector('video'); if (v) v.play().catch(() => {});
   };
 }
+// Vibrate when rest ends: off by default, remembered on the phone
+const VIB_ICON = '<svg viewBox="0 0 24 24" width="22" height="22"><rect x="7" y="3" width="10" height="18" rx="2.2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M3.5 8 v8 M20.5 8 v8 M1 10 v4 M23 10 v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+function vibOn() { try { return localStorage.getItem('vikac.vib') === '1'; } catch (e) { return false; } }
+// The PB shown on an exercise: best of all other sessions and what is typed in this one
+function pbPop(box, inpEl) {
+  const old = box.querySelector('.pbpop'); if (old) old.remove();
+  const br = box.getBoundingClientRect(), r = inpEl.getBoundingClientRect(), el = document.createElement('span'); el.className = 'pbpop'; el.innerHTML = TROPHY + 'New PB!';
+  el.style.right = Math.max(4, br.right - r.right - 6) + 'px'; el.style.top = (r.top - br.top - 26) + 'px'; box.appendChild(el);
+  if (vibOn()) vib([30, 40, 60]); setTimeout(() => el.remove(), 1700);
+}
+function bestPBNow(e, type, sid) { const o = exPB(e.n, type, sid), c = entryPB(e, type); if (!o && !c) return null; return { v: Math.max(o ? o.v : 0, c) }; }
 function workoutHtml() {
   const date = R.params.date || R.date, key = R.params.key || (dayInfo(date).workoutKey); if (!key) return `<div class="screen">${topbar('Workout')}<div class="card">No workout today. Rest is part of the plan.</div></div>`;
   const w = PROGRAM.workouts[key], s = getSession(date, key), doneN = s.ex.filter(e => e.done).length;
-  return `<div class="screen bar">${topbar(w.name, fmtDate(date), `<div class="cond" id="prog" style="font-size:16px">${doneN}/${s.ex.length}</div><div class="muted">done</div>`)}
+  return `<div class="screen bar">${topbar(w.name, fmtDate(date), `<div class="wohd"><button class="vibt ${vibOn() ? 'on' : ''}" data-vibt aria-label="Vibrate when rest ends">${VIB_ICON}</button><div><div class="cond" id="prog" style="font-size:16px">${doneN}/${s.ex.length}</div><div class="muted">done</div></div></div>`)}
     ${s.ex.map((e, i) => { const def = w.ex[i], last = lastFor(e.n, date), v = s.finished ? verdictFor(e.n, e, date, s.id) : null;
       return `<div class="ex ${e.done ? 'on' : ''}" data-i="${i}">
         <div class="hd"><div><div class="nm">${i + 1}. ${esc(e.n)}${eqIcons(e.n)}</div><div class="sch">${esc(def.s)} · ${restLabel(def.type, def.s)}</div><button class="vid has" data-vid hidden>▶ Video</button></div><div class="exchk ${e.done ? 'on' : ''}" data-exdone role="checkbox">${e.done ? ICONS.check : ''}</div></div><div class="vbox" hidden></div>
-        ${last ? `<div class="last"><span>Last <b>${esc(last.label)}</b></span>${!s.finished && !exComplete(e, def.type) ? '<button class="use" data-use>Use</button>' : ''}</div>${last.note ? `<div class="q">“${esc(last.note)}”</div>` : ''}` : ''}
+        ${last ? `<div class="last"><span>Last <b>${esc(last.label)}</b>${(pb => pb ? `<span class="pbtag">${TROPHY}PB</span><b class="pbv">${fmtPB(e.n, def.type, pb.v)}</b>` : '')(bestPBNow(e, def.type, s.id))}</span>${!s.finished && !exComplete(e, def.type) ? '<button class="use" data-use>Use</button>' : ''}</div>${last.note ? `<div class="q">“${esc(last.note)}”</div>` : ''}` : ''}
         ${def.type === 'max' ? `<div class="row"><div class="field"><label>Reps in 5 min</label><input type="number" inputmode="numeric" data-f="reps" value="${esc(e.reps)}" placeholder="${last && last.e.reps ? last.e.reps : ''}"></div><div class="field"><label>Added kg</label><input type="number" inputmode="decimal" data-f="load" value="${esc(e.load)}" placeholder="${last && last.e.load ? last.e.load : '0'}"></div></div>`
         : `<div class="sets"><span></span><span style="width:auto;text-align:center">kg</span><span style="width:auto;text-align:center">reps</span>${e.sets.map((st, j) => { const ls = last && last.e.sets && last.e.sets[j] || {}; return `<span>${j === 0 && def.type === 'hn' ? 'H' : j + 1}</span><input type="number" inputmode="decimal" step="0.5" data-set="${j}" data-f="kg" value="${esc(st.kg)}" placeholder="${esc(ls.kg || '')}"><input type="number" inputmode="numeric" data-set="${j}" data-f="reps" value="${esc(st.reps)}" placeholder="${esc(ls.reps || '')}">`; }).join('')}</div>`}
         ${e.note ? `<textarea data-f="note" placeholder="Note for next time">${esc(e.note)}</textarea>` : `<button class="link" data-addnote>+ Note for next time</button><textarea data-f="note" placeholder="" style="display:none"></textarea>`}
@@ -2542,6 +2711,14 @@ function bindWorkout() {
     box.querySelectorAll('input').forEach(inpEl => inpEl.addEventListener('focus', () => { if (!restState.manual && !restState.timer) { restState.dur = restFor(def.type, inpEl.dataset.set != null ? +inpEl.dataset.set : 0, def.s); const db = $('#dur'); if (db) db.textContent = restState.dur + ' s'; } }));
     box.querySelectorAll('input,textarea').forEach(inpEl => inpEl.oninput = () => { const f = inpEl.dataset.f; if (inpEl.dataset.set != null) e.sets[+inpEl.dataset.set][f] = inpEl.value; else e[f] = inpEl.value; if (!e.done && exComplete(e, def.type)) { e.done = true; paint(); vib(20); } save(); });
     chk.onclick = () => { e.done = !e.done; save(); paint(); };
+    // New PB: after typing settles, a short "New PB!" pops next to the field and the PB on the line updates
+    box._pbSeen = entryPB(e, def.type);
+    box.querySelectorAll('input[type=number]').forEach(inpEl => inpEl.addEventListener('input', () => { clearTimeout(box._pbT); box._pbT = setTimeout(() => {
+      const other = exPB(e.n, def.type, s.id), cur = entryPB(e, def.type), shown = Math.max(other ? other.v : 0, cur), pv = box.querySelector('.pbv');
+      if (pv) { const t = fmtPB(e.n, def.type, shown); if (pv.textContent !== t) { pv.textContent = t; pv.classList.remove('bump'); void pv.offsetWidth; pv.classList.add('bump'); } }
+      if (other && cur > other.v && cur > box._pbSeen) { box._pbSeen = cur; pbPop(box, inpEl); }
+      else if (cur > box._pbSeen && !other) box._pbSeen = cur;
+    }, 650); }));
     bindVideo(box, e.n);
     const use = box.querySelector('[data-use]'); if (use) use.onclick = () => { const last = lastFor(e.n, date); if (!last) return; if (def.type === 'max') { e.reps = last.e.reps; e.load = last.e.load; } else e.sets.forEach((st, j) => { const ls = last.e.sets[j]; if (ls) { st.kg = ls.kg; st.reps = ls.reps; } }); e.done = exComplete(e, def.type); save(); render(); window.scrollTo(0, box.offsetTop - 80); };
     const an = box.querySelector('[data-addnote]'); if (an) an.onclick = () => { an.style.display = 'none'; const ta = box.querySelector('textarea'); ta.style.display = ''; ta.focus(); };
@@ -2556,10 +2733,11 @@ function bindWorkout() {
   };
   const ro = $('#reopen'); if (ro) ro.onclick = () => { s.finished = false; save(); render(); };
   $('#delS').onclick = () => { if (confirm('Delete this session?')) { S.sessions = S.sessions.filter(x => x.id !== s.id); save(); back(); } };
+  const vt = $('[data-vibt]'); if (vt) vt.onclick = () => { const on = !vibOn(); try { localStorage.setItem('vikac.vib', on ? '1' : '0'); } catch (e) {} vt.classList.toggle('on', on); if (on) vib(120); toast(on ? 'Vibrates when rest ends' : 'Vibration off', 1600); };
   // rest timer (keeps running across re-renders; the button is looked up on every tick)
   const rb = $('#rest'), db = $('#dur');
   if (rb) {
-    rb.onclick = () => { if (restState.timer) { stopRest(); paintRest(); return; } restState.left = restState.dur; restState.timer = setInterval(() => { restState.left--; if (restState.left <= 0) { stopRest(); vib([200, 100, 200]); toast('Rest over — next set!'); } paintRest(); }, 1000); paintRest(); };
+    rb.onclick = () => { if (restState.timer) { stopRest(); paintRest(); return; } restState.left = restState.dur; restState.timer = setInterval(() => { restState.left--; if (restState.left <= 0) { stopRest(); if (vibOn()) vib([400, 150, 400, 150, 400]); toast('Rest over — next set!'); } paintRest(); }, 1000); paintRest(); };
     db.onclick = () => { const opts = [60, 90, 120, 180]; restState.dur = opts[(opts.indexOf(restState.dur) + 1) % opts.length]; restState.manual = true; db.textContent = restState.dur + ' s'; };
     paintRest();
   }
@@ -2577,8 +2755,8 @@ function hangHtml() {
     <button class="btn" id="saveH">Save</button></div>`;
 }
 function bindHang() { const date = R.params.date || R.date; app.querySelectorAll('[data-pre]').forEach(b => b.onclick = () => { app.querySelector('[name=best]').value = b.dataset.pre; }); $('#saveH').onclick = () => { const o = readForm(app); if (!o.best) return toast('Enter your best hang'); day(date).hang = { best: o.best, total: o.total || 180 }; save(); toast('Hang logged. Posture gang!'); vib(30); back(); }; }
-function mtHtml() { const date = R.params.date || R.date, m = day(date).mt || {}; return `<div class="screen">${topbar('Muay Thai', fmtDate(date))}<div class="card"><label style="text-align:center">Minutes</label><input class="big" name="minutes" type="number" inputmode="numeric" value="${m.minutes || ''}" placeholder="60"><div class="chips" style="justify-content:center;margin:12px 0">${[30, 45, 60, 90].map(v => `<button class="btn sec sm" data-pre="${v}">${v} min</button>`).join('')}</div><div class="field"><label>What did you do? (optional)</label><textarea name="note" placeholder="Bag rounds, kicks, pads…">${esc(m.note || '')}</textarea></div></div><button class="btn" id="saveM">Save</button></div>`; }
-function bindMT() { const date = R.params.date || R.date; app.querySelectorAll('[data-pre]').forEach(b => b.onclick = () => { app.querySelector('[name=minutes]').value = b.dataset.pre; }); $('#saveM').onclick = () => { const o = readForm(app); if (!o.minutes) return toast('Enter minutes'); day(date).mt = { minutes: o.minutes, note: o.note }; save(); toast('Logged. Sawadee!'); vib(30); back(); }; }
+function mtHtml() { const date = R.params.date || R.date, m = day(date).mt || {}; return `<div class="screen">${topbar('Muay Thai', fmtDate(date))}<div class="card"><label style="text-align:center">Minutes</label><input class="big" name="minutes" type="number" inputmode="numeric" value="${m.minutes || ''}" placeholder="60">${m.src === 'band' ? '<div class="muted small" style="text-align:center;margin-top:4px">From the band · change it to override</div>' : ''}<div class="chips" style="justify-content:center;margin:12px 0">${[30, 45, 60, 90].map(v => `<button class="btn sec sm" data-pre="${v}">${v} min</button>`).join('')}</div><div class="field"><label>What did you do? (optional)</label><textarea name="note" placeholder="Bag rounds, kicks, pads…">${esc(m.note || '')}</textarea></div></div><button class="btn" id="saveM">Save</button></div>`; }
+function bindMT() { const date = R.params.date || R.date; app.querySelectorAll('[data-pre]').forEach(b => b.onclick = () => { app.querySelector('[name=minutes]').value = b.dataset.pre; }); $('#saveM').onclick = () => { const o = readForm(app); if (!o.minutes) return toast('Enter minutes'); const prev = day(date).mt || {}; day(date).mt = { minutes: o.minutes, note: o.note, src: prev.src === 'band' && +prev.minutes === +o.minutes ? 'band' : undefined }; save(); toast('Logged. Sawadee!'); vib(30); back(); }; }
 function mobilityHtml() { const date = R.params.date || R.date; return `<div class="screen">${topbar('Kick mobility', fmtDate(date))}<div class="card"><div class="muted">Routine coming soon — do your usual warm-up and tick it off.</div></div><button class="btn" id="doneM">Mark done</button></div>`; }
 function bindMobility() { const date = R.params.date || R.date; $('#doneM').onclick = () => { day(date).done.mobility = true; save(); toast('Mobility done!'); vib(30); back(); }; }
 
@@ -2708,6 +2886,45 @@ function weekBars(date, get, target, color) {
   return `<div class="weekbars">${cells.join('')}</div>`;
 }
 // The Progress tile as a scouter read-out: character, power level, progress to the goal, status, scan rows
+function tipsPillHtml() {
+  const a = activeTips().length, n = unseenTips();
+  return n ? `<button class="tips new" data-tips><i>i</i>NEW TIPS: ${n}</button>` : a ? `<button class="tips seen" data-tips><i>i</i>VIEW TIPS</button>` : `<button class="tips none" data-tips><i>i</i>NO TIPS AVAILABLE</button>`;
+}
+// Tips list: swipe a tip left (or ×) to dismiss it, Dismiss all, Tips history; opening it marks the tips as seen
+function openTips() {
+  let changed = false; for (const e of activeTips()) if (!e.seen) { e.seen = true; changed = true; } if (changed) { save(); }
+  const paintPill = () => { const pl = app.querySelector('[data-tips]'); if (pl) { pl.outerHTML = tipsPillHtml(); const np = app.querySelector('[data-tips]'); if (np) np.onclick = e => { e.stopPropagation(); openTips(); }; } const nb = app.querySelector('.nav [data-nav=dash] .nbadge'); if (nb && !unseenTips()) nb.remove(); };
+  paintPill();
+  const listHtml = () => { const a = activeTips();
+    return `<div class="tiphd"><h3 style="margin:0">Tips</h3>${a.length > 1 ? '<button class="link" data-tipall>Dismiss all</button>' : ''}</div>
+      ${a.length ? `<div class="muted" style="margin:2px 0 12px">Swipe a tip left to dismiss it</div>${a.map(e => `<div class="tipwrap" data-tip="${esc(e.id)}"><div class="under">DISMISS</div><div class="tip"><div class="cond" style="font-size:16px;margin-bottom:2px">${esc(e.h)}</div><div style="font-size:14px;line-height:1.4">${esc(e.text)}</div><button class="x" data-tipx aria-label="Dismiss">×</button></div></div>`).join('')}`
+        : '<div class="muted" style="margin:6px 0 16px">No tips right now. New ones show up here as your data comes in.</div>'}
+      <button class="btn sec" data-tiphist style="margin-top:4px">Tips history</button><button class="btn ghost" data-close style="margin-top:8px">Close</button>`; };
+  const histHtml = () => { const L = (S.tips || {}).log || [], lab = { active: ['a', 'Active'], dismissed: ['d', 'Dismissed'], resolved: ['r', 'Resolved'] };
+    return `<h3 style="margin:0">Tips history</h3><div class="muted" style="margin:2px 0 4px">Every tip this project — kept until you start a new project</div>
+      <div class="sec2">This project · ${L.length} tip${L.length === 1 ? '' : 's'}</div>
+      ${L.length ? L.map(e => `<div class="hist"><div class="meta"><span>${fmtShort(e.date)}</span><span class="st ${lab[e.status][0]}">${lab[e.status][1]}</span></div><div class="h">${esc(e.h)}</div><div class="tx">${esc(e.text)}</div></div>`).join('') : '<div class="muted" style="margin-bottom:12px">No tips yet.</div>'}
+      <button class="btn sec" data-tipback style="margin-top:6px">Back to tips</button><button class="btn ghost" data-close style="margin-top:8px">Close</button>`; };
+  const dismiss = id => { const e = S.tips.log.find(x => x.id === id); if (e) e.status = 'dismissed'; save(); paintPill(); };
+  modal(listHtml(), bg => {
+    const m = bg.querySelector('.modal');
+    const show = (html, bindFn) => { m.innerHTML = html; m.querySelectorAll('[data-close]').forEach(b => b.onclick = () => bg.close()); bindFn(); m.scrollTop = 0; };
+    const bindList = () => {
+      const all = m.querySelector('[data-tipall]'); if (all) all.onclick = () => { activeTips().forEach(e => e.status = 'dismissed'); save(); paintPill(); show(listHtml(), bindList); };
+      m.querySelector('[data-tiphist]').onclick = () => show(histHtml(), () => { m.querySelector('[data-tipback]').onclick = () => show(listHtml(), bindList); });
+      m.querySelectorAll('[data-tip]').forEach(w => {
+        const card = w.querySelector('.tip'), id = w.dataset.tip;
+        const out = () => { w.classList.add('sw'); card.style.transition = 'transform .2s ease-in'; card.style.transform = 'translateX(-110%)'; setTimeout(() => { w.style.transition = 'height .2s,margin .2s,opacity .2s'; w.style.height = w.offsetHeight + 'px'; requestAnimationFrame(() => { w.style.height = '0px'; w.style.marginBottom = '0px'; w.style.opacity = '0'; }); setTimeout(() => { dismiss(id); show(listHtml(), bindList); }, 220); }, 180); };
+        w.querySelector('[data-tipx]').onclick = e => { e.stopPropagation(); out(); };
+        let x0 = null, y0 = 0, dx = 0, horiz = null;
+        card.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; horiz = null; card.style.transition = 'none'; }, { passive: true });
+        card.addEventListener('touchmove', e => { if (x0 == null) return; const ddx = e.touches[0].clientX - x0, ddy = e.touches[0].clientY - y0; if (horiz == null && (Math.abs(ddx) > 8 || Math.abs(ddy) > 8)) horiz = Math.abs(ddx) > Math.abs(ddy); if (!horiz) return; e.preventDefault(); dx = Math.min(0, ddx); w.classList.toggle('sw', dx < 0); card.style.transform = `translateX(${dx}px)`; }, { passive: false });
+        card.addEventListener('touchend', () => { if (x0 == null) return; x0 = null; if (horiz && dx < -card.offsetWidth * 0.35) out(); else { card.style.transition = 'transform .18s'; card.style.transform = ''; setTimeout(() => w.classList.remove('sw'), 180); } });
+      });
+    };
+    bindList();
+  });
+}
 function scouterHtml(date, sg) {
   const pw = powerLevel(date), bars = Array.from({ length: 20 }, (_, i) => `<i class="${i < Math.round(pw.prog * 20) ? 'on' : ''}"></i>`).join('');
   const rows = []; for (const k of ['weight', 'fat', 'muscle']) { const x = sg.all.find(y => y.key === k); const def = METRIC_DEFS.find(m => m.id === k); const cur = current(k, date);
@@ -2716,13 +2933,22 @@ function scouterHtml(date, sg) {
     rows.push([def.label.toUpperCase(), cur.toFixed(def.dec) + u, arrow + (x ? d : ''), x ? (x.state === 'good' ? 'g' : x.state === 'bad' ? 'r' : 'y') : 'y']); }
   rows.push(['STREAK', pw.streak + (pw.streak === 1 ? ' day' : ' days'), '', pw.streak ? 'g' : 'r']);
   const info = dayInfo(date), heroL = heroArt({ level: pw.stage, size: 150 });
-  return `<div class="scouter" data-avatar><div class="sc-top"><span>SCOUTER · ${info.phase === 'pre' ? 'PRE-START' : 'DAY ' + Math.min(D(), Math.max(1, info.idx)) + '/' + D()}</span><span>DATA SCAN ▮▮▮</span></div>
+  return `<div class="scouter" data-avatar><div class="sc-top"><span>SCOUTER · ${info.phase === 'pre' ? 'PRE-START' : 'DAY ' + Math.min(D(), Math.max(1, info.idx)) + '/' + D()}</span>${tipsPillHtml()}</div>
     <div class="sc-body"><div class="sc-hero"><div class="glow"></div>${heroL}<div class="ring"></div></div>
     <div class="sc-data"><span class="sc-lab">POWER LEVEL</span><div class="sc-num">${pw.pl.toLocaleString('en-US')}</div>
       <div class="sc-bar">${bars}</div><div class="sc-scale"><span>START</span><span>${Math.round(pw.prog * 100)} %</span><span>GOAL 9001</span></div>
       <div class="sc-status ${pw.warn ? 'warn' : ''}">${esc(pw.status)} …</div><div class="sc-why">${esc(pw.why)}</div>
       <div class="sc-scan">${rows.map(r => `<div><span>${r[0]}</span><span><b>${esc(r[1])}</b> <span class="${r[3]}">${esc(r[2])}</span></span></div>`).join('')}</div></div></div>
     <div class="sc-foot"><span class="chev">▶▶▶</span><span>TAP FOR FULL SCAN</span></div></div>`;
+}
+// Records: Personal bests (default) and Highest volume, from every project
+function recordsHtml() {
+  const rc = records(), tab = R.rtab || 'pb', rows = tab === 'pb' ? rc.pb : rc.vol, nNew = rows.filter(x => x.isNew).length; let g = '', list = '';
+  for (const x of rows) { if (x.group !== g) { list += `<div class="grp">${x.group}</div>`; g = x.group; } list += `<div class="row2"><span class="nm">${esc(x.name)}${x.isNew ? '<span class="new">NEW</span>' : ''}${x.sub ? `<div class="sub">${x.sub}</div>` : ''}</span><span class="v">${x.v}</span></div>`; }
+  const top = tab === 'vol' ? `<div class="muted small" style="margin:6px 0 0">Most weight moved in one session (sets × reps × kg). Bodyweight exercises: most reps in one session.</div>${rc.big ? `<div class="top"><span class="nm">Biggest workout<div class="sub">${esc(rc.big.name)}</div></span><span class="v">${Math.round(rc.big.v).toLocaleString('en-US')} kg</span></div>` : ''}` : '';
+  return `<div class="card reccard"><div class="hd" style="align-items:center"><span class="rechd">${TROPHY}Records</span>${nNew ? `<span class="muted small">${nNew} new this week</span>` : ''}</div>
+    <div class="rtabs"><button data-rtab="pb" class="${tab === 'pb' ? 'on' : ''}">Personal bests</button><button data-rtab="vol" class="${tab === 'vol' ? 'on' : ''}">Highest volume</button></div>
+    ${top}${list || '<div class="muted" style="margin:10px 0 2px">No records yet — log a workout and they show up here.</div>'}</div>`;
 }
 function dashHtml() {
   const date = today(), fs = fitnessScore(date), p = P(), tab = R.ptab || 'overview';
@@ -2761,7 +2987,7 @@ function dashHtml() {
     const mtN = Object.keys(S.days).filter(d => S.days[d].mt && S.days[d].mt.minutes).length, mtMin = Object.keys(S.days).reduce((a, d) => a + (S.days[d].mt && +S.days[d].mt.minutes || 0), 0);
     const other = R.tab !== 'other' ? '' : `<div class="beam"><div class="hd"><span class="n">Dead hangs</span><span class="g">${hangs.length ? 'best ' + Math.max(...hangs.map(h => h.v)) + ' s' : 'no logs'}</span></div>${hangs.length ? beamSvg({ frac: Math.min(1, Math.max(0, (hangs[hangs.length - 1].v - hangs[0].v) / (hangs[0].v * 0.25))), timeFrac: tOf(date) / D(), state: hangs.length > 1 && hangs[hangs.length - 1].v < hangs[0].v * 0.95 ? 'slow' : 'zone', left: hangs[0].v + ' s', right: 'GOAL ' + Math.round(hangs[0].v * 1.25) + ' s' }) + '<div class="st ok">' + hangs[0].v + ' s → ' + hangs[hangs.length - 1].v + ' s.</div>' : beamSvg({ frac: 0, state: 'nodata', left: '—', right: 'GOAL +25 %' }) + '<div class="st muted">Log a hang to start.</div>'}</div>
       <div class="card flat"><div class="hd"><span class="cond">Muay Thai</span><span class="muted">${mtN} session${mtN === 1 ? '' : 's'} · ${mtMin} min</span></div></div>`;
-    body = `<div class="tabs">${Object.keys(groups).map(k => `<button data-tab="${k}" class="${R.tab === k ? 'on' : ''}">${groups[k]}</button>`).join('')}</div>
+    body = recordsHtml() + `<div class="tabs">${Object.keys(groups).map(k => `<button data-tab="${k}" class="${R.tab === k ? 'on' : ''}">${groups[k]}</button>`).join('')}</div>
     <div id="training">${R.tab !== 'other' ? groupBar(R.tab, date) : ''}${logged.map(n => exerciseBar(n, date)).join('')}${other}
     ${unlogged.length ? `<div class="card flat"><div class="muted" style="margin-bottom:6px">Not logged yet</div><div class="chips">${unlogged.map(n => `<span class="chip muted">${esc(n)}</span>`).join('')}</div></div>` : ''}</div>`;
   }
@@ -2772,6 +2998,8 @@ function dashHtml() {
   </div>${nav('dash')}`;
 }
 function bindDash() {
+  app.querySelectorAll('[data-rtab]').forEach(b => b.onclick = e => { e.stopPropagation(); if ((R.rtab || 'pb') === b.dataset.rtab) return; R.rtab = b.dataset.rtab; const y = window.scrollY; render(); window.scrollTo(0, y); });
+  const tp = $('[data-tips]'); if (tp) tp.onclick = e => { e.stopPropagation(); openTips(); };
   const bp = $('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) { toast(r.error, 2400); bp.textContent = '↻ Sync'; return; } render(); toast(r.changed ? 'Band data updated' : 'Already up to date', 1800); };
   const date = today();
   const order = ['overview', 'body', 'nutrition', 'training'], setTab = (k, anim) => { if ((R.ptab || 'overview') === k) return; R.ptab = k; render(); animate($('#pbody'), anim || 'fade'); window.scrollTo(0, 0); };
@@ -2843,7 +3071,7 @@ function profileHtml() {
       <div class="row"><button class="btn sec" data-editp>Edit</button><button class="btn" data-newp>New project</button></div>
       ${td < p.endDate && td > p.startDate ? '<button class="link" data-endp style="margin-top:6px">End this project today</button>' : ''}`;
   const past = S.archive.length ? `<div class="card"><div class="eyebrow">Past projects</div><div class="pastlist">${S.archive.map(pastRowHtml).join('')}</div></div>` : '';
-  return `<div class="screen">${band('Settings', '')}
+  return `<div class="screen"><div class="phead">${band('Settings', '')}</div>
     <div class="card"><div class="eyebrow">Current project</div><div class="hd" style="margin-bottom:4px"><h3 style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</h3><span class="chip ${chip[0]}">${chip[1]}</span></div>
       ${R.editProject ? form : summary}</div>
     ${past}
