@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v1.4.0)
+# Vikač High Kikač — install guide (v1.6.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -23,7 +23,19 @@ This folder is the whole app. Put it on any HTTPS address and add it to your pho
 - Data lives on the phone (Chrome's storage for this app). It survives restarts and being offline. It is lost only if you uninstall the app or clear Chrome's site data.
 - **Profile → Backup now** downloads `vikac-backup-DATE.json`. Drop it in Google Drive now and then; the Today screen nags you after 7 days without a backup. **Restore** brings everything back from that file, on any phone.
 
-## 4. Updating the app
+## 4. Cloud backup to GitHub (optional, recommended)
+
+Every change can also be saved as a commit to a **private** repository of yours, with full history — nothing is lost unless you delete that repository. One-time setup, about 5 minutes:
+
+1. On github.com: **+ → New repository**, name `trening-data`, choose **Private**, tick **Add a README file**, create it. (Keep it separate from the public `vikac` repository that hosts the app.)
+2. Profile photo → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
+3. Name it "Trening", set the longest expiry offered, **Repository access: Only select repositories → trening-data**.
+4. **Permissions → Repository permissions → Contents: Read and write**. Generate and copy the token (it is shown once).
+5. In the app: **Profile → Cloud backup**, enter `yourname/trening-data` and the token, tap **Connect**.
+
+The app then pushes a commit about 10 seconds after your last change (and when you leave the app), shows "Saved to GitHub … ago" in Profile, and nags you on the Today screen if syncing has failed for 3 days. **Restore from GitHub** brings everything back on a new phone. The token is stored only on the phone and can only touch that one repository; when it expires, make a new one and tap Connect again.
+
+## 5. Updating the app
 
 When a new version arrives, upload the new files to the same repository (Add file → Upload files, same names, Commit). The phone picks up the new version the next time you open the app while online. Your data is untouched by updates.
 

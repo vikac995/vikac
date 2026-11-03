@@ -44,7 +44,7 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .field{margin-bottom:12px}
 .row{display:flex;gap:10px}
 .row>*{flex:1;min-width:0}
-.screen{padding:calc(10px + var(--sat)) 14px calc(88px + var(--sab));max-width:560px;margin:0 auto;animation:snap .18s ease-out}
+.screen{padding:calc(10px + var(--sat)) 14px calc(88px + var(--sab));max-width:560px;margin:0 auto}
 .screen.bar{padding-bottom:calc(150px + var(--sab))}
 @keyframes snap{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 /* header band */
@@ -60,6 +60,42 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .band.center .h{max-width:none;font-size:56px}
 .band.center .h small{font-size:26px}
 .band.center .sub{max-width:none;font-size:15px}
+.band.cyc{padding-bottom:22px}
+.cyc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.cyc-top .slot{width:96px;text-align:center;flex:none}
+.cyc-top .slot .art{width:84px;height:84px;margin:0 auto;display:flex;align-items:center;justify-content:center;filter:drop-shadow(2px 2px 0 var(--ink))}
+.cyc-top .slot .cap{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:12px;color:var(--ink);margin-top:4px;white-space:nowrap}
+.cyc-top .mid{flex:1;text-align:center;min-width:0}
+.cyc-top .mid .c{font-family:'Bangers',Impact,sans-serif;font-size:40px;letter-spacing:.04em;line-height:.9;color:#fff;-webkit-text-stroke:1.2px var(--ink);paint-order:stroke;text-shadow:3px 3px 0 var(--ink)}
+.cyc-top .mid .d{font-family:'Bangers',Impact,sans-serif;font-size:30px;letter-spacing:.04em;line-height:1;color:#fff;-webkit-text-stroke:1px var(--ink);paint-order:stroke;text-shadow:2px 2px 0 var(--ink);margin-top:4px}
+.cyc-top .mid .dt{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:13px;color:var(--ink);margin-top:6px}
+.ring84{width:84px;height:84px}
+.cstrip{display:flex;align-items:center;justify-content:center;gap:5px;margin:12px 0 0}
+.cstrip .arrow{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.35);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--ink)}
+.cstrip .box{width:30px;height:30px;border-radius:7px;background:rgba(255,255,255,.35);border:2px solid rgba(27,27,27,.35);display:flex;align-items:center;justify-content:center;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;color:rgba(27,27,27,.55);position:relative}
+.cstrip .box.cur{background:#fff;border-color:var(--ink);color:var(--ink);box-shadow:2px 2px 0 var(--ink);transform:scale(1.08)}
+.cstrip .box.done::after{content:"";position:absolute;right:-4px;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--ok);border:1.5px solid var(--ink)}
+.cstrip .box.miss::after{content:"";position:absolute;right:-4px;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--badsoft);border:1.5px solid var(--ink)}
+.cstrip .box.part::after{content:"";position:absolute;right:-4px;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--yel);border:1.5px solid var(--ink)}
+.cstrip .box.today{outline:2px solid var(--ink);outline-offset:1px}
+.daytype{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:5px 14px;border-radius:999px;border:2px solid var(--ink);background:#fff;font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:15px;color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.daytype i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--ink)}
+.band .pill{color:var(--ink)}
+.bigball{display:flex;flex-direction:column;align-items:center;margin:14px 0 6px;position:relative}
+.bigball .art{width:124px;height:124px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(3px 3px 0 var(--ink))}
+.bigball .art.pop{animation:pop .6s ease-out}
+.bigball .cap{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px;margin-top:8px;text-align:center}
+.bigball .sub{font-size:13px;color:var(--muted);text-align:center}
+.cycles{display:flex;flex-direction:column;gap:8px}
+.cycrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px solid var(--line);border-radius:10px;background:#fff;min-height:48px}
+.cycrow.cur{border-color:var(--ink);box-shadow:var(--shadow-sm)}
+.cycrow .n{font-family:'Bangers',Impact,sans-serif;font-size:22px;letter-spacing:.03em;width:72px;flex:none}
+.cycrow .dates{font-size:12px;color:var(--muted);width:72px;flex:none}
+.cycrow .balls{display:flex;gap:3px;flex:1;margin:0;justify-content:flex-start}
+.cycrow .balls .mb{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--ink);background:radial-gradient(circle at 40% 35%,#FFD27A,#FE7F0C 55%,#C24A00)}
+.cycrow .balls .mb.off{background:#fff;border-style:dashed;border-color:#C9B9A5}
+.cycrow .balls .mb.miss{background:#EDEDED;border-color:#BBB}
+.cycrow .drg{width:26px;height:26px;flex:none;display:flex;align-items:center;justify-content:center}
 /* sticky top bar on sub-screens */
 .topbar{display:flex;align-items:center;gap:12px;margin:-10px -14px 14px;padding:calc(10px + var(--sat)) 14px 8px;min-height:44px;position:sticky;top:0;z-index:15;background:var(--paper);background-image:radial-gradient(rgba(254,127,12,.10) 1.2px,transparent 1.2px);background-size:14px 14px;border-bottom:2px solid var(--line)}
 .topbar .back{width:44px;height:44px;border-radius:10px;background:#fff;border:2px solid var(--ink);box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex:none}
@@ -274,7 +310,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.6.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -386,8 +422,10 @@ function idbGet() {
 function idbPut(v) { try { if (idb) idb.transaction('kv', 'readwrite').objectStore('kv').put(v, 'state'); } catch (e) {} }
 let saveTimer = null;
 function save() {
+  S.meta.updatedAt = new Date().toISOString();
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {}
   clearTimeout(saveTimer); saveTimer = setTimeout(() => idbPut(JSON.stringify(S)), 150);
+  if (typeof onStateSaved === 'function') { try { onStateSaved(); } catch (e) {} }
 }
 async function load() {
   idb = await idbOpen();
@@ -498,6 +536,31 @@ function dayCompletion(date) {
   return date < today() ? 'miss' : 'future';
 }
 function workoutTag(info) { if (!info.items) return null; if (info.isMT) return { k: 'mt', t: 'MT' }; if (info.isRest) return { k: 'rest', t: 'Rest' }; const g = PROGRAM.workouts[info.workoutKey].group; return { k: g, t: g === 'push' ? 'Push ' + info.variant : g === 'pull' ? 'Pull ' + info.variant : 'Legs ' + info.variant }; }
+
+// Day types: label + colour for every kind of day, rest included
+const DAYTYPES = { push: { label: 'Push', color: '#E05A00' }, pull: { label: 'Pull', color: '#1C6DD0' }, legs: { label: 'Legs', color: '#1E8E3E' }, mt: { label: 'Muay Thai', color: '#C2185B' }, rest: { label: 'Rest', color: '#8A8A8A' } };
+function dayType(info) { if (!info.items) return null; if (info.isMT) return { k: 'mt', label: 'Muay Thai' }; if (info.isRest) return { k: 'rest', label: info.cycleDay === 8 ? 'Rest · summon day' : 'Rest' }; const w = PROGRAM.workouts[info.workoutKey]; return { k: w.group, label: w.name }; }
+// One cycle = 8 days. Days 1–7 can each earn a dragon ball (a perfect day); day 8 is the summon day: 7 balls + a perfect day 8 = the dragon.
+function cycleOf(date) {
+  const info = dayInfo(date); if (!info.items) return null;
+  const p = P(), first = (info.cycleNum - 1) * 8, days = [];
+  for (let i = 0; i < 8; i++) { const t = first + i; if (t > D()) break; const d = addDays(p.startDate, t); days.push({ date: d, cd: i + 1, comp: dayCompletion(d), type: dayType(dayInfo(d)) }); }
+  const earned = days.filter(x => x.cd <= 7 && x.comp === 'done').length;
+  const before = days.filter(x => x.cd <= 7 && x.cd < info.cycleDay && x.comp === 'done').length;
+  const todayDone = dayCompletion(date) === 'done', summonDay = info.cycleDay === 8;
+  const sevenByDay8 = days.filter(x => x.cd <= 7 && x.comp === 'done').length === 7 && days.length === 8;
+  return { num: info.cycleNum, cd: info.cycleDay, days, earned, star: summonDay ? null : Math.min(7, before + 1), todayDone, summonDay, canSummon: summonDay && sevenByDay8, summoned: summonDay && sevenByDay8 && todayDone, start: days[0].date, end: days[days.length - 1].date, type: dayType(info) };
+}
+function allCycles() { const out = []; let t = 0; while (t <= D()) { const c = cycleOf(addDays(P().startDate, t)); if (!c) break; out.push(c); t += 8; } return out; }
+// Overall performance of a training group: average change of the best set's e1RM (or reps) versus each exercise's first session
+function groupSummary(group, date) {
+  const names = allExerciseNames(group), rows = [];
+  for (const n of names) { const h = exerciseHistory(n); if (!h.length) continue; const type = exType(n); const last = S.sessions.filter(s => s.finished && s.ex.some(e => e.n === n && exScore(e, type).v > 0)).sort((a, b) => a.date < b.date ? 1 : -1)[0]; const e = last.ex.find(x => x.n === n), v = verdictFor(n, e, last.date, last.id); rows.push({ n, sessions: h.length, change: h.length > 1 ? (h[h.length - 1].v / h[0].v - 1) * 100 : null, state: v.state }); }
+  const cmp = rows.filter(r => r.change != null);
+  const avg = cmp.length ? cmp.reduce((a, r) => a + r.change, 0) / cmp.length : null;
+  const up = cmp.filter(r => r.state === 'up' || r.state === 'jump').length, held = cmp.filter(r => r.state === 'hold').length, down = cmp.filter(r => r.state === 'down').length;
+  return { logged: rows.length, compared: cmp.length, avg, up, held, down, rows };
+}
 
 /* ---------- Readings + metrics ---------- */
 const METRIC_DEFS = [
@@ -710,6 +773,88 @@ function scienceCheck(date) {
   const cur = current('weight', date), lost = cur != null ? p.start.weight - cur : null;
   return { loggedDays: n, totalBalance: bal, predictedLoss: -bal / 7700, predictedWeight: p.start.weight + bal / 7700, lost, kcalPerKg: lost != null && lost > 0.3 && n ? Math.round(-bal / lost) : null, cur };
 }
+/* ============ Cloud backup: a private GitHub repository as the data store ============
+   Every change is pushed as a commit to <owner>/<repo>/<path>, so the full history is kept on GitHub
+   until you delete it yourself. The token lives only in this phone's storage, never inside the data file. */
+const GH_KEY = 'vikac.gh';
+let GH = { repo: '', token: '', path: 'trening-data.json', sha: null, lastSync: null, lastError: null, pending: false, conflict: null, lastRemoteUpdatedAt: null };
+try { const raw = localStorage.getItem(GH_KEY); if (raw) GH = Object.assign(GH, JSON.parse(raw)); } catch (e) {}
+function ghSave() { try { localStorage.setItem(GH_KEY, JSON.stringify(GH)); } catch (e) {} }
+const ghOn = () => !!(GH.repo && GH.token);
+const b64enc = str => btoa(unescape(encodeURIComponent(str)));
+const b64dec = b => decodeURIComponent(escape(atob(String(b).replace(/\s/g, ''))));
+function ghOwnerGuess() { const m = location.hostname.match(/^([^.]+)\.github\.io$/i); return m ? m[1] : ''; }
+async function ghFetch(method, path, body) {
+  const r = await fetch('https://api.github.com' + path, { method, headers: { Authorization: 'Bearer ' + GH.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(body ? { 'Content-Type': 'application/json' } : {}) }, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
+  let j = null; try { j = await r.json(); } catch (e) {}
+  return { ok: r.ok, status: r.status, j };
+}
+// Read the data file from the repo: null when it doesn't exist yet
+async function ghPull() {
+  const r = await ghFetch('GET', `/repos/${GH.repo}/contents/${GH.path}`);
+  if (r.status === 404) return { exists: false };
+  if (!r.ok) throw new Error(r.status === 401 ? 'Token rejected — make a new one' : r.status === 403 ? 'Token has no access to this repository' : 'GitHub error ' + r.status);
+  const data = JSON.parse(b64dec(r.j.content));
+  return { exists: true, sha: r.j.sha, data };
+}
+// Write the current state as one commit. Refuses (and records a conflict) if GitHub holds newer data from another device.
+async function ghPush(force) {
+  if (!ghOn()) return;
+  const head = await ghFetch('GET', `/repos/${GH.repo}/contents/${GH.path}`);
+  let sha = null;
+  if (head.ok) {
+    sha = head.j.sha;
+    if (!force && GH.sha && sha !== GH.sha) {
+      let remote = null; try { remote = JSON.parse(b64dec(head.j.content)); } catch (e) {}
+      const rAt = remote && remote.meta && remote.meta.updatedAt;
+      if (rAt && (!S.meta.updatedAt || rAt > S.meta.updatedAt) && rAt !== GH.lastRemoteUpdatedAt) { GH.conflict = { updatedAt: rAt, sha }; GH.pending = true; ghSave(); return 'conflict'; }
+    }
+  } else if (head.status !== 404) throw new Error(head.status === 401 ? 'Token rejected — make a new one' : head.status === 403 ? 'Token has no access to this repository' : 'GitHub error ' + head.status);
+  const content = b64enc(JSON.stringify(S));
+  const body = { message: 'Trening sync ' + new Date().toISOString().slice(0, 16).replace('T', ' '), content };
+  if (sha) body.sha = sha;
+  const r = await ghFetch('PUT', `/repos/${GH.repo}/contents/${GH.path}`, body);
+  if (!r.ok) throw new Error(r.status === 409 || r.status === 422 ? 'GitHub changed meanwhile — will retry' : r.status === 401 ? 'Token rejected — make a new one' : 'GitHub error ' + r.status);
+  GH.sha = r.j.content.sha; GH.lastSync = new Date().toISOString(); GH.lastError = null; GH.pending = false; GH.conflict = null; GH.lastRemoteUpdatedAt = S.meta.updatedAt || null; ghSave();
+  return 'ok';
+}
+let syncTimer = null, syncing = false;
+function scheduleSync(delay) { if (!ghOn()) return; GH.pending = true; ghSave(); clearTimeout(syncTimer); syncTimer = setTimeout(() => syncNow(), delay == null ? 12000 : delay); }
+async function syncNow(opts) {
+  opts = opts || {}; if (!ghOn() || syncing) return; if (!navigator.onLine) { GH.pending = true; ghSave(); return; }
+  syncing = true; let res = null;
+  try { res = await ghPush(opts.force); if (res === 'conflict' && !opts.quiet) toast('GitHub has newer data from another device — see Profile', 3000); }
+  catch (e) { GH.lastError = e.message || String(e); GH.pending = true; ghSave(); if (!opts.quiet) toast('Cloud backup failed: ' + GH.lastError, 3000); }
+  finally { syncing = false; if (typeof ghPaint === 'function') ghPaint(); }
+  return res;
+}
+// Called by save(): keep the phone copy authoritative and push shortly after the last change
+function onStateSaved() { scheduleSync(); }
+async function ghConnect(repo, token) {
+  GH.repo = repo.trim().replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/\/$/, ''); GH.token = token.trim(); GH.sha = null; GH.lastError = null; GH.conflict = null; ghSave();
+  const pulled = await ghPull();
+  if (pulled.exists) {
+    GH.sha = pulled.sha; const rAt = pulled.data && pulled.data.meta && pulled.data.meta.updatedAt;
+    const localEmpty = !S.project || (Object.keys(S.days).length === 0 && Object.keys(S.readings).length === 0 && S.sessions.length === 0);
+    if (localEmpty || (rAt && S.meta.updatedAt && rAt > S.meta.updatedAt)) { GH.conflict = { updatedAt: rAt || null, sha: pulled.sha, fresh: true }; ghSave(); return { connected: true, remoteNewer: true, remote: pulled.data }; }
+    GH.lastRemoteUpdatedAt = rAt || null; ghSave();
+  }
+  await ghPush(true);
+  return { connected: true, remoteNewer: false };
+}
+async function ghRestore() { const pulled = await ghPull(); if (!pulled.exists) throw new Error('Nothing on GitHub yet'); S = pulled.data; GH.sha = pulled.sha; GH.conflict = null; GH.pending = false; GH.lastSync = new Date().toISOString(); GH.lastRemoteUpdatedAt = S.meta.updatedAt || null; ghSave(); save(); clearTimeout(syncTimer); GH.pending = false; ghSave(); return S; }
+function ghDisconnect() { GH = { repo: '', token: '', path: GH.path, sha: null, lastSync: null, lastError: null, pending: false, conflict: null, lastRemoteUpdatedAt: null }; ghSave(); }
+function ghStatus() {
+  if (!ghOn()) return { state: 'off', text: 'Not connected' };
+  if (GH.conflict) return { state: 'conflict', text: 'GitHub has data from another device' };
+  if (GH.lastError) return { state: 'error', text: GH.lastError };
+  if (GH.pending) return { state: 'pending', text: 'Changes waiting to sync' };
+  if (!GH.lastSync) return { state: 'pending', text: 'Not synced yet' };
+  const mins = Math.round((Date.now() - new Date(GH.lastSync)) / 60000);
+  return { state: 'ok', text: 'Saved to GitHub ' + (mins < 1 ? 'just now' : mins < 60 ? mins + ' min ago' : mins < 1440 ? Math.round(mins / 60) + ' h ago' : Math.round(mins / 1440) + ' days ago') };
+}
+window.addEventListener('online', () => { if (GH.pending) syncNow({ quiet: true }); });
+document.addEventListener('visibilitychange', () => { if (document.hidden && GH.pending) { clearTimeout(syncTimer); syncNow({ quiet: true }); } });
 /* ============ Hero v2: Vikač, original anime-style Muay Thai fighter ============ */
 // opts: { level 0..4, slim 0..1, pose:'stand'|'beam'|'kick', mood:'happy'|'cool'|'tired'|'fire', aura:bool, size, inner }
 function heroSvg(o) {
@@ -922,61 +1067,88 @@ function beamSvg(o) {
   </svg>`;
 }
 
-// Original dark-green eastern dragon for the 7/7 celebration (body, fin and belly plates computed along a spine curve)
-function dragonSvg() {
-  const ink = '#1B1B1B', body = '#1F6B3F', body2 = '#134A2B', belly = '#EADFB4', belly2 = '#CDBF8C', fin = '#2F8F57', fin2 = '#1A5C38', horn = '#F2E6C4', mane = '#0F3D24', eye = '#FFB300', whisk = '#E3B341';
-  const segs = [[16, 156, 60, 96, 112, 206, 156, 132], [156, 132, 192, 70, 226, 126, 266, 106]];
+// Original dark-green eastern dragon, built along a spine curve. opts: { segs, box, maxW, headScale, headTilt, mode: 'color'|'outline'|'grey', stars, bob }
+function dragonArt(o) {
+  o = o || {};
+  const mode = o.mode || 'color', outline = mode === 'outline', grey = mode === 'grey';
+  const ink = '#1B1B1B';
+  const body = grey ? '#BDBDBD' : '#1F6B3F', body2 = grey ? '#8E8E8E' : '#134A2B', belly = grey ? '#EDEDED' : '#EADFB4', belly2 = grey ? '#CFCFCF' : '#CDBF8C', fin = grey ? '#A8A8A8' : '#2F8F57', horn = grey ? '#E0E0E0' : '#F2E6C4', mane = grey ? '#7A7A7A' : '#0F3D24', eye = grey ? '#DDD' : '#FFB300', whisk = grey ? '#CFCFCF' : '#E3B341', hi = grey ? '#D5D5D5' : '#3E9B62';
+  const F = c => outline ? 'none' : c, S = outline ? 2.2 : 2.2;
+  const segs = o.segs, N = 36, pts = [];
   const cub = (a, b, c, d, t) => (1 - t) ** 3 * a + 3 * (1 - t) ** 2 * t * b + 3 * (1 - t) * t * t * c + t ** 3 * d;
   const dcub = (a, b, c, d, t) => 3 * (1 - t) ** 2 * (b - a) + 6 * (1 - t) * t * (c - b) + 3 * t * t * (d - c);
-  const N = 36, pts = [];
   segs.forEach((g, si) => { for (let i = (si ? 1 : 0); i <= N; i++) { const t = i / N; const x = cub(g[0], g[2], g[4], g[6], t), y = cub(g[1], g[3], g[5], g[7], t); let tx = dcub(g[0], g[2], g[4], g[6], t), ty = dcub(g[1], g[3], g[5], g[7], t); const L = Math.hypot(tx, ty) || 1; tx /= L; ty /= L; pts.push({ x, y, tx, ty, ux: ty, uy: -tx }); } });
-  const M = pts.length - 1;
-  const wAt = k => { const sfr = k / M; return 7 + 17 * Math.min(1, sfr * 1.6); };
+  const M = pts.length - 1, maxW = o.maxW || 24, minW = maxW * 0.3;
+  const wAt = k => { const sfr = k / M; return minW + (maxW - minW) * Math.min(1, sfr * 1.6); };
   const left = pts.map((p, k) => `${(p.x + p.ux * wAt(k)).toFixed(1)} ${(p.y + p.uy * wAt(k)).toFixed(1)}`);
   const right = pts.map((p, k) => `${(p.x - p.ux * wAt(k)).toFixed(1)} ${(p.y - p.uy * wAt(k)).toFixed(1)}`).reverse();
   const bodyPath = `M${left.join(' L')} L${right.join(' L')} Z`;
-  // dorsal fin: triangles on the upper side
+  const k0 = o.headScale || 1;
   let fins = '';
-  for (let k = 6; k < M - 2; k += 4) { const p = pts[k], w = wAt(k), h = 9 + w * 0.55; const bx = p.x + p.ux * (w - 2), by = p.y + p.uy * (w - 2); const b1x = bx - p.tx * 6, b1y = by - p.ty * 6, b2x = bx + p.tx * 6, b2y = by + p.ty * 6; const tipx = bx + p.ux * h - p.tx * 4, tipy = by + p.uy * h - p.ty * 4; fins += `<path d="M${b1x} ${b1y} L${tipx} ${tipy} L${b2x} ${b2y} Z" fill="${fin}" stroke="${ink}" stroke-width="2.2" stroke-linejoin="round"/>`; }
-  // belly plates on the lower side
+  for (let k = 6; k < M - 2; k += 4) { const p = pts[k], w = wAt(k), h = (9 + w * 0.55) * 0.8; const bx = p.x + p.ux * (w - 2), by = p.y + p.uy * (w - 2); fins += `<path d="M${bx - p.tx * 6 * k0} ${by - p.ty * 6 * k0} L${bx + p.ux * h - p.tx * 4} ${by + p.uy * h - p.ty * 4} L${bx + p.tx * 6 * k0} ${by + p.ty * 6 * k0} Z" fill="${F(fin)}" stroke="${ink}" stroke-width="${S}" stroke-linejoin="round"/>`; }
   let plates = '';
-  for (let k = 4; k < M - 1; k += 3) { const p = pts[k], w = wAt(k) - 3; const cx = p.x - p.ux * (w - 4), cy = p.y - p.uy * (w - 4); const a = Math.atan2(p.ty, p.tx) * 180 / Math.PI; plates += `<rect x="${cx - 5}" y="${cy - 3.2}" width="10" height="6.4" rx="3" fill="${belly}" stroke="${belly2}" stroke-width="1" transform="rotate(${a} ${cx} ${cy})"/>`; }
-  // legs at two points on the underside
-  const legAt = (k, flip) => { const p = pts[k], w = wAt(k); const x = p.x - p.ux * (w - 6), y = p.y - p.uy * (w - 6); return `<g transform="translate(${x} ${y})"><path d="M0 0 C${6 * flip} 10 ${2 * flip} 22 ${10 * flip} 30" stroke="${ink}" stroke-width="17" fill="none" stroke-linecap="round"/><path d="M0 0 C${6 * flip} 10 ${2 * flip} 22 ${10 * flip} 30" stroke="${body}" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M${10 * flip} 30 l${-8 * flip} 9 M${10 * flip} 30 l${0} 11 M${10 * flip} 30 l${9 * flip} 8" stroke="${ink}" stroke-width="4" stroke-linecap="round"/><path d="M${10 * flip} 30 l${-8 * flip} 9 M${10 * flip} 30 l${0} 11 M${10 * flip} 30 l${9 * flip} 8" stroke="${horn}" stroke-width="2" stroke-linecap="round"/></g>`; };
-  const legs = legAt(22, 1) + legAt(50, 1) + legAt(14, -1) + legAt(44, -1);
-  // tail tuft
+  if (!outline) for (let k = 4; k < M - 1; k += 3) { const p = pts[k], w = wAt(k) - 3; const cx = p.x - p.ux * (w - 4), cy = p.y - p.uy * (w - 4); const a = Math.atan2(p.ty, p.tx) * 180 / Math.PI; plates += `<rect x="${cx - 5 * k0}" y="${cy - 3.2 * k0}" width="${10 * k0}" height="${6.4 * k0}" rx="${3 * k0}" fill="${belly}" stroke="${belly2}" stroke-width="1" transform="rotate(${a} ${cx} ${cy})"/>`; }
+  const legAt = (k, flip) => { const p = pts[k], w = wAt(k); const x = p.x - p.ux * (w - 6), y = p.y - p.uy * (w - 6); const L = 30 * k0; return `<g transform="translate(${x} ${y}) scale(${k0})"><path d="M0 0 C${6 * flip} 10 ${2 * flip} 22 ${10 * flip} 30" stroke="${ink}" stroke-width="17" fill="none" stroke-linecap="round"/><path d="M0 0 C${6 * flip} 10 ${2 * flip} 22 ${10 * flip} 30" stroke="${outline ? '#fff' : body}" stroke-width="11" fill="none" stroke-linecap="round"/><path d="M${10 * flip} 30 l${-8 * flip} 9 M${10 * flip} 30 l0 11 M${10 * flip} 30 l${9 * flip} 8" stroke="${ink}" stroke-width="4" stroke-linecap="round"/><path d="M${10 * flip} 30 l${-8 * flip} 9 M${10 * flip} 30 l0 11 M${10 * flip} 30 l${9 * flip} 8" stroke="${outline ? '#fff' : horn}" stroke-width="2" stroke-linecap="round"/></g>`; };
+  const legs = (o.legs || [[22, 1], [50, 1], [14, -1], [44, -1]]).map(([k, f]) => legAt(Math.min(k, M - 3), f)).join('');
   const t0 = pts[0];
-  const tuft = `<g transform="translate(${t0.x} ${t0.y})"><path d="M0 0 L-16 -14 L-6 -2 L-22 2 L-6 4 L-14 18 Z" fill="${mane}" stroke="${ink}" stroke-width="2.4" stroke-linejoin="round"/></g>`;
-  // head at the end, aligned with the tangent
-  const hp = pts[M], ha = Math.atan2(hp.ty, hp.tx) * 180 / Math.PI - 8;
-  const head = `<g transform="translate(${hp.x} ${hp.y}) rotate(${ha})">
-    <path d="M-22 -14 L-10 -26 L-2 -34 L4 -22 L10 -30 L14 -16 L-4 -8 Z" fill="${mane}" stroke="${ink}" stroke-width="2.4" stroke-linejoin="round"/>
-    <path d="M-26 10 L-12 18 L-6 30 L2 20 L10 28 L12 14 Z" fill="${mane}" stroke="${ink}" stroke-width="2.4" stroke-linejoin="round"/>
-    <path d="M-18 -20 C-4 -32 28 -30 48 -16 L62 -8 L60 6 L46 10 L30 22 C10 26 -10 22 -18 10 Z" fill="${body}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M28 2 C36 -2 52 -4 62 -8 L60 6 L46 10 L30 22 Z" fill="${body2}" opacity=".55"/>
-    <path d="M30 12 C40 10 52 10 64 14 C58 24 44 30 30 22 Z" fill="${body2}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M36 12 l2 6 M44 12 l2 6 M52 12 l1 6 M58 13 l0 5" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
-    <path d="M38 16 C44 20 52 22 60 20" stroke="#B5323A" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>
-    <path d="M8 -26 C6 -40 -2 -50 -10 -54 M8 -26 C14 -38 12 -46 6 -54 M18 -24 C22 -38 32 -46 44 -46 M18 -24 C26 -32 36 -34 40 -30" stroke="${ink}" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M8 -26 C6 -40 -2 -50 -10 -54 M8 -26 C14 -38 12 -46 6 -54 M18 -24 C22 -38 32 -46 44 -46 M18 -24 C26 -32 36 -34 40 -30" stroke="${horn}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <ellipse cx="22" cy="-8" rx="7" ry="6" fill="${eye}" stroke="${ink}" stroke-width="2"/><ellipse cx="23" cy="-8" rx="2" ry="4.5" fill="${ink}"/><circle cx="25" cy="-10" r="1.3" fill="#fff"/>
+  const tuft = `<g transform="translate(${t0.x} ${t0.y}) scale(${k0})"><path d="M0 0 L-16 -14 L-6 -2 L-22 2 L-6 4 L-14 18 Z" fill="${F(mane)}" stroke="${ink}" stroke-width="2.4" stroke-linejoin="round"/></g>`;
+  const hp = pts[M]; let ha = Math.atan2(hp.ty, hp.tx) * 180 / Math.PI + (o.headTilt || -8);
+  const flip = Math.cos(ha * Math.PI / 180) < 0 ? -1 : 1;
+  const head = `<g transform="translate(${hp.x} ${hp.y}) rotate(${ha}) scale(${k0} ${k0 * flip})">
+    <path d="M-22 -14 L-10 -26 L-2 -34 L4 -22 L10 -30 L14 -16 L-4 -8 Z" fill="${F(mane)}" stroke="${ink}" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M-26 10 L-12 18 L-6 30 L2 20 L10 28 L12 14 Z" fill="${F(mane)}" stroke="${ink}" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M-18 -20 C-4 -32 28 -30 48 -16 L62 -8 L60 6 L46 10 L30 22 C10 26 -10 22 -18 10 Z" fill="${F(body)}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
+    ${outline ? '' : `<path d="M28 2 C36 -2 52 -4 62 -8 L60 6 L46 10 L30 22 Z" fill="${body2}" opacity=".55"/>`}
+    <path d="M30 12 C40 10 52 10 64 14 C58 24 44 30 30 22 Z" fill="${F(body2)}" stroke="${ink}" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M36 12 l2 6 M44 12 l2 6 M52 12 l1 6 M58 13 l0 5" stroke="${outline ? ink : '#fff'}" stroke-width="2.6" stroke-linecap="round"/>
+    ${outline ? '' : `<path d="M38 16 C44 20 52 22 60 20" stroke="#B5323A" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>`}
+    <path d="M8 -26 C6 -40 -2 -50 -10 -54 M8 -26 C14 -38 12 -46 6 -54 M18 -24 C22 -38 32 -46 44 -46 M18 -24 C26 -32 36 -34 40 -30" stroke="${ink}" stroke-width="${outline ? 2.6 : 5.5}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    ${outline ? '' : `<path d="M8 -26 C6 -40 -2 -50 -10 -54 M8 -26 C14 -38 12 -46 6 -54 M18 -24 C22 -38 32 -46 44 -46 M18 -24 C26 -32 36 -34 40 -30" stroke="${horn}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`}
+    <ellipse cx="22" cy="-8" rx="7" ry="6" fill="${F(eye)}" stroke="${ink}" stroke-width="2"/><ellipse cx="23" cy="-8" rx="2" ry="4.5" fill="${ink}"/>${outline ? '' : '<circle cx="25" cy="-10" r="1.3" fill="#fff"/>'}
     <path d="M12 -16 L30 -14" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>
     <path d="M54 -10 l4 2 M56 -4 l4 0" stroke="${ink}" stroke-width="2" stroke-linecap="round"/>
-    <path d="M60 2 C76 -6 92 4 100 -10 C92 10 78 14 62 8" fill="${whisk}" stroke="${ink}" stroke-width="1.6"><animate attributeName="d" dur="2.6s" repeatCount="indefinite" values="M60 2 C76 -6 92 4 100 -10 C92 10 78 14 62 8;M60 2 C76 -2 92 10 102 -2 C92 14 78 16 62 8;M60 2 C76 -6 92 4 100 -10 C92 10 78 14 62 8"/></path>
-    <path d="M60 10 C74 16 88 26 98 42 C84 30 70 24 60 18" fill="${whisk}" stroke="${ink}" stroke-width="1.6"><animate attributeName="d" dur="3.1s" repeatCount="indefinite" values="M60 10 C74 16 88 26 98 42 C84 30 70 24 60 18;M60 10 C74 20 84 34 92 48 C82 34 70 26 60 18;M60 10 C74 16 88 26 98 42 C84 30 70 24 60 18"/></path>
-    <path d="M30 24 L30 36 L36 28" fill="${mane}" stroke="${ink}" stroke-width="2"/>
+    <path d="M60 2 C76 -6 92 4 100 -10 C92 10 78 14 62 8" fill="${F(whisk)}" stroke="${ink}" stroke-width="1.6">${o.bob ? '<animate attributeName="d" dur="2.6s" repeatCount="indefinite" values="M60 2 C76 -6 92 4 100 -10 C92 10 78 14 62 8;M60 2 C76 -2 92 10 102 -2 C92 14 78 16 62 8;M60 2 C76 -6 92 4 100 -10 C92 10 78 14 62 8"/>' : ''}</path>
+    <path d="M60 10 C74 16 88 26 98 42 C84 30 70 24 60 18" fill="${F(whisk)}" stroke="${ink}" stroke-width="1.6">${o.bob ? '<animate attributeName="d" dur="3.1s" repeatCount="indefinite" values="M60 10 C74 16 88 26 98 42 C84 30 70 24 60 18;M60 10 C74 20 84 34 92 48 C82 34 70 26 60 18;M60 10 C74 16 88 26 98 42 C84 30 70 24 60 18"/>' : ''}</path>
+    <path d="M30 24 L30 36 L36 28" fill="${F(mane)}" stroke="${ink}" stroke-width="2"/>
   </g>`;
-  const spineHi = `<path d="M${pts.filter((p, k) => k % 2 === 0).map(p => `${(p.x + p.ux * 4).toFixed(1)} ${(p.y + p.uy * 4).toFixed(1)}`).join(' L')}" stroke="#3E9B62" stroke-width="5" fill="none" stroke-linecap="round" opacity=".55"/>`;
-  return `<svg viewBox="-10 -20 380 240" style="overflow:visible">
-    <g><animateTransform attributeName="transform" type="translate" values="0 0;0 -7;0 0" dur="2.4s" repeatCount="indefinite"/>
+  const spineHi = outline ? '' : `<path d="M${pts.filter((p, k) => k % 2 === 0).map(p => `${(p.x + p.ux * 4).toFixed(1)} ${(p.y + p.uy * 4).toFixed(1)}`).join(' L')}" stroke="${hi}" stroke-width="5" fill="none" stroke-linecap="round" opacity=".55"/>`;
+  const starsFx = o.stars ? `<g fill="#FFD400" stroke="${ink}" stroke-width="2"><path d="M40 20 L46 34 L60 38 L46 42 L40 56 L34 42 L20 38 L34 34 Z"/><path d="M330 150 L334 160 L344 163 L334 166 L330 176 L326 166 L316 163 L326 160 Z"/><path d="M120 10 L123 17 L130 19 L123 21 L120 28 L117 21 L110 19 L117 17 Z"/></g>` : '';
+  return `<svg viewBox="${o.box || '-10 -20 380 240'}" ${o.size ? `width="${o.size}" height="${o.size}"` : ''} style="overflow:visible">
+    <g>${o.bob ? '<animateTransform attributeName="transform" type="translate" values="0 0;0 -7;0 0" dur="2.4s" repeatCount="indefinite"/>' : ''}
       ${legs}${tuft}
-      <path d="${bodyPath}" fill="${body}" stroke="${ink}" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="${bodyPath}" fill="${outline ? '#fff' : body}" stroke="${ink}" stroke-width="${outline ? 2.6 : 3.5}" stroke-linejoin="round"/>
       ${spineHi}${plates}${fins}${head}
-    </g>
-    <g fill="#FFD400" stroke="${ink}" stroke-width="2"><path d="M40 20 L46 34 L60 38 L46 42 L40 56 L34 42 L20 38 L34 34 Z"/><path d="M330 150 L334 160 L344 163 L334 166 L330 176 L326 166 L316 163 L326 160 Z"/><path d="M120 10 L123 17 L130 19 L123 21 L120 28 L117 21 L110 19 L117 17 Z"/></g>
+    </g>${starsFx}
   </svg>`;
 }
+function dragonSvg() { return dragonArt({ segs: [[16, 156, 60, 96, 112, 206, 156, 132], [156, 132, 192, 70, 226, 126, 266, 106]], box: '-10 -20 380 240', maxW: 24, headScale: 1, stars: true, bob: true }); }
+// Compact emblem for the summon slot: the same dragon coiled into a loop. state: 'ready' (outline, waiting) | 'done' (colour) | 'locked' (grey)
+function dragonBadgeSvg(o) {
+  o = o || {}; const st = o.state || 'ready', size = o.size || 84;
+  const art = dragonArt({ segs: [[14, 92, 70, 118, 118, 60, 76, 30], [76, 30, 40, 4, 8, 44, 48, 62]], box: '-6 -12 150 150', maxW: 14, headScale: 0.62, headTilt: -14, legs: [[18, 1], [40, -1]], mode: st === 'locked' ? 'grey' : 'color', size });
+  if (st === 'done') return art;
+  return `<div style="position:relative;width:${size}px;height:${size}px;display:inline-block"><div style="opacity:${st === 'locked' ? .7 : .4}">${art}</div><svg viewBox="0 0 100 100" width="${size}" height="${size}" style="position:absolute;left:0;top:0"><circle cx="50" cy="50" r="47" fill="none" stroke="#1B1B1B" stroke-width="3" stroke-dasharray="6 5"/>${st === 'locked' ? '<rect x="40" y="46" width="20" height="16" rx="3" fill="#fff" stroke="#1B1B1B" stroke-width="2.5"/><path d="M44 46 v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="#1B1B1B" stroke-width="2.5"/>' : ''}</svg></div>`;
+}
 
+// Star dragon ball: an orange glass orb with 1–7 stars. state: 'full' (collected) | 'hollow' (still to earn) | 'dim' (missed/locked)
+const STAR_LAYOUTS = { 1: [[0, 0]], 2: [[-0.42, -0.42], [0.42, 0.42]], 3: [[0, -0.5], [-0.45, 0.3], [0.45, 0.3]], 4: [[-0.42, -0.42], [0.42, -0.42], [-0.42, 0.42], [0.42, 0.42]], 5: [[0, -0.52], [-0.5, -0.16], [0.5, -0.16], [-0.31, 0.44], [0.31, 0.44]], 6: [[-0.48, -0.28], [0, -0.52], [0.48, -0.28], [-0.48, 0.28], [0, 0.52], [0.48, 0.28]], 7: [[0, 0], [-0.5, -0.29], [0, -0.58], [0.5, -0.29], [-0.5, 0.29], [0, 0.58], [0.5, 0.29]] };
+function starPath(cx, cy, r) { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; d += (i ? 'L' : 'M') + (cx + rr * Math.cos(a)).toFixed(2) + ' ' + (cy + rr * Math.sin(a)).toFixed(2); } return d + 'Z'; }
+function ballSvg(o) {
+  o = o || {}; const n = Math.max(1, Math.min(7, o.stars || 1)), st = o.state || 'full', size = o.size || 84, id = 'b' + Math.random().toString(36).slice(2, 7);
+  const dim = st === 'dim', hollow = st === 'hollow';
+  const sr = n === 1 ? 16 : n <= 3 ? 11 : n <= 5 ? 9.5 : 8.5, spread = n === 1 ? 0 : 24;
+  const stars = STAR_LAYOUTS[n].map(([x, y]) => `<path d="${starPath(50 + x * spread * (n >= 6 ? 1.05 : 1), 50 + y * spread * (n >= 6 ? 1.05 : 1), sr)}" fill="${hollow || dim ? 'none' : '#FFE68A'}" stroke="${dim ? '#9A9A9A' : hollow ? '#D45E00' : '#8A3A00'}" stroke-width="${hollow ? 2.4 : 1.8}" stroke-linejoin="round" opacity="${hollow ? .9 : 1}"/>`).join('');
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="overflow:visible">
+    <defs><radialGradient id="${id}g" cx="38%" cy="32%" r="70%"><stop offset="0" stop-color="${dim ? '#E8E8E8' : hollow ? '#FFFBF2' : '#FFD27A'}"/><stop offset=".45" stop-color="${dim ? '#C9C9C9' : hollow ? '#FFEBCF' : '#FE9A2E'}"/><stop offset="1" stop-color="${dim ? '#8F8F8F' : hollow ? '#E9C79A' : '#C24A00'}"/></radialGradient>
+    <radialGradient id="${id}h" cx="30%" cy="26%" r="30%"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="50" cy="50" r="46" fill="url(#${id}g)" stroke="#1B1B1B" stroke-width="3.5" opacity="${hollow ? .95 : 1}"/>
+    ${stars}
+    <circle cx="50" cy="50" r="46" fill="url(#${id}h)" opacity="${hollow ? .5 : 1}"/>
+    <ellipse cx="36" cy="30" rx="11" ry="6" fill="#fff" opacity="${hollow ? .35 : .75}" transform="rotate(-30 36 30)"/>
+    <path d="M22 66 C28 80 44 88 60 84" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity="${hollow ? .2 : .45}"/>
+    ${hollow ? `<circle cx="50" cy="50" r="46" fill="none" stroke="#1B1B1B" stroke-width="3" stroke-dasharray="6 5"/>` : ''}
+  </svg>`;
+}
 // Impact burst used in the tick animation
 function burstSvg() { return `<svg viewBox="0 0 50 50"><path d="M25 2 L29 16 L42 8 L34 20 L48 25 L34 30 L42 42 L29 34 L25 48 L21 34 L8 42 L16 30 L2 25 L16 20 L8 8 L21 16 Z" fill="#FFD400" stroke="#1B1B1B" stroke-width="2" stroke-linejoin="round"/></svg>`; }
 
@@ -985,6 +1157,7 @@ const ICONS = {
   cal: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg>',
   dash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 19V11M10 19V5M16 19v-8M22 19H2"/></svg>',
   profile: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="#1B1B1B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg>',
 };
 /* ============ UI ============ */
@@ -1014,7 +1187,7 @@ function nav(on) {
     <button data-nav="today" class="${on === 'today' ? 'on' : ''}">${ICONS.today}Today</button>
     <button data-nav="cal" class="${on === 'cal' ? 'on' : ''}">${ICONS.cal}Calendar</button>
     <button data-nav="dash" class="${on === 'dash' ? 'on' : ''}">${ICONS.dash}Dashboard</button>
-    <button data-nav="profile" class="${on === 'profile' ? 'on' : ''}">${ICONS.profile}Profile</button>
+    <button data-nav="profile" class="${on === 'profile' ? 'on' : ''}">${ICONS.settings}Settings</button>
   </div>`;
 }
 function topbar(title, sub, right) { return `<div class="topbar"><button class="back" data-back aria-label="Back">‹</button><div><div class="t">${esc(title)}</div>${sub ? '<div class="s">' + esc(sub) + '</div>' : ''}</div>${right ? `<div class="r">${right}</div>` : ''}</div>`; }
@@ -1104,58 +1277,97 @@ function itemSub(date, it) {
   if (it.id === 'mobility') sub = 'Before kicking';
   return sub;
 }
+function ringSvg(pct, color, size) {
+  const circ = 2 * Math.PI * 34;
+  return `<svg viewBox="0 0 84 84" width="${size || 84}" height="${size || 84}"><circle cx="42" cy="42" r="34" fill="none" stroke="#fff" stroke-width="10" opacity=".6"/><circle cx="42" cy="42" r="34" fill="none" stroke="${color || '#1F6B3F'}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${circ * Math.max(0, Math.min(100, pct)) / 100} ${circ}" transform="rotate(-90 42 42)"/><circle cx="42" cy="42" r="34" fill="none" stroke="#1B1B1B" stroke-width="2"/><circle cx="42" cy="42" r="29" fill="#fff" stroke="#1B1B1B" stroke-width="2"/><text x="42" y="49" text-anchor="middle" font-family="Bangers,Impact" font-size="22" fill="#1B1B1B">${Math.round(pct)}%</text></svg>`;
+}
+function slotArt(cyc) {
+  if (!cyc) return '';
+  if (cyc.summonDay) return dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 84 });
+  return ballSvg({ stars: cyc.star, state: cyc.todayDone ? 'full' : 'hollow', size: 84 });
+}
+function slotCap(cyc) { if (!cyc) return ''; if (cyc.summonDay) return cyc.summoned ? 'Dragon summoned' : cyc.canSummon ? 'Summon today' : cyc.earned + '/7 · no summon'; return cyc.earned + '/7 collected'; }
+function bigBallHtml(cyc, future) {
+  if (!cyc) return '';
+  if (cyc.summonDay) {
+    const st = cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked';
+    const cap = cyc.summoned ? 'The dragon answered!' : cyc.canSummon ? 'Summon the dragon' : 'No summon this cycle';
+    const sub = cyc.summoned ? 'Perfect cycle. Rest up — next fight starts tomorrow.' : cyc.canSummon ? (future ? 'Complete everything on this day to summon.' : 'Complete everything today and the dragon appears.') : 'You collected ' + cyc.earned + ' of 7 balls — all seven are needed. New cycle tomorrow.';
+    return `<div class="bigball" data-bigball><div class="art" id="bigart">${dragonBadgeSvg({ state: st, size: 124 })}</div><div class="cap">${cap}</div><div class="sub">${sub}</div></div>`;
+  }
+  const cap = cyc.todayDone ? cyc.star + '-star ball collected!' : 'Today\'s ' + cyc.star + '-star ball';
+  const sub = cyc.todayDone ? (cyc.earned === 7 ? 'All seven! Summon the dragon on day 8.' : (7 - cyc.earned) + ' more to summon the dragon.') : (future ? 'Complete everything on the day to collect it.' : 'Complete everything to collect it.');
+  return `<div class="bigball" data-bigball><div class="art" id="bigart">${ballSvg({ stars: cyc.star, state: cyc.todayDone ? 'full' : 'hollow', size: 124 })}</div><div class="cap">${cap}</div><div class="sub">${sub}</div></div>`;
+}
 function todayHtml() {
-  const date = R.date, info = dayInfo(date), p = P(), future = date > today();
+  const date = R.date, info = dayInfo(date), p = P(), future = date > today(), td = today();
   let body = '', head;
   if (info.phase === 'pre') { head = band(`T-${-info.t}`, 'days to go', null, true); body = `<div class="funline">Day 1 is ${fmtDate(p.startDate)}. Stretch, sleep, and weigh in if you like.</div><button class="btn sec" data-open="weigh">Log a weigh-in</button>`; }
-  else if (info.phase === 'post') { head = band('Finished', fmtDate(p.endDate), null, true); body = `<div class="funline">Project finished on ${fmtDate(p.endDate)}. The Dashboard has the final verdict; start a new project from Profile.</div>`; }
+  else if (info.phase === 'post') { head = band('Finished', fmtDate(p.endDate), null, true); body = `<div class="funline">Project finished on ${fmtDate(p.endDate)}. The Dashboard has the final verdict; start a new project from Settings.</div>`; }
   else {
-    head = band(`Day ${info.idx}<small>/${D()}</small>`, `${info.daysLeft} to go`, null, true);
-    const db = dragonBalls(date), sk = streak(date);
+    const cyc = cycleOf(date), pct = info.t / D() * 100, dtp = cyc.type, col = DAYTYPES[dtp.k].color;
+    head = `<div class="band cyc">
+      <div class="cyc-top">
+        <div class="slot" data-slot><div class="art" id="slotart">${slotArt(cyc)}</div><div class="cap" id="slotcap">${slotCap(cyc)}</div></div>
+        <div class="mid"><div class="c">Cycle ${cyc.num}</div><div class="d">Day ${cyc.cd}/${cyc.days.length}</div><div class="dt">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)}${date === td ? ' · today' : ''}</div></div>
+        <div class="slot"><div class="art">${ringSvg(pct, '#1F6B3F', 84)}</div><div class="cap">Day ${info.idx}/${D()}</div></div>
+      </div>
+      <div class="cstrip"><button class="arrow" data-day="-1" aria-label="Previous day">‹</button>${cyc.days.map(x => `<button class="box ${x.cd === cyc.cd ? 'cur' : ''} ${x.date === td ? 'today' : ''} ${x.date < td || x.date === td ? (x.comp === 'done' ? 'done' : x.comp === 'part' ? 'part' : x.date < td ? 'miss' : '') : ''}" data-goto="${x.date}" title="${x.type.label}">${x.cd}</button>`).join('')}<button class="arrow" data-day="1" aria-label="Next day">›</button></div>
+      <div class="center"><span class="daytype"><i style="background:${col}"></i>${esc(dtp.label)}</span>${date !== td ? ` <button class="pill" data-day="0" style="margin-left:8px;margin-top:12px">↩ Today</button>` : ''}</div>
+    </div>`;
     body = `<div class="funline">${esc(funLine(info))}</div>
       <ul class="todo">${info.items.map(it => {
         const dn = isDone(date, it.id), tag = it.id === 'workout' ? tagHtml(PROGRAM.workouts[it.key].group, PROGRAM.workouts[it.key].group) : it.id === 'mt' ? tagHtml('mt', 'MT') : '';
         return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}" data-item="${it.id}" data-key="${it.key || ''}"><div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap"><svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg></div><div class="burst">${burstSvg()}</div></li>`;
       }).join('')}</ul>
-      ${future ? '<div class="center muted">Planned — logging opens on the day.</div>' : `<div class="balls">${[0, 1, 2, 3, 4, 5, 6].map(i => `<div class="ball ${i < db.balls ? '' : 'off'}"></div>`).join('')}</div>
-      <div class="center cond" data-balls style="cursor:pointer;font-size:14px;color:var(--ink2)">${db.balls}/7 dragon balls${db.balls === 7 ? ' — perfect day!' : ''}</div>
-      ${sk >= 2 ? `<div class="center"><span class="streak">${sk} perfect days in a row</span></div>` : ''}`}`;
+      ${bigBallHtml(cyc, future)}
+      ${future ? '<div class="center muted" style="margin-top:6px">Planned — logging opens on the day.</div>' : ''}`;
   }
-  const last = S.meta.lastBackup ? diffDays(S.meta.lastBackup.slice(0, 10), today()) : null;
-  const bk = (last == null && Object.keys(S.days).length > 3) || (last != null && last >= 7) ? `<div class="warnbox" data-nav="profile"><span>${last == null ? 'No backup yet' : 'Last backup ' + last + ' days ago'} — tap to back up.</span></div>` : '';
-  return `<div class="screen">${head}
-    <div class="daynav"><button class="pill" data-day="-1">‹ ${fmtShort(addDays(date, -1))}</button>${date === today() ? '<span class="pill or">Today</span>' : `<button class="pill" data-day="0">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)} <span style="opacity:.55">· ↩</span></button>`}<button class="pill" data-day="1">${fmtShort(addDays(date, 1))} ›</button></div>
-    ${bk}${body}
-  </div>${nav('today')}`;
+  const last = S.meta.lastBackup ? diffDays(S.meta.lastBackup.slice(0, 10), today()) : null, gst = ghStatus();
+  let bk = '';
+  if (ghOn()) { const stale = GH.lastSync ? diffDays(GH.lastSync.slice(0, 10), today()) : 99; if (gst.state === 'conflict' || gst.state === 'error' || stale >= 3) bk = `<div class="warnbox" data-nav="profile"><span>Cloud backup needs attention — ${esc(gst.text)}. Tap to fix.</span></div>`; }
+  else if ((last == null && Object.keys(S.days).length > 3) || (last != null && last >= 7)) bk = `<div class="warnbox" data-nav="profile"><span>${last == null ? 'No backup yet' : 'Last backup ' + last + ' days ago'} — tap to back up or turn on cloud backup.</span></div>`;
+  return `<div class="screen">${head}${bk}${body}</div>${nav('today')}`;
 }
 function bindToday() {
   const date = R.date, future = date > today();
   app.querySelectorAll('[data-day]').forEach(b => b.onclick = () => { const n = +b.dataset.day; R.date = n === 0 ? today() : addDays(date, n); render(); });
+  app.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => { R.date = b.dataset.goto; render(); });
   app.querySelectorAll('[data-chk]').forEach(c => c.onclick = () => {
     if (future) return toast('That day hasn\'t happened yet');
     const li = c.closest('li'), id = li.dataset.item, d = day(date);
-    if (li.classList.contains('done')) { d.done[id] = false; if (['workout', 'weigh', 'nutrition', 'hang', 'mt'].includes(id) && isDone(date, id)) { toast('Logged data keeps it done — clear it inside'); return; } li.classList.remove('done'); save(); refreshBalls(); return; }
+    if (li.classList.contains('done')) { d.done[id] = false; if (['workout', 'weigh', 'nutrition', 'hang', 'mt'].includes(id) && isDone(date, id)) { toast('Logged data keeps it done — clear it inside'); return; } li.classList.remove('done'); save(); refreshCycle(); return; }
     d.done[id] = true; save(); li.classList.add('done');
     const z = li.querySelector('.zap'), bu = li.querySelector('.burst'); z.classList.remove('play'); bu.classList.remove('play'); void z.offsetWidth; z.classList.add('play'); bu.classList.add('play');
-    vib(30); refreshBalls(true);
+    vib(30); refreshCycle(true);
   });
   app.querySelectorAll('[data-open-item]').forEach(el => el.onclick = () => { const li = el.closest('li'), id = li.dataset.item; let key = li.dataset.key; if (id === 'workout') { const ex = S.sessions.find(x => x.date === date); if (ex) key = ex.key; } go(id, { date, key }); });
   app.querySelectorAll('[data-open]').forEach(b => b.onclick = () => go(b.dataset.open, { date }));
-  const bl = app.querySelector('[data-balls]'); if (bl) bl.onclick = () => showBalls(date);
+  const bb = app.querySelector('[data-bigball]'); if (bb) bb.onclick = () => showBalls(date);
+  const sl = app.querySelector('[data-slot]'); if (sl) sl.onclick = () => showBalls(date);
 }
-function refreshBalls(pop) {
-  const db = dragonBalls(R.date), balls = app.querySelectorAll('.ball'); let newly = false;
-  balls.forEach((b, i) => { const on = i < db.balls; if (on && b.classList.contains('off')) { newly = true; if (pop) b.classList.add('pop'); } b.classList.toggle('off', !on); });
-  const t = app.querySelector('[data-balls]'); if (t) t.textContent = db.balls + '/7 dragon balls' + (db.balls === 7 ? ' — perfect day!' : '');
-  if (db.balls === 7 && newly && !day(R.date).dragonShown) { day(R.date).dragonShown = true; save(); showDragon(); }
+// Re-draw the ball slot, the big ball and the cycle strip after a tick; celebrate a collected ball or a summoned dragon
+function refreshCycle(pop) {
+  const cyc = cycleOf(R.date); if (!cyc) return;
+  const was = R._lastDone; R._lastDone = cyc.todayDone;
+  const sa = $('#slotart'), sc = $('#slotcap'), ba = $('#bigart'); if (sa) sa.innerHTML = slotArt(cyc); if (sc) sc.textContent = slotCap(cyc);
+  const bb = app.querySelector('[data-bigball]'); if (bb) bb.outerHTML = bigBallHtml(cyc, false); const bb2 = app.querySelector('[data-bigball]'); if (bb2) bb2.onclick = () => showBalls(R.date);
+  const cur = app.querySelector('.cstrip .box.cur'); if (cur) { cur.classList.remove('done', 'part', 'miss'); cur.classList.add(cyc.todayDone ? 'done' : dayCompletion(R.date) === 'part' ? 'part' : 'miss'); }
+  if (cyc.todayDone && pop && !was) {
+    const art = $('#bigart'); if (art) { art.classList.add('pop'); }
+    const key = cyc.summonDay ? 'summon' : 'ball', flag = day(R.date).celebrated || {};
+    if (!flag[key]) { flag[key] = true; day(R.date).celebrated = flag; save(); if (cyc.summoned) showDragon(); else { vib([40, 60, 40, 60, 120]); toast(cyc.star + '-star dragon ball collected!', 2400); } }
+  }
 }
 function showDragon() {
-  const el = document.createElement('div'); el.className = 'dragon'; el.innerHTML = dragonSvg() + '<div class="msg">All seven!</div><div class="cond" style="margin-top:4px;font-size:18px">Perfect day, champion.</div>';
+  const el = document.createElement('div'); el.className = 'dragon'; el.innerHTML = dragonSvg() + '<div class="msg">The dragon answers!</div><div class="cond" style="margin-top:4px;font-size:18px">Seven balls, perfect cycle. Legendary.</div>';
   el.onclick = () => el.remove(); document.body.appendChild(el); vib([60, 40, 60, 40, 120]); setTimeout(() => { if (el.parentNode) el.remove(); }, 6500);
 }
 function showBalls(date) {
-  const db = dragonBalls(date);
-  modal(`<h3>Dragon balls</h3><div class="cond" style="font-size:18px">${db.balls} of 7 · ${fmtShort(date)}</div><div class="kv" style="margin-top:10px">${db.rows.map(r => `<span>${esc(r.label)}</span><b class="${r.pts >= r.max ? 'ok' : r.pts > 0 ? 'warn' : 'muted'}">${r.pts >= r.max ? '✓' : r.pts > 0 ? '½' : '○'}</b>`).join('')}</div><button class="btn sec" data-close>Close</button>`);
+  const info = dayInfo(date), cyc = cycleOf(date); if (!info.items) return;
+  const rows = info.items.map(it => `<span>${esc(it.label)}</span><b class="${isDone(date, it.id) ? 'ok' : 'muted'}">${isDone(date, it.id) ? '✓' : '○'}</b>`).join('');
+  const head = cyc.summonDay ? (cyc.canSummon ? 'Summon day — complete everything' : 'Summon day — needs all 7 balls') : 'Today\'s ' + cyc.star + '-star ball';
+  modal(`<h3>${head}</h3><div class="muted">Cycle ${cyc.num} · ${cyc.earned}/7 balls collected</div><div class="kv" style="margin-top:10px">${rows}</div><div class="chips" style="margin:6px 0 2px">${cyc.days.filter(x => x.cd <= 7).map(x => `<span class="chip ${x.comp === 'done' ? 'ok' : x.comp === 'miss' ? 'bad' : 'muted'}" title="${x.type.label}">${x.cd}</span>`).join('')}</div><button class="btn sec" data-close>Close</button>`);
 }
 
 /* ---------- Calendar ---------- */
@@ -1193,6 +1405,8 @@ function calHtml() {
       <div class="legend"><span><i style="background:var(--ok)"></i>perfect</span><span><i style="background:var(--yel)"></i>partly</span><span><i style="background:var(--badsoft)"></i>missed</span><span><i style="box-shadow:0 0 0 2px var(--or);border-color:transparent"></i>today</span></div>
     </div>
     ${detail}
+    <div class="sec-h">Cycles</div>
+    <div class="card flat"><div class="cycles">${allCycles().map(c => { const cur = R.calSel >= c.start && R.calSel <= c.end; return `<div class="cycrow ${cur ? 'cur' : ''}" data-cal="${c.start}"><span class="n">Cycle ${c.num}</span><span class="dates">${fmtShort(c.start)} – ${fmtShort(c.end)}</span><div class="balls">${c.days.filter(x => x.cd <= 7).map(x => `<span class="mb ${x.comp === 'done' ? '' : x.comp === 'miss' ? 'miss' : 'off'}"></span>`).join('')}</div><span class="drg">${c.days.length === 8 ? dragonBadgeSvg({ state: c.summoned ? 'done' : (c.earned === 7 && c.days[7].comp !== 'miss') ? 'ready' : 'locked', size: 26 }) : ''}</span></div>`; }).join('')}</div></div>
     <div class="sec-h">${MONTHS[M - 1]}</div>
     <div class="card flat" style="padding:4px 10px"><ul class="dl">${list || '<li><span class="muted">No program days this month.</span></li>'}</ul></div>
   </div>${nav('cal')}`;
@@ -1384,6 +1598,14 @@ function metricBar(st, date) {
     ${beamSvg({ frac, expFrac: ef, timeFrac: tf, state: st.state === 'ahead' ? 'zone' : st.state, left: st.start.toFixed(def.dec) + u, right: 'GOAL ' + st.goal.toFixed(def.dec) + u })}
     <div class="st ${st.cls}">${esc(st.text)}</div></div>`;
 }
+function groupBar(group, date) {
+  const g = groupSummary(group, date), label = DAYTYPES[group].label + ' overall';
+  if (!g.logged) return `<div class="beam" style="border-color:${DAYTYPES[group].color}"><div class="hd"><span class="n">${label}</span><span class="g">nothing logged yet</span></div>${beamSvg({ frac: 0, state: 'nodata', left: 'baseline', right: 'GOAL +3 %' })}<div class="st muted">Log a ${DAYTYPES[group].label} session to start.</div></div>`;
+  if (!g.compared) return `<div class="beam" style="border-color:${DAYTYPES[group].color}"><div class="hd"><span class="n">${label}</span><span class="g">${g.logged} exercise${g.logged === 1 ? '' : 's'} logged</span></div>${beamSvg({ frac: 0, state: 'zone', left: 'baseline', right: 'GOAL +3 %' })}<div class="st muted">Baselines set. Comparisons start with the next ${DAYTYPES[group].label} session.</div></div>`;
+  const state = g.avg >= -2.5 ? 'zone' : 'slow', frac = Math.max(0, Math.min(1, g.avg / 3));
+  const txt = `${g.up + g.held} of ${g.compared} held or improved · ${g.avg >= 0 ? '+' : ''}${g.avg.toFixed(1)} % vs baseline`;
+  return `<div class="beam" style="border-color:${DAYTYPES[group].color}"><div class="hd"><span class="n">${label}</span><span class="g">${g.compared} compared</span></div>${beamSvg({ frac, state, left: 'baseline', right: 'GOAL +3 %' })}<div class="st ${state === 'zone' ? 'ok' : 'warn'}">${txt}${g.down ? ' · ' + g.down + ' down' : ''}</div></div>`;
+}
 function exerciseBar(name, date) {
   const type = exType(name), hist = exerciseHistory(name); const tgt = S.targets[name] || (type === 'max' ? 1.25 : 1.03);
   const first = hist[0].v, last = hist[hist.length - 1].v, goal = first * tgt, span = goal - first;
@@ -1419,7 +1641,7 @@ function dashHtml() {
     <div class="sec-h">Body</div>${body}
     <div class="sec-h">Training</div>
     <div class="tabs">${Object.keys(groups).map(k => `<button data-tab="${k}" class="${R.tab === k ? 'on' : ''}">${groups[k]}</button>`).join('')}</div>
-    ${logged.map(n => exerciseBar(n, date)).join('')}${other}
+    ${R.tab !== 'other' ? groupBar(R.tab, date) : ''}${logged.map(n => exerciseBar(n, date)).join('')}${other}
     ${unlogged.length ? `<div class="card flat"><div class="muted" style="margin-bottom:6px">Not logged yet</div><div class="chips">${unlogged.map(n => `<span class="chip muted">${esc(n)}</span>`).join('')}</div></div>` : ''}
     <div class="sec-h">Science check</div>${science}
   </div>${nav('dash')}`;
@@ -1473,10 +1695,11 @@ function profileHtml() {
       <details class="adv"><summary>Advanced</summary><div class="row">${inp('bmr', 'BMR', p.bmr, 10)}${inp('bandDefault', 'Band kcal default', p.bandDefault, 10)}</div><div class="row">${inp('height', 'Height', p.height, 1)}${inp('age', 'Age', p.age, 0.5)}</div>${inp('waterDrop', 'Early water drop (kg)', p.waterDrop)}</details>
       <div class="muted" id="derived"></div><div style="height:8px"></div>
       <div class="row"><button class="btn sec" data-cancelp>Cancel</button><button class="btn" data-savep>Save</button></div>`;
-  return `<div class="screen">${band('Profile', '')}
+  return `<div class="screen">${band('Settings', '')}
     <div class="card"><div class="hd"><h3>${esc(p.name)}</h3>${R.editProject ? '' : '<button class="btn sec sm" data-editp>Edit</button>'}</div>
       ${R.editProject ? form : `<div class="muted">${fmtShort(p.startDate)} → ${fmtShort(p.endDate)} · −${p.deficit} kcal/day · goal ${goalWeight()} kg · ${p.protein} g protein</div>`}</div>
-    <div class="card"><h3>Backup</h3><div class="muted" style="margin:0 0 10px">${S.meta.lastBackup ? 'Last backup ' + fmtDate(S.meta.lastBackup.slice(0, 10)) : 'No backup yet.'}</div>
+    ${cloudCardHtml()}
+    <div class="card"><h3>Backup file</h3><div class="muted" style="margin:0 0 10px">${S.meta.lastBackup ? 'Last file backup ' + fmtDate(S.meta.lastBackup.slice(0, 10)) : 'No file backup yet.'}</div>
       <div class="row"><button class="btn" data-backup>Backup now</button><button class="btn sec" data-restore>Restore</button></div><input type="file" accept="application/json,.json" id="restoreFile" style="display:none">
       <button class="link" data-csv style="margin-top:6px">Export readings as CSV</button></div>
     <div class="card"><div class="hd"><h3>App</h3><span class="muted">v${APP_VERSION}</span></div>
@@ -1484,7 +1707,36 @@ function profileHtml() {
       <div class="row"><button class="btn sec" data-intro>Replay intro</button><button class="btn ghost" data-reset>Reset everything</button></div></div>
   </div>${nav('profile')}`;
 }
+function cloudCardHtml() {
+  const st = ghStatus(), owner = ghOwnerGuess();
+  if (!ghOn()) return `<div class="card" id="cloud"><h3>Cloud backup</h3><div class="muted" style="margin:0 0 10px">Every change is also saved to a private GitHub repository, with full history. Nothing there is deleted unless you delete it.</div>
+      <div class="field"><label>Repository (owner/name)</label><input id="ghrepo" value="${owner ? owner + '/trening-data' : ''}" placeholder="yourname/trening-data" autocapitalize="off" autocorrect="off"></div>
+      <div class="field"><label>Token</label><input id="ghtoken" type="password" placeholder="github_pat_…" autocapitalize="off" autocorrect="off"></div>
+      <button class="btn" data-ghconnect>Connect</button>
+      <details class="adv"><summary>How to set it up (5 minutes)</summary><ol style="padding-left:18px;margin:4px 0;font-size:14px;line-height:1.5">
+        <li>On github.com: <b>+ → New repository</b>, name <b>trening-data</b>, choose <b>Private</b>, tick <b>Add a README</b>, create.</li>
+        <li>Profile photo → <b>Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token</b>.</li>
+        <li>Name it "Trening", set the longest expiry, <b>Repository access: Only select repositories → trening-data</b>.</li>
+        <li><b>Permissions → Repository permissions → Contents: Read and write</b>. Generate, copy the token.</li>
+        <li>Paste it above and tap Connect. The token can only touch that one repository.</li></ol></details></div>`;
+  const cls = st.state === 'ok' ? 'ok' : st.state === 'conflict' || st.state === 'error' ? 'bad' : 'warn';
+  const conflict = GH.conflict ? `<div class="warnbox" style="display:block"><div style="margin-bottom:8px">${GH.conflict.fresh ? 'GitHub already holds data' : 'GitHub has newer data'}${GH.conflict.updatedAt ? ' (saved ' + GH.conflict.updatedAt.slice(0, 16).replace('T', ' ') + ')' : ''}. Which copy is right?</div><div class="row"><button class="btn sec sm" data-ghuseremote>Use GitHub's</button><button class="btn sm" data-ghuselocal>Keep this phone's</button></div></div>` : '';
+  return `<div class="card" id="cloud"><div class="hd"><h3>Cloud backup</h3><span class="chip ${cls}" id="ghchip">${st.state === 'ok' ? 'On' : st.state === 'pending' ? 'Pending' : st.state === 'error' ? 'Error' : 'Attention'}</span></div>
+    <div class="muted" style="margin:2px 0 10px" id="ghtext">${esc(st.text)} · <a href="https://github.com/${esc(GH.repo)}/commits" target="_blank" rel="noopener" style="color:var(--or2)">${esc(GH.repo)}</a></div>${conflict}
+    <div class="row"><button class="btn sec" data-ghsync>Sync now</button><button class="btn sec" data-ghrestore>Restore from GitHub</button></div>
+    <button class="link" data-ghdisconnect style="margin-top:6px">Disconnect</button></div>`;
+}
+function ghPaint() { if (R.screen !== 'profile') return; const c = $('#cloud'); if (!c) return; c.outerHTML = cloudCardHtml(); bindCloud(); }
+function bindCloud() {
+  const c = $('[data-ghconnect]'); if (c) c.onclick = async () => { const repo = $('#ghrepo').value, token = $('#ghtoken').value; if (!/^[\w.-]+\/[\w.-]+$/.test(repo.trim())) return toast('Repository looks wrong — use owner/name'); if (!token.trim()) return toast('Paste the token'); c.textContent = 'Connecting…'; try { const r = await ghConnect(repo, token); toast(r.remoteNewer ? 'Connected — GitHub already has data, choose below' : 'Connected. Cloud backup is on.', 2600); vib(30); } catch (e) { ghDisconnect(); toast('Could not connect: ' + (e.message || e), 3500); } render(); };
+  const sy = $('[data-ghsync]'); if (sy) sy.onclick = async () => { sy.textContent = 'Syncing…'; const r = await syncNow({ quiet: true }); if (r === 'ok') toast('Saved to GitHub'); else if (r === 'conflict') toast('GitHub has newer data — choose below', 2600); else if (GH.lastError) toast(GH.lastError, 3000); ghPaint(); };
+  const rs = $('[data-ghrestore]'); if (rs) rs.onclick = async () => { if (!confirm('Replace everything on this phone with the copy on GitHub?')) return; try { await ghRestore(); toast('Restored from GitHub'); render(); } catch (e) { toast('Restore failed: ' + (e.message || e), 3000); } };
+  const ur = $('[data-ghuseremote]'); if (ur) ur.onclick = async () => { try { await ghRestore(); toast('Using GitHub\'s copy'); render(); } catch (e) { toast('Failed: ' + (e.message || e), 3000); } };
+  const ul = $('[data-ghuselocal]'); if (ul) ul.onclick = async () => { GH.conflict = null; ghSave(); const r = await syncNow({ force: true, quiet: true }); toast(r === 'ok' ? 'Phone\'s copy saved to GitHub' : (GH.lastError || 'Failed'), 2600); render(); };
+  const dc = $('[data-ghdisconnect]'); if (dc) dc.onclick = () => { if (confirm('Disconnect cloud backup? Data on GitHub stays there.')) { ghDisconnect(); render(); } };
+}
 function bindProfile() {
+  bindCloud();
   const ep = $('[data-editp]'); if (ep) ep.onclick = () => { R.editProject = true; render(); };
   const cp = $('[data-cancelp]'); if (cp) cp.onclick = () => { R.editProject = false; render(); };
   if (R.editProject) {
@@ -1550,6 +1802,7 @@ window.addEventListener('popstate', () => {
   if (!S.meta.introSeen) { S.meta.introSeen = true; save(); render(); playIntro(start); } else start();
   document.addEventListener('visibilitychange', () => { if (!document.hidden && R.screen === 'today' && R.date !== today() && R.stack.length === 0) { R.date = today(); render(); } });
   armBack();
+  if (ghOn() && GH.pending) setTimeout(() => syncNow({ quiet: true }), 2500);
   if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} }
 })();
 </script>
