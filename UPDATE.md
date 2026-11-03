@@ -1,6 +1,6 @@
-# What to do now — updating to v2.0.1
+# What to do now — updating to v2.0.2
 
-This zip is the complete app at v2.0.1 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v2.0.2 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v2.0.1 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 2.0.1 found — reloading".
+1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 2.0.2 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The app name on the home screen only changes when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -30,7 +30,7 @@ From then on, Settings shows "Saved to GitHub … ago". If the phone is ever los
 
 ## D. What changed since the version on your phone
 
-- v2.0.1 — Today's header stays put when you swipe days: only the day's content moves and the white box glides along the 1–8 strip. Dashboard is now **Progress** (dumbbell): the top tile has a smaller score with a one-line explanation and the recent movers as coloured chips (green = moving the right way, red = wrong way, yellow ● = no change); tap for the breakdown in words. Nutrition tracks protein, **carbs and fat** with daily targets (fat 0.65 g/kg, carbs fill the rest). **Read screenshots**: share or pick many Xiaomi/MFP screenshots at once — each is logged to the day it shows (Today / Tomorrow / a date), so food can be logged days ahead; MFP diary and Today-screen layouts both work.
+- v2.0.2 — Today's header stays put when you swipe days: only the day's content moves and the white box glides along the 1–8 strip. Dashboard is now **Progress** (dumbbell): the top tile has a smaller score with a one-line explanation and the recent movers as coloured chips (green = moving the right way, red = wrong way, yellow ● = no change); tap for the breakdown in words. Nutrition tracks protein, **carbs and fat** with daily targets (fat 0.65 g/kg, carbs fill the rest). **Read screenshots**: share or pick many Xiaomi/MFP screenshots at once — each is logged to the day it shows (Today / Tomorrow / a date), so food can be logged days ahead; MFP diary and Today-screen layouts both work.
 - v1.9.0 — **Motion & projects.** Screens slide in (forward from the right, back from the left), day swipes and arrows glide in the swipe direction, pop-ups rise and fade, the dashboard's skeletal/visceral section expands in place. The stretch timer stays pinned under the title. Calendar: tapping a day keeps you in the calendar and glides its card to the top; the month header has seasonal scenes (leaf piles, snowmen, cherry trees, parasols) on a matching ground. Dashboard body cards redesigned: big current value, status chip, start → goal beam, plan / pace / heading line; no more character beside the bars. Settings: **Current project** with Edit, **New project** and **End this project today**; **Past projects** with summaries, Reopen and Delete; starting point can be filled from a Mi Fitness screenshot (Edit and setup). Intro removed. "Read from MFP export". Dragon-ball pop-up has more air.
 - v1.8.0 — **MyFitnessPal.** Screenshot MFP's Today screen → share → Trening: the nutrition form opens with calories and protein filled in (date from the header), Save or Cancel. The nutrition screen has its own **Fill from export** for a screenshot from the gallery. For catching up: MFP → More → Settings → File Export → Export, open the emailed link on the phone, download the zip, then Trening **Settings → Read from MFP export** fills every unlogged project day at once (hand-logged days are kept; today is skipped before 21:00).
 - v1.7.0 — **Fill from export.** In the Xiaomi app, share the body-composition image → pick **Trening**: a screen opens with the date from the image (change it if needed) and all six values filled in; Save or Cancel. On any weigh-in screen, **Fill from export** picks the image from the gallery and fills the boxes. Everything is read on the phone — nothing is uploaded. First use downloads the 6 MB reader once. If Trening doesn't appear in the share sheet right after the update, give Chrome a day to refresh the app, or remove and re-add the home-screen icon.

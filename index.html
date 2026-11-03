@@ -356,7 +356,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.0.1';
+const APP_VERSION = '2.0.2';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2233,7 +2233,7 @@ function stretchHtml() {
 }
 function playerHtml() {
   const s = STRETCH[player.idx], nx = STRETCH[player.idx + 1];
-  return `<div class="player"><div class="big" id="pt">${player.left}</div><div class="info"><div class="n">${player.idx + 1}. ${esc(s.t)}</div><div class="sd">${s.sides ? 'side ' + player.side + ' of 2 · ' : ''}${nx ? 'next: ' + esc(nx.t) : 'last step'}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn sec sm" id="pp">${player.paused ? 'Go' : 'Pause'}</button><button class="btn sec sm" id="skip">Skip</button></div></div>`;
+  return `<div class="player"><div class="big" id="pt">${player.left}</div><div class="info"><div class="n">${player.idx + 1}. ${esc(s.t)}</div><div class="sd">${s.sides ? 'side ' + player.side + ' of 2 · ' : ''}${nx ? 'next: ' + esc(nx.t) : 'last step'}</div></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn sec sm" id="pp">${player.paused ? 'Go' : 'Pause'}</button><button class="btn sec sm" id="skip">Skip</button><button class="btn sec sm" id="stopP" style="color:var(--bad);border-color:var(--bad)">Stop</button></div></div>`;
 }
 function bindStretch() {
   const date = R.params.date || R.date;
@@ -2247,6 +2247,7 @@ function wirePlayer(date) {
   const pp = $('#pp'), sk = $('#skip');
   if (pp) pp.onclick = () => { player.paused = !player.paused; pp.textContent = player.paused ? 'Go' : 'Pause'; };
   if (sk) sk.onclick = () => advance(date, true);
+  const st = $('#stopP'); if (st) st.onclick = async () => { player.paused = true; if (!await ask('Stop the routine?', 'Progress in it is not kept — you can start again any time.', 'Stop', true)) { player.paused = false; return; } stopPlayer(); render(); window.scrollTo(0, 0); };
 }
 function advance(date, manual) {
   const s = STRETCH[player.idx];
