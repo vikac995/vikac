@@ -298,9 +298,9 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 @media (max-width:380px){.avatar.progress>svg,.avatar.progress>img.heroimg,.avatar.progress>.herostack{width:112px!important;height:168px!important}.avatar.progress .sig{font-size:12px;padding:3px 6px}.avatar.progress .sig b{font-size:13px}}
 .herostack{flex:none;position:relative}
 .herostack img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:contain;object-position:bottom}
-.herostack img.aura{animation:auraPulse .9s ease-in-out infinite;transform-origin:50% 62%}
-.herostack img.bolts{animation:boltFlick .5s steps(2,end) infinite}
-@keyframes auraPulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.06);opacity:1}}
+.herostack img.aura{animation:auraPulse .9s ease-in-out infinite;transform-origin:50% 68%}
+.herostack img.bolts{animation:boltFlick .5s steps(2,end) infinite;transform:scale(1.12);transform-origin:50% 60%}
+@keyframes auraPulse{0%,100%{transform:scale(1.38,1.3);opacity:.85}50%{transform:scale(1.46,1.37);opacity:1}}
 @keyframes boltFlick{0%{opacity:1}50%{opacity:.15}100%{opacity:1}}
 .zap img{display:block}
 .avatar.progress .pr{flex:1;min-width:0}
@@ -411,7 +411,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.4.2';
+const APP_VERSION = '2.4.3';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
