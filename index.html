@@ -828,13 +828,13 @@ hr{border-top-color:var(--line)}
 /* ================= Stage 3: Journey + smoother workout ================= */
 :root{color-scheme:dark}
 html{background:#0E0F12}
-.ex{transition:border-color .3s,box-shadow .3s}
+.ex{transition:border-color .2s,box-shadow .2s}
 .ex.open .cs{display:none}.ex:not(.open) .os{display:none}
 .ex .pick{transition:width .25s,opacity .2s,margin .25s,border-width .25s;overflow:hidden}
 .ex.open .pick{width:0;margin-right:-10px;opacity:0;border-width:0}
 .ex:not(.open) .vid{display:none!important}
 .ex.open .pbmini{display:none}
-.ex .collapse{transition:grid-template-rows .34s cubic-bezier(.3,.8,.25,1)}
+.ex .collapse{transition:grid-template-rows .22s cubic-bezier(.3,.8,.25,1)}
 .screen.jo{padding-bottom:calc(100px + var(--sab))}
 .jtop{position:sticky;top:0;z-index:15;margin:-10px -14px 0;padding:calc(14px + var(--sat)) 16px 8px;background:rgba(14,15,18,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .jtop .jt{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
@@ -1020,7 +1020,8 @@ html{background:#0E0F12}
 .hudscr .rtabs4 button.on{color:#1B1B1B}
 .hudscr .rtabs4 .rind{position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 7px);border-radius:7px;background:#FFD84D;box-shadow:0 0 10px rgba(255,216,77,.6);transition:transform .3s cubic-bezier(.3,.9,.3,1.1)}
 .hudscr .rtabs4.vol .rind{transform:translateX(calc(100% + 6px))}
-.hudscr .grp4{font-family:'BarlowC',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:#6fae63;margin:12px 0 2px}
+.hudscr .grp4{display:flex;align-items:center;gap:10px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:#c9ffb8;text-shadow:0 0 8px rgba(77,255,58,.35);margin:16px 0 4px}
+.hudscr .grp4::after{content:"";flex:1;height:1.5px;background:linear-gradient(90deg,rgba(160,255,130,.45),rgba(160,255,130,0))}
 .hudscr .rr{display:flex;align-items:center;gap:10px;width:100%;padding:8px 0;border-top:1px dashed rgba(160,255,130,.22)}.hudscr .grp4+.rr{border-top:0}
 .hudscr .rr .n{flex:1;min-width:0;font-family:'BarlowC',sans-serif;font-weight:700;font-size:15.5px;letter-spacing:.04em;text-transform:uppercase;color:#e6ffdc}.hudscr .rr .n small{display:block;font-family:system-ui,sans-serif;font-weight:400;font-size:11.5px;letter-spacing:0;text-transform:none;color:#7fc66f}
 .hudscr .rr .v{font-family:'Courier New',monospace;font-weight:700;font-size:16px;color:#FFD84D;text-shadow:0 0 6px rgba(255,216,77,.5);text-align:right;white-space:nowrap}
@@ -1174,6 +1175,20 @@ input[data-num].kpfresh{color:var(--or2)}
 body.kpopen .toast{bottom:calc(var(--kb,280px) + 14px)}
 .botbar{transition:bottom .3s cubic-bezier(.2,.8,.2,1)}
 body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
+.qtile{position:relative}
+.qtile.done{border-color:rgba(61,220,132,.45);background:rgba(61,220,132,.07)}.qtile.done .ic{background:var(--oksoft);color:var(--ok)}
+.qok{position:absolute;top:7px;right:7px;width:20px;height:20px;border-radius:50%;background:var(--ok);display:flex;align-items:center;justify-content:center}.qok svg{width:12px;height:12px}
+.modalbg.hudm.sheetbg .modal{border-bottom:0;border-radius:24px 24px 0 0}
+.modal.fixh{height:min(64vh,560px)}
+/* full-screen sheets (workout, stretching) */
+.fslayer{position:fixed;inset:0;overflow:hidden;background-color:var(--paper);background-image:radial-gradient(120% 300px at 50% -80px,rgba(254,127,12,.11),transparent 70%);background-repeat:no-repeat;background-size:100% 400px;background-attachment:local;overscroll-behavior:none}
+.fslayer.under{z-index:30;pointer-events:none}
+.fsscrim{position:fixed;inset:0;z-index:31;background:rgba(5,5,8,.6);pointer-events:none}
+.fslayer.over{z-index:32;border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.55);will-change:transform}
+#app.fsin{position:relative;z-index:32;background-color:var(--paper);min-height:100vh;border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.55);will-change:transform}
+.screen.fs .wbar,.screen.fs .topbar{touch-action:none}
+.screen.fs .wbar::before,.screen.fs .topbar::before{content:"";position:absolute;left:50%;top:calc(5px + var(--sat));width:40px;height:4px;margin-left:-20px;border-radius:2px;background:#45474f}
+.screen.fs .wbar .back svg,.screen.fs .topbar .back svg{transform:rotate(-90deg)}
 </style>
 </head>
 <body>
@@ -1181,7 +1196,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.5.0';
+const APP_VERSION = '4.5.2';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2890,12 +2905,18 @@ function render(anim) {
   if (LOG_SHEETS[R.screen]) R.screen = 'today';   // logging lives in sheets now
   if (R.screen === 'band' || R.screen === 'backup') R.screen = 'profile';
   if (!S.project) { app.innerHTML = setupHtml(); bindSetup(); applyUnits(app); animate(app.querySelector('.screen'), anim); return; }
-  const sc = { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, exfile: exfileHtml, project: projectHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[R.screen] || todayHtml;
+  const sc = screenHtml(R.screen) || todayHtml;
   if (syncTips()) save();
   let html, failed = false; try { html = sc(); } catch (e) { html = errorScreen(e); failed = true; }
+  // the workout and stretching rise from the bottom over the screen you were on, and slide back down when you leave
+  const from = R._curScreen, y0 = window.scrollY, motion = !!anim && !fsReduce();
+  const fsIn = motion && !failed && FS_SCREENS[R.screen] && !FS_SCREENS[from] && !!app.firstChild && !FSX.over, fsOut = FS_SCREENS[from] && !FS_SCREENS[R.screen] && (motion || !!FSX.over) && (!!app.firstChild || !!FSX.over);
+  let under = null, over = null;
+  if (fsIn) under = fsLayer('under', y0);
+  if (fsOut) over = FSX.over || fsLayer('over', y0);
   app.innerHTML = html; setTimeout(() => applyUnits(app), 0);
   keepAwake(R.screen === 'workout');
-  animate(app.querySelector('.screen'), anim);
+  if (!fsIn && !fsOut) animate(app.querySelector('.screen'), anim);
   app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (R.screen === b.dataset.nav && !R.stack.length && !app.querySelector('.errscr')) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); if (b.classList.contains('plchip')) R.stab = 'scan'; go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
   const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, exfile: bindExfile, project: bindProject, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
@@ -2904,7 +2925,10 @@ function render(anim) {
   const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = R.screen === 'dash' || R.screen === 'exfile' ? '#0a2e12' : '#0E0F12';
   if (failed) { const h = $('[data-errhome]'); if (h) h.onclick = () => { R.stack = []; R.date = today(); go('today', {}, false, 'fade'); }; return; }
   if (binder) try { binder(); } catch (e) { console.error(e); logError(e); toast('Something went wrong: ' + (e.message || e), 4000); }
+  if (FS_SCREENS[R.screen]) fsBindDrag();
+  if (fsIn) fsSlideUp(under); else if (fsOut) fsSlideDown(over);
 }
+function screenHtml(name) { return { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, exfile: exfileHtml, project: projectHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[name]; }
 // A screen that throws shows this instead of freezing the app (and the tab or view that broke is reset, so the next tap works)
 function logError(e) { try { localStorage.setItem('vikac.lasterr', JSON.stringify({ at: new Date().toISOString(), v: APP_VERSION, screen: R.screen, msg: (e && e.message) || String(e), stack: ((e && e.stack) || '').slice(0, 900) })); } catch (x) {} }
 function errorScreen(e) {
@@ -3268,6 +3292,75 @@ window.addEventListener('popstate', () => {
 });
 
 
+/* ============ Full-screen sheets: the workout and stretching ============
+   They rise from the bottom over the screen you were on (which dims behind them), cover the whole screen while you use them,
+   and slide back down when you leave — by the ⌄ button, Finish / Done, the phone's back button, or by dragging the header
+   down (let go past a quarter of the screen or flick it). Same motion as the small sheets, full height. */
+const FS_SCREENS = { workout: 1, stretch: 1 };
+const FS_IN = 'cubic-bezier(.05,.7,.1,1)', FS_OUT = 'cubic-bezier(.3,0,.8,.15)';
+const FSX = { over: null, under: null, scrim: null, y: 0 };
+const fsReduce = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+// the screen's live content, lifted out of #app into a fixed layer that looks exactly the same (same scroll position)
+function fsLayer(cls, y) {
+  const L = document.createElement('div'); L.className = 'fslayer ' + cls;
+  while (app.firstChild) L.appendChild(app.firstChild);
+  document.body.appendChild(L); L.scrollTop = y || 0; return L;
+}
+function fsScrim(o) { const s = document.createElement('div'); s.className = 'fsscrim'; s.style.opacity = o == null ? 0 : o; document.body.appendChild(s); return s; }
+function fsCleanup() { ['over', 'under', 'scrim'].forEach(k => { if (FSX[k]) { FSX[k].remove(); FSX[k] = null; } }); }
+// opening: the new screen is already in #app; the old one waits in `under` while #app slides up over it
+function fsSlideUp(under) {
+  const scrim = fsScrim(0), bb = app.querySelector('.botbar'), H = window.innerHeight;
+  if (bb) { bb.style.position = 'absolute'; bb.style.bottom = 'auto'; bb.style.top = (H - bb.offsetHeight) + 'px'; }
+  app.classList.add('fsin');
+  const done = () => { app.classList.remove('fsin'); app.style.transform = ''; if (bb) { bb.style.position = bb.style.bottom = bb.style.top = ''; } under.remove(); scrim.remove(); };
+  scrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 380, easing: 'linear', fill: 'forwards' });
+  const a = app.animate([{ transform: `translateY(${H}px)` }, { transform: 'none' }], { duration: 440, easing: FS_IN });
+  a.onfinish = done; a.oncancel = done;
+}
+// leaving: the full sheet (already lifted into `over`) slides down from wherever it is and reveals the screen in #app
+function fsSlideDown(over) {
+  const H = window.innerHeight, cur = new DOMMatrix(getComputedStyle(over).transform).m42 || 0, scrim = FSX.scrim || fsScrim(1), from = +getComputedStyle(scrim).opacity;
+  if (FSX.under) { FSX.under.remove(); FSX.under = null; }
+  const dur = Math.round(Math.max(150, 300 * (1 - cur / H) * (FSX.v > 1 ? .7 : 1)));
+  FSX.over = over; FSX.scrim = scrim; FSX.v = 0;
+  scrim.animate([{ opacity: from }, { opacity: 0 }], { duration: dur, easing: 'linear', fill: 'forwards' });
+  const a = over.animate([{ transform: `translateY(${cur}px)` }, { transform: `translateY(${H + 40}px)` }], { duration: dur, easing: FS_OUT, fill: 'forwards' });
+  a.onfinish = () => { if (FSX.over === over) fsCleanup(); else { over.remove(); scrim.remove(); } };
+}
+// what the screen underneath looks like, for the drag (drawn from the back stack, not live)
+function fsPeekHtml() {
+  const top = R.stack[R.stack.length - 1] || { screen: 'today', params: {}, date: today(), y: 0 }, keep = { screen: R.screen, params: R.params, date: R.date };
+  try { R.screen = top.screen; R.params = top.params || {}; if (top.date) R.date = top.date; const f = screenHtml(top.screen); return { html: f ? f() : '', y: top.y || 0 }; }
+  catch (e) { return { html: '', y: 0 }; } finally { Object.assign(R, keep); }
+}
+// drag the header down to close
+function fsBindDrag() {
+  const zone = app.querySelector('.screen.fs .wbar, .screen.fs .topbar'); if (!zone || fsReduce()) return;
+  let y0 = null, x0 = 0, dy = 0, on = false, pts = [];
+  zone.addEventListener('touchstart', e => { if (e.touches.length > 1 || FSX.over) { y0 = null; return; } const t = e.touches[0]; y0 = t.clientY; x0 = t.clientX; dy = 0; on = false; pts = [[t.clientY, e.timeStamp]]; }, { passive: true });
+  zone.addEventListener('touchmove', e => {
+    if (y0 == null) return; const t = e.touches[0], ddy = t.clientY - y0, ddx = t.clientX - x0;
+    if (!on) { if (Math.abs(ddy) < 8 && Math.abs(ddx) < 8) return; if (ddy <= 0 || Math.abs(ddy) < Math.abs(ddx) * 1.2) { y0 = null; return; }
+      on = true; y0 = t.clientY; if (KP.inp) kpClose(); FSX.y = window.scrollY;
+      const pk = fsPeekHtml(); FSX.under = document.createElement('div'); FSX.under.className = 'fslayer under'; FSX.under.innerHTML = pk.html; document.body.appendChild(FSX.under); FSX.under.scrollTop = pk.y;
+      FSX.scrim = fsScrim(1); FSX.over = fsLayer('over', FSX.y); }
+    if (e.cancelable) e.preventDefault();
+    dy = Math.max(0, t.clientY - y0); FSX.over.style.transform = `translateY(${dy}px)`; FSX.scrim.style.opacity = Math.max(0, 1 - dy / window.innerHeight * 1.1).toFixed(3);
+    pts.push([t.clientY, e.timeStamp]); if (pts.length > 6) pts.shift();
+  }, { passive: false });
+  const end = () => {
+    if (!on) { y0 = null; return; } on = false; y0 = null;
+    const a = pts[0], b = pts[pts.length - 1], v = b && a && b[1] > a[1] ? (b[0] - a[0]) / (b[1] - a[1]) : 0;
+    if (dy > window.innerHeight * .25 || (v > .45 && dy > 16)) { FSX.v = v; back(); return; }
+    // not far enough: spring back up and put the screen back where it was
+    const over = FSX.over, sy = FSX.y;
+    FSX.scrim.animate([{ opacity: FSX.scrim.style.opacity }, { opacity: 1 }], { duration: 220, fill: 'forwards' });
+    over.style.transform = ''; over.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 260, easing: FS_IN }).onfinish = () => { over.style.transform = ''; while (over.firstChild) app.appendChild(over.firstChild); window.scrollTo(0, sy); fsCleanup(); };
+  };
+  zone.addEventListener('touchend', end); zone.addEventListener('touchcancel', end);
+}
+
 /* ============ Trening 4: Today, Quick log, Workout (dark) ============ */
 const SV = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 const IC4 = {
@@ -3466,18 +3559,30 @@ function refreshToday(pop, tile) {
 function refreshCycle(pop) { refreshToday(pop); }
 
 /* ---------- Quick log (+) and day notes ---------- */
+// The + menu: the day's own list (the same items as Today, ticked the same way) from any screen, plus a screenshot and a note.
+// Muay Thai only shows on a Muay Thai day, mobility only on its days. Logs for the day open on Today, else for today.
 function quickLog() {
-  const date = R.screen === 'today' && dayInfo(R.date).items ? R.date : today(), d = S.days[date] || {}, r = S.readings[date], n = d.nutrition || {}, mt = d.mt || {};
-  const lr = lastReading('weight', date), tg = (() => { try { return nutritionTarget(date); } catch (e) { return null; } })(), hp = hangPB();
-  const tile = (k, ic, t, s) => `<button class="qtile" data-q="${k}"><span class="ic">${IC4[ic]}</span><b>${t}</b><span>${s}</span></button>`;
-  const bg = modal(`<div class="hdl"></div><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="h1" style="font-size:34px">Log</span><span class="cond muted" style="font-size:13px">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)}</span></div>
-    <div class="qtiles">${tile('weigh', 'scale', 'Weight', r ? r.weight + ' kg today' : lr ? 'last ' + lr.v + ' kg' : 'morning')}${tile('nutrition', 'fork', 'Food', n.kcal ? (+n.kcal).toLocaleString('en-GB') + (tg && tg.kcal ? ' / ' + tg.kcal.toLocaleString('en-GB') : '') + ' kcal' : tg && tg.kcal ? '0 / ' + tg.kcal.toLocaleString('en-GB') + ' kcal' : 'kcal · protein')}${tile('shots', 'cam', 'Screenshot', 'MFP or scale')}
-    ${tile('hang', 'hang', 'Dead hang', hp ? 'PB ' + fmtSecs(hp.v) : 'best hang')}${tile('mt', 'glove', 'Muay Thai', mt.minutes ? mt.minutes + ' min' + (mt.kcal ? ' · ' + mt.kcal + ' kcal' : '') : 'auto from band')}${tile('note', 'pen', 'Note', d.note ? 'edit today\'s note' : 'for this day')}</div>
+  const date = R.screen === 'today' && dayInfo(R.date).items ? R.date : today(), info = dayInfo(date), d = S.days[date] || {}, r = S.readings[date], n = d.nutrition || {}, mt = d.mt || {};
+  const lr = lastReading('weight', date), tg = (() => { try { return nutritionTarget(date); } catch (e) { return null; } })(), hp = hangPB(), h = d.hang || {};
+  const sub = { weigh: r ? r.weight + ' kg' : lr ? 'last ' + lr.v + ' kg' : 'morning',
+    nutrition: n.kcal ? fmtN(n.kcal) + (tg && tg.kcal ? ' / ' + fmtN(tg.kcal) : '') + ' kcal' : tg && tg.kcal ? '0 / ' + fmtN(tg.kcal) + ' kcal' : 'kcal · protein',
+    hang: h.best ? 'best ' + fmtSecs(h.best) : hp ? 'PB ' + fmtSecs(hp.v) : 'best hang', mt: mt.minutes ? mt.minutes + ' min' + (mt.kcal ? ' · ' + mt.kcal + ' kcal' : '') : 'from the band',
+    stretch: '11 steps · ~13 min', mobility: 'warm-up routine' };
+  const items = info.items ? info.items : [{ id: 'weigh' }, { id: 'nutrition' }];
+  const lab = it => it.id === 'workout' ? PROGRAM.workouts[it.key].name : { weigh: 'Weight', nutrition: 'Food', hang: 'Dead hang', mt: 'Muay Thai', stretch: 'Stretching', mobility: 'Mobility' }[it.id] || it.label;
+  const tile = (k, ic, t, s, done, attr) => `<button class="qtile ${done ? 'done' : ''}" data-q="${k}" ${attr || ''}>${done ? `<span class="qok">${IC4.check}</span>` : ''}<span class="ic">${IC4[ic]}</span><b>${esc(t)}</b><span>${esc(s)}</span></button>`;
+  const tiles = items.map(it => { const done = info.items ? isDone(date, it.id) : false, s = it.id === 'workout' ? (() => { const x = S.sessions.find(y => y.date === date && y.key === it.key); return x && x.finished ? 'finished' : x ? x.ex.filter(e => e.done).length + ' / ' + x.ex.length + ' exercises' : PROGRAM.workouts[it.key].ex.length + ' exercises'; })() : sub[it.id] || '';
+    return tile(it.id, ITEM_IC[it.id] || 'pen', lab(it), s, done, it.key ? `data-key="${it.key}"` : ''); }).join('');
+  const dp = info.items ? dayProgress(date) : null, nDone = info.items ? info.items.filter(it => isDone(date, it.id)).length : 0;
+  const bg = modal(`<div class="hdl"></div><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="h1" style="font-size:34px">Log</span><span class="cond muted" style="font-size:13px">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)}${dp ? ' · ' + nDone + ' / ' + info.items.length + ' done' : ''}</span></div>
+    <div class="qtiles">${tiles}${tile('shots', 'cam', 'Screenshot', 'MFP or scale')}${tile('note', 'pen', 'Note', d.note ? 'edit the note' : 'for this day')}</div>
     <input type="file" accept="image/*" multiple id="qShots" style="display:none">${bandCfg() ? `<div style="margin-top:14px">${bandTodayHtml(date)}</div>` : ''}`, b => {
     b.classList.add('sheetbg');
     b.querySelectorAll('[data-q]').forEach(t => t.onclick = () => { const k = t.dataset.q;
       if (k === 'shots') return b.querySelector('#qShots').click();
-      b.close(); if (k === 'note') return setTimeout(() => noteSheet(date), 180); go(k, { date }); });
+      b.close(); if (k === 'note') return setTimeout(() => noteSheet(date), 180);
+      if (k === 'workout') { const x = S.sessions.find(y => y.date === date); return go('workout', { date, key: x ? x.key : t.dataset.key }); }
+      go(k, { date }); });
     const f = b.querySelector('#qShots'); f.onchange = () => { const files = Array.from(f.files || []); f.value = ''; if (!files.length) return; b.close(); if (files.length === 1) go('import', { file: files[0] }); else startBatch(files); };
     const bp = b.querySelector('[data-bandpull]'); if (bp) bp.onclick = async () => { bp.lastChild.textContent = 'Syncing…'; const res = await bandFetch(); b.close(); toast(res.ok ? (res.changed ? 'Band data updated' : 'Band data up to date') : res.error, 1800); if (R.screen === 'today') refreshToday(false); else render(); };
   });
@@ -3526,7 +3631,7 @@ function workoutHtml() {
       </div></div></div>
     </div>`;
   }).join('');
-  return `<div class="screen wo"><div class="wbar"><button class="back" data-back aria-label="Back">${IC4.back}</button><div class="tt"><div class="h1">${esc(w.name)}</div><div class="s">${shortD(date)} · ~${workoutMinutes(key)} min${lb && lb.kcal ? ` · <span class="wkcal">${lb.kcal} kcal</span>` : ''}</div></div><div class="prog"><b id="prog">${doneN}/${s.ex.length}</b><span>DONE</span></div></div>
+  return `<div class="screen wo fs"><div class="wbar"><button class="back" data-back aria-label="Back">${IC4.back}</button><div class="tt"><div class="h1">${esc(w.name)}</div><div class="s">${shortD(date)} · ~${workoutMinutes(key)} min${lb && lb.kcal ? ` · <span class="wkcal">${lb.kcal} kcal</span>` : ''}</div></div><div class="prog"><b id="prog">${doneN}/${s.ex.length}</b><span>DONE</span></div></div>
     <div class="segbar" id="segbar">${s.ex.map((e, i) => `<i class="${e.done ? 'on' : i === open ? 'cur' : ''}"></i>`).join('')}</div>
     ${cards}
     <button class="btn ghost" id="delS" style="margin-top:8px">Delete this session</button>
@@ -3547,7 +3652,7 @@ function bindWorkout() {
     boxes.forEach((b, j) => { const on = j === i, was = b.classList.contains('open'); if (on === was) return; b.classList.toggle('open', on); b.querySelector('.collapse').classList.toggle('open', on);
       if (!on) { const v = b.querySelector('video'); if (v) v.pause(); b.querySelectorAll('.pbpop').forEach(x => x.remove()); paintHead(j); } });
     paintProgress();
-    if (i >= 0 && scroll !== false) setTimeout(() => { const el = boxes[i]; if (!el) return; const top = el.getBoundingClientRect().top + window.scrollY - 104; if (Math.abs(top - window.scrollY) > 40) window.scrollTo({ top, behavior: 'smooth' }); }, 340);
+    if (i >= 0 && scroll !== false) glideTo(boxes[i], 104, 300);
   };
   boxes.forEach((box, i) => {
     const e = s.ex[i], def = w.ex[i], type = def.type;
@@ -3557,7 +3662,7 @@ function bindWorkout() {
     const maybeAdvance = () => { if (e.done || s.finished) return; if (!exComplete(e, type)) return; e.done = true; save(); vib(20); paintProgress();
       // a "New PB!" gets its moment before the card folds
       const go2 = () => { const ae = document.activeElement; if ((ae && box.contains(ae) && /INPUT|TEXTAREA/.test(ae.tagName)) || kpActiveIn(box)) return; if (R._woOpen !== i) return; if (Date.now() - (box._popAt || 0) < 1200) return setTimeout(go2, 250); const nx = s.ex.findIndex((x, j) => j > i && !x.done); setOpen(nx); };
-      setTimeout(go2, 800); };
+      setTimeout(go2, 450); };
     box._pbSeen = entryPB(e, type);
     const pbCheck = inpEl => { clearTimeout(box._pbT); box._pbT = setTimeout(() => {
       const other = exPB(e.n, type, s.id), cur = entryPB(e, type), shown = Math.max(other ? other.v : 0, cur), pv = box.querySelector('.pbv');
@@ -3596,6 +3701,14 @@ function bindWorkout() {
   $('#delS').onclick = async () => { if (await ask('Delete this session?', 'Everything logged in it is removed.', 'Delete', true)) { S.sessions = S.sessions.filter(x => x.id !== s.id); R._woKey = null; save(); back(); } };
 }
 
+// Scroll so an element sits `offset` px below the top, quickly, while cards above it are still folding:
+// the target is re-measured every frame, so the glide lands exactly where the card ends up
+function glideTo(el, offset, dur) {
+  if (!el) return; const y0 = window.scrollY, t0 = performance.now(), want = () => Math.max(0, el.getBoundingClientRect().top + window.scrollY - offset);
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return window.scrollTo(0, want());
+  const step = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3), y = y0 + (want() - y0) * e; window.scrollTo(0, y); if (k < 1 && el.isConnected) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
 /* ---------- Where you left off: screen, day, scroll (kept for the same calendar day) ---------- */
 const UI_LS = 'vikac.ui';
 function saveUI() {
@@ -3679,7 +3792,7 @@ function hangHint(date, v) {
 function stretchRing() { const s = STRETCH[player.idx], R0 = 40, c = 2 * Math.PI * R0, f = s ? player.left / s.d : 0; return `<svg viewBox="0 0 92 92"><circle cx="46" cy="46" r="${R0}" fill="none" stroke="#2c2620" stroke-width="7"/><circle id="pring" cx="46" cy="46" r="${R0}" fill="none" stroke="#FE7F0C" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 46 46)" style="filter:drop-shadow(0 0 5px rgba(254,127,12,.8))"/></svg>`; }
 function stretchHtml() {
   const date = R.params.date || R.date, total = STRETCH.reduce((a, s) => a + s.d * (s.sides || 1), 0), done = isDone(date, 'stretch');
-  return `<div class="screen bar">${topbar('Stretching', 'For kicks · ' + STRETCH.length + ' steps · ~' + Math.round(total / 60) + ' min')}
+  return `<div class="screen bar fs">${topbar('Stretching', 'For kicks · ' + STRETCH.length + ' steps · ~' + Math.round(total / 60) + ' min')}
     <div id="player">${player.on ? playerHtml() : `<button class="btn big" id="playAll">Start the routine ▶</button><div style="height:12px"></div>`}</div>
     ${STRETCH.map((s, i) => { const did = player.on && i < player.idx, cur = player.on && i === player.idx; return `<div class="step ${cur ? 'cur' : ''} ${did ? 'did' : ''}" data-i="${i}"><div class="stt">${did ? `<span class="ok4">${IC4.check}</span>` : ''}<span class="n">${i + 1}. ${esc(s.t)}</span><small>${s.d} s${s.sides ? ' per side' : ''}</small></div>${s.img && !did ? `<img src="${s.img}" alt="" loading="lazy">` : ''}</div>`; }).join('')}
   </div><div class="botbar"><button class="btn ${done ? 'sec' : ''}" id="doneS">${done ? 'Done ✓' : 'Mark done'}</button></div>`;
@@ -4304,6 +4417,7 @@ function bindDash() {
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) mode = 'none';
   SC_RUN++;
   if (mode === 'tab') { const ind = app.querySelector('.htabs .ind'), pi = order.indexOf(R._stabPrev || tab); if (ind && pi >= 0) { const to = ind.style.left; ind.style.transition = 'none'; ind.style.left = (pi * 20 + 2) + '%'; void ind.offsetWidth; ind.style.transition = ''; ind.style.left = to; } }
+  if (mode === 'tab') scAnim($('#hpane'), [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 240 });
   if (mode !== 'none') { const f = { scan: scScan, body: scBody, training: scTraining, records: scRecords }[tab]; if (f) f(); }
 }
 let SC_RUN = 0;
@@ -4318,26 +4432,27 @@ const scPop = (el, delay, dur) => scAnim(el, [{ transform: 'scale(.3)', opacity:
 // Scan: everything is already there — the crosshair locks on, the power level counts up, the balls you collected pop in
 function scScan() {
   const p = $('#hpane'); if (!p) return;
-  const ring = p.querySelector('.hero .ring'); scAnim(ring, [{ transform: 'scale(2.2) rotate(-90deg)', opacity: 0 }, { transform: 'scale(.92) rotate(5deg)', opacity: 1, offset: .7 }, { transform: 'none', opacity: 1 }], { duration: 300 });
-  scLater(300, () => scAnim(ring, [{ opacity: 1 }, { opacity: .2 }, { opacity: 1 }], { duration: 160, fill: 'none', easing: 'steps(2,end)' }));
-  const n = $('#pln'), plv = +n.textContent.replace(/\D/g, ''), pc = $('#plpct'), pct = +pc.textContent.replace(/\D/g, ''), D0 = 520;
-  scCount(n, plv, D0, 0, v => Math.round(v).toLocaleString('en-GB')); scCount(pc, pct, D0, 0, v => Math.round(v) + ' %');
+  const ring = p.querySelector('.hero .ring'); scAnim(ring, [{ transform: 'scale(2.4) rotate(-110deg)', opacity: 0 }, { transform: 'scale(.92) rotate(6deg)', opacity: 1, offset: .72 }, { transform: 'none', opacity: 1 }], { duration: 520, delay: 60 });
+  scLater(600, () => scAnim(ring, [{ opacity: 1 }, { opacity: .2 }, { opacity: 1 }, { opacity: .2 }, { opacity: 1 }], { duration: 300, fill: 'none', easing: 'steps(4,end)' }));
+  const n = $('#pln'), plv = +n.textContent.replace(/\D/g, ''), pc = $('#plpct'), pct = +pc.textContent.replace(/\D/g, ''), D0 = 950, O = 120;
+  scCount(n, plv, D0, O, v => Math.round(v).toLocaleString('en-GB')); scCount(pc, pct, D0, O, v => Math.round(v) + ' %');
+  scAnim(n, [{ boxShadow: '0 0 0 rgba(140,255,110,0)' }, { boxShadow: '0 0 18px rgba(140,255,110,.7)', offset: .8 }, { boxShadow: '0 0 0 rgba(140,255,110,0)' }], { duration: D0 + 300, delay: O, fill: 'none' });
   const segs = [...p.querySelectorAll('#plb i')], lit = segs.filter(x => x.classList.contains('on')).length; segs.forEach(x => x.classList.remove('on'));
-  segs.slice(0, lit).forEach((x, i) => scLater(Math.round(D0 * .8 * (i + 1) / lit), () => x.classList.add('on'))); setTimeout(() => segs.slice(0, lit).forEach(x => x.classList.add('on')), D0 + 100);
-  p.querySelectorAll('.rb .rbf').forEach((b, i) => scPop(b, 80 + i * 45, 240));
+  segs.slice(0, lit).forEach((x, i) => scLater(O + Math.round(D0 * .85 * (i + 1) / lit), () => x.classList.add('on'))); setTimeout(() => segs.slice(0, lit).forEach(x => x.classList.add('on')), O + D0 + 120);
+  p.querySelectorAll('.rb .rbf').forEach((b, i) => scPop(b, 260 + i * 90, 360));
 }
 // Body: the trend line draws, then where it is heading
 function scBody() {
   const s = $('#wchart svg'); if (!s) return;
-  const t = s.querySelector('.tr'); if (t && t.getTotalLength) { const L = t.getTotalLength(); scAnim(t, [{ strokeDasharray: L + ' ' + L, strokeDashoffset: L }, { strokeDasharray: L + ' ' + L, strokeDashoffset: 0 }], { duration: 420 }); }
-  const pj = s.querySelector('.pj'); if (pj) { const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map(a => +pj.getAttribute(a)); scGrow(k => { pj.setAttribute('x2', x1 + (x2 - x1) * k); pj.setAttribute('y2', y1 + (y2 - y1) * k); }, 320, 360); }
-  scAnim(s.querySelector('.goal'), [{ opacity: 0 }, { opacity: 1 }], { duration: 180, delay: 600 });
+  const t = s.querySelector('.tr'); if (t && t.getTotalLength) { const L = t.getTotalLength(); scAnim(t, [{ strokeDasharray: L + ' ' + L, strokeDashoffset: L }, { strokeDasharray: L + ' ' + L, strokeDashoffset: 0 }], { duration: 700, delay: 80 }); }
+  const pj = s.querySelector('.pj'); if (pj) { const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map(a => +pj.getAttribute(a)); scGrow(k => { pj.setAttribute('x2', x1 + (x2 - x1) * k); pj.setAttribute('y2', y1 + (y2 - y1) * k); }, 500, 700); }
+  scAnim(s.querySelector('.goal'), [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 1100 });
 }
 function scChart() { scBody(); }
 // Training: the numbers and bars fill; the list is simply there
-function scTraining() { const p = $('#hpane'); p.querySelectorAll('.kpis [data-c]').forEach(b => scCount(b, +b.dataset.c, 450, 0)); p.querySelectorAll('.hbar .tr i,.hangs i').forEach(b => scAnim(b, [{ transform: b.parentNode.classList.contains('hangs') ? 'scaleY(0)' : 'scaleX(0)' }, { transform: 'none' }], { duration: 450 })); }
+function scTraining() { const p = $('#hpane'); p.querySelectorAll('.kpis [data-c]').forEach((b, i) => scCount(b, +b.dataset.c, 750, 80 + i * 60)); p.querySelectorAll('.hbar .tr i,.hangs i').forEach((b, i) => scAnim(b, [{ transform: b.parentNode.classList.contains('hangs') ? 'scaleY(0)' : 'scaleX(0)' }, { transform: 'none' }], { duration: 700, delay: 120 + Math.min(i, 10) * 50 })); }
 // Records: static, only the NEW tags pop in
-function scRecords() { const p = $('#rrows'); if (p) p.querySelectorAll('.new4').forEach((n, i) => scPop(n, 60 + i * 40, 220)); }
+function scRecords() { const p = $('#rrows'); if (p) p.querySelectorAll('.new4').forEach((n, i) => scPop(n, 180 + i * 80, 340)); }
 
 /* ---------- Exercise file: every session of one lift, across every project ---------- */
 function exFam(name, f) { if (f) return f; const types = new Set(); for (const k in PROGRAM.workouts) { const d = PROGRAM.workouts[k].ex.find(x => x.n === name); if (d) types.add(d.type === 'max' ? 'max' : 'sets'); } return types.has('sets') ? 'sets' : 'max'; }
@@ -4393,8 +4508,8 @@ function bindExfile() {
   app.querySelectorAll('[data-sess]').forEach(b => b.onclick = () => { const [d, key] = b.dataset.sess.split('|'); go('workout', { date: d, key }); });
   const gl = $('#xgl'); if (gl) wireSteppers(app.querySelector('.goal4'), inp => { const v = Math.max(0, Math.min(100, +inp.value || 0)); S.targets[name] = 1 + v / 100; save(); gl.innerHTML = exGoalLine(exRows(name, fam).filter(r => r.live && r.s.finished), S.targets[name], kind, fv); });
   SC_RUN++; if (R._prevScreen !== 'dash' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
-  const p = $('#hpane'), l = p.querySelector('.xl2'); if (l && l.getTotalLength) { const L = l.getTotalLength(); scAnim(l, [{ strokeDasharray: L + ' ' + L, strokeDashoffset: L }, { strokeDasharray: L + ' ' + L, strokeDashoffset: 0 }], { duration: 420 }); }
-  const xp = p.querySelector('.xpb'); if (xp) scPop(xp.lastElementChild, 380, 260);
+  const p = $('#hpane'), l = p.querySelector('.xl2'); if (l && l.getTotalLength) { const L = l.getTotalLength(); scAnim(l, [{ strokeDasharray: L + ' ' + L, strokeDashoffset: L }, { strokeDasharray: L + ' ' + L, strokeDashoffset: 0 }], { duration: 700, delay: 80 }); }
+  const xp = p.querySelector('.xpb'); if (xp) scPop(xp.lastElementChild, 700, 380);
 }
 
 /* ============ Stage 5: Settings — a grouped list, each row opens its page ============ */
