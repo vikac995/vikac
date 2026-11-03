@@ -460,9 +460,9 @@ details.adv summary{list-style:none;cursor:pointer;font-family:'BarlowC',sans-se
 details.adv summary::-webkit-details-marker{display:none}
 details.adv summary::before{content:"▸";transition:transform .15s}
 details.adv[open] summary::before{transform:rotate(90deg)}
-.toast{position:fixed;left:14px;right:14px;bottom:calc(100px + var(--sab));margin:0 auto;width:max-content;max-width:calc(100vw - 28px);background:var(--ink);color:#fff;font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:10px 18px;border-radius:999px;z-index:60;text-align:center;border:2px solid #fff;box-shadow:3px 3px 0 var(--or);animation:toastin .22s ease-out;transition:opacity .18s ease-in,transform .18s ease-in;will-change:opacity,transform}
+.toast{position:fixed;left:14px;right:14px;bottom:calc(98px + var(--sab));margin:0 auto;width:max-content;max-width:calc(100vw - 48px);background:rgba(45,46,54,.97);color:var(--ink);font-size:14.5px;font-weight:500;line-height:1.3;padding:9px 16px;border-radius:999px;z-index:60;text-align:center;border:1px solid #484a55;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:toastin .2s ease-out;transition:opacity .18s ease-in,transform .18s ease-in;will-change:opacity,transform;pointer-events:none}
 .toast.out{opacity:0;transform:translateY(8px)}
-@keyframes toastin{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes toastin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .dragon{position:fixed;inset:0;z-index:80;background:rgba(255,246,234,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;animation:snap .3s}
 .dragon svg{width:min(92vw,440px);height:auto}
 .dragon>*{position:relative;z-index:1}
@@ -580,7 +580,6 @@ hr{border-top-color:var(--line)}
 .modalbg.sheetbg{align-items:flex-end;padding:0}
 .modalbg.sheetbg .modal{max-width:560px;border-radius:24px 24px 0 0;border-bottom:0;padding:10px 16px calc(18px + var(--sab));max-height:90vh}
 .hdl{width:44px;height:5px;border-radius:3px;background:#45474f;margin:0 auto 12px}
-.toast{background:#F4EFE8;color:#111}
 .kv b{color:var(--ink)}
 /* calendar */
 .cal{background:var(--card);border:1.5px solid var(--line);box-shadow:none;border-radius:16px}
@@ -1195,6 +1194,16 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .shutter span{width:100%;height:100%;border-radius:50%;background:var(--ink);color:#121318;display:flex;align-items:center;justify-content:center}
 .shutter span svg{width:30px;height:30px}
 .shutter:active{transform:scale(.92)}
+/* quiet "saved": the changed row glows once and its tick pops; elsewhere the + turns into a tick */
+@keyframes justGlow{0%{box-shadow:0 0 0 0 rgba(61,220,132,.55)}100%{box-shadow:0 0 0 12px rgba(61,220,132,0)}}
+@keyframes justGlowB{0%{box-shadow:0 0 0 0 rgba(90,176,255,.5)}100%{box-shadow:0 0 0 12px rgba(90,176,255,0)}}
+@keyframes justPop{0%{transform:scale(.4)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+.todo li.just{animation:justGlow .9s ease-out}.todo li.bonus.just{animation-name:justGlowB}
+.todo li.just .st{animation:justPop .42s cubic-bezier(.3,1.4,.5,1)}
+.wt.just,.t4note.just{animation:justGlow .9s ease-out}.wt.shrink.just{animation:wtShrink .45s cubic-bezier(.2,.8,.2,1),justGlow .9s ease-out}
+.nav .fab.saved{background:var(--ok);box-shadow:0 0 0 4px rgba(61,220,132,.22),0 6px 16px rgba(0,0,0,.6);transition:background .2s}
+.nav .fab.saved svg{animation:justPop .42s cubic-bezier(.3,1.4,.5,1)}
+@media (prefers-reduced-motion:reduce){.just,.just .st,.fab.saved svg{animation:none!important}}
 </style>
 </head>
 <body>
@@ -1202,7 +1211,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.5.3';
+const APP_VERSION = '4.5.4';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2798,6 +2807,18 @@ const R = { screen: 'today', params: {}, stack: [], date: today(), tab: 'push', 
 const app = $('#app');
 let toastTimer = null;
 // One toast at a time: a new message reuses the pill (no re-entry animation); it fades out before it is removed
+// A quiet "saved": no message. On Today the row (or tile) that changed glows once and its tick pops; anywhere else the + button
+// turns into a tick for a moment. Toasts are kept for errors, answers you asked for, and the dragon-ball moments.
+function markJust(kind) {
+  if (R.screen === 'today') {
+    const b = $('#t4body'), el = b && (kind === 'mt' || kind === 'workout' ? b.querySelector('[data-wt]') : kind === 'note' ? b.querySelector('[data-note]') : b.querySelector(`li[data-item="${kind}"]`));
+    if (el) { el.classList.remove('just'); void el.offsetWidth; el.classList.add('just'); clearTimeout(el._jt); el._jt = setTimeout(() => el.classList.remove('just'), 1100); }
+    return;
+  }
+  const f = app.querySelector('.nav .fab'); if (!f) return;
+  clearTimeout(markJust.t); f.classList.remove('saved'); void f.offsetWidth; f.classList.add('saved'); f.innerHTML = IC4.check;
+  markJust.t = setTimeout(() => { if (!f.isConnected) return; f.classList.remove('saved'); f.innerHTML = IC4.plus; }, 1100);
+}
 function toast(msg, ms) { let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.classList.remove('out'); t.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.add('out'); toastTimer = setTimeout(() => t.remove(), 200); }, ms || 1800); }
 // Navigation: a pushed screen slides in from the right, going back slides in from the left, tabs cross-fade
 function go(screen, params, push, anim) { if (LOG_SHEETS[screen]) return openLogSheet(screen, (params || {}).date); const pushed = push !== false && R.screen !== screen; if (pushed) R.stack.push({ screen: R.screen, params: R.params, date: R.date, y: window.scrollY }); R.screen = screen; R.params = params || {}; render(anim || (pushed ? 'right' : 'fade')); window.scrollTo(0, 0); }
@@ -3187,7 +3208,7 @@ function bindStretch() {
   const start = () => { player.on = true; player.idx = 0; player.side = 1; player.left = STRETCH[0].d; player.paused = false; render(); runPlayer(date); };
   const pa = $('#playAll'); if (pa) pa.onclick = start;
   if (player.on) { wirePlayer(date); runPlayer(date); }
-  $('#doneS').onclick = () => { day(date).done.stretch = true; save(); stopPlayer(); toast('Stretching done. Kicks incoming!'); vib(30); back(); };
+  $('#doneS').onclick = () => { day(date).done.stretch = true; save(); stopPlayer(); vib(30); back(); setTimeout(() => markJust('stretch'), 300); };
   app.querySelectorAll('.step').forEach(box => box.onclick = () => { if (!player.on) { player.on = true; player.idx = +box.dataset.i; player.side = 1; player.left = STRETCH[player.idx].d; player.paused = false; render(); runPlayer(date); } });
 }
 function wirePlayer(date) {
@@ -3200,7 +3221,7 @@ function advance(date, manual) {
   const s = STRETCH[player.idx];
   if (s.sides && player.side < s.sides) { player.side++; player.left = s.d; vib(150); }
   else if (player.idx < STRETCH.length - 1) { player.idx++; player.side = 1; player.left = STRETCH[player.idx].d; vib([150, 80, 150]); }
-  else { stopPlayer(); day(date).done.stretch = true; save(); vib([200, 100, 200, 100, 400]); toast('Routine complete!'); back(); return; }
+  else { stopPlayer(); day(date).done.stretch = true; save(); vib([200, 100, 200, 100, 400]); back(); setTimeout(() => markJust('stretch'), 300); return; }
   render(); const cur = app.querySelector('.step.cur'); if (cur) cur.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 function stopPlayer() { player.on = false; if (player.timer) clearInterval(player.timer); player.timer = null; }
@@ -3546,7 +3567,7 @@ function bindTodayBody(date, future) {
     fireBeam(li); vib(30); setTimeout(() => refreshToday(true), 700);
   });
   body.querySelectorAll('[data-open-item]').forEach(el => el.onclick = () => { const li = el.closest('li'); go(li.dataset.item, { date, key: li.dataset.key }); });
-  const bp = body.querySelector('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) { toast(r.error, 2400); } else toast(r.changed ? 'Band data updated' : 'Band data up to date', 1600); refreshToday(false); };
+  const bp = body.querySelector('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) toast(r.error, 2400); refreshToday(false); };
   const nt = body.querySelector('[data-note]'); if (nt) nt.onclick = () => noteSheet(date);
 }
 // Re-draw the ring, the tile and the goals after a tick; celebrate a collected ball or a summoned dragon
@@ -3592,7 +3613,10 @@ function quickLog() {
       if (k === 'workout') { const x = S.sessions.find(y => y.date === date); return go('workout', { date, key: x ? x.key : t.dataset.key }); }
       go(k, { date }); });
     const f = b.querySelector('#qShots'); f.onchange = () => { const files = Array.from(f.files || []); f.value = ''; if (!files.length) return; b.close(); if (files.length === 1) go('import', { file: files[0] }); else startBatch(files); };
-    const bp = b.querySelector('[data-bandpull]'); if (bp) bp.onclick = async () => { bp.lastChild.textContent = 'Syncing…'; const res = await bandFetch(); b.close(); toast(res.ok ? (res.changed ? 'Band data updated' : 'Band data up to date') : res.error, 1800); if (R.screen === 'today') refreshToday(false); else render(); };
+    // the band line syncs in place: the numbers and the time on its button are the answer
+    const bindBand = () => { const bp = b.querySelector('[data-bandpull]'); if (bp) bp.onclick = async () => { bp.lastChild.textContent = 'Syncing…'; const res = await bandFetch(); if (!res.ok) { bp.lastChild.textContent = 'Sync'; return toast(res.error, 2400); }
+      const ln = bp.closest('.t4band'); if (ln) { ln.outerHTML = bandTodayHtml(date); bindBand(); } if (R.screen === 'today') refreshToday(false); }; };
+    bindBand();
   });
   return bg;
 }
@@ -3602,8 +3626,8 @@ function noteSheet(date) {
     <textarea id="dnote" rows="4" placeholder="How did it go?" style="margin-top:12px;min-height:110px;resize:none">${esc(d.note || '')}</textarea>
     <div class="row" style="margin-top:12px">${d.note ? '<button class="btn danger" data-del>Delete</button>' : '<button class="btn sec" data-close>Cancel</button>'}<button class="btn" data-ok>Save</button></div>`, b => {
     b.classList.add('sheetbg'); const ta = b.querySelector('#dnote'); setTimeout(() => ta.focus(), 250);
-    b.querySelector('[data-ok]').onclick = () => { const v = ta.value.trim(); if (v) d.note = v; else delete d.note; save(); b.close(); if (R.screen === 'today') refreshToday(false); toast(v ? 'Note saved' : 'Note removed', 1400); };
-    const del = b.querySelector('[data-del]'); if (del) del.onclick = () => { delete d.note; save(); b.close(); if (R.screen === 'today') refreshToday(false); toast('Note removed', 1400); };
+    b.querySelector('[data-ok]').onclick = () => { const v = ta.value.trim(); if (v) d.note = v; else delete d.note; save(); b.close(); if (R.screen === 'today') refreshToday(false); if (v) setTimeout(() => markJust('note'), 160); };
+    const del = b.querySelector('[data-del]'); if (del) del.onclick = () => { delete d.note; save(); b.close(); if (R.screen === 'today') refreshToday(false); };
   });
 }
 
@@ -4067,8 +4091,9 @@ function openLogSheet(kind, date) { const f = LOG_SHEETS[kind]; if (!f) return; 
 function logSheet(title, date, body, foot, onbind) {
   return modal(`<div class="hdl"></div><div class="shd"><span class="h1">${title}</span><span class="cond muted">${shortD(date)}</span></div>${body}<div data-foot class="sfoot">${foot}</div>`, b => { b.classList.remove('hudm'); b.classList.add('sheetbg', 'logsh'); onbind(b); });
 }
-// after a save: the screen underneath shows it (Today ticks the item and celebrates a ball), scroll kept
-function afterLog() { if (R.screen === 'today') return refreshToday(true); const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); }
+// after a save: the screen underneath shows it (Today ticks the item and celebrates a ball), scroll kept; no "Saved!" message —
+// the changed row glows once instead (markJust)
+function afterLog(kind) { if (R.screen === 'today') refreshToday(true); else { const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); } if (kind) setTimeout(() => markJust(kind), 160); }
 
 /* ---------- Weigh-in ---------- */
 function weighSheet(date) {
@@ -4085,8 +4110,7 @@ function weighSheet(date) {
     b.querySelector('[data-save]').onclick = () => {
       const o = readForm(b); if (!o.weight) return toast('Weight is required'); const prev = S.readings[date] || {};
       S.readings[date] = { weight: o.weight, fat: o.fat, muscle: o.muscle, skeletal: o.skeletal, visceral: o.visceral, water: o.water, late: late != null ? late : prev.late != null ? prev.late : (date === today() && new Date().getHours() >= 12) }; save();
-      const tr = current('weight', date), pace = rate14('weight', date); b.close(); afterLog(); vib(30);
-      toast(o.weight + ' kg saved' + (tr != null && readingsUpTo(date, 10).length >= 4 ? ' · trend ' + tr.toFixed(1) + (pace != null ? ' (' + (pace * 7 > 0 ? '+' : '') + (pace * 7).toFixed(1) + '/wk)' : '') : ''), 2600);
+      b.close(); afterLog('weigh'); vib(30);
     };
     const d = b.querySelector('[data-del]'); if (d) d.onclick = async () => { if (!await ask('Delete this reading?', 'The weigh-in for ' + shortD(date) + ' is removed.', 'Delete', true)) return; delete S.readings[date]; save(); b.close(); afterLog(); };
   });
@@ -4114,11 +4138,11 @@ function nutritionSheet(date) {
       finally { if (keep === undefined) delete d().nutrition; else d().nutrition = keep; } };
     b.querySelectorAll('input[name]').forEach(i => i.addEventListener('input', upd));
     const bp = b.querySelector('[data-bandpull]'); if (bp) bp.onclick = async () => { bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); bp.lastChild.textContent = r.ok ? new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Sync'; if (!r.ok) return toast(r.error, 2400);
-      const k = bandKcal(date), bi = b.querySelector('[name=band]'); if (k.src === 'band') bi.placeholder = (bandDay(date) || {}).active || bi.placeholder; upd(); toast(r.changed ? 'Band data updated' : 'Already up to date', 1800); };
+      const k = bandKcal(date), bi = b.querySelector('[name=band]'); if (k.src === 'band') bi.placeholder = (bandDay(date) || {}).active || bi.placeholder; upd(); };
     const ff = b.querySelector('#fillFile'); b.querySelector('[data-fill]').onclick = () => ff.click();
     ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, b, b.querySelector('#fillStatus'), 'mfp', () => upd()); ff.value = ''; };
-    b.querySelector('[data-save]').onclick = () => { const e = entry(); if ([e.kcal, e.protein, e.carbs, e.fat, e.band].every(v => v == null)) return toast('Enter what you ate'); d().nutrition = e; save(); b.close(); afterLog(); toast('Saved!'); vib(30); };
-    const dl = b.querySelector('[data-del]'); if (dl) dl.onclick = async () => { if (!await ask('Delete this entry?', 'Calories and macros for ' + shortD(date) + ' are removed.', 'Delete', true)) return; const x = d(); delete x.nutrition; if (x.done) x.done.nutrition = false; save(); b.close(); afterLog(); toast('Entry deleted'); };
+    b.querySelector('[data-save]').onclick = () => { const e = entry(); if ([e.kcal, e.protein, e.carbs, e.fat, e.band].every(v => v == null)) return toast('Enter what you ate'); d().nutrition = e; save(); b.close(); afterLog('nutrition'); vib(30); };
+    const dl = b.querySelector('[data-del]'); if (dl) dl.onclick = async () => { if (!await ask('Delete this entry?', 'Calories and macros for ' + shortD(date) + ' are removed.', 'Delete', true)) return; const x = d(); delete x.nutrition; if (x.done) x.done.nutrition = false; save(); b.close(); afterLog(); };
   });
 }
 
@@ -4140,9 +4164,9 @@ function mtSheet(date) {
     b.querySelector('[data-save]').onclick = () => { const o = readForm(b); if (!o.minutes) return toast('Enter minutes'); const prev = day(date).mt || {};
       const kcalHand = o.kcal != null && +o.kcal !== +(prev.kcal || 0) ? true : prev.kcalSrc === 'hand';
       day(date).mt = { minutes: o.minutes, kcal: o.kcal || null, kcalSrc: kcalHand && o.kcal ? 'hand' : undefined, note: o.note, src: prev.src === 'band' && +prev.minutes === +o.minutes ? 'band' : undefined };
-      save(); b.close(); afterLog(); toast('Logged. Sawadee!'); vib(30); };
+      save(); b.close(); afterLog('mt'); vib(30); };
     const cl = b.querySelector('[data-clear]'); if (cl) cl.onclick = async () => { if (!await ask('Clear this session?', 'Minutes and kcal for ' + shortD(date) + ' are removed and the day shows Muay Thai as not done. The band fills it again on its next sync unless you type your own.', 'Clear', true)) return;
-      const d = day(date); d.mt = { minutes: null, kcal: null, src: 'cleared', note: '' }; if (d.done) d.done.mt = false; save(); b.close(); afterLog(); toast('Cleared'); };
+      const d = day(date); d.mt = { minutes: null, kcal: null, src: 'cleared', note: '' }; if (d.done) d.done.mt = false; save(); b.close(); afterLog(); };
   });
 }
 
@@ -4156,7 +4180,7 @@ function hangSheet(date) {
   logSheet('Dead hangs', date, body, '<button class="btn" data-save>Save</button>', b => {
     wireSteppers(b, inp => { if (inp.name === 'best') b.querySelector('#hhint').innerHTML = hangHint(date, inp.value); });
     b.querySelectorAll('[data-pre]').forEach(x => x.onclick = () => { const i = b.querySelector('[name=best]'); i.value = x.dataset.pre; i.dispatchEvent(new Event('input')); });
-    b.querySelector('[data-save]').onclick = () => { const o = readForm(b); if (!o.best) return toast('Enter your best hang'); day(date).hang = { best: o.best, total: o.total || 180 }; save(); b.close(); afterLog(); toast('Hang logged. Posture gang!'); vib(30); };
+    b.querySelector('[data-save]').onclick = () => { const o = readForm(b); if (!o.best) return toast('Enter your best hang'); day(date).hang = { best: o.best, total: o.total || 180 }; save(); b.close(); afterLog('hang'); vib(30); };
   });
 }
 
@@ -4167,7 +4191,7 @@ function mobilitySheet(date) {
   const body = `<div class="mobrow"><span class="mobic">${IC4.kick}</span><div><div class="cond" style="font-size:18px">Your usual warm-up</div><div class="muted" style="font-size:14px;margin-top:3px">Range of motion routine · tick it off when it's done.</div></div></div>
     ${recent.length ? `<div class="secl"><span>Before this</span><span>days 2 · 4 · 6</span></div><div class="xl" style="margin-top:0">${recent.map(([d, inf]) => { const dn = isDone(d, 'mobility'); return `<div class="xr"><span class="ok5 ${dn ? 'on b' : ''}">${dn ? IC4.check : ''}</span><span class="n">${shortD(d)}<small>Cycle ${inf.cycleNum} · ${esc(dayType(inf).label)}</small></span></div>`; }).join('')}</div>` : ''}`;
   logSheet('Kick mobility', date, body, `<button class="btn ${done ? 'sec' : ''}" data-save>${done ? 'Done ✓ · tap to undo' : 'Mark done'}</button>`, b => {
-    b.querySelector('[data-save]').onclick = () => { const d = day(date); d.done = d.done || {}; if (isDone(date, 'mobility')) { d.done.mobility = false; save(); b.close(); afterLog(); toast('Mobility not done'); return; } d.done.mobility = true; save(); b.close(); afterLog(); toast('Mobility done!'); vib(30); };
+    b.querySelector('[data-save]').onclick = () => { const d = day(date); d.done = d.done || {}; if (isDone(date, 'mobility')) { d.done.mobility = false; save(); b.close(); afterLog(); return; } d.done.mobility = true; save(); b.close(); afterLog('mobility'); vib(30); };
   });
 }
 
@@ -4415,7 +4439,7 @@ function bindDash() {
   app.querySelectorAll('[data-wr]').forEach(b => b.onclick = e => { e.stopPropagation(); if ((R.wrange || 'all') === b.dataset.wr) return; R.wrange = b.dataset.wr; app.querySelectorAll('[data-wr]').forEach(x => x.classList.toggle('on', x === b)); const h = $('#wchart'); h.innerHTML = weightChart(date, R.wrange); SC_RUN++; scBody(); });
   app.querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { if ((R.frange || '7d') === b.dataset.fr) return; R.frange = b.dataset.fr; const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); });
   app.querySelectorAll('[data-lognut]').forEach(b => b.onclick = () => go('nutrition', { date: today() }));
-  const bp = $('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) toast(r.error, 2400); else toast(r.changed ? 'Band data updated' : 'Band data up to date', 1600); const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); };
+  const bp = $('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) toast(r.error, 2400); const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); };
   app.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { const [k, d, key] = b.dataset.open.split('|'); if (k === 'mt') go('mt', { date: d }); else go('workout', { date: d, key }); });
   const bindRows = () => app.querySelectorAll('#rrows [data-ex]').forEach(b => b.onclick = () => go('exfile', { name: b.dataset.ex, fam: b.dataset.fam || '' }));
   bindRows();
@@ -4584,7 +4608,7 @@ function bindProfile() {
   };
 }
 async function checkUpdates(row) {
-  if (row) row.classList.add('busy'); toast('Checking…');
+  if (row) row.classList.add('busy'); else toast('Checking…');
   try { const reg = await navigator.serviceWorker.getRegistration(); if (reg) { await reg.update(); if (reg.waiting) reg.waiting.postMessage('skipWaiting'); } const r = await fetch('index.html', { cache: 'no-cache' }); const t = await r.text(); const m = t.match(/APP_VERSION = '([^']+)'/); if (m && m[1] !== APP_VERSION) { toast('Version ' + m[1] + ' found — reloading'); setTimeout(() => location.reload(), 800); } else toast('You have the latest version (' + APP_VERSION + ')'); }
   catch (e) { toast('Offline — try again later'); }
   if (row) row.classList.remove('busy');
@@ -4623,11 +4647,11 @@ function bindProject() {
   app.querySelectorAll('input').forEach(i => i.addEventListener('input', upd)); upd();
   const ff = $('#fillFile'); $('[data-fill]').onclick = () => ff.click();
   ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, app, $('#fillStatus'), 'scale', upd); ff.value = ''; };
-  const en = $('[data-endp]'); if (en) en.onclick = async () => { if (!await ask('End the project today?', 'Today becomes the final day. You can still extend it later here, or start a new project.', 'End today')) return; S.project.endDate = today(); save(); back(); toast('Final day is today'); };
+  const en = $('[data-endp]'); if (en) en.onclick = async () => { if (!await ask('End the project today?', 'Today becomes the final day. You can still extend it later here, or start a new project.', 'End today')) return; S.project.endDate = today(); save(); back(); };
   $('#saveP').onclick = () => {
     const o = readForm(app); if (!o.weight || !o.startDate || !o.endDate || diffDays(o.startDate, o.endDate) < 1) return toast('Check the dates and the weight');
     Object.assign(S.project, { name: (o.name || '').trim() || S.project.name, startDate: o.startDate, endDate: o.endDate, deficit: o.deficit, bmr: o.bmr, protein: o.protein, bandDefault: o.bandDefault, waterDrop: o.waterDrop, height: o.height, age: o.age, start: { weight: o.weight, fat: o.fat, muscle: o.muscle, skeletal: o.skeletal, visceral: o.visceral, water: o.water } });
-    for (const d in S.readings) if (S.readings[d].seeded) delete S.readings[d]; seedStartReading(); save(); back(); toast('Saved');
+    for (const d in S.readings) if (S.readings[d].seeded) delete S.readings[d]; seedStartReading(); save(); back();
   };
 }
 
@@ -4647,7 +4671,7 @@ function pastProjectModal(id) {
     <div class="row" data-foot><button class="btn dline" data-del>Delete</button><button class="btn" data-reopen>Reopen</button></div>`, bg => {
     bg.classList.add('sheetbg');
     bg.querySelector('[data-reopen]').onclick = async () => { bg.close(); const cur = P(); if (!await ask('Reopen ' + p.name + '?', cur ? `<b>${esc(cur.name)}</b> goes to Past projects and <b>${esc(p.name)}</b> becomes the current project again — you can extend it under Project.` : 'It becomes the current project again.', 'Reopen')) return; reopenProject(id); save(); R.stack = []; R.date = today(); go('today', {}, false, 'fade'); toast(p.name + ' is the current project'); };
-    bg.querySelector('[data-del]').onclick = async () => { bg.close(); if (!await ask('Delete ' + p.name + '?', 'Everything logged in it is deleted. This cannot be undone.', 'Delete', true)) return; deleteProject(id); save(); if (R.screen === 'past' && !S.archive.length) back(); else render(); toast('Deleted'); };
+    bg.querySelector('[data-del]').onclick = async () => { bg.close(); if (!await ask('Delete ' + p.name + '?', 'Everything logged in it is deleted. This cannot be undone.', 'Delete', true)) return; deleteProject(id); save(); if (R.screen === 'past' && !S.archive.length) back(); else render(); };
   });
 }
 
@@ -4667,7 +4691,7 @@ function bandSheet() {
   setSheet('Band sync', h.last ? '<span class="stc on">On</span>' : '<span class="stc warn">Waiting</span>', `<div class="sgrp" id="bandkv">${kvr('Band data received', agoTxt(h.last))}${kvr('Last checked', agoTxt(h.fetched))}${kvr('Today', (t.steps != null ? fmtN(t.steps) + ' steps' : '— steps') + ' · ' + (t.active != null ? t.active + ' kcal' : '— kcal'))}${kvr('Inbox', esc(host))}</div>
     <div class="lead4" style="margin-top:12px">Band → Mi Fitness → Health Connect → the inbox app sends new data every 30 minutes; the app picks it up when it is open.</div>
     <div class="row" data-foot><button class="btn sec" data-banddisc>Disconnect</button><button class="btn" data-bandsync>${IC4.sync}Sync now</button></div>`, b => {
-    b.querySelector('[data-bandsync]').onclick = async e => { const btn = e.currentTarget; btn.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); btn.lastChild.textContent = 'Sync now'; toast(r.ok ? (r.changed ? 'Band data updated' : 'Band data up to date') : r.error, 2200);
+    b.querySelector('[data-bandsync]').onclick = async e => { const btn = e.currentTarget; btn.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); btn.lastChild.textContent = 'Sync now'; if (!r.ok) toast(r.error, 2400);
       const h2 = S.health || {}, t2 = bandDay(today()) || {}; b.querySelector('#bandkv').innerHTML = kvr('Band data received', agoTxt(h2.last)) + kvr('Last checked', agoTxt(h2.fetched)) + kvr('Today', (t2.steps != null ? fmtN(t2.steps) + ' steps' : '— steps') + ' · ' + (t2.active != null ? t2.active + ' kcal' : '— kcal')) + kvr('Inbox', esc(host)); settingsRefresh(); };
     b.querySelector('[data-banddisc]').onclick = async () => { b.close(); if (await ask('Disconnect band sync?', 'Data already synced stays in the app.', 'Disconnect')) { bandSetCfg(null); settingsRefresh(); } };
   });
@@ -4699,7 +4723,7 @@ function ghPaint() {
 }
 function bindCloud() {
   const c = $('[data-ghconnect]'); if (c) c.onclick = async () => { const repo = $('#ghrepo').value, token = $('#ghtoken').value; if (!/^[\w.-]+\/[\w.-]+$/.test(repo.trim())) return toast('Repository looks wrong — use owner/name'); if (!token.trim()) return toast('Paste the token'); c.textContent = 'Connecting…'; try { const r = await ghConnect(repo, token); toast(r.remoteNewer ? 'Connected — GitHub already has data, choose below' : 'Connected. Cloud backup is on.', 2600); vib(30); } catch (e) { ghDisconnect(); toast('Could not connect: ' + (e.message || e), 3500); } render(); };
-  const sy = $('[data-ghsync]'); if (sy) sy.onclick = async () => { sy.lastChild.textContent = 'Syncing…'; const r = await syncNow({ quiet: true }); if (r === 'ok') toast('Saved to GitHub'); else if (r === 'conflict') toast('GitHub has newer data — choose below', 2600); else if (GH.lastError) toast(GH.lastError, 3000); ghPaint(); };
+  const sy = $('[data-ghsync]'); if (sy) sy.onclick = async () => { sy.lastChild.textContent = 'Syncing…'; const r = await syncNow({ quiet: true }); if (r === 'conflict') toast('GitHub has newer data — choose below', 2600); else if (GH.lastError) toast(GH.lastError, 3000); ghPaint(); };
   const rs = $('[data-ghrestore]'); if (rs) rs.onclick = async () => { if (!await ask('Restore from GitHub?', 'Everything on this phone is replaced by the copy on GitHub.', 'Restore')) return; try { await ghRestore(); toast('Restored from GitHub'); render(); } catch (e) { toast('Restore failed: ' + (e.message || e), 3000); } };
   const ur = $('[data-ghuseremote]'); if (ur) ur.onclick = async () => { try { await ghRestore(); toast('Using GitHub\'s copy'); render(); } catch (e) { toast('Failed: ' + (e.message || e), 3000); } };
   const ul = $('[data-ghuselocal]'); if (ul) ul.onclick = async () => { GH.conflict = null; ghSave(); const r = await syncNow({ force: true, quiet: true }); toast(r === 'ok' ? 'Phone\'s copy saved to GitHub' : (GH.lastError || 'Failed'), 2600); render(); };
@@ -4712,9 +4736,9 @@ function backupSheet() {
     <div class="sgrp">${srow({ ic: 'file', tone: 'or', t: 'Back up now', s: 'downloads vikac-backup-' + today() + '.json', act: 'backup' })}${srow({ ic: 'restore', t: 'Restore from a file', s: 'replaces everything on this phone', act: 'restore' })}${srow({ ic: 'table', t: 'Export readings as CSV', s: 'weigh-ins and nutrition, one row a day', act: 'csv' })}</div>
     <input type="file" accept="application/json,.json" id="restoreFile" hidden>`, b => {
     const act = {
-      backup: () => { S.meta.lastBackup = new Date().toISOString(); save(); download('vikac-backup-' + today() + '.json', JSON.stringify(S, null, 1)); toast('Backup downloaded'); b.close(); settingsRefresh(); },
+      backup: () => { S.meta.lastBackup = new Date().toISOString(); save(); download('vikac-backup-' + today() + '.json', JSON.stringify(S, null, 1)); b.close(); settingsRefresh(); },
       restore: () => b.querySelector('#restoreFile').click(),
-      csv: () => { const rows = [['date', 'weight', 'fat', 'muscle', 'skeletal', 'visceral', 'water', 'kcal', 'protein', 'band', 'balance', 'balls']]; const dates = new Set([...Object.keys(S.readings), ...Object.keys(S.days)]); [...dates].sort().forEach(d => { const r = S.readings[d] || {}, n = (S.days[d] || {}).nutrition || {}, nc = nutritionCalc(d); rows.push([d, r.weight, r.fat, r.muscle, r.skeletal, r.visceral, r.water, n.kcal, n.protein, n.band, nc ? nc.balance : '', tOf(d) >= 0 ? dragonBalls(d).balls : ''].map(x => x == null ? '' : x)); }); download('vikac-readings-' + today() + '.csv', rows.map(r => r.join(',')).join('\n'), 'text/csv'); toast('CSV downloaded'); },
+      csv: () => { const rows = [['date', 'weight', 'fat', 'muscle', 'skeletal', 'visceral', 'water', 'kcal', 'protein', 'band', 'balance', 'balls']]; const dates = new Set([...Object.keys(S.readings), ...Object.keys(S.days)]); [...dates].sort().forEach(d => { const r = S.readings[d] || {}, n = (S.days[d] || {}).nutrition || {}, nc = nutritionCalc(d); rows.push([d, r.weight, r.fat, r.muscle, r.skeletal, r.visceral, r.water, n.kcal, n.protein, n.band, nc ? nc.balance : '', tOf(d) >= 0 ? dragonBalls(d).balls : ''].map(x => x == null ? '' : x)); }); download('vikac-readings-' + today() + '.csv', rows.map(r => r.join(',')).join('\n'), 'text/csv'); },
     };
     b.querySelectorAll('[data-act]').forEach(x => x.onclick = () => act[x.dataset.act]());
     b.querySelector('#restoreFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = async () => { let o; try { o = JSON.parse(rd.result); if (!o.days || !('project' in o)) throw 0; } catch (err) { return toast('Not a valid backup file'); } b.close(); if (await ask('Restore this backup?', 'Everything on this phone is replaced by the backup file.', 'Restore')) { S = o; if (!Array.isArray(S.archive)) S.archive = []; save(); toast('Restored'); R.stack = []; R.date = today(); go('today', {}, false, 'fade'); } }; rd.readAsText(f); e.target.value = ''; };
