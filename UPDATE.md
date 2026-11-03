@@ -1,6 +1,6 @@
-# What to do now — updating to v1.8.0
+# What to do now — updating to v1.9.0
 
-This zip is the complete app at v1.8.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v1.9.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v1.8.0 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 1.8.0 found — reloading".
+1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 1.9.0 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The app name on the home screen only changes when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -30,7 +30,8 @@ From then on, Settings shows "Saved to GitHub … ago". If the phone is ever los
 
 ## D. What changed since the version on your phone
 
-- v1.8.0 — **MyFitnessPal.** Screenshot MFP's Today screen → share → Trening: the nutrition form opens with calories and protein filled in (date from the header), Save or Cancel. The nutrition screen has its own **Fill from export** for a screenshot from the gallery. For catching up: MFP → More → Settings → File Export → Export, open the emailed link on the phone, download the zip, then Trening **Settings → Import MFP export** fills every unlogged project day at once (hand-logged days are kept; today is skipped before 21:00).
+- v1.9.0 — **Motion & projects.** Screens slide in (forward from the right, back from the left), day swipes and arrows glide in the swipe direction, pop-ups rise and fade, the dashboard's skeletal/visceral section expands in place. The stretch timer stays pinned under the title. Calendar: tapping a day keeps you in the calendar and glides its card to the top; the month header has seasonal scenes (leaf piles, snowmen, cherry trees, parasols) on a matching ground. Dashboard body cards redesigned: big current value, status chip, start → goal beam, plan / pace / heading line; no more character beside the bars. Settings: **Current project** with Edit, **New project** and **End this project today**; **Past projects** with summaries, Reopen and Delete; starting point can be filled from a Mi Fitness screenshot (Edit and setup). Intro removed. "Read from MFP export". Dragon-ball pop-up has more air.
+- v1.8.0 — **MyFitnessPal.** Screenshot MFP's Today screen → share → Trening: the nutrition form opens with calories and protein filled in (date from the header), Save or Cancel. The nutrition screen has its own **Fill from export** for a screenshot from the gallery. For catching up: MFP → More → Settings → File Export → Export, open the emailed link on the phone, download the zip, then Trening **Settings → Read from MFP export** fills every unlogged project day at once (hand-logged days are kept; today is skipped before 21:00).
 - v1.7.0 — **Fill from export.** In the Xiaomi app, share the body-composition image → pick **Trening**: a screen opens with the date from the image (change it if needed) and all six values filled in; Save or Cancel. On any weigh-in screen, **Fill from export** picks the image from the gallery and fills the boxes. Everything is read on the phone — nothing is uploaded. First use downloads the 6 MB reader once. If Trening doesn't appear in the share sheet right after the update, give Chrome a day to refresh the app, or remove and re-add the home-screen icon.
 - Today is built around the cycle: Cycle n · Day d/8, the 8-box strip, the colour-coded day label, the time ring, and the dragon-ball slot. One ball per perfect day; seven balls plus a perfect day 8 summons the dragon.
 - Dashboard: Push / Pull / Legs each start with an overall bar; weight, fat and muscle first, skeletal and visceral behind a toggle; the science check shows your real expenditure once 10 days are logged.
