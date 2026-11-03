@@ -409,7 +409,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '2.4.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1657,14 +1657,14 @@ function dragonSvg() { return dragonArt({ segs: [[16, 156, 60, 96, 112, 206, 156
    landscape 3:2, facing right), dragon.png (landscape 3:2), ball-1.png … ball-7.png (square; optional ball-N-hollow.png
    for the uncollected look), season-<autumn|winter|spring|summer>.png (square figure standing at the bottom edge; the
    right-hand one is mirrored), ground-<season>.png (a tile repeated sideways, 4:1). Missing files → the built-in SVG art. */
-const ART_FILES = ['hero', 'heroAura', 'heroBolts', 'beam', 'dragon', 'dragonBadge', 'balls', 'ballsHollow', 'season-autumn', 'season-winter', 'season-spring', 'season-summer', 'ground-autumn', 'ground-winter', 'ground-spring', 'ground-summer'];
+const ART_FILES = ['hero', 'heroBeam', 'heroAura', 'heroBolts', 'beam', 'dragon', 'dragonBadge', 'balls', 'ballsHollow', 'season-autumn', 'season-winter', 'season-spring', 'season-summer', 'ground-autumn', 'ground-winter', 'ground-spring', 'ground-summer'];
 const ART = {};
 try { const a = JSON.parse(localStorage.getItem('vikac.art') || '{}'); for (const k of ART_FILES) ART[k] = !!a[k]; } catch (e) { for (const k of ART_FILES) ART[k] = false; }
-// Which custom PNGs exist on the server (checked on every open): hero-0.png stands for the set hero-0…4 + hero-beam,
+// Which custom PNGs exist on the server (checked on every open): hero-0.png stands for the set hero-0…4,
 // ball-1.png for ball-1…7, ball-1-hollow.png for the optional hollow set; seasons and grounds are per file
 function probeArt(done) {
   const test = src => new Promise(ok => { const im = new Image(); im.onload = () => ok(true); im.onerror = () => ok(false); im.src = src + '?v=' + Date.now(); });
-  const files = { hero: 'hero-0.png', heroAura: 'hero-aura.png', heroBolts: 'hero-bolts.png', beam: 'beam.png', dragon: 'dragon.png', dragonBadge: 'dragon-badge.png', balls: 'ball-1.png', ballsHollow: 'ball-1-hollow.png' }; for (const k of ART_FILES) if (!files[k]) files[k] = k + '.png';
+  const files = { hero: 'hero-0.png', heroBeam: 'hero-beam.png', heroAura: 'hero-aura.png', heroBolts: 'hero-bolts.png', beam: 'beam.png', dragon: 'dragon.png', dragonBadge: 'dragon-badge.png', balls: 'ball-1.png', ballsHollow: 'ball-1-hollow.png' }; for (const k of ART_FILES) if (!files[k]) files[k] = k + '.png';
   Promise.all(ART_FILES.map(k => test(files[k]))).then(res => { let changed = false; ART_FILES.forEach((k, i) => { if (ART[k] !== res[i]) changed = true; ART[k] = res[i]; }); try { localStorage.setItem('vikac.art', JSON.stringify(ART)); } catch (e) {} if (changed && done) done(); });
 }
 // The standing character: a PNG when one is uploaded, else the drawn one
@@ -1677,8 +1677,8 @@ function heroArt(o) {
   return `<img class="heroimg" src="hero-${lv}.png" alt="" style="width:${w}px;height:${h}px">`;
 }
 // The character that fires across a card when it is ticked. With beam.png the pose is shown alone (square) and the beam is its own stretching layer
-function beamHeroArt() { return ART.hero ? (ART.beam ? `<img src="hero-beam.png" alt="" style="width:46px;height:46px;object-fit:contain">` : `<img src="hero-beam.png" alt="" style="width:60px;height:40px;object-fit:contain">`) : `<svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg>`; }
-function beamFxHtml() { return ART.hero && ART.beam ? '<div class="beamfx"><img src="beam.png" alt=""></div>' : ''; }
+function beamHeroArt() { return ART.heroBeam ? (ART.beam ? `<img src="hero-beam.png" alt="" style="width:46px;height:46px;object-fit:contain">` : `<img src="hero-beam.png" alt="" style="width:60px;height:40px;object-fit:contain">`) : `<svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg>`; }
+function beamFxHtml() { return ART.heroBeam && ART.beam ? '<div class="beamfx"><img src="beam.png" alt=""></div>' : ''; }
 function dragonBigArt() { return ART.dragon ? `<img class="dragonimg" src="dragon.png" alt="" style="width:min(92vw,440px);height:auto">` : dragonSvg(); }
 // Summon badge. state: 'ready' (faded, pulsing — waiting for day 8) | 'done' (full colour) | 'locked' (grey, padlock)
 function dragonBadgeSvg(o) {

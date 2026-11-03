@@ -1,6 +1,6 @@
-# What to do now — updating to v2.4.0
+# What to do now — updating to v2.4.1
 
-This zip is the complete app at v2.4.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v2.4.1 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v2.4.0 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 2.4.0 found — reloading".
+1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 2.4.1 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The app name on the home screen only changes when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
