@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v4.3.0)
+# Vikač High Kikač — install guide (v4.4.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -20,7 +20,7 @@ This folder is the whole app. Put it on any HTTPS address and add it to your pho
 
 ## 3. Projects
 
-Settings shows the **current project** (name, dates, deficit, goal) with Edit, **New project** and, while it runs, **End this project today**. Edit changes dates (extend or shorten), targets and the starting point — the starting numbers can be filled from the Mi Fitness share image with **Fill from export**, in Edit and in the setup wizard. New project parks the current one under **Past projects** with everything logged; a past project opens a summary (days, perfect days, weight / fat / muscle start → end) with **Reopen** (it becomes current again, the current one is parked) and **Delete**. The setup wizard for a new project starts today with the last readings of the previous project pre-filled, and can be cancelled back to it.
+Settings → the **current project** row opens its page: name, dates (extend or shorten), targets and the starting point — the starting numbers can be filled from the Mi Fitness share image with **Fill from screenshot** — plus **End this project today** while it runs. **New project** parks the current one under **Past projects** with everything logged; a past project opens a summary sheet (days, perfect days, weight / fat / muscle start → end) with **Reopen** (it becomes current again, the current one is parked) and **Delete**. The new-project steps start today with the last readings of the previous project pre-filled, and can be cancelled back to it.
 
 ## 4. Earning the ball, and the report card
 
@@ -56,7 +56,7 @@ The weigh-in form can read the Mi Fitness share image instead of you typing six 
 
 **Macros:** nutrition keeps calories, protein, carbs and fat. Targets per day: protein as set (≈2.2 g/kg), fat 0.65 g/kg of current weight (never under 0.5 g/kg — the floor for hormones, per Helms 2014's 20–30 % of calories), carbs take whatever energy remains after the deficit, so they rise on days with more band kcal. Scouter → Food shows the 7-day (or whole-project) averages against the targets, each day's calories against that day's target and the days protein was hit.
 
-**Catching up several days:** MFP → More → Settings → **File Export** → pick the period → Export. MFP emails a link to a zip; open the link on the phone, download the zip, then in Trening **Settings → Read from MFP export** and pick it (the Nutrition-Summary CSV on its own also works). Every project day that isn't logged by hand gets its calories and protein; days you typed yourself are left alone, earlier imports are refreshed, and today is skipped unless it's after 21:00 (exports are usually taken mid-day).
+**Catching up several days:** MFP → More → Settings → **File Export** → pick the period → Export. MFP emails a link to a zip; open the link on the phone, download the zip, then in Trening **Settings → MFP export** and pick it (the Nutrition-Summary CSV on its own also works). Every project day that isn't logged by hand gets its calories and protein; days you typed yourself are left alone, earlier imports are refreshed, and today is skipped unless it's after 21:00 (exports are usually taken mid-day).
 
 Reading happens on the phone (tesseract.js) — the image is never uploaded anywhere. The first use downloads the reader (about 6 MB: `tess.js`, `tess-worker.js`, `tess-core.wasm.js`, `eng.traineddata.gz`); after that it works offline. The weight is cross-checked against fat-free weight + fat mass from the same image, so a misread digit shows up as a warning.
 
