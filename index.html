@@ -957,8 +957,9 @@ html{background:#0E0F12}
 .hudscr .vt svg{display:block;width:100%;height:24px;margin-top:2px}
 .hudscr .spk{filter:drop-shadow(0 0 3px #4dff3a)}
 .hudscr .radar{display:flex;align-items:center;justify-content:space-between;gap:2px;margin-top:10px}
-.hudscr .rb{position:relative;display:inline-flex;flex:none;opacity:.5}.hudscr .rb.got{opacity:1;filter:drop-shadow(0 0 5px rgba(255,190,80,.6))}
-.hudscr .rb.cur{opacity:1;filter:drop-shadow(0 0 6px #8dff6a)}.hudscr .rb.cur:after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid #8dff6a;animation:hping 1.8s ease-out infinite}
+.hudscr .rb{position:relative;display:inline-flex;flex:none}.hudscr .rb .rbb{display:inline-flex;filter:grayscale(1) brightness(.85);opacity:.42}
+.hudscr .rb .rbf{position:absolute;inset:0;display:inline-flex;filter:drop-shadow(0 0 5px rgba(255,190,80,.6))}
+.hudscr .rb.cur .rbb{opacity:.85;filter:grayscale(.3) drop-shadow(0 0 6px #8dff6a)}.hudscr .rb.cur:after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid #8dff6a;animation:hping 1.8s ease-out infinite}
 .hudscr .rb.dr{opacity:1}
 @keyframes hping{0%{transform:scale(1);opacity:.9}100%{transform:scale(2.1);opacity:0}}
 .hudscr .chainl{display:flex;justify-content:space-between;gap:10px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:#c9ffb8;margin-top:8px}
@@ -1129,6 +1130,15 @@ button.srow:active{background:var(--s2)}
 .modalbg.hudm .tipsub{color:#8fd77f}
 .modalbg.hudm .btn:not(.sec):not(.ghost):not(.dline){background:#8dff6a;color:#052;border:2px solid #000;box-shadow:0 0 14px rgba(110,255,80,.35)}
 .modalbg.hudm .hdl{background:rgba(160,255,130,.45)}
+.hudscr .xpb circle{transform-box:fill-box;transform-origin:center}
+/* pinned pop-up footer and fixed-height sheets */
+.modal>.mfoot{flex:none;padding:12px 20px 16px;border-top:1px solid var(--line);position:relative;z-index:2}
+.modalbg.sheetbg .modal>.mfoot{padding:12px 16px calc(14px + var(--sab))}
+.mfoot .btn,.modal .mfoot .btn{margin-top:0;width:100%}
+.mfoot .row{margin:0 0 10px}.mfoot .row:last-child{margin-bottom:0}
+.mfoot .btn.dline{margin-top:0}
+.modal.fixh{height:min(76vh,640px)}
+.modalbg.hudm .modal>.mfoot{border-top-color:rgba(160,255,130,.22)}
 </style>
 </head>
 <body>
@@ -1136,7 +1146,7 @@ button.srow:active{background:var(--s2)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.4.0';
+const APP_VERSION = '4.4.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1800,7 +1810,7 @@ function signals(date) {
   const since = addDays(date, -8), seen = new Set();
   for (const sx of S.sessions.filter(x => x.finished && x.date > since && x.date <= date).sort((a, b) => a.date < b.date ? 1 : -1)) for (const e of sx.ex) {
     if (seen.has(e.n)) continue; const v = verdictFor(e.n, e, sx.date, sx.id); if (v.state === 'none' || v.state === 'base') continue; seen.add(e.n);
-    out.push({ key: 'ex:' + e.n, label: e.n, value: v.now ? v.now.label : '', delta: v.pct != null ? (v.pct > 0 ? '+' : '') + v.pct.toFixed(1) + ' %' : '', arrow: v.state === 'down' ? '↓' : v.state === 'held' ? '●' : '↑', state: v.state === 'down' ? 'bad' : 'good', when: sx.date, order: 1 });
+    out.push({ key: 'ex:' + e.n, label: e.n, value: v.now ? v.now.label : '', delta: v.pct != null ? (v.pct > 0 ? '+' : '') + v.pct.toFixed(1) + ' %' : '', arrow: v.state === 'down' ? '↓' : v.state === 'hold' ? '●' : '↑', state: v.state === 'down' ? 'bad' : v.state === 'hold' ? 'flat' : 'good', when: sx.date, order: 1 });
   }
   let perfect = 0, n = 0, last = null; for (let i = 0; i < 7; i++) { const d = addDays(date, -i); if (tOf(d) < 0 || d > today()) continue; const done = dayCompletion(d) === 'done'; if (d === today() && !done) continue; n++; if (done) { perfect++; last = last || d; } }
   if (n) out.push({ key: 'days', label: 'Perfect days', value: perfect + '/' + n, delta: '', arrow: '●', state: perfect / n >= .85 ? 'good' : perfect / n >= .5 ? 'flat' : 'bad', when: last || date, order: 2 });
@@ -2756,6 +2766,8 @@ function modal(html, onbind) {
   const bg = document.createElement('div'); bg.className = 'modalbg' + (R.screen === 'dash' || R.screen === 'exfile' ? ' hudm' : '');
   bg.innerHTML = '<div class="modal" role="dialog" aria-modal="true" tabindex="-1"><button class="mclose" data-close aria-label="Close">' + XIC + '</button><div class="mbody">' + html + '</div></div>'; applyUnits(bg);
   const m = bg.firstChild, prev = document.activeElement; lockBody();
+  // buttons marked data-foot stay pinned at the bottom of the pop-up, in thumb reach, however long the content
+  const feet = m.querySelectorAll('.mbody [data-foot]'); if (feet.length) { const f = document.createElement('div'); f.className = 'mfoot'; feet.forEach(x => f.appendChild(x)); m.appendChild(f); }
   let closed = false;
   const close = () => {
     if (closed) return; closed = true; bg.classList.remove('drag'); bg.classList.add('out'); unlockBody();
@@ -2843,16 +2855,25 @@ function render(anim) {
   if (!S.project) { app.innerHTML = setupHtml(); bindSetup(); applyUnits(app); animate(app.querySelector('.screen'), anim); return; }
   const sc = { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, exfile: exfileHtml, project: projectHtml, past: pastHtml, band: bandHtml, cloud: cloudHtml, backup: backupHtml, profile: profileHtml, workout: workoutHtml, weigh: weighHtml, hang: hangHtml, mt: mtHtml, stretch: stretchHtml, mobility: mobilityHtml, nutrition: nutritionHtml, import: importHtml, batch: batchHtml }[R.screen] || todayHtml;
   if (syncTips()) save();
-  app.innerHTML = sc(); setTimeout(() => applyUnits(app), 0);
+  let html, failed = false; try { html = sc(); } catch (e) { html = errorScreen(e); failed = true; }
+  app.innerHTML = html; setTimeout(() => applyUnits(app), 0);
   keepAwake(R.screen === 'workout');
   animate(app.querySelector('.screen'), anim);
-  app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (R.screen === b.dataset.nav && !R.stack.length) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); if (b.classList.contains('plchip')) R.stab = 'scan'; go(b.dataset.nav, {}, false, 'fade'); });
+  app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (R.screen === b.dataset.nav && !R.stack.length && !app.querySelector('.errscr')) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); if (b.classList.contains('plchip')) R.stab = 'scan'; go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
   const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, exfile: bindExfile, project: bindProject, past: bindPast, band: bindBandPage, cloud: bindCloud, backup: bindBackup, profile: bindProfile, workout: bindWorkout, weigh: bindWeigh, hang: bindHang, mt: bindMT, stretch: bindStretch, mobility: bindMobility, nutrition: bindNutrition, import: bindImport, batch: bindBatch }[R.screen];
   R._prevScreen = R._curScreen; R._curScreen = R.screen;
   // the scouter paints the phone's status bar green
   const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = R.screen === 'dash' || R.screen === 'exfile' ? '#0a2e12' : '#0E0F12';
-  if (binder) binder();
+  if (failed) { const h = $('[data-errhome]'); if (h) h.onclick = () => { R.stack = []; R.date = today(); go('today', {}, false, 'fade'); }; return; }
+  if (binder) try { binder(); } catch (e) { console.error(e); logError(e); toast('Something went wrong: ' + (e.message || e), 4000); }
+}
+// A screen that throws shows this instead of freezing the app (and the tab or view that broke is reset, so the next tap works)
+function logError(e) { try { localStorage.setItem('vikac.lasterr', JSON.stringify({ at: new Date().toISOString(), v: APP_VERSION, screen: R.screen, msg: (e && e.message) || String(e), stack: ((e && e.stack) || '').slice(0, 900) })); } catch (x) {} }
+function errorScreen(e) {
+  console.error(e); logError(e); const sc = R.screen, msg = (e && e.message) || String(e), where = (((e && e.stack) || '').split('\n')[1] || '').trim();
+  if (sc === 'dash') R.stab = 'scan'; if (sc === 'journey' || sc === 'cal') R.jtab = 'path';
+  return `<div class="screen errscr"><div class="shead"><div class="h1">Oops</div></div><div class="lead4">This screen hit a bug and couldn't open. Your data is safe. A screenshot of this helps to fix it:</div><div class="dbox" style="font-family:monospace;font-size:12px;overflow-wrap:anywhere">v${APP_VERSION} · ${esc(sc)}${sc === 'dash' ? ' · ' + esc(R._stabErr || '') : ''}<br>${esc(msg)}<br>${esc(where)}</div><button class="btn" data-errhome style="margin-top:14px;width:100%">Back to Today</button></div>${nav(sc === 'exfile' ? 'dash' : sc === 'cal' ? 'journey' : sc)}`;
 }
 // Screen stays on while a workout is open (re-acquired when the app comes back to the front)
 // Enter (the keyboard's Done key) closes the keyboard in every field, including notes — no "Next", no new line
@@ -2959,7 +2980,7 @@ function showBalls(date) {
     <div class="kv" style="margin:16px 0 18px">${rows}</div>
     <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:8px">This cycle</div>
     <div class="chips" style="gap:8px">${days}</div>
-    <button class="btn sec" data-close>Close</button>`);
+    <button class="btn" data-close data-foot>Close</button>`);
 }
 
 /* ---------- Calendar ---------- */
@@ -3133,27 +3154,25 @@ function openTips() {
   const listHtml = () => { const a = activeTips(), nn = a.filter(e => fresh.has(e.id)).length;
     return `<div class="hdl"></div><div class="tiphd"><h3 style="margin:0">Tips</h3><span class="cond tipsub">${a.length ? (nn ? nn + ' new · ' : '') + 'swipe to dismiss' : ''}</span></div>
       ${a.length ? a.map(e => `<div class="tipwrap" data-tip="${esc(e.id)}"><div class="under">DISMISS</div><div class="tip"><div class="cond" style="font-size:16px;margin-bottom:2px">${fresh.has(e.id) ? '<span class="tnew">NEW</span>' : ''}${esc(e.h)}</div><div style="font-size:14px;line-height:1.4">${esc(e.text)}</div><button class="x" data-tipx aria-label="Dismiss">${XIC}</button></div></div>`).join('')
-        : '<div class="muted" style="margin:6px 0 16px">No tips right now. New ones show up here as your data comes in.</div>'}
-      <div class="row" style="margin-top:4px">${a.length > 1 ? '<button class="btn sec" data-tipall>Dismiss all</button>' : ''}<button class="btn sec" data-tiphist>Tips history</button></div><button class="btn" data-close style="margin-top:10px">Close</button>`; };
+        : '<div class="muted" style="margin:6px 0 16px">No tips right now. New ones show up here as your data comes in.</div>'}`; };
+  const listFoot = () => `<div class="row">${activeTips().length > 1 ? '<button class="btn sec" data-tipall>Dismiss all</button>' : ''}<button class="btn sec" data-tiphist>Tips history</button></div><button class="btn" data-close>Close</button>`;
   const histHtml = () => { const L = (S.tips || {}).log || [], lab = { active: ['a', 'Active'], dismissed: ['d', 'Dismissed'], resolved: ['r', 'Resolved'] };
     return `<div class="hdl"></div><h3 style="margin:0">Tips history</h3><div class="muted" style="margin:2px 0 4px">Every tip this project — kept until you start a new project</div>
       <div class="sec2">This project · ${L.length} tip${L.length === 1 ? '' : 's'}</div>
-      ${L.length ? L.map(e => `<div class="hist"><div class="meta"><span>${fmtShort(e.date)}</span><span class="st ${lab[e.status][0]}">${lab[e.status][1]}</span></div><div class="h">${esc(e.h)}</div><div class="tx">${esc(e.text)}</div></div>`).join('') : '<div class="muted" style="margin-bottom:12px">No tips yet.</div>'}
-      <div class="row" style="margin-top:6px"><button class="btn sec" data-tipback>Back to tips</button><button class="btn" data-close>Close</button></div>`; };
+      ${L.length ? L.map(e => `<div class="hist"><div class="meta"><span>${fmtShort(e.date)}</span><span class="st ${lab[e.status][0]}">${lab[e.status][1]}</span></div><div class="h">${esc(e.h)}</div><div class="tx">${esc(e.text)}</div></div>`).join('') : '<div class="muted" style="margin-bottom:12px">No tips yet.</div>'}`; };
+  const histFoot = () => `<div class="row"><button class="btn sec" data-tipback>Back to tips</button></div><button class="btn" data-close>Close</button>`;
   const dismiss = id => { const e = S.tips.log.find(x => x.id === id); if (e) e.status = 'dismissed'; save(); paintPill(); };
-  modal(listHtml(), bg => {
+  modal(listHtml() + `<div data-foot class="tfoot">${listFoot()}</div>`, bg => {
     bg.classList.add('sheetbg');
-    const m = bg.querySelector('.mbody'), box = bg.querySelector('.modal');
-    // the pop-up keeps its height while tips fly out (it only ever grows)
-    const keep = () => requestAnimationFrame(() => { box.style.minHeight = Math.max(parseFloat(box.style.minHeight) || 0, box.offsetHeight) + 'px'; });
-    const show = (html, bindFn) => { m.innerHTML = html; m.querySelectorAll('[data-close]').forEach(b => b.onclick = () => bg.close()); bindFn(); m.scrollTop = 0; keep(); };
-    keep();
+    // one fixed height for the list and the history, the buttons pinned at the bottom
+    const m = bg.querySelector('.mbody'), box = bg.querySelector('.modal'), foot = bg.querySelector('.mfoot'); box.classList.add('fixh');
+    const show = (html, fhtml, bindFn) => { m.innerHTML = html; foot.innerHTML = `<div class="tfoot">${fhtml}</div>`; bg.querySelectorAll('[data-close]').forEach(b => b.onclick = () => bg.close()); bindFn(); m.scrollTop = 0; };
     const bindList = () => {
-      const all = m.querySelector('[data-tipall]'); if (all) all.onclick = () => { activeTips().forEach(e => e.status = 'dismissed'); save(); paintPill(); show(listHtml(), bindList); };
-      m.querySelector('[data-tiphist]').onclick = () => show(histHtml(), () => { m.querySelector('[data-tipback]').onclick = () => show(listHtml(), bindList); });
+      const all = foot.querySelector('[data-tipall]'); if (all) all.onclick = () => { activeTips().forEach(e => e.status = 'dismissed'); save(); paintPill(); show(listHtml(), listFoot(), bindList); };
+      foot.querySelector('[data-tiphist]').onclick = () => show(histHtml(), histFoot(), () => { foot.querySelector('[data-tipback]').onclick = () => show(listHtml(), listFoot(), bindList); });
       m.querySelectorAll('[data-tip]').forEach(w => {
         const card = w.querySelector('.tip'), id = w.dataset.tip;
-        const out = () => { w.classList.add('sw'); card.style.transition = 'transform .2s ease-in'; card.style.transform = 'translateX(-110%)'; setTimeout(() => { w.style.transition = 'height .2s,margin .2s,opacity .2s'; w.style.height = w.offsetHeight + 'px'; requestAnimationFrame(() => { w.style.height = '0px'; w.style.marginBottom = '0px'; w.style.opacity = '0'; }); setTimeout(() => { dismiss(id); show(listHtml(), bindList); }, 220); }, 180); };
+        const out = () => { w.classList.add('sw'); card.style.transition = 'transform .2s ease-in'; card.style.transform = 'translateX(-110%)'; setTimeout(() => { w.style.transition = 'height .2s,margin .2s,opacity .2s'; w.style.height = w.offsetHeight + 'px'; requestAnimationFrame(() => { w.style.height = '0px'; w.style.marginBottom = '0px'; w.style.opacity = '0'; }); setTimeout(() => { dismiss(id); show(listHtml(), listFoot(), bindList); }, 220); }, 180); };
         w.querySelector('[data-tipx]').onclick = e => { e.stopPropagation(); out(); };
         let x0 = null, y0 = 0, dx = 0, horiz = null;
         card.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; dx = 0; horiz = null; card.style.transition = 'none'; }, { passive: true });
@@ -3174,7 +3193,7 @@ function metricTooltip(id, date) {
     ${dots.length ? `<div class="dots">${dots.map(v => `<i style="height:${10 + (v - mn) / rng * 18}px" title="${v}"></i>`).join('')}</div>` : ''}
     <div class="${st.cls}" style="font-weight:800;margin-top:6px">${esc(st.text)}</div>
     ${st.action ? `<div style="margin-top:8px">${esc(st.action)}</div>` : ''}
-    <button class="btn sec" style="margin-top:12px" data-close>Close</button>`);
+    <button class="btn" data-close data-foot>Close</button>`);
 }
 
 /* ---------- Profile ---------- */
@@ -3533,7 +3552,7 @@ function bindWorkout() {
     const pbs = sessionPBs(s);
     const lines = s.ex.map(e => { const v = verdictFor(e.n, e, date, s.id); if (v.state === 'none') return ''; return `<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="cond" style="font-size:15px;color:var(--ink)">${esc(e.n)}</div><div class="${v.cls}" style="font-weight:600;font-size:13.5px;margin-top:1px">${esc(v.text)}</div></div>`; }).join('');
     vib([40, 60, 40]); R._woOpen = null; R._wtShrink = true; back();
-    setTimeout(() => modal(`<h3>${esc(w.name)} done!</h3>${pbs ? `<div class="cond" style="color:var(--gold);font-size:14px;margin:-2px 0 10px">${pbs} new PB${pbs > 1 ? 's' : ''}</div>` : ''}${lines}<button class="btn" data-close>Nice</button>`), 280);
+    setTimeout(() => modal(`<h3>${esc(w.name)} done!</h3>${pbs ? `<div class="cond" style="color:var(--gold);font-size:14px;margin:-2px 0 10px">${pbs} new PB${pbs > 1 ? 's' : ''}</div>` : ''}${lines}<button class="btn" data-close data-foot>Nice</button>`), 280);
   };
   const ro = $('#reopen'); if (ro) ro.onclick = () => { s.finished = false; save(); R._woOpen = s.ex.findIndex(e => !e.done); render(); };
   $('#delS').onclick = async () => { if (await ask('Delete this session?', 'Everything logged in it is removed.', 'Delete', true)) { S.sessions = S.sessions.filter(x => x.id !== s.id); R._woKey = null; save(); back(); } };
@@ -3930,7 +3949,6 @@ IC4.scouter = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
 const TRO4 = '<svg class="tro" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 0 1-10 0z" fill="#F5B90F" stroke="#1B1B1B" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H4.2v1.6A3.4 3.4 0 0 0 7.6 10M17 5h2.8v1.6A3.4 3.4 0 0 1 16.4 10" fill="none" stroke="#FFD84D" stroke-width="1.6" stroke-linecap="round"/><path d="M12 13v3.5" stroke="#FFD84D" stroke-width="1.8"/><path d="M8.5 21h7l-.8-3.2H9.3z" fill="#E0A100" stroke="#1B1B1B" stroke-width="1.5" stroke-linejoin="round"/></svg>';
 const PBT = `<span class="pbt">${TRO4}PB</span>`;
 const STABS = [['scan', 'Scan'], ['body', 'Body'], ['food', 'Food'], ['training', 'Training'], ['records', 'Records']];
-const SC_LS = 'vikac.scan';
 const gb = v => Math.round(+v).toLocaleString('en-GB');
 const ARW = (d, flat) => d > flat ? '▲' : d < -flat ? '▼' : '●';
 const sgn = d => (d > 0 ? '+' : d < 0 ? '−' : '±');
@@ -3955,9 +3973,9 @@ function sparkSvg(vals, w, h) {
 
 /* ---------- Screen ---------- */
 function dashHtml() {
-  const date = scDate(), tab = R.stab || 'scan', i = STABS.findIndex(x => x[0] === tab);
+  const date = scDate(), tab = R.stab || 'scan', i = STABS.findIndex(x => x[0] === tab); R._stabErr = tab;
   const body = tab === 'body' ? bodyTab(date) : tab === 'food' ? foodTab(date) : tab === 'training' ? trainingTab(date) : tab === 'records' ? recordsTab() : scanTab(date);
-  return `<div class="hudbg"></div><div class="hudlines"></div><div class="hudsweep"></div><div class="screen hudscr">
+  return `<div class="hudbg"></div><div class="hudlines"></div><div class="screen hudscr">
     <div class="hhead"><div class="htop"><span class="bang">Scouter</span>${tipsPillHtml()}</div>
     <div class="htabs">${STABS.map(([k, l]) => `<button data-stab="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('')}<div class="ind" style="left:${i * 20 + 2}%"></div></div></div>
     <div id="hpane">${body}</div></div>${nav('dash')}`;
@@ -3973,7 +3991,7 @@ function scanTab(date) {
       <div class="scale"><span>START</span><span id="plpct">${pct} %</span><span>GOAL 9001</span></div>
       <div class="status ${pw.warn ? 'warn' : ''}"><span id="plst">${esc(pw.status.toUpperCase())}</span><span class="pdots go"><i>.</i><i>.</i><i>.</i></span></div></div></div>
     <div class="why">${esc(pw.why)}</div></div>
-  <div class="hp"><div class="t"><span>Vitals · 7-day trend</span><span>Tap to scan</span></div><div class="vit">${vt.map(x => `<button class="vt" data-go="${x.go}"><div class="l">${x.l}</div><div class="v"><b>${x.v}</b><span class="${x.c}">${x.d}</span></div>${sparkSvg(x.s)}</button>`).join('')}</div></div>
+  <div class="hp"><div class="t"><span>Vitals · 7-day trend</span><span></span></div><div class="vit">${vt.map(x => `<button class="vt" data-go="${x.go}"><div class="l">${x.l}</div><div class="v"><b>${x.v}</b><span class="${x.c}">${x.d}</span></div>${sparkSvg(x.s)}</button>`).join('')}</div></div>
   ${radarHtml()}
   <div class="hp"><div class="t"><span>Report card · so far</span><span>Overall <b class="gr">${rc.overall.grade}</b></span></div>
     <div class="rcg">${[['training', 'Training'], ['nutrition', 'Nutrition'], ['stretch', 'Stretch']].map(([k, l]) => `<div><span>${l}</span><b class="gr">${rc[k].grade}</b><small>${rc[k].done}/${rc[k].of}</small></div>`).join('')}</div>
@@ -4005,7 +4023,7 @@ function vitalTiles(date) {
 function radarHtml() {
   const p = P(), td = today(), d0 = td < p.startDate ? p.startDate : td > p.endDate ? p.endDate : td, cyc = cycleOf(d0); if (!cyc) return '';
   const js = journeyStats(), pl = dayPlan(d0), pre = td < p.startDate, over = td > p.endDate, live = !pre && !over && cyc.cd <= 7 && !cyc.todayDone;
-  let h = ''; for (let i = 1; i <= 7; i++) { const got = i <= cyc.earned, cur = live && i === cyc.earned + 1; h += `<span class="rb${got ? ' got' : ''}${cur ? ' cur' : ''}">${ballSvg({ stars: i, state: got ? 'full' : 'hollow', size: cur ? 34 : 28 })}</span>`; }
+  let h = ''; for (let i = 1; i <= 7; i++) { const got = i <= cyc.earned, cur = live && i === cyc.earned + 1; const sz = cur ? 34 : 28; h += `<span class="rb${got ? ' got' : ''}${cur ? ' cur' : ''}"><span class="rbb">${ballSvg({ stars: i, state: 'hollow', size: sz })}</span>${got ? `<span class="rbf">${ballSvg({ stars: i, state: 'full', size: sz })}</span>` : ''}</span>`; }
   h += `<span class="rb dr">${dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.earned === 7 ? 'ready' : 'locked', size: 34 })}</span>`;
   const left = pre ? 'Starts ' + shortD(p.startDate) : over ? 'Project done' : cyc.summonDay ? (cyc.summoned ? 'Dragon summoned' : cyc.canSummon ? '7 / 7 · summon today' : cyc.earned + ' / 7 · no summon') : cyc.todayDone ? cyc.earned + ' / 7 · today done' : cyc.earned + ' / 7 · next: ' + pl.title + ' today';
   return `<button class="hp" data-go="journey"><div class="t"><span>Cycle ${cyc.num} · dragon radar</span><span>${js.chain > 1 ? IC4.flame + ' ' + js.chain + '-day chain' : ''}</span></div><div class="radar">${h}</div><div class="chainl"><span>${esc(left)}</span><span>Balls ${js.balls} · dragons ${js.dragons}</span></div></button>`;
@@ -4016,7 +4034,7 @@ function plModal(date) {
     <div class="kv" style="margin:14px 0 6px">${fs.parts.map(x => `<span><b style="font-weight:700">${esc(x.label)}</b><br><span class="muted small">${esc(x.text)}</span></span><span class="chip ${x.cls === 'ok' ? 'ok' : x.cls === 'warn' ? 'warn' : 'muted'}">${esc(x.status || '—')}</span>`).join('')}</div>
     ${sg.all.length ? `<div class="eyebrow" style="margin-top:14px">Last 7 days</div><div class="kv">${sg.all.map(x => `<span>${esc(x.label)}<br><span class="muted small">${esc(x.value)}${x.delta ? ' · ' + esc(x.delta) : ''}</span></span><b class="${x.state === 'good' ? 'ok' : x.state === 'bad' ? 'bad' : 'warn'}" style="font-size:18px">${x.arrow}</b>`).join('')}</div>` : ''}
     <div class="muted small" style="margin-top:12px">Power level = how far your 7-day weight and body-fat trend has moved from the start toward the goal (300 → 9001). Score = body on plan (50 %) + strength held (30 %) + perfect days (20 %). Green ↓ on things that should fall and green ↑ on things that should rise; yellow ● means no real change this week.</div>
-    <button class="btn sec" data-close>Close</button>`);
+    <button class="btn" data-close data-foot>Close</button>`);
 }
 
 /* ---------- Body: weight against the plan, composition, science check ---------- */
@@ -4070,7 +4088,7 @@ function compRows(date) {
     rows.push(`<button class="mrow" data-metric="${id}"><span class="n">${esc(def.short || def.label)}<small>${sub}</small></span>${sparkSvg(readSeries(id, date, Math.min(60, Math.max(2, tOf(date) + 1))), 92, 28)}<span class="val"><b>${st.cur == null ? '—' : f(st.cur) + u}</b><span class="${a === '●' ? 'y' : good ? 'g' : 'r'}">${st.cur == null ? '' : a + Math.abs(dd).toFixed(def.dec)}</span></span></button>`);
   }
   const wv = readSeries('water', date, Math.min(60, Math.max(2, tOf(date) + 1)));
-  if (wv.length) { const cur = current('water', date), s0 = p.start.water != null && p.start.water !== '' ? +p.start.water : wv[0], dd = cur - s0;
+  if (wv.length) { const c7 = current('water', date), cur = c7 != null ? c7 : wv[wv.length - 1], s0 = p.start.water != null && p.start.water !== '' ? +p.start.water : wv[0], dd = cur - s0;
     rows.push(`<div class="mrow"><span class="n">Water<small>tracking only</small></span>${sparkSvg(wv, 92, 28)}<span class="val"><b>${cur.toFixed(1)} %</b><span class="y">${ARW(dd, .5) + Math.abs(dd).toFixed(1)}</span></span></div>`); }
   return rows.join('') || '<div class="empty">Log a weigh-in with body composition and it shows up here.</div>';
 }
@@ -4167,8 +4185,8 @@ function bindDash() {
   const pl = $('[data-pl]'); if (pl) pl.onclick = () => plModal(date);
   app.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const g = b.dataset.go; if (g === 'journey') { R.stack = []; go('journey', {}, false, 'fade'); } else setTab(g); });
   app.querySelectorAll('[data-metric]').forEach(el => el.onclick = () => metricTooltip(el.dataset.metric, date));
-  app.querySelectorAll('[data-wr]').forEach(b => b.onclick = e => { e.stopPropagation(); if ((R.wrange || 'all') === b.dataset.wr) return; R.wrange = b.dataset.wr; app.querySelectorAll('[data-wr]').forEach(x => x.classList.toggle('on', x === b)); const h = $('#wchart'); h.innerHTML = weightChart(date, R.wrange); SC_RUN++; scChart(h, 0); });
-  app.querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { if ((R.frange || '7d') === b.dataset.fr) return; R.frange = b.dataset.fr; const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); SC_RUN++; app.querySelectorAll('#ftiles [data-c]').forEach((el, i) => scCount(el, +el.dataset.c, 600, i * 60)); });
+  app.querySelectorAll('[data-wr]').forEach(b => b.onclick = e => { e.stopPropagation(); if ((R.wrange || 'all') === b.dataset.wr) return; R.wrange = b.dataset.wr; app.querySelectorAll('[data-wr]').forEach(x => x.classList.toggle('on', x === b)); const h = $('#wchart'); h.innerHTML = weightChart(date, R.wrange); SC_RUN++; scBody(); });
+  app.querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { if ((R.frange || '7d') === b.dataset.fr) return; R.frange = b.dataset.fr; const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); });
   app.querySelectorAll('[data-lognut]').forEach(b => b.onclick = () => go('nutrition', { date: today() }));
   const bp = $('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) toast(r.error, 2400); else toast(r.changed ? 'Band data updated' : 'Band data up to date', 1600); const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); };
   app.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { const [k, d, key] = b.dataset.open.split('|'); if (k === 'mt') go('mt', { date: d }); else go('workout', { date: d, key }); });
@@ -4176,77 +4194,46 @@ function bindDash() {
   bindRows();
   app.querySelectorAll('[data-rtab]').forEach(b => b.onclick = () => { if ((R.rtab || 'pb') === b.dataset.rtab) return; R.rtab = b.dataset.rtab; const box = app.querySelector('.rtabs4'); box.classList.toggle('vol', R.rtab === 'vol'); box.classList.toggle('pb', R.rtab === 'pb'); app.querySelectorAll('[data-rtab]').forEach(x => x.classList.toggle('on', x === b));
     const hint = box.nextElementSibling; if (hint && hint.classList.contains('empty')) hint.remove(); if (R.rtab === 'vol') box.insertAdjacentHTML('afterend', '<div class="empty" style="margin:4px 0 0;font-size:12px">Most weight moved in one session (sets × reps × kg). Bodyweight exercises: most reps in one session.</div>');
-    $('#rrows').innerHTML = recordRows(records(), R.rtab); bindRows(); SC_RUN++; scRecords(0); });
-  // how it comes in: the full boot once a day, a quick sweep after that, panels per tab, nothing on a refresh
-  let mode = R._scMode || (R._prevScreen === 'dash' ? 'none' : 'quick'); R._scMode = null;
-  if (mode === 'quick' && tab === 'scan') { let seen = null; try { seen = localStorage.getItem(SC_LS); } catch (e) {} if (seen !== today()) { mode = 'boot'; try { localStorage.setItem(SC_LS, today()); } catch (e) {} } }
+    $('#rrows').innerHTML = recordRows(records(), R.rtab); bindRows(); SC_RUN++; scRecords(); });
+  // how it comes in: a light touch when you arrive on a tab, nothing when the screen only refreshes
+  let mode = R._scMode || (R._prevScreen === 'dash' ? 'none' : 'enter'); R._scMode = null;
   if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) mode = 'none';
   SC_RUN++;
   if (mode === 'tab') { const ind = app.querySelector('.htabs .ind'), pi = order.indexOf(R._stabPrev || tab); if (ind && pi >= 0) { const to = ind.style.left; ind.style.transition = 'none'; ind.style.left = (pi * 20 + 2) + '%'; void ind.offsetWidth; ind.style.transition = ''; ind.style.left = to; } }
-  if (mode === 'boot') scBoot(true);
-  else if (mode === 'tab') { if (tab === 'scan') scBoot(false); else { scSweep(520); app.querySelectorAll('#hpane .hp').forEach((el, i) => scPanel(el, 60 + i * 130)); ({ body: () => scBody(120), food: () => scFood(120), training: () => scTraining(120), records: () => scRecords(120) })[tab](); } }
-  else if (mode === 'quick') scSweep(560);
+  if (mode !== 'none') { const f = { scan: scScan, body: scBody, training: scTraining, records: scRecords }[tab]; if (f) f(); }
 }
 let SC_RUN = 0;
 function scAnim(el, kf, o) { return el && el.animate ? el.animate(kf, Object.assign({ fill: 'backwards', easing: 'cubic-bezier(.2,.8,.2,1)' }, o)) : null; }
 function scLater(ms, fn) { const r = SC_RUN; setTimeout(() => { if (r === SC_RUN) fn(); }, ms); }
-function scScramble(el, dur, delay) {
-  if (!el) return; const fin = el.textContent, r = SC_RUN; if (!/\d/.test(fin)) return; el.textContent = fin.replace(/\d/g, '-');
-  setTimeout(() => { const t0 = performance.now(); const step = () => { const k = (performance.now() - t0) / dur; if (r !== SC_RUN || k >= 1) { el.textContent = fin; return; } el.textContent = fin.replace(/\d/g, (d, i) => i / fin.length < k * .9 ? d : String(Math.random() * 10 | 0)); requestAnimationFrame(step); }; step(); }, delay || 0);
-}
 function scCount(el, to, dur, delay, f) {
   if (!el || isNaN(to) || el.dataset.c === '') return; f = f || (v => gb(v) + (el.dataset.u || '')); const r = SC_RUN; el.textContent = f(0);
   setTimeout(() => { const t0 = performance.now(); const step = () => { const k = Math.min(1, (performance.now() - t0) / dur); if (r !== SC_RUN) { el.textContent = f(to); return; } el.textContent = f(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(step); }; step(); }, delay || 0);
 }
 function scGrow(set, dur, delay) { const r = SC_RUN; set(0); setTimeout(() => { const t0 = performance.now(); const step = () => { const k = Math.min(1, (performance.now() - t0) / dur); if (r !== SC_RUN) { set(1); return; } set(1 - Math.pow(1 - k, 3)); if (k < 1) requestAnimationFrame(step); }; step(); }, delay || 0); }
-const scReveal = (el, dur, delay) => scAnim(el, [{ clipPath: 'inset(-8px 100% -8px -8px)' }, { clipPath: 'inset(-8px -8px -8px -8px)' }], { duration: dur, delay, easing: 'cubic-bezier(.45,0,.2,1)' });
-const scPop = (el, delay) => scAnim(el, [{ transform: 'scale(0)', opacity: 0 }, { transform: 'scale(1.2)', opacity: 1, offset: .65 }, { transform: 'scale(1)', opacity: 1 }], { duration: 420, delay });
-const scSlide = (el, delay) => scAnim(el, [{ opacity: 0, transform: 'translateX(-18px)' }, { opacity: 1, transform: 'none' }], { duration: 340, delay });
-function scPanel(el, delay) { if (!el) return; el.classList.remove('in'); scAnim(el, [{ opacity: 0, clipPath: 'inset(-6px -6px 100% -6px)' }, { opacity: 1, clipPath: 'inset(-6px -6px -6px -6px)' }], { duration: 460, delay, easing: 'cubic-bezier(.45,0,.2,1)' }); scLater(delay + 260, () => el.classList.add('in')); setTimeout(() => el.classList.add('in'), delay + 900); }
-function scSweep(dur) { const s = $('.hudsweep'); if (s) scAnim(s, [{ transform: 'translateY(-120px)', opacity: 1 }, { transform: 'translateY(' + window.innerHeight + 'px)', opacity: 1 }], { duration: dur, easing: 'cubic-bezier(.45,.05,.55,.95)', fill: 'none' }); }
-// The scan: screen flickers on, panels unfold, the character is locked on, the number counts up, the status types out
-function scBoot(full) {
-  const p = $('#hpane'), scr = app.querySelector('.hudscr'); if (!p) return; const o = full ? 250 : 0;
-  if (full) { const fl = [{ filter: 'brightness(.15)' }, { filter: 'brightness(1.7)', offset: .12 }, { filter: 'brightness(.45)', offset: .26 }, { filter: 'brightness(1.15)', offset: .5 }, { filter: 'brightness(1)' }]; scAnim(scr, fl, { duration: 620, easing: 'linear', fill: 'none' }); scAnim($('.hudbg'), fl, { duration: 620, easing: 'linear', fill: 'none' });
-    scAnim($('.htop'), [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 80 }); scAnim($('.htabs'), [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: 160 }); }
-  scLater(o, () => scSweep(full ? 820 : 520));
-  p.querySelectorAll('.hp').forEach((el, i) => scPanel(el, o + 80 + i * 150));
-  scAnim(p.querySelector('.hart'), [{ opacity: 0, filter: 'brightness(3)' }, { opacity: .7, offset: .2 }, { opacity: .15, offset: .35 }, { opacity: 1, filter: 'brightness(1.4)', offset: .6 }, { opacity: 1, filter: 'brightness(1)' }], { duration: 520, delay: o + 200, easing: 'linear' });
-  const ring = p.querySelector('.hero .ring'); scAnim(ring, [{ transform: 'scale(2.8) rotate(-150deg)', opacity: 0 }, { transform: 'scale(.9) rotate(8deg)', opacity: 1, offset: .75 }, { transform: 'scale(1) rotate(0)', opacity: 1 }], { duration: 760, delay: o + 320 });
-  scLater(o + 1100, () => scAnim(ring, [{ opacity: 1 }, { opacity: .15 }, { opacity: 1 }, { opacity: .15 }, { opacity: 1 }], { duration: 420, fill: 'none', easing: 'steps(4,end)' }));
-  const n = $('#pln'), plv = +n.textContent.replace(/\D/g, ''), pct = +$('#plpct').textContent.replace(/\D/g, '');
-  scCount(n, plv, 1150, o + 650, v => Math.round(v).toLocaleString('en-GB')); scCount($('#plpct'), pct, 1150, o + 650, v => Math.round(v) + ' %');
-  scAnim(n, [{ boxShadow: '0 0 0 rgba(140,255,110,0)' }, { boxShadow: '0 0 22px rgba(140,255,110,.9)', offset: .85 }, { boxShadow: '0 0 0 rgba(140,255,110,0)' }], { duration: 1500, delay: o + 650, fill: 'none' });
-  const segs = [...p.querySelectorAll('#plb i')], lit = segs.filter(s => s.classList.contains('on')).length; segs.forEach(s => s.classList.remove('on'));
-  segs.forEach((s, i) => scLater(o + 650 + i * 42, () => { s.classList.add('hot'); setTimeout(() => s.classList.remove('hot'), 110); }));
-  scLater(o + 650 + 20 * 42 + 60, () => segs.slice(0, lit).forEach((s, i) => setTimeout(() => s.classList.add('on'), i * 60)));
-  setTimeout(() => segs.slice(0, lit).forEach(s => s.classList.add('on')), o + 650 + 20 * 42 + 60 + lit * 60 + 200);
-  const st = $('#plst'), msg = st.textContent, dots = p.querySelector('.pdots'); st.textContent = ''; dots.classList.remove('go');
-  scAnim(p.querySelector('.status'), [{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: o + 1500 });
-  [...msg].forEach((c, i) => scLater(o + 1600 + i * 55, () => { st.textContent = msg.slice(0, i + 1); })); scLater(o + 1600 + msg.length * 55, () => dots.classList.add('go'));
-  setTimeout(() => { if (st.isConnected && st.textContent !== msg) { st.textContent = msg; dots.classList.add('go'); } }, o + 1700 + msg.length * 55);
-  p.querySelectorAll('.vt').forEach((v, i) => { const d = o + 520 + i * 110; scScramble(v.querySelector('b'), 520, d); scReveal(v.querySelector('svg'), 650, d + 120); scAnim(v.querySelector('.v span'), [{ opacity: 0 }, { opacity: 1 }], { duration: 250, delay: d + 600 }); });
-  p.querySelectorAll('.radar>*').forEach((b, i) => scPop(b, o + 1150 + i * 80));
-  scAnim(p.querySelector('.chainl'), [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: o + 1800 });
-  p.querySelectorAll('.rcg .gr').forEach((g, i) => scPop(g, o + 1500 + i * 90));
+const scPop = (el, delay, dur) => scAnim(el, [{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.15)', opacity: 1, offset: .6 }, { transform: 'scale(1)', opacity: 1 }], { duration: dur || 260, delay });
+// Scan: everything is already there — the crosshair locks on, the power level counts up, the balls you collected pop in
+function scScan() {
+  const p = $('#hpane'); if (!p) return;
+  const ring = p.querySelector('.hero .ring'); scAnim(ring, [{ transform: 'scale(2.2) rotate(-90deg)', opacity: 0 }, { transform: 'scale(.92) rotate(5deg)', opacity: 1, offset: .7 }, { transform: 'none', opacity: 1 }], { duration: 300 });
+  scLater(300, () => scAnim(ring, [{ opacity: 1 }, { opacity: .2 }, { opacity: 1 }], { duration: 160, fill: 'none', easing: 'steps(2,end)' }));
+  const n = $('#pln'), plv = +n.textContent.replace(/\D/g, ''), pc = $('#plpct'), pct = +pc.textContent.replace(/\D/g, ''), D0 = 520;
+  scCount(n, plv, D0, 0, v => Math.round(v).toLocaleString('en-GB')); scCount(pc, pct, D0, 0, v => Math.round(v) + ' %');
+  const segs = [...p.querySelectorAll('#plb i')], lit = segs.filter(x => x.classList.contains('on')).length; segs.forEach(x => x.classList.remove('on'));
+  segs.slice(0, lit).forEach((x, i) => scLater(Math.round(D0 * .8 * (i + 1) / lit), () => x.classList.add('on'))); setTimeout(() => segs.slice(0, lit).forEach(x => x.classList.add('on')), D0 + 100);
+  p.querySelectorAll('.rb .rbf').forEach((b, i) => scPop(b, 80 + i * 45, 240));
 }
-function scChart(host, o) {
-  const s = host && host.querySelector('svg'); if (!s) return;
-  scAnim(s.querySelector('.zone'), [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: o + 150 });
-  s.querySelectorAll('.rd').forEach((c, i) => scAnim(c, [{ opacity: 0 }, { opacity: .9 }], { duration: 200, delay: o + 250 + i * 25 }));
-  const t = s.querySelector('.tr'); if (t && t.getTotalLength) { const L = t.getTotalLength(); scAnim(t, [{ strokeDasharray: L + ' ' + L, strokeDashoffset: L }, { strokeDasharray: L + ' ' + L, strokeDashoffset: 0 }], { duration: 650, delay: o + 300 }); }
-  const pj = s.querySelector('.pj'); if (pj) { const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map(a => +pj.getAttribute(a)); scGrow(k => { pj.setAttribute('x2', x1 + (x2 - x1) * k); pj.setAttribute('y2', y1 + (y2 - y1) * k); }, 800, o + 900); }
-  scAnim(s.querySelector('.goal'), [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: o + 1500 });
+// Body: the trend line draws, then where it is heading
+function scBody() {
+  const s = $('#wchart svg'); if (!s) return;
+  const t = s.querySelector('.tr'); if (t && t.getTotalLength) { const L = t.getTotalLength(); scAnim(t, [{ strokeDasharray: L + ' ' + L, strokeDashoffset: L }, { strokeDasharray: L + ' ' + L, strokeDashoffset: 0 }], { duration: 420 }); }
+  const pj = s.querySelector('.pj'); if (pj) { const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map(a => +pj.getAttribute(a)); scGrow(k => { pj.setAttribute('x2', x1 + (x2 - x1) * k); pj.setAttribute('y2', y1 + (y2 - y1) * k); }, 320, 360); }
+  scAnim(s.querySelector('.goal'), [{ opacity: 0 }, { opacity: 1 }], { duration: 180, delay: 600 });
 }
-function scBody(o) { const p = $('#hpane'); scChart($('#wchart'), o); scScramble($('#bw'), 500, o + 100); p.querySelectorAll('.mrow').forEach((m, i) => { scReveal(m.querySelector('svg'), 600, o + 500 + i * 90); scScramble(m.querySelector('.val b'), 450, o + 500 + i * 90); }); }
-function scFood(o) {
-  const p = $('#hpane'); p.querySelectorAll('[data-c]').forEach((b, i) => scCount(b, +b.dataset.c, 700, o + 100 + i * 60));
-  p.querySelectorAll('.fb').forEach((r, i) => { const h = +r.dataset.h, base = +r.getAttribute('y') + h; scGrow(k => { r.setAttribute('height', (h * k).toFixed(1)); r.setAttribute('y', (base - h * k).toFixed(1)); }, 520, o + 250 + i * 70); });
-  p.querySelectorAll('.ft').forEach((l, i) => scAnim(l, [{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: o + 700 + i * 70 }));
-  p.querySelectorAll('.pdays i').forEach((d, i) => scPop(d, o + 700 + i * 60));
-}
-function scTraining(o) { const p = $('#hpane'); p.querySelectorAll('.kpis [data-c]').forEach((b, i) => scCount(b, +b.dataset.c, 700, o + 100 + i * 80)); p.querySelectorAll('.hbar .tr i').forEach((b, i) => scAnim(b, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: 700, delay: o + 350 + i * 120 })); p.querySelectorAll('.sess').forEach((s, i) => scSlide(s, o + 400 + Math.min(i, 10) * 70)); p.querySelectorAll('.hangs i').forEach((b, i) => scAnim(b, [{ transform: 'scaleY(0)' }, { transform: 'scaleY(1)' }], { duration: 400, delay: o + 600 + i * 30 })); }
-function scRecords(o) { const p = $('#rrows'); if (!p) return; p.querySelectorAll('.grp4,.rr').forEach((r, i) => scSlide(r, o + 120 + Math.min(i, 16) * 40)); p.querySelectorAll('.v').forEach((v, i) => scScramble(v, 420, o + 200 + Math.min(i, 16) * 40)); p.querySelectorAll('.new4').forEach((n, i) => scPop(n, o + 700 + i * 90)); }
+function scChart() { scBody(); }
+// Training: the numbers and bars fill; the list is simply there
+function scTraining() { const p = $('#hpane'); p.querySelectorAll('.kpis [data-c]').forEach(b => scCount(b, +b.dataset.c, 450, 0)); p.querySelectorAll('.hbar .tr i,.hangs i').forEach(b => scAnim(b, [{ transform: b.parentNode.classList.contains('hangs') ? 'scaleY(0)' : 'scaleX(0)' }, { transform: 'none' }], { duration: 450 })); }
+// Records: static, only the NEW tags pop in
+function scRecords() { const p = $('#rrows'); if (p) p.querySelectorAll('.new4').forEach((n, i) => scPop(n, 60 + i * 40, 220)); }
 
 /* ---------- Exercise file: every session of one lift, across every project ---------- */
 function exFam(name, f) { if (f) return f; const types = new Set(); for (const k in PROGRAM.workouts) { const d = PROGRAM.workouts[k].ex.find(x => x.n === name); if (d) types.add(d.type === 'max' ? 'max' : 'sets'); } return types.has('sets') ? 'sets' : 'max'; }
@@ -4280,7 +4267,7 @@ function exfileHtml() {
     body += `<div class="hp"><div class="t"><span>History</span><span>Newest first</span></div>${rows.map((r, i) => ({ r, i })).reverse().map(({ r, i }) => { const w = PROGRAM.workouts[r.s.key] || { name: 'Workout' }, right = pbAt[i] ? PBT : r.vol ? `<span>${kind === 'kg' ? gb(r.vol) + ' kg' : gb(r.vol) + ' reps'}</span>` : '<span></span>';
       return `<${r.live ? 'button' : 'div'} class="sess" ${r.live ? `data-sess="${r.s.date}|${r.s.key}"` : ''}><div class="h"><span>${shortD(r.s.date)}${r.live ? '' : ' ' + r.s.date.slice(0, 4)} · ${esc(w.name)}</span>${right}</div><div class="s">${esc(setsSummary(r.e, r.t === 'max' ? 'max' : r.t))}</div>${r.e.note ? `<div class="q">“${esc(r.e.note)}”</div>` : ''}</${r.live ? 'button' : 'div'}>`; }).join('')}</div>`;
   }
-  return `<div class="hudbg"></div><div class="hudlines"></div><div class="hudsweep"></div><div class="screen hudscr xfile">${top}<div id="hpane">${body}</div></div>${nav('dash')}`;
+  return `<div class="hudbg"></div><div class="hudlines"></div><div class="screen hudscr xfile">${top}<div id="hpane">${body}</div></div>${nav('dash')}`;
 }
 function exGoalLine(live, tgt, kind, fv) { const f = live[0].v, now = Math.max(...live.map(r => r.v)), goal = kind === 'kg' ? Math.round(f * tgt * 2) / 2 : Math.round(f * tgt); return `${fv(f)} → <b class="${now >= goal ? 'g' : ''}">${fv(goal)}</b>${now >= goal ? ' ✓' : ''}`; }
 function exChart(rows, fam, kind) {
@@ -4301,16 +4288,9 @@ function bindExfile() {
   const name = R.params.name || '', fam = exFam(name, R.params.fam), kind = pbKind(name, fam === 'max' ? 'max' : 'main'), fv = v => kind === 'kg' ? (+v).toLocaleString('en-GB') + ' kg' : Math.round(v) + ' reps';
   app.querySelectorAll('[data-sess]').forEach(b => b.onclick = () => { const [d, key] = b.dataset.sess.split('|'); go('workout', { date: d, key }); });
   const gl = $('#xgl'); if (gl) wireSteppers(app.querySelector('.goal4'), inp => { const v = Math.max(0, Math.min(100, +inp.value || 0)); S.targets[name] = 1 + v / 100; save(); gl.innerHTML = exGoalLine(exRows(name, fam).filter(r => r.live && r.s.finished), S.targets[name], kind, fv); });
-  const mode = R._prevScreen === 'dash' ? 'full' : R._prevScreen === 'exfile' ? 'none' : 'quick';
-  SC_RUN++; if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  if (mode === 'quick') return scSweep(520); if (mode === 'none') return;
-  const p = $('#hpane'), o = 200; scSweep(560); p.querySelectorAll('.hp').forEach((el, i) => scPanel(el, o + i * 160));
-  p.querySelectorAll('.kp b').forEach((b, i) => scScramble(b, 480, o + 120 + i * 90));
-  p.querySelectorAll('.xb').forEach((r, i) => { const h = +r.dataset.h, base = +r.getAttribute('y') + h; scGrow(k => { r.setAttribute('height', (h * k).toFixed(1)); r.setAttribute('y', (base - h * k).toFixed(1)); }, 480, o + 250 + Math.min(i, 12) * 60); });
-  const l = p.querySelector('.xl2'); if (l && l.getTotalLength) { const L = l.getTotalLength(); scAnim(l, [{ strokeDasharray: L + ' ' + L, strokeDashoffset: L }, { strokeDasharray: L + ' ' + L, strokeDashoffset: 0 }], { duration: 800, delay: o + 500 }); }
-  p.querySelectorAll('.xd').forEach((c, i) => scPop(c, o + 500 + Math.min(i, 12) * 90));
-  const xp = p.querySelector('.xpb'); if (xp) { scAnim(xp, [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: o + 1300 }); scAnim(xp.lastElementChild, [{ r: 0 }, { r: 11 }, { r: 7 }], { duration: 450, delay: o + 1300 }); scAnim(p.querySelector('.kp.gold'), [{ boxShadow: '0 0 0 rgba(255,216,77,0)' }, { boxShadow: '0 0 18px rgba(255,216,77,.9)' }, { boxShadow: '0 0 0 rgba(255,216,77,0)' }], { duration: 900, delay: o + 1300, fill: 'none' }); }
-  p.querySelectorAll('.sess').forEach((s, i) => scSlide(s, o + 500 + Math.min(i, 10) * 90));
+  SC_RUN++; if (R._prevScreen !== 'dash' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  const p = $('#hpane'), l = p.querySelector('.xl2'); if (l && l.getTotalLength) { const L = l.getTotalLength(); scAnim(l, [{ strokeDasharray: L + ' ' + L, strokeDashoffset: L }, { strokeDasharray: L + ' ' + L, strokeDashoffset: 0 }], { duration: 420 }); }
+  const xp = p.querySelector('.xpb'); if (xp) scPop(xp.lastElementChild, 380, 260);
 }
 
 /* ============ Stage 5: Settings — a grouped list, each row opens its page ============ */
@@ -4370,7 +4350,7 @@ function bindProfile() {
       const r = applyMfpDays(days), lines = [];
       if (r.filled) lines.push(`<b>${r.filled}</b> day${r.filled > 1 ? 's' : ''} filled`); if (r.updated) lines.push(`<b>${r.updated}</b> refreshed`); if (r.kept) lines.push(`<b>${r.kept}</b> kept (logged by hand)`);
       if (!r.filled && !r.updated) lines.push('Nothing new for the project days');
-      modal(`<h3>MFP import</h3><div class="muted">${n} days in the file${r.first ? ' · filled ' + fmtShort(r.first) + ' – ' + fmtShort(r.last) : ''}</div><div style="margin:10px 0;line-height:1.6">${lines.join('<br>')}${r.skippedToday ? '<br><span class="muted">Today was skipped — the export is usually taken before the day is complete; share tonight\'s screenshot instead.</span>' : ''}</div><button class="btn" data-close>OK</button>`);
+      modal(`<h3>MFP import</h3><div class="muted">${n} days in the file${r.first ? ' · filled ' + fmtShort(r.first) + ' – ' + fmtShort(r.last) : ''}</div><div style="margin:10px 0;line-height:1.6">${lines.join('<br>')}${r.skippedToday ? '<br><span class="muted">Today was skipped — the export is usually taken before the day is complete; share tonight\'s screenshot instead.</span>' : ''}</div><button class="btn" data-close data-foot>OK</button>`);
     } catch (e) { toast('Import failed: ' + (e.message || e), 3500); }
   };
 }
@@ -4435,7 +4415,7 @@ function pastProjectModal(id) {
   const p = b.project, sm = b.summary || {}, f = (m, dec, u) => m && m.start != null ? (+m.start).toFixed(dec) + (m.end != null ? ' → ' + (+m.end).toFixed(dec) : '') + u : '—';
   modal(`<div class="hdl"></div><div class="h1" style="font-size:34px;padding-right:40px">${esc(p.name)}</div><div class="mut" style="margin-top:4px">${fmtShort(p.startDate)} → ${fmtShort(p.endDate)}${sm.finished ? ' · finished' : ' · paused on day ' + Math.min(sm.elapsed || 0, sm.days || 0)}</div>
     <div class="sgrp" style="margin-top:14px">${kvr('Days logged', Math.min(sm.elapsed || 0, sm.days || 0) + ' of ' + (sm.days || '—'))}${kvr('Perfect days', (sm.perfect || 0) + (sm.elapsed ? ' (' + Math.round(sm.perfect / sm.elapsed * 100) + ' %)' : ''))}${kvr('Workouts finished', sm.sessions || 0)}${kvr('Weight', f(sm.weight, 1, ' kg'))}${kvr('Body fat', f(sm.fat, 1, ' %'))}${kvr('Muscle', f(sm.muscle, 1, ' kg'))}</div>
-    <div class="row" style="margin-top:14px"><button class="btn dline" data-del>Delete</button><button class="btn" data-reopen>Reopen</button></div>`, bg => {
+    <div class="row" data-foot><button class="btn dline" data-del>Delete</button><button class="btn" data-reopen>Reopen</button></div>`, bg => {
     bg.classList.add('sheetbg');
     bg.querySelector('[data-reopen]').onclick = async () => { bg.close(); const cur = P(); if (!await ask('Reopen ' + p.name + '?', cur ? `<b>${esc(cur.name)}</b> goes to Past projects and <b>${esc(p.name)}</b> becomes the current project again — you can extend it under Project.` : 'It becomes the current project again.', 'Reopen')) return; reopenProject(id); save(); R.stack = []; R.date = today(); go('today', {}, false, 'fade'); toast(p.name + ' is the current project'); };
     bg.querySelector('[data-del]').onclick = async () => { bg.close(); if (!await ask('Delete ' + p.name + '?', 'Everything logged in it is deleted. This cannot be undone.', 'Delete', true)) return; deleteProject(id); save(); if (R.screen === 'past' && !S.archive.length) back(); else render(); toast('Deleted'); };
