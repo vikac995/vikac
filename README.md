@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v2.6.1)
+# Vikač High Kikač — install guide (v2.7.1)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -80,6 +80,51 @@ Upload PNGs to the repository next to index.html and they replace the drawn art;
 | icon-192.png, icon-512.png, icon-512-maskable.png | the home-screen icon (maskable: keep the subject inside the middle 80 %) | 192 / 512 / 512 |
 
 Not replaceable by file (drawn around your art): the ring and padlock on the summon badge, the grey/faded states, the bottom navigation icons, charts and bars.
+
+## 8b. Exercise videos
+
+Upload an .mp4 next to index.html with the exercise's file name below and a **▶ Video** button appears on that exercise in every workout (it plays inline). Re-upload with the same name to update; delete the file to remove the button. Keep clips under 25 MB (GitHub's web upload limit) — a 30–60 s phone clip at 720p is usually 5–15 MB. Note: the repository is public, so anything uploaded here can be downloaded by anyone.
+
+| Exercise | File name |
+| --- | --- |
+| DB bench press | video-db-bench-press.mp4 |
+| DB overhead press | video-db-overhead-press.mp4 |
+| Close grip DB press | video-close-grip-db-press.mp4 |
+| Cable crossovers | video-cable-crossovers.mp4 |
+| DB overhead extensions | video-db-overhead-extensions.mp4 |
+| DB side lateral raises | video-db-side-lateral-raises.mp4 |
+| Weighted pushups | video-weighted-pushups.mp4 |
+| Incline DB bench press | video-incline-db-bench-press.mp4 |
+| Triceps pushdown | video-triceps-pushdown.mp4 |
+| DB hip huggers | video-db-hip-huggers.mp4 |
+| Low to high crossovers | video-low-to-high-crossovers.mp4 |
+| Dips | video-dips.mp4 |
+| BB squats | video-bb-squats.mp4 |
+| Alternating reverse DB lunges | video-alternating-reverse-db-lunges.mp4 |
+| Leg curl | video-leg-curl.mp4 |
+| Leg extension | video-leg-extension.mp4 |
+| DB alternating step ups | video-db-alternating-step-ups.mp4 |
+| DB stiff leg deadlift | video-db-stiff-leg-deadlift.mp4 |
+| DB standing calf raises | video-db-standing-calf-raises.mp4 |
+| DB goblet squats | video-db-goblet-squats.mp4 |
+| BB RDL | video-bb-rdl.mp4 |
+| Bag swings | video-bag-swings.mp4 |
+| DB jump squats | video-db-jump-squats.mp4 |
+| DB seated calf raises | video-db-seated-calf-raises.mp4 |
+| Creeping lunges | video-creeping-lunges.mp4 |
+| Deadlift | video-deadlift.mp4 |
+| Barbell shrugs | video-barbell-shrugs.mp4 |
+| Weighted chins | video-weighted-chins.mp4 |
+| Lat pulldowns | video-lat-pulldowns.mp4 |
+| Face pulls | video-face-pulls.mp4 |
+| Standing DB curls | video-standing-db-curls.mp4 |
+| Pullups | video-pullups.mp4 |
+| Barbell curls | video-barbell-curls.mp4 |
+| Weighted pullups | video-weighted-pullups.mp4 |
+| Seated cable rows | video-seated-cable-rows.mp4 |
+| Straight arm pushdowns | video-straight-arm-pushdowns.mp4 |
+| Cross body hammer curls | video-cross-body-hammer-curls.mp4 |
+
 
 ## 9. Updating the app
 

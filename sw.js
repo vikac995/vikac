@@ -1,5 +1,5 @@
 /* Vikač High Kikač service worker — bump CACHE on every release */
-const CACHE = 'vikac-v2.6.1';
+const CACHE = 'vikac-v2.7.1';
 const ASSETS = ['index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(ASSETS.map(a => c.add(a).catch(() => null)))).then(() => self.skipWaiting()));
@@ -19,6 +19,7 @@ self.addEventListener('fetch', e => {
     return;
   }
   if (e.request.method !== 'GET' || url.origin !== location.origin) return;
+  if (/\/video-[a-z0-9-]+\.mp4$/.test(url.pathname)) return;   // exercise videos stream straight from the server (range requests)
   // custom art PNGs: network first so a re-upload shows up without a version bump, cache when offline
   if (/\/(hero-[0-9a-z]+|beam|dragon|dragon-badge|ball-[1-7](-hollow)?|season-[a-z]+|ground-[a-z]+)\.png$/.test(url.pathname)) { e.respondWith(fetch(e.request).then(r => { if (r.ok) caches.open(CACHE).then(c => c.put(e.request, r.clone())); return r; }).catch(() => caches.match(e.request))); return; }
   if (isOcr(url.pathname)) { e.respondWith(caches.open(OCR_CACHE).then(c => c.match(e.request).then(r => r || fetch(e.request).then(res => { if (res.ok) c.put(e.request, res.clone()); return res; })))); return; }
