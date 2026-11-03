@@ -1,6 +1,6 @@
-# What to do now — updating to v3.2.0
+# What to do now — updating to v4.0.0
 
-This zip is the complete app at v3.2.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v4.0.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v3.2.0 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 3.2.0 found — reloading".
+1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.0.0 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The app name on the home screen only changes when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -28,7 +28,19 @@ This saves every change as a commit to a private GitHub repository of yours, wit
 
 From then on, Settings shows "Saved to GitHub … ago". If the phone is ever lost or reset: install the app, open Settings → Cloud backup, enter the same repository and a token, and tap **Restore from GitHub**. When the token expires (GitHub emails you beforehand), make a new one with the same steps and tap Connect again.
 
-## D. What changed since the version on your phone
+## D. Update the band inbox (2 minutes, once)
+
+v4.0.0 shows the kcal burned in each band workout. The inbox needs the new code for that:
+
+1. Cloudflare dashboard → **Workers & Pages** → **trening-band** → **Edit code**.
+2. Open `trening-band-worker.txt` (sent with this update), select everything, copy.
+3. In the editor select everything, paste over it, click **Deploy**.
+
+Nothing else changes: same address, same key, the bucket and the data stay. Workouts recorded before the update get their kcal from the next sync on.
+
+## E. What changed since the version on your phone
+
+- v4.0.0 — **Trening 4, stage 1: dark.** Every screen is dark now; the Progress card keeps its green scouter look. **Today:** the training tile is always on top (the character doing the day's lift, Muay Thai or resting; placeholders until the new art is uploaded), the ring around the ball shows what still earns it, the cycle's balls sit under it (tap one to jump to that day), the rest of the day's goals below. When the training is done the tile turns green and shrinks with the thumbs-up; on rest days it does that when the ball is earned. **+ button** (middle of the bottom bar): log weight, food, a screenshot, a dead hang, Muay Thai or a **note** for the day, plus the band's steps and kcal with sync. **Workout:** one list — done exercises fold up and the next one opens; every set has − kg + and − reps + (tap the number to type it), last time's numbers show in grey and **✓** logs the set as shown; rest is shown as text only (no timer, no vibration setting); quick note per exercise; videos still open inside the card. **Band kcal:** Muay Thai days take minutes and kcal from the band (both can be overridden on the Muay Thai screen); lifting days show the kcal when you started a workout on the band.
 
 - v2.4.5 — The character on the Progress card is almost twice as big (150 px, standing on the card's bottom edge); the mover chips use short names (Muscle, Skeletal) so they fit beside him; `hero-beam.png` is checked on its own so the beam animation keeps working while only the standing character has been uploaded.
 - v2.4.0 — **Art built for animation.** New optional layers: `hero-aura.png` and `hero-bolts.png` (pulsing aura and flickering lightning behind/over hero-4 on Progress), `beam.png` (the tick animation becomes character → beam stretching across the card → burst; `hero-beam.png` is then the pose alone, 600 × 600), `dragon-badge.png` (a square coiled dragon for the summon badge instead of squeezing dragon.png). The summon celebration now floats the dragon over a pulsing glow; the "summon today" badge pulses. All still optional — nothing changes until a file is uploaded.

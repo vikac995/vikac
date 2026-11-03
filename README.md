@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v3.2.0)
+# Vikač High Kikač — install guide (v4.0.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -66,6 +66,8 @@ Upload PNGs to the repository next to index.html and they replace the drawn art;
 
 | File | What | Size |
 | --- | --- | --- |
+| lift-push.png, lift-legs.png, lift-pull.png, lift-mt.png, lift-rest.png | the training tile at the top of Today: the character doing the day's main lift (bench press, squat, deadlift), kicking the bag (Muay Thai) or sleeping under a tree (rest). Optional animation: extra frames lift-push-2.png … lift-push-8.png, played as a flip-book (0.42 s per frame). Until these exist the tile borrows hero-beam.png / hero-0.png | 600 × 600 |
+| lift-done.png | the thumbs-up shown when the day's training is done (the tile turns green and shrinks). Until it exists the tile uses hero-4.png | 600 × 600 |
 | hero-0.png … hero-4.png | the standing character at levels 0–4 (Soft, Getting there, Lean, Shredded, Powered up); shown on Progress, level follows the score | 600 × 900 |
 | hero-aura.png | optional: the "powered up" aura on its own, drawn in the same 600 × 900 frame as hero-4; the app pulses it behind hero-4 | 600 × 900 |
 | hero-bolts.png | optional: lightning bolts on their own, same frame; the app flickers them over hero-4 | 600 × 900 |
@@ -89,6 +91,7 @@ Videos are kept in a private Cloudflare R2 bucket (`VIDEOS` binding on the band 
 
 Chain: band → Mi Fitness → Health Connect → "Health Connect to Webhook" app → Cloudflare Worker (your private inbox) → Trening.
 Worker code: `trening-band-worker.js` (sent separately; it needs a KV binding `BAND` and a secret `KEY`). Trening: Settings → Band sync → inbox address + key → Connect.
+Since v4.0.0 the inbox also works out the kcal burned during each band workout (from the active-calorie records inside the workout's time window). Muay Thai days take minutes and kcal from the band; lifting days show the kcal when a workout was started on the band.
 
 ## 9. Updating the app
 
