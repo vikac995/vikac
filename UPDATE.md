@@ -1,6 +1,6 @@
-# What to do now — updating to v4.5.2
+# What to do now — updating to v4.5.3
 
-This zip is the complete app at v4.5.2 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v4.5.3 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v4.5.2 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.5.2 found — reloading".
+1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.5.3 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The phone's own bar under the app (orange before 4.0, dark now) and the app name come with the home-screen icon: Chrome refreshes them by itself within a few days, or right away when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -40,6 +40,7 @@ Nothing else changes: same address, same key, the bucket and the data stay. Work
 
 ## E. What changed since the version on your phone
 
+- v4.5.3 — **Fixes:** a sheet now sits right on top of the number pad (no gap with the screen showing through). The workout's exercise lines are plain text again (they had picked up the Settings chip style, ran off the screen and made the page scroll sideways); "Big jump. You sure?" is shorter. **+ menu:** Note sits with the other tiles and turns green with the start of the note when the day has one; Screenshot is a round camera button at the bottom.
 - v4.5.2 — **Workout and stretching are full-screen sheets:** they rise from the bottom over the screen you were on (it dims behind them), fill the whole screen while you use them, and slide back down when you leave — with ⌄ in the top corner, Finish / Done, the phone's back button, or by dragging the header down (let go past a quarter of the screen or flick; otherwise it springs back).
 - v4.5.1 — **The + menu is the day's list:** the same items as Today for that day (the workout, Muay Thai only on a Muay Thai day, food, weight, hangs, stretching, mobility on its days), each with a ✓ when it's done, plus Screenshot and Note — so you can log anything for today from any tab. **Workout:** exercise cards fold and open faster and the screen glides to the next one quickly; after the last set the next exercise opens sooner. **Scouter:** the animations are a little slower and smoother again (crosshair, power level, balls, NEW tags, the trend line), tabs fade in. Records' group names (Push, Pull, Legs…) are bigger and brighter with a line. The green sheets (Tips) have no outline along the bottom, and Tips is a bit shorter.
 - v4.5.0 — **Logging in sheets.** Weigh-in, Nutrition, Dead hangs, Muay Thai and Kick mobility open as bottom sheets over the screen you are on (Today, the + menu, Journey, the Scouter) instead of separate screens; Save closes the sheet and the screen underneath ticks the item (and celebrates a ball). Closing a sheet without Save keeps nothing. In Settings, Band sync and Backup file are sheets too. The workout and stretching stay full screens. **Number pad:** every number box opens the app's own number pad instead of the phone's keyboard — so the password / card / address bar can't appear any more. The first key replaces the number, ⌫ deletes, − / + step it (an empty set starts from the set above), Next jumps to the next box (in a workout: kg → reps → next set), Done or ⌄ closes it, tapping elsewhere closes it too, and the phone's back button closes the pad first. Sheets and Save buttons move up above the pad; a comma becomes a dot.

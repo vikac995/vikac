@@ -1095,9 +1095,9 @@ button.srow:active{background:var(--s2)}
 .srow.danger .st b{color:var(--bad)}.srow.danger .si{background:var(--badsoft);color:var(--bad)}
 .srow.busy .si svg{animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.sch{flex:none;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:2px 9px;border-radius:999px;border:1.5px solid var(--line2);color:var(--muted);white-space:nowrap}
-.sch.on{color:var(--ok);border-color:rgba(61,220,132,.5);background:var(--oksoft)}.sch.or{color:var(--or2);border-color:rgba(254,127,12,.5);background:var(--orsoft)}
-.sch.warn{color:var(--warn);border-color:rgba(255,183,77,.5);background:var(--warnsoft)}.sch.bad{color:var(--bad);border-color:rgba(255,107,94,.5);background:var(--badsoft)}
+.stc{flex:none;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:2px 9px;border-radius:999px;border:1.5px solid var(--line2);color:var(--muted);white-space:nowrap}
+.stc.on{color:var(--ok);border-color:rgba(61,220,132,.5);background:var(--oksoft)}.stc.or{color:var(--or2);border-color:rgba(254,127,12,.5);background:var(--orsoft)}
+.stc.warn{color:var(--warn);border-color:rgba(255,183,77,.5);background:var(--warnsoft)}.stc.bad{color:var(--bad);border-color:rgba(255,107,94,.5);background:var(--badsoft)}
 .kvr{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:12px 14px;border-top:1px solid var(--line);font-size:14.5px;color:var(--ink2)}
 .kvr:first-child{border-top:0}.kvr b{font-weight:700;color:var(--ink);text-align:right;min-width:0;overflow-wrap:anywhere}.kvr a{color:var(--or2);text-decoration:none}
 .lead4{font-size:14px;line-height:1.5;color:var(--muted);margin:2px 2px 14px}
@@ -1189,6 +1189,12 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .screen.fs .wbar,.screen.fs .topbar{touch-action:none}
 .screen.fs .wbar::before,.screen.fs .topbar::before{content:"";position:absolute;left:50%;top:calc(5px + var(--sat));width:40px;height:4px;margin-left:-20px;border-radius:2px;background:#45474f}
 .screen.fs .wbar .back svg,.screen.fs .topbar .back svg{transform:rotate(-90deg)}
+/* + menu: the screenshot button, round like a camera shutter */
+.qshot{display:flex;justify-content:center;margin:16px 0 2px}
+.shutter{width:76px;height:76px;border-radius:50%;padding:5px;border:3px solid var(--ink2);background:transparent;display:flex;align-items:center;justify-content:center;transition:transform .12s}
+.shutter span{width:100%;height:100%;border-radius:50%;background:var(--ink);color:#121318;display:flex;align-items:center;justify-content:center}
+.shutter span svg{width:30px;height:30px}
+.shutter:active{transform:scale(.92)}
 </style>
 </head>
 <body>
@@ -1196,7 +1202,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.5.2';
+const APP_VERSION = '4.5.3';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1682,7 +1688,7 @@ function verdictFor(name, e, date, sessionId) {
   const pv = exScore(prev.e, type).v, pct = (now.v - pv) / pv * 100;
   const o = { now, prev: pv, prevDate: prev.date, pct, prevLabel: exScore(prev.e, type).label };
   const cmp = type === 'max' ? f(pv) + ' → ' + f(now.v) : (prev.e.sets ? exScore(prev.e, type).set.kg : '') + ' kg → ' + now.set.kg + ' kg';
-  if (pct > 12) { o.state = 'jump'; o.text = cmp + ' (+' + pct.toFixed(0) + ' %). Big jump — sure that\'s right?'; o.cls = 'warn'; }
+  if (pct > 12) { o.state = 'jump'; o.text = cmp + ' (+' + pct.toFixed(0) + ' %). Big jump. You sure?'; o.cls = 'warn'; }
   else if (pct > 2.5) { o.state = 'up'; o.text = cmp + '. Nice!'; o.cls = 'ok'; }
   else if (pct >= -2.5) { o.state = 'hold'; o.text = cmp + '. Held it on a cut. Win.'; o.cls = 'ok'; }
   else { o.state = 'down'; o.text = cmp + ' (' + pct.toFixed(1) + ' %). Down a bit — happens on a cut. Next one\'s yours.'; o.cls = 'warn'; }
@@ -3575,8 +3581,10 @@ function quickLog() {
     return tile(it.id, ITEM_IC[it.id] || 'pen', lab(it), s, done, it.key ? `data-key="${it.key}"` : ''); }).join('');
   const dp = info.items ? dayProgress(date) : null, nDone = info.items ? info.items.filter(it => isDone(date, it.id)).length : 0;
   const bg = modal(`<div class="hdl"></div><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="h1" style="font-size:34px">Log</span><span class="cond muted" style="font-size:13px">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)}${dp ? ' · ' + nDone + ' / ' + info.items.length + ' done' : ''}</span></div>
-    <div class="qtiles">${tiles}${tile('shots', 'cam', 'Screenshot', 'MFP or scale')}${tile('note', 'pen', 'Note', d.note ? 'edit the note' : 'for this day')}</div>
-    <input type="file" accept="image/*" multiple id="qShots" style="display:none">${bandCfg() ? `<div style="margin-top:14px">${bandTodayHtml(date)}</div>` : ''}`, b => {
+    <div class="qtiles">${tiles}${tile('note', 'pen', 'Note', d.note ? '“' + (d.note.length > 18 ? d.note.slice(0, 17).trim() + '…' : d.note) + '”' : 'for this day', !!d.note)}</div>
+    ${bandCfg() ? `<div style="margin-top:14px">${bandTodayHtml(date)}</div>` : ''}
+    <div class="qshot"><button class="shutter" data-q="shots" aria-label="Read a screenshot (MFP or scale)"><span>${IC4.cam}</span></button></div>
+    <input type="file" accept="image/*" multiple id="qShots" style="display:none">`, b => {
     b.classList.add('sheetbg');
     b.querySelectorAll('[data-q]').forEach(t => t.onclick = () => { const k = t.dataset.q;
       if (k === 'shots') return b.querySelector('#qShots').click();
@@ -4012,7 +4020,9 @@ function kpOpen(i) {
   if (was && was !== i) kpLeave(was);
   KP.inp = i; KP.fresh = true; i.classList.add('kpon', 'kpfresh'); const st = i.closest('.stp,.affix'); if (st) st.classList.add('kpon');
   el.querySelector('.kdot').disabled = !kpDec(i); el.querySelector('.kok').textContent = kpNext(i) ? 'Next' : 'Done';
-  el.classList.add('on'); document.body.classList.add('kpopen'); document.body.classList.toggle('kpbar', !i.closest('.ex'));   // forms keep Save above the pad; a workout keeps its sets in view KP.h = el.offsetHeight || 280; document.documentElement.style.setProperty('--kb', KP.h + 'px');
+  // forms keep Save above the pad; a workout keeps its sets in view
+  el.classList.add('on'); document.body.classList.add('kpopen'); document.body.classList.toggle('kpbar', !i.closest('.ex'));
+  KP.h = el.offsetHeight || 280; document.documentElement.style.setProperty('--kb', KP.h + 'px');
   const sh = i.closest('.modalbg'); document.querySelectorAll('.modalbg.kplift').forEach(b => { if (b !== sh) b.classList.remove('kplift'); }); if (sh) sh.classList.add('kplift');
   setTimeout(() => kpReveal(i), sh ? 240 : 30); vib(4);
 }
@@ -4529,7 +4539,7 @@ const agoTxt = t => { if (!t) return 'never'; const m = Math.round((Date.now() -
 // One row of a settings group: icon, title, line under it, an optional status chip, a chevron when it opens a page
 function srow(o) {
   const tag = o.plain ? 'div' : 'button';
-  return `<${tag} class="srow ${o.cls || ''}" ${o.go ? `data-sgo="${o.go}"` : ''} ${o.act ? `data-act="${o.act}"` : ''} ${o.attr || ''}><span class="si ${o.tone || ''}">${IC4[o.ic] || ''}</span><span class="st"><b>${esc(o.t)}</b>${o.s ? `<span>${o.s}</span>` : ''}</span>${o.chip ? `<span class="sch ${o.chip[0]}">${o.chip[1]}</span>` : ''}${o.go || o.attr ? `<span class="chev">${IC4.chev}</span>` : ''}</${tag}>`;
+  return `<${tag} class="srow ${o.cls || ''}" ${o.go ? `data-sgo="${o.go}"` : ''} ${o.act ? `data-act="${o.act}"` : ''} ${o.attr || ''}><span class="si ${o.tone || ''}">${IC4[o.ic] || ''}</span><span class="st"><b>${esc(o.t)}</b>${o.s ? `<span>${o.s}</span>` : ''}</span>${o.chip ? `<span class="stc ${o.chip[0]}">${o.chip[1]}</span>` : ''}${o.go || o.attr ? `<span class="chev">${IC4.chev}</span>` : ''}</${tag}>`;
 }
 const kvr = (k, v) => `<div class="kvr"><span>${k}</span><b>${v}</b></div>`;
 function projectSub(p) { const td = today(); return td < p.startDate ? 'Current · starts ' + fmtShort(p.startDate) : td > p.endDate ? 'Current · finished' : 'Current · day ' + (tOf(td) + 1) + ' of ' + D(); }
@@ -4646,7 +4656,7 @@ function setSheet(title, chip, body, onbind) { return modal(`<div class="hdl"></
 function settingsRefresh() { if (R.screen !== 'profile') return; const y = window.scrollY; render(); window.scrollTo(0, y); }
 function bandSheet() {
   const c = bandCfg(), h = S.health || {};
-  if (!c) return setSheet('Band sync', '<span class="sch off">Off</span>', `<div class="lead4">Steps, active calories and workouts from the Xiaomi band, every 30 minutes — they fill the band kcal, the Muay Thai sessions and the Scouter.</div>
+  if (!c) return setSheet('Band sync', '<span class="stc off">Off</span>', `<div class="lead4">Steps, active calories and workouts from the Xiaomi band, every 30 minutes — they fill the band kcal, the Muay Thai sessions and the Scouter.</div>
     <div class="field"><label>Inbox address</label><input id="bandurl" placeholder="https://trening-band.yourname.workers.dev" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="url"></div>
     <div class="field"><label>Key</label><input id="bandkey" type="password" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
     <button class="btn" data-bandconnect data-foot>Connect</button>`, b => {
@@ -4654,7 +4664,7 @@ function bandSheet() {
       bandSetCfg({ url, key }); btn.textContent = 'Checking…'; const r = await bandFetch(); if (!r.ok) { bandSetCfg(null); btn.textContent = 'Connect'; return toast(r.error, 2600); } b.close(); settingsRefresh(); toast(r.last ? 'Connected · band data found' : 'Connected · waiting for the first band data', 2600); };
   });
   const t = bandDay(today()) || {}, host = (() => { try { return new URL(c.url).host; } catch (e) { return c.url; } })();
-  setSheet('Band sync', h.last ? '<span class="sch on">On</span>' : '<span class="sch warn">Waiting</span>', `<div class="sgrp" id="bandkv">${kvr('Band data received', agoTxt(h.last))}${kvr('Last checked', agoTxt(h.fetched))}${kvr('Today', (t.steps != null ? fmtN(t.steps) + ' steps' : '— steps') + ' · ' + (t.active != null ? t.active + ' kcal' : '— kcal'))}${kvr('Inbox', esc(host))}</div>
+  setSheet('Band sync', h.last ? '<span class="stc on">On</span>' : '<span class="stc warn">Waiting</span>', `<div class="sgrp" id="bandkv">${kvr('Band data received', agoTxt(h.last))}${kvr('Last checked', agoTxt(h.fetched))}${kvr('Today', (t.steps != null ? fmtN(t.steps) + ' steps' : '— steps') + ' · ' + (t.active != null ? t.active + ' kcal' : '— kcal'))}${kvr('Inbox', esc(host))}</div>
     <div class="lead4" style="margin-top:12px">Band → Mi Fitness → Health Connect → the inbox app sends new data every 30 minutes; the app picks it up when it is open.</div>
     <div class="row" data-foot><button class="btn sec" data-banddisc>Disconnect</button><button class="btn" data-bandsync>${IC4.sync}Sync now</button></div>`, b => {
     b.querySelector('[data-bandsync]').onclick = async e => { const btn = e.currentTarget; btn.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); btn.lastChild.textContent = 'Sync now'; toast(r.ok ? (r.changed ? 'Band data updated' : 'Band data up to date') : r.error, 2200);
@@ -4679,7 +4689,7 @@ function cloudCardHtml() {
         <li>Paste it above and tap Connect. The token can only touch that one repository.</li></ol></details></div>`;
   const cls = st.state === 'ok' ? 'on' : st.state === 'conflict' || st.state === 'error' ? 'bad' : 'warn';
   const conflict = GH.conflict ? `<div class="warnbox" style="display:block;margin-top:12px"><div style="margin-bottom:8px">${GH.conflict.fresh ? 'GitHub already holds data' : 'GitHub has newer data'}${GH.conflict.updatedAt ? ' (saved ' + GH.conflict.updatedAt.slice(0, 16).replace('T', ' ') + ')' : ''}. Which copy is right?</div><div class="row"><button class="btn sec sm" data-ghuseremote>Use GitHub's</button><button class="btn sm" data-ghuselocal>Keep this phone's</button></div></div>` : '';
-  return `<div id="cloud"><div class="sgrp">${kvr('Status', `<span class="sch ${cls}">${st.state === 'ok' ? 'On' : st.state === 'pending' ? 'Pending' : st.state === 'error' ? 'Error' : 'Attention'}</span>`)}${kvr('Last save', esc(st.text))}${kvr('Repository', `<a href="https://github.com/${esc(GH.repo)}/commits" target="_blank" rel="noopener">${esc(GH.repo)}</a>`)}</div>${conflict}
+  return `<div id="cloud"><div class="sgrp">${kvr('Status', `<span class="stc ${cls}">${st.state === 'ok' ? 'On' : st.state === 'pending' ? 'Pending' : st.state === 'error' ? 'Error' : 'Attention'}</span>`)}${kvr('Last save', esc(st.text))}${kvr('Repository', `<a href="https://github.com/${esc(GH.repo)}/commits" target="_blank" rel="noopener">${esc(GH.repo)}</a>`)}</div>${conflict}
     <div class="row" style="margin-top:14px"><button class="btn sec" data-ghsync>${IC4.sync}Sync now</button><button class="btn sec" data-ghrestore>${IC4.restore}Restore</button></div>
     <button class="btn dline" data-ghdisconnect style="margin-top:12px">Disconnect</button></div>`;
 }
@@ -4763,7 +4773,7 @@ function rowHtml(row) {
   const kind = row.kind === 'scale' ? 'Scale' : row.kind === 'mfp' ? 'MFP' : 'Image ' + (row.i + 1);
   const title = row.status === 'reading' ? 'Reading…' : kind + (row.date ? ' · ' + shortD(row.date) : '');
   const sub = row.status === 'reading' ? '' : row.date ? rowSummary(row) + (row.note ? ' · ' + row.note : '') : 'No date found · tap to set it';
-  const right = row.status === 'saved' ? `<span class="bok">${IC4.check}</span>` : row.status === 'check' ? '<span class="sch warn">Check</span>' : row.status === 'skipped' ? '<span class="sch off">Skipped</span>' : '<span class="bspin"></span>';
+  const right = row.status === 'saved' ? `<span class="bok">${IC4.check}</span>` : row.status === 'check' ? '<span class="stc warn">Check</span>' : row.status === 'skipped' ? '<span class="stc off">Skipped</span>' : '<span class="bspin"></span>';
   return `<img src="${row.thumb}" alt=""><div class="bi"><div class="t">${esc(title)}</div><div class="s">${esc(sub)}</div></div>${right}`;
 }
 function batchSub(b) { const n = b.rows.length, read = b.rows.filter(r => r.status !== 'reading').length, saved = b.rows.filter(r => r.status === 'saved').length, chk = b.rows.filter(r => r.status === 'check').length; return read < n ? 'Reading ' + Math.min(n, read + 1) + ' of ' + n + '…' : n + ' read · ' + saved + ' logged' + (chk ? ' · ' + chk + ' to check' : ''); }
