@@ -467,7 +467,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.8.0';
+const APP_VERSION = '2.8.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2876,7 +2876,7 @@ function bandTodayHtml(date) {
   const h = bandDay(date) || {}, y = bandDay(addDays(date, -1)) || {}, sl = h.sleep || null, fmtM = m => Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0');
   const tile = (v, l) => `<div class="bt"><b>${v}</b><span>${l}</span></div>`;
   return `<div class="card bandtoday"><div class="hd"><span class="cond" style="font-size:16px">Band · ${date === today() ? 'today' : fmtShort(date)}</span><span class="muted small">${S.health && S.health.last ? 'synced ' + S.health.last.slice(11, 16) : 'waiting'}</span></div>
-    <div class="btiles">${tile(h.steps != null ? h.steps.toLocaleString('en-US') : '—', 'steps')}${tile(h.active != null ? h.active : '—', 'active kcal')}${tile(h.hr ? h.hr.min : (y.hr ? y.hr.min : '—'), 'low HR')}${tile(sl ? fmtM(sl.min) : '—', 'sleep')}</div>
+    <div class="btiles">${tile(h.steps != null ? h.steps.toLocaleString('en-US') : '—', 'steps')}${tile(h.active != null ? h.active : '—', 'active kcal')}${tile(h.rhr || y.rhr || '—', 'rest HR')}${tile(sl ? fmtM(sl.min) : '—', 'sleep')}</div>
     ${(h.workouts || []).length ? `<div class="muted small" style="margin-top:6px">${h.workouts.map(w => esc(w.type.toLowerCase().replace(/_/g, ' ')) + ' ' + w.min + ' min').join(' · ')}</div>` : ''}</div>`;
 }
 function cloudCardHtml() {
