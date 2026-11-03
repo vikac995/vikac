@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v1.6.0)
+# Vikač High Kikač — install guide (v1.8.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -35,7 +35,20 @@ Every change can also be saved as a commit to a **private** repository of yours,
 
 The app then pushes a commit about 10 seconds after your last change (and when you leave the app), shows "Saved to GitHub … ago" in Profile, and nags you on the Today screen if syncing has failed for 3 days. **Restore from GitHub** brings everything back on a new phone. The token is stored only on the phone and can only touch that one repository; when it expires, make a new one and tap Connect again.
 
-## 5. Updating the app
+## 5. Fill from export (Xiaomi scale and MyFitnessPal)
+
+The weigh-in form can read the Mi Fitness share image instead of you typing six numbers. Two ways in:
+
+- **From the Xiaomi app:** on the body-composition screen tap share → choose **Trening**. The app opens on a "Fill from export" screen with the date from the image (editable) and the values already in the boxes — check, then **Save**. If Trening isn't in the share sheet yet, Chrome hasn't picked up the new manifest: wait a day, or remove the home-screen icon and add it again.
+- **From the weigh-in screen:** tap **Fill from export** and pick the image from your gallery.
+
+**MyFitnessPal works the same way.** Take a screenshot of MFP's Today screen (or the diary with its Totals row), share it to **Trening** — the app recognises it as MFP and opens the nutrition form with the calories and protein filled in, date from the header ("Today", "Yesterday" or a date). On the nutrition screen, **Fill from export** picks a screenshot from the gallery.
+
+**Catching up several days:** MFP → More → Settings → **File Export** → pick the period → Export. MFP emails a link to a zip; open the link on the phone, download the zip, then in Trening **Settings → Import MFP export** and pick it (the Nutrition-Summary CSV on its own also works). Every project day that isn't logged by hand gets its calories and protein; days you typed yourself are left alone, earlier imports are refreshed, and today is skipped unless it's after 21:00 (exports are usually taken mid-day).
+
+Reading happens on the phone (tesseract.js) — the image is never uploaded anywhere. The first use downloads the reader (about 6 MB: `tess.js`, `tess-worker.js`, `tess-core.wasm.js`, `eng.traineddata.gz`); after that it works offline. The weight is cross-checked against fat-free weight + fat mass from the same image, so a misread digit shows up as a warning.
+
+## 6. Updating the app
 
 When a new version arrives, upload the new files to the same repository (Add file → Upload files, same names, Commit). The phone picks up the new version the next time you open the app while online. Your data is untouched by updates.
 
@@ -47,4 +60,5 @@ When a new version arrives, upload the new files to the same repository (Add fil
 | manifest.webmanifest | tells Android it's an installable app, full screen, orange icon |
 | sw.js | offline cache; its version string changes on every release |
 | icon-*.png | app icons |
+| tess.js, tess-worker.js, tess-core.wasm.js, eng.traineddata.gz | the on-phone text reader for Fill from export (loaded only when used) |
 | src/, build.sh, font/, img/ | source parts the app is built from (fonts and photos are already inside index.html); not needed on the phone |

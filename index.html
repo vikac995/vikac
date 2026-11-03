@@ -46,6 +46,7 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .row>*{flex:1;min-width:0}
 .screen{padding:calc(10px + var(--sat)) 14px calc(88px + var(--sab));max-width:560px;margin:0 auto}
 .screen.bar{padding-bottom:calc(150px + var(--sab))}
+.screen.swipe{touch-action:pan-y}
 @keyframes snap{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 /* header band */
 .band{position:relative;margin:-10px -14px 14px;padding:calc(12px + var(--sat)) 18px 24px;min-height:calc(84px + var(--sat));background:var(--or);background-image:radial-gradient(rgba(0,0,0,.14) 1.5px,transparent 1.6px);background-size:10px 10px;color:#fff;clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),0 100%);border-bottom:3px solid var(--ink)}
@@ -78,14 +79,14 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .cstrip .box.miss::after{content:"";position:absolute;right:-4px;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--badsoft);border:1.5px solid var(--ink)}
 .cstrip .box.part::after{content:"";position:absolute;right:-4px;top:-4px;width:11px;height:11px;border-radius:50%;background:var(--yel);border:1.5px solid var(--ink)}
 .cstrip .box.today{outline:2px solid var(--ink);outline-offset:1px}
-.daytype{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:5px 14px;border-radius:999px;border:2px solid var(--ink);background:#fff;font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:15px;color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.band.cyc .tags{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin-top:12px}
+.band.cyc .tags .pill{box-shadow:2px 2px 0 var(--ink)}
+.daytype{display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:999px;border:2px solid var(--ink);background:#fff;font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:15px;color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
 .daytype i{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--ink)}
 .band .pill{color:var(--ink)}
-.bigball{display:flex;flex-direction:column;align-items:center;margin:14px 0 6px;position:relative}
+.bigball{display:flex;flex-direction:column;align-items:center;margin:18px 0 4px;position:relative}
 .bigball .art{width:124px;height:124px;display:flex;align-items:center;justify-content:center;filter:drop-shadow(3px 3px 0 var(--ink))}
 .bigball .art.pop{animation:pop .6s ease-out}
-.bigball .cap{font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:14px;margin-top:8px;text-align:center}
-.bigball .sub{font-size:13px;color:var(--muted);text-align:center}
 .cycles{display:flex;flex-direction:column;gap:8px}
 .cycrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:2px solid var(--line);border-radius:10px;background:#fff;min-height:48px}
 .cycrow.cur{border-color:var(--ink);box-shadow:var(--shadow-sm)}
@@ -252,6 +253,13 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .cell .m.done{background:var(--ok);color:#fff}.cell .m.part{background:var(--yel)}.cell .m.miss{background:var(--badsoft);color:var(--bad)}
 .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:12px;color:var(--muted)}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--ink);vertical-align:-1px;margin-right:3px}
+.daycard{padding:12px 14px}
+.daycard .hd{margin-bottom:2px}
+.daycard .hd .bang{font-size:24px;min-width:0}
+.daycard .sep{font-family:'BarlowC',sans-serif;font-weight:400;color:var(--muted);margin:0 3px;font-size:20px;vertical-align:1px}
+.daycard .right{display:flex;align-items:center;gap:8px;flex:none}
+.daycard .go{font-size:26px;line-height:1;color:var(--muted)}
+.daycard .dl li{padding:8px 4px;min-height:42px}
 .dl{list-style:none;margin:0;padding:0}
 .dl li{display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1.5px solid var(--line);min-height:48px}
 .dl li:last-child{border-bottom:0}
@@ -289,7 +297,9 @@ details.adv[open] summary::before{transform:rotate(90deg)}
 @keyframes iimp{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
 .intro .wt{position:absolute;left:24px;bottom:90px;font-family:'Bangers',Impact,sans-serif;font-size:40px;color:#fff;-webkit-text-stroke:1.2px var(--ink);paint-order:stroke;text-shadow:3px 3px 0 var(--ink)}
 .intro .skip{position:absolute;bottom:calc(20px + var(--sab));left:50%;transform:translateX(-50%);font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink);font-size:14px;padding:12px 24px;background:#fff;border:2px solid var(--ink);border-radius:999px;box-shadow:var(--shadow-sm)}
-.toast{position:fixed;left:50%;bottom:calc(100px + var(--sab));transform:translateX(-50%);background:var(--ink);color:#fff;font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:10px 18px;border-radius:999px;z-index:60;animation:snap .2s;max-width:90vw;text-align:center;border:2px solid #fff;box-shadow:3px 3px 0 var(--or)}
+.toast{position:fixed;left:14px;right:14px;bottom:calc(100px + var(--sab));margin:0 auto;width:max-content;max-width:calc(100vw - 28px);background:var(--ink);color:#fff;font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:10px 18px;border-radius:999px;z-index:60;text-align:center;border:2px solid #fff;box-shadow:3px 3px 0 var(--or);animation:toastin .22s ease-out;transition:opacity .18s ease-in,transform .18s ease-in;will-change:opacity,transform}
+.toast.out{opacity:0;transform:translateY(8px)}
+@keyframes toastin{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
 .dragon{position:fixed;inset:0;z-index:80;background:rgba(255,246,234,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;animation:snap .3s}
 .dragon svg{width:min(92vw,440px);height:auto}
 .dragon .msg{font-family:'Bangers',Impact,sans-serif;font-size:44px;color:var(--or);-webkit-text-stroke:1.2px var(--ink);paint-order:stroke;text-shadow:3px 3px 0 var(--ink);letter-spacing:.04em;margin-top:6px}
@@ -310,7 +320,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.8.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -539,7 +549,7 @@ function workoutTag(info) { if (!info.items) return null; if (info.isMT) return 
 
 // Day types: label + colour for every kind of day, rest included
 const DAYTYPES = { push: { label: 'Push', color: '#E05A00' }, pull: { label: 'Pull', color: '#1C6DD0' }, legs: { label: 'Legs', color: '#1E8E3E' }, mt: { label: 'Muay Thai', color: '#C2185B' }, rest: { label: 'Rest', color: '#8A8A8A' } };
-function dayType(info) { if (!info.items) return null; if (info.isMT) return { k: 'mt', label: 'Muay Thai' }; if (info.isRest) return { k: 'rest', label: info.cycleDay === 8 ? 'Rest · summon day' : 'Rest' }; const w = PROGRAM.workouts[info.workoutKey]; return { k: w.group, label: w.name }; }
+function dayType(info) { if (!info.items) return null; if (info.isMT) return { k: 'mt', label: 'Muay Thai' }; if (info.isRest) return { k: 'rest', label: 'Rest' }; const w = PROGRAM.workouts[info.workoutKey]; return { k: w.group, label: w.name }; }
 // One cycle = 8 days. Days 1–7 can each earn a dragon ball (a perfect day); day 8 is the summon day: 7 balls + a perfect day 8 = the dragon.
 function cycleOf(date) {
   const info = dayInfo(date); if (!info.items) return null;
@@ -855,6 +865,313 @@ function ghStatus() {
 }
 window.addEventListener('online', () => { if (GH.pending) syncNow({ quiet: true }); });
 document.addEventListener('visibilitychange', () => { if (document.hidden && GH.pending) { clearTimeout(syncTimer); syncNow({ quiet: true }); } });
+/* ============ Fill from export: read a shared image on the phone ============
+   Two kinds of image are understood: the Mi Fitness body-composition card (weight, fat %, muscle, …) and a
+   MyFitnessPal screenshot (calories and protein for the day). OCR runs locally with tesseract.js, loaded on demand
+   from this folder; nothing leaves the device. Labels are found by their words and the value is the number sitting
+   next to each label (above it on the Xiaomi card, below it in MFP). The big weight gets its own pass because of its size. */
+const OCR_FILES = { lib: 'tess.js', worker: 'tess-worker.js', core: 'tess-core.wasm.js', lang: '.' };
+let ocrWorker = null, ocrLoading = null;
+function ocrLoad(onStatus) {
+  if (ocrWorker) return Promise.resolve(ocrWorker);
+  if (ocrLoading) return ocrLoading;
+  ocrLoading = (async () => {
+    if (!window.Tesseract) { onStatus && onStatus('Loading the reader…'); await new Promise((ok, err) => { const s = document.createElement('script'); s.src = OCR_FILES.lib; s.onload = ok; s.onerror = () => err(new Error('Reader files missing — upload tess.js, tess-worker.js, tess-core.wasm.js and eng.traineddata.gz')); document.head.appendChild(s); }); }
+    onStatus && onStatus('Loading the reader…');
+    const w = await Tesseract.createWorker('eng', 1, { workerPath: OCR_FILES.worker, corePath: OCR_FILES.core, langPath: OCR_FILES.lang, gzip: true, workerBlobURL: false, logger: m => { if (onStatus && m.status === 'recognizing text') onStatus('Reading… ' + Math.round(m.progress * 100) + '%'); } });
+    ocrWorker = w; ocrLoading = null; return w;
+  })();
+  return ocrLoading;
+}
+// Load an image file into a canvas: min(R,G,B) keeps white text bright on the teal/black card, then invert + gamma for the grey captions
+function ocrPrepare(file, width, cropFrac, gamma) {
+  return new Promise((ok, err) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const sc = Math.min(1, width / img.width), W = Math.round(img.width * sc), srcH = cropFrac ? Math.round(img.height * cropFrac) : img.height, H = Math.round(srcH * sc);
+      const c = document.createElement('canvas'); c.width = W; c.height = H; const ctx = c.getContext('2d');
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.drawImage(img, 0, 0, img.width, srcH, 0, 0, W, H);
+      const d = ctx.getImageData(0, 0, W, H), p = d.data;
+      let sum = 0; for (let i = 0; i < p.length; i += 16) sum += Math.min(p[i], p[i + 1], p[i + 2]);
+      const dark = sum / (p.length / 16) < 128;   // dark theme: light text on dark → invert; light theme: leave as is
+      const lut = new Uint8Array(256); for (let v = 0; v < 256; v++) lut[v] = Math.round(255 * Math.pow(v / 255, gamma || 2.4));
+      for (let i = 0; i < p.length; i += 4) { const m = Math.min(p[i], p[i + 1], p[i + 2]); const v = lut[dark ? 255 - m : Math.max(p[i], p[i + 1], p[i + 2])]; p[i] = p[i + 1] = p[i + 2] = v; p[i + 3] = 255; }
+      ctx.putImageData(d, 0, 0);
+      ok({ canvas: c, scale: sc, imgW: img.width, imgH: img.height });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); err(new Error('Could not open that image')); };
+    img.src = url;
+  });
+}
+function ocrWords(data) { const out = []; for (const b of data.blocks || []) for (const pg of b.paragraphs) for (const l of pg.lines) for (const w of l.words) out.push({ text: w.text, x0: w.bbox.x0, y0: w.bbox.y0, x1: w.bbox.x1, y1: w.bbox.y1 }); return out; }
+// Full pipeline. Returns { kind: 'scale' | 'mfp' | 'unknown', values, date, late, notes[] }
+async function readImage(file, onStatus) {
+  const w = await ocrLoad(onStatus);
+  onStatus && onStatus('Reading…');
+  const main = await ocrPrepare(file, 900);
+  await w.setParameters({ tessedit_pageseg_mode: '3', tessedit_char_whitelist: '' });
+  const r1 = await w.recognize(main.canvas, {}, { blocks: true });
+  const words = ocrWords(r1.data), kind = classifyWords(words);
+  if (kind === 'mfp') {
+    const m = parseMfpShot(words, main.canvas.width, main.canvas.height); m.kind = 'mfp'; m.debugWords = words;
+    if (!m.date) { // the big "Today / Yesterday / date" header is often skipped in the main pass: look at it separately, smaller
+      try { const top = await ocrPrepare(file, 500, 0.12, 1); await w.setParameters({ tessedit_pageseg_mode: '11' }); const r2 = await w.recognize(top.canvas, {}, { blocks: true }); m.date = mfpDateFromText(ocrWords(r2.data).map(x => ocrNorm(x.text)).join(' ')); m.debugTop = ocrWords(r2.data).map(x => x.text); } catch (e) {}
+    }
+    return m;
+  }
+  const res = await readScale(w, file, main, words); res.kind = kind; return res;
+}
+async function readExport(file, onStatus) { return readImage(file, onStatus); }
+async function readScale(w, file, main, words) {
+  const res = parseExport(words, main.canvas.width, main.canvas.height);
+  // Second look at the big number at the top, scaled down so the digits are a normal size; the two reads are
+  // reconciled with the weight implied by the other numbers (fat-free weight + fat mass)
+  const cands = []; if (res.values.weight != null) cands.push(res.values.weight);
+  try {
+    const cut = res.headerEnd ? Math.min(0.2, res.headerEnd / main.canvas.height + 0.01) : 0.12;
+    const top = await ocrPrepare(file, 360, cut, 1);
+    await w.setParameters({ tessedit_pageseg_mode: '11', tessedit_char_whitelist: '0123456789.' });
+    const r2 = await w.recognize(top.canvas, {}, { blocks: true });
+    await w.setParameters({ tessedit_char_whitelist: '' });
+    const tw = ocrWords(r2.data).map(x => ({ h: x.y1 - x.y0, t: x.text, x0: x.x0 })).filter(x => /\d/.test(x.t)).sort((a, b) => b.h - a.h);
+    if (tw.length) { const v = ocrBigNumber(tw.filter(x => x.h > tw[0].h * 0.4).sort((a, b) => a.x0 - b.x0)); if (v != null) cands.push(v); }
+    res.debugTop = tw;
+  } catch (e) {}
+  if (res.derived != null) cands.push(Math.round(res.derived * 10) / 10);
+  if (cands.length) {
+    const ref = res.derived; let pick = cands[0];
+    if (ref != null) pick = cands.slice().sort((a, b) => Math.abs(a - ref) - Math.abs(b - ref))[0];
+    if (res.values.weight == null && pick === Math.round(res.derived * 10) / 10 && cands.length === 1) res.notes.push('Weight estimated from the other numbers — check it');
+    res.values.weight = pick;
+  }
+  res.debugWords = words;
+  return res;
+}
+// ---- pure parsing over OCR words (testable without a browser) ----
+// Digits of the big headline number from [{t, h}] tokens: the decimal part is drawn smaller ("83" + ".3");
+// a single run of digits with no dot that is too large for a weight gets one decimal (833 → 83.3)
+function ocrBigNumber(tokens) {
+  const tk = tokens.map(x => ({ t: String(x.t).replace(/[^0-9.]/g, ''), h: x.h || 0 })).filter(x => /\d/.test(x.t)); if (!tk.length) return null;
+  const hMax = Math.max.apply(null, tk.map(x => x.h));
+  const big = tk.filter(x => x.h >= hMax * 0.7), small = tk.filter(x => x.h < hMax * 0.7);
+  let s;
+  if (big.some(x => x.t.includes('.')) && !small.length) s = big.map(x => x.t).join('');
+  else if (small.length) s = big.map(x => x.t.replace(/\./g, '')).join('') + '.' + small.map(x => x.t.replace(/\./g, '')).join('');
+  else s = big.map(x => x.t).join('');
+  s = s.replace(/\.+/g, '.').replace(/^\./, '').replace(/\.$/, '');
+  let v = parseFloat(s); if (isNaN(v)) return null; if (!s.includes('.') && v > 250) v = v / 10;
+  return v >= 30 && v <= 250 ? Math.round(v * 10) / 10 : null;
+}
+const OCR_LABELS = {
+  fat: { words: ['body', 'fat', 'percentage'], range: [3, 60] },
+  muscle: { words: ['muscle', 'mass'], notBefore: 'skeletal', range: [15, 120] },
+  skeletal: { words: ['skeletal', 'muscle', 'mass'], range: [8, 80] },
+  visceral: { words: ['visceral', 'fat'], range: [1, 59] },
+  water: { words: ['body', 'water'], notAfter: 'mass', range: [25, 85] },
+  fatMass: { words: ['fat', 'mass'], range: [1, 150] },
+  fatFree: { words: ['fat-free', 'body', 'weight'], range: [20, 200] },
+  musclePct: { words: ['muscle', 'percentage'], range: [20, 95] },
+};
+function ocrNorm(t) { return String(t).toLowerCase().replace(/[^a-z0-9%.,:/\-]/g, ''); }
+function ocrEdit(a, b) { if (a === b) return 0; const m = a.length, n = b.length; if (!m || !n) return m + n; let prev = Array.from({ length: n + 1 }, (_, j) => j); for (let i = 1; i <= m; i++) { const cur = [i]; for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = cur; } return prev[n]; }
+function ocrWordIs(t, target) { t = ocrNorm(t).replace(/[.,:]+$/, ''); if (t === target) return true; if (target.length >= 5 && ocrEdit(t, target) <= 1) return true; if (target === 'fat-free') return /^fat-?free/.test(t); return false; }
+// Which app made the image: scale card or MFP screenshot
+function classifyWords(words) {
+  const t = words.map(w => ocrNorm(w.text)).join(' ');
+  const hits = list => list.filter(k => t.includes(k)).length;
+  const scale = hits(['skeletal', 'visceral', 'bmi', 'bone', 'muscle', 'fat-free', 'composition', 'metabolic']);
+  const mfp = hits(['calories', 'carbs', 'breakfast', 'lunch', 'dinner', 'snacks', 'diary', 'totals', 'remaining', 'cal ', 'kcal']);
+  if (scale >= 2 && scale >= mfp) return 'scale';
+  if (mfp >= 2) return 'mfp';
+  return 'unknown';
+}
+function ocrLines(words) {
+  const ws = words.map(w => Object.assign({}, w, { h: w.y1 - w.y0, cy: (w.y0 + w.y1) / 2 })).sort((a, b) => a.cy - b.cy || a.x0 - b.x0);
+  const lines = [];
+  for (const w of ws) { const l = lines.find(L => Math.abs(L.cy - w.cy) < Math.max(6, Math.min(L.h, w.h) * 0.6)); if (l) { l.words.push(w); l.cy = (l.cy * (l.words.length - 1) + w.cy) / l.words.length; l.h = Math.max(l.h, w.h); } else lines.push({ cy: w.cy, h: w.h, words: [w] }); }
+  lines.forEach(l => { l.words.sort((a, b) => a.x0 - b.x0); l.y0 = Math.min.apply(null, l.words.map(w => w.y0)); l.y1 = Math.max.apply(null, l.words.map(w => w.y1)); });
+  return { ws, lines };
+}
+// MyFitnessPal screenshot: Today screen ("Calories" card, "Carbs Fat Protein" row) or the diary ("Totals" row under column headers)
+function parseMfpShot(words, W, H) {
+  const { ws, lines } = ocrLines(words), values = {}, notes = [];
+  const num = t => { const v = ocrNumber(t); return v == null ? null : v; };
+  // diary: a Totals row, columns named in a header line
+  const tot = lines.find(L => L.words.some(w => /^totals?$/.test(ocrNorm(w.text).replace(/[.,:]+$/, ''))));
+  const head = lines.find(L => L.words.some(w => ocrWordIs(w.text, 'calories')) && L.words.some(w => ocrWordIs(w.text, 'protein')));
+  if (tot && head) {
+    const col = name => { const w = head.words.find(x => ocrWordIs(x.text, name)); return w ? (w.x0 + w.x1) / 2 : null; };
+    const pick = cx => { if (cx == null) return null; const c = tot.words.filter(w => num(w.text) != null).sort((a, b) => Math.abs((a.x0 + a.x1) / 2 - cx) - Math.abs((b.x0 + b.x1) / 2 - cx))[0]; return c ? num(c.text) : null; };
+    values.kcal = pick(col('calories')); values.protein = pick(col('protein'));
+  }
+  if (values.kcal == null) {
+    const below = (name, range) => { // the first number on the nearest line under the label, left-aligned with it
+      const labs = ws.filter(w => ocrWordIs(w.text, name)).sort((a, b) => a.y0 - b.y0);
+      for (const lab of labs) {
+        const cands = ws.filter(w => w.y0 >= lab.y1 - lab.h * 0.3 && w.y0 - lab.y1 <= lab.h * 3.2 && w.x0 >= lab.x0 - lab.h * 1.5 && w.x0 <= lab.x0 + lab.h * 4 && num(w.text) != null).sort((a, b) => a.y0 - b.y0 || a.x0 - b.x0);
+        for (const c of cands) { const v = num(c.text); if (v >= range[0] && v <= range[1]) return v; }
+      }
+      return null;
+    };
+    values.kcal = below('calories', [50, 15000]); values.protein = below('protein', [1, 800]);
+  }
+  if (values.kcal != null) values.kcal = Math.round(values.kcal); if (values.protein != null) values.protein = Math.round(values.protein);
+  // which day: "Today", "Yesterday" or a date in the header
+  const date = mfpDateFromText(ws.filter(w => w.y0 < H * 0.15).map(w => ocrNorm(w.text)).join(' '));
+  return { values, date, late: null, notes };
+}
+function mfpDateFromText(top) {
+  const td = today();
+  if (/yesterday/.test(top)) return addDays(td, -1);
+  if (/today/.test(top)) return td;
+  const MN = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  const m1 = top.match(/\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2})\b/), m2 = top.match(/\b(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/);
+  const mo = m1 ? MN.indexOf(m1[1]) + 1 : m2 ? MN.indexOf(m2[2]) + 1 : 0, dd = m1 ? +m1[2] : m2 ? +m2[1] : 0;
+  if (!mo || !dd) return null;
+  const y = +td.slice(0, 4); let c = y + '-' + pad(mo) + '-' + pad(dd); if (c > addDays(td, 1)) c = (y - 1) + c.slice(4); return c;
+}
+function ocrNumber(t) {
+  const m = ocrNorm(t).match(/^-?(\d{1,3}(?:,\d{3})+|\d+)(?:[.,](\d+))?/); if (!m) return null;
+  let s = m[1].replace(/,/g, ''); if (m[2] != null) { if (m[2].length === 3 && !m[1].includes(',') && !t.includes('.')) s += m[2]; else s += '.' + m[2].slice(0, 1); }
+  return parseFloat(s);
+}
+function parseExport(words, W, H) {
+  const { ws, lines } = ocrLines(words), values = {}, notes = [], found = {};
+  for (const key in OCR_LABELS) {
+    const def = OCR_LABELS[key]; let best = null;
+    for (const L of lines) {
+      for (let i = 0; i < L.words.length; i++) {
+        let ok = true, j = i, lineIdx = lines.indexOf(L), cur = L;
+        for (let k = 0; k < def.words.length; k++) {
+          if (j >= cur.words.length) { // label may wrap to the next line (same column)
+            const nx = lines[lineIdx + 1]; if (!nx) { ok = false; break; }
+            const first = nx.words.findIndex(x => Math.abs(x.x0 - L.words[i].x0) < L.h * 2);
+            if (first < 0 || k === 0) { ok = false; break; } cur = nx; lineIdx++; j = first;
+          }
+          if (!ocrWordIs(cur.words[j].text, def.words[k])) { ok = false; break; } j++;
+        }
+        if (!ok) continue;
+        if (def.notBefore && i > 0 && ocrWordIs(L.words[i - 1].text, def.notBefore)) continue;
+        if (def.notAfter && cur.words[j] && ocrWordIs(cur.words[j].text, def.notAfter)) continue;
+        const lab = L.words[i]; if (!best || lab.y0 < best.y0) best = { x0: lab.x0, y0: lab.y0, h: L.h };
+      }
+    }
+    if (!best) continue; found[key] = best;
+    // the value: nearest number above the label, left-aligned with it
+    const cands = ws.filter(w => w.y1 <= best.y0 + best.h * 0.35 && best.y0 - w.y1 <= best.h * 2.8 && Math.abs(w.x0 - best.x0) <= best.h * 2.2 && ocrNumber(w.text) != null)
+      .sort((a, b) => b.y1 - a.y1 || a.x0 - b.x0);
+    for (const c of cands) { const v = ocrNumber(c.text); if (v >= def.range[0] && v <= def.range[1]) { values[key] = v; break; } }
+  }
+  // the big weight: the tallest numeric word in the top part of the image
+  let headerEnd = null; const stop = ws.filter(w => /^(standard|decrease|increase|body)$/i.test(ocrNorm(w.text)) && w.y0 > H * 0.03).sort((a, b) => a.y0 - b.y0)[0]; if (stop) headerEnd = stop.y0;
+  const medH = ws.length ? ws.map(w => w.h).sort((a, b) => a - b)[Math.floor(ws.length / 2)] : 10;
+  const bigs = ws.filter(w => w.y0 < (headerEnd || H * 0.15) && w.h > medH * 2.2 && /\d/.test(w.text)).sort((a, b) => b.h - a.h || a.x0 - b.x0);
+  let weight = null, weightUnsure = false;
+  if (bigs.length) {
+    const b0 = bigs[0]; // the tallest digits, then anything with digits sitting on the same baseline to the right (the smaller decimal part)
+    const tail = ws.filter(w => w !== b0 && w.x0 >= b0.x0 && Math.abs(w.y1 - b0.y1) < b0.h * 0.35 && w.h > medH * 1.2 && /\d/.test(w.text)).sort((a, b) => a.x0 - b.x0);
+    weight = ocrBigNumber([b0].concat(tail).map(w => ({ t: w.text, h: w.h })));
+  }
+  // cross-checks from the other numbers (fat-free + fat mass is exact to ±0.1)
+  let derived = null;
+  if (values.fatFree != null && values.fatMass != null) derived = values.fatFree + values.fatMass;
+  else if (values.muscle != null && values.musclePct) derived = values.muscle / (values.musclePct / 100);
+  else if (values.fatMass != null && values.fat) derived = values.fatMass / (values.fat / 100);
+  if (weight != null && derived != null && Math.abs(weight - derived) > 0.6) { weightUnsure = true; notes.push('Weight read as ' + weight + ' but the other numbers suggest ' + derived.toFixed(1)); }
+  // date and time, usually in the header: dd/mm or mm/dd — whichever is the most recent past date
+  let date = null, late = null;
+  const txt = ws.filter(w => w.y0 < H * 0.25).map(w => w.text).join(' ');
+  const dm = txt.match(/(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})/), tm = txt.match(/(\d{1,2}):(\d{2})/);
+  if (dm) {
+    const a = +dm[1], b = +dm[2], y = +dm[3], td = today(), opts = [];
+    const mk = (m, d) => (m >= 1 && m <= 12 && d >= 1 && d <= 31) ? y + '-' + pad(m) + '-' + pad(d) : null;
+    for (const c of [mk(a, b), mk(b, a)]) if (c && c <= addDays(td, 1)) opts.push(c);
+    opts.sort(); date = opts.length ? opts[opts.length - 1] : null;
+  }
+  if (tm) late = +tm[1] >= 12;
+  return { values: { weight, fat: values.fat, muscle: values.muscle, skeletal: values.skeletal, visceral: values.visceral, water: values.water }, extra: { fatMass: values.fatMass, fatFree: values.fatFree, musclePct: values.musclePct }, derived, weightUnsure, date, late, notes, headerEnd, found: Object.keys(found) };
+}
+/* ============ MyFitnessPal export import ============
+   MFP emails a zip with Nutrition-Summary-….csv (one row per meal per day). This reads the zip in the browser
+   (Chrome's DecompressionStream handles the deflate), sums kcal and protein per day and fills the project's days
+   that were not logged by hand. Nothing leaves the phone. */
+async function unzipEntries(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(buf), out = [];
+  let eocd = -1; for (let i = u8.length - 22; i >= Math.max(0, u8.length - 70000); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('Not a zip file');
+  const n = dv.getUint16(eocd + 10, true); let p = dv.getUint32(eocd + 16, true);
+  for (let k = 0; k < n; k++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nlen = dv.getUint16(p + 28, true), xlen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+    const name = new TextDecoder().decode(u8.subarray(p + 46, p + 46 + nlen));
+    const lnlen = dv.getUint16(off + 26, true), lxlen = dv.getUint16(off + 28, true), start = off + 30 + lnlen + lxlen;
+    const data = u8.subarray(start, start + csize);
+    out.push({ name, method, data }); p += 46 + nlen + xlen + clen;
+  }
+  for (const e of out) {
+    if (e.method === 0) e.text = new TextDecoder().decode(e.data);
+    else if (e.method === 8) e.text = await new Response(new Blob([e.data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
+    else e.text = null;
+  }
+  return out;
+}
+function csvRows(text) { // RFC-ish: quoted fields may hold commas and newlines
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i + 1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.length > 1 || (r.length === 1 && r[0] !== ''));
+}
+// Nutrition-Summary CSV → { 'YYYY-MM-DD': { kcal, protein, carbs, fat, meals } }
+function parseMfpNutrition(text) {
+  const rows = csvRows(text); if (!rows.length) return {};
+  const head = rows[0].map(h => h.trim().toLowerCase());
+  const iD = head.indexOf('date'), iC = head.findIndex(h => h.startsWith('calories')), iP = head.findIndex(h => h.startsWith('protein')), iCb = head.findIndex(h => h.startsWith('carbohydrates')), iF = head.findIndex(h => h === 'fat (g)' || h === 'fat');
+  if (iD < 0 || iC < 0) return {};
+  const days = {};
+  for (const r of rows.slice(1)) {
+    const d = (r[iD] || '').trim(); if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) continue;
+    const o = days[d] || (days[d] = { kcal: 0, protein: 0, carbs: 0, fat: 0, meals: 0 });
+    o.kcal += +r[iC] || 0; if (iP >= 0) o.protein += +r[iP] || 0; if (iCb >= 0) o.carbs += +r[iCb] || 0; if (iF >= 0) o.fat += +r[iF] || 0; o.meals++;
+  }
+  return days;
+}
+async function readMfpFile(file) {
+  const name = (file.name || '').toLowerCase();
+  if (name.endsWith('.zip') || file.type === 'application/zip' || file.type === 'application/x-zip-compressed') {
+    const entries = await unzipEntries(await file.arrayBuffer());
+    const e = entries.find(x => /nutrition/i.test(x.name) && x.text != null) || entries.find(x => x.text && /^date,meal,calories/i.test(x.text.trim()));
+    if (!e) throw new Error('No Nutrition-Summary file in that zip');
+    return parseMfpNutrition(e.text);
+  }
+  const text = await file.text();
+  if (!/calories/i.test(text.split('\n')[0] || '')) throw new Error('That is not the MFP nutrition CSV');
+  return parseMfpNutrition(text);
+}
+// Write the days into the project: hand-logged days are kept, earlier imports are refreshed, today only late in the evening
+function applyMfpDays(days) {
+  const p = P(), td = today(), now = new Date(), res = { filled: 0, updated: 0, kept: 0, skippedToday: false, first: null, last: null };
+  const last = td < p.endDate ? td : p.endDate;
+  for (const d of Object.keys(days).sort()) {
+    if (d < p.startDate || d > last) continue;
+    if (d === td && now.getHours() < 21) { res.skippedToday = true; continue; }
+    const v = days[d]; if (!v.kcal) continue;
+    const cur = day(d).nutrition;
+    if (cur && cur.kcal && cur.src !== 'mfp') { res.kept++; continue; }
+    const next = { kcal: Math.round(v.kcal), protein: Math.round(v.protein), band: cur ? cur.band : undefined, src: 'mfp' };
+    if (cur && cur.src === 'mfp') { if (cur.kcal === next.kcal && cur.protein === next.protein) continue; res.updated++; } else res.filled++;
+    day(d).nutrition = next; res.first = res.first || d; res.last = d;
+  }
+  if (res.filled || res.updated) save();
+  return res;
+}
 /* ============ Hero v2: Vikač, original anime-style Muay Thai fighter ============ */
 // opts: { level 0..4, slim 0..1, pose:'stand'|'beam'|'kick', mood:'happy'|'cool'|'tired'|'fire', aura:bool, size, inner }
 function heroSvg(o) {
@@ -1125,7 +1442,7 @@ function dragonSvg() { return dragonArt({ segs: [[16, 156, 60, 96, 112, 206, 156
 // Compact emblem for the summon slot: the same dragon coiled into a loop. state: 'ready' (outline, waiting) | 'done' (colour) | 'locked' (grey)
 function dragonBadgeSvg(o) {
   o = o || {}; const st = o.state || 'ready', size = o.size || 84;
-  const art = dragonArt({ segs: [[14, 92, 70, 118, 118, 60, 76, 30], [76, 30, 40, 4, 8, 44, 48, 62]], box: '-6 -12 150 150', maxW: 14, headScale: 0.62, headTilt: -14, legs: [[18, 1], [40, -1]], mode: st === 'locked' ? 'grey' : 'color', size });
+  const art = dragonArt({ segs: [[14, 92, 70, 118, 118, 60, 76, 30], [76, 30, 40, 4, 8, 44, 48, 62]], box: '-13.5 -13 142 142', maxW: 14, headScale: 0.62, headTilt: -14, legs: [[18, 1], [40, -1]], mode: st === 'locked' ? 'grey' : 'color', size });
   if (st === 'done') return art;
   return `<div style="position:relative;width:${size}px;height:${size}px;display:inline-block"><div style="opacity:${st === 'locked' ? .7 : .4}">${art}</div><svg viewBox="0 0 100 100" width="${size}" height="${size}" style="position:absolute;left:0;top:0"><circle cx="50" cy="50" r="47" fill="none" stroke="#1B1B1B" stroke-width="3" stroke-dasharray="6 5"/>${st === 'locked' ? '<rect x="40" y="46" width="20" height="16" rx="3" fill="#fff" stroke="#1B1B1B" stroke-width="2.5"/><path d="M44 46 v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="#1B1B1B" stroke-width="2.5"/>' : ''}</svg></div>`;
 }
@@ -1166,9 +1483,16 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const R = { screen: 'today', params: {}, stack: [], date: today(), tab: 'push', calMonth: null, calSel: null, setupStep: 1, setupData: null, editProject: false };
 const app = $('#app');
 let toastTimer = null;
-function toast(msg, ms) { let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), ms || 1800); }
-function go(screen, params, push) { if (push !== false && R.screen !== screen) R.stack.push({ screen: R.screen, params: R.params }); R.screen = screen; R.params = params || {}; render(); window.scrollTo(0, 0); }
-function back() { const s = R.stack.pop(); if (s) { R.screen = s.screen; R.params = s.params; render(); } else go('today', {}, false); }
+// One toast at a time: a new message reuses the pill (no re-entry animation); it fades out before it is removed
+function toast(msg, ms) { let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.classList.remove('out'); t.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.add('out'); toastTimer = setTimeout(() => t.remove(), 200); }, ms || 1800); }
+function go(screen, params, push) { if (push !== false && R.screen !== screen) R.stack.push({ screen: R.screen, params: R.params, date: R.date }); R.screen = screen; R.params = params || {}; render(); window.scrollTo(0, 0); }
+function back() { const s = R.stack.pop(); if (s) { R.screen = s.screen; R.params = s.params; if (s.date) R.date = s.date; render(); window.scrollTo(0, 0); } else go('today', {}, false); }
+// Horizontal swipe → onLeft / onRight; touches starting at the screen edges are left to the phone's back gesture
+function bindSwipe(el, onLeft, onRight) {
+  if (!el) return; let sx = 0, sy = 0, live = false;
+  el.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; live = sx > 24 && sx < window.innerWidth - 24; }, { passive: true });
+  el.addEventListener('touchend', e => { if (!live) return; live = false; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) (dx < 0 ? onLeft : onRight)(); }, { passive: true });
+}
 function modal(html, onbind) {
   const bg = document.createElement('div'); bg.className = 'modalbg'; bg.innerHTML = '<div class="modal">' + html + '</div>';
   const sy = window.scrollY; document.body.classList.add('locked'); document.body.style.top = -sy + 'px';
@@ -1199,11 +1523,11 @@ const inp = (k, label, v, step, type) => `<div class="field"><label>${label}</la
 function render() {
   stopTimers();
   if (!S.project) { app.innerHTML = setupHtml(); bindSetup(); return; }
-  const sc = { today: todayHtml, cal: calHtml, dash: dashHtml, profile: profileHtml, workout: workoutHtml, weigh: weighHtml, hang: hangHtml, mt: mtHtml, stretch: stretchHtml, mobility: mobilityHtml, nutrition: nutritionHtml }[R.screen] || todayHtml;
+  const sc = { today: todayHtml, cal: calHtml, dash: dashHtml, profile: profileHtml, workout: workoutHtml, weigh: weighHtml, hang: hangHtml, mt: mtHtml, stretch: stretchHtml, mobility: mobilityHtml, nutrition: nutritionHtml, import: importHtml }[R.screen] || todayHtml;
   app.innerHTML = sc();
   app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { R.stack = []; if (b.dataset.nav === 'today') R.date = today(); go(b.dataset.nav, {}, false); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
-  const binder = { today: bindToday, cal: bindCal, dash: bindDash, profile: bindProfile, workout: bindWorkout, weigh: bindWeigh, hang: bindHang, mt: bindMT, stretch: bindStretch, mobility: bindMobility, nutrition: bindNutrition }[R.screen];
+  const binder = { today: bindToday, cal: bindCal, dash: bindDash, profile: bindProfile, workout: bindWorkout, weigh: bindWeigh, hang: bindHang, mt: bindMT, stretch: bindStretch, mobility: bindMobility, nutrition: bindNutrition, import: bindImport }[R.screen];
   if (binder) binder();
 }
 let timers = [];
@@ -1255,17 +1579,8 @@ function bindSetup() {
 }
 
 /* ---------- Today ---------- */
-const FUN = [
-  [.2, 'Rhythm found. The scale is starting to believe you.'], [.35, 'A third down. Pants are getting suspicious.'], [.5, 'Halfway! No retreat, no surrender.'],
-  [.65, 'Downhill from here, and you\'re lighter for it.'], [.8, 'Final stretch loading…'], [.9, 'Final boss week. Lock in gang!'],
-];
-function funLine(info) {
-  if (info.idx === 1) return 'Day one! The bag has no idea what\'s coming.';
-  if (info.phase === 'final') return 'Final weigh-in. Step on it like you mean it.';
-  if (info.isRest) return 'Rest day. Recovery is where the gains happen.';
-  if (info.idx <= 5) return 'Warm-up phase. Water weight is leaving the chat.';
-  const fr = info.t / D(); let l = 'Settling in. Keep stacking good days.'; for (const [f, s] of FUN) if (fr >= f) l = s; return l;
-}
+// Move the viewed day by n (0 = back to today), staying inside the project
+function shiftDay(n) { const p = P(), d = n === 0 ? today() : addDays(R.date, n); if (n !== 0 && (d < p.startDate || d > p.endDate)) return; R.date = d; render(); window.scrollTo(0, 0); }
 function itemSub(date, it) {
   let sub = it.sub; const d = S.days[date] || { done: {} };
   if (it.id === 'weigh') { const r = S.readings[date]; if (r) sub = r.weight + ' kg' + (r.fat ? ' · ' + r.fat + ' % fat' : ''); else { const lr = lastReading('weight', addDays(date, -1)); sub = lr ? 'Last ' + lr.v + ' kg' : 'Log the scale'; } }
@@ -1287,52 +1602,47 @@ function slotArt(cyc) {
   return ballSvg({ stars: cyc.star, state: cyc.todayDone ? 'full' : 'hollow', size: 84 });
 }
 function slotCap(cyc) { if (!cyc) return ''; if (cyc.summonDay) return cyc.summoned ? 'Dragon summoned' : cyc.canSummon ? 'Summon today' : cyc.earned + '/7 · no summon'; return cyc.earned + '/7 collected'; }
-function bigBallHtml(cyc, future) {
+// The big slot at the bottom of the list: this day's ball (or the dragon on day 8) — the art says it all
+function bigBallHtml(cyc) {
   if (!cyc) return '';
-  if (cyc.summonDay) {
-    const st = cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked';
-    const cap = cyc.summoned ? 'The dragon answered!' : cyc.canSummon ? 'Summon the dragon' : 'No summon this cycle';
-    const sub = cyc.summoned ? 'Perfect cycle. Rest up — next fight starts tomorrow.' : cyc.canSummon ? (future ? 'Complete everything on this day to summon.' : 'Complete everything today and the dragon appears.') : 'You collected ' + cyc.earned + ' of 7 balls — all seven are needed. New cycle tomorrow.';
-    return `<div class="bigball" data-bigball><div class="art" id="bigart">${dragonBadgeSvg({ state: st, size: 124 })}</div><div class="cap">${cap}</div><div class="sub">${sub}</div></div>`;
-  }
-  const cap = cyc.todayDone ? cyc.star + '-star ball collected!' : 'Today\'s ' + cyc.star + '-star ball';
-  const sub = cyc.todayDone ? (cyc.earned === 7 ? 'All seven! Summon the dragon on day 8.' : (7 - cyc.earned) + ' more to summon the dragon.') : (future ? 'Complete everything on the day to collect it.' : 'Complete everything to collect it.');
-  return `<div class="bigball" data-bigball><div class="art" id="bigart">${ballSvg({ stars: cyc.star, state: cyc.todayDone ? 'full' : 'hollow', size: 124 })}</div><div class="cap">${cap}</div><div class="sub">${sub}</div></div>`;
+  const art = cyc.summonDay ? dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 124 }) : ballSvg({ stars: cyc.star, state: cyc.todayDone ? 'full' : 'hollow', size: 124 });
+  return `<div class="bigball" data-bigball><div class="art" id="bigart">${art}</div></div>`;
 }
 function todayHtml() {
   const date = R.date, info = dayInfo(date), p = P(), future = date > today(), td = today();
   let body = '', head;
-  if (info.phase === 'pre') { head = band(`T-${-info.t}`, 'days to go', null, true); body = `<div class="funline">Day 1 is ${fmtDate(p.startDate)}. Stretch, sleep, and weigh in if you like.</div><button class="btn sec" data-open="weigh">Log a weigh-in</button>`; }
-  else if (info.phase === 'post') { head = band('Finished', fmtDate(p.endDate), null, true); body = `<div class="funline">Project finished on ${fmtDate(p.endDate)}. The Dashboard has the final verdict; start a new project from Settings.</div>`; }
+  if (info.phase === 'pre') { head = band(`T-${-info.t}`, 'days to go', null, true); body = `<div class="funline">Day 1 is ${fmtDate(p.startDate)}.</div><button class="btn sec" data-open="weigh">Log a weigh-in</button>`; }
+  else if (info.phase === 'post') { head = band('Finished', fmtDate(p.endDate), null, true); body = `<div class="funline">Finished on ${fmtDate(p.endDate)} — the Dashboard has the verdict.</div>`; }
   else {
     const cyc = cycleOf(date), pct = info.t / D() * 100, dtp = cyc.type, col = DAYTYPES[dtp.k].color;
     head = `<div class="band cyc">
       <div class="cyc-top">
         <div class="slot" data-slot><div class="art" id="slotart">${slotArt(cyc)}</div><div class="cap" id="slotcap">${slotCap(cyc)}</div></div>
         <div class="mid"><div class="c">Cycle ${cyc.num}</div><div class="d">Day ${cyc.cd}/${cyc.days.length}</div><div class="dt">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)}${date === td ? ' · today' : ''}</div></div>
-        <div class="slot"><div class="art">${ringSvg(pct, '#1F6B3F', 84)}</div><div class="cap">Day ${info.idx}/${D()}</div></div>
+        <div class="slot"><div class="art">${ringSvg(pct, '#1F6B3F', 84)}</div><div class="cap">${info.phase === 'final' ? 'Final weigh-in' : 'Day ' + info.idx + '/' + D()}</div></div>
       </div>
       <div class="cstrip"><button class="arrow" data-day="-1" aria-label="Previous day">‹</button>${cyc.days.map(x => `<button class="box ${x.cd === cyc.cd ? 'cur' : ''} ${x.date === td ? 'today' : ''} ${x.date < td || x.date === td ? (x.comp === 'done' ? 'done' : x.comp === 'part' ? 'part' : x.date < td ? 'miss' : '') : ''}" data-goto="${x.date}" title="${x.type.label}">${x.cd}</button>`).join('')}<button class="arrow" data-day="1" aria-label="Next day">›</button></div>
-      <div class="center"><span class="daytype"><i style="background:${col}"></i>${esc(dtp.label)}</span>${date !== td ? ` <button class="pill" data-day="0" style="margin-left:8px;margin-top:12px">↩ Today</button>` : ''}</div>
+      <div class="tags"><span class="daytype"><i style="background:${col}"></i>${esc(dtp.label)}</span>${date !== td ? `<button class="pill" data-day="0">↩ Today</button>` : ''}<button class="pill" data-viewcal>View in Calendar</button></div>
     </div>`;
-    body = `<div class="funline">${esc(funLine(info))}</div>
-      <ul class="todo">${info.items.map(it => {
+    body = `<ul class="todo">${info.items.map(it => {
         const dn = isDone(date, it.id), tag = it.id === 'workout' ? tagHtml(PROGRAM.workouts[it.key].group, PROGRAM.workouts[it.key].group) : it.id === 'mt' ? tagHtml('mt', 'MT') : '';
         return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}" data-item="${it.id}" data-key="${it.key || ''}"><div class="chk" data-chk>${ICONS.check}</div><div class="lab" data-open-item><div class="t">${esc(it.label)}</div>${tag}<div class="s">${esc(itemSub(date, it))}</div></div><div class="go" data-open-item>›</div><div class="zap"><svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg></div><div class="burst">${burstSvg()}</div></li>`;
       }).join('')}</ul>
-      ${bigBallHtml(cyc, future)}
-      ${future ? '<div class="center muted" style="margin-top:6px">Planned — logging opens on the day.</div>' : ''}`;
+      ${bigBallHtml(cyc)}`;
   }
   const last = S.meta.lastBackup ? diffDays(S.meta.lastBackup.slice(0, 10), today()) : null, gst = ghStatus();
   let bk = '';
   if (ghOn()) { const stale = GH.lastSync ? diffDays(GH.lastSync.slice(0, 10), today()) : 99; if (gst.state === 'conflict' || gst.state === 'error' || stale >= 3) bk = `<div class="warnbox" data-nav="profile"><span>Cloud backup needs attention — ${esc(gst.text)}. Tap to fix.</span></div>`; }
   else if ((last == null && Object.keys(S.days).length > 3) || (last != null && last >= 7)) bk = `<div class="warnbox" data-nav="profile"><span>${last == null ? 'No backup yet' : 'Last backup ' + last + ' days ago'} — tap to back up or turn on cloud backup.</span></div>`;
-  return `<div class="screen">${head}${bk}${body}</div>${nav('today')}`;
+  return `<div class="screen swipe">${head}${bk}${body}</div>${nav('today')}`;
 }
 function bindToday() {
   const date = R.date, future = date > today();
-  app.querySelectorAll('[data-day]').forEach(b => b.onclick = () => { const n = +b.dataset.day; R.date = n === 0 ? today() : addDays(date, n); render(); });
+  R._lastDone = dayCompletion(date) === 'done';
+  app.querySelectorAll('[data-day]').forEach(b => b.onclick = () => shiftDay(+b.dataset.day));
   app.querySelectorAll('[data-goto]').forEach(b => b.onclick = () => { R.date = b.dataset.goto; render(); });
+  const vc = app.querySelector('[data-viewcal]'); if (vc) vc.onclick = () => { R.calSel = date; R.calMonth = date.slice(0, 7); go('cal'); };
+  if (dayInfo(date).items) bindSwipe(app.querySelector('.screen'), () => shiftDay(1), () => shiftDay(-1));
   app.querySelectorAll('[data-chk]').forEach(c => c.onclick = () => {
     if (future) return toast('That day hasn\'t happened yet');
     const li = c.closest('li'), id = li.dataset.item, d = day(date);
@@ -1351,7 +1661,7 @@ function refreshCycle(pop) {
   const cyc = cycleOf(R.date); if (!cyc) return;
   const was = R._lastDone; R._lastDone = cyc.todayDone;
   const sa = $('#slotart'), sc = $('#slotcap'), ba = $('#bigart'); if (sa) sa.innerHTML = slotArt(cyc); if (sc) sc.textContent = slotCap(cyc);
-  const bb = app.querySelector('[data-bigball]'); if (bb) bb.outerHTML = bigBallHtml(cyc, false); const bb2 = app.querySelector('[data-bigball]'); if (bb2) bb2.onclick = () => showBalls(R.date);
+  const bb = app.querySelector('[data-bigball]'); if (bb) bb.outerHTML = bigBallHtml(cyc); const bb2 = app.querySelector('[data-bigball]'); if (bb2) bb2.onclick = () => showBalls(R.date);
   const cur = app.querySelector('.cstrip .box.cur'); if (cur) { cur.classList.remove('done', 'part', 'miss'); cur.classList.add(cyc.todayDone ? 'done' : dayCompletion(R.date) === 'part' ? 'part' : 'miss'); }
   if (cyc.todayDone && pop && !was) {
     const art = $('#bigart'); if (art) { art.classList.add('pop'); }
@@ -1360,7 +1670,7 @@ function refreshCycle(pop) {
   }
 }
 function showDragon() {
-  const el = document.createElement('div'); el.className = 'dragon'; el.innerHTML = dragonSvg() + '<div class="msg">The dragon answers!</div><div class="cond" style="margin-top:4px;font-size:18px">Seven balls, perfect cycle. Legendary.</div>';
+  const el = document.createElement('div'); el.className = 'dragon'; el.innerHTML = dragonSvg() + '<div class="msg">The dragon answers!</div>';
   el.onclick = () => el.remove(); document.body.appendChild(el); vib([60, 40, 60, 40, 120]); setTimeout(() => { if (el.parentNode) el.remove(); }, 6500);
 }
 function showBalls(date) {
@@ -1386,13 +1696,17 @@ function calHtml() {
   for (let d = 1; d <= dim; d++) {
     const ds = Y + '-' + pad(M) + '-' + pad(d), info = dayInfo(ds), inside = !!info.items, tag = workoutTag(info), comp = inside ? dayCompletion(ds) : 'none';
     const mark = comp === 'done' ? '<span class="m done">✓</span>' : comp === 'part' ? '<span class="m part">½</span>' : comp === 'miss' ? '<span class="m miss">·</span>' : '';
-    cells += `<div class="cell ${inside ? 'in' : 'out'} ${ds === td ? 'today' : ''} ${ds === R.calSel ? 'sel' : ''}" data-cal="${ds}"><span>${d}</span>${tag ? `<span class="w ${tag.k}">${tag.t.replace(/ [AB]$/, '')}</span>` : ''}${mark}</div>`;
+    cells += `<div class="cell ${inside ? 'in' : 'out'} ${ds === td ? 'today' : ''} ${ds === R.calSel ? 'sel' : ''}"${inside ? ` data-cal="${ds}"` : ''}><span>${d}</span>${tag ? `<span class="w ${tag.k}">${tag.t.replace(/ [AB]$/, '')}</span>` : ''}${mark}</div>`;
   }
-  const sel = R.calSel, sinfo = dayInfo(sel), stag = workoutTag(sinfo), comp = sinfo.items ? dayCompletion(sel) : null;
-  const detail = sinfo.items ? `<div class="card"><div class="hd" style="margin-bottom:6px"><div><div class="bang" style="font-size:26px">Day ${sinfo.idx} · ${stag.t}</div><div class="muted">${fmtDate(sel)}</div></div><span class="chip ${comp === 'done' ? 'ok' : comp === 'part' ? 'warn' : comp === 'miss' ? 'bad' : 'muted'}">${{ done: 'Perfect', part: 'Partly', miss: 'Missed', future: 'Planned' }[comp]}</span></div>
-      <ul class="dl">${sinfo.items.map(it => `<li><span class="st">${isDone(sel, it.id) ? '✓' : '○'}</span><span class="w">${esc(it.label)}<small>${esc(itemSub(sel, it))}</small></span></li>`).join('')}</ul>
-      <button class="btn" data-openday="${sel}" style="margin-top:10px">${sel === td ? 'Go to today' : sel < td ? 'Open & log this day' : 'Open this day'}</button></div>`
-    : `<div class="card flat"><div class="muted">${fmtDate(sel)} is outside the project.</div></div>`;
+  // The selected day's card: swipe it to move through days, tap it to open the day
+  const sel = R.calSel, sinfo = dayInfo(sel); let card = '';
+  if (sinfo.items) {
+    const comp = dayCompletion(sel), dt = dayType(sinfo), col = DAYTYPES[dt.k].color;
+    card = `<div class="card daycard" data-daycard="${sel}">
+      <div class="hd"><div class="bang">${sinfo.phase === 'final' ? 'Final weigh-in' : 'Day ' + sinfo.idx + '/' + D()}<span class="sep">|</span><span style="color:${col}">${esc(dt.label)}</span><span class="sep">|</span>C${sinfo.cycleNum}</div><div class="right"><span class="chip ${comp === 'done' ? 'ok' : comp === 'part' ? 'warn' : comp === 'miss' ? 'bad' : 'muted'}">${{ done: 'Perfect', part: 'Partly', miss: 'Missed', future: 'Planned' }[comp]}</span><span class="go">›</span></div></div>
+      <div class="muted">${fmtDate(sel)}</div>
+      <ul class="dl">${sinfo.items.map(it => `<li><span class="st">${isDone(sel, it.id) ? '✓' : '○'}</span><span class="w">${esc(it.label)}<small>${esc(itemSub(sel, it))}</small></span></li>`).join('')}</ul></div>`;
+  }
   let list = '';
   for (let d = 1; d <= dim; d++) { const ds = Y + '-' + pad(M) + '-' + pad(d), info = dayInfo(ds); if (!info.items) continue; const tag = workoutTag(info), c = dayCompletion(ds); list += `<li class="${ds === td ? 'today' : ''}" data-cal="${ds}"><span class="n">${info.idx}</span><span class="w">${tag.t}<small>${fmtShort(ds)}</small></span><span class="st ${c === 'done' ? 'ok' : c === 'part' ? 'warn' : c === 'miss' ? 'bad' : 'muted'}">${c === 'done' ? '✓' : c === 'part' ? '½' : c === 'miss' ? '–' : '○'}</span></li>`; }
   return `<div class="screen">${band('Calendar', '', `<div class="big">${nailed}<small>%</small></div><div class="sub">days nailed</div>`)}
@@ -1404,21 +1718,31 @@ function calHtml() {
       <div class="grid">${cells}</div>
       <div class="legend"><span><i style="background:var(--ok)"></i>perfect</span><span><i style="background:var(--yel)"></i>partly</span><span><i style="background:var(--badsoft)"></i>missed</span><span><i style="box-shadow:0 0 0 2px var(--or);border-color:transparent"></i>today</span></div>
     </div>
-    ${detail}
+    ${card}
     <div class="sec-h">Cycles</div>
-    <div class="card flat"><div class="cycles">${allCycles().map(c => { const cur = R.calSel >= c.start && R.calSel <= c.end; return `<div class="cycrow ${cur ? 'cur' : ''}" data-cal="${c.start}"><span class="n">Cycle ${c.num}</span><span class="dates">${fmtShort(c.start)} – ${fmtShort(c.end)}</span><div class="balls">${c.days.filter(x => x.cd <= 7).map(x => `<span class="mb ${x.comp === 'done' ? '' : x.comp === 'miss' ? 'miss' : 'off'}"></span>`).join('')}</div><span class="drg">${c.days.length === 8 ? dragonBadgeSvg({ state: c.summoned ? 'done' : (c.earned === 7 && c.days[7].comp !== 'miss') ? 'ready' : 'locked', size: 26 }) : ''}</span></div>`; }).join('')}</div></div>
+    <div class="card flat"><div class="cycles">${allCycles().map(c => { const cur = R.calSel >= c.start && R.calSel <= c.end; return `<div class="cycrow ${cur ? 'cur' : ''}" data-cyc="${c.start}"><span class="n">Cycle ${c.num}</span><span class="dates">${fmtShort(c.start)} – ${fmtShort(c.end)}</span><div class="balls">${c.days.filter(x => x.cd <= 7).map(x => `<span class="mb ${x.comp === 'done' ? '' : x.comp === 'miss' ? 'miss' : 'off'}"></span>`).join('')}</div><span class="drg">${c.days.length === 8 ? dragonBadgeSvg({ state: c.summoned ? 'done' : (c.earned === 7 && c.days[7].comp !== 'miss') ? 'ready' : 'locked', size: 26 }) : ''}</span></div>`; }).join('')}</div></div>
     <div class="sec-h">${MONTHS[M - 1]}</div>
     <div class="card flat" style="padding:4px 10px"><ul class="dl">${list || '<li><span class="muted">No program days this month.</span></li>'}</ul></div>
   </div>${nav('cal')}`;
 }
+// Move the calendar selection by n days, keeping the day card where it is on screen
+function calSelShift(n) {
+  const p = P(), d = addDays(R.calSel, n); if (d < p.startDate || d > p.endDate) return;
+  const c1 = app.querySelector('[data-daycard]'), top = c1 ? c1.getBoundingClientRect().top : null;
+  R.calSel = d; R.calMonth = d.slice(0, 7); render();
+  const c2 = app.querySelector('[data-daycard]'); if (c2 && top != null) window.scrollTo(0, Math.max(0, c2.getBoundingClientRect().top + window.scrollY - top));
+}
 function calShift(n) { const p = P(), [Y, M] = R.calMonth.split('-').map(Number); const d = new Date(Y, M - 1 + n, 1); const m = d.getFullYear() + '-' + pad(d.getMonth() + 1); if (m < p.startDate.slice(0, 7) || m > p.endDate.slice(0, 7)) return; R.calMonth = m; render(); }
 function bindCal() {
   app.querySelectorAll('[data-cm]').forEach(b => b.onclick = () => calShift(+b.dataset.cm));
-  const cal = app.querySelector('.cal'); let sx = 0, sy = 0, live = false;
-  cal.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; live = true; }, { passive: true });
-  cal.addEventListener('touchend', e => { if (!live) return; live = false; const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) calShift(dx < 0 ? 1 : -1); }, { passive: true });
-  app.querySelectorAll('[data-cal]').forEach(c => c.onclick = () => { R.calSel = c.dataset.cal; render(); const el = app.querySelector('.cal'); if (el) window.scrollTo({ top: el.offsetTop - 10 }); });
-  app.querySelectorAll('[data-openday]').forEach(b => b.onclick = () => { R.date = b.dataset.openday; R.stack = []; go('today', {}, false); });
+  bindSwipe(app.querySelector('.cal'), () => calShift(1), () => calShift(-1));
+  // A day opens its list (the Today screen for that date); the phone's back button returns here
+  app.querySelectorAll('[data-cal]').forEach(c => c.onclick = () => { const d = c.dataset.cal; R.calSel = d; R.date = d; go('today'); });
+  // The day card: swipe moves the selection a day at a time (the grid follows, months flip as needed), tap opens the day
+  const card = app.querySelector('[data-daycard]');
+  if (card) { bindSwipe(card, () => calSelShift(1), () => calSelShift(-1)); card.onclick = () => { R.date = card.dataset.daycard; go('today'); }; }
+  // A cycle jumps the grid to its first day and selects it
+  app.querySelectorAll('[data-cyc]').forEach(c => c.onclick = () => { const d = c.dataset.cyc; R.calSel = d; R.calMonth = d.slice(0, 7); render(); const el = app.querySelector('.cal'); if (el) window.scrollTo({ top: Math.max(0, el.offsetTop - 10), behavior: 'smooth' }); });
 }
 
 /* ---------- Weigh-in ---------- */
@@ -1434,17 +1758,91 @@ function weighHtml() {
       <div class="row">${inp('skeletal', 'Skeletal kg', r.skeletal)}${inp('visceral', 'Visceral', r.visceral, 1)}</div>
       <div class="row">${inp('water', 'Water %', r.water)}<div class="field"></div></div>
     </div>
+    <button class="btn sec" data-fill>Fill from export</button><input type="file" accept="image/*" id="fillFile" hidden>
+    <div class="muted center" id="fillStatus" style="margin:6px 0 10px;min-height:18px"></div>
     <button class="btn" id="saveW">Save</button>
     ${S.readings[date] ? '<div style="height:10px"></div><button class="btn ghost" id="delW">Delete this reading</button>' : ''}
   </div>`;
 }
+// Put OCR'd values into a reading form (only fields that were found)
+function fillReadingForm(root, values) {
+  let n = 0; for (const k of ['weight', 'fat', 'muscle', 'skeletal', 'visceral', 'water']) { const el = root.querySelector('[name=' + k + ']'); if (el && values[k] != null) { el.value = values[k]; n++; } } return n;
+}
+// Pick an image on a weigh-in or nutrition screen, read it, fill that screen's form
+async function runFill(file, root, statusEl, expect, onDone) {
+  const status = t => { if (statusEl) statusEl.textContent = t; }; status('Reading…');
+  try {
+    const res = await readImage(file, status);
+    if (res.kind !== expect && res.kind !== 'unknown') { status(''); return toast(res.kind === 'scale' ? 'That is a scale card — use Fill from export on the weigh-in screen' : 'That is a MyFitnessPal screenshot — use it on the nutrition screen', 3500); }
+    const n = expect === 'scale' ? fillReadingForm(root, res.values || {}) : fillNutritionForm(root, res.values || {});
+    status(n ? 'Filled ' + n + ' of ' + (expect === 'scale' ? 6 : 2) + ' values — check them, then Save' : 'Nothing recognised — is this the right screenshot?');
+    if (res.notes && res.notes.length) toast(res.notes[0], 3200);
+    onDone && onDone(res);
+  } catch (e) { status(''); toast('Could not read the image: ' + (e.message || e), 3500); }
+}
 function bindWeigh() {
   const date = R.params.date || R.date;
   const w = app.querySelector('[name=weight]'); setTimeout(() => { try { w.focus(); } catch (e) {} }, 60);
-  $('#saveW').onclick = () => { const o = readForm(app); if (!o.weight) return toast('Weight is required'); const prev = S.readings[date] || {}; S.readings[date] = { weight: o.weight, fat: o.fat, muscle: o.muscle, skeletal: o.skeletal, visceral: o.visceral, water: o.water, late: prev.late != null ? prev.late : (date === today() && new Date().getHours() >= 12) }; save(); const tr = current('weight', date), pace = rate14('weight', date); toast(o.weight + ' kg saved' + (tr != null && readingsUpTo(date, 10).length >= 4 ? ' · trend ' + tr.toFixed(1) + (pace != null ? ' (' + (pace * 7 > 0 ? '+' : '') + (pace * 7).toFixed(1) + '/wk)' : '') : ''), 2600); vib(30); back(); };
+  const ff = $('#fillFile'); app.querySelector('[data-fill]').onclick = () => ff.click();
+  ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, app, $('#fillStatus'), 'scale', res => { if (res.late != null) R._fillLate = res.late; }); ff.value = ''; };
+  $('#saveW').onclick = () => { const o = readForm(app); if (!o.weight) return toast('Weight is required'); const prev = S.readings[date] || {}; S.readings[date] = { weight: o.weight, fat: o.fat, muscle: o.muscle, skeletal: o.skeletal, visceral: o.visceral, water: o.water, late: R._fillLate != null ? R._fillLate : prev.late != null ? prev.late : (date === today() && new Date().getHours() >= 12) }; R._fillLate = null; save(); const tr = current('weight', date), pace = rate14('weight', date); toast(o.weight + ' kg saved' + (tr != null && readingsUpTo(date, 10).length >= 4 ? ' · trend ' + tr.toFixed(1) + (pace != null ? ' (' + (pace * 7 > 0 ? '+' : '') + (pace * 7).toFixed(1) + '/wk)' : '') : ''), 2600); vib(30); back(); };
   const d = $('#delW'); if (d) d.onclick = () => { delete S.readings[date]; save(); back(); };
 }
 
+/* ---------- Fill from export (image shared from the Xiaomi or MFP app) ---------- */
+// The screen reads the image first, then shows the matching form: weigh-in (scale card) or nutrition (MFP screenshot)
+function importHtml() {
+  const p = P(), td = today(), r = R.params.result, kind = r ? r.kind : null, d0 = (r && r.date) || td;
+  const dateField = `<div class="field"><label>Date</label><input name="date" type="date" value="${d0}" min="${p ? p.startDate : ''}" max="${addDays(td, 1)}"></div>`;
+  let form = '';
+  if (kind === 'scale') form = `${dateField}<label style="text-align:center">Weight (kg)</label><input class="big" name="weight" type="number" step="0.1" inputmode="decimal" placeholder="—"><div style="height:14px"></div>
+      <div class="row">${inp('fat', 'Body fat %', '')}${inp('muscle', 'Muscle kg', '')}</div><div class="row">${inp('skeletal', 'Skeletal kg', '')}${inp('visceral', 'Visceral', '', 1)}</div><div class="row">${inp('water', 'Water %', '')}<div class="field"></div></div>`;
+  else if (kind === 'mfp') form = `${dateField}<div class="row"><div class="field"><label>Calories eaten</label><input name="kcal" type="number" inputmode="numeric"></div><div class="field"><label>Protein (g)</label><input name="protein" type="number" inputmode="numeric"></div></div>
+      <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" placeholder="${p ? p.bandDefault : ''}"></div>`;
+  else if (kind === 'unknown') form = `<div class="muted" style="margin-top:8px">This doesn't look like a Mi Fitness card or a MyFitnessPal screenshot. Try it anyway as:</div><div class="row" style="margin-top:10px"><button class="btn sec" data-as="scale">Weigh-in</button><button class="btn sec" data-as="mfp">Nutrition</button></div>`;
+  return `<div class="screen">${topbar('Fill from export', kind === 'scale' ? 'Weigh-in' : kind === 'mfp' ? 'Nutrition' : 'Shared image')}
+    <div class="card">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px"><img id="impThumb" alt="" style="width:64px;height:64px;object-fit:cover;object-position:top;border:2px solid var(--ink);border-radius:8px;background:#222"><div class="muted" id="fillStatus" style="flex:1">Reading…</div></div>
+      ${form}
+    </div>
+    ${kind === 'scale' || kind === 'mfp' ? '<div class="row"><button class="btn sec" id="impCancel">Cancel</button><button class="btn" id="impSave">Save</button></div>' : '<button class="btn sec" id="impCancel">Cancel</button>'}
+  </div>`;
+}
+function bindImport() {
+  const file = R.params.file, r = R.params.result;
+  const leave = () => { R.stack = []; R.date = today(); go('today', {}, false); };
+  $('#impCancel').onclick = leave;
+  if (file) { const url = URL.createObjectURL(file); const im = $('#impThumb'); im.src = url; im.onload = () => URL.revokeObjectURL(url); }
+  if (!file) { $('#fillStatus').textContent = 'No image received — share it again from the other app.'; return; }
+  if (!r) { // first pass: read, then re-render with the right form
+    const status = t => { const el = $('#fillStatus'); if (el) el.textContent = t; };
+    readImage(file, status).then(res => { if (R.screen !== 'import') return; R.params.result = res; render(); })
+      .catch(e => { status(''); toast('Could not read the image: ' + (e.message || e), 3500); });
+    return;
+  }
+  app.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { R.params.result = Object.assign({}, r, { kind: b.dataset.as, values: r.values || {} }); render(); });
+  const n = r.kind === 'scale' ? fillReadingForm(app, r.values || {}) : r.kind === 'mfp' ? fillNutritionForm(app, r.values || {}) : 0;
+  const want = r.kind === 'scale' ? 6 : 2;
+  $('#fillStatus').textContent = r.kind === 'unknown' ? 'Not recognised' : n ? 'Filled ' + n + ' of ' + want + ' values' + (r.date ? ' · ' + fmtShort(r.date) : '') + ' — check them, then Save' : 'Nothing recognised — type the values or Cancel';
+  if (r.notes && r.notes.length && !r._noted) { r._noted = true; toast(r.notes[0], 3200); }
+  const sv = $('#impSave'); if (!sv) return;
+  sv.onclick = () => {
+    const o = readForm(app), date = o.date; if (!date) return toast('Pick a date');
+    if (r.kind === 'scale') {
+      if (!o.weight) return toast('Weight is required');
+      const prev = S.readings[date] || {}; day(date);
+      S.readings[date] = { weight: o.weight, fat: o.fat, muscle: o.muscle, skeletal: o.skeletal, visceral: o.visceral, water: o.water, late: r.late != null ? r.late : prev.late != null ? prev.late : false };
+      save(); toast(o.weight + ' kg saved for ' + fmtShort(date), 2200);
+    } else {
+      if (!o.kcal) return toast('Calories are required');
+      const prev = day(date).nutrition || {};
+      day(date).nutrition = { kcal: o.kcal, protein: o.protein, band: o.band == null ? prev.band : o.band, src: 'mfp-shot' };
+      save(); toast(o.kcal + ' kcal saved for ' + fmtShort(date), 2200);
+    }
+    R.stack = []; R.date = dayInfo(date).items ? date : today(); go('today', {}, false);
+  };
+}
+function fillNutritionForm(root, values) { let n = 0; for (const k of ['kcal', 'protein']) { const el = root.querySelector('[name=' + k + ']'); if (el && values[k] != null) { el.value = values[k]; n++; } } return n; }
 /* ---------- Workout ---------- */
 function getSession(date, key) {
   let s = S.sessions.find(x => x.date === date && x.key === key);
@@ -1571,6 +1969,8 @@ function nutritionHtml() {
       <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" value="${n.band == null ? '' : n.band}" placeholder="${p.bandDefault}"></div>
       <div id="calc">${nutritionCalcHtml(nc, p)}</div>
     </div>
+    <button class="btn sec" data-fill>Fill from export</button><input type="file" accept="image/*" id="fillFile" hidden>
+    <div class="muted center" id="fillStatus" style="margin:6px 0 10px;min-height:18px"></div>
     <button class="btn" id="saveN">Save</button></div>`;
 }
 function nutritionCalcHtml(nc, p) {
@@ -1584,6 +1984,8 @@ function bindNutrition() {
   const date = R.params.date || R.date;
   const upd = () => { const o = readForm(app); day(date).nutrition = { kcal: o.kcal, protein: o.protein, band: o.band }; $('#calc').innerHTML = nutritionCalcHtml(nutritionCalc(date), P()); const tg = nutritionTarget(date); $('#tgt .v').textContent = tg.kcal; };
   app.querySelectorAll('input').forEach(i => i.oninput = upd);
+  const ff = $('#fillFile'); app.querySelector('[data-fill]').onclick = () => ff.click();
+  ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, app, $('#fillStatus'), 'mfp', () => upd()); ff.value = ''; };
   $('#saveN').onclick = () => { upd(); save(); toast('Saved!'); vib(30); back(); };
 }
 
@@ -1702,6 +2104,8 @@ function profileHtml() {
     <div class="card"><h3>Backup file</h3><div class="muted" style="margin:0 0 10px">${S.meta.lastBackup ? 'Last file backup ' + fmtDate(S.meta.lastBackup.slice(0, 10)) : 'No file backup yet.'}</div>
       <div class="row"><button class="btn" data-backup>Backup now</button><button class="btn sec" data-restore>Restore</button></div><input type="file" accept="application/json,.json" id="restoreFile" style="display:none">
       <button class="link" data-csv style="margin-top:6px">Export readings as CSV</button></div>
+    <div class="card"><h3>MyFitnessPal</h3><div class="muted" style="margin:0 0 10px">Daily: screenshot MFP's Today screen and share it to Trening. Catching up: MFP → More → Settings → File export emails you a zip — open it here and every unlogged day gets its calories and protein.</div>
+      <button class="btn sec" data-mfp>Import MFP export</button><input type="file" accept=".zip,.csv,application/zip,application/x-zip-compressed,text/csv" id="mfpFile" style="display:none"></div>
     <div class="card"><div class="hd"><h3>App</h3><span class="muted">v${APP_VERSION}</span></div>
       <button class="btn" data-update style="margin:6px 0 10px">Check for updates</button>
       <div class="row"><button class="btn sec" data-intro>Replay intro</button><button class="btn ghost" data-reset>Reset everything</button></div></div>
@@ -1737,6 +2141,18 @@ function bindCloud() {
 }
 function bindProfile() {
   bindCloud();
+  const mf = $('#mfpFile'); app.querySelector('[data-mfp]').onclick = () => mf.click();
+  mf.onchange = async () => {
+    const f = mf.files && mf.files[0]; mf.value = ''; if (!f) return;
+    try {
+      const days = await readMfpFile(f), n = Object.keys(days).length; if (!n) return toast('No days found in that file', 3000);
+      const r = applyMfpDays(days);
+      const lines = [];
+      if (r.filled) lines.push(`<b>${r.filled}</b> day${r.filled > 1 ? 's' : ''} filled`); if (r.updated) lines.push(`<b>${r.updated}</b> refreshed`); if (r.kept) lines.push(`<b>${r.kept}</b> kept (logged by hand)`);
+      if (!r.filled && !r.updated) lines.push('Nothing new for the project days');
+      modal(`<h3>MFP import</h3><div class="muted">${n} days in the file${r.first ? ' · filled ' + fmtShort(r.first) + ' – ' + fmtShort(r.last) : ''}</div><div style="margin:10px 0;line-height:1.6">${lines.join('<br>')}${r.skippedToday ? '<br><span class="muted">Today was skipped — the export is usually taken before the day is complete; share tonight\'s screenshot instead.</span>' : ''}</div><button class="btn" data-close>OK</button>`);
+    } catch (e) { toast('Import failed: ' + (e.message || e), 3500); }
+  };
   const ep = $('[data-editp]'); if (ep) ep.onclick = () => { R.editProject = true; render(); };
   const cp = $('[data-cancelp]'); if (cp) cp.onclick = () => { R.editProject = false; render(); };
   if (R.editProject) {
@@ -1799,7 +2215,11 @@ window.addEventListener('popstate', () => {
 (async function boot() {
   await load();
   const start = () => { R.date = today(); render(); };
-  if (!S.meta.introSeen) { S.meta.introSeen = true; save(); render(); playIntro(start); } else start();
+  // An image shared from the Xiaomi app arrives through the service worker (see sw.js) as ?share=1
+  let shared = null;
+  if (/[?&]share=1/.test(location.search)) { try { history.replaceState(null, '', './'); const c = await caches.open('vikac-share'); const r = await c.match('shared-image'); if (r) { shared = await r.blob(); await c.delete('shared-image'); } } catch (e) {} }
+  if (shared && S.project) { S.meta.introSeen = true; R.stack = []; go('import', { file: shared }, false); }
+  else if (!S.meta.introSeen) { S.meta.introSeen = true; save(); render(); playIntro(start); } else start();
   document.addEventListener('visibilitychange', () => { if (!document.hidden && R.screen === 'today' && R.date !== today() && R.stack.length === 0) { R.date = today(); render(); } });
   armBack();
   if (ghOn() && GH.pending) setTimeout(() => syncNow({ quiet: true }), 2500);
