@@ -43,7 +43,7 @@ input.big{font-family:'Bangers',Impact,sans-serif;font-size:34px;letter-spacing:
 label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:13px;color:var(--ink2);margin:0 0 4px}
 .field{margin-bottom:12px}
 .bandsync{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px}.bandsync .link{margin:0;white-space:nowrap}
-.bandtoday .btiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.bandtoday .btiles{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:8px}
 .bandtoday .bt{background:var(--paper2);border:1.5px solid var(--ink);border-radius:9px;padding:7px 4px;text-align:center}
 .bandtoday .bt b{display:block;font-family:'Bangers',Impact,sans-serif;font-size:21px;letter-spacing:.03em;line-height:1.1}
 .bandtoday .bt span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
@@ -468,7 +468,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.9.2';
+const APP_VERSION = '2.9.3';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2772,6 +2772,7 @@ function dashHtml() {
   </div>${nav('dash')}`;
 }
 function bindDash() {
+  const bp = $('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) { toast(r.error, 2400); bp.textContent = '↻ Sync'; return; } render(); toast(r.changed ? 'Band data updated' : 'Already up to date', 1800); };
   const date = today();
   const order = ['overview', 'body', 'nutrition', 'training'], setTab = (k, anim) => { if ((R.ptab || 'overview') === k) return; R.ptab = k; render(); animate($('#pbody'), anim || 'fade'); window.scrollTo(0, 0); };
   app.querySelectorAll('[data-ptab]').forEach(b => b.onclick = () => setTab(b.dataset.ptab));
@@ -2895,11 +2896,9 @@ function bindBand() {
 }
 function bandTodayHtml(date) {
   if (!bandCfg()) return '';
-  const h = bandDay(date) || {}, y = bandDay(addDays(date, -1)) || {}, sl = h.sleep || null, fmtM = m => Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0');
-  const tile = (v, l) => `<div class="bt"><b>${v}</b><span>${l}</span></div>`;
-  return `<div class="card bandtoday"><div class="hd"><span class="cond" style="font-size:16px">Band · ${date === today() ? 'today' : fmtShort(date)}</span><span class="muted small">${S.health && S.health.last ? 'synced ' + S.health.last.slice(11, 16) : 'waiting'}</span></div>
-    <div class="btiles">${tile(h.steps != null ? h.steps.toLocaleString('en-US') : '—', 'steps')}${tile(h.active != null ? h.active : '—', 'active kcal')}${tile(h.rhr || y.rhr || '—', 'rest HR')}${tile(sl ? fmtM(sl.min) : '—', 'sleep')}</div>
-    ${(h.workouts || []).length ? `<div class="muted small" style="margin-top:6px">${h.workouts.map(w => esc(w.type.toLowerCase().replace(/_/g, ' ')) + ' ' + w.min + ' min').join(' · ')}</div>` : ''}</div>`;
+  const h = bandDay(date) || {}, tile = (v, l) => `<div class="bt"><b>${v}</b><span>${l}</span></div>`;
+  return `<div class="card bandtoday"><div class="hd"><span class="cond" style="font-size:16px">Band · ${date === today() ? 'today' : fmtShort(date)}</span><span class="bandsync" style="margin:0"><span class="muted small">${S.health && S.health.last ? 'synced ' + new Date(S.health.last).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'waiting'}</span><button class="link" data-bandpull>↻ Sync</button></span></div>
+    <div class="btiles">${tile(h.steps != null ? h.steps.toLocaleString('en-US') : '—', 'steps')}${tile(h.active != null ? h.active : '—', 'active kcal')}</div></div>`;
 }
 function cloudCardHtml() {
   const st = ghStatus(), owner = ghOwnerGuess();
