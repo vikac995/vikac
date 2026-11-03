@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Trening</title>
 <meta name="theme-color" content="#0E0F12">
+<meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -839,6 +840,71 @@ hr{border-top-color:var(--line)}
 .shotc{height:150px;border-radius:16px;overflow:hidden;background:var(--paper2);border:1.5px solid var(--line2)}
 .shotc img{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
 .botbar .btn svg{width:20px;height:20px}
+
+/* ================= Stage 3: Journey + smoother workout ================= */
+:root{color-scheme:dark}
+html{background:#0E0F12}
+.ex{transition:border-color .3s,box-shadow .3s}
+.ex.open .cs{display:none}.ex:not(.open) .os{display:none}
+.ex .pick{transition:width .25s,opacity .2s,margin .25s,border-width .25s;overflow:hidden}
+.ex.open .pick{width:0;margin-right:-10px;opacity:0;border-width:0}
+.ex:not(.open) .vid{display:none!important}
+.ex.open .pbmini{display:none}
+.ex .collapse{transition:grid-template-rows .34s cubic-bezier(.3,.8,.25,1)}
+.screen.jo{padding-bottom:calc(100px + var(--sab))}
+.jtop{position:sticky;top:0;z-index:15;margin:-10px -14px 0;padding:calc(14px + var(--sat)) 16px 8px;background:rgba(14,15,18,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.jtop .jt{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.jtop .h1{font-size:40px}
+.jsub{color:var(--muted);font-size:13px;margin-top:2px}
+.chain{display:inline-flex;align-items:center;gap:5px;background:var(--orsoft);color:var(--or2);border:1.5px solid var(--or);border-radius:20px;padding:4px 11px 4px 8px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.05em;margin-bottom:6px;white-space:nowrap}
+.seg{display:flex;margin:10px 0 0;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:4px}
+.seg button{flex:1;font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;padding:7px 0;border-radius:8px;color:var(--muted);transition:background .2s,color .2s}
+.seg button.on{background:var(--ink);color:#111}
+.path{position:relative;margin:6px -6px 0}
+.pnode{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
+.pnode>img,.pnode>svg{width:100%!important;height:100%!important}
+.pnode.miss>*{opacity:.3;filter:grayscale(1)}
+.pnode.fut{border:2px dashed #4a4c57;background:rgba(255,255,255,.02)}
+.pnode.fut>img,.pnode.fut>svg{opacity:.35;width:70%!important;height:70%!important}
+.pnode.today{box-shadow:0 0 0 6px rgba(254,127,12,.3),0 0 26px rgba(254,127,12,.75)}
+.plab{position:absolute;transform:translateY(-50%);font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);white-space:nowrap;z-index:2;pointer-events:none}
+.plab small{display:block;font-size:11px;color:var(--dim);letter-spacing:.04em}
+.plab.f{color:var(--muted)}
+.pban{position:absolute;left:18px;right:18px;display:flex;align-items:center;gap:10px;color:var(--gold);font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;transform:translateY(-50%)}
+.pban:before,.pban:after{content:"";flex:1;height:1.5px;background:linear-gradient(90deg,transparent,rgba(255,216,77,.55),transparent)}
+.pme{position:absolute;width:64px;height:96px;object-fit:contain;object-position:bottom;z-index:3;filter:drop-shadow(0 4px 8px rgba(0,0,0,.6));pointer-events:none}
+.wkh{display:flex;justify-content:space-between;margin:14px 4px 8px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.pday{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 7px;padding:8px 12px;border-radius:14px;background:var(--card);border:1.5px solid var(--line);text-align:left;color:var(--ink)}
+.pday.today{border-color:var(--or);background:linear-gradient(90deg,rgba(254,127,12,.14),var(--card));box-shadow:0 0 14px rgba(254,127,12,.25)}
+.pday.past{opacity:.72}
+.pday .dt{width:40px;text-align:center;flex:none}.pday .dt b{display:block;font-family:'Bangers',Impact,sans-serif;font-weight:400;font-size:25px;letter-spacing:.03em;line-height:1}.pday .dt span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.pday .pb4{width:34px;height:34px;flex:none}.pday .pb4>*{width:34px!important;height:34px!important}
+.pday .tt{flex:1;min-width:0}.pday .tt b{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:16px;letter-spacing:.05em;text-transform:uppercase}.pday .tt>span{font-size:12.5px;color:var(--muted)}
+.pday .tt .wtag{font-size:10.5px}
+.mhead{position:relative;height:104px;margin:10px -14px 0}
+.mhead .sea{position:absolute;bottom:20px;width:62px;height:62px;object-fit:contain;object-position:bottom;z-index:2}.mhead .sea.l{left:62px}.mhead .sea.r{right:62px;transform:scaleX(-1)}
+.mhead .gr{position:absolute;left:0;right:0;bottom:0;height:26px;background-repeat:repeat-x;background-size:auto 26px}
+.mhead .mn{position:absolute;left:0;right:0;top:12px;text-align:center}.mhead .mn .h1{font-size:36px}.mhead .mn .cond{font-size:12px;margin-top:2px}
+.mnav{position:absolute;top:20px;width:40px;height:40px;border-radius:12px;background:var(--card);border:1.5px solid var(--line2);color:var(--ink);font-size:20px;font-weight:700;z-index:3}.mnav.l{left:14px}.mnav.r{right:14px}.mnav:disabled{opacity:.25}
+.mgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.wd4{text-align:center;font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;color:var(--dim)}
+.mc{position:relative;height:54px;border-radius:10px;background:var(--card);border:1.5px solid var(--line);padding:4px 5px;text-align:left;color:var(--ink);overflow:hidden;display:block}
+.mc b{font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;position:absolute;left:6px;top:4px}
+.mc.out{background:none;border-color:transparent;opacity:.3}
+.mc.miss{opacity:.55}
+.mc i{position:absolute;left:5px;right:5px;bottom:5px;height:4px;border-radius:2px}
+.mc .mb4{position:absolute;right:3px;top:3px;width:22px;height:22px}.mc .mb4>*{width:22px!important;height:22px!important}
+.mc.today{border:2px solid var(--or);box-shadow:0 0 12px rgba(254,127,12,.45)}
+.leg4{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:10px;font-size:11.5px;color:var(--muted)}.leg4 i{display:inline-block;width:12px;height:4px;border-radius:2px;margin-right:4px;vertical-align:2px}
+.dsh{display:flex;align-items:center;gap:12px}.dsh .dsb{width:54px;height:54px;flex:none}.dsh .dsb>*{width:54px!important;height:54px!important}.dsh .h1{font-size:28px}
+.tchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.tchips span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.05em;background:var(--s2);border:1.5px solid var(--line2);border-radius:7px;padding:2px 8px}
+.xl{margin-top:10px;background:var(--paper2);border:1.5px solid var(--line);border-radius:14px}
+.xr{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--line)}.xr:first-child{border-top:0}
+.xr .n{flex:1;min-width:0;font-family:'BarlowC',sans-serif;font-weight:700;font-size:14.5px;letter-spacing:.04em;text-transform:uppercase}.xr .n small{display:block;font-family:system-ui,sans-serif;font-weight:400;font-size:12px;letter-spacing:0;text-transform:none;color:var(--muted)}
+.xr .pv{font-family:'BarlowC',sans-serif;font-weight:700;font-size:15px;color:var(--gold);min-width:50px;text-align:right}
+.ok5{width:24px;height:24px;border-radius:50%;border:2px dashed #4a4c57;flex:none;display:flex;align-items:center;justify-content:center}.ok5.on{background:var(--ok);border:0}.ok5.on.b{background:var(--bonus)}.ok5 svg{width:14px;height:14px}.ok5.w{border:0;color:var(--muted)}.ok5.w svg{width:20px;height:20px}
+.dot4{width:24px;height:24px;flex:none;border-radius:50%;border:2px dashed rgba(90,176,255,.6)}.dot4.req{border:0}.dot4.req>*{width:24px!important;height:24px!important}
+.ex .pick:not(.on) svg{opacity:0}
 </style>
 </head>
 <body>
@@ -846,7 +912,7 @@ hr{border-top-color:var(--line)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.1.0';
+const APP_VERSION = '4.2.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1105,8 +1171,8 @@ function dayInfo(date) {
 }
 function day(date) { return S.days[date] || (S.days[date] = { done: {} }); }
 function isDone(date, id) {
-  const d = S.days[date]; if (!d) return false;
-  if (d.done[id]) return true;
+  const d = S.days[date] || { done: {} };   // a weigh-in or a finished workout counts even before anything else touched the day
+  if (d.done && d.done[id]) return true;
   if (id === 'weigh') return !!S.readings[date];
   if (id === 'nutrition') return !!(d.nutrition && d.nutrition.kcal);
   if (id === 'hang') return !!(d.hang && d.hang.best);
@@ -2443,8 +2509,9 @@ let toastTimer = null;
 // One toast at a time: a new message reuses the pill (no re-entry animation); it fades out before it is removed
 function toast(msg, ms) { let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.classList.remove('out'); t.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.add('out'); toastTimer = setTimeout(() => t.remove(), 200); }, ms || 1800); }
 // Navigation: a pushed screen slides in from the right, going back slides in from the left, tabs cross-fade
-function go(screen, params, push, anim) { const pushed = push !== false && R.screen !== screen; if (pushed) R.stack.push({ screen: R.screen, params: R.params, date: R.date }); R.screen = screen; R.params = params || {}; render(anim || (pushed ? 'right' : 'fade')); window.scrollTo(0, 0); }
-function back() { const s = R.stack.pop(); if (s) { R.screen = s.screen; R.params = s.params; if (s.date) R.date = s.date; render('left'); window.scrollTo(0, 0); } else go('today', {}, false, 'left'); }
+function go(screen, params, push, anim) { const pushed = push !== false && R.screen !== screen; if (pushed) R.stack.push({ screen: R.screen, params: R.params, date: R.date, y: window.scrollY }); R.screen = screen; R.params = params || {}; render(anim || (pushed ? 'right' : 'fade')); window.scrollTo(0, 0); }
+// Going back lands where you were: same screen, same day, same scroll position
+function back() { const s = R.stack.pop(); if (s) { R.screen = s.screen; R.params = s.params; if (s.date) R.date = s.date; render('left'); window.scrollTo(0, s.y || 0); } else go('today', {}, false, 'left'); }
 // Entrance animation for a freshly rendered element: 'right' | 'left' | 'fade' | 'up'
 function animate(el, anim) { if (!el || !anim) return; el.classList.remove('a-right', 'a-left', 'a-fade', 'a-up'); void el.offsetWidth; el.classList.add('a-' + anim); }
 // Horizontal swipe → onLeft / onRight; touches starting at the screen edges are left to the phone's back gesture
@@ -2505,14 +2572,14 @@ function applyUnits(root) {
 function render(anim) {
   stopTimers();
   if (!S.project) { app.innerHTML = setupHtml(); bindSetup(); applyUnits(app); animate(app.querySelector('.screen'), anim); return; }
-  const sc = { today: todayHtml, cal: calHtml, dash: dashHtml, profile: profileHtml, workout: workoutHtml, weigh: weighHtml, hang: hangHtml, mt: mtHtml, stretch: stretchHtml, mobility: mobilityHtml, nutrition: nutritionHtml, import: importHtml, batch: batchHtml }[R.screen] || todayHtml;
+  const sc = { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, profile: profileHtml, workout: workoutHtml, weigh: weighHtml, hang: hangHtml, mt: mtHtml, stretch: stretchHtml, mobility: mobilityHtml, nutrition: nutritionHtml, import: importHtml, batch: batchHtml }[R.screen] || todayHtml;
   if (syncTips()) save();
   app.innerHTML = sc(); setTimeout(() => applyUnits(app), 0);
   keepAwake(R.screen === 'workout');
   animate(app.querySelector('.screen'), anim);
   app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (R.screen === b.dataset.nav && !R.stack.length) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
-  const binder = { today: bindToday, cal: bindCal, dash: bindDash, profile: bindProfile, workout: bindWorkout, weigh: bindWeigh, hang: bindHang, mt: bindMT, stretch: bindStretch, mobility: bindMobility, nutrition: bindNutrition, import: bindImport, batch: bindBatch }[R.screen];
+  const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, profile: bindProfile, workout: bindWorkout, weigh: bindWeigh, hang: bindHang, mt: bindMT, stretch: bindStretch, mobility: bindMobility, nutrition: bindNutrition, import: bindImport, batch: bindBatch }[R.screen];
   if (binder) binder();
 }
 // Screen stays on while a workout is open (re-acquired when the app comes back to the front)
@@ -2660,51 +2727,6 @@ function showBalls(date) {
 }
 
 /* ---------- Calendar ---------- */
-function calHtml() {
-  const p = P(), td = today();
-  if (!R.calMonth) R.calMonth = (td >= p.startDate.slice(0, 7) + '-01' ? td : p.startDate).slice(0, 7);
-  if (!R.calSel) R.calSel = td;
-  const [Y, M] = R.calMonth.split('-').map(Number), first = new Date(Y, M - 1, 1), dim = new Date(Y, M, 0).getDate();
-  const startCol = (first.getDay() + 6) % 7;
-  const startM = p.startDate.slice(0, 7), endM = p.endDate.slice(0, 7);
-  let done = 0, elapsed = 0; const Dd = D();
-  for (let i = 0; i <= Dd; i++) { const d = addDays(p.startDate, i); if (d > td) break; elapsed++; if (dayCompletion(d) === 'done') done++; }
-  const pct = Math.round(elapsed / (Dd + 1) * 100), nailed = elapsed ? Math.round(done / elapsed * 100) : 0, circ = 2 * Math.PI * 34;
-  let cells = '';
-  for (let i = 0; i < startCol; i++) cells += '<div></div>';
-  for (let d = 1; d <= dim; d++) {
-    const ds = Y + '-' + pad(M) + '-' + pad(d), info = dayInfo(ds), inside = !!info.items, tag = workoutTag(info), comp = inside ? dayCompletion(ds) : 'none';
-    const mark = comp === 'done' ? '<span class="m done">✓</span>' : comp === 'part' ? '<span class="m part">½</span>' : comp === 'miss' ? '<span class="m miss">·</span>' : '';
-    cells += `<div class="cell ${inside ? 'in' : 'out'} ${ds === td ? 'today' : ''} ${ds === R.calSel ? 'sel' : ''}"${inside ? ` data-cal="${ds}"` : ''}><span>${d}</span>${tag ? `<span class="w ${tag.k}">${tag.t.replace(/ [AB]$/, '')}</span>` : ''}${mark}</div>`;
-  }
-  // The selected day's card: swipe it to move through days, tap it to open the day
-  const sel = R.calSel, sinfo = dayInfo(sel); let card = '';
-  if (sinfo.items) {
-    const comp = dayCompletion(sel), dt = dayType(sinfo), col = DAYTYPES[dt.k].color;
-    card = `<div class="card daycard" data-daycard="${sel}">
-      <div class="hd"><div class="bang">${sinfo.phase === 'final' ? 'Final weigh-in' : 'Day ' + sinfo.idx + '/' + D()}<span class="sep">|</span><span style="color:${col}">${esc(dt.label)}</span><span class="sep">|</span>C${sinfo.cycleNum}</div><div class="right"><span class="chip ${comp === 'done' ? 'ok' : comp === 'part' ? 'warn' : comp === 'miss' ? 'bad' : 'muted'}">${{ done: 'Perfect', part: 'Partly', miss: 'Missed', future: 'Planned' }[comp]}</span><span class="go">›</span></div></div>
-      <div class="muted">${fmtDate(sel)}</div>
-      <ul class="dl">${sinfo.items.map(it => `<li><span class="st">${isDone(sel, it.id) ? '✓' : '○'}</span><span class="w">${esc(it.label)}<small>${esc(itemSub(sel, it))}</small></span></li>`).join('')}</ul></div>`;
-  }
-  let list = '';
-  for (let d = 1; d <= dim; d++) { const ds = Y + '-' + pad(M) + '-' + pad(d), info = dayInfo(ds); if (!info.items) continue; const tag = workoutTag(info), c = dayCompletion(ds); list += `<li class="${ds === td ? 'today' : ''}" data-cal="${ds}"><span class="n">${info.idx}</span><span class="w">${tag.t}<small>${fmtShort(ds)}</small></span><span class="st ${c === 'done' ? 'ok' : c === 'part' ? 'warn' : c === 'miss' ? 'bad' : 'muted'}">${c === 'done' ? '✓' : c === 'part' ? '½' : c === 'miss' ? '–' : '○'}</span></li>`; }
-  return `<div class="screen"><div class="phead">${band('Calendar', '', `<div class="big">${nailed}<small>%</small></div><div class="sub">days nailed</div>`)}</div>
-    <div class="cal">
-      <div class="mh"><button data-cm="-1" ${R.calMonth <= startM ? 'disabled' : ''} aria-label="Previous month">‹</button>${seasonSide(seasonOf(M), false)}<div class="m">${MONTHS[M - 1]}<small>${Y}</small></div>${seasonSide(seasonOf(M), true)}<button data-cm="1" ${R.calMonth >= endM ? 'disabled' : ''} aria-label="Next month">›</button></div>
-      ${seasonGround(seasonOf(M))}
-      <div class="ring"><svg viewBox="0 0 84 84"><circle cx="42" cy="42" r="34" fill="none" stroke="#EADFCF" stroke-width="10"/><circle cx="42" cy="42" r="34" fill="none" stroke="#FE7F0C" stroke-width="10" stroke-linecap="round" stroke-dasharray="${circ * pct / 100} ${circ}" transform="rotate(-90 42 42)"/><circle cx="42" cy="42" r="34" fill="none" stroke="#1B1B1B" stroke-width="1.5"/><circle cx="42" cy="42" r="29" fill="none" stroke="#1B1B1B" stroke-width="1.5"/><text x="42" y="48" text-anchor="middle" font-family="Bangers,Impact" font-size="22" fill="#1B1B1B">${pct}%</text></svg>
-        <div><div class="cond" style="font-size:18px">${pct} % of the project done</div><div class="muted">${done} perfect of ${elapsed} day${elapsed === 1 ? '' : 's'} · ${Dd + 1 - elapsed} left</div></div></div>
-      <div class="wd"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div>
-      <div class="grid">${cells}</div>
-      <div class="legend"><span><i style="background:var(--ok)"></i>perfect</span><span><i style="background:var(--yel)"></i>partly</span><span><i style="background:var(--badsoft)"></i>missed</span><span><i style="box-shadow:0 0 0 2px var(--or);border-color:transparent"></i>today</span></div>
-    </div>
-    ${card}
-    <div class="sec-h">Cycles</div>
-    <div class="card flat"><div class="cycles">${allCycles().map(c => { const cur = R.calSel >= c.start && R.calSel <= c.end; return `<div class="cycrow ${cur ? 'cur' : ''}" data-cyc="${c.start}"><span class="n">Cycle ${c.num}</span><span class="dates">${fmtShort(c.start)} – ${fmtShort(c.end)}</span><div class="balls">${c.days.filter(x => x.cd <= 7).map(x => `<span class="mb ${x.comp === 'done' ? '' : x.comp === 'miss' ? 'miss' : 'off'}"></span>`).join('')}</div><span class="drg">${c.days.length === 8 ? dragonBadgeSvg({ state: c.summoned ? 'done' : (c.earned === 7 && c.days[7].comp !== 'miss') ? 'ready' : 'locked', size: 26 }) : ''}</span></div>`; }).join('')}</div></div>
-    <div class="sec-h">${MONTHS[M - 1]}</div>
-    <div class="card flat" style="padding:4px 10px"><ul class="dl">${list || '<li><span class="muted">No program days this month.</span></li>'}</ul></div>
-  </div>${nav('cal')}`;
-}
 // Move the calendar selection by n days, keeping the day card where it is on screen
 function calSelShift(n) {
   const p = P(), d = addDays(R.calSel, n); if (d < p.startDate || d > p.endDate) return;
@@ -2712,18 +2734,6 @@ function calSelShift(n) {
   R.calSel = d; R.calMonth = d.slice(0, 7); render();
   const c2 = app.querySelector('[data-daycard]'); if (c2 && top != null) window.scrollTo(0, Math.max(0, c2.getBoundingClientRect().top + window.scrollY - top));
   animate(c2, n > 0 ? 'right' : 'left');
-}
-function calShift(n) { const p = P(), [Y, M] = R.calMonth.split('-').map(Number); const d = new Date(Y, M - 1 + n, 1); const m = d.getFullYear() + '-' + pad(d.getMonth() + 1); if (m < p.startDate.slice(0, 7) || m > p.endDate.slice(0, 7)) return; R.calMonth = m; render(); animate(app.querySelector('.cal'), n > 0 ? 'right' : 'left'); }
-function bindCal() {
-  app.querySelectorAll('[data-cm]').forEach(b => b.onclick = () => calShift(+b.dataset.cm));
-  bindSwipe(app.querySelector('.cal'), () => calShift(1), () => calShift(-1));
-  // A day in the grid or the month list selects it and glides its card up to the top of the screen
-  app.querySelectorAll('[data-cal]').forEach(c => c.onclick = () => { const d = c.dataset.cal; if (R.calSel !== d) { R.calSel = d; render(); } const card = app.querySelector('[data-daycard]'); if (card) { animate(card, 'fade'); window.scrollTo({ top: Math.max(0, card.getBoundingClientRect().top + window.scrollY - 10), behavior: 'smooth' }); } });
-  // The day card: swipe moves the selection a day at a time (the grid follows, months flip as needed), tap opens the day
-  const card = app.querySelector('[data-daycard]');
-  if (card) { bindSwipe(card, () => calSelShift(1), () => calSelShift(-1)); card.onclick = () => { R.date = card.dataset.daycard; go('today'); }; }
-  // A cycle jumps the grid to its first day and selects it
-  app.querySelectorAll('[data-cyc]').forEach(c => c.onclick = () => { const d = c.dataset.cyc; R.calSel = d; R.calMonth = d.slice(0, 7); render(); const el = app.querySelector('.cal'); if (el) window.scrollTo({ top: Math.max(0, el.offsetTop - 10), behavior: 'smooth' }); });
 }
 
 /* ---------- Weigh-in ---------- */
@@ -2777,7 +2787,8 @@ function bindImport() {
       save(); toast(o.kcal + ' kcal saved for ' + fmtShort(date), 2200);
     }
     if (R.params.row && R.batch) { const row = R.batch.rows[R.params.row.i]; row.status = 'saved'; row.date = date; row.kind = r.kind; row.values = o; row.note = 'edited'; back(); return; }
-    R.stack = []; R.date = dayInfo(date).items ? date : today(); go('today', {}, false);
+    if (R.stack.length) { back(); return; }
+    R.date = dayInfo(date).items ? date : today(); go('today', {}, false);
   };
 }
 function fillNutritionForm(root, values) { let n = 0; for (const k of ['kcal', 'protein', 'carbs', 'fat']) { const el = root.querySelector('[name=' + k + ']'); if (el && values[k] != null) { el.value = values[k]; n++; } } return n; }
@@ -2840,7 +2851,7 @@ function applyBatchRow(row) {
 function bindBatch() {
   const b = R.batch;
   app.querySelectorAll('[data-row]').forEach(el => el.onclick = () => { const row = b.rows[+el.dataset.row]; if (!row || row.status === 'reading') return; const res = Object.assign({}, row.result || { kind: row.kind || 'unknown', values: row.values || {}, notes: [] }, { date: row.date, kind: row.kind || 'unknown' }); go('import', { file: row.file, result: res, row }); });
-  const dn = $('#batchDone'); if (dn) dn.onclick = () => { b.rows.forEach(r => { try { URL.revokeObjectURL(r.thumb); } catch (e) {} }); R.batch = null; R.stack = []; R.date = today(); go('today', {}, false, 'fade'); };
+  const dn = $('#batchDone'); if (dn) dn.onclick = () => { b.rows.forEach(r => { try { URL.revokeObjectURL(r.thumb); } catch (e) {} }); R.batch = null; if (R.stack.length) { back(); return; } R.date = today(); go('today', {}, false, 'fade'); };
   const bk = app.querySelector('[data-back]'); if (bk) bk.onclick = back;
   if (b && b.rows.some(r => r.status === 'reading')) runBatch();
 }
@@ -2905,7 +2916,7 @@ function advance(date, manual) {
   const s = STRETCH[player.idx];
   if (s.sides && player.side < s.sides) { player.side++; player.left = s.d; vib(150); }
   else if (player.idx < STRETCH.length - 1) { player.idx++; player.side = 1; player.left = STRETCH[player.idx].d; vib([150, 80, 150]); }
-  else { stopPlayer(); day(date).done.stretch = true; save(); vib([200, 100, 200, 100, 400]); render(); toast('Routine complete!'); return; }
+  else { stopPlayer(); day(date).done.stretch = true; save(); vib([200, 100, 200, 100, 400]); toast('Routine complete!'); back(); return; }
   render(); const cur = app.querySelector('.step.cur'); if (cur) cur.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 function stopPlayer() { player.on = false; if (player.timer) clearInterval(player.timer); player.timer = null; }
@@ -3299,11 +3310,11 @@ const IC4 = {
 };
 const ITEM_IC = { weigh: 'scale', nutrition: 'fork', hang: 'hang', stretch: 'stretch', mobility: 'kick', workout: 'dumb', mt: 'glove' };
 
-/* ---------- Nav: Today · Calendar · + · Progress · Settings ---------- */
+/* ---------- Nav: Today · Journey · + · Progress · Settings ---------- */
 function nav(on) {
   return `<div class="nav">
     <button data-nav="today" class="${on === 'today' ? 'on' : ''}">${ICONS.today}Today</button>
-    <button data-nav="cal" class="${on === 'cal' ? 'on' : ''}">${ICONS.cal}Calendar</button>
+    <button data-nav="journey" class="${on === 'journey' || on === 'cal' ? 'on' : ''}">${IC4.journey}Journey</button>
     <button class="fab" data-fab aria-label="Log">${IC4.plus}</button>
     <button data-nav="dash" class="${on === 'dash' ? 'on' : ''}">${ICONS.dash}Progress${unseenTips() ? `<span class="nbadge">${unseenTips()}</span>` : ''}</button>
     <button data-nav="profile" class="${on === 'profile' ? 'on' : ''}">${ICONS.settings}Settings</button>
@@ -3347,13 +3358,13 @@ function t4Ring(d, n, won, size) {
 const SHORT = { workout: 'finish the workout', mt: 'Muay Thai', nutrition: 'log nutrition', weigh: 'weigh in', hang: 'dead hangs', stretch: 'stretching', mobility: 'kick mobility' };
 function t4HeroHtml(date, info, cyc) {
   const dp = dayProgress(date), td = today(), future = date > td, won = cyc.todayDone;
-  const art = cyc.summonDay ? dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 114 }) : ballSvg({ stars: cyc.star, state: won ? 'full' : 'hollow', size: 114 });
+  const art = cyc.summonDay ? dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 114 }) : ballSvg({ stars: future ? dayStars(date) : cyc.star, state: won ? 'full' : 'hollow', size: 114 });
   let cap;
   if (cyc.summonDay) cap = cyc.summoned ? '<div class="t4cap won">Dragon summoned</div>' : cyc.canSummon ? `<div class="t4cap">${dp.reqDone} of ${dp.req} · <b>finish the day to summon</b></div>` : `<div class="t4cap">${cyc.earned} / 7 balls · no summon this cycle</div>`;
   else if (won) cap = `<div class="t4cap won">${cyc.star}-star ball earned</div>`;
-  else if (future) cap = `<div class="t4cap">Earns the <b>${cyc.star}-star ball</b></div>`;
+  else if (future) cap = `<div class="t4cap">Earns the <b>${dayStars(date)}-star ball</b></div>`;
   else { const left = info.items.filter(it => it.req && !isDone(date, it.id)); cap = left.length === 1 ? `<div class="t4cap">${dp.reqDone} of ${dp.req} · <b>${left[0].id === 'workout' ? 'finish ' + esc(PROGRAM.workouts[left[0].key].name) : SHORT[left[0].id] || esc(left[0].label)}</b> for the ball</div>` : `<div class="t4cap">${dp.reqDone} of ${dp.req} to earn the <b>${cyc.star}-star ball</b></div>`; }
-  let got = 0; const strip = cyc.days.map(x => { const ok = x.comp === 'done' && x.cd <= 7; if (ok) got++; const star = Math.min(7, got + (ok ? 0 : 1));
+  const strip = cyc.days.map(x => { const ok = x.comp === 'done' && x.cd <= 7, star = dayStars(x.date) - 0;
     const a = x.cd === 8 ? dragonBadgeSvg({ state: cyc.days.length === 8 && x.comp === 'done' && cyc.days.filter(y => y.cd <= 7 && y.comp === 'done').length === 7 ? 'done' : 'locked', size: 22 }) : ballSvg({ stars: star, state: ok ? 'full' : 'hollow', size: 22 });
     return `<button class="mb ${ok || (x.cd === 8 && x.comp === 'done') ? 'got' : ''} ${x.date === date ? 'cur' : ''} ${x.date === td ? 'today' : ''}" data-goto="${x.date}" aria-label="Day ${x.cd}">${a}<i style="background:${DAYTYPES[x.type.k].color}"></i></button>`; }).join('');
   return `<div class="t4hero"><div class="t4ring ${won ? 'won' : ''}" data-bigball>${t4Ring(dp.reqDone, dp.req, won)}<div class="ball" id="bigart">${art}</div></div>${cap}
@@ -3389,7 +3400,7 @@ function wtHtml(date, info, cyc) {
   return `<div class="wt rest" data-wt>${liftArtHtml('rest')}${lab.replace('Today\'s training', 'Today').replace('>Training', '>Rest')}<div class="t h1">${title}</div><div class="s">${esc(req.join(' · '))}</div></div>`;
 }
 function t4Rows(date, info) {
-  const future = date > today(), cyc = cycleOf(date), star = cyc && !cyc.summonDay ? cyc.star : 7;
+  const future = date > today(), cyc = cycleOf(date), star = cyc && !cyc.summonDay ? (future ? dayStars(date) : cyc.star) : 7;
   const items = info.items.filter(it => it.id !== 'workout' && it.id !== 'mt');
   const done = items.filter(it => isDone(date, it.id)).length;
   return `<div class="secl"><span>${date === today() ? 'Today\'s goals' : 'Goals'}</span><span>${done} / ${items.length}</span></div><ul class="todo" id="list">${items.map(it => {
@@ -3435,6 +3446,11 @@ function bindToday() {
   app.querySelectorAll('[data-open]').forEach(b => b.onclick = () => go(b.dataset.open, { date }));
   if (!info.items) return;
   bindTodayBody(date, future);
+  if (R._wtShrink) { R._wtShrink = false; const wt = app.querySelector('.wt.done'); if (wt) wt.classList.add('shrink'); }
+  // a ball completed on another screen (workout, weigh-in, nutrition…) is celebrated when you land back here
+  const cyc = cycleOf(date);
+  if (cyc && date === today() && cyc.todayDone) { const key = cyc.summonDay ? 'summon' : 'ball', flag = day(date).celebrated || {};
+    if (!flag[key]) { flag[key] = true; day(date).celebrated = flag; save(); setTimeout(() => { const art = $('#bigart'); if (art) art.classList.add('pop'); if (cyc.summoned) showDragon(); else { vib([40, 60, 40, 60, 120]); toast(cyc.star + '-star dragon ball collected!', 2400); } }, 450); } }
 }
 function bindTodayBody(date, future) {
   const info = dayInfo(date), body = $('#t4body'); if (!body) return;
@@ -3500,36 +3516,38 @@ function noteSheet(date) {
 }
 
 /* ---------- Workout: one list, steppers, ✓ per set, rest as text ---------- */
-const KG_STEP = 2.5;
+// Every card carries its full body; opening and closing just slides it (no re-render), so nothing jumps
+const KG_STEP = 0.5;
 function setsSummary(e, type) { if (type === 'max') return e.reps ? e.reps + ' reps' + (+e.load ? ' +' + e.load + ' kg' : '') : ''; return e.sets.filter(s => s.kg !== '' || s.reps !== '').map(s => (s.kg || '–') + '×' + (s.reps || '–')).join(' · '); }
 function stepper(set, f, val, ph, step) { return `<div class="stp"><button data-step="-1" tabindex="-1">−</button><input type="number" inputmode="${f === 'reps' ? 'numeric' : 'decimal'}" step="${step}" ${set != null ? `data-set="${set}"` : ''} data-f="${f}" value="${esc(val)}" placeholder="${esc(ph == null ? '' : ph)}"><button data-step="1" tabindex="-1">+</button></div>`; }
+function exNewPB(e, type, sid) { const c = entryPB(e, type), o = exPB(e.n, type, sid); return c > 0 && o && c > o.v ? c : 0; }
+// The closed card's second line: what was logged (+ verdict when finished), or the plan and last time
+function exClosedSub(s, i, date) {
+  const e = s.ex[i], def = PROGRAM.workouts[s.key].ex[i], type = def.type, sum = setsSummary(e, type), last = lastFor(e.n, date), v = s.finished ? verdictFor(e.n, e, date, s.id) : null;
+  return (e.done || sum ? esc(sum || 'Done') : esc(def.s) + (last ? ' · last ' + esc(last.label.split(', ')[0]) : '')) + (v && v.state !== 'none' ? ` · <span class="${v.cls}">${esc(v.text)}</span>` : '');
+}
 function workoutHtml() {
   const date = R.params.date || R.date, key = R.params.key || dayInfo(date).workoutKey;
   if (!key) return `<div class="screen">${topbar('Workout')}<div class="card">No workout today. Rest is part of the plan.</div></div>`;
   const w = PROGRAM.workouts[key], s = getSession(date, key), doneN = s.ex.filter(e => e.done).length, lb = liftBand(date);
-  if (R._woOpen == null || R._woKey !== s.id) { R._woKey = s.id; const f = s.ex.findIndex(e => !e.done); R._woOpen = s.finished ? -1 : f; }
+  if (R._woOpen == null || R._woKey !== s.id) { R._woKey = s.id; R._woOpen = s.finished ? -1 : s.ex.findIndex(e => !e.done); }
   const open = R._woOpen;
   const cards = s.ex.map((e, i) => {
-    const def = w.ex[i], type = def.type, last = lastFor(e.n, date), pb = bestPBNow(e, type, s.id), isOpen = i === open;
-    const newPB = (() => { const c = entryPB(e, type), o = exPB(e.n, type, s.id); return c > 0 && o && c > o.v; })();
-    const v = s.finished ? verdictFor(e.n, e, date, s.id) : null;
-    if (!isOpen) {
-      const sum = setsSummary(e, type);
-      return `<div class="ex ${e.done ? 'done' : ''}" data-i="${i}"><div class="hd" data-openex><button class="pick ${e.done ? 'on' : ''}" data-exdone aria-label="Done">${e.done ? IC4.check : ''}</button><div class="grow"><div class="nm">${i + 1}. ${esc(e.n)}${eqIcons(e.n)}</div><div class="sch">${e.done || sum ? esc(sum || 'Done') : esc(def.s) + (last ? ' · last ' + esc(last.label.split(', ')[0]) : '')}${v && v.state !== 'none' ? ` · <span class="${v.cls}">${esc(v.text)}</span>` : ''}</div></div>${newPB ? `<span class="pbmini"><span class="pbtag">${TROPHY}PB</span>${fmtPB(e.n, type, entryPB(e, type))}</span>` : ''}</div></div>`;
-    }
+    const def = w.ex[i], type = def.type, last = lastFor(e.n, date), pb = bestPBNow(e, type, s.id), isOpen = i === open, npb = exNewPB(e, type, s.id);
     const ls = j => last && last.e.sets && last.e.sets[j] || {};
     const body = type === 'max'
       ? `<div class="maxg"><div><div class="l">Reps in 5 min</div>${stepper(null, 'reps', e.reps, last && last.e.reps ? last.e.reps : '', 1)}</div><div><div class="l">Added kg</div>${stepper(null, 'load', e.load, last && last.e.load ? last.e.load : '0', KG_STEP)}</div></div>`
       : `<div class="sets4"><span></span><span class="sh">KG</span><span></span><span class="sh">REPS</span><span></span>${e.sets.map((st, j) => `<span class="sn">${j === 0 && type === 'hn' ? 'H' : j + 1}</span>${stepper(j, 'kg', st.kg, ls(j).kg, KG_STEP)}<span class="x">×</span>${stepper(j, 'reps', st.reps, ls(j).reps, 1)}<button class="sck ${+st.kg > 0 && +st.reps > 0 ? 'on' : ''}" data-ok="${j}" aria-label="Log set">${IC4.check}</button>`).join('')}</div>`;
-    return `<div class="ex open ${e.done ? 'done' : ''}" data-i="${i}">
-      <div class="hd"><div class="grow" data-closeex><div class="nm">${i + 1}. ${esc(e.n)}${eqIcons(e.n)}</div><div class="sch">${esc(def.s)} · ${restLabel(type, def.s)}</div></div><button class="vid has" data-vid hidden>▶ Video</button></div><div class="vbox" hidden></div>
-      ${last ? `<div class="last"><span>Last <b>${esc(last.label.replace(/, /g, ' · '))}</b></span>${pb ? `<span class="r"><span class="pbtag">${TROPHY}PB</span><b class="pbv">${fmtPB(e.n, type, pb.v)}</b></span>` : ''}</div>${last.note ? `<div class="q">“${esc(last.note)}”</div>` : ''}` : (pb ? `<div class="last"><span>First time on this one</span><span class="r"><span class="pbtag">${TROPHY}PB</span><b class="pbv">${fmtPB(e.n, type, pb.v)}</b></span></div>` : '')}
-      ${body}
-      <textarea class="qn usertext" data-f="note" rows="1" placeholder="✎ Quick note for next time">${esc(e.note)}</textarea>
-      ${v && v.state !== 'none' ? `<div class="verdict ${v.cls}">${esc(v.text)}</div>` : ''}
+    return `<div class="ex ${isOpen ? 'open' : ''} ${e.done ? 'done' : ''}" data-i="${i}">
+      <div class="hd" data-tog><button class="pick ${e.done ? 'on' : ''}" data-exdone aria-label="Done">${IC4.check}</button><div class="grow"><div class="nm">${i + 1}. ${esc(e.n)}${eqIcons(e.n)}</div><div class="sch"><span class="cs">${exClosedSub(s, i, date)}</span><span class="os">${esc(def.s)} · ${restLabel(type, def.s)}</span></div></div><span class="pbmini">${npb ? `<span class="pbtag">${TROPHY}PB</span>${fmtPB(e.n, type, npb)}` : ''}</span><button class="vid has" data-vid hidden>▶ Video</button></div>
+      <div class="collapse ${isOpen ? 'open' : ''}"><div><div class="exb"><div class="vbox" hidden></div>
+        ${last ? `<div class="last"><span>Last <b>${esc(last.label.replace(/, /g, ' · '))}</b></span>${pb ? `<span class="r"><span class="pbtag">${TROPHY}PB</span><b class="pbv">${fmtPB(e.n, type, pb.v)}</b></span>` : ''}</div>${last.note ? `<div class="q">“${esc(last.note)}”</div>` : ''}` : (pb ? `<div class="last"><span>First time on this one</span><span class="r"><span class="pbtag">${TROPHY}PB</span><b class="pbv">${fmtPB(e.n, type, pb.v)}</b></span></div>` : '')}
+        ${body}
+        <textarea class="qn usertext" data-f="note" rows="1" placeholder="✎ Quick note for next time">${esc(e.note)}</textarea>
+      </div></div></div>
     </div>`;
   }).join('');
-  return `<div class="screen wo"><div class="wbar"><button class="back" data-back aria-label="Back">${IC4.back}</button><div class="tt"><div class="h1">${esc(w.name)}</div><div class="s">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)} · ~${workoutMinutes(key)} min${lb && lb.kcal ? ` · <span class="wkcal">${lb.kcal} kcal</span>` : ''}</div></div><div class="prog"><b id="prog">${doneN}/${s.ex.length}</b><span>DONE</span></div></div>
+  return `<div class="screen wo"><div class="wbar"><button class="back" data-back aria-label="Back">${IC4.back}</button><div class="tt"><div class="h1">${esc(w.name)}</div><div class="s">${shortD(date)} · ~${workoutMinutes(key)} min${lb && lb.kcal ? ` · <span class="wkcal">${lb.kcal} kcal</span>` : ''}</div></div><div class="prog"><b id="prog">${doneN}/${s.ex.length}</b><span>DONE</span></div></div>
     <div class="segbar" id="segbar">${s.ex.map((e, i) => `<i class="${e.done ? 'on' : i === open ? 'cur' : ''}"></i>`).join('')}</div>
     ${cards}
     <button class="btn ghost" id="delS" style="margin-top:8px">Delete this session</button>
@@ -3538,32 +3556,41 @@ function workoutHtml() {
 }
 function bindWorkout() {
   const date = R.params.date || R.date, key = R.params.key || dayInfo(date).workoutKey; if (!key) return; const s = getSession(date, key), w = PROGRAM.workouts[key];
-  const rerender = (scrollTo) => { const y = window.scrollY; app.innerHTML = workoutHtml(); app.querySelectorAll('[data-back]').forEach(b => b.onclick = back); bindWorkout(); applyUnits(app); window.scrollTo(0, y); if (scrollTo != null) { const el = app.querySelector(`.ex[data-i="${scrollTo}"]`); if (el) { const top = el.getBoundingClientRect().top + window.scrollY - 104; window.scrollTo({ top, behavior: 'smooth' }); } } };
-  const openEx = i => { R._woOpen = i; rerender(i); };
-  app.querySelectorAll('.ex').forEach(box => {
-    const i = +box.dataset.i, e = s.ex[i], def = w.ex[i], type = def.type;
-    const hd = box.querySelector('[data-openex]'); if (hd) hd.onclick = ev => { if (ev.target.closest('[data-exdone]')) return; openEx(i); };
-    const cl = box.querySelector('[data-closeex]'); if (cl) cl.onclick = () => { R._woOpen = -1; rerender(); };
-    const pk = box.querySelector('[data-exdone]'); if (pk) pk.onclick = ev => { ev.stopPropagation(); e.done = !e.done; save(); rerender(); };
-    if (!box.classList.contains('open')) return;
+  const boxes = Array.from(app.querySelectorAll('.ex'));
+  const paintProgress = () => { const p = $('#prog'); if (p) p.textContent = s.ex.filter(e => e.done).length + '/' + s.ex.length; const sb = $('#segbar'); if (sb) Array.from(sb.children).forEach((b, i) => b.className = s.ex[i].done ? 'on' : i === R._woOpen ? 'cur' : ''); };
+  const paintHead = i => { const box = boxes[i], e = s.ex[i], type = w.ex[i].type, npb = exNewPB(e, type, s.id);
+    box.classList.toggle('done', !!e.done); box.querySelector('.pick').classList.toggle('on', !!e.done);
+    box.querySelector('.cs').innerHTML = exClosedSub(s, i, date);
+    box.querySelector('.pbmini').innerHTML = npb ? `<span class="pbtag">${TROPHY}PB</span>${fmtPB(e.n, type, npb)}` : ''; };
+  // open one card (or none with -1): the old one slides shut, the new one slides open, then it scrolls into view
+  const setOpen = (i, scroll) => {
+    R._woOpen = i;
+    boxes.forEach((b, j) => { const on = j === i, was = b.classList.contains('open'); if (on === was) return; b.classList.toggle('open', on); b.querySelector('.collapse').classList.toggle('open', on);
+      if (!on) { const v = b.querySelector('video'); if (v) v.pause(); b.querySelectorAll('.pbpop').forEach(x => x.remove()); paintHead(j); } });
+    paintProgress();
+    if (i >= 0 && scroll !== false) setTimeout(() => { const el = boxes[i]; if (!el) return; const top = el.getBoundingClientRect().top + window.scrollY - 104; if (Math.abs(top - window.scrollY) > 40) window.scrollTo({ top, behavior: 'smooth' }); }, 340);
+  };
+  boxes.forEach((box, i) => {
+    const e = s.ex[i], def = w.ex[i], type = def.type;
+    box.querySelector('[data-tog]').onclick = ev => { if (ev.target.closest('[data-exdone],[data-vid]')) return; setOpen(box.classList.contains('open') ? -1 : i); };
+    box.querySelector('[data-exdone]').onclick = ev => { ev.stopPropagation(); e.done = !e.done; save(); paintHead(i); paintProgress(); };
     // finishing an exercise folds it up and opens the next one, once you are out of its fields
-    const maybeAdvance = () => { if (e.done || s.finished) return; if (!exComplete(e, type)) return; e.done = true; save(); vib(20);
-      setTimeout(() => { const ae = document.activeElement; if (ae && box.contains(ae) && /INPUT|TEXTAREA/.test(ae.tagName)) return; const nx = s.ex.findIndex((x, j) => j > i && !x.done); R._woOpen = nx >= 0 ? nx : -1; rerender(nx >= 0 ? nx : null); }, 650); };
+    const maybeAdvance = () => { if (e.done || s.finished) return; if (!exComplete(e, type)) return; e.done = true; save(); vib(20); paintProgress();
+      // a "New PB!" gets its moment before the card folds
+      const go2 = () => { const ae = document.activeElement; if (ae && box.contains(ae) && /INPUT|TEXTAREA/.test(ae.tagName)) return; if (R._woOpen !== i) return; if (Date.now() - (box._popAt || 0) < 1200) return setTimeout(go2, 250); const nx = s.ex.findIndex((x, j) => j > i && !x.done); setOpen(nx); };
+      setTimeout(go2, 800); };
     box._pbSeen = entryPB(e, type);
     const pbCheck = inpEl => { clearTimeout(box._pbT); box._pbT = setTimeout(() => {
       const other = exPB(e.n, type, s.id), cur = entryPB(e, type), shown = Math.max(other ? other.v : 0, cur), pv = box.querySelector('.pbv');
       if (pv) { const t = fmtPB(e.n, type, shown); if (pv.textContent !== t) { pv.textContent = t; pv.classList.remove('bump'); void pv.offsetWidth; pv.classList.add('bump'); } }
-      if (other && cur > other.v && cur > box._pbSeen) { box._pbSeen = cur; pbPop(box, inpEl); } else if (cur > box._pbSeen && !other) box._pbSeen = cur;
-    }, 650); };
+      if (other && cur > other.v && cur > box._pbSeen && box.classList.contains('open')) { box._pbSeen = cur; box._popAt = Date.now(); pbPop(box, inpEl); } else if (cur > box._pbSeen && !other) box._pbSeen = cur;
+    }, 500); };
     const paintOk = j => { if (j == null) return; const b = box.querySelector(`[data-ok="${j}"]`), st = e.sets[j]; if (b) b.classList.toggle('on', +st.kg > 0 && +st.reps > 0); };
     const setVal = (inpEl, v) => { inpEl.value = v; const f = inpEl.dataset.f, j = inpEl.dataset.set; if (j != null) e.sets[+j][f] = v; else e[f] = v; save(); paintOk(j != null ? +j : null); pbCheck(inpEl); };
-    box.querySelectorAll('input[data-f]').forEach(inpEl => {
-      inpEl.oninput = () => setVal(inpEl, inpEl.value);
-      inpEl.onblur = () => setTimeout(maybeAdvance, 50);
-    });
+    box.querySelectorAll('input[data-f]').forEach(inpEl => { inpEl.oninput = () => setVal(inpEl, inpEl.value); inpEl.onblur = () => setTimeout(maybeAdvance, 50); });
     box.querySelectorAll('[data-step]').forEach(b => b.onclick = () => {
-      const inpEl = b.parentNode.querySelector('input'), step = +inpEl.step || 1, d = +b.dataset.step, base = inpEl.value !== '' ? +inpEl.value : (inpEl.placeholder !== '' ? +inpEl.placeholder : null);
-      let v = base == null ? (d > 0 ? step : 0) : base + d * step; v = Math.max(0, Math.round(v * 100) / 100);
+      const inpEl = b.parentNode.querySelector('input'), step = +inpEl.step || 1, d = +b.dataset.step, dec = (String(step).split('.')[1] || '').length, base = inpEl.value !== '' ? +inpEl.value : (inpEl.placeholder !== '' ? +inpEl.placeholder : null);
+      let v = base == null ? (d > 0 ? step : 0) : base + d * step; v = Math.max(0, +v.toFixed(dec));
       setVal(inpEl, String(v)); vib(8); maybeAdvance();
     });
     box.querySelectorAll('[data-ok]').forEach(b => b.onclick = () => {
@@ -3576,40 +3603,32 @@ function bindWorkout() {
     const ta = box.querySelector('textarea[data-f="note"]'); if (ta) ta.oninput = () => { e.note = ta.value; save(); };
     bindVideo(box, e.n);
   });
+  // Finish: back to where you came from, the summary pops up there
   const fin = $('#finish'); if (fin) fin.onclick = () => {
     const logged = s.ex.filter(e => exScore(e, exType(e.n)).v > 0);
     if (!logged.length) return toast('Log at least one set first');
     s.finished = true; s.ex.forEach(e => { if (exScore(e, exType(e.n)).v > 0) e.done = true; }); save();
     const pbs = sessionPBs(s);
     const lines = s.ex.map(e => { const v = verdictFor(e.n, e, date, s.id); if (v.state === 'none') return ''; return `<div style="padding:8px 0;border-top:1px solid var(--line)"><div class="cond" style="font-size:15px;color:var(--ink)">${esc(e.n)}</div><div class="${v.cls}" style="font-weight:600;font-size:13.5px;margin-top:1px">${esc(v.text)}</div></div>`; }).join('');
-    modal(`<h3>${esc(w.name)} done!</h3>${pbs ? `<div class="cond" style="color:var(--gold);font-size:14px;margin:-2px 0 10px">${pbs} new PB${pbs > 1 ? 's' : ''}</div>` : ''}${lines}<button class="btn" data-close>Nice</button>`);
-    vib([40, 60, 40]); R._woOpen = -1; render();
+    vib([40, 60, 40]); R._woOpen = null; R._wtShrink = true; back();
+    setTimeout(() => modal(`<h3>${esc(w.name)} done!</h3>${pbs ? `<div class="cond" style="color:var(--gold);font-size:14px;margin:-2px 0 10px">${pbs} new PB${pbs > 1 ? 's' : ''}</div>` : ''}${lines}<button class="btn" data-close>Nice</button>`), 280);
   };
   const ro = $('#reopen'); if (ro) ro.onclick = () => { s.finished = false; save(); R._woOpen = s.ex.findIndex(e => !e.done); render(); };
   $('#delS').onclick = async () => { if (await ask('Delete this session?', 'Everything logged in it is removed.', 'Delete', true)) { S.sessions = S.sessions.filter(x => x.id !== s.id); R._woKey = null; save(); back(); } };
 }
 
-/* ---------- Muay Thai: minutes and kcal (from the band unless typed) ---------- */
-function mtHtml() {
-  const date = R.params.date || R.date, m = day(date).mt || {}, past = [];
-  for (const d in S.days) { const x = S.days[d].mt; if (x && x.minutes && d >= P().startDate && d <= today()) past.push(x); }
-  const tot = past.reduce((a, x) => a + (+x.minutes || 0), 0);
-  return `<div class="screen">${topbar('Muay Thai', fmtDate(date))}
-    <div class="card"><label style="text-align:center">Minutes</label><input class="big" name="minutes" type="number" inputmode="numeric" value="${m.minutes || ''}" placeholder="60">
-      <div class="chips" style="justify-content:center;margin:12px 0 4px">${[30, 45, 60, 90].map(v => `<button class="pill" data-pre="${v}">${v}</button>`).join('')}</div>
-      <div class="field" style="margin:12px 0 0"><label>Calories burned</label><input name="kcal" type="number" inputmode="numeric" value="${m.kcal || ''}" placeholder="${m.src === 'band' ? 'waiting for the band' : 'from the band'}"></div>
-      ${m.src === 'band' ? `<div class="muted small" style="text-align:center;margin-top:8px">From the band${m.kcal && m.kcalSrc !== 'hand' ? ' · minutes and kcal' : ''} · change a value to override</div>` : ''}</div>
-    <div class="field"><label>Note</label><input name="note" value="${esc(m.note || '')}" placeholder="Pads, sparring, bag…"></div>
-    ${past.length ? `<div class="card" style="display:flex;justify-content:space-around;text-align:center"><div><div class="bang" style="font-size:28px">${past.length}</div><div class="muted small">sessions</div></div><div><div class="bang" style="font-size:28px">${tot}</div><div class="muted small">minutes</div></div><div><div class="bang" style="font-size:28px">${Math.round(tot / past.length)}</div><div class="muted small">average</div></div></div>` : ''}
-    <button class="btn" id="saveM">Save</button></div>`;
+/* ---------- Where you left off: screen, day, scroll (kept for the same calendar day) ---------- */
+const UI_LS = 'vikac.ui';
+function saveUI() {
+  try { if (!S.project || ['import', 'batch'].includes(R.screen)) { localStorage.removeItem(UI_LS); return; }
+    const clean = st => ({ screen: st.screen, params: JSON.parse(JSON.stringify(st.params || {})), date: st.date, y: st.y || 0 });
+    if (R.stack.some(x => ['import', 'batch'].includes(x.screen))) { localStorage.removeItem(UI_LS); return; }
+    localStorage.setItem(UI_LS, JSON.stringify({ day: today(), at: Date.now(), y: window.scrollY, r: { screen: R.screen, params: JSON.parse(JSON.stringify(R.params || {})), date: R.date, stack: R.stack.map(clean), jtab: R.jtab, jmonth: R.jmonth, ptab: R.ptab, _woOpen: R._woOpen, _woKey: R._woKey } }));
+  } catch (e) {}
 }
-function bindMT() {
-  const date = R.params.date || R.date;
-  app.querySelectorAll('[data-pre]').forEach(b => b.onclick = () => { app.querySelector('[name=minutes]').value = b.dataset.pre; });
-  $('#saveM').onclick = () => { const o = readForm(app); if (!o.minutes) return toast('Enter minutes'); const prev = day(date).mt || {};
-    const kcalHand = o.kcal != null && +o.kcal !== +(prev.kcal || 0) ? true : prev.kcalSrc === 'hand';
-    day(date).mt = { minutes: o.minutes, kcal: o.kcal || null, kcalSrc: kcalHand && o.kcal ? 'hand' : undefined, note: o.note, src: prev.src === 'band' && +prev.minutes === +o.minutes ? 'band' : undefined };
-    save(); toast('Logged. Sawadee!'); vib(30); back(); };
+function loadUI() {
+  try { const st = JSON.parse(localStorage.getItem(UI_LS) || 'null'); localStorage.removeItem(UI_LS);
+    if (!st || !S.project || st.day !== today() || Date.now() - st.at > 12 * 3600 * 1000) return null; return st; } catch (e) { return null; }
 }
 
 /* ============ Stage 2: logging screens ============ */
@@ -3823,12 +3842,155 @@ function importHtml() {
     ${form}
   </div><div class="botbar">${kind === 'scale' || kind === 'mfp' ? '<button class="btn sec" id="impCancel" style="flex:.7">Cancel</button><button class="btn" id="impSave">Save</button>' : '<button class="btn sec" id="impCancel">Cancel</button>'}</div>`;
 }
+
+
+/* ============ Stage 3: Journey (Path · Plan · Month) and the day sheet ============ */
+IC4.journey = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="5" r="2.2"/><path d="M8 18.5c5 0 3-5 6-6.5s4 0 4-5"/></svg>';
+IC4.flame = '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 22c4 0 7-2.8 7-7 0-4-3-6.5-4-10-2 2-2.5 4-2.5 5.5C11 9 10 7.5 10 5.5 7 8 5 11 5 15c0 4.2 3 7 7 7z" fill="#FFD84D"/></svg>';
+const JCOL = { push: 'var(--push)', pull: 'var(--pull)', legs: 'var(--legs)', mt: 'var(--mt)', rest: 'var(--rest)', summon: 'var(--gold)' };
+// What a project day is, in a few words: title, tag, the planned line and the ball it earns
+function dayPlan(d) {
+  const info = dayInfo(d); if (!info.items) return null;
+  const cyc = cycleOf(d), w = info.workoutKey ? PROGRAM.workouts[info.workoutKey] : null, cd = info.cycleDay;
+  const k = w ? w.group : info.isMT ? 'mt' : cd === 8 ? 'summon' : 'rest';
+  const title = w ? w.name : info.isMT ? 'Muay Thai' : cd === 8 ? 'Rest · summon' : 'Rest';
+  const sub = w ? w.ex.length + ' exercises · ~' + workoutMinutes(info.workoutKey) + ' min' : info.isMT ? 'minutes and kcal from the band' : cd === 8 ? '7 balls → the dragon' : info.items.filter(it => it.req).map(it => SHORT[it.id] || it.label).join(' · ');
+  return { info, cyc, w, k, title, sub, cd, tag: k === 'mt' ? 'MT' : k === 'summon' ? 'Dragon' : k.toUpperCase() };
+}
+// The ball (or dragon) a day shows: full when earned, hollow before; stars count the balls earned so far in that cycle
+// a day ahead shows the ball it earns if every day before it is earned too
+function dayStars(d) { const cyc = cycleOf(d); if (!cyc) return 1; const td = today(); let n = 0; for (const x of cyc.days) { if (x.cd > 7 || x.date === d) break; if (x.comp === 'done' || (d > td && x.date >= td)) n++; } return Math.min(7, n + 1); }
+function dayBallArt(d, size) {
+  const pl = dayPlan(d); if (!pl) return ''; const comp = dayCompletion(d), cyc = pl.cyc;
+  if (pl.cd === 8) { const all7 = cyc.days.filter(y => y.cd <= 7 && y.comp === 'done').length === 7; return dragonBadgeSvg({ state: all7 && comp === 'done' ? 'done' : all7 ? 'ready' : 'locked', size }); }
+  return ballSvg({ stars: dayStars(d), state: comp === 'done' ? 'full' : 'hollow', size });
+}
+function journeyStats() {
+  const td = today(); let balls = 0, dragons = 0;
+  for (const c of allCycles()) { const seven = c.days.filter(x => x.cd <= 7 && x.comp === 'done' && x.date <= td).length; balls += seven; const d8 = c.days.find(x => x.cd === 8); if (seven === 7 && d8 && d8.comp === 'done') dragons++; }
+  let chain = 0; let d = dayCompletion(td) === 'done' ? td : addDays(td, -1); while (d >= P().startDate && dayCompletion(d) === 'done') { chain++; d = addDays(d, -1); }
+  return { balls, dragons, chain };
+}
+function journeyHtml() {
+  const p = P(), td = today(), info = dayInfo(td), st = journeyStats(), tab = R.jtab || 'path';
+  const idx = info.items ? info.idx : info.phase === 'pre' ? 0 : D() + 1;
+  return `<div class="screen jo"><div class="jtop"><div class="jt"><div><div class="h1">Journey</div><div class="jsub">${info.phase === 'pre' ? 'Day 1 is ' + shortD(p.startDate) : 'Day ' + Math.min(idx, D()) + ' of ' + D()} · ${st.balls} ball${st.balls === 1 ? '' : 's'} · ${st.dragons} dragon${st.dragons === 1 ? '' : 's'}</div></div>${st.chain > 1 ? `<span class="chain">${IC4.flame}${st.chain}-day chain</span>` : ''}</div>
+    <div class="seg" id="jseg">${['path', 'plan', 'month'].map(t => `<button data-jt="${t}" class="${t === tab ? 'on' : ''}">${t}</button>`).join('')}</div></div>
+    <div id="jbody">${tab === 'plan' ? planHtml() : tab === 'month' ? monthHtml() : pathHtml()}</div></div>${nav('journey')}`;
+}
+function bindJourney() {
+  app.querySelectorAll('[data-jt]').forEach(b => b.onclick = () => { if (R.jtab === b.dataset.jt) return; const order = ['path', 'plan', 'month'], dir = order.indexOf(b.dataset.jt) > order.indexOf(R.jtab || 'path') ? 'right' : 'left'; R.jtab = b.dataset.jt; window.scrollTo(0, 0); render(); animate($('#jbody'), dir); if (R.jtab === 'path') scrollPathToToday(false, true); });
+  bindSwipe($('#jbody'), () => { const o = ['path', 'plan', 'month'], i = o.indexOf(R.jtab || 'path'); if (R.jtab === 'month') return monthShift(1); if (i < 2) { R.jtab = o[i + 1]; window.scrollTo(0, 0); render(); animate($('#jbody'), 'right'); } }, () => { const o = ['path', 'plan', 'month'], i = o.indexOf(R.jtab || 'path'); if (R.jtab === 'month' && monthShift(-1)) return; if (i > 0) { R.jtab = o[i - 1]; window.scrollTo(0, 0); render(); animate($('#jbody'), 'left'); if (R.jtab === 'path') scrollPathToToday(false, true); } });
+  app.querySelectorAll('[data-dsheet]').forEach(el => el.onclick = () => daySheet(el.dataset.dsheet));
+  app.querySelectorAll('[data-jm]').forEach(b => b.onclick = e => { e.stopPropagation(); monthShift(+b.dataset.jm); });
+  if ((R.jtab || 'path') === 'path') scrollPathToToday(true);
+}
+// the path opens with today in view (unless you are coming back to a spot you scrolled to)
+function scrollPathToToday(instant, force) { setTimeout(() => { if (!force && window.scrollY > 0) return; const n = app.querySelector('.pnode.today') || app.querySelector('.pnode.next'); if (!n) return; const top = n.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.42; window.scrollTo({ top: Math.max(0, top), behavior: instant ? 'auto' : 'smooth' }); }, 30); }
+
+/* ---------- Path: every day of the project on one winding path ---------- */
+function pathHtml() {
+  const p = P(), td = today(), W = 384, GAP = 84, BAN = 56; let y = 34, h = '', pts = [], ty = null, firstFut = false; const lv = (powerLevel(td) || {}).stage, me = 'hero-' + (typeof lv === 'number' ? Math.max(0, Math.min(4, lv)) : 0) + '.png';
+  for (let t = 0; t <= D(); t++) {
+    const d = addDays(p.startDate, t), pl = dayPlan(d); if (!pl) continue;
+    if (pl.cd === 1) { const c = pl.cyc, got = c.days.filter(x => x.cd <= 7 && x.comp === 'done' && x.date <= td).length; h += `<div class="pban" style="top:${y - 6}px"><span>Cycle ${c.num} · ${got} / 7</span></div>`; y += BAN; }
+    const x = W / 2 + 104 * Math.sin(t * 0.92), comp = dayCompletion(d), past = d < td, isT = d === td;
+    pts.push([x, y]); if (isT || (ty == null && d > td)) ty = y;
+    const cls = isT ? 'today' : d > td ? 'fut' : comp === 'done' ? 'got' : 'miss', big = pl.cd === 8 ? 62 : isT ? 58 : 52;
+    const left = x > W / 2, lab = `<div class="plab ${d > td ? 'f' : ''}" style="top:${y}px;${left ? `right:${((W - x + 34 + (isT ? 70 : 0)) / W * 100).toFixed(2)}%;text-align:right` : `left:${((x + 34 + (isT ? 70 : 0)) / W * 100).toFixed(2)}%`}">Day ${t + 1} · ${esc(pl.title)}<small>${isT ? 'Today · ' : ''}${shortD(d)}${past && comp !== 'done' && pl.cd !== 8 ? ' · missed' : ''}</small></div>`;
+    const nx = d > td && !firstFut; if (nx) firstFut = true;
+    h += `<button class="pnode ${cls} ${nx ? 'next' : ''}" data-dsheet="${d}" style="left:${(x / W * 100).toFixed(2)}%;top:${y}px;width:${big}px;height:${big}px;margin:${-big / 2}px 0 0 ${-big / 2}px">${dayBallArt(d, big)}</button>${lab}`;
+    if (isT && ART.hero) h += `<img class="pme" src="${me}" alt="" style="${left ? `left:${((x - 34 - 64) / W * 100).toFixed(2)}%` : `left:${((x + 34) / W * 100).toFixed(2)}%`};top:${y - 62}px" onerror="this.remove()">`;
+    y += GAP;
+  }
+  const H = y - GAP + 50;
+  let path = ''; pts.forEach(([x, yy], i) => { if (!i) path += `M${x.toFixed(1)} ${yy}`; else { const [px, py] = pts[i - 1]; path += ` C${px.toFixed(1)} ${(py + yy) / 2} ${x.toFixed(1)} ${(py + yy) / 2} ${x.toFixed(1)} ${yy}`; } });
+  const cut = ty == null ? H : ty;
+  return `<div class="path" style="height:${H}px"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" width="100%" height="${H}" style="position:absolute;left:0;top:0"><defs><clipPath id="pp"><rect x="0" y="0" width="${W}" height="${cut}"/></clipPath><clipPath id="pf"><rect x="0" y="${cut}" width="${W}" height="${H}"/></clipPath></defs>
+    <path d="${path}" fill="none" stroke="#FE7F0C" stroke-width="6" stroke-linecap="round" clip-path="url(#pp)" style="filter:drop-shadow(0 0 7px rgba(254,127,12,.75))" vector-effect="non-scaling-stroke"/>
+    <path d="${path}" fill="none" stroke="#4a4c57" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round" clip-path="url(#pf)" vector-effect="non-scaling-stroke"/></svg>${h}</div>`;
+}
+
+/* ---------- Plan: this cycle and the next, day by day ---------- */
+function planRows(c) {
+  const td = today();
+  return c.days.map(x => { const pl = dayPlan(x.date), comp = x.comp, isT = x.date === td, past = x.date < td;
+    const st = past || isT ? (comp === 'done' ? `<span class="ok4">${IC4.check}</span>` : isT ? '<span class="cond orc" style="font-size:12px">TODAY</span>' : '<span class="cond mut" style="font-size:11.5px">MISSED</span>') : '';
+    return `<button class="pday ${isT ? 'today' : ''} ${past ? 'past' : ''}" data-dsheet="${x.date}"><span class="dt"><b>${parse(x.date).getDate()}</b><span>${WD[parse(x.date).getDay()].slice(0, 3)}</span></span><span class="pb4">${dayBallArt(x.date, 34)}</span><span class="tt"><b>${esc(pl.title)}<span class="wtag" style="background:${JCOL[pl.k]}">${pl.tag}</span></b><span>${esc(pl.sub)}</span></span>${st}</button>`; }).join('');
+}
+function planHtml() {
+  const td = today(), p = P(), info = dayInfo(td), cur = cycleOf(info.items ? td : info.phase === 'pre' ? p.startDate : p.endDate); if (!cur) return '';
+  const nxStart = addDays(cur.end, 1), nx = nxStart <= p.endDate ? cycleOf(nxStart) : null;
+  const lifts = c => c.days.filter(x => dayInfo(x.date).workoutKey); const mins = c => lifts(c).reduce((a, x) => a + workoutMinutes(dayInfo(x.date).workoutKey), 0);
+  const hm = m => Math.floor(m / 60) + ' h ' + pad(m % 60) + ' min';
+  return `<div class="wkh"><span>This cycle · ${cur.num}</span><span>${lifts(cur).length} lifts · ~${hm(mins(cur))}</span></div>${planRows(cur)}
+    ${nx ? `<div class="wkh" style="margin-top:16px"><span>Next cycle · ${nx.num}</span><span>${shortD(nx.start)} – ${shortD(nx.end)}</span></div>${planRows(nx)}` : '<div class="muted center" style="margin:18px 0">The project ends with this cycle.</div>'}`;
+}
+
+/* ---------- Month: the calendar ---------- */
+function monthShift(n) { const p = P(), [Y, M] = (R.jmonth || today().slice(0, 7)).split('-').map(Number), dt = new Date(Y, M - 1 + n, 1), m = dt.getFullYear() + '-' + pad(dt.getMonth() + 1); if (m < p.startDate.slice(0, 7) || m > p.endDate.slice(0, 7)) return false; R.jmonth = m; const jb = $('#jbody'); jb.innerHTML = monthHtml(); animate(jb, n > 0 ? 'right' : 'left'); bindJourney(); return true; }
+function monthHtml() {
+  const p = P(), td = today(); if (!R.jmonth) R.jmonth = (td >= p.startDate ? (td > p.endDate ? p.endDate : td) : p.startDate).slice(0, 7);
+  const [Y, M] = R.jmonth.split('-').map(Number), first = new Date(Y, M - 1, 1), dim = new Date(Y, M, 0).getDate(), startCol = (first.getDay() + 6) % 7, season = seasonOf(M);
+  let done = 0, elapsed = 0; for (let i = 0; i <= D(); i++) { const d = addDays(p.startDate, i); if (d > td) break; elapsed++; if (dayCompletion(d) === 'done') done++; }
+  let cells = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map(x => `<div class="wd4">${x}</div>`).join('');
+  for (let i = 0; i < startCol; i++) cells += '<div></div>';
+  for (let d = 1; d <= dim; d++) { const ds = Y + '-' + pad(M) + '-' + pad(d), pl = dayPlan(ds);
+    if (!pl) { cells += `<div class="mc out"><b>${d}</b></div>`; continue; }
+    const comp = dayCompletion(ds), got = comp === 'done', past = ds < td;
+    cells += `<button class="mc ${ds === td ? 'today' : ''} ${past && !got ? 'miss' : ''}" data-dsheet="${ds}"><b>${d}</b>${got ? `<span class="mb4">${dayBallArt(ds, 22)}</span>` : ''}<i style="background:${JCOL[pl.k]};opacity:${past || ds === td ? 1 : .5}"></i></button>`; }
+  const s = ART['season-' + season] ? `<img class="sea" src="season-${season}.png" alt="">` : '';
+  return `<div class="mhead">${s ? s.replace('class="sea"', 'class="sea l"') : ''}${s ? s.replace('class="sea"', 'class="sea r"') : ''}${ART['ground-' + season] ? `<div class="gr" style="background-image:url(ground-${season}.png)"></div>` : ''}
+      <button class="mnav l" data-jm="-1" ${R.jmonth <= p.startDate.slice(0, 7) ? 'disabled' : ''} aria-label="Previous month">‹</button><button class="mnav r" data-jm="1" ${R.jmonth >= p.endDate.slice(0, 7) ? 'disabled' : ''} aria-label="Next month">›</button>
+      <div class="mn"><span class="h1">${MONTHS[M - 1]}</span><div class="cond mut">${Y}</div></div></div>
+    <div class="mgrid">${cells}</div>
+    <div class="leg4">${['push', 'pull', 'legs', 'mt', 'rest'].map(k => `<span><i style="background:${JCOL[k]}"></i>${{ push: 'Push', pull: 'Pull', legs: 'Legs', mt: 'Muay Thai', rest: 'Rest' }[k]}</span>`).join('')}</div>
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span class="mut" style="font-size:14px">${done} perfect of ${elapsed} day${elapsed === 1 ? '' : 's'}</span><b class="cond" style="font-size:16px">${Math.round(elapsed / (D() + 1) * 100)} % done · ${D() + 1 - elapsed} left</b></div>`;
+}
+
+/* ---------- The day sheet: any day, ahead or behind ---------- */
+function daySheet(d) {
+  const pl = dayPlan(d); if (!pl) return; const td = today(), info = pl.info, future = d > td, comp = dayCompletion(d), cyc = pl.cyc;
+  const when = d === td ? 'today' : d === addDays(td, 1) ? 'tomorrow' : d === addDays(td, -1) ? 'yesterday' : '';
+  const ballTxt = pl.cd === 8 ? (cyc.summoned ? 'dragon summoned' : 'summon day') : comp === 'done' ? `<span class="goldc">${dayStars(d)}-star ball earned</span>` : future ? dayStars(d) + '-star ball' : d === td ? 'earns the ' + dayStars(d) + '-star ball' : 'no ball';
+  const head = `<div class="hdl"></div><div class="dsh"><span class="dsb">${dayBallArt(d, 54)}</span><div><div class="h1">${shortD(d)} · ${esc(pl.title)}</div><div class="mut" style="font-size:13.5px;margin-top:3px">Day ${info.idx} · ${ballTxt}${pl.w ? ' · ~' + workoutMinutes(info.workoutKey) + ' min' : ''}${when ? ' · ' + when : ''}</div></div></div>`;
+  let body = '', btn = '';
+  if (future && pl.w) {
+    const tg = nutritionTarget(d), mob = info.items.some(it => it.id === 'mobility');
+    body = `<div class="tchips"><span>~${fmtN(tg.kcal)} kcal</span><span>${tg.protein} g protein</span><span>Weigh-in</span>${mob ? '<span>Kick mobility</span>' : ''}</div><div class="xl">${pl.w.ex.map(e => { const last = lastFor(e.n, d), pb = exPB(e.n, e.type, null);
+      return `<div class="xr"><span class="n">${esc(e.n)}<small>${esc(e.s)}${last ? ' · last ' + esc(last.label.split(', ')[0]) : ''}</small></span>${pb ? `<span class="pbtag">${TROPHY}PB</span><span class="pv">${fmtPB(e.n, e.type, pb.v)}</span>` : ''}</div>`; }).join('')}</div>`;
+    btn = `<button class="btn" data-ow>Open the workout</button>`;
+  } else if (future) {
+    const req = info.items.filter(it => it.req), bon = info.items.filter(it => !it.req), row = (it, r) => `<div class="xr"><span class="dot4 ${r ? 'req' : ''}">${r ? dayBallArt(d, 22) : ''}</span><span class="n">${esc(it.label)}<small>${esc(itemSub(d, it))}</small></span></div>`;
+    body = `<div class="tchips"><span>~${fmtN(nutritionTarget(d).kcal)} kcal</span><span>${P().protein} g protein</span></div><div class="secl" style="margin:14px 2px 6px"><span>Earns the ball</span><span></span></div><div class="xl" style="margin-top:0">${req.map(it => row(it, true)).join('')}</div>${bon.length ? `<div class="secl" style="margin:14px 2px 6px"><span>Bonus</span><span></span></div><div class="xl" style="margin-top:0">${bon.map(it => row(it, false)).join('')}</div>` : ''}`;
+    btn = `<button class="btn sec" data-od>Open the day</button>`;
+  } else {
+    const h = bandDay(d), note = (S.days[d] || {}).note;
+    body = `<div class="xl">${info.items.map(it => { const dn = isDone(d, it.id); let sub = itemSub(d, it);
+        if (it.id === 'workout') { const s = S.sessions.find(x => x.date === d); if (s) { const pbs = sessionPBs(s), lb = liftBand(d); sub = s.ex.filter(e => e.done).length + ' / ' + s.ex.length + ' exercises' + (s.finished ? '' : ' · not finished') + (lb && lb.kcal ? ' · ' + lb.kcal + ' kcal' : ''); return `<div class="xr"><span class="ok5 ${dn ? 'on' : ''} ${it.req ? '' : 'b'}">${dn ? IC4.check : ''}</span><span class="n">${esc(it.label)}<small>${sub}</small></span>${pbs ? `<span class="pbtag">${TROPHY}${pbs} PB</span>` : ''}</div>`; } }
+        if (it.id === 'mt') { const m = (S.days[d] || {}).mt; if (m && m.minutes) sub = m.minutes + ' min' + (m.kcal ? ' · ' + m.kcal + ' kcal' : '') + (m.note ? ' · ' + m.note : ''); }
+        return `<div class="xr"><span class="ok5 ${dn ? 'on' : ''} ${it.req ? '' : 'b'}">${dn ? IC4.check : ''}</span><span class="n">${esc(it.label)}<small>${esc(sub)}</small></span></div>`; }).join('')}
+      ${h && (h.steps || h.active) ? `<div class="xr"><span class="ok5 w">${IC4.watch}</span><span class="n">Band<small>${h.steps != null ? fmtN(h.steps) + ' steps' : ''}${h.active != null ? ' · ' + h.active + ' active kcal' : ''}</small></span></div>` : ''}</div>
+      ${note ? `<div class="q" style="margin:10px 4px 0">“${esc(note)}”</div>` : ''}`;
+    btn = `<button class="btn ${d === td ? '' : 'sec'}" data-od>${d === td ? 'Open today' : 'Open the day'}</button>`;
+  }
+  modal(head + body + `<div style="margin-top:12px">${btn}</div>`, b => {
+    b.classList.add('sheetbg', 'daysh');
+    const ow = b.querySelector('[data-ow]'); if (ow) ow.onclick = () => { b.close(); go('workout', { date: d, key: info.workoutKey }); };
+    const od = b.querySelector('[data-od]'); if (od) od.onclick = () => { b.close(); R.date = d; go('today', {}); };
+    // drag the sheet down to close it
+    const m = b.querySelector('.modal'), hd = b.querySelector('.hdl'); let y0 = null, dy = 0;
+    const st = e => { y0 = (e.touches ? e.touches[0] : e).clientY; dy = 0; m.style.transition = 'none'; }, mv = e => { if (y0 == null) return; dy = Math.max(0, (e.touches ? e.touches[0] : e).clientY - y0); m.style.transform = `translateY(${dy}px)`; }, en = () => { if (y0 == null) return; y0 = null; m.style.transition = ''; if (dy > 80) b.close(); else m.style.transform = ''; };
+    [hd, b.querySelector('.dsh')].forEach(el => { if (!el) return; el.addEventListener('touchstart', st, { passive: true }); el.addEventListener('touchmove', mv, { passive: true }); el.addEventListener('touchend', en); });
+  });
+}
 /* ---------- Boot ---------- */
 (async function boot() {
   await load();
   if (S.project && seedStartReading()) save();
   probeArt(() => { _artGeom = null; render(); }); setTimeout(() => { if (ART.heroBeam) { _artGeom = null; artGeom(); } }, 50);   // custom PNG art appears as soon as the files are on the server
-  const start = () => { R.date = today(); render(); };
+  // Coming back to the app (also after Android closed it in the background): the same screen, day and scroll position
+  const start = () => { const st = loadUI(); if (st) { Object.assign(R, st.r); render(); requestAnimationFrame(() => window.scrollTo(0, st.y || 0)); } else { R.date = today(); render(); } };
   // An image shared from the Xiaomi app arrives through the service worker (see sw.js) as ?share=1
   let shared = [];
   if (/[?&]share=1/.test(location.search)) { try { history.replaceState(null, '', './'); const c = await caches.open('vikac-share'); const keys = (await c.keys()).sort((a, b) => a.url < b.url ? -1 : 1); for (const k of keys) { const r = await c.match(k); if (r) shared.push(await r.blob()); await c.delete(k); } } catch (e) {} }
@@ -3838,7 +4000,9 @@ function importHtml() {
   const bandTick = () => { if (!bandCfg() || document.hidden) return; bandFetch().then(r => { if (r.ok && r.changed && (R.screen === 'dash' || R.screen === 'profile')) render(); }); };
   setTimeout(bandTick, 1500); setInterval(bandTick, 30 * 60 * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden && bandCfg() && (!S.health || !S.health.fetched || Date.now() - new Date(S.health.fetched) > 10 * 60 * 1000)) bandTick(); });
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && R.screen === 'today' && R.date !== today() && R.stack.length === 0) { R.date = today(); render(); } });
+  // only a new calendar day moves Today along (you were on today's page when the day changed); otherwise you stay put
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { R._hiddenDay = today(); saveUI(); return; } if (R._hiddenDay && R._hiddenDay !== today() && R.screen === 'today' && R.date === R._hiddenDay && R.stack.length === 0) { R.date = today(); render(); } });
+  window.addEventListener('pagehide', saveUI);
   armBack();
   if (ghOn() && GH.pending) setTimeout(() => syncNow({ quiet: true }), 2500);
   if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('sw.js'); } catch (e) {} }
