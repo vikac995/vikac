@@ -468,7 +468,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.8.2';
+const APP_VERSION = '2.9.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -547,6 +547,16 @@ const EQUIP = {
   'DB jump squats': 'db', 'DB seated calf raises': 'db bench', 'Creeping lunges': 'bw', 'Deadlift': 'bb', 'Barbell shrugs': 'bb', 'Weighted chins': 'bw', 'Lat pulldowns': 'cable',
   'Face pulls': 'cable', 'Standing DB curls': 'db', 'Pullups': 'bw', 'Barbell curls': 'bb', 'Weighted pullups': 'bw', 'Seated cable rows': 'cable', 'Straight arm pushdowns': 'cable',
   'Cross body hammer curls': 'db',
+};
+// Exercise → video number (the [123] in the file name in the R2 bucket); a few share one video
+const VIDEO_ID = {
+  'DB bench press': '301027132', 'Incline DB bench press': '775063650', 'DB overhead press': '301028259', 'Close grip DB press': '306723507', 'Cable crossovers': '375843914',
+  'DB overhead extensions': '493908553', 'DB side lateral raises': '311822256', 'Weighted pushups': '311825980', 'Triceps pushdown': '243793174', 'DB hip huggers': '375849363',
+  'Low to high crossovers': '493907129', 'Dips': '301060256', 'BB squats': '301028669', 'Alternating reverse DB lunges': '311820789', 'DB alternating step ups': '375845587',
+  'DB stiff leg deadlift': '493907753', 'DB standing calf raises': '491343895', 'DB goblet squats': '638644943', 'BB RDL': '311826795', 'Bag swings': '301035459',
+  'DB jump squats': '301030984', 'DB seated calf raises': '491342484', 'Creeping lunges': '483414930', 'Deadlift': '301033680', 'Barbell shrugs': '311826955',
+  'Weighted chins': '301060122', 'Lat pulldowns': '375748522', 'Face pulls': '311821078', 'Standing DB curls': '861699540', 'Pullups': '311826560', 'Barbell curls': '301027708',
+  'Weighted pullups': '311826560', 'Seated cable rows': '486567266', 'Straight arm pushdowns': '375748807', 'Cross body hammer curls': '491344769',
 };
 const STRETCH = [
   { t: 'Sjedenje na koljenima', d: 30 },
@@ -2481,20 +2491,23 @@ function getSession(date, key) {
 function lastFor(name, date) { const p = prevSessionFor(name, date, null); if (!p) return null; const type = exType(name); return { date: p.date, e: p.e, type, label: p.e.sets ? p.e.sets.filter(s => s.kg && s.reps).map(s => s.kg + '×' + s.reps).join(', ') : (p.e.reps + ' reps' + (p.e.load ? ' +' + p.e.load + ' kg' : '')), note: p.e.note }; }
 let restState = { left: 0, dur: 180, timer: null, manual: false };
 function fmtT(s) { return Math.floor(s / 60) + ':' + pad(s % 60); }
-// Video for an exercise: a file in the repository named video-<exercise>.mp4 (e.g. video-db-bench-press.mp4) shows
-// a ▶ Video button that plays it inline. Checked once per session per exercise.
-const VID_SEEN = {};
-function videoSlug(name) { return 'video-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '.mp4'; }
-function videoExists(name) {
-  const f = videoSlug(name); if (VID_SEEN[f] != null) return Promise.resolve(VID_SEEN[f]);
-  return fetch(f, { method: 'HEAD', cache: 'no-cache' }).then(r => (VID_SEEN[f] = r.ok)).catch(() => (VID_SEEN[f] = false));
+// Exercise videos live in the private R2 bucket behind the band inbox (same address and key); the list of available
+// video numbers is fetched once per session
+let VID_LIST = null;
+function videoList() {
+  const c = bandCfg(); if (!c) return Promise.resolve({});
+  if (VID_LIST) return VID_LIST;
+  VID_LIST = fetch(c.url.replace(/\/+$/, '') + '/vlist', { headers: { 'X-Key': c.key } }).then(r => r.ok ? r.json() : { ids: [] }).then(j => { const m = {}; (j.ids || []).forEach(id => m[id] = true); return m; }).catch(() => { VID_LIST = null; return {}; });
+  return VID_LIST;
 }
+function videoSrc(name) { const c = bandCfg(), id = VIDEO_ID[name]; return c && id ? c.url.replace(/\/+$/, '') + '/v/' + id + '?key=' + encodeURIComponent(c.key) : null; }
+function videoExists(name) { const id = VIDEO_ID[name]; if (!id) return Promise.resolve(false); return videoList().then(m => !!m[id]); }
 function bindVideo(box, name) {
   const btn = box.querySelector('[data-vid]'), vb = box.querySelector('.vbox'); if (!btn) return;
   videoExists(name).then(ok => { if (ok) btn.hidden = false; });
   btn.onclick = () => {
     if (!vb.hidden) { const v = vb.querySelector('video'); if (v) v.pause(); vb.hidden = true; btn.textContent = '▶ Video'; return; }
-    if (!vb.firstChild) vb.innerHTML = `<video src="${videoSlug(name)}" controls playsinline preload="metadata"></video>`;
+    if (!vb.firstChild) vb.innerHTML = `<video src="${videoSrc(name)}" controls playsinline preload="metadata"></video>`;
     vb.hidden = false; btn.textContent = '▼ Hide video'; const v = vb.querySelector('video'); if (v) v.play().catch(() => {});
   };
 }
