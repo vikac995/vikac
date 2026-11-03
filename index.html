@@ -42,6 +42,10 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 input.big{font-family:'Bangers',Impact,sans-serif;font-size:34px;letter-spacing:.04em;padding:6px 14px;text-align:center}
 label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:13px;color:var(--ink2);margin:0 0 4px}
 .field{margin-bottom:12px}
+.bandtoday .btiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.bandtoday .bt{background:var(--paper2);border:1.5px solid var(--ink);border-radius:9px;padding:7px 4px;text-align:center}
+.bandtoday .bt b{display:block;font-family:'Bangers',Impact,sans-serif;font-size:21px;letter-spacing:.03em;line-height:1.1}
+.bandtoday .bt span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .ex .vid[hidden]{display:none}.ex .vid{margin-top:6px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--or2);background:none;border:1.5px dashed var(--or2);border-radius:7px;padding:3px 9px}
 .ex .vid.has{background:var(--ink);color:#fff;border:1.5px solid var(--ink)}
 .ex .vbox{margin:10px 0 4px}.ex .vbox video{width:100%;max-height:60vh;border-radius:10px;border:2px solid var(--ink);background:#000;display:block}
@@ -463,7 +467,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.7.1';
+const APP_VERSION = '2.8.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -584,6 +588,32 @@ function idbGet() {
   });
 }
 function idbPut(v) { try { if (idb) idb.transaction('kv', 'readwrite').objectStore('kv').put(v, 'state'); } catch (e) {} }
+/* ---------- Band sync: Xiaomi band → Mi Fitness → Health Connect → HC Webhook → Cloudflare inbox → here ---------- */
+const BAND_LS = 'vikac.band';
+function bandCfg() { try { return JSON.parse(localStorage.getItem(BAND_LS) || 'null'); } catch (e) { return null; } }
+function bandSetCfg(c) { try { if (c) localStorage.setItem(BAND_LS, JSON.stringify(c)); else localStorage.removeItem(BAND_LS); } catch (e) {} }
+function bandDay(date) { return S.health && S.health.days && S.health.days[date] || null; }
+// Extra kcal burned for a day: typed by hand > synced from the band (active calories) > project default
+function bandKcal(date) {
+  const p = P(), n = (S.days[date] || {}).nutrition || {};
+  if (n.band != null && n.band !== '') return { v: +n.band, src: 'hand' };
+  const h = bandDay(date); if (h && h.active) return { v: h.active, src: 'band' };
+  return { v: p ? p.bandDefault : 300, src: 'default' };
+}
+async function bandFetch() {
+  const c = bandCfg(); if (!c || !c.url) return { ok: false, error: 'not set up' };
+  try {
+    const r = await fetch(c.url.replace(/\/+$/, '') + '/out?days=60', { headers: { 'X-Key': c.key }, cache: 'no-store' });
+    if (r.status === 401) return { ok: false, error: 'Wrong key' };
+    if (!r.ok) return { ok: false, error: 'Inbox answered ' + r.status };
+    const j = await r.json(), before = JSON.stringify(S.health && S.health.days || {});
+    S.health = S.health || { days: {} }; Object.assign(S.health.days, j.days || {}); S.health.last = j.last || S.health.last; S.health.fetched = new Date().toISOString();
+    // a boxing / martial-arts / kickboxing session of 20+ min recorded by the band ticks that day's Muay Thai
+    for (const d in j.days || {}) { if (!P() || d < P().startDate || d > P().endDate) continue; const info = dayInfo(d); if (!info.items || !info.items.some(it => it.id === 'mt')) continue;
+      if ((j.days[d].workouts || []).some(w => /box|martial|kick|muay|thai/i.test(w.type) && w.min >= 20) && !day(d).done.mt) day(d).done.mt = true; }
+    const changed = JSON.stringify(S.health.days) !== before; save(); return { ok: true, changed, last: S.health.last };
+  } catch (e) { return { ok: false, error: 'Inbox not reachable' }; }
+}
 // Exercise videos: files the user picks on the phone, kept in their own IndexedDB store (never uploaded anywhere)
 let vdb = null;
 function vdbOpen() { return vdb ? Promise.resolve(vdb) : new Promise(res => { try { const r = indexedDB.open('vikac-video', 1); r.onupgradeneeded = () => r.result.createObjectStore('v'); r.onsuccess = () => { vdb = r.result; res(vdb); }; r.onerror = () => res(null); } catch (e) { res(null); } }); }
@@ -689,7 +719,7 @@ function isDone(date, id) {
 /* ---------- Nutrition ---------- */
 function nutritionCalc(date) {
   const d = S.days[date], p = P(); const n = d && d.nutrition; if (!n || !n.kcal) return null;
-  const band = n.band == null || n.band === '' ? p.bandDefault : +n.band;
+  const bk = bandKcal(date), band = bk.v;
   const target = p.bmr + band - p.deficit;
   const balance = +n.kcal - (p.bmr + band);
   const def = -balance; // positive = deficit
@@ -702,7 +732,7 @@ function nutritionCalc(date) {
   else { pts = 0; verdict = def > 0 ? 'Only −' + def + '. The plan says −' + p.deficit + '.' : 'Surplus of +' + (-def) + '. Happens! Fresh page tomorrow.'; cls = 'bad'; }
   const prot = +n.protein || 0;
   const ppts = prot >= p.protein ? 1 : prot >= p.protein - 20 ? .5 : 0;
-  return { band, target, balance, def, pts, verdict, cls, prot, ppts, bandAssumed: n.band == null || n.band === '' };
+  return { band, target, balance, def, pts, verdict, cls, prot, ppts, bandAssumed: bk.src === 'default', bandSrc: bk.src };
 }
 
 /* ---------- Dragon balls ---------- */
@@ -1029,7 +1059,7 @@ function streak(date) {
 // every set of an exercise filled in (or reps for a 5-min MAX)
 function exComplete(e, type) { if (type === 'max') return +e.reps > 0; return e.sets.length > 0 && e.sets.every(st => +st.kg > 0 && +st.reps > 0); }
 // what to eat today, before anything is logged (uses the band value if entered, else the default)
-function nutritionTarget(date) { const p = P(), n = (S.days[date] || {}).nutrition || {}; const band = n.band == null || n.band === '' ? p.bandDefault : +n.band; return { kcal: p.bmr + band - p.deficit, protein: p.protein, band }; }
+function nutritionTarget(date) { const p = P(); const band = bandKcal(date).v; return { kcal: p.bmr + band - p.deficit, protein: p.protein, band }; }
 // Daily macros for the cut: protein as set (≈2.2 g/kg), fat 0.65 g/kg of body weight (Helms 2014: 20–30 % of kcal,
 // never below 0.5 g/kg), carbs take whatever energy is left — they rise on days with more band kcal
 function macroTargets(date) {
@@ -2585,7 +2615,7 @@ function nutritionHtml() {
     <div class="card">
       <div class="row"><div class="field"><label>Calories eaten</label><input name="kcal" type="number" inputmode="numeric" value="${n.kcal || ''}"></div><div class="field"><label>Protein (g)</label><input name="protein" type="number" inputmode="numeric" value="${n.protein || ''}"></div></div>
       <div class="row"><div class="field"><label>Carbs (g)</label><input name="carbs" type="number" inputmode="numeric" value="${n.carbs == null ? '' : n.carbs}"></div><div class="field"><label>Fat (g)</label><input name="fat" type="number" inputmode="numeric" value="${n.fat == null ? '' : n.fat}"></div></div>
-      <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" value="${n.band == null ? '' : n.band}" placeholder="${p.bandDefault}"></div>
+      <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" value="${n.band == null ? '' : n.band}" placeholder="${bandKcal(date).src === 'band' ? bandDay(date).active : p.bandDefault}">${bandKcal(date).src === 'band' && (n.band == null || n.band === '') ? '<div class="muted small" style="margin-top:4px">From the band · leave empty to keep it synced</div>' : ''}</div>
       <div id="calc">${nutritionCalcHtml(nc, p, date)}</div>
     </div>
     <button class="btn sec" data-fill>Fill from export</button><input type="file" accept="image/*" id="fillFile" hidden>
@@ -2681,7 +2711,7 @@ function dashHtml() {
     const sigs = sg.list.length ? `<div class="sigs">${sg.list.map(x => `<span class="sig ${x.state}"><b>${x.arrow}</b>${esc(x.label)} <span class="v">${esc(x.value)}</span>${x.delta ? `<small>${esc(x.delta)}</small>` : ''}</span>`).join('')}</div>` : '<div class="muted small" style="margin-top:6px">Log a weigh-in or a workout and the movers show up here.</div>';
     const row = (k, lab) => `<div class="mrow"><span class="l">${lab}</span><div class="bar"><i style="width:${rc[k].pct || 0}%"></i></div><span class="n"><b class="grade">${rc[k].grade}</b><small> ${rc[k].done}/${rc[k].of}</small></span></div>`;
     const lastW = lastReading('weight', date), lastSess = S.sessions.filter(x => x.finished).sort((a, b) => a.date < b.date ? 1 : -1)[0];
-    body = scouterHtml(date, sg) + `
+    body = scouterHtml(date, sg) + bandTodayHtml(date) + `
       <div class="card"><div class="hd"><span class="cond" style="font-size:16px">Report card</span><span class="cond" style="font-size:16px">Overall <b class="grade" style="font-size:24px;color:var(--or2)">${rc.overall.grade}</b></span></div>
         ${row('training', 'Training')}${row('nutrition', 'Nutrition')}${row('stretch', 'Stretch')}
         <div class="muted small" style="margin-top:6px">${rc.days.done} of ${rc.days.of} days perfect so far.</div></div>
@@ -2794,6 +2824,7 @@ function profileHtml() {
     <div class="card"><div class="eyebrow">Current project</div><div class="hd" style="margin-bottom:4px"><h3 style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</h3><span class="chip ${chip[0]}">${chip[1]}</span></div>
       ${R.editProject ? form : summary}</div>
     ${past}
+    ${bandCardHtml()}
     ${cloudCardHtml()}
     <div class="card"><h3>Backup file</h3><div class="muted" style="margin:0 0 10px">${S.meta.lastBackup ? 'Last file backup ' + fmtDate(S.meta.lastBackup.slice(0, 10)) : 'No file backup yet.'}</div>
       <div class="row"><button class="btn" data-backup>Backup now</button><button class="btn sec" data-restore>Restore</button></div><input type="file" accept="application/json,.json" id="restoreFile" style="display:none">
@@ -2822,6 +2853,31 @@ function pastProjectModal(id) {
     bg.querySelector('[data-reopen]').onclick = async () => { bg.close(); const cur = P(); if (!await ask('Reopen ' + p.name + '?', cur ? `<b>${esc(cur.name)}</b> goes to Past projects and <b>${esc(p.name)}</b> becomes the current project again — you can extend it under Edit.` : 'It becomes the current project again.', 'Reopen')) return; reopenProject(id); save(); R.editProject = false; R.stack = []; R.date = today(); go('today', {}, false, 'fade'); toast(p.name + ' is the current project'); };
     bg.querySelector('[data-del]').onclick = async () => { bg.close(); if (!await ask('Delete ' + p.name + '?', 'Everything logged in it is deleted. This cannot be undone.', 'Delete', true)) return; deleteProject(id); save(); render(); toast('Deleted'); };
   });
+}
+function bandCardHtml() {
+  const c = bandCfg();
+  if (!c) return `<div class="card" id="bandcard"><h3>Band sync</h3><div class="muted" style="margin:0 0 10px">Steps, calories burned, heart rate, sleep and workouts from the Xiaomi band, every 30 min.</div>
+    <div class="field"><label>Inbox address</label><input id="bandurl" placeholder="https://trening-band.yourname.workers.dev" autocapitalize="off" autocorrect="off"></div>
+    <div class="field"><label>Key</label><input id="bandkey" type="password" autocapitalize="off" autocorrect="off"></div>
+    <button class="btn" data-bandconnect>Connect</button></div>`;
+  const h = S.health || {}, ago = t => { if (!t) return 'never'; const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago'; };
+  return `<div class="card" id="bandcard"><div class="hd"><h3>Band sync</h3><span class="chip ${h.last ? 'ok' : 'warn'}">${h.last ? 'On' : 'Waiting'}</span></div>
+    <div class="muted" style="margin:2px 0 10px">Band data received ${ago(h.last)} · checked ${ago(h.fetched)}</div>
+    <div class="row"><button class="btn sec" data-bandsync>Sync now</button><button class="btn sec" data-banddisc>Disconnect</button></div></div>`;
+}
+function bindBand() {
+  const c = $('[data-bandconnect]'); if (c) c.onclick = async () => { const url = $('#bandurl').value.trim(), key = $('#bandkey').value.trim(); if (!/^https:\/\//.test(url) || !key) return toast('Enter the inbox address and key');
+    bandSetCfg({ url, key }); c.textContent = 'Checking…'; const r = await bandFetch(); if (!r.ok) { bandSetCfg(null); c.textContent = 'Connect'; return toast(r.error, 2600); } toast(r.last ? 'Connected · band data found' : 'Connected · waiting for the first band data', 2600); render(); };
+  const sy = $('[data-bandsync]'); if (sy) sy.onclick = async () => { sy.textContent = 'Syncing…'; const r = await bandFetch(); toast(r.ok ? 'Band data up to date' : r.error, 2200); render(); };
+  const dc = $('[data-banddisc]'); if (dc) dc.onclick = async () => { if (await ask('Disconnect band sync?', 'Data already synced stays in the app.', 'Disconnect')) { bandSetCfg(null); render(); } };
+}
+function bandTodayHtml(date) {
+  if (!bandCfg()) return '';
+  const h = bandDay(date) || {}, y = bandDay(addDays(date, -1)) || {}, sl = h.sleep || null, fmtM = m => Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0');
+  const tile = (v, l) => `<div class="bt"><b>${v}</b><span>${l}</span></div>`;
+  return `<div class="card bandtoday"><div class="hd"><span class="cond" style="font-size:16px">Band · ${date === today() ? 'today' : fmtShort(date)}</span><span class="muted small">${S.health && S.health.last ? 'synced ' + S.health.last.slice(11, 16) : 'waiting'}</span></div>
+    <div class="btiles">${tile(h.steps != null ? h.steps.toLocaleString('en-US') : '—', 'steps')}${tile(h.active != null ? h.active : '—', 'active kcal')}${tile(h.hr ? h.hr.min : (y.hr ? y.hr.min : '—'), 'low HR')}${tile(sl ? fmtM(sl.min) : '—', 'sleep')}</div>
+    ${(h.workouts || []).length ? `<div class="muted small" style="margin-top:6px">${h.workouts.map(w => esc(w.type.toLowerCase().replace(/_/g, ' ')) + ' ' + w.min + ' min').join(' · ')}</div>` : ''}</div>`;
 }
 function cloudCardHtml() {
   const st = ghStatus(), owner = ghOwnerGuess();
@@ -2852,6 +2908,7 @@ function bindCloud() {
   const dc = $('[data-ghdisconnect]'); if (dc) dc.onclick = async () => { if (await ask('Disconnect cloud backup?', 'The data on GitHub stays there; this phone just stops syncing.', 'Disconnect')) { ghDisconnect(); render(); } };
 }
 function bindProfile() {
+  bindBand();
   bindCloud();
   const sf = $('#shotFiles'); app.querySelector('[data-shots]').onclick = () => sf.click();
   sf.onchange = () => { const files = Array.from(sf.files || []); sf.value = ''; if (!files.length) return; if (files.length === 1) go('import', { file: files[0] }); else startBatch(files); };
@@ -2921,6 +2978,9 @@ window.addEventListener('popstate', () => {
   if (shared.length === 1 && S.project) { R.stack = []; go('import', { file: shared[0] }, false); }
   else if (shared.length > 1 && S.project) { R.stack = []; startBatch(shared); }
   else start();
+  const bandTick = () => { if (!bandCfg() || document.hidden) return; bandFetch().then(r => { if (r.ok && r.changed && (R.screen === 'dash' || R.screen === 'profile')) render(); }); };
+  setTimeout(bandTick, 1500); setInterval(bandTick, 30 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && bandCfg() && (!S.health || !S.health.fetched || Date.now() - new Date(S.health.fetched) > 10 * 60 * 1000)) bandTick(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && R.screen === 'today' && R.date !== today() && R.stack.length === 0) { R.date = today(); render(); } });
   armBack();
   if (ghOn() && GH.pending) setTimeout(() => syncNow({ quiet: true }), 2500);

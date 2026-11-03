@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v2.7.1)
+# Vikač High Kikač — install guide (v2.8.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -125,6 +125,11 @@ Upload an .mp4 next to index.html with the exercise's file name below and a **�
 | Straight arm pushdowns | video-straight-arm-pushdowns.mp4 |
 | Cross body hammer curls | video-cross-body-hammer-curls.mp4 |
 
+
+## 10. Band sync (Xiaomi band → Trening)
+
+Chain: band → Mi Fitness → Health Connect → "Health Connect to Webhook" app → Cloudflare Worker (your private inbox) → Trening.
+Worker code: `trening-band-worker.js` (sent separately; it needs a KV binding `BAND` and a secret `KEY`). Trening: Settings → Band sync → inbox address + key → Connect.
 
 ## 9. Updating the app
 
