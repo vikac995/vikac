@@ -27,6 +27,9 @@
   --shadow:4px 4px 0 var(--ink);--shadow-sm:3px 3px 0 var(--ink);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* app text is not selectable (no copy bar on long-press); only what you typed yourself is: fields and your exercise notes */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,.q,.usertext{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 html,body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.35;overscroll-behavior:none}
 body{min-height:100vh;min-height:100dvh;background-image:radial-gradient(rgba(254,127,12,.10) 1.2px,transparent 1.2px);background-size:14px 14px}
 body.locked{position:fixed;left:0;right:0;overflow:hidden}
@@ -519,7 +522,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '3.1.0';
+const APP_VERSION = '3.1.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
