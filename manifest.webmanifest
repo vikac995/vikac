@@ -1,6 +1,6 @@
 {
-  "name": "Vikač High Kikač",
-  "short_name": "Vikač",
+  "name": "Trening",
+  "short_name": "Trening",
   "description": "Daily to-do list and progress tracker for the Vikač High Kikač fitness project.",
   "start_url": "./",
   "scope": "./",
