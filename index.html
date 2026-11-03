@@ -356,7 +356,7 @@ hr{border:0;border-top:2px solid var(--line);margin:14px 0}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.0.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -499,6 +499,15 @@ function projectSummary() {
   for (let i = 0; i <= D(); i++) { const d = addDays(p.startDate, i); if (d > last) break; elapsed++; if (dayCompletion(d) === 'done') perfect++; }
   const m = {}; for (const id of ['weight', 'fat', 'muscle']) { const lr = lastReading(id, last); m[id] = { start: p.start[id] == null || p.start[id] === '' ? null : +p.start[id], end: lr ? lr.v : null }; }
   return { elapsed, perfect, days: D(), weight: m.weight, fat: m.fat, muscle: m.muscle, sessions: S.sessions.filter(x => x.finished).length, finished: td >= p.endDate };
+}
+
+// The starting point is also Day 1's weigh-in: make sure it exists as a reading so trends, Progress and the
+// Today list see it (only once the start date has arrived, and never over a reading you logged yourself)
+function seedStartReading() {
+  const p = P(); if (!p || !p.start || p.start.weight == null || p.start.weight === '' || p.startDate > today()) return false;
+  if (S.readings[p.startDate]) return false;
+  const s = p.start; S.readings[p.startDate] = { weight: +s.weight, fat: s.fat, muscle: s.muscle, skeletal: s.skeletal, visceral: s.visceral, water: s.water, late: false, seeded: true };
+  day(p.startDate); return true;
 }
 
 /* ---------- Dates ---------- */
@@ -1764,7 +1773,7 @@ function bindSetup() {
   const st = $('#startBtn'); if (st) st.onclick = () => {
     collect(); if (!d.start.weight) return toast('Weight is required');
     S.project = { name: (d.name || '').trim() || 'My first project', startDate: d.startDate, endDate: d.endDate, deficit: d.deficit, bmr: d.bmr || 1750, protein: d.protein || 180, waterDrop: d.waterDrop == null ? 0.5 : d.waterDrop, bandDefault: d.bandDefault == null ? 300 : d.bandDefault, height: d.height, age: d.age, start: { weight: d.start.weight, fat: d.start.fat, muscle: d.start.muscle, skeletal: d.start.skeletal, visceral: d.start.visceral, water: d.start.water } };
-    S.meta.createdAt = new Date().toISOString(); save(); R.stack = []; R.setupData = null; R.setupStep = 1; R.date = today(); go('today', {}, false, 'fade'); toast('Project started. Let\'s go!');
+    S.meta.createdAt = new Date().toISOString(); seedStartReading(); save(); R.stack = []; R.setupData = null; R.setupStep = 1; R.date = today(); go('today', {}, false, 'fade'); toast('Project started. Let\'s go!');
   };
 }
 
@@ -2515,7 +2524,7 @@ function bindProfile() {
     app.querySelectorAll('input').forEach(i => i.oninput = upd); upd();
     const ff = $('#fillFile'); $('[data-fill]').onclick = () => ff.click();
     ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, app, $('#fillStatus'), 'scale', () => upd()); ff.value = ''; };
-    $('[data-savep]').onclick = () => { const o = readForm(app); if (!o.weight || diffDays(o.startDate, o.endDate) < 1) return toast('Check dates and weight'); Object.assign(S.project, { name: o.name, startDate: o.startDate, endDate: o.endDate, deficit: o.deficit, bmr: o.bmr, protein: o.protein, bandDefault: o.bandDefault, waterDrop: o.waterDrop, height: o.height, age: o.age, start: { weight: o.weight, fat: o.fat, muscle: o.muscle, skeletal: o.skeletal, visceral: o.visceral, water: o.water } }); save(); R.editProject = false; render(); toast('Saved'); };
+    $('[data-savep]').onclick = () => { const o = readForm(app); if (!o.weight || diffDays(o.startDate, o.endDate) < 1) return toast('Check dates and weight'); Object.assign(S.project, { name: o.name, startDate: o.startDate, endDate: o.endDate, deficit: o.deficit, bmr: o.bmr, protein: o.protein, bandDefault: o.bandDefault, waterDrop: o.waterDrop, height: o.height, age: o.age, start: { weight: o.weight, fat: o.fat, muscle: o.muscle, skeletal: o.skeletal, visceral: o.visceral, water: o.water } }); const r0 = S.readings[o.startDate]; if (r0 && r0.seeded) delete S.readings[o.startDate]; seedStartReading(); save(); R.editProject = false; render(); toast('Saved'); };
   }
   $('[data-backup]').onclick = () => { S.meta.lastBackup = new Date().toISOString(); save(); download('vikac-backup-' + today() + '.json', JSON.stringify(S, null, 1)); toast('Backup downloaded'); render(); };
   $('[data-restore]').onclick = () => $('#restoreFile').click();
@@ -2549,6 +2558,7 @@ window.addEventListener('popstate', () => {
 /* ---------- Boot ---------- */
 (async function boot() {
   await load();
+  if (S.project && seedStartReading()) save();
   const start = () => { R.date = today(); render(); };
   // An image shared from the Xiaomi app arrives through the service worker (see sw.js) as ?share=1
   let shared = [];
