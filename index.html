@@ -905,6 +905,18 @@ html{background:#0E0F12}
 .ok5{width:24px;height:24px;border-radius:50%;border:2px dashed #4a4c57;flex:none;display:flex;align-items:center;justify-content:center}.ok5.on{background:var(--ok);border:0}.ok5.on.b{background:var(--bonus)}.ok5 svg{width:14px;height:14px}.ok5.w{border:0;color:var(--muted)}.ok5.w svg{width:20px;height:20px}
 .dot4{width:24px;height:24px;flex:none;border-radius:50%;border:2px dashed rgba(90,176,255,.6)}.dot4.req{border:0}.dot4.req>*{width:24px!important;height:24px!important}
 .ex .pick:not(.on) svg{opacity:0}
+
+/* every pop-up: a close button pinned in the corner, the content scrolls under it */
+.modal{display:flex;flex-direction:column;overflow:hidden;padding:0;position:relative}
+.modal>.mbody{overflow:auto;min-height:0;flex:1 1 auto;padding:22px 20px;-webkit-overflow-scrolling:touch}
+.modal>.mclose{position:absolute;top:10px;right:10px;z-index:6;width:34px;height:34px;border-radius:50%;background:var(--s2);border:1.5px solid var(--line2);color:var(--ink);font-size:21px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0 0 2px}
+.modal>.mbody>h3:first-child,.tiphd,.mbody>.hdl+div{padding-right:40px}
+.modalbg.sheetbg .modal{padding:0}
+.modalbg.sheetbg .mbody{padding:10px 16px calc(18px + var(--sab))}
+.modal .btn{margin-top:14px}
+.wt.done.summoned .art{display:flex;align-items:center;justify-content:center}
+.dsb{cursor:pointer}
+.modal>.mclose{box-shadow:0 0 0 6px var(--card)}
 </style>
 </head>
 <body>
@@ -912,7 +924,7 @@ html{background:#0E0F12}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.2.0';
+const APP_VERSION = '4.2.2';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1073,6 +1085,7 @@ async function bandFetch() {
     for (const d in j.days || {}) { if (!P() || d < P().startDate || d > P().endDate) continue; const info = dayInfo(d); if (!info.items || !info.items.some(it => it.id === 'mt')) continue;
       const ws = (j.days[d].workouts || []).filter(w => MT_TYPES.test(w.type || '')), min = ws.reduce((a, w) => a + (+w.min || 0), 0), kc = ws.reduce((a, w) => a + (+w.kcal || 0), 0) || null; if (!min) continue;
       const cur = day(d).mt;
+      if (cur && cur.src === 'cleared') continue;
       if (cur && cur.minutes && cur.src !== 'band') { if (kc && cur.kcalSrc !== 'hand' && cur.kcal !== kc) cur.kcal = kc; continue; }
       if (cur && cur.src === 'band' && +cur.minutes === min && (cur.kcal || null) === kc) continue;
       day(d).mt = { minutes: min, kcal: cur && cur.kcalSrc === 'hand' ? cur.kcal : kc, kcalSrc: cur && cur.kcalSrc === 'hand' ? 'hand' : undefined, note: cur ? cur.note : '', src: 'band' }; }
@@ -2521,7 +2534,8 @@ function bindSwipe(el, onLeft, onRight) {
   el.addEventListener('touchend', e => { if (!live) return; live = false; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy; if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) (dx < 0 ? onLeft : onRight)(); }, { passive: true });
 }
 function modal(html, onbind) {
-  const bg = document.createElement('div'); bg.className = 'modalbg'; bg.innerHTML = '<div class="modal">' + html + '</div>'; applyUnits(bg);
+  // every pop-up has a close button that stays in its corner, however long the content
+  const bg = document.createElement('div'); bg.className = 'modalbg'; bg.innerHTML = '<div class="modal"><button class="mclose" data-close aria-label="Close">×</button><div class="mbody">' + html + '</div></div>'; applyUnits(bg);
   const sy = window.scrollY; document.body.classList.add('locked'); document.body.style.top = -sy + 'px';
   let closed = false;
   const close = () => { if (closed) return; closed = true; bg.classList.add('out'); document.body.classList.remove('locked'); document.body.style.top = ''; window.scrollTo(0, sy); setTimeout(() => bg.remove(), 160); };
@@ -2553,7 +2567,8 @@ const inp = (k, label, v, step, type) => `<div class="field"><label>${label}</la
 const UNIT_RULES = [[/^Added kg$/i, 'kg', 'Added weight'], [/^Calories burned$/i, 'kcal', 'Calories burned'], [/^Calories eaten$/i, 'kcal', 'Calories eaten'], [/^Band: extra kcal burned$/i, 'kcal', 'Band: extra burned'], [/^BMR$/i, 'kcal', 'BMR'], [/^Band kcal default$/i, 'kcal', 'Band default'], [/^Band kcal if not entered$/i, 'kcal', 'Band if not entered'], [/\s*\((kg|g|kcal|cm|%)\)/i, null], [/\s+(kg|%)$/i, null]];
 function applyUnits(root) {
   if (!root) return;
-  root.querySelectorAll('input:not([type=file]):not([type=checkbox]),textarea').forEach(i => i.setAttribute('enterkeyhint', 'done'));
+  // no autofill on any field: Chrome's key / card / address bar above the keyboard is for forms on websites, not for a log
+  root.querySelectorAll('input:not([type=file]):not([type=checkbox]),textarea').forEach(noFill);
   root.querySelectorAll('input[type=number]').forEach(input => {
     if (input.closest('.affix') || input.closest('.sets')) return;
     const field = input.closest('.field'), label = field ? field.querySelector('label') : (input.previousElementSibling && input.previousElementSibling.tagName === 'LABEL' ? input.previousElementSibling : null);
@@ -2584,7 +2599,8 @@ function render(anim) {
 }
 // Screen stays on while a workout is open (re-acquired when the app comes back to the front)
 // Enter (the keyboard's Done key) closes the keyboard in every field, including notes — no "Next", no new line
-document.addEventListener('focusin', e => { const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') && !t.hasAttribute('enterkeyhint')) t.setAttribute('enterkeyhint', 'done'); });
+function noFill(i) { i.setAttribute('enterkeyhint', 'done'); i.setAttribute('autocomplete', 'off'); if (i.type === 'number' || i.type === 'date') { i.setAttribute('autocorrect', 'off'); i.setAttribute('autocapitalize', 'off'); i.setAttribute('spellcheck', 'false'); } }
+document.addEventListener('focusin', e => { const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') && t.getAttribute('autocomplete') !== 'off') noFill(t); });
 document.addEventListener('keydown', e => { const t = e.target; if (e.key === 'Enter' && t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) { e.preventDefault(); t.blur(); } });
 let wakeLock = null, wantAwake = false;
 function keepAwake(on) {
@@ -2717,7 +2733,7 @@ function showDragon() {
 function showBalls(date) {
   const info = dayInfo(date), cyc = cycleOf(date); if (!info.items) return;
   const rows = info.items.map(it => `<span>${esc(it.label)}${it.req ? '' : ' <span class="muted small">bonus</span>'}</span><b class="${isDone(date, it.id) ? (it.req ? 'ok' : 'blue') : 'muted'}" style="font-size:18px">${isDone(date, it.id) ? '✓' : '○'}</b>`).join('');
-  const head = cyc.summonDay ? (cyc.canSummon ? 'Summon day' : 'Summon day · locked') : (date === today() ? 'Today\'s ' : '') + cyc.star + '-star ball';
+  const head = cyc.summonDay ? (cyc.summoned ? 'Dragon summoned' : cyc.canSummon ? 'Summon day' : 'Summon day · locked') : (date === today() ? 'Today\'s ' : '') + cyc.star + '-star ball';
   const days = cyc.days.filter(x => x.cd <= 7).map(x => `<span class="chip daychip ${x.comp === 'done' ? 'ok' : x.comp === 'miss' ? 'bad' : 'muted'}" title="${x.type.label}">${x.cd}</span>`).join('');
   modal(`<h3>${head}</h3><div class="muted">Cycle ${cyc.num} · ${cyc.earned} of 7 balls collected</div>
     <div class="kv" style="margin:16px 0 18px">${rows}</div>
@@ -2987,8 +3003,11 @@ function openTips() {
       <button class="btn sec" data-tipback style="margin-top:6px">Back to tips</button><button class="btn ghost" data-close style="margin-top:8px">Close</button>`; };
   const dismiss = id => { const e = S.tips.log.find(x => x.id === id); if (e) e.status = 'dismissed'; save(); paintPill(); };
   modal(listHtml(), bg => {
-    const m = bg.querySelector('.modal');
-    const show = (html, bindFn) => { m.innerHTML = html; m.querySelectorAll('[data-close]').forEach(b => b.onclick = () => bg.close()); bindFn(); m.scrollTop = 0; };
+    const m = bg.querySelector('.mbody'), box = bg.querySelector('.modal');
+    // the pop-up keeps its height while tips fly out (it only ever grows)
+    const keep = () => requestAnimationFrame(() => { box.style.minHeight = Math.max(parseFloat(box.style.minHeight) || 0, box.offsetHeight) + 'px'; });
+    const show = (html, bindFn) => { m.innerHTML = html; m.querySelectorAll('[data-close]').forEach(b => b.onclick = () => bg.close()); bindFn(); m.scrollTop = 0; keep(); };
+    keep();
     const bindList = () => {
       const all = m.querySelector('[data-tipall]'); if (all) all.onclick = () => { activeTips().forEach(e => e.status = 'dismissed'); save(); paintPill(); show(listHtml(), bindList); };
       m.querySelector('[data-tiphist]').onclick = () => show(histHtml(), () => { m.querySelector('[data-tipback]').onclick = () => show(listHtml(), bindList); });
@@ -3395,7 +3414,8 @@ function wtHtml(date, info, cyc) {
       <button class="btn big" data-startwo>${future ? 'Open' : 'Log Muay Thai'}</button></div>`;
   }
   const title = cyc.summonDay ? 'Summon day' : 'Rest day';
-  if (cyc.todayDone) return `<div class="wt done rest" data-wt>${liftArtHtml('done')}<div class="tx"><div class="t h1">${title}</div><div class="s">${cyc.summonDay ? (cyc.summoned ? 'Dragon summoned' : 'Day complete') : cyc.star + '-star ball earned'}</div></div><span class="ok">${IC4.check}</span></div>`;
+  if (cyc.summoned) return `<div class="wt done rest summoned" data-wt><div class="art">${dragonBadgeSvg({ state: 'done', size: 58 })}</div><div class="tx"><div class="t h1">Dragon summoned</div><div class="s">Cycle ${cyc.num} · 7 / 7 balls</div></div><span class="ok">${IC4.check}</span></div>`;
+  if (cyc.todayDone) return `<div class="wt done rest" data-wt>${liftArtHtml('done')}<div class="tx"><div class="t h1">${title}</div><div class="s">${cyc.summonDay ? 'Day complete' : cyc.star + '-star ball earned'}</div></div><span class="ok">${IC4.check}</span></div>`;
   const req = info.items.filter(it => it.req).map(it => SHORT[it.id] || it.label);
   return `<div class="wt rest" data-wt>${liftArtHtml('rest')}${lab.replace('Today\'s training', 'Today').replace('>Training', '>Rest')}<div class="t h1">${title}</div><div class="s">${esc(req.join(' · '))}</div></div>`;
 }
@@ -3457,7 +3477,7 @@ function bindTodayBody(date, future) {
   body.querySelectorAll('[data-day]').forEach(b => b.onclick = e => { e.stopPropagation(); shiftDay(+b.dataset.day); });
   body.querySelectorAll('[data-goto]').forEach(b => b.onclick = e => { e.stopPropagation(); const d = b.dataset.goto; if (d === R.date) return; R.date = d; patchToday(d > date ? 'right' : 'left'); });
   const bb = body.querySelector('[data-bigball]'); if (bb) bb.onclick = () => showBalls(date);
-  const openWT = () => { if (info.workoutKey) { const s = S.sessions.find(x => x.date === date); go('workout', { date, key: s ? s.key : info.workoutKey }); } else if (info.isMT) go('mt', { date }); else showBalls(date); };
+  const openWT = () => { if (info.workoutKey) { const s = S.sessions.find(x => x.date === date); go('workout', { date, key: s ? s.key : info.workoutKey }); } else if (info.isMT) go('mt', { date }); else if (cycleOf(date).summoned) showDragon(); else showBalls(date); };
   const wt = body.querySelector('[data-wt]'); if (wt) wt.onclick = openWT;
   startLiftAnim();
   body.querySelectorAll('[data-chk]').forEach(c => c.onclick = e => {
@@ -3753,6 +3773,7 @@ function mtHtml() {
       <div class="chips" style="justify-content:center;margin:12px 0 0">${[30, 45, 60, 90].map(v => `<button class="pill" data-pre="${v}">${v}</button>`).join('')}</div></div>
     <div class="grid4" style="margin-top:12px"><div class="field"><label>Calories burned</label><input name="kcal" type="number" inputmode="numeric" value="${m.kcal || ''}" placeholder="${m.src === 'band' ? 'from the band' : '—'}"></div><div class="field"><label>Note</label><input name="note" value="${esc(m.note || '')}" placeholder="Pads, sparring…"></div></div>
     ${m.src === 'band' ? '<div class="muted small center" style="margin-top:-4px">Change minutes or kcal to override the band.</div>' : ''}
+    ${m.minutes || (day(date).done || {}).mt ? '<button class="btn ghost" id="clearM" style="margin-top:6px">Clear this session</button>' : ''}
     ${past.length ? `<div class="secl" style="margin-top:18px"><span>This project</span><span></span></div><div class="tiles3"><div class="card"><div class="lab4">Sessions</div><b class="bang">${past.length}</b></div><div class="card"><div class="lab4">Minutes</div><b class="bang">${fmtN(tot)}</b></div><div class="card"><div class="lab4">${tk ? 'kcal' : 'Average'}</div><b class="bang">${tk ? fmtN(tk) : Math.round(tot / past.length)}</b></div></div>` : ''}
   </div><div class="botbar"><button class="btn" id="saveM">Save</button></div>`;
 }
@@ -3763,6 +3784,8 @@ function bindMT() {
     const kcalHand = o.kcal != null && +o.kcal !== +(prev.kcal || 0) ? true : prev.kcalSrc === 'hand';
     day(date).mt = { minutes: o.minutes, kcal: o.kcal || null, kcalSrc: kcalHand && o.kcal ? 'hand' : undefined, note: o.note, src: prev.src === 'band' && +prev.minutes === +o.minutes ? 'band' : undefined };
     save(); toast('Logged. Sawadee!'); vib(30); back(); };
+  const cl = $('#clearM'); if (cl) cl.onclick = async () => { if (!await ask('Clear this session?', 'Minutes and kcal for ' + shortD(date) + ' are removed and the day shows Muay Thai as not done. The band fills it again on its next sync unless you type your own.', 'Clear', true)) return;
+    const d = day(date); d.mt = { minutes: null, kcal: null, src: 'cleared', note: '' }; if (d.done) d.done.mt = false; save(); toast('Cleared'); back(); };
 }
 
 /* ---------- Dead hangs ---------- */
@@ -3853,8 +3876,9 @@ function dayPlan(d) {
   const info = dayInfo(d); if (!info.items) return null;
   const cyc = cycleOf(d), w = info.workoutKey ? PROGRAM.workouts[info.workoutKey] : null, cd = info.cycleDay;
   const k = w ? w.group : info.isMT ? 'mt' : cd === 8 ? 'summon' : 'rest';
-  const title = w ? w.name : info.isMT ? 'Muay Thai' : cd === 8 ? 'Rest · summon' : 'Rest';
-  const sub = w ? w.ex.length + ' exercises · ~' + workoutMinutes(info.workoutKey) + ' min' : info.isMT ? 'minutes and kcal from the band' : cd === 8 ? '7 balls → the dragon' : info.items.filter(it => it.req).map(it => SHORT[it.id] || it.label).join(' · ');
+  const summoned = cd === 8 && cyc.summoned;
+  const title = w ? w.name : info.isMT ? 'Muay Thai' : summoned ? 'Dragon summoned' : cd === 8 ? 'Rest · summon' : 'Rest';
+  const sub = w ? w.ex.length + ' exercises · ~' + workoutMinutes(info.workoutKey) + ' min' : info.isMT ? 'minutes and kcal from the band' : summoned ? 'Cycle ' + cyc.num + ' · 7 / 7 balls' : cd === 8 ? '7 balls → the dragon' : info.items.filter(it => it.req).map(it => SHORT[it.id] || it.label).join(' · ');
   return { info, cyc, w, k, title, sub, cd, tag: k === 'mt' ? 'MT' : k === 'summon' ? 'Dragon' : k.toUpperCase() };
 }
 // The ball (or dragon) a day shows: full when earned, hollow before; stars count the balls earned so far in that cycle
@@ -3952,7 +3976,7 @@ function monthHtml() {
 function daySheet(d) {
   const pl = dayPlan(d); if (!pl) return; const td = today(), info = pl.info, future = d > td, comp = dayCompletion(d), cyc = pl.cyc;
   const when = d === td ? 'today' : d === addDays(td, 1) ? 'tomorrow' : d === addDays(td, -1) ? 'yesterday' : '';
-  const ballTxt = pl.cd === 8 ? (cyc.summoned ? 'dragon summoned' : 'summon day') : comp === 'done' ? `<span class="goldc">${dayStars(d)}-star ball earned</span>` : future ? dayStars(d) + '-star ball' : d === td ? 'earns the ' + dayStars(d) + '-star ball' : 'no ball';
+  const ballTxt = pl.cd === 8 ? (cyc.summoned ? 'cycle ' + cyc.num + ' · 7 / 7 balls' : 'summon day') : comp === 'done' ? `<span class="goldc">${dayStars(d)}-star ball earned</span>` : future ? dayStars(d) + '-star ball' : d === td ? 'earns the ' + dayStars(d) + '-star ball' : 'no ball';
   const head = `<div class="hdl"></div><div class="dsh"><span class="dsb">${dayBallArt(d, 54)}</span><div><div class="h1">${shortD(d)} · ${esc(pl.title)}</div><div class="mut" style="font-size:13.5px;margin-top:3px">Day ${info.idx} · ${ballTxt}${pl.w ? ' · ~' + workoutMinutes(info.workoutKey) + ' min' : ''}${when ? ' · ' + when : ''}</div></div></div>`;
   let body = '', btn = '';
   if (future && pl.w) {
@@ -3972,11 +3996,15 @@ function daySheet(d) {
         return `<div class="xr"><span class="ok5 ${dn ? 'on' : ''} ${it.req ? '' : 'b'}">${dn ? IC4.check : ''}</span><span class="n">${esc(it.label)}<small>${esc(sub)}</small></span></div>`; }).join('')}
       ${h && (h.steps || h.active) ? `<div class="xr"><span class="ok5 w">${IC4.watch}</span><span class="n">Band<small>${h.steps != null ? fmtN(h.steps) + ' steps' : ''}${h.active != null ? ' · ' + h.active + ' active kcal' : ''}</small></span></div>` : ''}</div>
       ${note ? `<div class="q" style="margin:10px 4px 0">“${esc(note)}”</div>` : ''}`;
-    btn = `<button class="btn ${d === td ? '' : 'sec'}" data-od>${d === td ? 'Open today' : 'Open the day'}</button>`;
+    const wk = info.workoutKey ? `<button class="btn" data-ow>Open the workout</button>` : info.isMT ? `<button class="btn" data-omt>Open Muay Thai</button>` : cyc.summoned && pl.cd === 8 ? `<button class="btn" data-dragon>See the dragon</button>` : '';
+    btn = wk ? `<div class="row">${wk}<button class="btn sec" data-od>${d === td ? 'Today' : 'The day'}</button></div>` : `<button class="btn ${d === td ? '' : 'sec'}" data-od>${d === td ? 'Open today' : 'Open the day'}</button>`;
   }
   modal(head + body + `<div style="margin-top:12px">${btn}</div>`, b => {
     b.classList.add('sheetbg', 'daysh');
-    const ow = b.querySelector('[data-ow]'); if (ow) ow.onclick = () => { b.close(); go('workout', { date: d, key: info.workoutKey }); };
+    const ow = b.querySelector('[data-ow]'); if (ow) ow.onclick = () => { b.close(); const s = S.sessions.find(x => x.date === d); go('workout', { date: d, key: s ? s.key : info.workoutKey }); };
+    const om = b.querySelector('[data-omt]'); if (om) om.onclick = () => { b.close(); go('mt', { date: d }); };
+    const dg = b.querySelector('[data-dragon]'); if (dg) dg.onclick = () => { b.close(); setTimeout(showDragon, 200); };
+    const art = b.querySelector('.dsb'); if (art && pl.cd === 8 && cyc.summoned) art.onclick = () => { b.close(); setTimeout(showDragon, 200); };
     const od = b.querySelector('[data-od]'); if (od) od.onclick = () => { b.close(); R.date = d; go('today', {}); };
     // drag the sheet down to close it
     const m = b.querySelector('.modal'), hd = b.querySelector('.hdl'); let y0 = null, dy = 0;
