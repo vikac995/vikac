@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v2.1.0)
+# Vikač High Kikač — install guide (v2.1.1)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -24,7 +24,7 @@ Settings shows the **current project** (name, dates, deficit, goal) with Edit, *
 
 ## 4. Earning the ball, and the report card
 
-On a training day the ball needs the session and the nutrition entry (required, ball badge in the corner, green tick); the weigh-in, hangs, stretching and mobility are bonus (blue tick). On a rest day everything is required. Progress → Overview grades Training, Nutrition and Stretch as done ÷ possible so far on the American scale (A+ ≥ 97, A ≥ 93, A− ≥ 90, B+ ≥ 87 … D− ≥ 60, F below), and the Today screen shows the same grades as of the day you are looking at. Today only counts once it is finished.
+On a training day the ball needs the session and the nutrition entry (required, ball badge in the corner, green tick); the weigh-in, hangs, stretching and mobility are bonus (blue tick). On a rest day everything is required. Progress → Overview grades Training, Nutrition and Stretch as done ÷ possible so far on the American scale (A+ ≥ 97, A ≥ 93, A− ≥ 90, B+ ≥ 87 … D− ≥ 60, F below), and the Today screen shows the same grades as of the day you are looking at.
 
 ## 5. Keeping your data safe
 
