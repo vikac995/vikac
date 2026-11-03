@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v2.0.3)
+# Vikač High Kikač — install guide (v2.1.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -22,12 +22,16 @@ This folder is the whole app. Put it on any HTTPS address and add it to your pho
 
 Settings shows the **current project** (name, dates, deficit, goal) with Edit, **New project** and, while it runs, **End this project today**. Edit changes dates (extend or shorten), targets and the starting point — the starting numbers can be filled from the Mi Fitness share image with **Fill from export**, in Edit and in the setup wizard. New project parks the current one under **Past projects** with everything logged; a past project opens a summary (days, perfect days, weight / fat / muscle start → end) with **Reopen** (it becomes current again, the current one is parked) and **Delete**. The setup wizard for a new project starts today with the last readings of the previous project pre-filled, and can be cancelled back to it.
 
-## 4. Keeping your data safe
+## 4. Earning the ball, and the report card
+
+On a training day the ball needs the session and the nutrition entry (required, ball badge in the corner, green tick); the weigh-in, hangs, stretching and mobility are bonus (blue tick). On a rest day everything is required. Progress → Overview grades Training, Nutrition and Stretch as done ÷ possible so far on the American scale (A+ ≥ 97, A ≥ 93, A− ≥ 90, B+ ≥ 87 … D− ≥ 60, F below), and the Today screen shows the same grades as of the day you are looking at. Today only counts once it is finished.
+
+## 5. Keeping your data safe
 
 - Data lives on the phone (Chrome's storage for this app). It survives restarts and being offline. It is lost only if you uninstall the app or clear Chrome's site data.
 - **Profile → Backup now** downloads `vikac-backup-DATE.json`. Drop it in Google Drive now and then; the Today screen nags you after 7 days without a backup. **Restore** brings everything back from that file, on any phone.
 
-## 5. Cloud backup to GitHub (optional, recommended)
+## 6. Cloud backup to GitHub (optional, recommended)
 
 Every change can also be saved as a commit to a **private** repository of yours, with full history — nothing is lost unless you delete that repository. One-time setup, about 5 minutes:
 
@@ -39,7 +43,7 @@ Every change can also be saved as a commit to a **private** repository of yours,
 
 The app then pushes a commit about 10 seconds after your last change (and when you leave the app), shows "Saved to GitHub … ago" in Profile, and nags you on the Today screen if syncing has failed for 3 days. **Restore from GitHub** brings everything back on a new phone. The token is stored only on the phone and can only touch that one repository; when it expires, make a new one and tap Connect again.
 
-## 6. Fill from export (Xiaomi scale and MyFitnessPal)
+## 7. Fill from export (Xiaomi scale and MyFitnessPal)
 
 The weigh-in form can read the Mi Fitness share image instead of you typing six numbers. Two ways in:
 
@@ -56,7 +60,7 @@ The weigh-in form can read the Mi Fitness share image instead of you typing six 
 
 Reading happens on the phone (tesseract.js) — the image is never uploaded anywhere. The first use downloads the reader (about 6 MB: `tess.js`, `tess-worker.js`, `tess-core.wasm.js`, `eng.traineddata.gz`); after that it works offline. The weight is cross-checked against fat-free weight + fat mass from the same image, so a misread digit shows up as a warning.
 
-## 7. Updating the app
+## 8. Updating the app
 
 When a new version arrives, upload the new files to the same repository (Add file → Upload files, same names, Commit). The phone picks up the new version the next time you open the app while online. Your data is untouched by updates.
 
