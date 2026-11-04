@@ -1332,6 +1332,10 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .wt.done .s .dch{font-size:11.5px}
 .dch i{font-style:normal}.dch .dna{display:none}
 @media (max-width:389px){.dch .dna{display:inline}.dch .dwd{display:none}}  /* narrow phones: "▼202" in place of "202 under" */
+/* the Scouter's signal bars sit still */
+.hudscr .sig i{animation:none!important;opacity:1}
+/* language sheet */
+.modal [data-lang].srow{width:100%}
 </style>
 </head>
 <body>
@@ -1339,7 +1343,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.9.0';
+const APP_VERSION = '4.10.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -3677,6 +3681,7 @@ const IC4 = {
   watch: SV('<rect x="7" y="6" width="10" height="12" rx="3"/><path d="M9 6l1-3h4l1 3M9 18l1 3h4l1-3M12 10v2.5l1.5 1"/>'),
   sync: SV('<path d="M20 12a8 8 0 0 1-14 5.3M4 12A8 8 0 0 1 18 6.7"/><path d="M18 3v4h-4M6 21v-4h4"/>'),
   lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18"/></svg>',
   check: '<svg viewBox="0 0 24 24" fill="none" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7" stroke="#0E0F12"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   back: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="#F4EFE8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -3751,7 +3756,7 @@ function t4StripBalls(date, cyc) {
   return cyc.days.map(x => { const ok = x.comp === 'done' && x.cd <= 7, star = dayStars(x.date) - 0;
     const a = x.cd === 8 ? dragonBadgeSvg({ state: cyc.dragon ? 'done' : 'locked', size: 22 }) : ballSvg({ stars: star, state: ok ? 'full' : 'hollow', size: 22 });
     const dt = parse(x.date), col = x.cd === 8 ? 'var(--gold)' : JCOL[x.type.k] || 'var(--muted)';
-    return `<button class="mb ${ok || (x.cd === 8 && cyc.dragon) ? 'got' : ''} ${x.date === date ? 'cur' : ''} ${x.date === td ? 'today' : ''}" data-goto="${x.date}" aria-label="${WD[dt.getDay()]} ${fmtShort(x.date)}, ${esc(x.cd === 8 ? 'summon day' : x.type.label)}${x.date === date ? ', shown' : ''}"><span class="mbb">${a}</span><span class="mbd">${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}</span><span class="mbw2" style="color:${col}">${WD[dt.getDay()].slice(0, 3)}</span></button>`; }).join('');
+    return `<button class="mb ${ok || (x.cd === 8 && cyc.dragon) ? 'got' : ''} ${x.date === date ? 'cur' : ''} ${x.date === td ? 'today' : ''}" data-goto="${x.date}" data-al="${WD[dt.getDay()]} ${fmtShort(x.date)}, ${esc(x.cd === 8 ? 'summon day' : x.type.label)}" aria-label="${WD[dt.getDay()]} ${fmtShort(x.date)}, ${esc(x.cd === 8 ? 'summon day' : x.type.label)}${x.date === date ? ', shown' : ''}"><span class="mbb">${a}</span><span class="mbd">${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}</span><span class="mbw2" style="color:${col}">${WD[dt.getDay()].slice(0, 3)}</span></button>`; }).join('');
 }
 function t4StripHtml(date, cyc) { return `<div class="t4strip" id="t4strip" data-cyc="${cyc.num}"><div class="mbw"><span class="mbsel"></span><div class="mbs">${t4StripBalls(date, cyc)}</div></div></div>`; }
 // ‹ › sit either side of the big ball, on the same spot every day (the ball is always at the same height, summon day included)
@@ -3781,7 +3786,7 @@ function bindTodayNav() {
 function t4StripRefresh(date, cyc, dir) {
   const st = $('#t4strip'); if (!st) return; const mb = st.querySelector('.mbs'), crossed = st.dataset.cyc !== String(cyc.num);
   if (dir && !crossed) {   // same cycle: only the highlight moves
-    mb.querySelectorAll('.mb').forEach(b => { const on = b.dataset.goto === date; b.classList.toggle('cur', on); b.setAttribute('aria-label', b.getAttribute('aria-label').replace(', shown', '') + (on ? ', shown' : '')); });
+    mb.querySelectorAll('.mb').forEach(b => { const on = b.dataset.goto === date; b.classList.toggle('cur', on); b.setAttribute('aria-label', b.dataset.al + (on ? ', shown' : '')); });
     return t4SelPlace(true);
   }
   mb.innerHTML = t4StripBalls(date, cyc); st.dataset.cyc = cyc.num; bindTodayNav();
@@ -4216,12 +4221,12 @@ function stretchHtml() {
   const date = R.params.date || R.date, total = STRETCH.reduce((a, s) => a + s.d * (s.sides || 1), 0), done = isDone(date, 'stretch');
   return `<div class="screen bar fs">${topbar('Stretching', 'For kicks · ' + STRETCH.length + ' steps · ~' + Math.round(total / 60) + ' min')}
     <div id="player">${player.on ? playerHtml() : `<button class="btn big" id="playAll">Start the routine ▶</button><div style="height:12px"></div>`}</div>
-    ${STRETCH.map((s, i) => { const did = player.on && i < player.idx, cur = player.on && i === player.idx; return `<div class="step ${cur ? 'cur' : ''} ${did ? 'did' : ''}" data-i="${i}"><div class="stt">${did ? `<span class="ok4">${IC4.check}</span>` : ''}<span class="n">${i + 1}. ${esc(s.t)}</span><small>${s.d} s${s.sides ? ' per side' : ''}</small></div>${s.img && !did ? `<img src="${s.img}" alt="" loading="lazy">` : ''}</div>`; }).join('')}
+    ${STRETCH.map((s, i) => { const did = player.on && i < player.idx, cur = player.on && i === player.idx; return `<div class="step ${cur ? 'cur' : ''} ${did ? 'did' : ''}" data-i="${i}"><div class="stt">${did ? `<span class="ok4">${IC4.check}</span>` : ''}<span class="n">${i + 1}. <span data-notr>${esc(s.t)}</span></span><small>${s.d} s${s.sides ? ' per side' : ''}</small></div>${s.img && !did ? `<img src="${s.img}" alt="" loading="lazy">` : ''}</div>`; }).join('')}
   </div><div class="botbar"><button class="btn ${done ? 'sec' : ''}" id="doneS">${done ? 'Done ✓' : 'Mark done'}</button></div>`;
 }
 function playerHtml() {
   const s = STRETCH[player.idx], nx = STRETCH[player.idx + 1];
-  return `<div class="player"><div class="pring">${stretchRing()}<b id="pt">${player.left}</b></div><div class="info"><div class="n">${player.idx + 1}. ${esc(s.t)}</div><div class="sd">${s.sides ? 'side ' + player.side + ' of 2 · ' : ''}${nx ? 'next: ' + esc(nx.t) : 'last step'}</div>
+  return `<div class="player"><div class="pring">${stretchRing()}<b id="pt">${player.left}</b></div><div class="info"><div class="n">${player.idx + 1}. <span data-notr>${esc(s.t)}</span></div><div class="sd">${s.sides ? `<span>side ${player.side} of 2 ·</span> ` : ''}${nx ? `<span>next:</span> <span data-notr>${esc(nx.t)}</span>` : '<span>last step</span>'}</div>
     <div class="pbtns"><button id="pp">${player.paused ? 'Go' : 'Pause'}</button><button id="skip">Skip</button><button id="stopP" class="badc">Stop</button></div></div></div>`;
 }
 function runPlayer(date) {
@@ -4975,23 +4980,32 @@ function profileHtml() {
       ${srow({ ic: 'flag', tone: 'or', t: p.name, s: fmtShort(p.startDate) + ' → ' + fmtShort(p.endDate) + ' · goal ' + goalWeight() + ' kg', chip: [chip[0] === 'or' ? 'or' : chip[0] === 'ok' ? 'on' : 'off', chip[1]], go: 'project' })}
       ${arch.length ? srow({ ic: 'box', t: 'Past projects', s: arch.length + ' · ' + esc(arch.map(b => b.project.name).join(', ')), go: 'past' }) : srow({ ic: 'box', t: 'Past projects', s: 'None yet', plain: true, cls: 'off' })}
       ${srow({ ic: 'plus', t: 'New project', s: 'the current one moves to Past projects', act: 'newp' })}</div>
-    <div class="sgl">Sync</div><div class="sgrp">
+    <div class="sgl">Sync &amp; backup</div><div class="sgrp">
       ${srow({ ic: 'watch', t: 'Band sync', s: bc ? 'Steps and kcal · ' + (h.last ? agoTxt(h.last) : 'waiting for data') : 'Not connected', chip: bc ? (h.last ? ['on', 'On'] : ['warn', 'Waiting']) : ['off', 'Off'], act: 'band' })}
       ${srow({ ic: 'cloud', t: 'Cloud backup', s: esc(gs.text), chip: cc, go: 'cloud' })}</div>
     <div class="sgl">Data</div><div class="sgrp">
       ${srow({ ic: 'image', t: 'Read screenshots', s: 'Xiaomi or MFP, one or many', act: 'shots' })}
       ${srow({ ic: 'fork', t: 'MFP export', s: 'Fill every unlogged day', act: 'mfp' })}
       ${srow({ ic: 'file', t: 'Backup file', s: (S.meta.lastBackup ? 'Last ' + shortD(S.meta.lastBackup.slice(0, 10)) : 'No file backup yet') + ' · restore · CSV', act: 'backup' })}</div>
+    <div class="sgl">Language</div><div class="sgrp">
+      ${srow({ ic: 'globe', t: 'Language', s: LANG === 'hr' ? '<span data-notr>Hrvatski</span>' : '<span data-notr>English</span>', act: 'lang' })}
+      ${LANG === 'hr' ? srow({ ic: 'pen', t: 'Translate exercise names', s: 'Exercise names in Croatian (Push, Pull, Legs stay)', chip: TR_NAMES ? ['on', 'On'] : ['off', 'Off'], act: 'trnames' }) : ''}</div>
     <div class="sgl">App · v${APP_VERSION}</div><div class="sgrp">
       ${srow({ ic: 'sync', t: 'Check for updates', act: 'update', cls: 'upd' })}
       ${srow({ ic: 'trash', t: 'Reset everything', s: 'every project and log on this phone', act: 'reset', cls: 'danger' })}</div>
     <input type="file" accept="image/*" multiple id="shotFiles" hidden><input type="file" accept=".zip,.csv,application/zip,application/x-zip-compressed,text/csv" id="mfpFile" hidden>
   </div>${nav('profile')}`;
 }
+// Language: English or Hrvatski (each written in its own language); picking one reloads the app in it
+function langSheet() {
+  const opt = (k, lab) => `<button class="srow" data-lang="${k}"><span class="st"><b data-notr>${lab}</b></span>${LANG === k ? `<span class="stc on">✓</span>` : ''}</button>`;
+  modal(`<div class="hdl"></div><h3 style="margin:0 0 12px">Language</h3><div class="sgrp">${opt('en', 'English')}${opt('hr', 'Hrvatski')}</div>`, b => {
+    b.classList.add('sheetbg'); b.querySelectorAll('[data-lang]').forEach(x => x.onclick = () => { const k = x.dataset.lang; if (k === LANG) return b.close(); setLang(k); }); });
+}
 function bindProfile() {
   app.querySelectorAll('[data-sgo]').forEach(b => b.onclick = () => go(b.dataset.sgo, {}));
   const sf = $('#shotFiles'), mf = $('#mfpFile');
-  const act = { newp: startNewProjectFlow, shots: () => sf.click(), mfp: () => mf.click(), update: checkUpdates, reset: resetEverything, band: bandSheet, backup: backupSheet };
+  const act = { newp: startNewProjectFlow, shots: () => sf.click(), mfp: () => mf.click(), update: checkUpdates, reset: resetEverything, band: bandSheet, backup: backupSheet, lang: langSheet, trnames: () => setTrNames(!TR_NAMES) };
   app.querySelectorAll('[data-act]').forEach(b => b.onclick = () => act[b.dataset.act](b));
   sf.onchange = () => { const files = Array.from(sf.files || []); sf.value = ''; if (!files.length) return; if (files.length === 1) go('import', { file: files[0] }); else startBatch(files); };
   mf.onchange = async () => {
@@ -5229,8 +5243,457 @@ function bindBatch() {
   const add = $('[data-addshots]'), inp = $('#addShots'); if (add && inp) { add.onclick = () => inp.click(); inp.onchange = () => { const files = Array.from(inp.files || []); inp.value = ''; if (!files.length) return; const n = b.rows.length; files.forEach((f, k) => b.rows.push({ i: n + k, file: f, thumb: URL.createObjectURL(f), status: 'reading', kind: null, date: null, values: null, note: '', late: null })); const y = window.scrollY; render(); window.scrollTo(0, y); }; }
   if (b && b.rows.some(r => r.status === 'reading')) runBatch();
 }
+
+/* ============ Language: English or Croatian ============
+   The app is written in English. In Croatian, everything it shows is translated on its way to the screen: a watcher sees
+   every piece of text the app puts on the page (screens, sheets, toasts, labels for screen readers) and swaps it for the
+   Croatian from the dictionary below. Numbers, dates and names inside a sentence are lifted out first and put back in the
+   right place, so one entry covers "Day 3 of 57" and "Day 41 of 90". Numbers get the Croatian decimal comma (83,2 kg) and
+   thousands dot (1.348 kcal); dates come out as "Pet 13. stu". Push, Pull, Legs, Muay Thai, RIR, PB and kg stay English.
+   Exercise names are translated only when "Translate exercise names" is on. What you type yourself is never touched.
+   Language and that switch live in Settings → Language; changing them reloads the app. */
+const LANG = (() => { try { return localStorage.getItem('vikac.lang') === 'hr' ? 'hr' : 'en'; } catch (e) { return 'en'; } })();
+const TR_NAMES = (() => { try { return localStorage.getItem('vikac.trnames') === '1'; } catch (e) { return false; } })();
+function setLang(l) { try { localStorage.setItem('vikac.lang', l); } catch (e) {} location.reload(); }
+function setTrNames(on) { try { localStorage.setItem('vikac.trnames', on ? '1' : '0'); } catch (e) {} location.reload(); }
+// Croatian plural: 1 dan · 2 dana · 5 dana (one / few / many)
+function hrPl(n, one, few, many) { n = Math.abs(Math.round(+String(n).replace(/[^\d.-]/g, '') || 0)); const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many; }
+
+const HR_WD = ['Nedjelja', 'Ponedjeljak', 'Utorak', 'Srijeda', 'Četvrtak', 'Petak', 'Subota'];
+const HR_WD3 = ['Ned', 'Pon', 'Uto', 'Sri', 'Čet', 'Pet', 'Sub'];
+const HR_MO = ['sij', 'velj', 'ožu', 'tra', 'svi', 'lip', 'srp', 'kol', 'ruj', 'lis', 'stu', 'pro'];
+const HR_MON = ['Siječanj', 'Veljača', 'Ožujak', 'Travanj', 'Svibanj', 'Lipanj', 'Srpanj', 'Kolovoz', 'Rujan', 'Listopad', 'Studeni', 'Prosinac'];
+const HR_MOG = ['siječnja', 'veljače', 'ožujka', 'travnja', 'svibnja', 'lipnja', 'srpnja', 'kolovoza', 'rujna', 'listopada', 'studenoga', 'prosinca'];
+const EN_WD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const EN_MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+if (LANG === 'hr') {
+  // dates are built from these everywhere: weekday names (their first 3 letters are the short form), month names
+  HR_WD.forEach((w, i) => { WD[i] = w; });
+  HR_MO.forEach((m, i) => { MO[i] = m; });
+  HR_MON.forEach((m, i) => { MONTHS[i] = m; });
+  fmtShort = s => { const d = parse(s); return d.getDate() + '. ' + MO[d.getMonth()]; };
+  fmtDate = s => { const d = parse(s); return WD[d.getDay()].toLowerCase() + ', ' + d.getDate() + '. ' + HR_MOG[d.getMonth()] + ' ' + d.getFullYear(); };
+  document.documentElement.lang = 'hr';
+}
+
+/* ---------- The translator ---------- */
+const I18N = { dict: null, names: null, rx: null, cache: new Map(), done: new WeakMap() };
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function i18nInit() {
+  const wd = [...EN_WD, ...EN_WD.map(w => w.slice(0, 3)), ...HR_WD, ...HR_WD3], mo = [...EN_MON, ...EN_MON.map(m => m.slice(0, 3)), ...HR_MON, ...HR_MOG, ...HR_MO];
+  const WDR = wd.sort((a, b) => b.length - a.length).map(reEsc).join('|'), MOR = mo.sort((a, b) => b.length - a.length).map(reEsc).join('|');
+  const names = Object.keys(typeof EQUIP === 'object' ? EQUIP : {}).sort((a, b) => b.length - a.length).map(reEsc).join('|');
+  // one pass, leftmost wins: a whole date, an exercise name, a workout name, a number
+  I18N.rx = new RegExp(
+    `((?:(?:${WDR}),? )?\\d{1,2}\\.? (?:${MOR})\\b\\.?(?: \\d{4}\\.?)?)` +
+    (names ? `|((?<![A-Za-z])(?:${names})(?![A-Za-z]))` : '|(\\u0000)') +
+    `|((?<![A-Za-z])(?:Push|Pull|Legs) [AB](?![A-Za-z]))` +
+    `|(\\d+(?:[.,:/]\\d+)*)`, 'g');
+  I18N.dict = HR_DICT; I18N.names = HR_NAMES;
+}
+// "Day 3 of 57" → shape "Day {0} of {1}" + values ["3", "57"]; kinds tell a translatable exercise name apart
+function i18nShape(s) {
+  const vals = [], kinds = [];
+  const shape = s.replace(I18N.rx, (m, date, name, wk, num) => { vals.push(m); kinds.push(name ? 'n' : date ? 'd' : wk ? 'w' : 'x'); return '{' + (vals.length - 1) + '}'; });
+  return { shape, vals, kinds };
+}
+// Croatian numbers: decimal comma, thousands dot (dates, times, versions untouched)
+function hrNum(s) {
+  return s.replace(/(?<![\d.,:])(\d+)\.(\d+)(?![\d.])/g, '$1,$2').replace(/(\d),(\d{3})(?![\d])/g, '$1.$2').replace(/(\d),(\d{3})(?![\d])/g, '$1.$2');
+}
+function trName(n) { return TR_NAMES && I18N.names[n] ? I18N.names[n] : n; }
+function trText(s) {
+  if (LANG !== 'hr' || !s || !/[A-Za-z0-9]/.test(s)) return s;
+  const hit = I18N.cache.get(s); if (hit !== undefined) return hit;
+  const lead = s.match(/^\s*/)[0], trail = s.match(/\s*$/)[0], core = s.slice(lead.length, s.length - trail.length);
+  let out = core;
+  if (/[A-Za-z]/.test(core)) {
+    const ex = I18N.dict[core];
+    if (ex !== undefined && typeof ex === 'string') out = ex;
+    else {
+      const { shape, vals, kinds } = i18nShape(core), t = I18N.dict[shape];
+      const v = vals.map((x, i) => kinds[i] === 'n' ? trName(x) : x);
+      if (typeof t === 'function') out = t(v);
+      else if (typeof t === 'string') out = t.replace(/\{(\d+)\}/g, (m, i) => v[+i] != null ? v[+i] : m);
+      else if (TR_NAMES && kinds.length === 1 && kinds[0] === 'n' && shape === '{0}') out = v[0];
+      else if (vals.length && kinds.some(k => k === 'n')) out = core.replace(I18N.rx, (m, date, name) => name ? trName(m) : m);
+      else {
+        // no whole match: known pieces inside (set schemes, the rest-day list) are swapped one by one
+        let f = shape; for (const [re, to] of HR_FRAG) f = f.replace(re, to);
+        if (f !== shape) out = f.replace(/\{(\d+)\}/g, (m, i) => v[+i] != null ? v[+i] : m);
+        else if (window.__i18nMiss) window.__i18nMiss(shape, core);   // test runs collect what has no translation yet
+      }
+    }
+  }
+  out = lead + hrNum(out) + trail;
+  if (I18N.cache.size > 6000) I18N.cache.clear();
+  I18N.cache.set(s, out); return out;
+}
+const I18N_ATTRS = ['placeholder', 'aria-label', 'title'];
+const i18nSkip = el => !!(el && el.closest && el.closest('script,style,textarea,.usertext,[data-notr]'));
+// a textarea's own text is what you typed, but its placeholder is the app's
+const i18nSkipA = el => !!(el && el.closest && (el.closest('script,style,[data-notr]') || (el.parentElement && el.parentElement.closest('.usertext'))));
+function trTextNode(n) {
+  if (I18N.done.get(n) === n.data) return; const p = n.parentElement; if (p && i18nSkip(p)) return;
+  const t = trText(n.data); if (t !== n.data) n.data = t; I18N.done.set(n, n.data);
+}
+function trAttrs(el) {
+  if (i18nSkipA(el)) return;
+  for (const a of I18N_ATTRS) { if (!el.hasAttribute(a)) continue; const v = el.getAttribute(a), key = 'a:' + a; if (el[key] === v) continue; const t = trText(v); if (t !== v) el.setAttribute(a, t); el[key] = el.getAttribute(a); }
+}
+function trTree(root) {
+  if (!root) return;
+  if (root.nodeType === 3) return trTextNode(root);
+  if (root.nodeType !== 1 && root.nodeType !== 11) return;
+  if (root.nodeType === 1) { trAttrs(root); if (i18nSkip(root)) return; }
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: n => { if (n.nodeType !== 1 || !i18nSkip(n)) return NodeFilter.FILTER_ACCEPT; if (n.tagName === 'TEXTAREA') trAttrs(n); return NodeFilter.FILTER_REJECT; } });
+  let n; while ((n = w.nextNode())) { if (n.nodeType === 3) trTextNode(n); else trAttrs(n); }
+}
+function i18nStart() {
+  if (LANG !== 'hr') return; i18nInit();
+  trTree(document.body);
+  new MutationObserver(ms => { for (const m of ms) { if (m.type === 'characterData') trTextNode(m.target); else if (m.type === 'attributes') trAttrs(m.target); else m.addedNodes.forEach(trTree); } })
+    .observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: I18N_ATTRS });
+}
+
+/* ---------- Croatian dictionary ----------
+   Keys are the English text as the app shows it, with {0}, {1}… where a number, a date, a workout or an exercise name sits
+   (the same order as in the English). A value is the Croatian text, or a small function when the words depend on the
+   number (1 dan · 2 dana · 5 dana). */
+const zv = n => hrPl(n, 'zvjezdicom', 'zvjezdice', 'zvjezdica');           // s 1 zvjezdicom · s 2 zvjezdice · s 5 zvjezdica
+const dana = n => hrPl(n, 'dan', 'dana', 'dana');
+const HR_NAMES = {
+  'DB bench press': 'Potisak bučicama na klupi', 'Incline DB bench press': 'Kosi potisak bučicama', 'DB overhead press': 'Potisak bučicama iznad glave',
+  'Close grip DB press': 'Uski potisak bučicama', 'Cable crossovers': 'Križanje sajli', 'DB overhead extensions': 'Ekstenzija bučicom iznad glave',
+  'DB side lateral raises': 'Odručenje bučicama', 'Weighted pushups': 'Sklekovi s utegom', 'Pushups': 'Sklekovi', 'Triceps pushdown': 'Potisak sajle za triceps',
+  'DB hip huggers': 'Potisak bučicama uz bokove', 'Low to high crossovers': 'Križanje sajli odozdo', 'Dips': 'Propadanja', 'BB squats': 'Čučanj sa šipkom',
+  'Alternating reverse DB lunges': 'Iskoraci unatrag s bučicama', 'Leg curl': 'Pregib nogu', 'Leg extension': 'Ekstenzija nogu', 'DB alternating step ups': 'Step-up s bučicama',
+  'DB stiff leg deadlift': 'Mrtvo dizanje bučicama ravnih nogu', 'DB standing calf raises': 'Podizanje na prste stojeći', 'DB goblet squats': 'Goblet čučanj',
+  'BB RDL': 'Rumunjsko mrtvo dizanje', 'Bag swings': 'Zamasi vrećom', 'DB jump squats': 'Čučanj sa skokom', 'DB seated calf raises': 'Podizanje na prste sjedeći',
+  'Creeping lunges': 'Puzajući iskoraci', 'Deadlift': 'Mrtvo dizanje', 'Barbell shrugs': 'Slijeganje ramenima sa šipkom', 'Weighted chins': 'Zgibovi pothvatom s utegom',
+  'Lat pulldowns': 'Povlačenje sajle do prsa', 'Face pulls': 'Povlačenje sajle do lica', 'Standing DB curls': 'Pregib bučicama stojeći', 'Pullups': 'Zgibovi',
+  'Barbell curls': 'Pregib sa šipkom', 'Weighted pullups': 'Zgibovi s utegom', 'Seated cable rows': 'Veslanje na sajli', 'Straight arm pushdowns': 'Spuštanje sajle ravnih ruku',
+  'Cross body hammer curls': 'Čekić pregib preko tijela',
+};
+const HR_DICT = {
+  /* tab bar, headers */
+  'Today': 'Danas', 'TODAY': 'DANAS', 'Journey': 'Putovanje', 'Scouter': 'Skener', 'Settings': 'Postavke', 'Log': 'Unos',
+  '↩ Today': '↩ Danas', 'Today · {0}': 'Danas · {0}', 'Previous day': 'Prethodni dan', 'Next day': 'Sljedeći dan', 'Previous month': 'Prethodni mjesec', 'Next month': 'Sljedeći mjesec',
+  'Number pad': 'Brojčanik', 'Next': 'Dalje', 'Done': 'Gotovo', 'DONE': 'GOTOVO', 'Close': 'Zatvori', 'Cancel': 'Odustani', 'Save': 'Spremi', 'Delete': 'Obriši', 'Back': 'Natrag',
+  'Open': 'Otvori', 'Start': 'Kreni', 'START': 'START', 'Check': 'Provjeri', 'On': 'Uključeno', 'Off': 'Isključeno', 'Nice': 'Odlično', 'Other': 'Ostalo', 'All': 'Sve',
+  /* Today */
+  'Day': 'Dan', 'Day {0}': 'Dan {0}', 'Day {0} of {1}': 'Dan {0} od {1}', 'Cycle {0}': 'Ciklus {0}',
+  '{0} · Cycle {1}': '{0} · Ciklus {1}', '{0} · Cycle {1} · ahead': '{0} · Ciklus {1} · unaprijed', '{0} · Cycle {1} · past': '{0} · Ciklus {1} · prošlo',
+  "Today's goals": 'Današnji ciljevi', 'Goals': 'Ciljevi', "Today's training": 'Današnji trening', 'Training': 'Trening', 'Rest': 'Odmor', 'Rest day': 'Dan odmora',
+  'Summon day': 'Dan prizivanja', 'Day complete': 'Dan završen', 'Dragon summoned': 'Zmaj prizvan', 'Summon': 'Prizovi',
+  '{0} of {1} to earn the': '{0} od {1} za', '{0}-star ball': v => 'kuglu s ' + v[0] + ' ' + zv(v[0]), 'Earns the': 'Donosi',
+  '{0}-star ball earned': v => 'Osvojena kugla s ' + v[0] + ' ' + zv(v[0]), "Today's {0}-star ball": v => 'Današnja kugla s ' + v[0] + ' ' + zv(v[0]),
+  '{0}-star dragon ball collected!': v => 'Skupljena zmajeva kugla s ' + v[0] + ' ' + zv(v[0]) + '!',
+  '{0} of {1} ·': '{0} od {1} ·', 'for the ball': 'za kuglu', 'finish {0}': 'završi {0}', 'finish the workout': 'završi trening', 'log nutrition': 'unesi prehranu',
+  'weigh in': 'izvaži se', 'dead hangs': 'visovi', 'stretching': 'istezanje', 'kick mobility': 'mobilnost za udarce', 'Muay Thai': 'Muay Thai',
+  'finish the day to summon': 'završi dan za prizivanje', '{0} / {1} balls · no summon this cycle': '{0} / {1} kugli · bez prizivanja u ovom ciklusu',
+  '{0} / {1} balls · the dragon is waiting': '{0} / {1} kugli · zmaj čeka', '{0} / {1} balls · finish today\'s goals first': '{0} / {1} kugli · prvo završi današnje ciljeve',
+  '{0} / {1} balls ·': '{0} / {1} kugli ·', 'the dragon is waiting': 'zmaj čeka', 'Hold to summon': 'Drži za prizivanje', 'Keep holding…': 'Drži još…',
+  'Start workout ▶': 'Započni trening ▶', 'Preview workout': 'Pregled treninga', 'Continue ▶': 'Nastavi ▶', 'Log Muay Thai': 'Unesi Muay Thai',
+  '{0} exercises': v => v[0] + ' ' + hrPl(v[0], 'vježba', 'vježbe', 'vježbi'), '{0} exercises · ~{1} min': v => v[0] + ' ' + hrPl(v[0], 'vježba', 'vježbe', 'vježbi') + ' · ~' + v[1] + ' min',
+  '{0}/{1} exercises': '{0}/{1} vježbi', '{0}/{1} exercises · {2} PB': '{0}/{1} vježbi · {2} PB', '{0}/{1} exercises · {2} PBs': '{0}/{1} vježbi · {2} PB',
+  '{0}/{1} done': '{0}/{1} gotovo', '{0} min · {1} kcal': '{0} min · {1} kcal', '{0} min · {1} kcal · from the band': '{0} min · {1} kcal · s narukvice',
+  'Minutes and kcal from the band': 'Minute i kcal s narukvice', 'Minutes and kcal from the band · kick mobility first': 'Minute i kcal s narukvice · prvo mobilnost za udarce',
+  'weigh in · dead hangs · stretching · log nutrition': 'vaganje · visovi · istezanje · prehrana', 'Open': 'Otvori',
+  'Morning weigh-in': 'Jutarnje vaganje', 'Log the scale': 'Unesi vagu', 'Kick mobility warm-up': 'Zagrijavanje za udarce', 'Range of motion routine': 'Rutina opsega pokreta',
+  'Before kicking': 'Prije udaraca', 'Dead hangs — {0} min': 'Visovi — {0} min', 'Log your best hang': 'Unesi najduži vis', 'Stretching for kicks': 'Istezanje za udarce',
+  '{0} steps · ~{1} min': '{0} koraka · ~{1} min', '{0} steps · {1} min': '{0} koraka · {1} min', 'Nutrition': 'Prehrana', 'Calories · protein · band kcal': 'Kalorije · proteini · kcal narukvice',
+  'Bag work / class — log minutes': 'Vreća / trening — unesi minute', 'No PB yet': 'Još nema PB-a', 'PB': 'PB', 'PB {0}': 'PB {0}',
+  'Target {0} kcal · {1} g protein': 'Cilj {0} kcal · {1} g proteina', '{0} kcal · {1} g protein': '{0} kcal · {1} g proteina', '{0} kcal over · {1} g protein': '{0} kcal previše · {1} g proteina',
+  'Last {0} kg · {1} days ago': v => 'Zadnje ' + v[0] + ' kg · prije ' + v[1] + ' ' + dana(v[1]), 'Last {0} kg · yesterday': 'Zadnje {0} kg · jučer',
+  '{0} kg': '{0} kg', '{0} kg · {1} %': '{0} kg · {1} %', '{0} in a row': '{0} zaredom', 'best {0}': 'najbolje {0}', '{0} g P': '{0} g P',
+  'under': 'ispod', 'over': 'previše', 'short': 'manjka', '{0} under': '{0} ispod', '{0} over': '{0} previše', '{0} short': 'manjka {0}',
+  '▲{0} % vol': '▲{0} % vol', '▲{0} min': '▲{0} min', '▲{0} s': '▲{0} s',
+  'steps ·': 'koraka ·', 'active kcal': 'aktivnih kcal', 'Sync': 'Sinkroniziraj', 'Syncing…': 'Sinkronizacija…',
+  'No backup yet — tap to back up or turn on cloud backup.': 'Još nema sigurnosne kopije — dodirni za kopiju ili uključi kopiju u oblaku.',
+  'Last backup {0} days ago — tap to back up or turn on cloud backup.': v => 'Zadnja kopija prije ' + v[0] + ' ' + dana(v[0]) + ' — dodirni za kopiju ili uključi kopiju u oblaku.',
+  'Cloud backup needs attention — {0}. Tap to fix.': 'Kopija u oblaku traži pažnju — {0}. Dodirni za popravak.',
+  'T-{0}': 'T-{0}', 'day to go': 'dan do starta', 'days to go': 'dana do starta', 'Day {0} is': 'Dan {0} je', 'Log a weigh-in': 'Unesi vaganje', 'See Day {0} ›': 'Pogledaj dan {0} ›',
+  'Finished': 'Završeno', 'Progress has the verdict.': 'Presuda je u Skeneru.', 'Start a new project': 'Pokreni novi projekt', 'Extend it in Settings': 'Produlji ga u Postavkama',
+  'That day hasn\'t happened yet': 'Taj dan još nije došao', 'Logged data keeps it done — clear it inside': 'Uneseni podaci ga drže gotovim — obriši ih unutra',
+  'Note': 'Bilješka', 'for this day': 'za ovaj dan', 'How did it go?': 'Kako je prošlo?', 'Read a screenshot (MFP or scale)': 'Učitaj snimku zaslona (MFP ili vaga)',
+  'Weight': 'Težina', 'Food': 'Prehrana', 'Dead hang': 'Vis', 'Stretching': 'Istezanje', 'Mobility': 'Mobilnost', 'morning': 'ujutro', 'kcal · protein': 'kcal · proteini',
+  'best hang': 'najduži vis', 'warm-up routine': 'rutina zagrijavanja', 'from the band': 's narukvice', 'finished': 'završeno', '{0} / {1} done': '{0} / {1} gotovo',
+  '{0} · {1} / {2} done': '{0} · {1} / {2} gotovo', 'last {0} kg': 'zadnje {0} kg', '{0} / {1} kcal': '{0} / {1} kcal',
+  /* summon */
+  'The dragon answers': 'Zmaj se odaziva', 'The dragon is summoned': 'Zmaj je prizvan', 'Tap to close': 'Dodirni za zatvaranje',
+  'Cycle {0} · {1} / {2} balls': 'Ciklus {0} · {1} / {2} kugli', 'Cycle {0} · {1} / {2} balls · dragon {3} of {4}': 'Ciklus {0} · {1} / {2} kugli · zmaj {3} od {4}',
+  'Cycle {0} · {1} of {2} balls collected': 'Ciklus {0} · {1} od {2} kugli skupljeno', 'This cycle': 'Ovaj ciklus', 'bonus': 'bonus',
+  'Summon day · locked': 'Dan prizivanja · zaključano', 'Summon today': 'Prizivanje danas', '{0}/7 · no summon': '{0}/7 · bez prizivanja', '{0}/7 collected': '{0}/7 skupljeno',
+  /* quick log, notes, sheets */
+  'Weigh-in': 'Vaganje', 'Last': 'Zadnje', 'From the scale · optional': 'S vage · neobavezno', 'Body fat %': 'Tjelesna mast %', 'Muscle kg': 'Mišići kg', 'Skeletal kg': 'Skeletni kg',
+  'Visceral': 'Visceralna', 'Water %': 'Voda %', 'Screenshot': 'Snimka zaslona', 'Delete this reading': 'Obriši ovo vaganje', 'Delete this reading?': 'Obrisati ovo vaganje?',
+  'The weigh-in for {0} is removed.': 'Vaganje za {0} se briše.', 'Weight is required': 'Težina je obavezna', 'From your last weigh-in': 'Od zadnjeg vaganja',
+  'Your starting point — straight from the scale.': 'Tvoja početna točka — ravno s vage.', 'Calories eaten': 'Pojedene kalorije', 'Protein (g)': 'Proteini (g)', 'Carbs (g)': 'UH (g)', 'Fat (g)': 'Masti (g)',
+  'Band': 'Narukvica', 'Band: extra kcal burned': 'Narukvica: dodatno potrošene kcal', 'Band: extra burned': 'Narukvica: dodatno potrošeno',
+  'From the band — type a number to override it': 'S narukvice — upiši broj da ga zamijeniš', 'Typed by hand — clear it to use the band': 'Upisano ručno — obriši za podatak s narukvice',
+  'No band data for this day yet — the project default is used': 'Za ovaj dan još nema podataka s narukvice — koristi se zadana vrijednost projekta',
+  'Delete this entry': 'Obriši ovaj unos', 'Delete this entry?': 'Obrisati ovaj unos?', 'Calories and macros for {0} are removed.': 'Kalorije i makronutrijenti za {0} se brišu.',
+  'Enter what you ate': 'Unesi što si pojeo', 'BMR {0} + band {1} − {2}': 'BMR {0} + narukvica {1} − {2}', 'BMR {0} + default {1} − {2}': 'BMR {0} + zadano {1} − {2}',
+  'BMR {0} + typed {1} − {2}': 'BMR {0} + upisano {1} − {2}', 'To eat today': 'Za pojesti danas', 'Balance for the day': 'Bilanca dana', 'Left today': 'Preostalo danas',
+  'Textbook! −{0} on the day.': 'Školski! −{0} za danas.', 'A bit soft today (−{0}). Still a win.': 'Danas malo mekše (−{0}). I dalje pobjeda.',
+  'Slightly deep (−{0}). Fine once, not daily.': 'Malo duboko (−{0}). Jednom može, ne svaki dan.', "That's too deep (−{0}). Eat something, champion.": 'Preduboko (−{0}). Pojedi nešto, šampione.',
+  'Only −{0}. The plan says −{1}.': 'Samo −{0}. Plan kaže −{1}.', 'Surplus of +{0}. Happens! Fresh page tomorrow.': 'Višak od +{0}. Događa se! Sutra nova stranica.',
+  'Muay Thai session': 'Muay Thai trening', 'Calories burned': 'Potrošene kalorije', 'Note': 'Bilješka', 'Pads, sparring…': 'Fokuseri, sparing…', 'This project': 'Ovaj projekt',
+  '{0} sessions · {1} min · {2} kcal': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga') + ' · ' + v[1] + ' min · ' + v[2] + ' kcal',
+  '{0} session · {1} min · {2} kcal': '{0} trening · {1} min · {2} kcal', '{0} sessions · {1} min': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga') + ' · ' + v[1] + ' min',
+  'From the band': 'S narukvice', 'From the band · {0} – {1}': 'S narukvice · {0} – {1}', 'Change minutes or kcal to override the band.': 'Promijeni minute ili kcal da zamijeniš podatke s narukvice.',
+  'Clear this session': 'Obriši ovaj trening', 'Clear this session?': 'Obrisati ovaj trening?', 'Enter minutes': 'Unesi minute',
+  'Minutes and kcal for {0} are removed and the day shows Muay Thai as not done. The band fills it again on its next sync unless you type your own.': 'Minute i kcal za {0} se brišu i Muay Thai za taj dan više nije gotov. Narukvica ga opet popuni pri sljedećoj sinkronizaciji, osim ako upišeš svoje.',
+  'Dead hangs': 'Visovi', 'Best single hang': 'Najduži pojedinačni vis', 'Total hang time': 'Ukupno vrijeme visa', 'seconds': 'sekunde', 'Last {0} days': v => 'Zadnjih ' + v[0] + ' ' + dana(v[0]),
+  'best': 'najbolje', 'Enter your best hang': 'Unesi najduži vis', 'Log a hang and the line starts here.': 'Unesi vis i linija kreće odavde.',
+  'Kick mobility': 'Mobilnost za udarce', 'Your usual warm-up': 'Tvoje uobičajeno zagrijavanje', 'Range of motion routine · tick it off when it\'s done.': 'Rutina opsega pokreta · označi kad je gotova.',
+  'Before this': 'Prije ovoga', 'Mark done': 'Označi gotovo', 'Done ✓ · tap to undo': 'Gotovo ✓ · dodirni za poništavanje', 'days {0} · {1} · {2}': 'dani {0} · {1} · {2}',
+  'Fill from screenshot': 'Popuni iz snimke zaslona', 'Reading…': 'Čitam…', 'Reading {0} of {1}…': 'Čitam {0} od {1}…',
+  /* workout */
+  'Finish workout': 'Završi trening', 'Log set': 'Upiši seriju', 'Log at least one set first': 'Prvo upiši barem jednu seriju', 'Delete this session': 'Obriši ovaj trening',
+  'Delete this session?': 'Obrisati ovaj trening?', 'Everything logged in it is removed.': 'Sve što je u njemu uneseno se briše.', '✎ Quick note for next time': '✎ Kratka bilješka za idući put',
+  '▶ Video': '▶ Video', '▼ Hide video': '▼ Sakrij video', 'KG': 'KG', 'REPS': 'PON', 'kg': 'kg', 'reps': 'pon', '{0} reps': '{0} pon', 'Reps in {0} min': 'Ponavljanja u {0} min',
+  'Added kg': 'Dodatni kg', 'Added weight': 'Dodatni teret', '{0} min MAX': '{0} min MAX', '{0} min MAX · rest {1} min after': '{0} min MAX · odmor {1} min poslije',
+  '{0} × {1} @ {2}% {3}RM': '{0} × {1} @ {2}% {3}RM', '{0} × {1} @ {2}% {3}RM · last {4}×{5}': '{0} × {1} @ {2}% {3}RM · zadnje {4}×{5}',
+  '{0} × {1} @ {2}% {3}RM · rest {4}–{5} min': '{0} × {1} @ {2}% {3}RM · odmor {4}–{5} min', '{0} × {1}–{2} @ {3} RIR · last {4}×{5}': '{0} × {1}–{2} @ {3} RIR · zadnje {4}×{5}',
+  '{0} × {1}–{2} @ {3} RIR · rest {4} s – {5} min': '{0} × {1}–{2} @ {3} RIR · odmor {4} s – {5} min',
+  '{0} × {1}–{2} heavy, {3} × {4}–{5}': '{0} × {1}–{2} teško, {3} × {4}–{5}', '{0} × {1}–{2} heavy, {3} × {4}–{5} · rest {6} s – {7} min': '{0} × {1}–{2} teško, {3} × {4}–{5} · odmor {6} s – {7} min',
+  '{0} × {1}–{2} heavy, {3} × {4}–{5} controlled': '{0} × {1}–{2} teško, {3} × {4}–{5} kontrolirano', '{0} × {1} heavy, {2} × {3} controlled': '{0} × {1} teško, {2} × {3} kontrolirano',
+  '{0} × {1}–{2} / side @ {3} RIR': '{0} × {1}–{2} / strana @ {3} RIR', 'rest {0}–{1} min': 'odmor {0}–{1} min', 'rest {0} s – {1} min': 'odmor {0} s – {1} min', 'rest {0} min after': 'odmor {0} min poslije',
+  'First time on this one': 'Prvi put na ovoj vježbi', 'Baseline locked: {0} kg × {1}. Next time we chase it.': 'Polazište zaključano: {0} kg × {1}. Idući put ga lovimo.',
+  'Baseline locked: {0} reps. Next time we chase it.': 'Polazište zaključano: {0} pon. Idući put ga lovimo.', 'Nothing logged.': 'Ništa nije uneseno.',
+  '{0} kg → {1} kg. Nice!': '{0} kg → {1} kg. Odlično!', '{0} kg → {1} kg. Held it on a cut. Win.': '{0} kg → {1} kg. Zadržano na cutu. Pobjeda.',
+  '{0} kg → {1} kg ({2} %). Big jump. You sure?': '{0} kg → {1} kg ({2} %). Veliki skok. Siguran si?', '{0} kg → {1} kg (+{2} %). Big jump. You sure?': '{0} kg → {1} kg (+{2} %). Veliki skok. Siguran si?',
+  '{0} kg → {1} kg ({2} %). Down a bit — happens on a cut. Next one\'s yours.': '{0} kg → {1} kg ({2} %). Malo slabije — na cutu se događa. Iduća je tvoja.',
+  '{0} reps → {1} reps. Nice!': '{0} pon → {1} pon. Odlično!', '{0} reps → {1} reps. Held it on a cut. Win.': '{0} pon → {1} pon. Zadržano na cutu. Pobjeda.',
+  '{0} reps → {1} reps (+{2} %). Big jump. You sure?': '{0} pon → {1} pon (+{2} %). Veliki skok. Siguran si?',
+  '{0} reps → {1} reps ({2} %). Down a bit — happens on a cut. Next one\'s yours.': '{0} pon → {1} pon ({2} %). Malo slabije — na cutu se događa. Iduća je tvoja.',
+  '● same as': '● isto kao', 'same as last time': 'isto kao zadnji put', 'New PB!': 'Novi PB!', '{0} new PB': '{0} novi PB', 'No workout today. Rest is part of the plan.': 'Danas nema treninga. Odmor je dio plana.',
+  '{0} done!': '{0} gotov!', 'Pre-cut test': 'Početni test', '{0} · Pre-cut test': '{0} · Početni test', 'Bench': 'Klupa', 'Cable': 'Sajla', 'Dumbbells': 'Bučice', 'Barbell': 'Šipka', 'Bodyweight': 'Vlastita težina',
+  /* stretching */
+  'Stretch': 'Istezanje', 'Start the routine ▶': 'Kreni s rutinom ▶', 'For kicks · {0} steps · ~{1} min': 'Za udarce · {0} koraka · ~{1} min', '{0} s': '{0} s', '{0} s per side': '{0} s po strani',
+  'Pause': 'Pauza', 'Skip': 'Preskoči', 'last step': 'zadnji korak', 'Stop the routine?': 'Prekinuti rutinu?', 'Progress in it is not kept — you can start again any time.': 'Napredak se ne sprema — možeš krenuti ispočetka kad god želiš.',
+  'Stop': 'Prekini', 'Done ✓': 'Gotovo ✓', 'Image {0}': 'Slika {0}', 'Asian squat': 'Azijski čučanj', '{0}. Asian squat': '{0}. Azijski čučanj', 'Routine complete!': 'Rutina gotova!',
+  /* Journey */
+  'Path': 'Staza', 'Plan': 'Plan', 'Month': 'Mjesec', 'path': 'staza', 'plan': 'plan', 'month': 'mjesec',
+  'Day {0} of {1} · {2} balls · {3} dragon': v => 'Dan ' + v[0] + ' od ' + v[1] + ' · ' + v[2] + ' ' + hrPl(v[2], 'kugla', 'kugle', 'kugli') + ' · ' + v[3] + ' ' + hrPl(v[3], 'zmaj', 'zmaja', 'zmajeva'),
+  'Day {0} of {1} · {2} balls · {3} dragons': v => 'Dan ' + v[0] + ' od ' + v[1] + ' · ' + v[2] + ' ' + hrPl(v[2], 'kugla', 'kugle', 'kugli') + ' · ' + v[3] + ' ' + hrPl(v[3], 'zmaj', 'zmaja', 'zmajeva'),
+  'Day {0} of {1} · {2} ball · {3} dragons': v => 'Dan ' + v[0] + ' od ' + v[1] + ' · ' + v[2] + ' kugla · ' + v[3] + ' ' + hrPl(v[3], 'zmaj', 'zmaja', 'zmajeva'),
+  'Day {0} of {1} · {2} ball · {3} dragon': v => 'Dan ' + v[0] + ' od ' + v[1] + ' · ' + v[2] + ' kugla · ' + v[3] + ' zmaj',
+  'Day {0} is {1} · {2} balls · {3} dragons': 'Dan {0} je {1} · {2} kugli · {3} zmajeva',
+  '{0}-day chain': v => v[0] + ' ' + dana(v[0]) + ' u komadu',
+  'Cycle {0} · {1} / {2}': 'Ciklus {0} · {1} / {2}', 'Day {0} · {1}': 'Dan {0} · {1}', 'Day {0} · Muay Thai': 'Dan {0} · Muay Thai', 'Day {0} · Rest': 'Dan {0} · Odmor',
+  'Day {0} · Rest · summon': 'Dan {0} · Odmor · prizivanje', 'Day {0} · Dragon summoned': 'Dan {0} · Zmaj prizvan', '{0} · missed': '{0} · propušteno', 'Today · {0} · missed': 'Danas · {0} · propušteno',
+  'This cycle · {0}': 'Ovaj ciklus · {0}', 'Next cycle · {0}': 'Sljedeći ciklus · {0}', '{0} lifts · ~{1} h {2} min': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga') + ' · ~' + v[1] + ' h ' + v[2] + ' min',
+  'The project ends with this cycle.': 'Projekt završava ovim ciklusom.', 'MISSED': 'PROPUŠTENO', 'Rest · summon': 'Odmor · prizivanje', '7 balls → the dragon': '7 kugli → zmaj',
+  'minutes and kcal from the band': 'minute i kcal s narukvice', 'Cycle {0} · {1}': 'Ciklus {0} · {1}', 'Cycle {0} · Muay Thai': 'Ciklus {0} · Muay Thai', 'summon day': 'dan prizivanja',
+  'MON': 'PON', 'TUE': 'UTO', 'WED': 'SRI', 'THU': 'ČET', 'FRI': 'PET', 'SAT': 'SUB', 'SUN': 'NED', 'Push': 'Push', 'Pull': 'Pull', 'Legs': 'Legs',
+  '{0} perfect of {1} days': v => v[0] + ' savršenih od ' + v[1] + ' ' + dana(v[1]), '{0} perfect of {1} day': '{0} savršen od {1} dana', '{0} % done · {1} left': '{0} % gotovo · još {1}',
+  '{0}, {1}': '{0}, {1}', '{0}, {1}, shown': '{0}, {1}, prikazano', '{0}, Muay Thai': '{0}, Muay Thai', '{0}, Muay Thai, shown': '{0}, Muay Thai, prikazano', '{0}, Rest': '{0}, odmor',
+  '{0}, Rest, shown': '{0}, odmor, prikazano', '{0}, summon day': '{0}, dan prizivanja', '{0}, summon day, shown': '{0}, dan prizivanja, prikazano',
+  'Open the workout': 'Otvori trening', 'Open the day': 'Otvori dan', 'Open today': 'Otvori danas', 'The day': 'Dan', 'Open Muay Thai': 'Otvori Muay Thai', 'See the dragon': 'Pogledaj zmaja',
+  'Earns the ball': 'Donosi kuglu', 'no ball': 'bez kugle', 'earns the {0}-star ball': v => 'donosi kuglu s ' + v[0] + ' ' + zv(v[0]), '· not finished': '· nije završeno',
+  'tomorrow': 'sutra', 'yesterday': 'jučer', 'today': 'danas', 'Bonus': 'Bonus',
+  /* Scouter */
+  'Scan': 'Sken', 'Body': 'Tijelo', 'Records': 'Rekordi', 'Tips': 'Savjeti', 'NO TIPS AVAILABLE': 'NEMA SAVJETA', 'NEW TIPS: {0}': 'NOVI SAVJETI: {0}', 'VIEW TIPS': 'SAVJETI',
+  'POWER LEVEL': 'RAZINA MOĆI', 'Power level {0}': 'Razina moći {0}', 'Power level · DAY {0} / {1}': 'Razina moći · DAN {0} / {1}', 'Power level · PRE-START · T-{0}': 'Razina moći · PRIJE STARTA · T-{0}',
+  'GOAL {0}': 'CILJ {0}', 'CHARGING': 'PUNJENJE', 'POWERING UP': 'JAČANJE', 'SURGING': 'PROBOJ', 'Charging': 'Punjenje', 'Powering up': 'Jačanje', 'Surging': 'Proboj', 'Recharge': 'Punjenje baterija',
+  "It's over 9000": 'Preko 9000 je', 'Goal reached — full power.': 'Cilj dostignut — puna snaga.', 'Ahead of plan': 'Ispred plana', 'Slightly off the line': 'Malo izvan linije', 'Project done': 'Projekt gotov',
+  'On pace · {0} of {1} perfect days': v => 'U tempu · ' + v[0] + ' od ' + v[1] + ' savršenih dana', 'On pace · {0} of {1} perfect days · {2} % of the way from start to goal': v => 'U tempu · ' + v[0] + ' od ' + v[1] + ' savršenih dana · ' + v[2] + ' % puta od starta do cilja',
+  'Day one — the scan starts here.': 'Prvi dan — skeniranje počinje ovdje.', 'Scan running — first readings coming in.': 'Skeniranje u tijeku — stižu prva mjerenja.',
+  'Vitals · {0}-day trend': 'Vitalni znakovi · trend {0} dana', 'Weight': 'Težina', 'Body fat': 'Tjelesna mast', 'Muscle': 'Mišići', 'Muscle mass': 'Mišićna masa', 'Water': 'Voda', 'Visceral fat': 'Visceralna mast',
+  'Skeletal': 'Skeletni', 'Skeletal muscle': 'Skeletni mišići', 'Avg kcal': 'Prosj. kcal', 'Avg protein': 'Prosj. proteini', 'Perfect days': 'Savršeni dani', 'Steps / day': 'Koraci / dan', 'Active kcal': 'Aktivne kcal',
+  'Cycle {0} · dragon radar': 'Ciklus {0} · zmajev radar', '{0} / {1} · next: {2} today': '{0} / {1} · sljedeće: {2} danas', '{0} / {1} · next: Muay Thai today': '{0} / {1} · sljedeće: Muay Thai danas',
+  '{0} / {1} · next: rest today': '{0} / {1} · sljedeće: odmor danas', '{0} / {1} · next: Rest today': '{0} / {1} · sljedeće: odmor danas', '{0} / {1} · summon today': '{0} / {1} · prizivanje danas',
+  'Balls {0} · dragons {1}': 'Kugle {0} · zmajevi {1}', 'Starts {0}': 'Počinje {0}', '{0} · summon to': '{0} · prizovi',
+  'Report card · so far': 'Ocjene · zasad', 'Report card': 'Ocjene', 'Overall': 'Ukupno', 'Strength': 'Snaga', 'Pace': 'Tempo', 'Lifts': 'Dizanja',
+  'How you\'re doing · {0}': 'Kako ti ide · {0}', 'Science check': 'Znanstvena provjera', 'Composition': 'Sastav tijela',
+  'Power level = how far your {0}-day weight and body-fat trend has moved from the start toward the goal ({1} → {2}). Score = body on plan ({3} %) + strength held ({4} %) + perfect days ({5} %). Green ↓ on things that should fall and green ↑ on things that should rise; yellow ● means no real change this week.':
+    'Razina moći = koliko se tvoj {0}-dnevni trend težine i tjelesne masti pomaknuo od starta prema cilju ({1} → {2}). Ocjena = tijelo po planu ({3} %) + zadržana snaga ({4} %) + savršeni dani ({5} %). Zelena ↓ na onome što treba padati i zelena ↑ na onome što treba rasti; žuta ● znači da ovaj tjedan nema prave promjene.',
+  'Weight · trend vs plan': 'Težina · trend prema planu', 'trend': 'trend', 'plan zone': 'zona plana', 'projection': 'projekcija', 'Goal on {0}': 'Cilj {0}',
+  'expected on {0} if the deficit holds · plan {1}': 'očekivano {0} ako se deficit održi · plan {1}', 'Heading for': 'Smjer prema', 'You are': 'Ti si', 'Plan says today': 'Plan za danas',
+  '{0} kg · plan {1} kg': '{0} kg · plan {1} kg', '{0} % · plan {1} %': '{0} % · plan {1} %', 'plan {0} · goal {1}': 'plan {0} · cilj {1}', 'plan {0} % today': 'plan {0} % danas',
+  'Pace −{0} kg/wk · plan −{1}': 'Tempo −{0} kg/tj · plan −{1}', 'Pace +{0} kg/wk · plan −{1}': 'Tempo +{0} kg/tj · plan −{1}', 'Pace after a week of weigh-ins · plan −{0}': 'Tempo nakon tjedan dana vaganja · plan −{0}',
+  '−{0} kg / week': '−{0} kg / tjedan', '-{0} % / week': '-{0} % / tjedan', 'hold ≥ {0} kg': 'zadrži ≥ {0} kg', '(−{0} kg) · keep muscle ≥ {1} kg': '(−{0} kg) · zadrži mišiće ≥ {1} kg',
+  '{0} → {1} kg': '{0} → {1} kg', '{0} kg →': '{0} kg →', '→ goal': '→ cilj', 'down {0} kg': 'dolje {0} kg', 'up {0} kg': 'gore {0} kg', '±{0} off': '±{0} odstupanja',
+  'Starting point': 'Početna točka', 'Lowest weight': 'Najniža težina', 'Final weigh-in': 'Završno vaganje', 'Since day {0}': 'Od dana {0}', 'on plan': 'po planu', 'on target': 'na cilju',
+  'Dropping faster than planned — eat a bit more': 'Pada brže od plana — jedi malo više', 'Weight is dropping {0} kg a week — faster than planned.': 'Težina pada {0} kg tjedno — brže od plana.',
+  '{0} % → {1} % in {2} days. In the green!': v => v[0] + ' % → ' + v[1] + ' % u ' + v[2] + ' ' + dana(v[2]) + '. U zelenom!',
+  'Food · {0}-day average': 'Prehrana · prosjek {0} dana', 'Food · project average': 'Prehrana · prosjek projekta', 'Band · {0}-day average': 'Narukvica · prosjek {0} dana',
+  'Targets': 'Ciljevi', 'Targets · today': 'Ciljevi · danas', 'Protein · daily {0} g': 'Proteini · dnevno {0} g', 'Protein · {0} g/kg': 'Proteini · {0} g/kg', 'Fat · {0} g/kg': 'Masti · {0} g/kg',
+  'Carbs · {0} g/kg — what is left after protein and fat': 'UH · {0} g/kg — što ostane nakon proteina i masti', 'Calories · BMR {0} + band {1} − {2}': 'Kalorije · BMR {0} + narukvica {1} − {2}',
+  'Calories': 'Kalorije', 'Protein': 'Proteini', 'Carbs': 'UH', 'Fat': 'Masti', 'protein': 'proteini', 'carbs': 'UH', 'fat': 'masti', 'g': 'g', 'kcal': 'kcal', 'Kcal': 'Kcal', 'kcal/day': 'kcal/dan', '{0} kcal/day': '{0} kcal/dan',
+  'real burn · after {0} logged days ({1})': 'stvarna potrošnja · nakon {0} unesenih dana ({1})', 'real daily burn · planned {0}': 'stvarna dnevna potrošnja · planirano {0}',
+  'kcal per kg lost · after the first {0} kg': 'kcal po izgubljenom kg · nakon prvih {0} kg', 'kcal per kg lost · plan {0}': 'kcal po izgubljenom kg · plan {0}',
+  '{0} / {1} days hit': '{0} / {1} dana pogođeno', 'Days logged': 'Uneseni dani', '{0} days logged': v => v[0] + ' ' + dana(v[0]) + ' uneseno', 'tracking only': 'samo praćenje',
+  'Under {0} g on {1} of the last {2} logged days (average {3} g). Protein is what keeps the muscle on a cut.': 'Ispod {0} g u {1} od zadnjih {2} unesenih dana (prosjek {3} g). Proteini čuvaju mišiće na cutu.',
+  'Nothing logged yet. Share an MFP screenshot or type today\'s numbers.': 'Još ništa nije uneseno. Podijeli MFP snimku zaslona ili upiši današnje brojeve.',
+  'Steps': 'Koraci', '{0} steps · {1} kcal': '{0} koraka · {1} kcal', 'Training · this project': 'Trening · ovaj projekt', 'Goal · this project': 'Cilj · ovaj projekt', 'this project': 'ovaj projekt',
+  'Workouts finished': 'Završeni treninzi', 'Sessions': 'Treninzi', 'sessions': 'treninga', '{0} sessions': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga'), 'Best session': 'Najbolji trening',
+  'Longest perfect streak': 'Najduži niz savršenih dana', '{0} of {1} days perfect': v => v[0] + ' od ' + v[1] + ' ' + dana(v[1]) + ' savršeno', '{0} of the last {1} days': v => v[0] + ' od zadnjih ' + v[1] + ' ' + dana(v[1]),
+  '{0} of {1} lifts held or improved this cycle': '{0} od {1} dizanja zadržano ili poboljšano u ovom ciklusu', 'no comparable sessions yet': 'još nema usporedivih treninga',
+  'No sessions yet — finish a workout and it lands here.': 'Još nema treninga — završi trening i pojavit će se ovdje.', 'all held': 'sve zadržano', 'mostly held': 'uglavnom zadržano', 'slipping': 'popušta',
+  'flawless': 'besprijekorno', 'solid': 'solidno', 'patchy': 'neujednačeno', 'none yet': 'još ništa', 'None yet': 'Još ništa', 'holding': 'drži se', 'perfect days': 'savršeni dani',
+  'Personal bests': 'Osobni rekordi', 'Highest volume': 'Najveći volumen', 'Most weight moved in one session (sets × reps × kg). Bodyweight exercises: most reps in one session.': 'Najviše kila podignuto u jednom treningu (serije × ponavljanja × kg). Vježbe s vlastitom težinom: najviše ponavljanja u jednom treningu.',
+  'No records yet — log a workout and they show up here.': 'Još nema rekorda — unesi trening i pojavit će se ovdje.', 'NEW': 'NOVO', '{0} new this week': '{0} novo ovaj tjedan', 'PBs': 'PB-ovi', 'PUSH': 'PUSH', 'PULL': 'PULL', 'LEGS': 'LEGS',
+  '{0} · most weight moved in one session': '{0} · najviše kila u jednom treningu', 'Heaviest set · volume': 'Najteža serija · volumen', 'heaviest kg': 'najteži kg', 'volume': 'volumen', 'Best': 'Najbolje', 'Best volume': 'Najbolji volumen',
+  'History': 'Povijest', 'Newest first': 'Najnovije prvo', 'First': 'Prvo', 'Beat the first session by': 'Nadmaši prvi trening za', '· week best {0}': '· najbolje u tjednu {0}', '= {0} s ·': '= {0} s ·',
+  'Strength · since day {0}': 'Snaga · od dana {0}', '{0}D': '{0}D', '{0}W': '{0}T', '{0}M': '{0}M', 'past {0} months': v => 'zadnjih ' + v[0] + ' ' + hrPl(v[0], 'mjesec', 'mjeseca', 'mjeseci'),
+  'The trend appears after a few weigh-ins.': 'Trend se pojavi nakon nekoliko vaganja.', 'base': 'start', '{0} kg ({1})': '{0} kg ({1})', '{0} kg · +{1} kg': '{0} kg · +{1} kg', '{0} kg · -{1} kg': '{0} kg · -{1} kg',
+  'Every tip this project — kept until you start a new project': 'Svi savjeti ovog projekta — čuvaju se dok ne pokreneš novi projekt', 'Tips history': 'Povijest savjeta', 'Back to tips': 'Natrag na savjete',
+  'This project · {0} tips': v => 'Ovaj projekt · ' + v[0] + ' ' + hrPl(v[0], 'savjet', 'savjeta', 'savjeta'), 'Dismiss': 'Odbaci', 'Dismiss all': 'Odbaci sve', 'Dismissed': 'Odbačeno', 'Resolved': 'Riješeno', 'Active': 'Aktivno',
+  'swipe to dismiss': 'povuci za odbacivanje', '{0} new · swipe to dismiss': '{0} novo · povuci za odbacivanje', 'DISMISS': 'ODBACI', 'No tips right now. New ones show up here as your data comes in.': 'Trenutno nema savjeta. Novi se pojave ovdje kako stižu podaci.',
+  'No tips yet.': 'Još nema savjeta.', 'tip': 'savjet',
+  /* Settings */
+  'Project': 'Projekt', 'Past projects': 'Prošli projekti', 'New project': 'Novi projekt', 'the current one moves to Past projects': 'trenutni ide u Prošle projekte',
+  'Sync': 'Sinkronizacija', 'Band sync': 'Narukvica', 'Cloud backup': 'Kopija u oblaku', 'Data': 'Podaci', 'Read screenshots': 'Učitaj snimke zaslona', 'Xiaomi or MFP, one or many': 'Xiaomi ili MFP, jedna ili više',
+  'MFP export': 'MFP izvoz', 'Fill every unlogged day': 'Popuni svaki neuneseni dan', 'Backup file': 'Datoteka kopije', 'App · v{0}': 'Aplikacija · v{0}', 'Check for updates': 'Provjeri ažuriranja',
+  'Reset everything': 'Obriši sve', 'every project and log on this phone': 'svaki projekt i unos na ovom mobitelu', 'Not connected': 'Nije spojeno', 'Waiting': 'Čeka', 'Pending': 'Na čekanju',
+  'Steps and kcal · {0} min ago': 'Koraci i kcal · prije {0} min', 'Steps and kcal · {0} days ago': v => 'Koraci i kcal · prije ' + v[0] + ' ' + dana(v[0]), 'Steps and kcal · just now': 'Koraci i kcal · upravo sada',
+  'Steps and kcal · waiting for data': 'Koraci i kcal · čeka podatke', 'Last {0} · restore · CSV': 'Zadnja {0} · vrati · CSV', 'No file backup yet · restore · CSV': 'Još nema kopije · vrati · CSV',
+  'Current · day {0} of {1}': 'Trenutni · dan {0} od {1}', 'Current · starts {0}': 'Trenutni · počinje {0}', 'Current · finished': 'Trenutni · završen', '{0} → {1} · goal {2} kg': '{0} → {1} · cilj {2} kg',
+  'Project name': 'Naziv projekta', 'Name': 'Naziv', 'First day': 'Prvi dan', 'Last day': 'Zadnji dan', 'Deficit / day': 'Deficit / dan', 'Deficit / day (kcal)': 'Deficit / dan (kcal)',
+  'Protein / day': 'Proteini / dan', 'Protein / day (g)': 'Proteini / dan (g)', 'BMR': 'BMR', 'BMR (kcal)': 'BMR (kcal)', 'Band default': 'Zadano za narukvicu', 'Band default (kcal)': 'Zadano za narukvicu (kcal)',
+  'Height': 'Visina', 'Height (cm)': 'Visina (cm)', 'Age': 'Dob', 'Early water drop': 'Rani gubitak vode', 'Early water drop (kg)': 'Rani gubitak vode (kg)', 'cm': 'cm',
+  'Advanced: BMR, band default, height, age, early water drop': 'Napredno: BMR, zadano za narukvicu, visina, dob, rani gubitak vode', 'Advanced: height, age, early water drop': 'Napredno: visina, dob, rani gubitak vode',
+  'Starting point — from the scale': 'Početna točka — s vage', 'Weight (kg)': 'Težina (kg)', 'Body fat (%)': 'Tjelesna mast (%)', 'Muscle (kg)': 'Mišići (kg)', 'Skeletal (kg)': 'Skeletni (kg)', 'Water (%)': 'Voda (%)',
+  'End this project today': 'Završi ovaj projekt danas', 'End the project today?': 'Završiti projekt danas?', 'End today': 'Završi danas', 'Today becomes the final day. You can still extend it later here, or start a new project.': 'Danas postaje zadnji dan. Kasnije ga i dalje možeš produljiti ovdje ili pokrenuti novi projekt.',
+  'Check the dates and the weight': 'Provjeri datume i težinu', 'Tap one for its summary — reopen it or delete it.': 'Dodirni projekt za sažetak — ponovno ga otvori ili obriši.', 'Reopen': 'Ponovno otvori',
+  '{0} → {1} · {2} % perfect · {3} → {4} kg': '{0} → {1} · {2} % savršeno · {3} → {4} kg', '{0} → {1} · finished': '{0} → {1} · završeno', '{0} project': '{0} projekt', 'first project': 'prvi projekt', 'First project': 'Prvi projekt',
+  'Start a new project?': 'Pokrenuti novi projekt?', 'Start new': 'Pokreni novi', 'moves to Past projects with everything you logged. You can reopen it any time.': 'ide u Prošle projekte sa svime što si unio. Možeš ga ponovno otvoriti kad god želiš.',
+  'Name the mission and set the dates.': 'Imenuj misiju i postavi datume.', 'Project started. Let\'s go!': 'Projekt pokrenut. Idemo!', 'End date must be at least a week after Day 1': 'Zadnji dan mora biti barem tjedan dana nakon prvog dana',
+  'Enter the daily deficit': 'Unesi dnevni deficit', 'Band sync': 'Narukvica', 'Band data received': 'Podaci s narukvice primljeni', 'Last checked': 'Zadnja provjera', 'Inbox': 'Sandučić', 'Sync now': 'Sinkroniziraj sada', 'Disconnect': 'Odspoji',
+  'Disconnect band sync?': 'Odspojiti narukvicu?', 'Data already synced stays in the app.': 'Već sinkronizirani podaci ostaju u aplikaciji.', 'Connect': 'Spoji', 'Checking…': 'Provjeravam…',
+  'Band → Mi Fitness → Health Connect → the inbox app sends new data every {0} minutes; the app picks it up when it is open.': 'Narukvica → Mi Fitness → Health Connect → aplikacija sandučića šalje nove podatke svakih {0} minuta; aplikacija ih preuzme kad je otvorena.',
+  'Enter the inbox address and key': 'Unesi adresu sandučića i ključ', 'Connected · band data found': 'Spojeno · pronađeni podaci s narukvice', 'Connected · waiting for the first band data': 'Spojeno · čeka prve podatke s narukvice',
+  'Wrong key': 'Pogrešan ključ', 'Inbox not reachable': 'Sandučić nije dostupan', 'Inbox answered {0}': 'Sandučić je odgovorio {0}', 'not set up': 'nije postavljeno', 'just now': 'upravo sada', '{0} min ago': 'prije {0} min',
+  '{0} h ago': 'prije {0} h', '{0} days ago': v => 'prije ' + v[0] + ' ' + dana(v[0]), '{0} day ago': 'prije {0} dan', 'waiting for data': 'čeka podatke',
+  'Every change saved to a private GitHub repository, with history — a new phone picks up where this one left off.': 'Svaka promjena sprema se u privatni GitHub repozitorij, s poviješću — novi mobitel nastavlja gdje je ovaj stao.',
+  'How to set it up ({0} minutes)': 'Kako postaviti ({0} minuta)', 'On github.com:': 'Na github.com:', '+ → New repository': '+ → New repository', ', name': ', naziv', ', choose': ', odaberi', ', tick': ', označi', ', create.': ', izradi.',
+  'Private': 'Private', 'Add a README': 'Add a README', 'Profile photo →': 'Profilna slika →', 'Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token': 'Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token',
+  'Name it "Trening", set the longest expiry,': 'Nazovi ga "Trening", postavi najdulje trajanje,', 'Repository access: Only select repositories → trening-data': 'Repository access: Only select repositories → trening-data',
+  'Permissions → Repository permissions → Contents: Read and write': 'Permissions → Repository permissions → Contents: Read and write', '. Generate, copy the token.': '. Generiraj i kopiraj token.',
+  'Paste it above and tap Connect. The token can only touch that one repository.': 'Zalijepi ga gore i dodirni Spoji. Token može dirati samo taj jedan repozitorij.', 'Repository (owner/name)': 'Repozitorij (vlasnik/naziv)', 'Token': 'Token',
+  'Repository looks wrong — use owner/name': 'Repozitorij ne izgleda dobro — koristi vlasnik/naziv', 'Paste the token': 'Zalijepi token', 'Connected. Cloud backup is on.': 'Spojeno. Kopija u oblaku je uključena.',
+  'Connected — GitHub already has data, choose below': 'Spojeno — GitHub već ima podatke, odaberi dolje', 'Could not connect: {0}': 'Spajanje nije uspjelo: {0}', 'Saved to GitHub': 'Spremljeno na GitHub',
+  'Saved to GitHub {0} min ago': 'Spremljeno na GitHub prije {0} min', 'Saved to GitHub {0} h ago': 'Spremljeno na GitHub prije {0} h', 'Saved to GitHub just now': 'Spremljeno na GitHub upravo sada',
+  'Changes waiting to sync': 'Promjene čekaju sinkronizaciju', 'Not synced yet': 'Još nije sinkronizirano', 'Nothing on GitHub yet': 'Na GitHubu još nema ničega', 'GitHub has data from another device': 'GitHub ima podatke s drugog uređaja',
+  'GitHub has newer data — choose below': 'GitHub ima novije podatke — odaberi dolje', 'GitHub has newer data from another device — see Profile': 'GitHub ima novije podatke s drugog uređaja — pogledaj Postavke',
+  'GitHub changed meanwhile — will retry': 'GitHub se u međuvremenu promijenio — pokušat ću ponovno', 'Token rejected — make a new one': 'Token odbijen — napravi novi', 'Token has no access to this repository': 'Token nema pristup ovom repozitoriju', 'GitHub error': 'GitHub greška',
+  'Restore from GitHub': 'Vrati s GitHuba', 'Restore from GitHub?': 'Vratiti s GitHuba?', 'Everything on this phone is replaced by the copy on GitHub.': 'Sve na ovom mobitelu zamijenit će kopija s GitHuba.', 'Restore': 'Vrati',
+  'Restored from GitHub': 'Vraćeno s GitHuba', 'Use GitHub\'s copy': 'Koristi kopiju s GitHuba', 'Use this phone\'s copy': 'Koristi kopiju s ovog mobitela', 'Using GitHub\'s copy': 'Koristi se kopija s GitHuba',
+  'Phone\'s copy saved to GitHub': 'Kopija s mobitela spremljena na GitHub', 'Cloud backup failed: {0}': 'Kopija u oblaku nije uspjela: {0}', 'Turn off cloud backup': 'Isključi kopiju u oblaku', 'Failed': 'Nije uspjelo',
+  'One file with everything — every project, log and workout. Keep one somewhere safe now and then, or restore one onto a new phone.': 'Jedna datoteka sa svime — svaki projekt, unos i trening. Povremeno je spremi na sigurno ili je vrati na novi mobitel.',
+  'Back up now': 'Napravi kopiju', 'downloads vikac-backup-{0}-{1}-{2}.json': 'preuzima vikac-backup-{0}-{1}-{2}.json', 'Restore from a file': 'Vrati iz datoteke', 'replaces everything on this phone': 'zamjenjuje sve na ovom mobitelu',
+  'Export readings as CSV': 'Izvezi mjerenja kao CSV', 'weigh-ins and nutrition, one row a day': 'vaganja i prehrana, jedan red po danu', 'Not a valid backup file': 'Nije ispravna datoteka kopije', 'Restored': 'Vraćeno',
+  'Restore this backup?': 'Vratiti ovu kopiju?', 'Everything on this phone is replaced by the file.': 'Sve na ovom mobitelu zamijenit će datoteka.', 'Reset everything?': 'Obrisati sve?', 'Every project and log on this phone is deleted. This cannot be undone.': 'Svaki projekt i unos na ovom mobitelu se briše. To se ne može poništiti.',
+  'You have the latest version ({0})': 'Imaš najnoviju verziju ({0})', 'Version {0} found — reloading': 'Pronađena verzija {0} — ponovno učitavam', 'Offline — try again later': 'Nema mreže — pokušaj kasnije',
+  'Delete {0}?': 'Obrisati {0}?', 'Everything logged in it is deleted. This cannot be undone.': 'Sve uneseno u njemu se briše. To se ne može poništiti.', '{0} is the current project': '{0} je trenutni projekt',
+  'No days found in that file': 'U datoteci nema dana', 'Import failed: {0}': 'Uvoz nije uspio: {0}', 'Not a zip file': 'Nije zip datoteka', 'No Nutrition-Summary file in that zip': 'U zipu nema datoteke Nutrition-Summary', 'That is not the MFP nutrition CSV': 'To nije MFP CSV prehrane',
+  'Language': 'Jezik', 'Translate exercise names': 'Prevedi nazive vježbi', 'Exercise names in Croatian (Push, Pull, Legs stay)': 'Nazivi vježbi na hrvatskom (Push, Pull, Legs ostaju)',
+  /* import / screenshots */
+  'Shared image': 'Podijeljena slika', 'From a screenshot': 'Iz snimke zaslona', 'Weigh-in · read on the phone': 'Vaganje · pročitano na mobitelu', 'Nutrition · read on the phone': 'Prehrana · pročitano na mobitelu',
+  'Read on the phone, nothing is uploaded.': 'Čita se na mobitelu, ništa se ne šalje.', 'Values': 'Vrijednosti', 'check, then save': 'provjeri pa spremi', 'Weight kg': 'Težina kg', 'Pick a date': 'Odaberi datum',
+  'Calories are required': 'Kalorije su obavezne', '{0} kg saved for {1}': '{0} kg spremljeno za {1}', '{0} kcal saved for {1}': '{0} kcal spremljeno za {1}', 'Loading the reader…': 'Učitavam čitač…', 'recognizing text': 'prepoznajem tekst',
+  'Could not open that image': 'Tu sliku nije moguće otvoriti', 'Could not read the image: {0}': 'Sliku nije moguće pročitati: {0}', 'No image received — share it again from the other app.': 'Slika nije primljena — podijeli je ponovno iz druge aplikacije.',
+  'Nothing recognised — is this the right screenshot?': 'Ništa nije prepoznato — je li ovo prava snimka zaslona?', 'Nothing recognised — type the values or Cancel': 'Ništa nije prepoznato — upiši vrijednosti ili Odustani',
+  'That is a scale card — use Fill from export on the weigh-in screen': 'To je kartica vage — koristi je na zaslonu vaganja', 'That is a MyFitnessPal screenshot — use it on the nutrition screen': 'To je MyFitnessPal snimka zaslona — koristi je na zaslonu prehrane',
+  'Weight estimated from the other numbers — check it': 'Težina procijenjena iz ostalih brojeva — provjeri je', 'No date found · tap to set it': 'Datum nije pronađen · dodirni za postavljanje', 'Screenshots': 'Snimke zaslona',
+  'Each one is logged to the day it shows — tap one to change its date or numbers.': 'Svaka se upisuje na dan koji prikazuje — dodirni je za promjenu datuma ili brojeva.', 'Add more': 'Dodaj još', 'Scale · {0}': 'Vaga · {0}', 'MFP · {0}': 'MFP · {0}',
+  'no date found': 'datum nije pronađen', 'no weight read': 'težina nije pročitana', 'no calories read': 'kalorije nisu pročitane', 'nothing logged in MFP yet': 'u MFP-u još ništa nije uneseno', 'outside the project': 'izvan projekta', 'not recognised': 'nije prepoznato',
+  'This doesn\'t look like a Mi Fitness card or a MyFitnessPal screenshot. Try it anyway as:': 'Ovo ne izgleda kao Mi Fitness kartica ni MyFitnessPal snimka zaslona. Ipak pokušaj kao:',
+  '{0} kg · {1} % · {2} values': '{0} kg · {1} % · {2} vrijednosti', 'Latest · {0}': 'Najnovije · {0}', 'Save all': 'Spremi sve',
+  /* errors */
+  'Oops': 'Ups', 'This screen hit a bug and couldn\'t open. Your data is safe. A screenshot of this helps to fix it:': 'Ovaj zaslon je naišao na grešku i nije se otvorio. Tvoji podaci su sigurni. Snimka zaslona ovoga pomaže u popravku:',
+  'Back to Today': 'Natrag na Danas', 'Something went wrong: {0}': 'Nešto je pošlo po krivu: {0}', 'Failed: {0}': 'Nije uspjelo: {0}', 'Restore failed: {0}': 'Vraćanje nije uspjelo: {0}',
+  /* metric statuses and actions (Scouter, Body) */
+  'No readings yet. Hop on the scale!': 'Još nema mjerenja. Stani na vagu!', 'no readings yet': 'još nema mjerenja', 'ahead of plan': 'ispred plana', 'behind plan': 'iza plana', 'too fast': 'prebrzo',
+  'body off the line': 'tijelo izvan linije', 'body on plan': 'tijelo po planu', 'strength untested': 'snaga neprovjerena', 'strength holding': 'snaga se drži', 'strength slipping': 'snaga popušta', 'weight behind plan': 'težina iza plana',
+  'body on plan · strength holding · {0} perfect days': 'tijelo po planu · snaga se drži · {0} savršenih dana', 'On plan. Keep going.': 'Po planu. Nastavi.', 'On track.': 'Na pravom putu.',
+  'Lagging a bit. Keep the deficit honest.': 'Malo kasniš. Drži deficit poštenim.', 'Dropping. Protein, heavy sets, sleep.': 'Pada. Proteini, teške serije, san.', 'Holding. Keep the heavy sets heavy.': 'Drži se. Neka teške serije ostanu teške.',
+  'Ahead by {0}. Nice.': 'Ispred za {0}. Odlično.', 'Ahead by {0} kg. Nice.': 'Ispred za {0} kg. Odlično.', '{0} kg above the line — nothing to change yet.': '{0} kg iznad linije — zasad ništa ne mijenjaj.',
+  '{0} kg above the line. About {1} kcal/day less would bring you back on it.': '{0} kg iznad linije. Oko {1} kcal manje dnevno vratilo bi te na nju.', 'Too fast for keeping muscle. Eat about {0} kcal/day more.': 'Prebrzo za čuvanje mišića. Jedi oko {0} kcal više dnevno.',
+  'Soft': 'Mekano', 'Getting there': 'Ide to', 'Lean': 'Vitko', 'Shredded': 'Isklesano', 'Powered up': 'Puna snaga',
+};
+// metric status sentences: "83.3 kg → 82.4 kg in 9 days. Too slow brother." and friends — the head is the same, the ending varies
+(() => {
+  const ends = { 'Too slow brother.': 'Presporo, brate.', 'Slow down my man.': 'Uspori, prijatelju.', 'Ahead of the line. Easy, tiger!': 'Ispred linije. Polako, tigre!', 'In the green!': 'U zelenom!',
+    'Gaining on a cut. Legend!': 'Rasteš na cutu. Legenda!', 'Holding. In the green!': 'Drži se. U zelenom!' };
+  for (const u of ['kg', '%', '']) for (const [e, h] of Object.entries(ends)) {
+    const a = u ? ' ' + u : '';
+    HR_DICT[`{0}${a} → {1}${a} in {2} days. ${e}`] = v => `${v[0]}${a} → ${v[1]}${a} u ${v[2]} ${dana(v[2])}. ${h}`;
+    HR_DICT[`{0}${a} → {1}${a} in {2} day. ${e}`] = v => `${v[0]}${a} → ${v[1]}${a} u ${v[2]} dan. ${h}`;
+  }
+  for (const u of ['kg', '%']) { HR_DICT[`{0}${u === '%' ? ' %' : ' kg'} → {1}${u === '%' ? ' %' : ' kg'} in {2} days. Losing muscle. Eat your {3} g.`] = v => `${v[0]} ${u} → ${v[1]} ${u} u ${v[2]} ${dana(v[2])}. Gubiš mišiće. Pojedi svojih ${v[3]} g.`; }
+})();
+Object.assign(HR_DICT, {
+  /* tips */
+  'Calories': 'Kalorije', 'Pace': 'Tempo', 'Weigh-in': 'Vaganje',
+  'Your real burn is about {0} kcal/day, the plan assumes {1}. To keep the −{2} deficit, aim for about {3} kcal a day.': 'Stvarno trošiš oko {0} kcal/dan, plan računa s {1}. Za deficit od −{2} ciljaj na oko {3} kcal dnevno.',
+  'Your real burn is about {0} kcal/day, the plan assumes {1}. To keep the −{2} deficit, aim for about {3} kcal a day — the band\'s calories are probably counted too high.': 'Stvarno trošiš oko {0} kcal/dan, plan računa s {1}. Za deficit od −{2} ciljaj na oko {3} kcal dnevno — narukvica vjerojatno broji previše kalorija.',
+  'Weight is dropping {0} kg a week — faster than planned. About {1}–{2} kcal more a day protects muscle.': 'Težina pada {0} kg tjedno — brže od plana. Oko {1}–{2} kcal više dnevno štiti mišiće.',
+  'Weight is dropping more than {0} % a week — faster than planned. About {1}–{2} kcal more a day protects muscle.': 'Težina pada više od {0} % tjedno — brže od plana. Oko {1}–{2} kcal više dnevno štiti mišiće.',
+  'Last weigh-in was {0} days ago. The trend needs one most mornings to stay accurate.': v => 'Zadnje vaganje bilo je prije ' + v[0] + ' ' + dana(v[0]) + '. Trendu treba vaganje većinu jutara da ostane točan.',
+  'No weigh-in yet. The trend needs one most mornings to stay accurate.': 'Još nema vaganja. Trendu treba vaganje većinu jutara da ostane točan.',
+  'Muscle mass is trending down ({0} kg, plan {1}). Hit {2} g protein every day and keep the heavy sets heavy.': 'Mišićna masa pada ({0} kg, plan {1}). Unesi {2} g proteina svaki dan i neka teške serije ostanu teške.',
+  /* power level, report card, records */
+  'Day one': 'Prvi dan', 'Workout': 'Trening', '{0} day': '{0} dan', '{0} days': v => v[0] + ' ' + dana(v[0]), 'Ahead of plan · {0} of {1} perfect days': v => 'Ispred plana · ' + v[0] + ' od ' + v[1] + ' savršenih dana',
+  '{0} missed days': v => v[0] + ' ' + hrPl(v[0], 'propušten dan', 'propuštena dana', 'propuštenih dana'), 'Weight behind plan': 'Težina iza plana', 'Weight behind plan · {0} missed days': v => 'Težina iza plana · ' + v[0] + ' ' + hrPl(v[0], 'propušten dan', 'propuštena dana', 'propuštenih dana'),
+  '{0} of the last {1} day': '{0} od zadnjeg {1} dana', 'Strength': 'Snaga', 'Body': 'Tijelo',
+  /* weigh-in reply under the big number */
+  '▲ {0} vs yesterday': '▲ {0} u odnosu na jučer', '▼ {0} vs yesterday': '▼ {0} u odnosu na jučer', '▲ {0} vs today': '▲ {0} u odnosu na danas', '▼ {0} vs today': '▼ {0} u odnosu na danas',
+  '▲ {0} vs {1} days ago': v => '▲ ' + v[0] + ' u odnosu na prije ' + v[1] + ' ' + dana(v[1]), '▼ {0} vs {1} days ago': v => '▼ ' + v[0] + ' u odnosu na prije ' + v[1] + ' ' + dana(v[1]),
+  '● same as yesterday': '● isto kao jučer', '● same as {0} days ago': v => '● isto kao prije ' + v[0] + ' ' + dana(v[0]), '+{0} kg / week': '+{0} kg / tjedan', '−{0} kg / week': '−{0} kg / tjedan',
+  'week best {0}': 'najbolje u tjednu {0}', '= {0}': '= {0}', '{0} days ago': v => 'prije ' + v[0] + ' ' + dana(v[0]),
+  /* misc labels seen around */
+  'Sync & backup': 'Sinkronizacija i kopije', 'Sync': 'Sinkroniziraj', 'My': 'Moj', 'i': 'i', 'H': 'V', 'T': 'T', 'W': 'T', 'M': 'M', 'S': 'S', 'F': 'M', 'B': 'B',
+  'Newest first': 'Najnovije prvo', 'yourname/trening-data': 'tvojeime/trening-data', 'github_pat_…': 'github_pat_…', 'trening-data': 'trening-data',
+  'Lowest weight': 'Najniža težina', 'Dead hang': 'Vis', 'Longest perfect streak': 'Najduži niz savršenih dana', 'Highest volume': 'Najveći volumen', 'Body fat': 'Tjelesna mast',
+  'never': 'nikad', 'Summon': 'Prizovi', 'month': 'mjesec', 'Month': 'Mjesec',
+});
+// The sentence under an exercise's history: built here in Croatian (too many combinations for the dictionary)
+if (LANG === 'hr') contextSentence = function (name, e, date, sessionId) {
+  const v = verdictFor(name, e, date, sessionId); if (!v.prev) return v.text;
+  const wA = current('weight', v.prevDate), wB = current('weight', date), mA = current('muscle', v.prevDate), mB = current('muscle', date), fA = current('fat', v.prevDate), fB = current('fat', date);
+  const haveW = wA != null && wB != null, haveM = mA != null && mB != null, haveF = fA != null && fB != null, wDown = haveW && wB < wA - 0.2;
+  const ws = haveW ? fmtDelta(wA, wB, 1, ' kg') : 'nema podataka s vage', ms = haveM ? fmtDelta(mA, mB, 1, ' kg') : 'nema podataka', fs = haveF ? fmtDelta(fA, fB, 1, ' %') : 'nema podataka';
+  const type = exType(name), nowS = type === 'max' ? Math.round(v.now.v) + ' pon' : v.now.set.kg + ' kg', prevS = type === 'max' ? Math.round(v.prev) + ' pon' : v.prevLabel.split(' ×')[0];
+  const mStable = haveM && Math.abs(mB - mA) <= 0.5, fDown = haveF && fB < fA;
+  if (v.state === 'up' || v.state === 'jump') {
+    if (wDown) return 'Napredovao si s ' + prevS + ' → ' + nowS + ' uz gubitak od ' + (wA - wB).toFixed(1) + ' kg. Mišićna masa ' + (mStable ? 'je ostala stabilna' : mB > mA ? 'je narasla' : 'je pala') + ' (' + ms + '), a tjelesnu mast ' + (fDown ? 'si smanjio' : 'nisi smanjio') + ' (' + fs + ').';
+    return 'Jači si (' + prevS + ' → ' + nowS + '), ali vaga se nije pomaknula (' + ws + '). Provjeri deficit.';
+  }
+  if (v.state === 'hold') {
+    if (wDown) return 'Zadržao si snagu na ' + nowS + ' uz gubitak težine (' + ws + ') i ' + (fDown ? 'manje' : 'jednako') + ' tjelesne masti (' + fs + ').';
+    return 'Snaga zadržana na ' + nowS + '. Težina ' + ws + ', tjelesna mast ' + fs + '. Drži deficit poštenim.';
+  }
+  if (wDown) return 'Izgubio si snagu, a to nikad nije dobro. Ipak, izgubio si težinu (' + ws + ') i ' + (fDown ? 'smanjio' : 'nisi smanjio') + ' tjelesnu mast (' + fs + ').';
+  return 'Izgubio si snagu (' + prevS + ' → ' + nowS + '). Težina: ' + ws + '. Tjelesna mast: ' + fs + '. Fokus, ekipa.';
+};
+Object.assign(HR_DICT, {
+  'Log nutrition': 'Unesi prehranu', 'goal {0}': 'cilj {0}', 'target that day': 'cilj tog dana', 'weigh-in': 'vaganje', 'Last {0}': 'Zadnje {0}', '{0} of {1}': '{0} od {1}',
+  '{0} exercises · {1} PB': '{0} vježbi · {1} PB', '{0} exercises · {1} PBs': '{0} vježbi · {1} PB', '▼{0} since start': '▼{0} od starta', '▲{0} since start': '▲{0} od starta',
+  '{0} days': v => v[0] + ' ' + dana(v[0]), '{0} days → goal {1} kg · starting point next step': v => v[0] + ' ' + dana(v[0]) + ' → cilj ' + v[1] + ' kg · početna točka u sljedećem koraku',
+  '{0} days': v => v[0] + ' ' + dana(v[0]), '→ goal': '→ cilj', '· starting point next step': '· početna točka u sljedećem koraku', 'Final weigh-in must come after Day 1': 'Završno vaganje mora biti nakon prvog dana',
+  'Day 1': 'Dan 1', 'Final weigh-in': 'Završno vaganje', 'Cancel — back to {0}': 'Odustani — natrag na {0}', 'Starting point': 'Početna točka', 'New project': 'Novi projekt', 'My first project': 'Moj prvi projekt',
+  '{0} value': '{0} vrijednost', '{0} values': '{0} vrijednosti', 'no values': 'nema vrijednosti', 'Scale': 'Vaga', 'MFP': 'MFP', 'Skipped': 'Preskočeno', '{0} g protein': '{0} g proteina',
+});
+// pieces swapped inside longer text that has no entry of its own (set schemes, lists of goals)
+const HR_FRAG = [
+  [/\bheavy\b/g, 'teško'], [/\bcontrolled\b/g, 'kontrolirano'], [/ \/ side\b/g, ' / strana'], [/· last (?=\{)/g, '· zadnje '], [/· rest (?=\{)/g, '· odmor '], [/\bmin after\b/g, 'min poslije'],
+  [/\bweigh in\b/g, 'vaganje'], [/\blog nutrition\b/g, 'prehrana'], [/\bdead hangs\b/g, 'visovi'], [/\bstretching\b/g, 'istezanje'], [/\bkick mobility\b/g, 'mobilnost'], [/\bfinish the workout\b/g, 'završi trening'],
+];
+Object.assign(HR_DICT, {
+  'Day {0} ·': 'Dan {0} ·', 'Delete all': 'Obriši sve', 'Delete everything?': 'Obrisati sve?', 'Dragon': 'Zmaj', 'MT': 'MT', 'REST': 'ODMOR', 'Inbox address': 'Adresa sandučića', 'Key': 'Ključ',
+  'Steps, active calories and workouts from the Xiaomi band, every {0} minutes — they fill the band kcal, the Muay Thai sessions and the Scouter.': 'Koraci, aktivne kalorije i treninzi s Xiaomi narukvice, svakih {0} minuta — pune kcal narukvice, Muay Thai treninge i Skener.',
+  'The current project, past projects, all readings and workouts on this phone. Back up first if in doubt.': 'Trenutni projekt, prošli projekti, sva mjerenja i treninzi na ovom mobitelu. Ako nisi siguran, prvo napravi kopiju.',
+  'This project · {0} tip': v => 'Ovaj projekt · ' + v[0] + ' ' + hrPl(v[0], 'savjet', 'savjeta', 'savjeta'), 'next:': 'sljedeće:', 'side {0} of {1} ·': 'strana {0} od {1} ·',
+  'v{0} · profile': 'v{0} · profil', '{0} / {1} exercises': '{0} / {1} vježbi', '{0} kg · {1} % fat': '{0} kg · {1} % masti', '{0} kg · {1} kg': '{0} kg · {1} kg',
+});
 /* ---------- Boot ---------- */
 (async function boot() {
+  i18nStart();   // Croatian: translate everything the app shows from here on
   await load();
   if (S.project && seedStartReading()) save();
   probeArt(() => { _artGeom = null; viewsChanged(); render(); }); setTimeout(() => { if (ART.heroBeam) { _artGeom = null; artGeom(); } }, 50);   // custom PNG art appears as soon as the files are on the server
