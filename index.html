@@ -1296,6 +1296,17 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .t4stage>.arrow svg{width:20px;height:20px}
 .t4stage>.arrow:active{transform:scale(.92)}
 .t4stage>.arrow.sl{left:2px}.t4stage>.arrow.sr{right:2px}
+/* calendar: a season banner behind the month name, faded into the page at the top and the bottom */
+.mhead.banner{height:auto;aspect-ratio:4/1;min-height:96px}
+.mhead .mbg{position:absolute;inset:0;background-size:cover;background-position:center bottom;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 26%,#000 88%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 26%,#000 88%,transparent 100%)}
+.mhead.banner .mn{top:50%;transform:translateY(-58%)}
+.mhead.banner .mn .h1{text-shadow:2px 2px 0 #000,0 0 18px rgba(0,0,0,.8)}
+/* month arrows sit either side of the year, under the month name, so they never cover the art */
+.mhead .mn .myr{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:2px}
+.mhead .mn .myr .cond{font-size:12px;margin:0;min-width:34px}
+.mhead .myr .mnav{position:static;width:30px;height:30px;padding:0;border-radius:50%;background:rgba(27,28,34,.82);border:1.5px solid var(--line2);display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.mhead .myr .mnav svg{width:16px;height:16px}
+.mhead .myr .mnav:disabled{opacity:.3}
 </style>
 </head>
 <body>
@@ -1303,7 +1314,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.8.1';
+const APP_VERSION = '4.8.2';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2770,7 +2781,7 @@ function dragonSvg() { return dragonArt({ segs: [[16, 156, 60, 96, 112, 206, 156
    landscape 3:2, facing right), dragon.png (landscape 3:2), ball-1.png … ball-7.png (square; optional ball-N-hollow.png
    for the uncollected look), season-<autumn|winter|spring|summer>.png (square figure standing at the bottom edge; the
    right-hand one is mirrored), ground-<season>.png (a tile repeated sideways, 4:1). Missing files → the built-in SVG art. */
-const ART_FILES = ['hero', 'body', 'heroBeam', 'heroAura', 'heroBolts', 'beam', 'dragon', 'dragonBadge', 'balls', 'ballsHollow', 'season-autumn', 'season-winter', 'season-spring', 'season-summer', 'ground-autumn', 'ground-winter', 'ground-spring', 'ground-summer', 'lift-push', 'lift-legs', 'lift-pull', 'lift-mt', 'lift-rest', 'lift-done'];
+const ART_FILES = ['hero', 'body', 'heroBeam', 'heroAura', 'heroBolts', 'beam', 'dragon', 'dragonBadge', 'balls', 'ballsHollow', 'season-autumn', 'season-winter', 'season-spring', 'season-summer', 'ground-autumn', 'ground-winter', 'ground-spring', 'ground-summer', 'banner-autumn', 'banner-winter', 'banner-spring', 'banner-summer', 'lift-push', 'lift-legs', 'lift-pull', 'lift-mt', 'lift-rest', 'lift-done'];
 const ART = {};
 try { const a = JSON.parse(localStorage.getItem('vikac.art') || '{}'); for (const k of ART_FILES) ART[k] = !!a[k]; } catch (e) { for (const k of ART_FILES) ART[k] = false; }
 // Which custom PNGs exist on the server (checked on every open): hero-0.png stands for the set hero-0…4,
@@ -4274,10 +4285,10 @@ function monthHtml() {
     if (!pl) { cells += `<div class="mc out"><b>${d}</b></div>`; continue; }
     const comp = dayCompletion(ds), got = comp === 'done', past = ds < td;
     cells += `<button class="mc ${ds === td ? 'today' : ''} ${past && !got ? 'miss' : ''}" data-dsheet="${ds}"><b>${d}</b>${got ? `<span class="mb4">${dayBallArt(ds, 22)}</span>` : ''}<i style="background:${JCOL[pl.k]};opacity:${past || ds === td ? 1 : .5}"></i></button>`; }
-  const s = ART['season-' + season] ? `<img class="sea" src="season-${season}.png" alt="">` : '';
-  return `<div class="mhead">${s ? s.replace('class="sea"', 'class="sea l"') : ''}${s ? s.replace('class="sea"', 'class="sea r"') : ''}${ART['ground-' + season] ? `<div class="gr" style="background-image:url(ground-${season}.png)"></div>` : ''}
-      <button class="mnav l" data-jm="-1" ${R.jmonth <= p.startDate.slice(0, 7) ? 'disabled' : ''} aria-label="Previous month">‹</button><button class="mnav r" data-jm="1" ${R.jmonth >= p.endDate.slice(0, 7) ? 'disabled' : ''} aria-label="Next month">›</button>
-      <div class="mn"><span class="h1">${MONTHS[M - 1]}</span><div class="cond mut">${Y}</div></div></div>
+  // a season banner (one dark scene behind the month name); without one, the older season sprites and ground strip
+  const bn = ART['banner-' + season], s = !bn && ART['season-' + season] ? `<img class="sea" src="season-${season}.png" alt="">` : '';
+  return `<div class="mhead ${bn ? 'banner' : ''}">${bn ? `<div class="mbg" style="background-image:url(banner-${season}.png)"></div>` : ''}${s ? s.replace('class="sea"', 'class="sea l"') : ''}${s ? s.replace('class="sea"', 'class="sea r"') : ''}${!bn && ART['ground-' + season] ? `<div class="gr" style="background-image:url(ground-${season}.png)"></div>` : ''}
+      <div class="mn"><span class="h1">${MONTHS[M - 1]}</span><div class="myr"><button class="mnav l" data-jm="-1" ${R.jmonth <= p.startDate.slice(0, 7) ? 'disabled' : ''} aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="cond mut">${Y}</span><button class="mnav r" data-jm="1" ${R.jmonth >= p.endDate.slice(0, 7) ? 'disabled' : ''} aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div></div></div>
     <div class="mgrid">${cells}</div>
     <div class="leg4">${['push', 'pull', 'legs', 'mt', 'rest'].map(k => `<span><i style="background:${JCOL[k]}"></i>${{ push: 'Push', pull: 'Pull', legs: 'Legs', mt: 'Muay Thai', rest: 'Rest' }[k]}</span>`).join('')}</div>
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span class="mut" style="font-size:14px">${done} perfect of ${elapsed} day${elapsed === 1 ? '' : 's'}</span><b class="cond" style="font-size:16px">${Math.round(elapsed / (D() + 1) * 100)} % done · ${D() + 1 - elapsed} left</b></div>`;
