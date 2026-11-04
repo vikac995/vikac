@@ -1573,6 +1573,50 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 .jchk.lo::before{background:var(--or);box-shadow:0 0 6px rgba(254,127,12,.45)}.jchk.end::before{display:none}
 .jchk::after{content:"";flex:1;min-width:16px;border-top:1.5px dashed var(--line2);margin-left:4px}
 .jchk b{color:var(--ink);font-weight:700}.jchk .you b.okc{color:var(--ok)}.jchk .you b.badc{color:var(--warn)}
+/* v6 4a: the check-in — a task under the kcal left on a cycle's last day, its sheet, the switch on Habits & goals */
+.ckc{display:flex;align-items:center;gap:12px;width:100%;margin:12px 0 0;padding:11px 14px 11px 12px;min-height:66px;border-radius:18px;background:linear-gradient(160deg,#29250f,var(--card) 68%);border:2px solid rgba(255,216,77,.55);color:var(--ink);text-align:left;font:inherit;cursor:pointer}
+.ckc:active{transform:translateY(1px)}
+.ckc .ic{width:42px;height:42px;border-radius:12px;background:var(--goldbg);color:var(--gold);display:flex;align-items:center;justify-content:center;flex:none}
+.ckc .ic svg{width:24px;height:24px;stroke-width:2.6}
+.ckc .lab{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ckc .lab b{font-family:'BarlowC',sans-serif;font-weight:700;font-size:17.5px;letter-spacing:.07em;text-transform:uppercase;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ckc .lab small{font-size:13.5px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ckc .kp{flex:none;font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.07em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+.ckc .st{width:30px;height:30px;border-radius:50%;background:var(--ok);display:flex;align-items:center;justify-content:center;flex:none}
+.ckc .st svg{width:18px;height:18px}
+.ckc.done{min-height:56px;padding:8px 14px 8px 12px;background:linear-gradient(90deg,rgba(61,220,132,.12),var(--card) 75%);border:1.5px solid rgba(61,220,132,.4)}
+.ckc.done .ic{width:34px;height:34px;border-radius:10px;background:rgba(61,220,132,.16);color:var(--ok)}
+.ckc.done .ic svg{width:20px;height:20px}
+.ckc.done .lab b{font-size:16.5px}
+.ckc.ahead{background:var(--card);border:1.5px dashed rgba(255,216,77,.4)}
+.ckc.ahead .kp{color:var(--muted)}
+.ckc.missed{min-height:56px;padding:8px 14px 8px 12px;background:var(--card);border:1.5px solid var(--line);cursor:default}
+.ckc.missed:active{transform:none}
+.ckc.missed .ic{width:34px;height:34px;border-radius:10px;background:var(--s2);color:var(--dim)}
+.ckc.missed .ic svg{width:20px;height:20px}
+.ckc.missed .lab b{color:var(--muted);font-size:16.5px}
+.ckc.missed .kp{color:var(--dim)}
+.ckc.just{animation:justGlow .9s ease-out}
+.ckrows{margin:2px 0 0}
+.ckrows>div{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:5px 2px;font-size:15.5px;color:var(--ink2)}
+.ckrows b{font-family:'BarlowC',sans-serif;font-weight:700;font-size:16.5px;letter-spacing:.03em;color:var(--ink);text-align:right;white-space:nowrap}
+.ckrows b.g{color:var(--ok)}.ckrows b.y{color:var(--warn)}
+.cksh .sgl{margin:18px 2px 8px}
+.ckfeel{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.ckfeel button{min-height:60px;padding:7px 2px 6px;border-radius:13px;background:var(--card);border:1.5px solid var(--line2);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.ckfeel button b{font-family:'BarlowC',sans-serif;font-weight:700;font-size:21px;line-height:1}
+.ckfeel button small{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.ckfeel button.on{background:var(--orsoft);border-color:var(--or)}
+.ckfeel button.on small{color:var(--or2)}
+.ckfeel button:disabled{opacity:1}
+.ckfeel button:disabled:not(.on){opacity:.55}
+.ckmot{margin-top:14px}
+.cksug{margin-top:14px;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(61,220,132,.45);background:linear-gradient(160deg,#16231b,var(--card) 70%);font-size:15px;line-height:1.4;color:var(--ink2)}
+.cksug b{color:var(--ink);font-weight:700}
+.cksug .stc{display:inline-block;margin-left:8px;vertical-align:1px}
+.cksug.skip{border-color:var(--line2);background:var(--card)}
+.cksug[hidden]{display:none}
+.ckrow .hopen{cursor:default}.ckrow .hopen:active{background:none}
 </style>
 </head>
 <body>
@@ -1580,7 +1624,7 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.8.0';
+const APP_VERSION = '5.9.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1796,10 +1840,30 @@ function prof() { const pr = S.profile || {}, p = S.project || {}; return { sex:
 function bmrCalc() {
   const pr = prof(), p = P(), lr = lastReading('weight', today()), w = lr ? lr.v : p && p.start ? +p.start.weight : null;
   if (!(w > 0) || !(+pr.height > 0) || !(+pr.age > 0)) return null;
-  return Math.round(10 * w + 6.25 * pr.height - 5 * pr.age + (pr.sex === 'f' ? -161 : 5));
+  return mifflin(w, +pr.height, +pr.age, pr.sex);
 }
+function mifflin(w, h, a, sex) { return Math.round(10 * w + 6.25 * h - 5 * a + (sex === 'f' ? -161 : 5)); }
 // Every editor ends here: phase / profile → S.project, then saved (Today, the kcal left and Journey follow at once)
 function planChanged() { mirrorProject(); save(); }
+// v6 4a: the deficit and protein a day was lived under. A change (My plan, the check-in) applies from the day it is made; the
+// days before keep theirs (S.phase.prev: [{ until, deficit, protein }] — the last date each older pair covers, as S.plan.prev),
+// so their kcal verdicts, Ki and balls stay as they were. Without any change everything reads the plan as it is.
+function phaseAt(date) {
+  const p = P(), prev = S.phase && S.phase.prev; if (!p || !date || !Array.isArray(prev) || !prev.length) return p;
+  for (const v of prev) if (v && date <= v.until) return Object.assign({}, p, { deficit: +v.deficit || 0, protein: +v.protein > 0 ? +v.protein : p.protein });
+  return p;
+}
+// Change the phase from today on: fn edits S.phase (deficit, protein, motivation, kind…), then mirrored and saved
+function editPhase(fn) {
+  const ph = S.phase, p = S.project; if (!ph) return false;
+  const old = { deficit: +ph.deficit || 0, protein: ph.protein }; fn(ph);
+  if ((+ph.deficit || 0) !== old.deficit || ph.protein !== old.protein) {
+    const y = addDays(today(), -1), prev = Array.isArray(ph.prev) ? ph.prev : [];
+    // only when project days lie behind today and no change today already kept them
+    if (p && p.startDate && y >= p.startDate && !prev.some(v => v && v.until >= y)) { prev.push({ until: y, deficit: old.deficit, protein: old.protein }); prev.sort((a, b) => a.until < b.until ? -1 : 1); ph.prev = prev; }
+  }
+  planChanged(); return true;
+}
 /* Cycles of any length (2–14 days). S.plan.segs: [{ c, len }] — from cycle number c on, every cycle has len days (the first
    entry is cycle 1). Without it the whole project runs on the pattern's own length (as before). A new length starts with the
    next cycle: the cycle running now and every one before keep their days, length and number; the numbers simply go on. */
@@ -2120,7 +2184,7 @@ function isDone(date, id) {
 
 /* ---------- Nutrition ---------- */
 function nutritionCalc(date) {
-  const d = S.days[date], p = P(); const n = d && d.nutrition; if (!n || !n.kcal) return null;
+  const d = S.days[date], p = phaseAt(date); const n = d && d.nutrition; if (!n || !n.kcal) return null;
   const bk = bandKcal(date), band = bk.v;
   const target = p.bmr + band - p.deficit;
   const balance = +n.kcal - (p.bmr + band);
@@ -2178,7 +2242,7 @@ function dayCompletion(date) {
 }
 /* ---------- Ki (v6): points for what a day got done (the Scouter's Ki card) ----------
    Workout or Muay Thai done +3 · calories within 100 of the target +2 · protein target reached +1 · every other required item
-   done +1 · every bonus item done +1; all of it ×1.5 on a day inside a run of 7+ perfect days in a row (counting forward too,
+   done +1 · every bonus item done +1 · a cycle's check-in done +2; all of it ×1.5 on a day inside a run of 7+ perfect days in a row (counting forward too,
    so a run's first days get it once the 7th is done). Days outside the project or in the future: 0. A day's Ki is a whole
    number (kiDay: .5 rounds up); totals add up the rounded days. Kept for one stretch of work like dayInfo (dropped on save). */
 function kiPerfect(d) {
@@ -2201,6 +2265,7 @@ function kiParts(date) {
     else if (it.id === 'nutrition') { if (n && n.kcal && Math.abs(+n.kcal - tg.kcal) <= 100) out.parts.push({ id: 'kcal', label: 'Kcal on target', pts: 2 }); if (n && +n.protein >= tg.protein) out.parts.push({ id: 'protein', label: 'Protein on target', pts: 1 }); }
     else if (isDone(date, it.id)) out.parts.push({ id: it.id, label: it.label, pts: 1, custom: isCustomHabit(it.id) });   // every other item, required or bonus
   }
+  if (checkinDone(date)) out.parts.push({ id: 'checkin', label: 'Check-in', pts: 2 });   // v6 4a: a cycle's check-in, done that day
   out.base = out.parts.reduce((a, x) => a + x.pts, 0); out.run = kiInRun7(date); out.ki = out.run ? out.base * 1.5 : out.base;
   return out;
 }
@@ -2611,11 +2676,11 @@ function streak(date) {
 // every set of an exercise filled in (or reps for a 5-min MAX)
 function exComplete(e, type) { if (type === 'max') return +e.reps > 0; return e.sets.length > 0 && e.sets.every(st => +st.kg > 0 && +st.reps > 0); }
 // what to eat today, before anything is logged (uses the band value if entered, else the default)
-function nutritionTarget(date) { const p = P(); const band = bandKcal(date).v; return { kcal: p.bmr + band - p.deficit, protein: p.protein, band }; }
+function nutritionTarget(date) { const p = phaseAt(date); const band = bandKcal(date).v; return { kcal: p.bmr + band - p.deficit, protein: p.protein, band }; }
 // Daily macros for the cut: protein as set (≈2.2 g/kg), fat 0.65 g/kg of body weight (Helms 2014: 20–30 % of kcal,
 // never below 0.5 g/kg), carbs take whatever energy is left — they rise on days with more band kcal
 function macroTargets(date) {
-  const p = P(), tg = nutritionTarget(date), w = current('weight', date) || +p.start.weight || 80;
+  const p = phaseAt(date), tg = nutritionTarget(date), w = current('weight', date) || +p.start.weight || 80;
   const fatMin = Math.round(0.5 * w), fat = Math.max(fatMin, Math.min(Math.round(0.65 * w), Math.round(tg.kcal * 0.35 / 9)));
   const carbs = Math.max(40, Math.round((tg.kcal - p.protein * 4 - fat * 9) / 4));
   return { kcal: tg.kcal, protein: p.protein, fat, carbs, band: tg.band, perKg: { protein: +(p.protein / w).toFixed(2), fat: +(fat / w).toFixed(2), carbs: +(carbs / w).toFixed(2) } };
@@ -2692,6 +2757,179 @@ function scienceCheck(date) {
   for (const d in S.days) { if (d > date || tOf(d) < 0) continue; const nc = nutritionCalc(d); if (nc) { bal += nc.balance; n++; } }
   const cur = current('weight', date), lost = cur != null ? p.start.weight - cur : null;
   return { loggedDays: n, totalBalance: bal, predictedLoss: -bal / 7700, predictedWeight: p.start.weight + bal / 7700, lost, kcalPerKg: lost != null && lost > 0.3 && n ? Math.round(-bal / lost) : null, cur };
+}
+
+/* ---------- Motivation → targets (v6 4a; the new-project setup reuses it) ----------
+   The phase and the motivation (1 = the gentlest end, 10 = the hardest, linear in between) give the day's kcal against the
+   daily burn and the protein: cut −10 … −25 % of the burn · 2.0–2.4 g/kg; recomp −5 … −10 % · 2.0–2.4 g/kg; maintain 0 ·
+   1.6–2.0 g/kg; bulk +5 … +15 % · 1.6–2.2 g/kg. Daily burn = BMR + the typical activity kcal (what the kcal-left budget used on
+   the recent days: band, typed or estimate; the profile's estimate before there are any). Safety limits, always: losing at most
+   1 % of body weight a week, gaining at most 0.5 % (7,700 kcal a kg), and eating never below 1,500 kcal (men) / 1,200 (women),
+   or the BMR when that is higher. kcal are rounded to 10 (never across a limit), protein to 5 g. */
+const PHASE_RANGE = { cut: { pct: [10, 25], gkg: [2.0, 2.4] }, recomp: { pct: [5, 10], gkg: [2.0, 2.4] }, maintain: { pct: [0, 0], gkg: [1.6, 2.0] }, bulk: { pct: [-5, -15], gkg: [1.6, 2.2] } };
+// the activity kcal the budget used on the last n project days before today (null before there are any)
+function typicalActivity(n) {
+  const p = S.project; if (!p || !p.startDate) return null; const td = today(); let s = 0, k = 0;
+  for (let i = 1; i <= (n || 14); i++) { const d = addDays(td, -i); if (d < p.startDate) break; if (d > p.endDate) continue; s += +bandKcal(d).v || 0; k++; }
+  return k ? Math.round(s / k) : null;
+}
+// The body the targets are for. Nothing given: the live project (its BMR, the trend weight, the typical activity). A body given
+// (weight, age, height, sex, level — a project being set up): the Mifflin BMR and the activity estimate of that level.
+function phaseBody(o) {
+  o = o || {}; const pr = prof(), own = o.weight != null || o.age != null || o.height != null, p = !own && S.project ? P() : null;
+  const sex = o.sex || pr.sex, weight = +o.weight > 0 ? +o.weight : p ? bodyWeight(today()) : 80, age = +o.age > 0 ? +o.age : +pr.age, height = +o.height > 0 ? +o.height : +pr.height;
+  const bmr = +o.bmr > 0 ? +o.bmr : p && +p.bmr > 0 ? +p.bmr : age > 0 && height > 0 ? mifflin(weight, height, age, sex) : 1750;
+  const lvl = ACTIVITY[o.level] ? o.level : pr.activity, ta = o.activity == null && p ? typicalActivity() : null;
+  const activity = o.activity != null ? Math.round(+o.activity || 0) : ta != null ? ta : Math.round(bmr * ACTIVITY[lvl].f);
+  return { sex, weight, bmr, activity, burn: bmr + activity };
+}
+// the most a deficit may be (the loss cap and the floor) and the most a surplus may be, for that body
+function safeLimits(b) {
+  const floor = b.sex === 'f' ? 1200 : 1500, loss = b.weight * 0.01 * 7700 / 7, gain = b.weight * 0.005 * 7700 / 7;
+  return { floor, loss, gain, maxDef: Math.min(loss, b.burn - floor), maxSur: gain };
+}
+// a signed deficit (+ under the burn, − a surplus) held inside the limits, rounded to 10 kcal without crossing them; cap: the
+// limit that held it ('loss', 'floor', 'gain') or null
+function safeDeficit(def, lim) {
+  let v = Math.round(def / 10) * 10, cap = null;
+  if (v > lim.maxDef) { v = Math.floor(lim.maxDef / 10) * 10; cap = lim.maxDef === lim.loss ? 'loss' : 'floor'; }
+  if (-v > lim.maxSur) { v = -Math.floor(lim.maxSur / 10) * 10; cap = 'gain'; }
+  return { v: v || 0, cap };
+}
+// { deficit (signed, as S.phase.deficit), kcal (a typical day's intake), protein, cap, burn, … }
+function phaseTargets(kind, motivation, o) {
+  const k = PHASE_RANGE[kind] ? kind : 'cut', rg = PHASE_RANGE[k], m = Math.max(1, Math.min(10, Math.round(+motivation) || 7)), f = (m - 1) / 9;
+  const b = phaseBody(o), lim = safeLimits(b), pct = rg.pct[0] + (rg.pct[1] - rg.pct[0]) * f, gkg = rg.gkg[0] + (rg.gkg[1] - rg.gkg[0]) * f, sd = safeDeficit(b.burn * pct / 100, lim);
+  const kcal = Math.max(Math.ceil(lim.floor / 10) * 10, Math.round((b.burn - sd.v) / 10) * 10);
+  return { kind: k, motivation: m, deficit: sd.v, kcal, protein: Math.round(b.weight * gkg / 5) * 5, pct: Math.round(pct * 100) / 100, gkg: Math.round(gkg * 100) / 100, cap: sd.cap,
+    burn: b.burn, bmr: b.bmr, activity: b.activity, weight: Math.round(b.weight * 10) / 10, limits: lim };
+}
+
+/* ---------- Check-in (v6 4a): the last day of every cycle ----------
+   A task on Today right under the kcal left, never a pop-up: five numbers for the cycle against the plan, how it felt, the
+   motivation, and at most one suggestion to accept or skip. Not part of the ball; done that day it earns +2 Ki. The record:
+   S.days[date].checkin = { feel, motivation, suggestion: { kind, rule, from, to, … text } | null, accepted, at, rows }.
+   Off with the switch on Habits & goals (S.plan.checkin === false). */
+function checkinOn() { return !(S.plan && S.plan.checkin === false); }
+function checkinDone(date) { const c = S.days[date] && S.days[date].checkin; return !!(c && c.at); }
+// a cycle's last day inside the project (a last cycle cut short by the final day has none)
+function isCheckinDay(date) { if (!S.project || !date) return false; const info = dayInfo(date); return !!info.items && info.cycleDay === info.cycleLen; }
+function checkinTitle(info) { return (info.cycleLen === 7 ? 'Week ' : 'Cycle ') + info.cycleNum + ' check-in'; }
+const CK_TOL = 0.3;   // kg: the cycle's weight change counts as on plan within this of the plan line's change
+// The cycle that ends on date, against the plan (up to today)
+function checkinStats(date) {
+  const info = dayInfo(date), p = P(), td = today(), start = addDays(p.startDate, info.cycleT0), upto = date < td ? date : td;
+  const o = { start, end: date, len: info.cycleLen, weight: null, trend14: null, lifts: { n: 0, held: 0, rows: [] }, kcal: { on: 0, n: 0 }, protein: { on: 0, n: 0 }, habits: { done: 0, n: 0, pct: null, per: [] }, kcal14: { on: 0, n: 0 }, t: tOf(date) };
+  // weight: the trend's change over the cycle (from the trend the day before it, or the starting weight) against the plan line's
+  const wAt = d => { const c = current('weight', d); if (c != null) return c; const lr = lastReading('weight', d); return lr ? lr.v : null; };
+  const w1 = current('weight', upto), w0 = info.cycleT0 === 0 ? (p.start && +p.start.weight > 0 ? +p.start.weight : null) : wAt(addDays(start, -1));
+  if (w1 != null && w0 != null) {
+    const d = w1 - w0, plan = expected('weight', tOf(upto)) - expected('weight', Math.max(0, info.cycleT0 - 1)), diff = d - plan, dir = plan < -0.05 ? -1 : plan > 0.05 ? 1 : 0;
+    o.weight = { d, plan, state: dir === 0 ? (Math.abs(diff) <= CK_TOL ? 'on' : 'off') : diff * dir < -CK_TOL ? 'behind' : diff * dir > CK_TOL ? 'ahead' : 'on' };
+  }
+  // the last 14 days: the weigh-ins and their trend (the weight rules need 4 of them)
+  let n14 = 0; for (let i = 0; i < 14; i++) { const r = S.readings[addDays(upto, -i)]; if (r && r.weight != null && r.weight !== '') n14++; }
+  const f14 = n14 >= 4 ? trendFit('weight', upto, 14, 4) : null; if (f14) o.trend14 = { slope: f14.slope, w: f14.value, n: n14 };
+  // main lifts: done this cycle, its best estimated 1RM against the lift's last session before the cycle (held: within 2.5 %)
+  for (const g of ['push', 'pull', 'legs']) for (const n of allExerciseNames(g)) {
+    if (o.lifts.rows.some(x => x.n === n)) continue; const h = scLiftHist(n), inC = h.filter(x => x.date >= start && x.date <= upto), bef = h.filter(x => x.date < start);
+    if (!inC.length || !bef.length) continue; const best = Math.max(...inC.map(x => x.v)), prev = bef[bef.length - 1].v;
+    o.lifts.rows.push({ n, best, prev, held: best >= prev * 0.975 });
+  }
+  o.lifts.n = o.lifts.rows.length; o.lifts.held = o.lifts.rows.filter(x => x.held).length;
+  // food (±100 kcal, protein reached): every day gone, today once it is logged — as the Scouter counts them
+  const food = (d, acc) => { const n = (S.days[d] || {}).nutrition, has = !!(n && n.kcal); if (!has && d >= td) return; acc.n++; if (!has) return; const tg = nutritionTarget(d); if (Math.abs(+n.kcal - tg.kcal) <= 100) acc.on++; return +n.protein >= tg.protein; };
+  for (let d = start; d <= upto; d = addDays(d, 1)) {
+    const pk = { on: 0, n: 0 }, pr = food(d, pk); o.kcal.on += pk.on; o.kcal.n += pk.n; o.protein.n += pk.n; if (pr) o.protein.on++;
+    // habits: every daily item but the session, required and bonus; today's count once done (the day isn't over)
+    for (const it of dayInfo(d).items || []) {
+      if (it.id === 'workout' || it.id === 'mt') continue; const dn = isDone(d, it.id); if (d === td && !dn) continue;
+      o.habits.n++; if (dn) o.habits.done++;
+      if (it.req && it.id !== 'weigh' && it.id !== 'nutrition') { let r = o.habits.per.find(x => x.id === it.id); if (!r) o.habits.per.push(r = { id: it.id, label: it.label, n: 0, done: 0 }); r.n++; if (dn) r.done++; }
+    }
+  }
+  if (o.habits.n) o.habits.pct = Math.round(o.habits.done / o.habits.n * 100);
+  for (let i = 0; i < 14; i++) { const d = addDays(upto, -i); if (d < p.startDate) break; food(d, o.kcal14); }
+  return o;
+}
+const ckShare = a => a.n ? a.on / a.n : null;
+// the sheet's five rows: [label, value, good (true / false / null: no data)]
+function checkinRows(st) {
+  const wk = st.trend14 ? st.trend14.slope * 7 : null, kind = (S.phase || {}).kind, fast = wk != null && st.trend14.w > 0 && (kind === 'bulk' ? wk / st.trend14.w > 0.005 : -wk / st.trend14.w > 0.01);
+  const w = st.weight, days = a => a.n ? `${a.on} of ${a.n} ${a.n === 1 ? 'day' : 'days'}` : '—';
+  const W = { on: 'on plan', behind: 'behind plan', ahead: 'ahead of plan', off: 'off plan' };
+  return [
+    ['Weight trend', w ? `${w.d > 0.05 ? '+' : w.d < -0.05 ? '−' : '±'}${Math.abs(w.d).toFixed(1)} kg · ${W[w.state]}` : '—', w ? (w.state === 'on' || (w.state === 'ahead' && !fast)) : null],
+    ['Main lifts', st.lifts.n ? `held ${st.lifts.held} of ${st.lifts.n}` : '—', st.lifts.n ? st.lifts.held / st.lifts.n >= 0.7 : null],
+    ['Kcal on target', days(st.kcal), st.kcal.n ? ckShare(st.kcal) >= 0.7 : null],
+    ['Protein on target', days(st.protein), st.protein.n ? ckShare(st.protein) >= 0.7 : null],
+    ['Habits done', st.habits.pct == null ? '—' : st.habits.pct + ' %', st.habits.pct == null ? null : st.habits.pct >= 80],
+  ];
+}
+// "deficit 500 → 550 kcal a day." · "surplus 300 → 250 kcal a day." · "deficit stays 500 kcal a day."
+function ckOff(a, b) {
+  const w = a < 0 || b < 0 ? 'surplus' : 'deficit', f = v => fmtN(Math.abs(v));
+  return a === b ? (a === 0 ? 'kcal stay at maintenance.' : `${w} stays ${f(a)} kcal a day.`) : `${w} ${f(a)} → ${f(b)} kcal a day.`;
+}
+/* At most one suggestion, the first rule that applies (never past the safety limits; the weight rules need 4 weigh-ins in the
+   last 14 days): 1 the motivation changed in the sheet → its target · 2 cut losing over 1 % a week → +150 kcal, bulk gaining over
+   0.5 % a week → −150 · 3 cut with most lifts dropped → 100 kcal smaller deficit · 4 cut / recomp flat for 2 weeks (under 0.2 kg)
+   with kcal on target on 70 % of the days → −100 kcal · 5 habits under half done → the least-done required habit (not the
+   weigh-in or nutrition) becomes bonus · 6 felt too much → motivation one down (a gentler target), felt too easy with all on
+   target → one up. { kind 'kcal' | 'motivation' | 'habit', rule, from, to, defFrom, defTo, habit, lead, change, text } or null. */
+function checkinSuggest(date, st, feel, mot) {
+  const ph = S.phase || {}, kind = ph.kind || phaseKind(+ph.deficit || 0), cur = +ph.deficit || 0, m0 = Math.max(1, Math.min(10, +ph.motivation || 7));
+  const lim = safeLimits(phaseBody()), mk = (o, lead, change) => Object.assign(o, { lead, change, text: lead + ' ' + change });
+  const kc = (rule, to, lead, change) => to === cur ? null : mk({ kind: 'kcal', rule, from: cur, to, defFrom: cur, defTo: to }, lead, change || ckOff(cur, to));
+  const motv = (rule, m, to, lead) => mk({ kind: 'motivation', rule, from: m0, to: m, defFrom: cur, defTo: to }, lead, lead.startsWith('Motivation') ? ckOff(cur, to) : `motivation ${m0} → ${m}, ${ckOff(cur, to)}`);
+  let r;
+  // 1. a new motivation: its point of the phase
+  mot = Math.max(1, Math.min(10, Math.round(+mot) || m0));
+  if (mot !== m0) return motv(1, mot, phaseTargets(kind, mot).deficit, `Motivation ${m0} → ${mot}:`);
+  const t14 = st.trend14, wk = t14 ? t14.slope * 7 : null, bw = t14 && t14.w > 0 ? t14.w : phaseBody().weight;
+  // 2. losing or gaining too fast
+  if (t14 && kind === 'cut' && -wk > bw * 0.01) { const to = safeDeficit(Math.max(0, cur - 150), lim).v; if (to < cur && (r = kc(2, to, 'Losing over 1 % a week:', `+${fmtN(cur - to)} kcal a day, deficit ${fmtN(cur)} → ${fmtN(to)}.`))) return r; }
+  if (t14 && kind === 'bulk' && wk > bw * 0.005) { const to = safeDeficit(Math.min(0, cur + 150), lim).v; if (to > cur && (r = kc(2, to, 'Gaining over 0.5 % a week:', `−${fmtN(to - cur)} kcal a day, surplus ${fmtN(-cur)} → ${fmtN(-to)}.`))) return r; }
+  // 3. a cut taking the strength: a smaller deficit
+  if (kind === 'cut' && st.lifts.n >= 2 && st.lifts.n - st.lifts.held > st.lifts.n / 2) { const to = safeDeficit(Math.max(0, cur - 100), lim).v; if (to < cur && (r = kc(3, to, 'Most lifts dropped:'))) return r; }
+  // 4. stuck while eating to plan: a bigger deficit, as far as the limits allow (dropped when they allow nothing)
+  if (t14 && (kind === 'cut' || kind === 'recomp') && st.t >= 13 && Math.abs(t14.slope * 14) < 0.2 && st.kcal14.n && ckShare(st.kcal14) >= 0.7) {
+    const to = Math.min(cur + 100, safeDeficit(cur + 100, lim).v); if (to > cur && (r = kc(4, to, 'Weight flat for 2 weeks:', `−${fmtN(to - cur)} kcal a day, deficit ${fmtN(cur)} → ${fmtN(to)}.`))) return r; }
+  // 5. habits under half done: the least-done required habit becomes bonus (from today; the days gone keep theirs)
+  if (st.habits.pct != null && st.habits.pct < 50) {
+    const live = Array.isArray(S.habits) ? S.habits : [], c = st.habits.per.filter(x => live.some(h => h.id === x.id && !h.off && h.req !== false)).sort((a, b) => a.done / a.n - b.done / b.n || b.n - a.n)[0];
+    if (c) { const h = live.find(x => x.id === c.id); return mk({ kind: 'habit', rule: 5, habit: c.id, label: h.label, custom: isCustomHabit(c.id), from: h.req == null ? 'auto' : h.req, to: false }, 'Habits under half done:', h.label + ' becomes bonus.'); }
+  }
+  // 6. how it felt: one step gentler, or one step harder when everything is on target
+  if (feel === 1 && m0 > 1) { const t = phaseTargets(kind, m0 - 1).deficit; return motv(6, m0 - 1, Math.abs(t) < Math.abs(cur) ? t : cur, 'Felt too much:'); }
+  if (feel === 5 && m0 < 10) {
+    const good = st.kcal.n && ckShare(st.kcal) >= 0.7 && ckShare(st.protein) >= 0.7 && st.habits.pct != null && st.habits.pct >= 80 && (!st.lifts.n || st.lifts.held / st.lifts.n >= 0.7);
+    if (good) { const t = phaseTargets(kind, m0 + 1).deficit; return motv(6, m0 + 1, Math.abs(t) > Math.abs(cur) ? t : cur, 'Felt too easy:'); }
+  }
+  return null;
+}
+// Accept: the change from today on (the days gone keep their targets, Ki and balls)
+function checkinApply(sg) {
+  if (!sg) return false;
+  if (sg.kind === 'kcal') return editPhase(ph => { ph.deficit = sg.to; });
+  if (sg.kind === 'motivation') return editPhase(ph => { ph.motivation = sg.to; ph.deficit = sg.defTo; });
+  if (sg.kind === 'habit') { const ch = editHabits(list => { const x = list.find(h => h.id === sg.habit); if (x) x.req = false; }); save(); return ch; }
+  return false;
+}
+// Done: the record (Skip / Done change nothing; Accept applies the suggestion first)
+function checkinFinish(date, o) {
+  const sg = o.suggestion || null, acc = !!(sg && o.accept);
+  if (acc) checkinApply(sg);
+  day(date).checkin = { feel: o.feel || null, motivation: o.motivation, suggestion: sg ? { kind: sg.kind, rule: sg.rule, from: sg.from, to: sg.to, defFrom: sg.defFrom, defTo: sg.defTo, habit: sg.habit, label: sg.label, lead: sg.lead, change: sg.change, text: sg.text } : null, accepted: acc, at: new Date().toISOString(), rows: o.rows || null };
+  save();
+}
+// the done card's one line: "Deficit 500 → 600 kcal" · "Motivation 6" · "Stretching → bonus" · "No change"
+function checkinOutcome(c) {
+  const sg = c && c.accepted ? c.suggestion : null; if (!sg) return { text: 'No change' };
+  if (sg.kind === 'motivation') return { text: 'Motivation ' + sg.to };
+  if (sg.kind === 'habit') return { habit: sg.label || sg.habit, custom: isCustomHabit(sg.habit), text: (sg.label || sg.habit) + ' → bonus' };
+  const a = sg.defFrom, b = sg.defTo, w = a < 0 || b < 0 ? 'Surplus ' : 'Deficit ';
+  return { text: w + fmtN(Math.abs(a)) + ' → ' + fmtN(Math.abs(b)) + ' kcal' };
 }
 /* ============ Cloud backup: a private GitHub repository as the data store ============
    Every change is pushed as a commit to <owner>/<repo>/<path>, so the full history is kept on GitHub
@@ -4435,7 +4673,7 @@ function wtHtml(date, info, cyc) {
 // the phase's part of a kcal formula: " − 500 deficit", " + 300 surplus", nothing on maintenance
 function kcalOff(p, word) { const d = +p.deficit || 0; return d > 0 ? ' − ' + fmtN(d) + (word ? ' deficit' : '') : d < 0 ? ' + ' + fmtN(-d) + (word ? ' surplus' : '') : ''; }
 function budgetHtml(date) {
-  const td = today(); if (date > td) return ''; const p = P(); let tg; try { tg = nutritionTarget(date); } catch (e) { return ''; }
+  const td = today(); if (date > td) return ''; const p = phaseAt(date); let tg; try { tg = nutritionTarget(date); } catch (e) { return ''; }
   const n = (S.days[date] || {}).nutrition || {}, eaten = +n.kcal || 0, left = Math.round(tg.kcal - eaten), over = left < 0, bk = bandKcal(date);
   const hm = t => new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   const sync = bk.src === 'band' ? (date === td && S.health && S.health.last ? 'band ' + hm(S.health.last) : 'band') : bk.src === 'hand' ? 'activity: yours' : 'activity: estimate';
@@ -4446,6 +4684,49 @@ function budgetHtml(date) {
     <div class="ln"><span>Eaten <b>${fmtN(eaten)}</b></span><span>Budget <b>${fmtN(tg.kcal)}</b></span></div>
     <div class="eq">Budget = BMR ${fmtN(p.bmr)} + activity ${fmtN(bk.v)}${kcalOff(p, true)}</div>
     <div class="pr"><span>${pl > 0 ? 'Protein ' + pl + ' g to go' : 'Protein ✓'}</span>${date === td && !over ? `<span>30 min walk ≈ +${walk}</span>` : ''}</div></div>`;
+}
+/* ---------- Check-in (v6 4a): a task right under the kcal left on a cycle's last day ----------
+   Tap it for the sheet; done, it turns green with what came of it, and opens the summary again. A past cycle's last day shows
+   whether it was done, but it can't be started any more (gone at midnight); off with the switch on Habits & goals. */
+const CK_IC = SV('<path d="M6.5 12.5l3.8 3.8L17.8 8.6"/>');
+function ckOutcomeHtml(c) { const oc = checkinOutcome(c); return oc.habit != null ? `<span${oc.custom ? ' class="usertext"' : ''}>${esc(oc.habit)}</span> <span>→ bonus</span>` : esc(oc.text); }
+function checkinCardHtml(date) {
+  if (!isCheckinDay(date)) return ''; const c = (S.days[date] || {}).checkin, done = checkinDone(date); if (!done && !checkinOn()) return '';
+  const td = today(), title = esc(checkinTitle(dayInfo(date)));
+  if (done) return `<button class="ckc done" data-ck><span class="ic">${CK_IC}</span><span class="lab"><b>${title}</b><small>${ckOutcomeHtml(c)}</small></span><span class="st">${IC4.check}</span></button>`;
+  if (date < td) return `<div class="ckc missed"><span class="ic">${CK_IC}</span><span class="lab"><b>${title}</b></span><span class="kp">missed</span></div>`;
+  return `<button class="ckc${date > td ? ' ahead' : ''}" data-ck><span class="ic">${CK_IC}</span><span class="lab"><b>${title}</b></span><span class="kp">+2 Ki ›</span></button>`;
+}
+function ckSugHtml(sg) {
+  if (!sg) return ''; const ch = sg.kind === 'habit' ? `<span${sg.custom ? ' class="usertext"' : ''}>${esc(sg.label)}</span> <span>becomes bonus.</span>` : `<span>${esc(sg.change)}</span>`;
+  return `<b>${esc(sg.lead)}</b> ${ch}`;
+}
+// The sheet: the cycle against the plan, how it felt, the motivation, at most one suggestion — Skip / Accept, or Done. Once
+// done the same sheet reads back what was decided.
+function checkinSheet(date) {
+  const info = dayInfo(date), c = (S.days[date] || {}).checkin, done = checkinDone(date), td = today(); if (!info.items || (!done && date !== td)) return;
+  const wk = info.cycleLen === 7, st = done ? null : checkinStats(date), rows = done && Array.isArray(c.rows) ? c.rows : checkinRows(st || checkinStats(date));
+  const m0 = Math.max(1, Math.min(10, +(S.phase || {}).motivation || 7)); let feel = done ? c.feel : null, mot = done ? c.motivation : m0, sg = done ? c.suggestion : null;
+  const rowsHtml = `<div class="ckrows">${rows.map(([l, v, g]) => `<div><span>${esc(l)}</span><b class="${g == null ? '' : g ? 'g' : 'y'}">${esc(v)}</b></div>`).join('')}</div>`;
+  const feelHtml = () => [1, 2, 3, 4, 5].map(v => `<button data-feel="${v}" class="${feel === v ? 'on' : ''}" aria-pressed="${feel === v}"${done ? ' disabled' : ''}><b>${v}</b>${v === 1 ? '<small>too much</small>' : v === 3 ? '<small>right</small>' : v === 5 ? '<small>too easy</small>' : ''}</button>`).join('');
+  const motHtml = done ? `<b class="pv">${mot == null ? '—' : mot}</b>` : smallStepper('ckmot', mot, '', 1);
+  const sugBox = () => sg ? `<div class="cksug${done ? (c.accepted ? ' acc' : ' skip') : ''}" id="cksug">${ckSugHtml(sg)}${done ? `<span class="stc ${c.accepted ? 'on' : 'off'}">${c.accepted ? 'Accepted' : 'Skipped'}</span>` : ''}</div>` : '<div id="cksug" hidden></div>';
+  const foot = () => done ? '<button class="btn" data-close>Close</button>' : sg ? '<div class="row"><button class="btn sec" data-ckskip>Skip</button><button class="btn" data-ckacc>Accept</button></div>' : '<button class="btn" data-ckdone>Done</button>';
+  modal(`<div class="hdl"></div><div class="shd"><span class="h1">${esc(checkinTitle(info))}</span><span></span></div>${rowsHtml}
+    <div class="sgl">${wk ? 'How did the week feel?' : 'How did the cycle feel?'}</div><div class="ckfeel" role="group" aria-label="${wk ? 'How did the week feel?' : 'How did the cycle feel?'}">${feelHtml()}</div>
+    <div class="sgrp pcard ckmot">${prow('Motivation', '', motHtml)}</div>${sugBox()}
+    <div data-foot class="sfoot" id="ckfoot">${foot()}</div>`, b => {
+    b.classList.remove('hudm'); b.classList.add('sheetbg', 'logsh', 'cksh'); if (done) return;
+    const paint = () => { sg = checkinSuggest(date, st, feel, mot); const box = b.querySelector('#cksug'); box.outerHTML = sugBox(); const f = b.querySelector('#ckfoot'); f.innerHTML = foot(); bindFoot(); };
+    const finish = accept => { if (today() !== date) { b.close(); refreshToday(false); return toast('That day is over'); }
+      checkinFinish(date, { feel, motivation: mot, suggestion: sg, accept, rows: checkinRows(st) }); b.close(); vib(30); refreshToday(false);
+      setTimeout(() => { const el = $('.ckc.done'); if (el) el.classList.add('just'); }, 60); };
+    const bindFoot = () => { const f = b.querySelector('#ckfoot'), on = (s, fn) => { const x = f.querySelector(s); if (x) x.onclick = fn; };
+      on('[data-ckskip]', () => finish(false)); on('[data-ckacc]', () => finish(true)); on('[data-ckdone]', () => finish(false)); };
+    b.querySelectorAll('[data-feel]').forEach(x => x.onclick = () => { const v = +x.dataset.feel; feel = feel === v ? null : v; b.querySelectorAll('[data-feel]').forEach(y => { const on = +y.dataset.feel === feel; y.classList.toggle('on', on); y.setAttribute('aria-pressed', on); }); vib(8); paint(); });
+    wireSteppers(b, inp => { const v = num(inp.value); if (v == null) return; const m = Math.max(1, Math.min(10, Math.round(v))); if (String(m) !== inp.value && !KP.inp) inp.value = m; if (m !== mot) { mot = m; paint(); } });
+    paint();
+  });
 }
 /* ---------- Rest timer ----------
    Logging a set starts the rest (3:00 after the heavy 3 × 5 sets, 2:00 after the others), docked above Finish. +15 adds
@@ -4574,7 +4855,7 @@ function bandTodayHtml(date) {
 }
 function t4BodyHtml(date, info) {
   const cyc = cycleOf(date), note = (S.days[date] || {}).note;
-  return budgetHtml(date) + wtHtml(date, info, cyc) + t4Rows(date, info) + `<div class="t4noterow ${note ? 'has' : ''}" data-note><span class="ic">${IC4.pen}</span><span class="nlab"><b>Note</b>${note ? `<span class="usertext">${esc(note)}</span>` : '<span>How did it go?</span>'}</span></div>` + bandTodayHtml(date);
+  return budgetHtml(date) + checkinCardHtml(date) + wtHtml(date, info, cyc) + t4Rows(date, info) + `<div class="t4noterow ${note ? 'has' : ''}" data-note><span class="ic">${IC4.pen}</span><span class="nlab"><b>Note</b>${note ? `<span class="usertext">${esc(note)}</span>` : '<span>How did it go?</span>'}</span></div>` + bandTodayHtml(date);
 }
 function todayHtml() {
   const date = R.date, info = dayInfo(date), p = P(), td = today();
@@ -4625,6 +4906,7 @@ function bindTodayBody(date, future) {
   const openWT = () => { if (info.workoutKey) { const s = S.sessions.find(x => x.date === date); if (date === today() && !(s && (s.finished || s.startedAt))) R._woStart = !(s && s.ex.some(e => e.done || e.sets.some(st => st.kg || st.reps))); go('workout', { date, key: s ? s.key : info.workoutKey }); } else if (info.isMT) go('mt', { date }); else showBalls(date); };
   const wt = body.querySelector('[data-wt]'); if (wt) wt.onclick = openWT;
   const bu = body.querySelector('[data-bud]'); if (bu) bu.onclick = () => go('nutrition', { date });
+  const ck = body.querySelector('[data-ck]'); if (ck) ck.onclick = () => future ? toast('That day hasn\'t happened yet') : checkinSheet(date);
   body.querySelectorAll('[data-chg]').forEach(c => c.onclick = e => { e.stopPropagation(); changeDaySheet(date); });
   startLiftAnim();
   body.querySelectorAll('[data-chk]').forEach(c => c.onclick = e => {
@@ -5269,7 +5551,7 @@ function weighSheet(date) {
 
 /* ---------- Nutrition ---------- */
 function nutritionSheet(date) {
-  const n = (S.days[date] || {}).nutrition || {}, p = P(), bk = bandKcal(date), has = n.kcal || n.protein || n.carbs || n.fat;
+  const n = (S.days[date] || {}).nutrition || {}, p = phaseAt(date), bk = bandKcal(date), has = n.kcal || n.protein || n.carbs || n.fat;
   const last = S.health && S.health.last ? new Date(S.health.last).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : null;
   const tl = k => `BMR ${fmtN(p.bmr)} + ${k.src === 'band' ? 'band' : k.src === 'hand' ? 'typed' : 'estimate'} ${fmtN(k.v)}${kcalOff(p)}`;
   const note = k => k.src === 'band' ? 'From the band — type a number to override it' : k.src === 'hand' ? 'Typed by hand — clear it to use the band' : 'Estimate · the band or a screenshot makes it exact';
@@ -5286,7 +5568,7 @@ function nutritionSheet(date) {
     // what the numbers would do, shown live; nothing is kept until Save
     const entry = () => { const o = readForm(b), prev = d().nutrition || {}; return { kcal: o.kcal, protein: o.protein, carbs: o.carbs, fat: o.fat, band: o.band, src: prev.src }; };
     const upd = () => { const keep = d().nutrition; d().nutrition = entry();
-      try { b.querySelector('#calc').innerHTML = nutritionCalcHtml(nutritionCalc(date), P(), date); b.querySelector('#tgt').innerHTML = targetHtml(date); b.querySelector('#tgtlab').textContent = tl(bandKcal(date)); b.querySelector('#bandnote').textContent = note(bandKcal(date)); }
+      try { b.querySelector('#calc').innerHTML = nutritionCalcHtml(nutritionCalc(date), phaseAt(date), date); b.querySelector('#tgt').innerHTML = targetHtml(date); b.querySelector('#tgtlab').textContent = tl(bandKcal(date)); b.querySelector('#bandnote').textContent = note(bandKcal(date)); }
       finally { if (keep === undefined) delete d().nutrition; else d().nutrition = keep; } };
     b.querySelectorAll('input[name]').forEach(i => i.addEventListener('input', upd));
     const bp = b.querySelector('[data-bandpull]'); if (bp) bp.onclick = async () => { bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); bp.lastChild.textContent = r.ok ? new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Sync'; if (!r.ok) return toast(r.error, 2400);
@@ -6097,17 +6379,22 @@ function myPlanHtml() {
 }
 function bindMyPlan() {
   const ph = S.phase, keepY = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  // every change of the numbers applies from today on (editPhase: the days gone keep their targets, Ki and balls)
   app.querySelectorAll('[data-ph]').forEach(b => b.onclick = () => { const k = b.dataset.ph; if (k === ph.kind) return;
-    ph.sizes = Object.assign({}, ph.sizes); if (ph.kind !== 'maintain') ph.sizes[ph.kind] = Math.abs(+ph.deficit || 0);   // each phase keeps its own size
-    ph.kind = k; ph.deficit = k === 'maintain' ? 0 : k === 'bulk' ? -phaseSize(k) : phaseSize(k); planChanged(); vib(10); keepY(); });
+    editPhase(ph => { ph.sizes = Object.assign({}, ph.sizes); if (ph.kind !== 'maintain') ph.sizes[ph.kind] = Math.abs(+ph.deficit || 0);   // each phase keeps its own size
+      ph.kind = k; ph.deficit = k === 'maintain' ? 0 : k === 'bulk' ? -phaseSize(k) : phaseSize(k); }); vib(10); keepY(); });
   const segLab = () => { const b = app.querySelector(`[data-ph="${ph.kind}"] small`); if (b) b.textContent = fmtOff(phaseOff(ph.kind)) + '/day'; };
   wireSteppers(app, inp => {
     const v = num(inp.value); if (v == null) return;
-    if (inp.name === 'pdef') { ph.deficit = ph.kind === 'bulk' ? -v : v; planChanged(); segLab(); }
-    else if (inp.name === 'pprot') { if (v > 0) { ph.protein = v; planChanged(); } }
+    if (inp.name === 'pdef') { editPhase(ph => { ph.deficit = ph.kind === 'bulk' ? -v : v; }); segLab(); }
+    else if (inp.name === 'pprot') { if (v > 0) editPhase(ph => { ph.protein = v; }); }
     else if (inp.name === 'pcyc') { const c = Math.max(1, Math.min(200, Math.round(v))); if (String(c) !== inp.value && !KP.inp) inp.value = c; S.project.endDate = addDays(S.project.startDate, cycStartT(c + 1) - 1); planChanged(); const pe = app.querySelector('[name=pend]'); if (pe) { pe.value = S.project.endDate; pe.previousElementSibling.textContent = dayYear(S.project.endDate); } }
   });
-  app.querySelectorAll('[data-mot]').forEach(b => b.onclick = () => { ph.motivation = +b.dataset.mot; planChanged(); app.querySelectorAll('[data-mot]').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); vib(8); });
+  // a motivation sets the deficit to its point of the phase (phaseTargets); the deficit can still be fine-tuned by hand after
+  app.querySelectorAll('[data-mot]').forEach(b => b.onclick = () => { const m = +b.dataset.mot, t = phaseTargets(ph.kind, m);
+    editPhase(ph => { ph.motivation = m; ph.deficit = t.deficit; });
+    app.querySelectorAll('[data-mot]').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+    const di = app.querySelector('[name=pdef]'); if (di && !KP.inp) di.value = Math.abs(+ph.deficit || 0); segLab(); vib(8); });
   app.querySelectorAll('[data-len]').forEach(b => b.onclick = () => { const on = b.dataset.len === 'ongoing'; if (on === isOngoing()) return; setOngoing(on); planChanged(); vib(10); keepY(); });
   app.querySelectorAll('.dpick input').forEach(i => { i.addEventListener('click', () => { try { i.showPicker(); } catch (e) {} });
     i.addEventListener('change', () => { const v = i.value, p = S.project; if (!/^\d{4}-\d\d-\d\d$/.test(v)) return;
@@ -6402,8 +6689,11 @@ function habitsHtml() {
   return `<div class="screen pplan hgp">${topbar('Habits & goals', '')}
     <div class="sgl">Daily habits</div><div class="sgrp" id="hlist">${hs.map(habitRow).join('')}<button class="srow addrow" data-hadd><span class="st"><b>+ Add a habit</b></span></button></div>
     <div class="sgl">Goals</div><div class="sgrp" id="glist">${gs.map(goalRow).join('')}<button class="srow addrow" data-gadd><span class="st"><b>+ Add goal</b></span></button></div>
+    <div class="sgl">End of cycle</div><div class="sgrp">${ckRow()}</div>
   </div>`;
 }
+// v6 4a: the check-in on a cycle's last day, on or off (S.plan.checkin; on unless switched off)
+function ckRow() { const on = checkinOn(); return `<div class="srow hrow ckrow ${on ? '' : 'off'}"><span class="hopen"><span class="si">${CK_IC}</span><span class="st"><b>Check-in</b></span></span><button class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${on}" aria-label="Check-in" data-cksw><i></i></button></div>`; }
 function habitsRefresh() { if (R.screen !== 'habits') return; const y = window.scrollY; render(); window.scrollTo(0, y); }
 function bindHabits() {
   app.querySelectorAll('[data-hsw]').forEach(b => b.onclick = () => {
@@ -6414,6 +6704,8 @@ function bindHabits() {
   const ha = $('[data-hadd]'); if (ha) ha.onclick = () => habitSheet(null);
   app.querySelectorAll('[data-gid]').forEach(b => b.onclick = () => go('goal', { id: b.dataset.gid }));
   const ga = $('[data-gadd]'); if (ga) ga.onclick = () => go('goal', {});
+  const cs = $('[data-cksw]'); if (cs) cs.onclick = () => { if (!S.plan) S.plan = defaultPlan(); const on = !checkinOn(); if (on) delete S.plan.checkin; else S.plan.checkin = false; save();
+    cs.classList.toggle('on', on); cs.setAttribute('aria-checked', on); cs.closest('.hrow').classList.toggle('off', !on); vib(10); };
 }
 // A habit's sheet: name (your own), target and unit (a number), the days, how it counts. A new one starts with its block.
 function habitSheet(id) {
@@ -7180,6 +7472,26 @@ Object.assign(HR_DICT, {
 });
 // chart labels are built from the Croatian month names already (4. STU · PRO): they stay as they are
 HR_MO.forEach(m => { const u = m.toUpperCase(); HR_DICT[u] = u; HR_DICT['{0}. ' + u] = '{0}. ' + u; });
+// v6 4a: the check-in on a cycle's last day (Today's task, its sheet, the switch on Habits & goals)
+Object.assign(HR_DICT, {
+  'Cycle {0} check-in': 'Provjera ciklusa {0}', 'Week {0} check-in': 'Provjera tjedna {0}', '+{0} Ki ›': '+{0} Ki ›', 'Check-in': 'Provjera', 'End of cycle': 'Kraj ciklusa',
+  'No change': 'Bez promjene', 'Motivation {0}': 'Motivacija {0}', 'Deficit {0} → {1} kcal': 'Deficit {0} → {1} kcal', 'Surplus {0} → {1} kcal': 'Suficit {0} → {1} kcal', '→ bonus': '→ bonus',
+  'Weight trend': 'Trend težine', 'Main lifts': 'Glavna dizanja', 'Habits done': 'Odrađene navike', 'held {0} of {1}': 'zadržano {0} od {1}',
+  '{0} of {1} days': v => v[0] + ' od ' + v[1] + ' ' + dana(v[1]), '{0} of {1} day': v => v[0] + ' od ' + v[1] + ' ' + dana(v[1]),
+  'How did the cycle feel?': 'Kakav je bio ciklus?', 'How did the week feel?': 'Kakav je bio tjedan?', 'too much': 'previše', 'right': 'taman', 'too easy': 'prelagano',
+  'Accept': 'Prihvati', 'Accepted': 'Prihvaćeno', 'That day is over': 'Taj dan je prošao',
+  'Motivation {0} → {1}:': 'Motivacija {0} → {1}:', 'Losing over {0} % a week:': 'Gubiš više od {0} % tjedno:', 'Gaining over {0} % a week:': 'Dobivaš više od {0} % tjedno:',
+  'Most lifts dropped:': 'Većina dizanja je pala:', 'Weight flat for {0} weeks:': 'Težina stoji {0} tjedna:', 'Habits under half done:': 'Navike odrađene manje od pola:',
+  'Felt too much:': 'Bilo je previše:', 'Felt too easy:': 'Bilo je prelagano:', 'becomes bonus.': 'postaje bonus.',
+  '+{0} kcal a day, deficit {1} → {2}.': '+{0} kcal dnevno, deficit {1} → {2}.', '−{0} kcal a day, deficit {1} → {2}.': '−{0} kcal dnevno, deficit {1} → {2}.',
+  '−{0} kcal a day, surplus {1} → {2}.': '−{0} kcal dnevno, suficit {1} → {2}.',
+});
+// the cycle's weight change against the plan line: "−0.5 kg · on plan"; a kcal change, alone or after a new motivation
+for (const s of ['−', '+', '±']) for (const [en, hr] of [['on plan', 'po planu'], ['behind plan', 'iza plana'], ['ahead of plan', 'ispred plana'], ['off plan', 'izvan plana']]) HR_DICT[s + '{0} kg · ' + en] = s + '{0} kg · ' + hr;
+{ const ch = [['deficit {0} → {1} kcal a day.', 'deficit {0} → {1} kcal dnevno.'], ['surplus {0} → {1} kcal a day.', 'suficit {0} → {1} kcal dnevno.'], ['deficit stays {0} kcal a day.', 'deficit ostaje {0} kcal dnevno.'],
+    ['surplus stays {0} kcal a day.', 'suficit ostaje {0} kcal dnevno.'], ['kcal stay at maintenance.', 'kcal ostaju na održavanju.']];
+  const sh = (s, k) => s.replace(/\{(\d+)\}/g, (m, i) => '{' + (+i + k) + '}');
+  for (const [en, hr] of ch) { HR_DICT[en] = hr; HR_DICT['motivation {0} → {1}, ' + sh(en, 2)] = 'motivacija {0} → {1}, ' + sh(hr, 2); } }
 /* ---------- Boot ---------- */
 (async function boot() {
   i18nStart();   // Croatian: translate everything the app shows from here on
