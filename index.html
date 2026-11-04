@@ -1285,7 +1285,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.7.2';
+const APP_VERSION = '4.8.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1420,7 +1420,7 @@ function idbPut(v) { try { if (idb) idb.transaction('kv', 'readwrite').objectSto
 const BAND_LS = 'vikac.band';
 const MT_TYPES = /box|martial|kick|muay|thai/i;
 function bandCfg() { try { return JSON.parse(localStorage.getItem(BAND_LS) || 'null'); } catch (e) { return null; } }
-function bandSetCfg(c) { try { if (c) localStorage.setItem(BAND_LS, JSON.stringify(c)); else localStorage.removeItem(BAND_LS); } catch (e) {} }
+function bandSetCfg(c) { if (typeof viewsChanged === 'function') viewsChanged(); try { if (c) localStorage.setItem(BAND_LS, JSON.stringify(c)); else localStorage.removeItem(BAND_LS); } catch (e) {} }
 function bandDay(date) { return S.health && S.health.days && S.health.days[date] || null; }
 // Band workouts on a day that are not Muay Thai (lifting with a workout started on the band) and their kcal
 const NOT_LIFT = /walk|run|cycl|bik|swim|hik|row(?!s)/i;
@@ -1460,8 +1460,20 @@ function videoGet(name) { return vdbOpen().then(db => new Promise(res => { if (!
 function videoPut(name, blob) { return vdbOpen().then(db => new Promise(res => { if (!db) return res(false); try { const tx = db.transaction('v', 'readwrite'); tx.objectStore('v').put(blob, name); tx.oncomplete = () => res(true); tx.onerror = () => res(false); } catch (e) { res(false); } })); }
 function videoDel(name) { return vdbOpen().then(db => new Promise(res => { if (!db) return res(); try { const tx = db.transaction('v', 'readwrite'); tx.objectStore('v').delete(name); tx.oncomplete = () => res(); tx.onerror = () => res(); } catch (e) { res(); } })); }
 function videoNames() { return vdbOpen().then(db => new Promise(res => { if (!db) return res([]); try { const q = db.transaction('v').objectStore('v').getAllKeys(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); } catch (e) { res([]); } })); }
+// dayInfo and cycleOf are asked the same questions hundreds of times while one screen is drawn (the Journey path: every
+// day, its cycle, its stars). The answers are kept only for that one stretch of work (until the current task ends) and
+// are dropped at once by a save, so anything changed afterwards is always read fresh.
+var MEMO = { td: '', info: new Map(), cyc: new Map(), armed: false };
+function memoReset() { MEMO.info.clear(); MEMO.cyc.clear(); MEMO.td = ''; }
+function memoDay() {
+  if (!MEMO.armed) { MEMO.armed = true; queueMicrotask(() => { memoReset(); MEMO.armed = false; }); }
+  const td = today(); if (MEMO.td !== td) { MEMO.info.clear(); MEMO.cyc.clear(); MEMO.td = td; }
+}
+function dayInfo(date) { memoDay(); if (MEMO.info.has(date)) return MEMO.info.get(date); const v = dayInfo0(date); MEMO.info.set(date, v); return v; }
+function cycleOf(date) { memoDay(); if (MEMO.cyc.has(date)) return MEMO.cyc.get(date); const v = cycleOf0(date); MEMO.cyc.set(date, v); return v; }
 let saveTimer = null;
 function save() {
+  memoReset(); if (typeof viewsChanged === 'function') viewsChanged();
   S.meta.updatedAt = new Date().toISOString();
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {}
   clearTimeout(saveTimer); saveTimer = setTimeout(() => idbPut(JSON.stringify(S)), 150);
@@ -1523,7 +1535,7 @@ function tOf(date) { return diffDays(P().startDate, date); }            // 0 on 
 function goalWeight() { const p = P(); return Math.round((p.start.weight - p.deficit * D() / 7700) * 10) / 10; }
 function rate() { return (P().start.weight - goalWeight()) / D(); }     // kg/day
 
-function dayInfo(date) {
+function dayInfo0(date) {
   const t = tOf(date), idx = t + 1, Dd = D();
   if (t < 0) return { t, idx, phase: 'pre' };
   if (t > Dd) return { t, idx, phase: 'post' };
@@ -1636,7 +1648,7 @@ function workoutTag(info) { if (!info.items) return null; if (info.isMT) return 
 const DAYTYPES = { push: { label: 'Push', color: '#E05A00' }, pull: { label: 'Pull', color: '#1C6DD0' }, legs: { label: 'Legs', color: '#1E8E3E' }, mt: { label: 'Muay Thai', color: '#C2185B' }, rest: { label: 'Rest', color: '#8A8A8A' } };
 function dayType(info) { if (!info.items) return null; if (info.isMT) return { k: 'mt', label: 'Muay Thai' }; if (info.isRest) return { k: 'rest', label: 'Rest' }; const w = PROGRAM.workouts[info.workoutKey]; return { k: w.group, label: w.name }; }
 // One cycle = 8 days. Days 1–7 can each earn a dragon ball (a perfect day); day 8 is the summon day: 7 balls + a perfect day 8 = the dragon.
-function cycleOf(date) {
+function cycleOf0(date) {
   const info = dayInfo(date); if (!info.items) return null;
   const p = P(), first = (info.cycleNum - 1) * 8, days = [];
   for (let i = 0; i < 8; i++) { const t = first + i; if (t > D()) break; const d = addDays(p.startDate, t); days.push({ date: d, cd: i + 1, comp: dayCompletion(d), type: dayType(dayInfo(d)) }); }
@@ -2064,7 +2076,7 @@ function scienceCheck(date) {
 const GH_KEY = 'vikac.gh';
 let GH = { repo: '', token: '', path: 'trening-data.json', sha: null, lastSync: null, lastError: null, pending: false, conflict: null, lastRemoteUpdatedAt: null };
 try { const raw = localStorage.getItem(GH_KEY); if (raw) GH = Object.assign(GH, JSON.parse(raw)); } catch (e) {}
-function ghSave() { try { localStorage.setItem(GH_KEY, JSON.stringify(GH)); } catch (e) {} }
+function ghSave() { try { localStorage.setItem(GH_KEY, JSON.stringify(GH)); } catch (e) {} if (typeof viewsChanged === 'function') viewsChanged(); }
 const ghOn = () => !!(GH.repo && GH.token);
 const b64enc = str => btoa(unescape(encodeURIComponent(str)));
 const b64dec = b => decodeURIComponent(escape(atob(String(b).replace(/\s/g, ''))));
@@ -2909,7 +2921,7 @@ function markJust(kind) {
 }
 function toast(msg, ms) { let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.classList.remove('out'); t.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.add('out'); toastTimer = setTimeout(() => t.remove(), 200); }, ms || 1800); }
 // Navigation: a pushed screen slides in from the right, going back slides in from the left, tabs cross-fade
-function go(screen, params, push, anim) { if (LOG_SHEETS[screen]) return openLogSheet(screen, (params || {}).date); const pushed = push !== false && R.screen !== screen; if (pushed) R.stack.push({ screen: R.screen, params: R.params, date: R.date, y: window.scrollY }); R.screen = screen; R.params = params || {}; render(anim || (pushed ? 'right' : 'fade')); window.scrollTo(0, 0); }
+function go(screen, params, push, anim) { if (LOG_SHEETS[screen]) return openLogSheet(screen, (params || {}).date); const pushed = push !== false && R.screen !== screen; if (pushed) R.stack.push({ screen: R.screen, params: R.params, date: R.date, y: window.scrollY }); R.screen = screen; R.params = params || {}; render(anim || (pushed ? 'right' : 'fade')); if (!R._restored) window.scrollTo(0, 0); }
 // Going back lands where you were: same screen, same day, same scroll position
 function back() { const s = R.stack.pop(); if (s) { R.screen = s.screen; R.params = s.params; if (s.date) R.date = s.date; render('left'); window.scrollTo(0, s.y || 0); } else go('today', {}, false, 'left'); }
 // Entrance animation for a freshly rendered element: 'right' | 'left' | 'fade' | 'up'
@@ -3015,8 +3027,37 @@ function applyUnits(root) {
     if (wrap.classList.contains('big')) { const fit = () => { input.style.width = Math.max(2, (input.value || input.placeholder || '').length + 0.6) + 'ch'; }; fit(); input.addEventListener('input', fit); }
   });
 }
+/* ---------- Tabs stay alive ----------
+   Today, Journey and the Scouter are kept as they were when you leave them (scroll position included) and come back
+   instantly: nothing is rebuilt and no entrance plays. A tab is rebuilt only if something it shows has changed since
+   (anything saved, new art, a sync, another date) or you asked for a different view of it (another day, another
+   Scouter tab). The tab bar never changes place, so switching feels like flipping pages. */
+var VIEW_REV = 0; const TAB_CACHE = {}, TAB_KEEP = { today: 1, journey: 1, dash: 1 };
+function viewsChanged() { VIEW_REV++; }
+function tabKey(name) { return [name, VIEW_REV, today(), name === 'today' ? R.date : '', name === 'dash' ? [R.stab, R.frange, R.wr, R.rtab].join('|') : '', name === 'journey' ? [R.jtab, R.jmonth].join('|') : ''].join('~'); }
+function stashTab(name) {
+  if (!TAB_KEEP[name] || !app.firstChild || app.querySelector('.errscr')) return;
+  const y = window.scrollY;   // read before the page empties (the browser clamps the scroll to 0 then)
+  const box = document.createDocumentFragment(); while (app.firstChild) box.appendChild(app.firstChild);
+  // one-shot entrances would replay when the page goes back in; it should just be there
+  box.querySelectorAll('.a-right,.a-left,.a-fade,.a-up,.pop,.shrink,.just').forEach(e => e.classList.remove('a-right', 'a-left', 'a-fade', 'a-up', 'pop', 'shrink', 'just'));
+  TAB_CACHE[name] = { box, key: tabKey(name), y };
+}
+function restoreTab(name) {
+  const c = TAB_CACHE[name]; delete TAB_CACHE[name]; if (!c || c.key !== tabKey(name)) return false;
+  app.textContent = ''; app.appendChild(c.box); window.scrollTo(0, c.y);
+  R._prevScreen = R._curScreen; R._curScreen = R.screen; keepAwake(false);
+  const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = R.screen === 'dash' ? '#0a2e12' : '#0E0F12';
+  if (R.screen === 'today') startLiftAnim();
+  return true;
+}
 function render(anim) {
-  stopTimers(); if (KP.inp && app.contains(KP.inp)) kpClose();
+  stopTimers(); if (KP.inp && app.contains(KP.inp)) kpClose(); memoReset(); R._restored = false;
+  // leaving a tab keeps it; coming back to one shows it as it was (not around the full-screen workout and stretching)
+  if (S.project && R.screen !== R._curScreen && !FS_SCREENS[R.screen] && !FS_SCREENS[R._curScreen] && !FSX.over) {
+    stashTab(R._curScreen);
+    if (TAB_KEEP[R.screen] && restoreTab(R.screen)) { R._restored = true; return; }
+  }
   if (LOG_SHEETS[R.screen]) R.screen = 'today';   // logging lives in sheets now
   if (R.screen === 'band' || R.screen === 'backup') R.screen = 'profile';
   if (!S.project) { app.innerHTML = setupHtml(); bindSetup(); applyUnits(app); animate(app.querySelector('.screen'), anim); return; }
@@ -5076,7 +5117,7 @@ function bindBatch() {
 (async function boot() {
   await load();
   if (S.project && seedStartReading()) save();
-  probeArt(() => { _artGeom = null; render(); }); setTimeout(() => { if (ART.heroBeam) { _artGeom = null; artGeom(); } }, 50);   // custom PNG art appears as soon as the files are on the server
+  probeArt(() => { _artGeom = null; viewsChanged(); render(); }); setTimeout(() => { if (ART.heroBeam) { _artGeom = null; artGeom(); } }, 50);   // custom PNG art appears as soon as the files are on the server
   // Coming back to the app (also after Android closed it in the background): the same screen, day and scroll position
   const start = () => { const st = loadUI(); if (st) { Object.assign(R, st.r); render(); requestAnimationFrame(() => window.scrollTo(0, st.y || 0)); } else { R.date = today(); render(); } };
   // An image shared from the Xiaomi app arrives through the service worker (see sw.js) as ?share=1
