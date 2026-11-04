@@ -1307,6 +1307,12 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .mhead .myr .mnav{position:static;width:30px;height:30px;padding:0;border-radius:50%;background:rgba(27,28,34,.82);border:1.5px solid var(--line2);display:flex;align-items:center;justify-content:center;color:var(--ink)}
 .mhead .myr .mnav svg{width:16px;height:16px}
 .mhead .myr .mnav:disabled{opacity:.3}
+/* one "done" look: bonus goals turn green when done, same as the required ones */
+.todo li.bonus.done{background:linear-gradient(90deg,rgba(61,220,132,.12),var(--card) 75%);border-color:rgba(61,220,132,.4)}
+.todo li.bonus.done .ic{background:rgba(61,220,132,.16);color:var(--ok)}
+.todo li.bonus.done .st{background:var(--ok)}
+.todo li.bonus.just{animation-name:justGlow}
+.ok5.on.b{background:var(--ok)}
 </style>
 </head>
 <body>
@@ -1314,7 +1320,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.8.2';
+const APP_VERSION = '4.8.3';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -3308,7 +3314,7 @@ function playSummon(o) {
 }
 function showBalls(date) {
   const info = dayInfo(date), cyc = cycleOf(date); if (!info.items) return;
-  const rows = info.items.map(it => `<span>${esc(it.label)}${it.req ? '' : ' <span class="muted small">bonus</span>'}</span><b class="${isDone(date, it.id) ? (it.req ? 'ok' : 'blue') : 'muted'}" style="font-size:18px">${isDone(date, it.id) ? '✓' : '○'}</b>`).join('');
+  const rows = info.items.map(it => `<span>${esc(it.label)}${it.req ? '' : ' <span class="muted small">bonus</span>'}</span><b class="${isDone(date, it.id) ? 'ok' : 'muted'}" style="font-size:18px">${isDone(date, it.id) ? '✓' : '○'}</b>`).join('');
   const head = cyc.summonDay ? (cyc.summoned ? 'Dragon summoned' : cyc.canSummon ? 'Summon day' : 'Summon day · locked') : (date === today() ? 'Today\'s ' : '') + cyc.star + '-star ball';
   const days = cyc.days.filter(x => x.cd <= 7).map(x => `<span class="chip daychip ${x.comp === 'done' ? 'ok' : x.comp === 'miss' ? 'bad' : 'muted'}" title="${x.type.label}">${x.cd}</span>`).join('');
   modal(`<h3>${head}</h3><div class="muted">Cycle ${cyc.num} · ${cyc.earned} of 7 balls collected</div>
