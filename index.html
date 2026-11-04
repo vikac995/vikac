@@ -1416,6 +1416,26 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .mtadd[hidden],.mtaddf[hidden]{display:none}.mtaddf{margin-top:8px}
 .mttot{display:flex;justify-content:space-between;align-items:baseline;margin:12px 2px 2px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.mttot b{font-size:16px;color:var(--ink);letter-spacing:.04em}
 .chrow{min-height:58px}.chrow .cdot{width:12px;height:12px;border-radius:50%;flex:none;margin:0 4px}.chrow.cur{background:var(--orsoft)}
+/* v5.2 · kcal left, rest timer */
+.bud{margin:12px 0 0;border-radius:18px;padding:12px 14px 13px;background:linear-gradient(160deg,#1b281e,var(--card) 65%);border:2px solid rgba(61,220,132,.5);cursor:pointer}
+.bud .h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:#8fb59f}.bud .h b{color:#bcd6c4;font-size:11.5px;letter-spacing:.06em}
+.bud .big{display:flex;align-items:baseline;gap:8px;margin-top:2px}.bud .big b{font-family:'Bangers',Impact,sans-serif;font-weight:400;font-size:56px;line-height:1;letter-spacing:.02em;color:#e9ffe9}.bud .big span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:18px;color:#8fb59f;letter-spacing:.06em;text-transform:uppercase}
+.bud .bar{height:11px;border-radius:6px;background:rgba(255,255,255,.08);margin:9px 0 6px;overflow:hidden}.bud .bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#3DDC84,#9be7b9)}
+.bud .ln{display:flex;justify-content:space-between;font-size:13.5px;color:#cfcac3}.bud .ln b{color:var(--ink)}
+.bud .eq{margin-top:5px;font-size:12.5px;color:var(--muted)}.bud .pr{margin-top:8px;display:flex;flex-wrap:wrap;gap:6px}.bud .pr span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.04em;padding:4px 10px;border-radius:999px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.14)}
+.bud.over{background:linear-gradient(160deg,#2d1d0e,var(--card) 65%);border-color:rgba(255,155,69,.6)}.bud.over .big b{color:var(--or2)}.bud.over .bar i{background:linear-gradient(90deg,#FE7F0C,#FFB74D)}
+.rdock{position:fixed;left:12px;right:12px;bottom:calc(88px + var(--sab));z-index:30;max-width:536px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:9px 10px 9px 12px;border-radius:18px;background:#1c130b;border:2px solid var(--or);box-shadow:0 0 0 4px rgba(254,127,12,.12),0 10px 26px rgba(0,0,0,.7);animation:rdIn .3s cubic-bezier(.2,.8,.2,1)}
+@keyframes rdIn{from{transform:translateY(20px);opacity:0}}
+.rdock .rg{position:relative;width:54px;height:54px;flex:none;display:flex;align-items:center;justify-content:center}.rdock .rg>svg{position:absolute;inset:0;width:54px;height:54px;overflow:visible}
+.rdock .rg span{position:relative;font-family:'BarlowC',sans-serif;font-weight:700;font-size:10px;letter-spacing:.12em;color:var(--muted)}.rdock .rg span svg{width:22px;height:22px}
+.rdock .tx{min-width:0;flex:1}.rdock .tm{font-family:'Bangers',Impact,sans-serif;font-size:36px;line-height:1;letter-spacing:.03em}
+.rdock .lb{font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rdock .lb b{color:var(--ink)}
+.rdock .bt{display:flex;gap:6px;flex:none}.rdock .bt button{height:42px;min-height:0;min-width:50px;padding:0 10px;border-radius:12px;background:var(--s2);border:1.5px solid var(--line2);font-family:'BarlowC',sans-serif;font-weight:700;font-size:14.5px;letter-spacing:.06em;color:var(--ink)}
+.rdock.go{background:#0f2618;border-color:var(--ok);box-shadow:0 0 0 4px rgba(61,220,132,.18),0 0 26px rgba(61,220,132,.35)}.rdock.go .tm{color:var(--ok)}
+.screen.wo{padding-bottom:calc(180px + var(--sab))}
+.nav.nav3 .navball.tmr{color:var(--or2)}.nav.nav3 .navball.tmr .rg svg{width:68px!important;height:68px!important}
+.nav.nav3 .navball .tt{position:relative;display:flex;flex-direction:column;align-items:center;line-height:1}.nav.nav3 .navball .tt b{font-family:'Bangers',Impact,sans-serif;font-weight:400;font-size:23px;letter-spacing:.03em;color:var(--ink)}.nav.nav3 .navball .tt small{font-family:'BarlowC',sans-serif;font-weight:700;font-size:8.5px;letter-spacing:.12em;color:var(--muted)}
+.nav.nav3 .navball.tmr.go{color:var(--ok)}.nav.nav3 .navball.tmr.go .bb{box-shadow:0 0 0 5px rgba(61,220,132,.22),0 0 24px rgba(61,220,132,.5),0 6px 16px rgba(0,0,0,.7)}.nav.nav3 .navball.tmr.go .tt b{color:var(--ok)}
 </style>
 </head>
 <body>
@@ -1423,7 +1443,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.1.0';
+const APP_VERSION = '5.2.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -3236,7 +3256,7 @@ function render(anim) {
   app.innerHTML = html; setTimeout(() => applyUnits(app), 0);
   keepAwake(R.screen === 'workout');
   if (!fsIn && !fsOut) animate(app.querySelector('.screen'), anim);
-  app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (b._held) { b._held = false; return; } if (R.screen === b.dataset.nav && !R.stack.length && !app.querySelector('.errscr')) { if (R.screen === 'today' && R.date !== today() && dayInfo(today()).items) { const dir = today() > R.date ? 'right' : 'left'; R.date = today(); patchToday(dir); return; } window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); if (b.classList.contains('plchip')) R.stab = 'scan'; go(b.dataset.nav, {}, false, 'fade'); });
+  app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (b._held) { b._held = false; return; } if (b.dataset.nav === 'today' && restOn()) { go('workout', { date: REST.date, key: REST.key }, true, 'up'); return; } if (R.screen === b.dataset.nav && !R.stack.length && !app.querySelector('.errscr')) { if (R.screen === 'today' && R.date !== today() && dayInfo(today()).items) { const dir = today() > R.date ? 'right' : 'left'; R.date = today(); patchToday(dir); return; } window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); if (b.classList.contains('plchip')) R.stab = 'scan'; go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
   const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, exfile: bindExfile, project: bindProject, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
   R._prevScreen = R._curScreen; R._curScreen = R.screen;
@@ -3302,7 +3322,7 @@ function shiftDay(n) { const p = P(); let d = n === 0 ? today() : addDays(R.date
 function itemSub(date, it) {
   let sub = it.sub; const d = S.days[date] || { done: {} };
   if (it.id === 'weigh') { const r = S.readings[date]; if (r) sub = r.weight + ' kg' + (r.fat ? ' · ' + r.fat + ' % fat' : ''); else { const lr = lastReading('weight', addDays(date, -1)); if (lr) { const g = diffDays(lr.date, date); sub = 'Last ' + lr.v + ' kg · ' + (g <= 1 ? 'yesterday' : g + ' days ago'); } else sub = 'Log the scale'; } }
-  if (it.id === 'nutrition') { const n = d.nutrition; if (n && n.kcal) sub = (+n.kcal).toLocaleString('en-GB') + ' kcal · ' + (n.protein || 0) + ' g protein' + (n.carbs != null && n.carbs !== '' ? ' · C ' + n.carbs : '') + (n.fat != null && n.fat !== '' ? ' · F ' + n.fat : ''); else { const tg = nutritionTarget(date); sub = 'Target ' + tg.kcal.toLocaleString('en-GB') + ' kcal · ' + tg.protein + ' g protein'; } }
+  if (it.id === 'nutrition') { const n = d.nutrition; if (n && n.kcal) sub = (+n.kcal).toLocaleString('en-GB') + ' kcal · ' + (n.protein || 0) + ' g protein' + (n.carbs != null && n.carbs !== '' ? ' · C ' + n.carbs : '') + (n.fat != null && n.fat !== '' ? ' · F ' + n.fat : ''); else { sub = date > today() ? 'Plan it in MFP' : 'Screenshot your MFP day, or type it'; } }
   if (it.id === 'hang') { const h = hangPB(); sub = h ? 'PB ' + fmtSecs(h.v) : 'No PB yet'; }
   if (it.id === 'mt' && d.mt && d.mt.minutes) sub = d.mt.minutes + ' min';
   if (it.id === 'workout') { const s = S.sessions.find(x => x.date === date), m = workoutMinutes(it.key); if (s) sub = (s.finished ? 'Finished · ' : '') + s.ex.filter(e => e.done).length + '/' + s.ex.length + ' exercises'; if (m && !(s && s.finished)) sub += ' · ~' + m + ' min'; }
@@ -3816,7 +3836,8 @@ function nav(on) {
 // after anything is logged: the ball's ring catches up (and pops when something just got done)
 function navBallRefresh(pop) {
   const nb = document.querySelector('.nav .navball'); if (!nb) return; const b = navBallState();
-  nb.className = 'navball ' + (R.screen === 'today' ? 'on ' : '') + b.cls; nb.querySelector('.bb').innerHTML = b.inner;
+  nb.className = 'navball ' + (R.screen === 'today' ? 'on ' : '') + b.cls; const bb = nb.querySelector('.bb'); bb.innerHTML = b.inner; bb._h = null; const nl = nb.querySelector('.nl'); if (nl) nl.textContent = 'Today';
+  if (REST && R.screen !== 'workout') return restPaint();
   if (pop) { nb.classList.remove('pop'); void nb.offsetWidth; nb.classList.add('pop'); clearTimeout(nb._pt); nb._pt = setTimeout(() => nb.classList.remove('pop'), 700); }
 }
 // the gear (Settings) and the camera (screenshots) at the top of the tabs
@@ -3973,6 +3994,49 @@ function wtHtml(date, info, cyc) {
   if (cyc.todayDone) return `<div class="wt done rest" data-wt>${liftArtHtml('done')}<div class="tx">${labR}<div class="t h1">${title}</div>${noSum}${chg}</div><span class="ok">${IC4.check}</span></div>`;
   return `<div class="wt rest" data-wt>${liftArtHtml('rest')}${labR}<div class="t h1">${title}</div>${noSum}${chg}</div>`;
 }
+/* ---------- Kcal left: what you can still eat today ----------
+   Budget = BMR + the band's active kcal so far (or what you typed, or the project default) − the deficit; eaten = what's
+   logged (your MFP day — planned meals count as eaten). It grows as you move, so late in the evening it's close to final. */
+function budgetHtml(date) {
+  const td = today(); if (date > td) return ''; const p = P(); let tg; try { tg = nutritionTarget(date); } catch (e) { return ''; }
+  const n = (S.days[date] || {}).nutrition || {}, eaten = +n.kcal || 0, left = Math.round(tg.kcal - eaten), over = left < 0, bk = bandKcal(date);
+  const hm = t => new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const sync = bk.src === 'band' ? (date === td && S.health && S.health.last ? 'band synced ' + hm(S.health.last) : 'band') : bk.src === 'hand' ? 'band kcal typed' : 'no band data yet';
+  const pl = Math.round(p.protein - (+n.protein || 0)), w = current('weight', date) || +p.start.weight || 80, walk = Math.round(w * 3.5 / 2);   // brisk walk ≈ 3.5 kcal per kg per hour
+  return `<div class="bud ${over ? 'over' : ''}" data-bud><div class="h"><span>${date === td ? 'Kcal left today' : 'Kcal left'}</span><b>${sync}</b></div>
+    <div class="big"><b>${fmtN(Math.abs(left))}</b><span>${over ? 'kcal over' : 'kcal'}</span></div>
+    <div class="bar"><i style="width:${(Math.max(0, Math.min(1, eaten / Math.max(1, tg.kcal))) * 100).toFixed(1)}%"></i></div>
+    <div class="ln"><span>Eaten <b>${fmtN(eaten)}</b></span><span>Budget <b>${fmtN(tg.kcal)}</b></span></div>
+    <div class="eq">Budget = BMR ${fmtN(p.bmr)} + band ${fmtN(bk.v)} − ${fmtN(p.deficit)} deficit</div>
+    <div class="pr"><span>${pl > 0 ? 'Protein ' + pl + ' g to go' : 'Protein ✓'}</span>${date === td && !over ? `<span>30 min walk ≈ +${walk}</span>` : ''}</div></div>`;
+}
+/* ---------- Rest timer ----------
+   Logging a set starts the rest (3:00 after the heavy 3 × 5 sets, 2:00 after the others), docked above Finish. +15 adds
+   time, Skip ends it; at zero the phone buzzes and it turns green: GO, with the next set. Leave the workout and the ball
+   in the tab bar keeps counting (tap it to go back). Kept by the clock, so it's right after the phone sleeps. */
+let REST = (() => { try { const r = JSON.parse(localStorage.getItem('vikac.rest') || 'null'); return r && Date.now() < r.end + 120000 ? r : null; } catch (e) { return null; } })(), restTick = 0;
+function restOn() { return !!REST; }
+function restSave() { try { if (REST) localStorage.setItem('vikac.rest', JSON.stringify(REST)); else localStorage.removeItem('vikac.rest'); } catch (e) {} }
+function restStart(o) { REST = Object.assign({ end: Date.now() + o.sec * 1000, total: o.sec, go: false }, o); restSave(); restLoop(); restPaint(); }
+function restStop() { REST = null; restSave(); clearInterval(restTick); restTick = 0; const d = $('#rdock'); if (d) d.remove(); navBallRefresh(); }
+function restLoop() { if (!restTick) restTick = setInterval(restPaint, 250); }
+function restRing(frac, col, r) { const c = 2 * Math.PI * r, s = r * 2 + 6; return `<svg viewBox="0 0 ${s} ${s}"><circle cx="${s / 2}" cy="${s / 2}" r="${r}" fill="none" stroke="#2e2620" stroke-width="5"/><circle cx="${s / 2}" cy="${s / 2}" r="${r}" fill="none" stroke="${col}" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(c * frac).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${s / 2} ${s / 2})" style="filter:drop-shadow(0 0 4px ${col})"/></svg>`; }
+function restPaint() {
+  if (!REST) return; const left = Math.max(0, Math.ceil((REST.end - Date.now()) / 1000)), mmss = Math.floor(left / 60) + ':' + pad(left % 60);
+  if (!left && !REST.go) { REST.go = true; restSave(); vib([220, 110, 220, 110, 320]); }
+  if (REST.go && Date.now() > REST.end + 120000) return restStop();
+  const frac = REST.go ? 1 : left / REST.total, col = REST.go ? '#3DDC84' : '#FE7F0C';
+  let d = $('#rdock'); const onWo = R.screen === 'workout';
+  if (onWo) {
+    if (!d) { d = document.createElement('div'); d.id = 'rdock'; document.body.appendChild(d);
+      d.addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (!b) return; if (b.dataset.r === 'plus') { REST.end += 15000; REST.total += 15; REST.go = false; restSave(); restPaint(); } else restStop(); }); }
+    const html = `<span class="rg">${restRing(frac, col, 24)}<span>${REST.go ? IC4.check.replace('#0E0F12', '#3DDC84') : 'REST'}</span></span><div class="tx"><div class="tm">${REST.go ? 'GO' : mmss}</div><div class="lb">${REST.go ? '' : 'then '}<b>${esc(REST.next)}</b>${REST.nv ? ' · ' + esc(REST.nv) : ''}</div></div><div class="bt">${REST.go ? '<button data-r="ok">OK</button>' : '<button data-r="plus">+15</button><button data-r="skip">Skip</button>'}</div>`;
+    d.className = 'rdock' + (REST.go ? ' go' : ''); if (d._h !== html) { d.innerHTML = html; d._h = html; }
+  } else if (d) d.remove();
+  const nb = document.querySelector('.nav .navball');
+  if (nb && !onWo) { nb.classList.add('tmr'); nb.classList.toggle('go', REST.go); const bb = nb.querySelector('.bb'), h = `<span class="rg">${restRing(frac, col, 31)}</span><span class="tt"><b>${REST.go ? 'GO' : mmss}</b><small>${REST.go ? 'NEXT SET' : 'REST'}</small></span>`; if (bb._h !== h) { bb.innerHTML = h; bb._h = h; } const nl = nb.querySelector('.nl'); if (nl) nl.textContent = REST.go ? 'Go' : 'Rest'; }
+}
+if (REST) setTimeout(restLoop, 800);
 // ⇄ on the training card: change the day to whatever is on (or happened); it says what the plan was once changed
 const SWAP_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>';
 function planName(k) { return k === 'rest' ? 'Rest' : k === 'mt' ? 'Muay Thai' : PROGRAM.workouts[k] ? PROGRAM.workouts[k].name : k; }
@@ -4067,7 +4131,7 @@ function bandTodayHtml(date) {
 }
 function t4BodyHtml(date, info) {
   const cyc = cycleOf(date), note = (S.days[date] || {}).note;
-  return wtHtml(date, info, cyc) + t4Rows(date, info) + `<div class="t4noterow ${note ? 'has' : ''}" data-note><span class="ic">${IC4.pen}</span><span class="nlab"><b>Note</b>${note ? `<span class="usertext">${esc(note)}</span>` : '<span>How did it go?</span>'}</span></div>` + bandTodayHtml(date);
+  return budgetHtml(date) + wtHtml(date, info, cyc) + t4Rows(date, info) + `<div class="t4noterow ${note ? 'has' : ''}" data-note><span class="ic">${IC4.pen}</span><span class="nlab"><b>Note</b>${note ? `<span class="usertext">${esc(note)}</span>` : '<span>How did it go?</span>'}</span></div>` + bandTodayHtml(date);
 }
 function todayHtml() {
   const date = R.date, info = dayInfo(date), p = P(), td = today();
@@ -4119,6 +4183,7 @@ function bindTodayBody(date, future) {
   const bb = body.querySelector('[data-bigball]'); if (bb) bb.onclick = () => showBalls(date);
   const openWT = () => { if (info.workoutKey) { const s = S.sessions.find(x => x.date === date); go('workout', { date, key: s ? s.key : info.workoutKey }); } else if (info.isMT) go('mt', { date }); else if (cycleOf(date).summoned) showDragon(date); else showBalls(date); };
   const wt = body.querySelector('[data-wt]'); if (wt) wt.onclick = openWT;
+  const bu = body.querySelector('[data-bud]'); if (bu) bu.onclick = () => go('nutrition', { date });
   body.querySelectorAll('[data-chg]').forEach(c => c.onclick = e => { e.stopPropagation(); changeDaySheet(date); });
   startLiftAnim();
   body.querySelectorAll('[data-chk]').forEach(c => c.onclick = e => {
@@ -4269,7 +4334,11 @@ function bindWorkout() {
       if (pv) { const t = fmtPB(e.n, type, shown); if (pv.textContent !== t) { pv.textContent = t; pv.classList.remove('bump'); void pv.offsetWidth; pv.classList.add('bump'); } }
       if (other && cur > other.v && cur > box._pbSeen && box.classList.contains('open')) { box._pbSeen = cur; box._popAt = Date.now(); pbPop(box, inpEl); } else if (cur > box._pbSeen && !other) box._pbSeen = cur;
     }, 500); };
-    const paintOk = j => { if (j == null) return; const b = box.querySelector(`[data-ok="${j}"]`), st = e.sets[j]; if (b) b.classList.toggle('on', +st.kg > 0 && +st.reps > 0); };
+    const paintOk = j => { if (j == null) return; const b = box.querySelector(`[data-ok="${j}"]`), st = e.sets[j]; if (!b) return; const was = b.classList.contains('on'), now = +st.kg > 0 && +st.reps > 0; b.classList.toggle('on', now); if (now && !was) restAfterSet(i, j); };
+    // the rest after set j: what comes next (the next set with last time's numbers, or the next exercise)
+    const restAfterSet = (ii, j) => { const def = w.ex[ii], nx = j + 1 < e.sets.length, ne = w.ex[ii + 1];
+      if (!nx && !ne) return restStop(); const ls = lastFor(e.n, date), lj = ls && ls.e.sets && ls.e.sets[j + 1];
+      restStart({ sec: restFor(def.type, j, def.s), date, key, next: nx ? 'set ' + (j + 2) + ' of ' + e.sets.length : ne.n, nv: nx && lj && +lj.kg > 0 && +lj.reps > 0 ? lj.kg + ' kg × ' + lj.reps : '' }); };
     const setVal = (inpEl, v) => { inpEl.value = v; const f = inpEl.dataset.f, j = inpEl.dataset.set; if (j != null) e.sets[+j][f] = v; else e[f] = v; save(); paintOk(j != null ? +j : null); pbCheck(inpEl); };
     box.querySelectorAll('input[data-f]').forEach(inpEl => { inpEl.oninput = () => setVal(inpEl, inpEl.value); inpEl.onblur = () => setTimeout(maybeAdvance, 50); });
     box.querySelectorAll('[data-step]').forEach(b => b.onclick = () => {
@@ -4288,7 +4357,8 @@ function bindWorkout() {
     bindVideo(box, e.n);
   });
   // Finish: back to where you came from, the summary pops up there
-  const fin = $('#finish'); if (fin) fin.onclick = () => {
+  if (REST) restLoop();
+  const fin = $('#finish'); if (fin) fin.onclick = () => { restStop();
     const logged = s.ex.filter(e => exScore(e, exType(e.n)).v > 0);
     if (!logged.length) return toast('Log at least one set first');
     s.finished = true; s.ex.forEach(e => { if (exScore(e, exType(e.n)).v > 0) e.done = true; }); save();
@@ -5917,6 +5987,10 @@ Object.assign(HR_DICT, {
   '{0} session · {1} min': v => v[0] + ' trening · ' + v[1] + ' min', '{0} sessions · {1} min': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga') + ' · ' + v[1] + ' min',
   '{0} session · {1} min · {2} kcal': v => v[0] + ' trening · ' + v[1] + ' min · ' + v[2] + ' kcal', '{0} sessions · {1} min · {2} kcal': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga') + ' · ' + v[1] + ' min · ' + v[2] + ' kcal',
   'weigh-in, food, hangs, stretching': 'vaganje, prehrana, visovi, istezanje',
+  'Kcal left today': 'Preostalo kcal danas', 'Kcal left': 'Preostalo kcal', 'no band data yet': 'još nema podataka s narukvice', 'band kcal typed': 'kcal narukvice upisane', 'Eaten': 'Pojedeno', 'Budget': 'Budžet',
+  'Budget = BMR {0} + band {1} − {2} deficit': 'Budžet = BMR {0} + narukvica {1} − {2} deficit', 'Protein {0} g to go': 'Još {0} g proteina', 'Protein ✓': 'Proteini ✓', '{0} min walk ≈ +{1}': '{0} min hoda ≈ +{1}',
+  'Screenshot your MFP day, or type it': 'Snimka MFP dana ili upiši ručno', 'Plan it in MFP': 'Isplaniraj u MFP-u', 'band synced {0}': 'narukvica sinkr. {0}', 'band': 'narukvica', 'kcal over': 'kcal preko',
+  'then': 'zatim', 'set {0} of {1}': 'serija {0} od {1}', '{0} done · ~{1} min': '{0} gotovo · ~{1} min', 'NEXT SET': 'SLJEDEĆA', 'Go': 'Kreni', 'GO': 'KRENI', 'Skip': 'Preskoči',
   'v{0} · profile': 'v{0} · profil', '{0} / {1} exercises': '{0} / {1} vježbi', '{0} kg · {1} % fat': '{0} kg · {1} % masti', '{0} kg · {1} kg': '{0} kg · {1} kg',
 });
 /* ---------- Boot ---------- */
