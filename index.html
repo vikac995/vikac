@@ -1247,6 +1247,17 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .summon .sb.glow{filter:drop-shadow(0 0 9px rgba(255,195,70,.95)) drop-shadow(0 0 20px rgba(255,150,30,.6))}
 @media (prefers-reduced-motion:reduce){.t4orbit.on,.t4orbit.on .ob>span,.btn.sumbtn.holding,.btn.sumbtn.call,.summon .sdr.float>*{animation:none!important}}
 .wt.mt .s{margin-bottom:12px}  /* the button clears the kick art like on the lifting tiles (they have the equipment row) */
+/* Today: header and cycle strip are the fixed navigation; only the day below them slides */
+.t4head .d{display:flex;align-items:center;gap:8px;min-height:24px}
+.t4head .tback{display:inline-flex;align-items:center;min-height:0;height:22px;padding:0 9px;border-radius:999px;background:var(--s2);border:1.5px solid var(--line2);color:var(--ink);font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+.t4head .tback[hidden]{display:none}
+.t4strip{justify-content:center;margin:8px 0 2px}
+.t4strip .mbw{position:relative}
+.t4strip .mbs{position:relative;display:flex;align-items:center;gap:4px}
+.t4strip .mbsel{position:absolute;left:0;top:0;width:30px;height:34px;border-radius:9px;background:var(--s2);box-shadow:0 0 0 1.5px var(--or);transition:transform .24s cubic-bezier(.2,.8,.2,1)}
+.t4strip .mb.cur{background:none;box-shadow:none}
+.t4strip .mb>img,.t4strip .mb>svg{transition:width .2s,height .2s,opacity .2s}
+.t4hero{margin-top:10px}
 </style>
 </head>
 <body>
@@ -1254,7 +1265,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.7.0';
+const APP_VERSION = '4.7.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -3609,15 +3620,53 @@ function t4HeroHtml(date, info, cyc) {
   else if (won) cap = `<div class="t4cap won">${cyc.star}-star ball earned</div>`;
   else if (future) cap = `<div class="t4cap">Earns the <b>${dayStars(date)}-star ball</b></div>`;
   else { const left = info.items.filter(it => it.req && !isDone(date, it.id)); cap = left.length === 1 ? `<div class="t4cap">${dp.reqDone} of ${dp.req} · <b>${left[0].id === 'workout' ? 'finish ' + esc(PROGRAM.workouts[left[0].key].name) : SHORT[left[0].id] || esc(left[0].label)}</b> for the ball</div>` : `<div class="t4cap">${dp.reqDone} of ${dp.req} to earn the <b>${cyc.star}-star ball</b></div>`; }
-  const strip = cyc.days.map(x => { const ok = x.comp === 'done' && x.cd <= 7, star = dayStars(x.date) - 0;
-    const a = x.cd === 8 ? dragonBadgeSvg({ state: cyc.dragon ? 'done' : 'locked', size: 22 }) : ballSvg({ stars: star, state: ok ? 'full' : 'hollow', size: 22 });
-    return `<button class="mb ${ok || (x.cd === 8 && cyc.dragon) ? 'got' : ''} ${x.date === date ? 'cur' : ''} ${x.date === td ? 'today' : ''}" data-goto="${x.date}" aria-label="Day ${x.cd}">${a}<i style="background:${DAYTYPES[x.type.k].color}"></i></button>`; }).join('');
   // day 8: the seven balls of the cycle circle the dragon (lit ones collected); once the dragon has come they are gone
   const orbit = cyc.summonDay && !cyc.summoned ? `<div class="t4orbit ${cyc.canSummon ? 'on' : ''}">${[0, 1, 2, 3, 4, 5, 6].map(i => { const a = (-90 + i * 360 / 7) * Math.PI / 180;
     return `<span class="ob" style="left:${(104 * Math.cos(a)).toFixed(1)}px;top:${(104 * Math.sin(a)).toFixed(1)}px"><span>${ballSvg({ stars: i + 1, state: i < cyc.earned ? 'full' : 'dim', size: 30 })}</span></span>`; }).join('')}</div>` : '';
-  return `<div class="t4hero"><div class="t4ring ${won ? 'won' : ''} ${orbit ? 'orb' : ''}" data-bigball>${t4Ring(dp.reqDone, dp.req, won)}<div class="ball" id="bigart">${art}</div>${orbit}</div>${cap}
-    <div class="t4strip"><button class="arrow" data-day="-1" aria-label="Previous day">‹</button>${strip}<button class="arrow" data-day="1" aria-label="Next day">›</button></div>
-    ${date !== td ? `<div class="t4back"><button class="pill" data-day="0">↩ Today</button></div>` : ''}</div>`;
+  return `<div class="t4hero"><div class="t4ring ${won ? 'won' : ''} ${orbit ? 'orb' : ''}" data-bigball>${t4Ring(dp.reqDone, dp.req, won)}<div class="ball" id="bigart">${art}</div>${orbit}</div>${cap}</div>`;
+}
+/* ---------- Day navigation: the header and the cycle strip stay put; only the day below them changes ----------
+   Changing the day (swipe, ‹ ›, a day in the strip, ↩ Today) rewrites the header's words in place and moves the strip's
+   highlight; the strip's balls slide only when you cross into another cycle; the day itself (ring, training, goals) slides
+   in from the side you are heading to. Nothing above it reloads, so the controls never jump. */
+function t4StripBalls(date, cyc) {
+  const td = today();
+  return cyc.days.map(x => { const ok = x.comp === 'done' && x.cd <= 7, star = dayStars(x.date) - 0;
+    const a = x.cd === 8 ? dragonBadgeSvg({ state: cyc.dragon ? 'done' : 'locked', size: 22 }) : ballSvg({ stars: star, state: ok ? 'full' : 'hollow', size: 22 });
+    return `<button class="mb ${ok || (x.cd === 8 && cyc.dragon) ? 'got' : ''} ${x.date === date ? 'cur' : ''} ${x.date === td ? 'today' : ''}" data-goto="${x.date}" aria-label="Day ${x.cd}${x.date === date ? ', shown' : ''}">${a}<i style="background:${DAYTYPES[x.type.k].color}"></i></button>`; }).join('');
+}
+function t4StripHtml(date, cyc) { return `<div class="t4strip" id="t4strip" data-cyc="${cyc.num}"><button class="arrow" data-day="-1" aria-label="Previous day">‹</button><div class="mbw"><span class="mbsel"></span><div class="mbs">${t4StripBalls(date, cyc)}</div></div><button class="arrow" data-day="1" aria-label="Next day">›</button></div>`; }
+// the highlight behind the shown day glides to it (jumps when the strip changes cycle)
+function t4SelPlace(glide) {
+  const st = $('#t4strip'); if (!st) return; const sel = st.querySelector('.mbsel'), cur = st.querySelector('.mb.cur'); if (!sel) return;
+  if (!cur) { sel.style.opacity = 0; return; } sel.style.opacity = 1; sel.style.transition = glide ? '' : 'none';
+  sel.style.transform = `translateX(${cur.offsetLeft}px)`; if (!glide) { void sel.offsetWidth; sel.style.transition = ''; }
+}
+function t4HeadText(date, info, cyc) { const td = today(); return WD[parse(date).getDay()].slice(0, 3) + ' ' + fmtShort(date) + ' · Cycle ' + cyc.num + (date === td ? '' : date < td ? ' · past' : ' · ahead'); }
+function t4HeadHtml(date, info, cyc) {
+  const pl = powerLevel(date);
+  return `<div class="t4head" id="t4head"><div><div class="d"><span class="dt">${t4HeadText(date, info, cyc)}</span><button class="tback" data-day="0" ${date === today() ? 'hidden' : ''}>↩ Today</button></div><div class="day h1">Day <span class="dn">${info.idx}</span> <small>/${D()}</small></div></div>${pl ? `<button class="plchip" data-nav="dash"><span>PL</span><b>${pl.pl.toLocaleString('en-GB')}</b></button>` : ''}</div>`;
+}
+// header words, Today button and the PL number, changed where they are
+function t4HeadUpdate(date, info, cyc) {
+  const h = $('#t4head'); if (!h) return false; const pl = powerLevel(date), chip = h.querySelector('.plchip b');
+  if (!!pl !== !!chip) return false;
+  h.querySelector('.dt').textContent = t4HeadText(date, info, cyc); h.querySelector('.dn').textContent = info.idx; h.querySelector('.tback').hidden = date === today();
+  if (chip) chip.textContent = pl.pl.toLocaleString('en-GB'); return true;
+}
+function bindTodayNav() {
+  app.querySelectorAll('#t4head [data-day], #t4strip [data-day]').forEach(b => b.onclick = e => { e.stopPropagation(); shiftDay(+b.dataset.day); });
+  app.querySelectorAll('#t4strip [data-goto]').forEach(b => b.onclick = e => { e.stopPropagation(); const d = b.dataset.goto; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; patchToday(dir); });
+}
+function t4StripRefresh(date, cyc, dir) {
+  const st = $('#t4strip'); if (!st) return; const mb = st.querySelector('.mbs'), crossed = st.dataset.cyc !== String(cyc.num);
+  if (dir && !crossed) {   // same cycle: only the highlight moves
+    mb.querySelectorAll('.mb').forEach(b => { const on = b.dataset.goto === date; b.classList.toggle('cur', on); b.setAttribute('aria-label', b.getAttribute('aria-label').replace(', shown', '') + (on ? ', shown' : '')); });
+    return t4SelPlace(true);
+  }
+  mb.innerHTML = t4StripBalls(date, cyc); st.dataset.cyc = cyc.num; bindTodayNav();
+  if (crossed && dir) { animate(mb, dir); const sel = st.querySelector('.mbsel'); if (sel) sel.style.opacity = 0; clearTimeout(st._sel); st._sel = setTimeout(() => t4SelPlace(false), 250); }   // new cycle: the balls slide in, then the highlight appears
+  else t4SelPlace(false);
 }
 function liftKind(info) { return info.workoutKey ? PROGRAM.workouts[info.workoutKey].group : info.isMT ? 'mt' : 'rest'; }
 // New PBs set in one session: exercises where this session beats every other session
@@ -3682,17 +3731,29 @@ function todayHtml() {
     <button class="btn sec" data-open="weigh">Log a weigh-in</button><button class="btn" data-goto="${p.startDate}" style="margin-top:12px">See Day 1 ›</button></div>${nav('today')}`;
   if (info.phase === 'post') return `<div class="screen"><div class="t4pre"><div class="big" style="font-size:72px">Finished</div><div class="cond" style="font-size:16px;color:var(--muted)">${fmtDate(p.endDate)}</div></div>
     <div class="card" style="text-align:center;margin-top:22px">Progress has the verdict.</div><button class="btn" data-newp>Start a new project</button><button class="link" data-nav="profile" style="margin-top:8px">Extend it in Settings</button></div>${nav('today')}`;
-  const cyc = cycleOf(date), pl = powerLevel(date);
-  return `<div class="screen swipe"><div class="t4head"><div><div class="d">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)} · Cycle ${cyc.num}${date === td ? '' : date < td ? ' · past' : ' · ahead'}</div><div class="day h1">Day ${info.idx} <small>/${D()}</small></div></div>${pl ? `<button class="plchip" data-nav="dash"><span>PL</span><b>${pl.pl.toLocaleString('en-GB')}</b></button>` : ''}</div>
-    ${bk}<div id="t4body">${t4BodyHtml(date, info)}</div></div>${nav('today')}`;
+  const cyc = cycleOf(date);
+  return `<div class="screen swipe">${t4HeadHtml(date, info, cyc)}${bk}${t4StripHtml(date, cyc)}<div id="t4body">${t4BodyHtml(date, info)}</div></div>${nav('today')}`;
 }
-function patchToday(dir) { render(dir); window.scrollTo(0, 0); }
+// Go to R.date on Today: only the day slides in; the header, the strip and the tab bar stay (a full redraw only when
+// leaving or entering the project's days, e.g. back to the countdown)
+function patchToday(dir) {
+  const date = R.date, info = dayInfo(date), body = $('#t4body');
+  if (R.screen !== 'today' || !info.items || !body || !$('#t4strip')) { render(dir); window.scrollTo(0, 0); return; }
+  const cyc = cycleOf(date);
+  if (!t4HeadUpdate(date, info, cyc)) { render(dir); window.scrollTo(0, 0); return; }
+  t4StripRefresh(date, cyc, dir);
+  body.innerHTML = t4BodyHtml(date, info); bindTodayBody(date, date > today()); R._lastDone = dayCompletion(date) === 'done';
+  animate(body, dir);
+  // scrolled down to the goals: come back up so the new day starts at its top; otherwise nothing moves
+  const st = $('#t4strip').getBoundingClientRect(); if (st.top < 0) window.scrollTo(0, 0);
+}
 function listHtml(info, date) { return t4Rows(date, info); }
 function bindToday() {
   const date = R.date, future = date > today(), info = dayInfo(date);
   R._lastDone = dayCompletion(date) === 'done';
   app.querySelectorAll('[data-day]').forEach(b => b.onclick = e => { e.stopPropagation(); shiftDay(+b.dataset.day); });
-  app.querySelectorAll('[data-goto]').forEach(b => b.onclick = e => { e.stopPropagation(); const d = b.dataset.goto; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; patchToday(dir); });
+  bindTodayNav(); t4SelPlace(false);
+  app.querySelectorAll('[data-goto]').forEach(b => { if (b.closest('#t4strip')) return; b.onclick = e => { e.stopPropagation(); const d = b.dataset.goto; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; patchToday(dir); }; });
   const np = app.querySelector('[data-newp]'); if (np) np.onclick = startNewProjectFlow;
   if (info.items || info.phase === 'pre') bindSwipe(app.querySelector('.screen'), () => shiftDay(1), () => shiftDay(-1));
   app.querySelectorAll('[data-open]').forEach(b => b.onclick = () => go(b.dataset.open, { date }));
@@ -3706,8 +3767,6 @@ function bindToday() {
 }
 function bindTodayBody(date, future) {
   const info = dayInfo(date), body = $('#t4body'); if (!body) return;
-  body.querySelectorAll('[data-day]').forEach(b => b.onclick = e => { e.stopPropagation(); shiftDay(+b.dataset.day); });
-  body.querySelectorAll('[data-goto]').forEach(b => b.onclick = e => { e.stopPropagation(); const d = b.dataset.goto; if (d === R.date) return; R.date = d; patchToday(d > date ? 'right' : 'left'); });
   const bb = body.querySelector('[data-bigball]'); if (bb) bb.onclick = () => showBalls(date);
   const openWT = () => { if (info.workoutKey) { const s = S.sessions.find(x => x.date === date); go('workout', { date, key: s ? s.key : info.workoutKey }); } else if (info.isMT) go('mt', { date }); else if (cycleOf(date).summoned) showDragon(date); else showBalls(date); };
   const wt = body.querySelector('[data-wt]'); if (wt) wt.onclick = openWT;
@@ -3729,7 +3788,7 @@ function refreshToday(pop, tile) {
   if (R.screen !== 'today') return; const date = R.date, info = dayInfo(date), body = $('#t4body'); if (!body || !info.items) return;
   const cyc = cycleOf(date), was = R._lastDone; R._lastDone = cyc.todayDone;
   const wasDoneTile = !!body.querySelector('.wt.done');
-  body.innerHTML = t4BodyHtml(date, info); bindTodayBody(date, date > today());
+  body.innerHTML = t4BodyHtml(date, info); bindTodayBody(date, date > today()); t4HeadUpdate(date, info, cyc); t4StripRefresh(date, cyc);
   const wt = body.querySelector('.wt.done'); if (wt && (!wasDoneTile || tile)) wt.classList.add('shrink');
   if (cyc.todayDone && pop && !was) {
     const art = $('#bigart'); if (art) art.classList.add('pop');

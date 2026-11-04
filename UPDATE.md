@@ -1,6 +1,6 @@
-# What to do now — updating to v4.7.0
+# What to do now — updating to v4.7.1
 
-This zip is the complete app at v4.7.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v4.7.1 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v4.7.0 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.7.0 found — reloading".
+1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.7.1 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The phone's own bar under the app (orange before 4.0, dark now) and the app name come with the home-screen icon: Chrome refreshes them by itself within a few days, or right away when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -40,6 +40,7 @@ Nothing else changes: same address, same key, the bucket and the data stay. Work
 
 ## E. What changed since the version on your phone
 
+- v4.7.1 — **Moving between days on Today:** the header and the cycle strip stay where they are and only the day below them slides in. The strip now sits right under the header (with ‹ › at its ends); its highlight glides to the day you pick, and the balls slide only when you cross into another cycle. **↩ Today** is a small button next to the date. Scrolled down to the goals, a new day starts at its top.
 - v4.7.0 — **Your real body:** the character on the Scouter and on the Journey path now shows how you actually look, picked by your 7-day body-fat trend from six bodies 3 % apart (25 %+, 22–25, 19–22, 16–19, 13–16, under 13). Before the first reading it uses your starting body fat. The powered-up final form still appears when you reach the goal. Needs body-0.png … body-5.png uploaded (until then the old figures stay).
 - v4.6.2 — The column of light in the summon fades out softly at both ends while it grows (no hard square edge).
 - v4.6.1 — The Muay Thai tile leaves room for its kick art above the button (like the lifting tiles).
