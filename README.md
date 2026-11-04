@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v4.11.0)
+# Vikač High Kikač — install guide (v5.0.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
@@ -29,7 +29,7 @@ On a training day the ball needs the session and the nutrition entry (required, 
 ## 5. Keeping your data safe
 
 - Data lives on the phone (Chrome's storage for this app). It survives restarts and being offline. It is lost only if you uninstall the app or clear Chrome's site data.
-- **Profile → Backup now** downloads `vikac-backup-DATE.json`. Drop it in Google Drive now and then; the Today screen nags you after 7 days without a backup. **Restore** brings everything back from that file, on any phone.
+- **Settings → Backup file** downloads `vikac-backup-DATE.json`. Drop it in Google Drive now and then; the gear gets an orange dot after 7 days without a backup. **Restore** brings everything back from that file, on any phone.
 
 ## 6. Cloud backup to GitHub (optional, recommended)
 
@@ -39,9 +39,9 @@ Every change can also be saved as a commit to a **private** repository of yours,
 2. Profile photo → **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**.
 3. Name it "Trening", set the longest expiry offered, **Repository access: Only select repositories → trening-data**.
 4. **Permissions → Repository permissions → Contents: Read and write**. Generate and copy the token (it is shown once).
-5. In the app: **Profile → Cloud backup**, enter `yourname/trening-data` and the token, tap **Connect**.
+5. In the app: **Settings → Cloud backup**, enter `yourname/trening-data` and the token, tap **Connect**.
 
-The app then pushes a commit about 10 seconds after your last change (and when you leave the app), shows "Saved to GitHub … ago" in Profile, and nags you on the Today screen if syncing has failed for 3 days. **Restore from GitHub** brings everything back on a new phone. The token is stored only on the phone and can only touch that one repository; when it expires, make a new one and tap Connect again.
+The app then pushes a commit about 10 seconds after your last change (and when you leave the app), shows "Saved to GitHub … ago" in Settings, and puts an orange dot on the gear if syncing has failed for 3 days. **Restore from GitHub** brings everything back on a new phone. The token is stored only on the phone and can only touch that one repository; when it expires, make a new one and tap Connect again.
 
 ## 7. Fill from export (Xiaomi scale and MyFitnessPal)
 
@@ -52,7 +52,7 @@ The weigh-in form can read the Mi Fitness share image instead of you typing six 
 
 **MyFitnessPal works the same way.** Take a screenshot of MFP's Today screen (or the diary with its Totals row), share it to **Trening** — the app recognises it as MFP and opens the nutrition form with the calories and protein filled in, date from the header ("Today", "Yesterday" or a date). On the nutrition screen, **Fill from export** picks a screenshot from the gallery.
 
-**Many at once:** share several screenshots to Trening in one go, or Settings → **Read screenshots** and pick them. Each is read and logged to the day it shows — "Today", "Tomorrow", "Yesterday" or the date in MFP's header, the date printed on the Mi Fitness card — so food can be logged days ahead. Rows that could not be read (no date, unknown image) say *Check*; tap one to set the date or numbers by hand. Empty MFP days are skipped.
+**Many at once:** share several screenshots to Trening in one go, or tap the **camera** at the top of Today and pick them. Each is read and logged to the day it shows — "Today", "Tomorrow", "Yesterday" or the date in MFP's header, the date printed on the Mi Fitness card — so food can be logged days ahead. Rows that could not be read (no date, unknown image) say *Check*; tap one to set the date or numbers by hand. Empty MFP days are skipped.
 
 **Macros:** nutrition keeps calories, protein, carbs and fat. Targets per day: protein as set (≈2.2 g/kg), fat 0.65 g/kg of current weight (never under 0.5 g/kg — the floor for hormones, per Helms 2014's 20–30 % of calories), carbs take whatever energy remains after the deficit, so they rise on days with more band kcal. Scouter → Food shows the 7-day (or whole-project) averages against the targets, each day's calories against that day's target and the days protein was hit.
 
@@ -90,7 +90,7 @@ Videos are kept in a private Cloudflare R2 bucket (`VIDEOS` binding on the band 
 ## 10. Band sync (Xiaomi band → Trening)
 
 Chain: band → Mi Fitness → Health Connect → "Health Connect to Webhook" app → Cloudflare Worker (your private inbox) → Trening.
-Worker code: `trening-band-worker.js` (sent separately; it needs a KV binding `BAND` and a secret `KEY`). Trening: Settings → Band sync → inbox address + key → Connect.
+Worker code: `trening-band-worker.js` (sent separately; it needs a KV binding `BAND` and a secret `KEY`). Trening: Settings (the gear) → Band → inbox address + key → Connect.
 Since v4.0.0 the inbox also works out the kcal burned during each band workout (from the active-calorie records inside the workout's time window). Muay Thai days take minutes and kcal from the band; lifting days show the kcal when a workout was started on the band.
 
 ## 9. Updating the app

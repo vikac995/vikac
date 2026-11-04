@@ -1,6 +1,6 @@
-# What to do now — updating to v4.11.0
+# What to do now — updating to v5.0.0
 
-This zip is the complete app at v4.11.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v5.0.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v4.11.0 — whatever version the phone is on, on
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.11.0 found — reloading".
+1. Open the app on the phone. Go to **Settings** (from v5.0 it's the **gear** at the top right; before that a tab, called **Profile** before 1.6) → **Check for updates**. It should say "Version 5.0.0 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The phone's own bar under the app (orange before 4.0, dark now) and the app name come with the home-screen icon: Chrome refreshes them by itself within a few days, or right away when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -40,6 +40,7 @@ Nothing else changes: same address, same key, the bucket and the data stay. Work
 
 ## E. What changed since the version on your phone
 
+- v5.0.0 — **New layout, step 1.** Three tabs: **Journey · the ball · Scouter**. The dragon ball in the middle *is* Today: its ring fills with the day's goals, it turns gold when the ball is earned, on day 8 it's the dragon (hold it to summon, from any tab), and tapping it always brings you back to today. The big ball at the top of Today, its ‹ › arrows, the ↩ Today chip, the PL chip and the **+ button** are gone: everything is logged on Today, one tap per goal. **Camera** (top of Today) reads one or many scale / MFP screenshots, each saved to the day it shows. **Note** is the last row on Today, one per day; the Muay Thai note field now writes the same note (old Muay Thai notes were moved into their day's note). **Settings** is a page behind the **gear** (top right of every tab), grouped as Project · Connections · Files · Language · App; the yellow backup box became an orange dot on the gear. **Past projects** moved to Scouter (bottom of Scan). Step 2 (Journey Cycles view, one-page Scouter) comes next.
 - v4.11.0 — **Less clutter:** no more "N-star ball" text anywhere (the balls themselves still show their stars). Today: no caption under the big ball; the top line is just Day X / Y and the cycle (the date is in the strip and on the training card, also once it's done); bigger dates and weekdays in the strip; the rest-day card no longer repeats the goals listed under it. Workouts: last time reads "30 kg × 6, 6, 5 reps" (also in the finished list and the exercise history). Plan: every 5th day shows where the weight should be ("Day 10 · should be at 82.3 kg"); the weekday carries the training colour instead of a tag. **Language:** Settings → Language now has three switches, EN or HR each — Interface, Exercise names and Stretches (the stretching steps now exist in English too, and the three "picture" steps have real names).
 - v4.10.0 — **Hrvatski:** the whole app can now be in Croatian. Settings → **Language** → Hrvatski (the app reloads). Push, Pull, Legs, Muay Thai, RIR, PB and kg stay in English; numbers use the Croatian decimal comma (83,2 kg) and dates read "Pet 13. stu". A second switch, **Translate exercise names**, puts the exercise names in Croatian too (off by default). What you type yourself (notes) is never translated. Also: the signal bars on the Scouter (Skener) no longer animate.
 - v4.9.0 — **Feedback on Today:** once something is logged, its row says how it compares, with an arrow and a word or two (green = good, orange = worth a look, grey = no change). Weigh-in: weight and body fat against the weigh-in before. Nutrition: kcal under / over the day's target, protein ✓ or how much short. Dead hangs: against the last hang, with PB when it is one. Mobility and stretching: how many days in a row. Muay Thai: minutes against the last session. Workout: volume against the last time you did the same workout. Rows keep their size.
