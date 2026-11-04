@@ -1321,6 +1321,17 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .plab .pwt b{color:var(--ink);font-weight:700}
 .plab .pwt i{font-style:normal;font-size:9px}.plab .pwt i.dn{color:var(--ok)}.plab .pwt i.up{color:var(--warn)}
 .plab .pwt .pf{padding-left:6px;margin-left:2px;border-left:1px solid var(--line2);color:var(--ink2)}
+/* feedback chips on Today's goals and tiles: green = good, orange = worth a look, grey = no change */
+.dch{display:inline-block;vertical-align:1px;margin-left:2px;padding:1px 6px;border-radius:6px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.03em;line-height:1.35;text-transform:uppercase}
+.dch.gd{color:var(--ok);background:rgba(61,220,132,.13)}
+.dch.bd{color:var(--warn);background:rgba(255,183,77,.13)}
+.dch.eq{color:var(--muted);background:var(--s2)}
+.todo .lab .s{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:20px;line-height:20px}
+.todo .lab .s .dch{line-height:16px;vertical-align:1px}
+.todo .lab .s .pbtag{line-height:14px;padding-top:0;padding-bottom:0;vertical-align:1px}
+.wt.done .s .dch{font-size:11.5px}
+.dch i{font-style:normal}.dch .dna{display:none}
+@media (max-width:389px){.dch .dna{display:inline}.dch .dwd{display:none}}  /* narrow phones: "▼202" in place of "202 under" */
 </style>
 </head>
 <body>
@@ -1328,7 +1339,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.8.5';
+const APP_VERSION = '4.9.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -3786,7 +3797,7 @@ function wtHtml(date, info, cyc) {
   if (info.workoutKey) {
     const w = PROGRAM.workouts[info.workoutKey], s = S.sessions.find(x => x.date === date), m = workoutMinutes(info.workoutKey), lb = liftBand(date);
     if (isDone(date, 'workout')) { const ss = s || { ex: [] }, n = ss.ex.filter(e => e.done).length, pbs = s ? sessionPBs(s) : 0;
-      return `<div class="wt done ${k}" data-wt>${liftArtHtml('done')}<div class="tx"><div class="t h1">${esc(s ? PROGRAM.workouts[s.key].name : w.name)}</div><div class="s">${s ? n + '/' + ss.ex.length + ' exercises' : 'Done'}${pbs ? ' · ' + pbs + ' PB' + (pbs > 1 ? 's' : '') : ''}${lb && lb.kcal ? ' · ' + lb.kcal + ' kcal' : ''}</div></div><span class="ok">${IC4.check}</span></div>`; }
+      return `<div class="wt done ${k}" data-wt>${liftArtHtml('done')}<div class="tx"><div class="t h1">${esc(s ? PROGRAM.workouts[s.key].name : w.name)}</div><div class="s">${s ? n + '/' + ss.ex.length + ' exercises' : 'Done'}${pbs ? ' · ' + pbs + ' PB' + (pbs > 1 ? 's' : '') : ''}${lb && lb.kcal ? ' · ' + lb.kcal + ' kcal' : ''}${s ? volDelta(s) : ''}</div></div><span class="ok">${IC4.check}</span></div>`; }
     const kinds = []; w.ex.forEach(e => (EQUIP[e.n] || '').split(' ').forEach(q => { if (q && !kinds.includes(q)) kinds.push(q); }));
     const started = s && s.ex.some(e => e.done || e.sets.some(st => st.kg || st.reps) || e.reps);
     return `<div class="wt ${k}" data-wt>${liftArtHtml(k)}${lab}<div class="t h1">${esc(w.name)}</div><div class="s">${started ? s.ex.filter(e => e.done).length + '/' + w.ex.length + ' done' : w.ex.length + ' exercises'} · ~${m} min</div>
@@ -3795,7 +3806,7 @@ function wtHtml(date, info, cyc) {
   }
   if (info.isMT) {
     const mt = (S.days[date] || {}).mt || {};
-    if (isDone(date, 'mt')) return `<div class="wt done mt" data-wt>${liftArtHtml('done')}<div class="tx"><div class="t h1">Muay Thai</div><div class="s">${mt.minutes ? mt.minutes + ' min' : 'Done'}${mt.kcal ? ' · ' + mt.kcal + ' kcal' : ''}${mt.src === 'band' ? ' · from the band' : ''}</div></div><span class="ok">${IC4.check}</span></div>`;
+    if (isDone(date, 'mt')) return `<div class="wt done mt" data-wt>${liftArtHtml('done')}<div class="tx"><div class="t h1">Muay Thai</div><div class="s">${mt.minutes ? mt.minutes + ' min' : 'Done'}${mt.kcal ? ' · ' + mt.kcal + ' kcal' : ''}${mt.src === 'band' ? ' · from the band' : ''}${mtDelta(date)}</div></div><span class="ok">${IC4.check}</span></div>`;
     const mob = info.items.some(it => it.id === 'mobility');
     return `<div class="wt mt" data-wt>${liftArtHtml('mt')}${lab}<div class="t h1">Muay Thai</div><div class="s">Minutes and kcal from the band${mob ? ' · kick mobility first' : ''}</div>
       <button class="btn big" data-startwo>${future ? 'Open' : 'Log Muay Thai'}</button></div>`;
@@ -3809,12 +3820,62 @@ function wtHtml(date, info, cyc) {
   const req = info.items.filter(it => it.req).map(it => SHORT[it.id] || it.label);
   return `<div class="wt rest" data-wt>${liftArtHtml('rest')}${lab.replace('Today\'s training', 'Today').replace('>Training', '>Rest')}<div class="t h1">${title}</div><div class="s">${esc(req.join(' · '))}</div></div>`;
 }
+/* ---------- Feedback right after logging: how it compares, in an arrow and a word or two ----------
+   Weigh-in: weight and body fat against the weigh-in before it (down is green on a cut). Nutrition: against the day's
+   target (kcal under / over, protein hit / short). Dead hangs: against the last hang, with PB when it is one. Mobility and
+   stretching: how many scheduled days in a row. Muay Thai: minutes against the last session. Workout: volume against the
+   last time you did the same workout. It replaces the row's second line, so the row keeps its size. */
+function dch(good, txt) { return `<span class="dch ${good == null ? 'eq' : good ? 'gd' : 'bd'}">${txt}</span>`; }
+function arrowNum(dl, fmt) { return dl > 0 ? '▲' + fmt(dl) : dl < 0 ? '▼' + fmt(-dl) : '='; }
+function itemFeedback(date, it) {
+  const d = S.days[date] || {};
+  if (it.id === 'weigh') {
+    const r = S.readings[date]; if (!r || r.weight == null || r.weight === '') return null;
+    const w = +r.weight, pw = lastReading('weight', addDays(date, -1)); let h = w.toFixed(1) + ' kg';
+    if (pw) { const dl = +(w - pw.v).toFixed(1); h += ' ' + dch(dl === 0 ? null : dl < 0, arrowNum(dl, x => x.toFixed(1))); }
+    if (r.fat != null && r.fat !== '') { const f = +r.fat, pf = lastReading('fat', addDays(date, -1)); h += ' · ' + f.toFixed(1) + ' %';
+      if (pf) { const df = +(f - pf.v).toFixed(1); h += ' ' + dch(df === 0 ? null : df < 0, arrowNum(df, x => x.toFixed(1))); } }
+    return h;
+  }
+  if (it.id === 'nutrition') {
+    const n = d.nutrition; if (!n || !n.kcal) return null; let tg = null; try { tg = nutritionTarget(date); } catch (e) {}
+    let h = fmtN(n.kcal) + ' kcal';
+    if (tg && tg.kcal) { const df = Math.round(n.kcal - tg.kcal); h += ' ' + (df <= 0 ? dch(true, '<i class="dna">▼</i>' + fmtN(-df) + '<i class="dwd"> under</i>') : dch(false, '<i class="dna">▲</i>' + fmtN(df) + '<i class="dwd"> over</i>')); }
+    if (n.protein) { h += ' · ' + n.protein + ' g P'; if (tg && tg.protein) { const dp = Math.round(n.protein - tg.protein); h += ' ' + (dp >= 0 ? dch(true, '✓') : dch(false, '<i class="dna">▼</i>' + -dp + '<i class="dwd"> short</i>')); } }
+    return h;
+  }
+  if (it.id === 'hang') {
+    const hg = d.hang; if (!hg || !(+hg.best > 0)) return null; const b = +hg.best; let prev = null;
+    for (let i = 1; i <= 60; i++) { const x = (S.days[addDays(date, -i)] || {}).hang; if (x && +x.best > 0) { prev = +x.best; break; } }
+    const pb = hangPB(); let h = (pb && b >= pb.v ? `<span class="pbtag">${TROPHY}PB</span> ` : '') + 'best ' + fmtSecs(b);
+    if (prev != null) { const dl = b - prev; h += ' ' + dch(dl === 0 ? null : dl > 0, arrowNum(dl, fmtSecs)); }
+    return h;
+  }
+  if (it.id === 'mobility' || it.id === 'stretch') {
+    if (!isDone(date, it.id)) return null; let n = 0;
+    for (let i = 0; i < 90; i++) { const x = addDays(date, -i), inf = dayInfo(x); if (!inf.items) break; if (!inf.items.some(y => y.id === it.id)) continue; if (isDone(x, it.id)) n++; else break; }
+    return esc(itemSub(date, it)) + (n >= 2 ? ' ' + dch(true, n + ' in a row') : '');
+  }
+  return null;
+}
+function mtDelta(date) {
+  const m = ((S.days[date] || {}).mt || {}).minutes; if (!m) return ''; let prev = null;
+  for (let i = 1; i <= 60; i++) { const x = (S.days[addDays(date, -i)] || {}).mt; if (x && +x.minutes > 0) { prev = +x.minutes; break; } }
+  if (prev == null) return ''; const dl = +m - prev; return ' ' + dch(dl === 0 ? null : dl > 0, arrowNum(dl, x => x + ' min'));
+}
+// volume of a session: kg × reps over its done sets (exercises without a weight are left out)
+function sessVol(s) { let v = 0; for (const e of s.ex || []) for (const st of e.sets || []) { const kg = +st.kg, r = +st.reps; if (kg > 0 && r > 0) v += kg * r; } return v; }
+function volDelta(s) {
+  const v = sessVol(s); if (!v) return ''; const pv = S.sessions.filter(x => x.key === s.key && x.date < s.date && x.finished && sessVol(x) > 0).sort((a, b) => a.date < b.date ? 1 : -1)[0];
+  if (!pv) return ''; const pct = Math.round((v - sessVol(pv)) / sessVol(pv) * 100);
+  return ' ' + dch(pct === 0 ? null : pct > 0, arrowNum(pct, x => x + ' % vol'));
+}
 function t4Rows(date, info) {
   const future = date > today(), cyc = cycleOf(date), star = cyc && !cyc.summonDay ? (future ? dayStars(date) : cyc.star) : 7;
   const items = info.items.filter(it => it.id !== 'workout' && it.id !== 'mt');
   const done = items.filter(it => isDone(date, it.id)).length;
   return `<div class="secl"><span>${date === today() ? 'Today\'s goals' : 'Goals'}</span><span>${done} / ${items.length}</span></div><ul class="todo" id="list">${items.map(it => {
-    const dn = isDone(date, it.id), sub = it.id === 'hang' && hangPB() ? `<span class="pbtag">${TROPHY}PB</span> ${fmtSecs(hangPB().v)}` : esc(itemSub(date, it));
+    const dn = isDone(date, it.id), fb = itemFeedback(date, it), sub = fb != null ? fb : it.id === 'hang' && hangPB() ? `<span class="pbtag">${TROPHY}PB</span> ${fmtSecs(hangPB().v)}` : esc(itemSub(date, it));
     const st = dn ? `<span class="st" data-chk>${IC4.check}</span>` : it.req ? `<span class="st" data-chk>${ballSvg({ stars: star, state: 'hollow', size: 30 })}</span>` : `<span class="st circ" data-chk></span>`;
     return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}"><span class="ic" data-open-item>${IC4[ITEM_IC[it.id]] || ''}</span><div class="lab" data-open-item><div class="t">${esc(it.label)}</div><div class="s">${sub}</div></div>${st}<div class="zap">${beamHeroArt()}</div>${beamFxHtml()}</li>`;
   }).join('')}</ul>`;
