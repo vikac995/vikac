@@ -49,13 +49,6 @@ label{display:block;font-family:'BarlowC',sans-serif;font-weight:600;text-transf
 .field{margin-bottom:12px}
 /* tips */
 .sc-top{align-items:center}.sc-top>span:first-child{opacity:.75}
-.htop .tips{font-family:'BarlowC',sans-serif;font-weight:700;letter-spacing:.12em;font-size:13px;border-radius:7px;padding:3px 9px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;position:relative;z-index:4}
-.htop .tips.none{color:#d9ffcb;background:rgba(0,0,0,.25);border:1.5px solid rgba(180,255,150,.45)}
-.htop .tips.new{color:#1B1B1B;background:#FFD84D;border:2px solid #1B1B1B;box-shadow:0 0 0 3px rgba(255,216,77,.35),0 0 14px rgba(255,216,77,.9);animation:tipPulse 1.1s ease-in-out infinite}
-.htop .tips.seen{color:#FFD84D;background:rgba(0,0,0,.25);border:1.5px solid #FFD84D}
-.htop .tips i{font-style:normal;display:inline-flex;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center;font-size:11px;font-family:Georgia,serif;font-weight:700}
-.htop .tips.none i{border:1.5px solid #d9ffcb}.htop .tips.new i{background:#1B1B1B;color:#FFD84D}.htop .tips.seen i{border:1.5px solid #FFD84D}
-@keyframes tipPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 3px rgba(255,216,77,.35),0 0 10px rgba(255,216,77,.7)}50%{transform:scale(1.06);box-shadow:0 0 0 5px rgba(255,216,77,.25),0 0 22px rgba(255,216,77,1)}}
 .nav button[data-nav=dash]{position:relative}
 .nbadge{position:absolute;top:2px;left:calc(50% + 6px);min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:#E03A2F;color:#fff;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;line-height:16px;border:2px solid #fff;box-shadow:0 0 0 1.5px #1B1B1B;letter-spacing:0;text-align:center;box-sizing:border-box}
 .tiphd{display:flex;justify-content:space-between;align-items:baseline}.tiphd .link{margin:0}
@@ -121,7 +114,6 @@ input::placeholder{color:#5f5b56}
 .collapse.open{grid-template-rows:1fr}
 .collapse>div{overflow:hidden;min-height:0}
 #player{display:contents}
-@media (prefers-reduced-motion:reduce){.htop .tips.new{animation:none}}
 @media (prefers-reduced-motion:reduce){.a-right,.a-left,.a-fade,.a-up,.modalbg,.modal,.toast,.dragon,.dglow,.dragonimg,.herostack img,.badge{animation:none!important}.collapse{transition:none}}
 @keyframes snap{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
 /* header band */
@@ -891,64 +883,26 @@ html{background:#0E0F12}
 .hhead{position:sticky;top:0;z-index:15;margin:-10px -14px 0;padding:calc(12px + var(--sat)) 14px 0;background:rgba(9,42,15,.92);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .htop{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:2px 2px 8px}
 .htop .bang,.xtop .bang{font-family:'Bangers',Impact,sans-serif;font-weight:400;letter-spacing:.04em;line-height:.95;font-size:36px;color:#d6ffc4;text-shadow:0 0 8px #4dff3a,2px 2px 0 #000;-webkit-text-stroke:.8px #032}
-.htabs{display:flex;border-bottom:1.5px solid rgba(160,255,130,.5);position:relative}
-.htabs button{flex:1;text-align:center;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13.5px;letter-spacing:.08em;text-transform:uppercase;color:#6fae63;padding:9px 0 8px;transition:color .25s,text-shadow .25s}
-.htabs button.on{color:#e6ffdc;text-shadow:0 0 6px #4dff3a}
-.htabs .ind{position:absolute;bottom:-2px;height:3px;width:16%;border-radius:2px;background:#8dff6a;box-shadow:0 0 8px #4dff3a;transition:left .32s cubic-bezier(.3,.9,.3,1.15)}
 .hudscr .hp{position:relative;display:block;width:100%;margin-top:10px;border:1.5px solid rgba(160,255,130,.5);border-radius:10px;background:rgba(0,0,0,.22);padding:10px 12px;text-align:left}
 .hudscr .hp .t{font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#8fd77f;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:18px}
 .hudscr .hp .t svg{width:14px;height:14px;vertical-align:-2px}
 .hudscr .br:before,.hudscr .br:after{content:"";position:absolute;width:0;height:0;border-color:#8dff6a;border-style:solid;transition:width .35s cubic-bezier(.3,.9,.3,1.3),height .35s cubic-bezier(.3,.9,.3,1.3)}
 .hudscr .br:before{left:-2px;top:-2px;border-width:2.5px 0 0 2.5px;border-radius:4px 0 0 0}.hudscr .br:after{right:-2px;bottom:-2px;border-width:0 2.5px 2.5px 0;border-radius:0 0 4px 0}
 .hudscr .br.in:before,.hudscr .br.in:after{width:12px;height:12px}
-.hudscr .sig{display:inline-flex;gap:2px;align-items:flex-end;height:12px}.hudscr .sig i{width:3px;background:#8fd77f;border-radius:1px;animation:hsig 1.4s infinite}
-.hudscr .sig i:nth-child(1){height:5px}.hudscr .sig i:nth-child(2){height:8px;animation-delay:.2s}.hudscr .sig i:nth-child(3){height:11px;animation-delay:.4s}
-@keyframes hsig{0%,70%,100%{opacity:1}80%{opacity:.25}}
 .hudscr .empty{font-size:13.5px;color:#9fd890;margin-top:8px;line-height:1.45}
 .hudscr .hbtn{display:flex;align-items:center;justify-content:center;width:100%;margin-top:12px;height:46px;border-radius:10px;border:1.5px solid #8dff6a;color:#c9ffb8;font-family:'BarlowC',sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:15px;box-shadow:0 0 10px rgba(110,255,80,.3);background:rgba(13,58,22,.6);text-align:center}
 .hudscr .hsy{display:inline-flex;align-items:center;gap:5px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;color:#c9ffb8;border:1.5px solid rgba(160,255,130,.45);border-radius:7px;padding:2px 8px}.hudscr .hsy svg{width:13px;height:13px}
 /* power level */
-.hudscr .plrow{display:flex;gap:10px;align-items:flex-end}
 .hudscr .hero{width:120px;height:170px;position:relative;flex:none}
 .hudscr .hero .hart{position:absolute;left:0;bottom:0;width:120px;height:180px}
 .hudscr .hero .hart>img,.hudscr .hero .hart>.herostack,.hudscr .hero .hart>svg{position:absolute!important;left:0;bottom:0;width:120px!important;height:180px!important;object-fit:contain;object-position:bottom}
 .hudscr .hero .glow{position:absolute;left:50%;bottom:6px;width:130px;height:130px;margin-left:-65px;border-radius:50%;background:radial-gradient(circle,rgba(140,255,110,.55),transparent 68%);animation:hglow 2.4s ease-in-out infinite}
 @keyframes hglow{0%,100%{opacity:.7;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
-.hudscr .hero .ring{position:absolute;left:50%;top:36px;width:48px;height:48px;margin-left:-24px;border:1.5px solid rgba(180,255,150,.85);border-radius:50%;box-shadow:0 0 8px rgba(140,255,110,.8)}
-.hudscr .hero .ring:before,.hudscr .hero .ring:after{content:"";position:absolute;background:rgba(180,255,150,.85)}.hudscr .hero .ring:before{left:50%;top:-7px;bottom:-7px;width:1px}.hudscr .hero .ring:after{top:50%;left:-7px;right:-7px;height:1px}
-.hudscr .pl{flex:1;min-width:0;padding-bottom:6px}
-.hudscr .pl .lab{display:inline-block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;letter-spacing:.12em;border:1.5px solid rgba(180,255,150,.75);border-bottom:0;border-radius:6px 6px 0 0;padding:2px 8px}
-.hudscr .num{font-family:'Courier New',ui-monospace,monospace;font-weight:700;font-size:44px;line-height:1;color:#d6ffc4;text-shadow:0 0 6px #6dff4f,0 0 14px #2fd82a;border:1.5px solid rgba(180,255,150,.75);border-radius:0 8px 8px 8px;padding:6px 10px 4px;background:rgba(0,0,0,.25);white-space:nowrap;overflow:hidden}
-.hudscr .bar{display:flex;gap:2px;margin:8px 0 2px;height:10px}.hudscr .bar i{flex:1;background:rgba(160,255,130,.15);border-radius:1px;transition:background .15s,box-shadow .15s}
-.hudscr .bar i.on{background:#8dff6a;box-shadow:0 0 5px #6dff4f}.hudscr .bar i.hot{background:#eaffde;box-shadow:0 0 8px #b8ff9e}
-.hudscr .scale{display:flex;justify-content:space-between;font-family:'BarlowC',sans-serif;font-weight:700;font-size:10.5px;letter-spacing:.08em;opacity:.75}
-.hudscr .status{margin-top:9px;display:inline-flex;align-items:center;font-family:'BarlowC',sans-serif;font-weight:700;font-size:16px;letter-spacing:.1em;color:#eaffde;border:2px solid #8dff6a;border-radius:9px;padding:4px 11px;background:rgba(20,80,25,.7);box-shadow:0 0 10px rgba(110,255,80,.45);min-height:30px;max-width:100%}
-.hudscr .status.warn{border-color:#ffd84d;color:#fff6cf;box-shadow:0 0 10px rgba(255,210,60,.45)}
-.hudscr .pdots i{font-style:normal;opacity:0}.hudscr .pdots.go i{animation:hdot 1.2s infinite}.hudscr .pdots.go i:nth-child(2){animation-delay:.2s}.hudscr .pdots.go i:nth-child(3){animation-delay:.4s}
-@keyframes hdot{0%,20%{opacity:0}30%,80%{opacity:1}100%{opacity:0}}
-.hudscr .why{font-size:12.5px;color:#9fd890;margin-top:6px}
-/* vitals, radar, report card */
-.hudscr .vit{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.hudscr .vt{display:block;width:100%;border:1.5px solid rgba(160,255,130,.35);border-radius:8px;padding:7px 9px 5px;background:rgba(0,0,0,.18)}
-.hudscr .vt:active,.hudscr .mrow:active,.hudscr .rr:active,.hudscr .sess:active,.hudscr button.hp:active,.hudscr .hp[data-pl]:active{background:rgba(140,255,110,.08)}
-.hudscr .vt .l{font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#7fc66f}
-.hudscr .vt .v{display:flex;align-items:baseline;justify-content:space-between;gap:6px}.hudscr .vt .v b{font-family:'Courier New',monospace;font-weight:700;font-size:21px;color:#eaffde;white-space:nowrap}.hudscr .vt .v span{font-family:'Courier New',monospace;font-weight:700;font-size:13px;white-space:nowrap}
-.hudscr .vt svg{display:block;width:100%;height:24px;margin-top:2px}
+.hudscr .mrow:active,.hudscr .rr:active,.hudscr .sess:active,.hudscr button.hp:active{background:rgba(140,255,110,.08)}
 .hudscr .spk{filter:drop-shadow(0 0 3px #4dff3a)}
-.hudscr .radar{display:flex;align-items:center;justify-content:space-between;gap:2px;margin-top:10px}
-.hudscr .rb{position:relative;display:inline-flex;flex:none}.hudscr .rb .rbb{display:inline-flex;filter:grayscale(1) brightness(.85);opacity:.42}
-.hudscr .rb .rbf{position:absolute;inset:0;display:inline-flex;filter:drop-shadow(0 0 5px rgba(255,190,80,.6))}
-.hudscr .rb.cur .rbb{opacity:.85;filter:grayscale(.3) drop-shadow(0 0 6px #8dff6a)}.hudscr .rb.cur:after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid #8dff6a;animation:hping 1.8s ease-out infinite}
-.hudscr .rb.dr{opacity:1}
 @keyframes hping{0%{transform:scale(1);opacity:.9}100%{transform:scale(2.1);opacity:0}}
 .hudscr .chainl{display:flex;justify-content:space-between;gap:10px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:#c9ffb8;margin-top:8px}
 .hudscr .chainl span:last-child{text-align:right}
-.hudscr .rcg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
-.hudscr .rcg div{border:1.5px solid rgba(160,255,130,.35);border-radius:8px;padding:6px 9px;background:rgba(0,0,0,.18);display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
-.hudscr .rcg span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#7fc66f;width:100%}
-.hudscr .gr{display:inline-block;font-family:'Courier New',monospace;font-weight:700;font-size:22px;color:#eaffde;text-shadow:0 0 6px #2fd82a}.hudscr .t .gr{font-size:18px;margin-left:4px}
-.hudscr .rcg small{font-family:'Courier New',monospace;font-size:12px;color:#7fc66f}
-.hudscr .foot{font-family:'BarlowC',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#7fc66f;margin-top:8px}
 /* body */
 .hudscr .chipsh{display:flex;gap:6px}.hudscr .chipsh button{font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:6px;border:1.5px solid rgba(160,255,130,.35);color:#7fc66f}
 .hudscr .chipsh button.on{background:#8dff6a;color:#052;border-color:#8dff6a}
@@ -1019,6 +973,86 @@ html{background:#0E0F12}
 .hudscr .goal4{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:13.5px;color:#9fd890}.hudscr .goal4 .stp{width:132px;flex:none;height:42px;background:rgba(0,0,0,.3);border-color:rgba(160,255,130,.5)}
 .hudscr .goal4 .stp button{background:rgba(141,255,106,.12);color:#d6ffc4;width:36px;text-align:center}.hudscr .goal4 .stp input{color:#eaffde;font-family:'Courier New',monospace}
 .hudscr .goal4 .stp:focus-within{border-color:#8dff6a;box-shadow:0 0 0 3px rgba(141,255,106,.22)}
+/* the Scouter as one page (v6 3b): the period switch and the cards — title + headline, at most three numbers, one chart, details */
+.scper{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:0 0 10px;padding:4px;border:1.5px solid rgba(160,255,130,.38);border-radius:12px;background:rgba(0,0,0,.28)}
+.scper.n3{grid-template-columns:repeat(3,1fr)}
+.scper button{text-align:center;font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#7fc66f;padding:8px 0 7px;border-radius:9px;transition:background .2s,color .2s,box-shadow .2s}
+.scper button.on{background:#8dff6a;color:#06280c;box-shadow:0 0 10px rgba(110,255,80,.45)}
+.hudscr .hp.sc{margin-top:12px;border-radius:14px;padding:12px 14px;border-color:rgba(160,255,130,.38);background:rgba(2,18,7,.55)}
+.scp #hpane>.hp:first-child{margin-top:4px}
+.hudscr .sc .t{font-size:12.5px;letter-spacing:.14em;color:#86c978;align-items:baseline}
+.hudscr .sc .t .hl{font-size:14px;letter-spacing:.07em;color:#c9ffb8;text-align:right;min-width:0}
+.hudscr .sc .t .hl b{color:#eaffde;letter-spacing:.03em}
+.hudscr .sct{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.hudscr .sct>div{border:1.5px solid rgba(160,255,130,.3);border-radius:10px;padding:8px 10px 7px;min-width:0;background:rgba(0,0,0,.2)}
+.hudscr .sct .l{font-family:'BarlowC',sans-serif;font-weight:700;font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;color:#7fc66f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hudscr .sct b{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:27px;line-height:1.1;color:#eaffde;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hudscr .sct b small{font-size:16px;color:#c9ffb8}
+.hudscr .sct>div>small{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13.5px;line-height:1.2;letter-spacing:.02em;color:#8fd77f;margin-top:2px}
+.hudscr .sct>div>small.g{color:#8dff6a}.hudscr .sct>div>small.r{color:#ff8a7a}.hudscr .sct>div>small.y{color:#FFD84D}
+.hudscr .scmore{display:flex;justify-content:space-between;align-items:center;width:100%;margin-top:12px;padding:11px 0 1px;border-top:1px solid rgba(160,255,130,.2);font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:#8dff6a}
+.hudscr .scmore .ch{font-size:20px;line-height:1;margin-right:2px}
+.hudscr .scnone{font-size:14.5px;color:#9fd890;margin-top:8px}
+.hudscr .scmore:active,.hudscr .scg:active,.hudscr .scrow:active{background:rgba(140,255,110,.07)}
+/* tip */
+.hudscr .sc.sctip{border-color:rgba(255,216,77,.55);background:rgba(46,40,6,.62)}
+.hudscr .sctip .t{color:#FFD84D}.hudscr .sctip .t .tnew{margin:0;vertical-align:1px}
+.hudscr .sctip .t .hl{color:#8dff6a;letter-spacing:.1em;white-space:nowrap}
+.hudscr .sctip .tx{font-size:15.5px;line-height:1.4;color:#f1ffe9;margin-top:6px}
+/* power level: the green monospace is kept for its number only */
+.hudscr .sc.scpl{display:grid;grid-template-columns:104px 1fr;gap:14px;align-items:center;padding-top:8px;padding-bottom:10px}
+.hudscr .scpl .hero{width:104px;height:150px}
+.hudscr .scpl .hero .hart{width:104px;height:156px}
+.hudscr .scpl .hero .hart>img,.hudscr .scpl .hero .hart>.herostack,.hudscr .scpl .hero .hart>svg{width:104px!important;height:156px!important}
+.hudscr .scpl .hero .glow{width:116px;height:116px;margin-left:-58px}
+.hudscr .scpl .pli{min-width:0}
+.hudscr .scpl .lab{font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.16em;color:#86c978}
+.hudscr .plnum{font-family:'Courier New',ui-monospace,monospace;font-weight:700;font-size:54px;line-height:1;color:#c8ffb0;text-shadow:0 0 8px #6dff4f,0 0 18px #2fd82a;margin:2px 0 9px;white-space:nowrap}
+.hudscr .scpl .plst{display:inline-block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:#06280c;background:#8dff6a;border-radius:999px;padding:3px 13px;box-shadow:0 0 10px rgba(110,255,80,.4)}
+.hudscr .scpl .plst.warn{background:#FFD84D;color:#2b2000;box-shadow:0 0 10px rgba(255,210,60,.45)}
+.hudscr .scpl .lw{font-size:14.5px;color:#d6ffc4;margin-top:10px;line-height:1.35}.hudscr .scpl .lw b{color:#fff}.hudscr .scpl .lwv{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:16px;letter-spacing:.02em;color:#eaffde;margin-top:1px}
+/* goals */
+.hudscr .scg{display:block;width:100%;padding:9px 0 8px;border-top:1px dashed rgba(160,255,130,.2)}.hudscr .sc .t+.scg{border-top:0;padding-top:6px}
+.hudscr .scg .r1{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.hudscr .scg .n{font-size:15.5px;color:#eaffde;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hudscr .scg .mtag{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#06280c;background:#8dff6a;border-radius:5px;padding:1px 6px;margin-right:8px;vertical-align:2px}
+.hudscr .scg .v{font-family:'BarlowC',sans-serif;font-weight:700;font-size:16px;color:#eaffde;white-space:nowrap}
+.hudscr .scg .gb{height:6px;border-radius:3px;background:rgba(160,255,130,.14);margin:7px 0 5px;overflow:hidden}
+.hudscr .scg .gb i{display:block;height:100%;border-radius:3px;background:#8dff6a;box-shadow:0 0 6px #4dff3a;transform-origin:left}
+.hudscr .scg .r2{display:flex;justify-content:space-between;gap:10px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:#7fc66f}
+/* body */
+.hudscr .scwc .chart{margin-top:8px}
+/* strength */
+.hudscr .scbar{display:grid;grid-template-columns:52px 1fr 52px;align-items:center;gap:10px;padding:5px 0}.hudscr .sc .t+.scbar{margin-top:4px}
+.hudscr .scbar .n{font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.08em;color:#d6ffc4}
+.hudscr .scbar .tr{height:10px;border-radius:5px;background:rgba(160,255,130,.12);overflow:hidden}
+.hudscr .scbar .tr i{display:block;height:100%;border-radius:5px;background:#8dff6a;box-shadow:0 0 6px #4dff3a;transform-origin:left}.hudscr .scbar .tr i.neg{background:#ff8a7a;box-shadow:none}
+.hudscr .scbar .v{text-align:right;font-family:'BarlowC',sans-serif;font-weight:700;font-size:16px;color:#c9ffb8;white-space:nowrap}.hudscr .scbar .v.r{color:#ff8a7a}
+.hudscr .sclift{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:5px 0}.hudscr .scbar+.sclift{margin-top:6px}
+.hudscr .sclift .n{font-size:15px;color:#d6ffc4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hudscr .sclift .v{font-family:'BarlowC',sans-serif;font-weight:700;font-size:16px;color:#eaffde;white-space:nowrap}.hudscr .sclift .v i{font-style:normal;margin-left:6px}
+/* Ki */
+.hudscr .kibig{display:flex;align-items:baseline;gap:8px;margin-top:2px}
+.hudscr .kibig b{font-family:'BarlowC',sans-serif;font-weight:700;font-size:46px;line-height:1;color:#eaffde;text-shadow:0 0 10px rgba(77,255,58,.45)}
+.hudscr .kibig span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:17px;letter-spacing:.1em;color:#8fd77f}
+.hudscr .kibars{display:block;width:100%;height:auto;margin-top:8px;overflow:visible}
+.hudscr .kibars text{font-family:'BarlowC',sans-serif;font-weight:700}
+.hudscr .kibars .kib{transform-box:fill-box;transform-origin:50% 100%;filter:drop-shadow(0 0 3px rgba(77,255,58,.5))}
+.hudscr .kid{padding:9px 0;border-top:1px dashed rgba(160,255,130,.2)}.hudscr .kidl>.kid:first-child{border-top:0;padding-top:2px}
+.hudscr .kid .h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:#8fd77f}
+.hudscr .kid .h b{font-size:21px;letter-spacing:0;color:#eaffde}
+.hudscr .kid .p{display:flex;flex-wrap:wrap;gap:3px 14px;margin-top:3px;font-size:14px;color:#c9f5bb}
+.hudscr .kid .p b{font-family:'BarlowC',sans-serif;font-weight:700;font-size:15px;color:#8dff6a}
+.hudscr .kid .x15{font-family:'BarlowC',sans-serif;font-weight:700;font-size:15px;color:#FFD84D}
+/* past projects */
+.hudscr .scrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;width:100%;padding:6px 0}.hudscr .sc .t+.scrow{margin-top:4px}
+.hudscr .scrow .n{font-size:15px;color:#d6ffc4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hudscr .scrow .v{font-family:'BarlowC',sans-serif;font-weight:700;font-size:15px;color:#eaffde;white-space:nowrap}
+@media (max-width:380px){.hudscr .sct{gap:6px}.hudscr .sct>div{padding:8px 8px 7px}.hudscr .sct .l{font-size:11px;letter-spacing:.05em}.hudscr .sct b{font-size:25px}.hudscr .sct>div>small{font-size:13px}.scper button{letter-spacing:.06em}}
+/* normal fonts for words and numbers in the HUD (the old Courier stays on the power level number only) */
+.hudscr .mono,.hudscr .big,.hudscr .chart text.m,.hudscr .mrow .val,.hudscr .sci b,.hudscr .fk b,.hudscr .fk small,.hudscr .tg b,.hudscr .kp b,.hudscr .hbar .v,.hudscr .rr .v,.hudscr .goal4 .stp input{font-family:'BarlowC','Arial Narrow',sans-serif}
+.hudscr .sess .s{font-family:'BarlowC','Arial Narrow',sans-serif;font-size:15.5px;letter-spacing:.02em}
+.hudscr .big{font-size:36px}.hudscr .mrow .val{font-size:17px}.hudscr .sci b{font-size:20px}.hudscr .fk b,.hudscr .kp b{font-size:21px}.hudscr .rr .v{font-size:17px}
 /* nav on the scouter */
 .nav.hn{background:#04170a;border-top-color:#000}.nav.hn button{color:#5f9a55}.nav.hn button.on{color:#c9ffb8;text-shadow:0 0 6px #4dff3a}
 /* pop-ups opened from the scouter */
@@ -1546,7 +1580,7 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.7.0';
+const APP_VERSION = '5.8.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1929,11 +1963,11 @@ function videoNames() { return vdbOpen().then(db => new Promise(res => { if (!db
 // dayInfo and cycleOf are asked the same questions hundreds of times while one screen is drawn (Journey's cycles: every
 // day, its cycle, its stars). The answers are kept only for that one stretch of work (until the current task ends) and
 // are dropped at once by a save, so anything changed afterwards is always read fresh.
-var MEMO = { td: '', info: new Map(), cyc: new Map(), balls: null, armed: false };
-function memoReset() { MEMO.info.clear(); MEMO.cyc.clear(); MEMO.balls = null; MEMO.td = ''; }
+var MEMO = { td: '', info: new Map(), cyc: new Map(), balls: null, ki: null, kp: null, armed: false };
+function memoReset() { MEMO.info.clear(); MEMO.cyc.clear(); MEMO.balls = null; MEMO.ki = null; MEMO.kp = null; MEMO.td = ''; }
 function memoDay() {
   if (!MEMO.armed) { MEMO.armed = true; queueMicrotask(() => { memoReset(); MEMO.armed = false; }); }
-  const td = today(); if (MEMO.td !== td) { MEMO.info.clear(); MEMO.cyc.clear(); MEMO.balls = null; MEMO.td = td; }
+  const td = today(); if (MEMO.td !== td) { MEMO.info.clear(); MEMO.cyc.clear(); MEMO.balls = null; MEMO.ki = null; MEMO.kp = null; MEMO.td = td; }
 }
 function dayInfo(date) { memoDay(); if (MEMO.info.has(date)) return MEMO.info.get(date); const v = dayInfo0(date); MEMO.info.set(date, v); return v; }
 function cycleOf(date) { memoDay(); if (MEMO.cyc.has(date)) return MEMO.cyc.get(date); const v = cycleOf0(date); MEMO.cyc.set(date, v); return v; }
@@ -2142,50 +2176,42 @@ function dayCompletion(date) {
   if (dp.req && dp.reqDone >= dp.req) return 'done'; if (dp.reqDone + dp.bonusDone > 0) return 'part';
   return date < today() ? 'miss' : 'future';
 }
-/* ---------- Ki (v6): points for what a day got done — computed only, nothing shows it yet ----------
+/* ---------- Ki (v6): points for what a day got done (the Scouter's Ki card) ----------
    Workout or Muay Thai done +3 · calories within 100 of the target +2 · protein target reached +1 · every other required item
    done +1 · every bonus item done +1; all of it ×1.5 on a day inside a run of 7+ perfect days in a row (counting forward too,
-   so a run's first days get it once the 7th is done). Days outside the project or in the future: 0. */
-function kiPerfect(d) { const p = S.project; return !!p && d >= p.startDate && d <= p.endDate && d <= today() && dayCompletion(d) === 'done'; }
+   so a run's first days get it once the 7th is done). Days outside the project or in the future: 0. A day's Ki is a whole
+   number (kiDay: .5 rounds up); totals add up the rounded days. Kept for one stretch of work like dayInfo (dropped on save). */
+function kiPerfect(d) {
+  const p = S.project; if (!p || d < p.startDate || d > p.endDate || d > today()) return false;
+  memoDay(); const m = MEMO.kp || (MEMO.kp = new Map()); if (m.has(d)) return m.get(d); const v = dayCompletion(d) === 'done'; m.set(d, v); return v;
+}
 function kiInRun7(date) {
   if (!kiPerfect(date)) return false; let n = 1;
   for (let d = addDays(date, -1); n < 7 && kiPerfect(d); d = addDays(d, -1)) n++;
   for (let d = addDays(date, 1); n < 7 && kiPerfect(d); d = addDays(d, 1)) n++;
   return n >= 7;
 }
-function kiForDay(date) {
-  if (!S.project || date > today()) return 0; const info = dayInfo(date); if (!info.items) return 0;
-  const n = (S.days[date] || {}).nutrition, tg = nutritionTarget(date); let pts = 0;
+// What a day's Ki is made of: parts [{ id, label, pts }], their sum, whether the ×1.5 of a 7-day run applies, the Ki (unrounded)
+function kiParts(date) {
+  const out = { parts: [], base: 0, run: false, ki: 0 };
+  if (!S.project || date > today()) return out; const info = dayInfo(date); if (!info.items) return out;
+  const n = (S.days[date] || {}).nutrition, tg = nutritionTarget(date);
   for (const it of info.items) {
-    if (it.id === 'workout' || it.id === 'mt') { if (isDone(date, it.id)) pts += 3; }
-    else if (it.id === 'nutrition') { if (n && n.kcal && Math.abs(+n.kcal - tg.kcal) <= 100) pts += 2; if (n && +n.protein >= tg.protein) pts += 1; }
-    else if (isDone(date, it.id)) pts += 1;   // every other item, required or bonus
+    if (it.id === 'workout' || it.id === 'mt') { if (isDone(date, it.id)) out.parts.push({ id: it.id, label: it.label, pts: 3 }); }
+    else if (it.id === 'nutrition') { if (n && n.kcal && Math.abs(+n.kcal - tg.kcal) <= 100) out.parts.push({ id: 'kcal', label: 'Kcal on target', pts: 2 }); if (n && +n.protein >= tg.protein) out.parts.push({ id: 'protein', label: 'Protein on target', pts: 1 }); }
+    else if (isDone(date, it.id)) out.parts.push({ id: it.id, label: it.label, pts: 1, custom: isCustomHabit(it.id) });   // every other item, required or bonus
   }
-  return kiInRun7(date) ? pts * 1.5 : pts;
+  out.base = out.parts.reduce((a, x) => a + x.pts, 0); out.run = kiInRun7(date); out.ki = out.run ? out.base * 1.5 : out.base;
+  return out;
 }
+function kiForDay(date) { return kiParts(date).ki; }
+function kiDay(date) { memoDay(); const m = MEMO.ki || (MEMO.ki = new Map()); if (m.has(date)) return m.get(date); const v = Math.round(kiForDay(date)); m.set(date, v); return v; }
 // Ki over a stretch of days (both ends included; the whole project so far without them)
 function kiTotal(fromDate, toDate) {
   const p = S.project; if (!p) return 0; const td = today(); let sum = 0;
   const last = [toDate || td, p.endDate, td].sort()[0];
-  for (let d = fromDate && fromDate > p.startDate ? fromDate : p.startDate; d <= last; d = addDays(d, 1)) sum += kiForDay(d);
+  for (let d = fromDate && fromDate > p.startDate ? fromDate : p.startDate; d <= last; d = addDays(d, 1)) sum += kiDay(d);
   return sum;
-}
-// American letter grades from a percentage
-function gradeOf(pct) { if (pct == null) return '—'; const g = [[97, 'A+'], [93, 'A'], [90, 'A−'], [87, 'B+'], [83, 'B'], [80, 'B−'], [77, 'C+'], [73, 'C'], [70, 'C−'], [67, 'D+'], [63, 'D'], [60, 'D−']]; for (const [p, l] of g) if (pct >= p) return l; return 'F'; }
-// Report card up to a day: training sessions, nutrition days and stretches done out of every one possible so far,
-// the viewed day included — so a day starts at 0 and climbs as you tick things off.
-function reportCard(date) {
-  const p = P(), td = today(), last = date < td ? date : td, cats = { training: [0, 0], nutrition: [0, 0], stretch: [0, 0], days: [0, 0] };
-  for (let i = 0; i <= D(); i++) {
-    const d = addDays(p.startDate, i); if (d > last) break; const info = dayInfo(d); if (!info.items) continue; const isToday = d === td;
-    const cnt = (k, it) => { if (!it) return; cats[k][1]++; if (isDone(d, it.id)) cats[k][0]++; };
-    cnt('training', info.items.find(it => it.id === 'workout' || it.id === 'mt')); cnt('nutrition', info.items.find(it => it.id === 'nutrition')); cnt('stretch', info.items.find(it => it.id === 'stretch'));
-    const comp = dayCompletion(d); cats.days[1]++; if (comp === 'done') cats.days[0]++;
-  }
-  const out = {}; for (const k in cats) { const [a, b] = cats[k]; const pct = b ? a / b * 100 : null; out[k] = { done: a, of: b, pct, grade: gradeOf(pct) }; }
-  const allA = cats.training[0] + cats.nutrition[0] + cats.stretch[0], allB = cats.training[1] + cats.nutrition[1] + cats.stretch[1];
-  out.overall = { done: allA, of: allB, pct: allB ? allA / allB * 100 : null, grade: gradeOf(allB ? allA / allB * 100 : null) };
-  return out;
 }
 function workoutTag(info) { if (!info.items) return null; if (info.isMT) return { k: 'mt', t: 'MT' }; if (info.isRest) return { k: 'rest', t: 'Rest' }; const g = PROGRAM.workouts[info.workoutKey].group; return { k: g, t: g === 'push' ? 'Push ' + info.variant : g === 'pull' ? 'Pull ' + info.variant : 'Legs ' + info.variant }; }
 
@@ -3546,7 +3572,7 @@ function lockBody() { if (modalCount++ === 0) { lockY = window.scrollY; document
 function unlockBody() { if (modalCount > 0 && --modalCount === 0) { document.body.classList.remove('locked'); document.body.style.top = ''; window.scrollTo(0, lockY); } }
 function topModal() { const all = document.querySelectorAll('.modalbg:not(.out)'); return all.length ? all[all.length - 1] : null; }
 function modal(html, onbind) {
-  const bg = document.createElement('div'); bg.className = 'modalbg' + (R.screen === 'dash' || R.screen === 'exfile' ? ' hudm' : '');
+  const bg = document.createElement('div'); bg.className = 'modalbg' + (R.screen === 'dash' || R.screen === 'scd' || R.screen === 'exfile' ? ' hudm' : '');
   bg.innerHTML = '<div class="modal" role="dialog" aria-modal="true" tabindex="-1"><button class="mclose" data-close aria-label="Close">' + XIC + '</button><div class="mbody">' + html + '</div></div>'; applyUnits(bg);
   const m = bg.firstChild, prev = document.activeElement; lockBody();
   // buttons marked data-foot stay pinned at the bottom of the pop-up, in thumb reach, however long the content
@@ -3637,10 +3663,10 @@ function applyUnits(root) {
    Today, Journey and the Scouter are kept as they were when you leave them (scroll position included) and come back
    instantly: nothing is rebuilt and no entrance plays. A tab is rebuilt only if something it shows has changed since
    (anything saved, new art, a sync, another date) or you asked for a different view of it (another day, another
-   Scouter tab). The tab bar never changes place, so switching feels like flipping pages. */
+   Scouter period). The tab bar never changes place, so switching feels like flipping pages. */
 var VIEW_REV = 0; const TAB_CACHE = {}, TAB_KEEP = { today: 1, journey: 1, dash: 1 };
 function viewsChanged() { VIEW_REV++; }
-function tabKey(name) { return [name, VIEW_REV, today(), name === 'today' ? R.date : '', name === 'dash' ? [R.stab, R.frange, R.wr, R.rtab].join('|') : '', name === 'journey' ? [R.jtab, R.jmonth].join('|') : ''].join('~'); }
+function tabKey(name) { return [name, VIEW_REV, today(), name === 'today' ? R.date : '', name === 'dash' ? scPer() : '', name === 'journey' ? [R.jtab, R.jmonth].join('|') : ''].join('~'); }
 function stashTab(name) {
   if (!TAB_KEEP[name] || !app.firstChild || app.querySelector('.errscr')) return;
   const y = window.scrollY;   // read before the page empties (the browser clamps the scroll to 0 then)
@@ -3679,24 +3705,24 @@ function render(anim) {
   app.innerHTML = html; setTimeout(() => applyUnits(app), 0);
   keepAwake(R.screen === 'workout');
   if (!fsIn && !fsOut) animate(app.querySelector('.screen'), anim);
-  app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (b._held) { b._held = false; return; } if (b.dataset.nav === 'today' && restOn()) { go('workout', { date: REST.date, key: REST.key }, true, 'up'); return; } if (R.screen === b.dataset.nav && !R.stack.length && !app.querySelector('.errscr')) { if (R.screen === 'today' && R.date !== today() && dayInfo(today()).items) { const dir = today() > R.date ? 'right' : 'left'; R.date = today(); patchToday(dir); return; } window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); if (b.classList.contains('plchip')) R.stab = 'scan'; go(b.dataset.nav, {}, false, 'fade'); });
+  app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (b._held) { b._held = false; return; } if (b.dataset.nav === 'today' && restOn()) { go('workout', { date: REST.date, key: REST.key }, true, 'up'); return; } if (R.screen === b.dataset.nav && !R.stack.length && !app.querySelector('.errscr')) { if (R.screen === 'today' && R.date !== today() && dayInfo(today()).items) { const dir = today() > R.date ? 'right' : 'left'; R.date = today(); patchToday(dir); return; } window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
-  const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, exfile: bindExfile, project: bindProject, myplan: bindMyPlan, me: bindMe, habits: bindHabits, goal: bindGoal, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
+  const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, scd: bindScd, exfile: bindExfile, project: bindProject, myplan: bindMyPlan, me: bindMe, habits: bindHabits, goal: bindGoal, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
   R._prevScreen = R._curScreen; R._curScreen = R.screen;
   // the scouter paints the phone's status bar green
-  const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = R.screen === 'dash' || R.screen === 'exfile' ? '#0a2e12' : '#0E0F12';
+  const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = R.screen === 'dash' || R.screen === 'scd' || R.screen === 'exfile' ? '#0a2e12' : '#0E0F12';
   if (failed) { const h = $('[data-errhome]'); if (h) h.onclick = () => { R.stack = []; R.date = today(); go('today', {}, false, 'fade'); }; return; }
   if (binder) try { binder(); } catch (e) { console.error(e); logError(e); toast('Something went wrong: ' + (e.message || e), 4000); }
   if (FS_SCREENS[R.screen]) fsBindDrag();
   if (fsIn) fsSlideUp(under); else if (fsOut) fsSlideDown(over);
 }
-function screenHtml(name) { return { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, exfile: exfileHtml, project: projectHtml, myplan: myPlanHtml, me: meHtml, habits: habitsHtml, goal: goalHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[name]; }
+function screenHtml(name) { return { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, scd: scdHtml, exfile: exfileHtml, project: projectHtml, myplan: myPlanHtml, me: meHtml, habits: habitsHtml, goal: goalHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[name]; }
 // A screen that throws shows this instead of freezing the app (and the tab or view that broke is reset, so the next tap works)
 function logError(e) { try { localStorage.setItem('vikac.lasterr', JSON.stringify({ at: new Date().toISOString(), v: APP_VERSION, screen: R.screen, msg: (e && e.message) || String(e), stack: ((e && e.stack) || '').slice(0, 900) })); } catch (x) {} }
 function errorScreen(e) {
   console.error(e); logError(e); const sc = R.screen, msg = (e && e.message) || String(e), where = (((e && e.stack) || '').split('\n')[1] || '').trim();
-  if (sc === 'dash') R.stab = 'scan'; if (sc === 'journey' || sc === 'cal') R.jtab = 'cycles';
-  return `<div class="screen errscr"><div class="shead"><div class="h1">Oops</div></div><div class="lead4">This screen hit a bug and couldn't open. Your data is safe. A screenshot of this helps to fix it:</div><div class="dbox" style="font-family:monospace;font-size:12px;overflow-wrap:anywhere">v${APP_VERSION} · ${esc(sc)}${sc === 'dash' ? ' · ' + esc(R._stabErr || '') : ''}<br>${esc(msg)}<br>${esc(where)}</div><button class="btn" data-errhome style="margin-top:14px;width:100%">Back to Today</button></div>${nav(sc === 'exfile' ? 'dash' : sc === 'cal' ? 'journey' : sc)}`;
+  if (sc === 'dash') { R.scper = null; try { localStorage.removeItem(SCPER_LS); } catch (x) {} } if (sc === 'journey' || sc === 'cal') R.jtab = 'cycles';
+  return `<div class="screen errscr"><div class="shead"><div class="h1">Oops</div></div><div class="lead4">This screen hit a bug and couldn't open. Your data is safe. A screenshot of this helps to fix it:</div><div class="dbox" style="font-family:monospace;font-size:12px;overflow-wrap:anywhere">v${APP_VERSION} · ${esc(sc)}${sc === 'dash' || sc === 'scd' ? ' · ' + esc(R._stabErr || '') : ''}<br>${esc(msg)}<br>${esc(where)}</div><button class="btn" data-errhome style="margin-top:14px;width:100%">Back to Today</button></div>${nav(sc === 'exfile' || sc === 'scd' ? 'dash' : sc === 'cal' ? 'journey' : sc)}`;
 }
 // Screen stays on while a workout is open (re-acquired when the app comes back to the front)
 // Enter (the keyboard's Done key) closes the keyboard in every field, including notes — no "Next", no new line
@@ -4032,15 +4058,11 @@ function stopPlayer() { player.on = false; if (player.timer) clearInterval(playe
 /* ---------- Nutrition ---------- */
 
 /* ---------- Scouter helpers: tips and the metric pop-up (the screen itself is in scouter.js) ---------- */
-function tipsPillHtml() {
-  const a = activeTips().length, n = unseenTips();
-  return n ? `<button class="tips new" data-tips><i>i</i>NEW TIPS: ${n}</button>` : a ? `<button class="tips seen" data-tips><i>i</i>VIEW TIPS</button>` : `<button class="tips none" data-tips><i>i</i>NO TIPS AVAILABLE</button>`;
-}
 // Tips: a bottom sheet — swipe a tip left (or ×) to dismiss it, Dismiss all, Tips history; opening it marks the tips as seen
 function openTips() {
   const fresh = new Set(activeTips().filter(e => !e.seen).map(e => e.id));
   let changed = false; for (const e of activeTips()) if (!e.seen) { e.seen = true; changed = true; } if (changed) { save(); }
-  const paintPill = () => { const pl = app.querySelector('[data-tips]'); if (pl) { pl.outerHTML = tipsPillHtml(); const np = app.querySelector('[data-tips]'); if (np) np.onclick = e => { e.stopPropagation(); openTips(); }; } const nb = app.querySelector('.nav [data-nav=dash] .nbadge'); if (nb && !unseenTips()) nb.remove(); };
+  const paintPill = () => { const tc = app.querySelector('[data-tipcard]'); if (tc) { const h = tipCardHtml(); if (h) { tc.insertAdjacentHTML('afterend', h); const n = tc.nextElementSibling; if (n) n.onclick = () => openTips(); } tc.remove(); } const nb = app.querySelector('.nav [data-nav=dash] .nbadge'); if (nb && !unseenTips()) nb.remove(); };
   paintPill();
   const listHtml = () => { const a = activeTips(), nn = a.filter(e => fresh.has(e.id)).length;
     return `<div class="hdl"></div><div class="tiphd"><h3 style="margin:0">Tips</h3><span class="cond tipsub">${a.length ? (nn ? nn + ' new · ' : '') + 'swipe to dismiss' : ''}</span></div>
@@ -4813,12 +4835,19 @@ function saveUI() {
   try { if (!S.project || ['import', 'batch'].includes(R.screen)) { localStorage.removeItem(UI_LS); return; }
     const clean = st => ({ screen: st.screen, params: JSON.parse(JSON.stringify(st.params || {})), date: st.date, y: st.y || 0 });
     if (R.stack.some(x => ['import', 'batch'].includes(x.screen))) { localStorage.removeItem(UI_LS); return; }
-    localStorage.setItem(UI_LS, JSON.stringify({ day: today(), at: Date.now(), y: window.scrollY, r: { screen: R.screen, params: JSON.parse(JSON.stringify(R.params || {})), date: R.date, stack: R.stack.map(clean), jtab: R.jtab, jmonth: R.jmonth, ptab: R.ptab, stab: R.stab, wrange: R.wrange, frange: R.frange, rtab: R.rtab, _woOpen: R._woOpen, _woKey: R._woKey } }));
+    localStorage.setItem(UI_LS, JSON.stringify({ day: today(), at: Date.now(), y: window.scrollY, r: { screen: R.screen, params: JSON.parse(JSON.stringify(R.params || {})), date: R.date, stack: R.stack.map(clean), jtab: R.jtab, jmonth: R.jmonth, ptab: R.ptab, wrange: R.wrange, frange: R.frange, rtab: R.rtab, _woOpen: R._woOpen, _woKey: R._woKey } }));
   } catch (e) {}
 }
 function loadUI() {
   try { const st = JSON.parse(localStorage.getItem(UI_LS) || 'null'); localStorage.removeItem(UI_LS);
-    if (!st || !S.project || st.day !== today() || Date.now() - st.at > 12 * 3600 * 1000) return null; return st; } catch (e) { return null; }
+    if (!st || !S.project || st.day !== today() || Date.now() - st.at > 12 * 3600 * 1000) return null; return scOldTab(st); } catch (e) { return null; }
+}
+// v6 3b: the Scouter is one page. A state saved on one of its old tabs opens that tab's detail page (Records and Training are
+// one page now; back leads to the Scouter); the Scan tab is the page itself.
+function scOldTab(st) {
+  const r = st.r || {}, k = { body: 'body', food: 'food', training: 'lifts', records: 'lifts' }[r.stab];
+  if (r.screen === 'dash' && k) { r.screen = 'scd'; r.params = { k }; r.stack = (Array.isArray(r.stack) ? r.stack : []).concat([{ screen: 'dash', params: {}, date: r.date, y: 0 }]); if (r.stab === 'training') st.y = 0; }
+  delete r.stab; return st;
 }
 
 /* ============ Stage 2: logging screens ============ */
@@ -5362,11 +5391,12 @@ function habitLogSheet(id, date) {
   });
 }
 
-/* ============ Stage 4: Scouter — the green HUD (Scan · Body · Food · Training · Records) and exercise files ============ */
+/* ============ Scouter: one page in the green HUD — the period switch (Week · Month · Project · All), the newest tip, power
+   level, goals, body, strength, food, Ki and past projects — its detail pages (Body · Food · Lifts & records · Ki) and the
+   exercise files. Every card has the same shape: a title with a one-line headline, at most three numbers, one chart, details. ============ */
 IC4.scouter = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="8" height="6.5" rx="1.6" fill="currentColor" fill-opacity=".25"/><path d="M10.5 9.5l6 2.5"/><circle cx="18.5" cy="13.5" r="3"/><path d="M18.5 16.5v3"/></svg>';
 const TRO4 = '<svg class="tro" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 0 1-10 0z" fill="#F5B90F" stroke="#1B1B1B" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H4.2v1.6A3.4 3.4 0 0 0 7.6 10M17 5h2.8v1.6A3.4 3.4 0 0 1 16.4 10" fill="none" stroke="#FFD84D" stroke-width="1.6" stroke-linecap="round"/><path d="M12 13v3.5" stroke="#FFD84D" stroke-width="1.8"/><path d="M8.5 21h7l-.8-3.2H9.3z" fill="#E0A100" stroke="#1B1B1B" stroke-width="1.5" stroke-linejoin="round"/></svg>';
 const PBT = `<span class="pbt">${TRO4}PB</span>`;
-const STABS = [['scan', 'Scan'], ['body', 'Body'], ['food', 'Food'], ['training', 'Training'], ['records', 'Records']];
 const gb = v => Math.round(+v).toLocaleString('en-GB');
 const ARW = (d, flat) => d > flat ? '▲' : d < -flat ? '▼' : '●';
 const sgn = d => (d > 0 ? '+' : d < 0 ? '−' : '±');
@@ -5389,64 +5419,236 @@ function sparkSvg(vals, w, h) {
   return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline class="spk" points="${pts.join(' ')}" fill="none" stroke="#8dff6a" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`;
 }
 
+/* ---------- The period ----------
+   One switch for the whole page. Week: the last 7 days against the 7 before; Month: the last 30 against the 30 before;
+   Project: Day 1 to today against the start; All: the whole log so far (readings before Day 1 included) against its start.
+   An ongoing plan has no Project. Opens on Project the first time, then on the last one picked (kept on this phone). */
+const SC_PERS = [['week', 'Week'], ['month', 'Month'], ['project', 'Project'], ['all', 'All']], SCPER_LS = 'vikac.scper';
+const SC_WORDS = { week: { body: 'this week', str: 'vs a week ago', ki: 'vs last week', name: 'This week' }, month: { body: 'this month', str: 'vs a month ago', ki: 'vs last month', name: 'This month' },
+  project: { body: 'this project', str: 'since day 1', name: 'This project' }, all: { body: 'so far', str: 'since the start', name: 'So far' } };
+function scPers() { return isOngoing() ? SC_PERS.filter(x => x[0] !== 'project') : SC_PERS; }
+function scPer() { let k = R.scper; if (!k) { try { k = localStorage.getItem(SCPER_LS); } catch (e) {} } if (!SC_PERS.some(x => x[0] === k)) k = 'project'; return k === 'project' && isOngoing() ? 'all' : k; }
+function scPerSet(k) { R.scper = k; try { localStorage.setItem(SCPER_LS, k); } catch (e) {} }
+// the first day the log knows: Day 1, or an earlier weigh-in or finished session
+function scLogStart() {
+  let s = P().startDate; for (const d in S.readings) if (d < s && S.readings[d] && ['weight', 'fat', 'muscle'].some(k => S.readings[d][k] != null && S.readings[d][k] !== '')) s = d;
+  for (const x of S.sessions || []) if (x.finished && x.date < s) s = x.date; return s;
+}
+// from … to (both included); week and month also have the period before (prevFrom … prevTo); pFrom … pTo: the project's days
+// in it up to today (Ki, food and perfect days live there)
+function scRange(k) {
+  const p = P(), to = scDate(), o = { k, to, win: false };
+  if (k === 'week' || k === 'month') { o.n = k === 'week' ? 7 : 30; o.win = true; o.from = addDays(to, 1 - o.n); o.prevTo = addDays(o.from, -1); o.prevFrom = addDays(o.from, -o.n); }
+  else o.from = k === 'project' ? p.startDate : scLogStart();
+  o.pFrom = o.from > p.startDate ? o.from : p.startDate; o.pTo = [to, today(), p.endDate].sort()[0];
+  return o;
+}
+const scPct = v => { const r = Math.round(v); return sgn(r) + Math.abs(r) + ' %'; };
+const scCls = (d, dir, flat) => { const a = ARW(d, flat); return a === '●' ? 'y' : !dir ? '' : (dir < 0 ? a === '▼' : a === '▲') ? 'g' : 'r'; };
+// a card: title, one-line headline, its content, the details row
+function scCard(o) {
+  return `<div class="hp sc ${o.cls || ''}"><div class="t"><span>${o.title}</span><span class="hl">${o.hl || ''}</span></div>${o.body || ''}${o.more ? `<button class="scmore" data-scd="${o.more[0]}"><span>${o.more[1]}</span><span class="ch">›</span></button>` : ''}</div>`;
+}
+const scTiles = list => `<div class="sct">${list.map(x => `<div><div class="l">${x.l}</div><b>${x.v}</b>${x.s != null && x.s !== '' ? `<small class="${x.c || ''}">${x.s}</small>` : ''}</div>`).join('')}</div>`;
+
 /* ---------- Screen ---------- */
 function dashHtml() {
-  const date = scDate(), tab = R.stab || 'scan', i = STABS.findIndex(x => x[0] === tab); R._stabErr = tab;
-  const body = tab === 'body' ? bodyTab(date) : tab === 'food' ? foodTab(date) : tab === 'training' ? trainingTab(date) : tab === 'records' ? recordsTab() : scanTab(date);
-  return `<div class="hudbg"></div><div class="hudlines"></div><div class="screen hudscr">
-    <div class="hhead"><div class="htop"><span class="bang">Scouter</span><span class="htr">${tipsPillHtml()}${GEAR_BTN()}</span></div>
-    <div class="htabs">${STABS.map(([k, l]) => `<button data-stab="${k}" class="${k === tab ? 'on' : ''}">${l}</button>`).join('')}<div class="ind" style="left:${i * 20 + 2}%"></div></div></div>
-    <div id="hpane">${body}</div></div>${nav('dash')}`;
+  const date = scDate(), k = scPer(), rg = scRange(k); R._stabErr = k;
+  return `<div class="hudbg"></div><div class="hudlines"></div><div class="screen hudscr scp">
+    <div class="hhead"><div class="htop"><span class="bang">Scouter</span><span class="htr">${GEAR_BTN()}</span></div>${scPerBar(k)}</div>
+    <div id="hpane">${tipCardHtml()}${plCard(date)}${goalsCard()}${bodyCard(date, rg)}${strengthCard(rg)}${foodCard(rg)}${kiCard(rg)}${pastCard()}</div></div>${nav('dash')}`;
+}
+function scPerBar(k) { const L = scPers(); return `<div class="scper n${L.length}" role="group" aria-label="Period">${L.map(([v, l]) => `<button data-per="${v}" class="${v === k ? 'on' : ''}" aria-pressed="${v === k}">${l}</button>`).join('')}</div>`; }
+
+/* ---------- The newest tip (the sheet with all of them is one tap away) ---------- */
+function tipCardHtml() {
+  const e = activeTips()[0]; if (!e) return '';
+  return `<button class="hp sc sctip" data-tipcard><div class="t"><span><span>Tip</span>${e.seen ? '' : ' · <span class="tnew">NEW</span>'}</span><span class="hl">All tips ›</span></div><div class="tx">${esc(e.text)}</div></button>`;
 }
 
-/* ---------- Scan: power level, vitals, dragon radar, report card ---------- */
-function scanTab(date) {
-  const pw = powerLevel(date), on = Math.round(pw.prog * 20), rc = reportCard(date), pct = Math.round(pw.prog * 100);
-  const vt = vitalTiles(date);
-  return `<div class="hp br in" data-pl><div class="t"><span>Power level · ${hudDay(date)}</span><span class="sig"><i></i><i></i><i></i></span></div>
-    <div class="plrow"><div class="hero"><div class="glow"></div><div class="hart">${pw.stage === 4 ? heroArt({ level: 4, size: 120 }) : bodyArt({ date, size: 120, fallback: pw.stage })}</div><div class="ring"></div></div>
-    <div class="pl"><span class="lab">POWER LEVEL</span><div class="num" id="pln">${pw.pl.toLocaleString('en-GB')}</div><div class="bar" id="plb">${Array.from({ length: 20 }, (_, k) => `<i class="${k < on ? 'on' : ''}"></i>`).join('')}</div>
-      <div class="scale"><span>START</span><span id="plpct">${pct} %</span><span>GOAL 9001</span></div>
-      <div class="status ${pw.warn ? 'warn' : ''}"><span id="plst">${esc(pw.status.toUpperCase())}</span><span class="pdots go"><i>.</i><i>.</i><i>.</i></span></div></div></div>
-    <div class="why">${esc(pw.why)}</div></div>
-  <div class="hp"><div class="t"><span>Vitals · 7-day trend</span><span></span></div><div class="vit">${vt.map(x => `<button class="vt" data-go="${x.go}"><div class="l">${x.l}</div><div class="v"><b>${x.v}</b><span class="${x.c}">${x.d}</span></div>${sparkSvg(x.s)}</button>`).join('')}</div></div>
-  ${radarHtml()}
-  <div class="hp"><div class="t"><span>Report card · so far</span><span>Overall <b class="gr">${rc.overall.grade}</b></span></div>
-    <div class="rcg">${[['training', 'Training'], ['nutrition', 'Nutrition'], ['stretch', 'Stretch']].map(([k, l]) => `<div><span>${l}</span><b class="gr">${rc[k].grade}</b><small>${rc[k].done}/${rc[k].of}</small></div>`).join('')}</div>
-    <div class="foot">${rc.days.done} of ${rc.days.of} days perfect</div></div>
-  ${(S.archive || []).length ? `<button class="hp hpast" data-past><div class="t"><span>Past projects</span><span>${S.archive.length} ›</span></div><div class="foot">${esc(S.archive.map(b => b.project.name).join(' · '))}</div></button>` : ''}`;
+/* ---------- Power level: where the body stands now ---------- */
+function plCard(date) {
+  const pw = powerLevel(date), td = today(); let lw = null;
+  for (const d of Object.keys(S.readings).sort().reverse()) { const r = S.readings[d]; if (d <= td && r && r.weight != null && r.weight !== '') { lw = { d, r }; break; } }
+  const when = !lw ? '' : lw.d === td ? 'today' : lw.d === addDays(td, -1) ? 'yesterday' : fmtShort(lw.d);
+  const line = lw ? `<span>Last weigh-in</span> <b>${when}</b><span class="lwv">${(+lw.r.weight).toFixed(1)} kg${lw.r.fat != null && lw.r.fat !== '' ? ' · ' + (+lw.r.fat).toFixed(1) + ' %' : ''}</span>` : '<span>No weigh-in yet</span>';
+  return `<button class="hp sc scpl" data-pl><div class="hero"><div class="glow"></div><div class="hart">${pw.stage === 4 ? heroArt({ level: 4, size: 104 }) : bodyArt({ date, size: 104, fallback: pw.stage })}</div></div>
+    <div class="pli"><div class="lab">POWER LEVEL</div><div class="plnum" id="pln">${pw.pl.toLocaleString('en-GB')}</div><span class="plst ${pw.warn ? 'warn' : ''}">${esc(pw.status)}</span><div class="lw">${line}</div></div></button>`;
 }
-// Six vitals: body from the scale, food from the log, steps from the band
-function vitalTiles(date) {
-  const p = P(), out = [];
-  for (const [id, lab] of [['weight', 'Weight'], ['fat', 'Body fat %'], ['muscle', 'Muscle kg']]) {
-    const def = METRIC_DEFS.find(m => m.id === id), cur = current(id, date);
-    if (cur == null) { out.push({ l: lab, v: '—', d: '', c: '', s: [], go: 'body' }); continue; }
-    let ref = current(id, addDays(date, -7)); if (ref == null) ref = p.start[id] != null && p.start[id] !== '' ? +p.start[id] : cur;
-    const dd = cur - ref, a = ARW(dd, FLAT[id]), good = def.dir < 0 ? a === '▼' : a === '▲';
-    out.push({ l: lab, v: cur.toFixed(def.dec), d: a + Math.abs(dd).toFixed(def.dec), c: a === '●' ? 'y' : good ? 'g' : 'r', s: readSeries(id, date, 14), go: 'body' });
+
+/* ---------- Goals: the main one first, now → target, how far, by when, on pace or not ---------- */
+// a lift's heaviest set up to a day (every project), for where a lift goal started
+function scLiftBestBy(name, date) { let b = null; for (const s of allSessions()) { if (s.date > date) continue; const e = (s.ex || []).find(x => x.n === name); if (!e || typeIn(s, name) === 'max') continue; for (const st of e.sets || []) { const kg = +st.kg || 0; if (+st.reps > 0 && kg > 0 && (!b || kg > b)) b = kg; } } return b; }
+function scGoalInfo(g) {
+  const p = P(), td = today(), sh = goalShow(g), tg = +sh.target, by = sh.by || null, now = goalNow(g), c = g.created && g.created > p.startDate && g.created <= td ? g.created : null;
+  const o = { g, title: sh.title, user: !!sh.user, now, tg, by, start: null, from: null, frac: null, pace: null, unit: '', dec: 1 };
+  if (g.type === 'body') { const m = BODY_M[g.metric] ? g.metric : 'weight'; o.unit = BODY_M[m][1] === '%' ? ' %' : ' kg';
+    if (c) { let v = current(m, c); if (v == null) { const lr = lastReading(m, c); v = lr ? lr.v : null; } if (v != null) { o.start = v; o.from = c; } }
+    if (o.start == null && p.start && p.start[m] != null && p.start[m] !== '') { o.start = +p.start[m]; o.from = p.startDate; } }
+  else if (g.type === 'lift') { o.unit = ' kg'; o.dec = null; const c2 = g.created || p.startDate; let b = scLiftBestBy(g.exercise, c2), f = c2;
+    if (b == null) { const s = allSessions().filter(x => x.date > c2 && (x.ex || []).some(e => e.n === g.exercise)).sort((x, y) => x.date < y.date ? -1 : 1)[0]; if (s) { b = scLiftBestBy(g.exercise, s.date); f = s.date; } }
+    o.start = b; o.from = b == null ? null : f; }
+  else if (g.type === 'consistency') { o.start = 0; o.dec = 0; }
+  else { const ks = Object.keys(g.vals || {}).filter(d => d <= td).sort(); o.start = ks.length ? +g.vals[ks[0]] : null; o.from = ks[0] || null; o.dec = null; }
+  if (now == null || !(tg > 0)) return o;
+  const span = o.start == null ? 0 : tg - o.start, reached = Math.abs(span) < 1e-9 ? Math.abs(now - tg) < 1e-9 : span > 0 ? now >= tg - 1e-9 : now <= tg + 1e-9;
+  o.frac = reached ? 1 : o.start == null || Math.abs(span) < 1e-9 ? 0 : Math.max(0, Math.min(1, (now - o.start) / span));
+  if (reached) o.pace = 'reached';
+  else if (g.type === 'body' && (g.metric || 'weight') === 'weight' && (g.auto || mainWeightGoal() === g)) { const st = metricStatus('weight', td); o.pace = !st || st.state === 'nodata' ? null : st.state === 'slow' ? 'behind' : 'on pace'; }
+  else if (g.type !== 'consistency' && by && o.from && by > o.from) { const el = Math.max(0, Math.min(1, diffDays(o.from, td) / diffDays(o.from, by))); o.pace = o.frac >= el - 0.05 ? 'on pace' : 'behind'; }
+  return o;
+}
+function goalsCard() {
+  const gs = (S.goals || []).slice().sort((a, b) => (b.main ? 1 : 0) - (a.main ? 1 : 0)); if (!gs.length) return '';
+  const L = gs.map(scGoalInfo), f = (v, o) => v == null ? '—' : o.dec == null ? fmtHV(v) : (+v).toFixed(o.dec);
+  const rows = L.map(o => {
+    const val = o.g.type === 'consistency' ? `${o.now == null ? '—' : o.now} → ${o.tg} of 7` : o.g.type === 'custom' ? `${f(o.now, o) + ' → ' + f(o.tg, o)}${o.g.unit ? `<i class="usertext"> ${esc(o.g.unit)}</i>` : ''}` : `${f(o.now, o)} → ${f(o.tg, o)}${o.unit}`;
+    const bys = o.by ? `<span>by ${fmtShort(o.by)}</span>` : '<span></span>', pc = o.pace === 'behind' ? 'y' : 'g';
+    return `<button class="scg" data-goals="${esc(o.g.id)}"><div class="r1"><span class="n">${o.g.main ? '<i class="mtag">Main</i>' : ''}<span${o.user ? ' class="usertext"' : ''}>${esc(o.title)}</span></span><span class="v">${val}</span></div>
+      <div class="gb"><i style="width:${((o.frac || 0) * 100).toFixed(1)}%"></i></div><div class="r2">${bys}${o.pace ? `<span class="${pc}">${o.pace}</span>` : ''}</div></button>`; }).join('');
+  const judged = L.filter(o => o.pace), good = judged.filter(o => o.pace !== 'behind').length;
+  return `<div class="hp sc scgoals"><div class="t"><span>Goals</span><span class="hl">${judged.length ? `${good} of ${judged.length} on pace` : ''}</span></div>${rows}<button class="scmore" data-goals><span>Goals</span><span class="ch">›</span></button></div>`;
+}
+
+/* ---------- Body: weight against the plan over the period; weight, body fat and muscle with their change ---------- */
+function scBodyVal(id, d) { const v = current(id, d); if (v != null) return v; const lr = lastReading(id, d); return lr ? lr.v : null; }
+// where a metric stood as the period began: the end of the period before (week, month), the starting point (project), the
+// first reading of the log (all). Day 1 of a project / log has nothing before it.
+function scBodyRef(id, rg) {
+  if (rg.win) return current(id, rg.prevTo);
+  if (!(rg.to > rg.from)) return null;
+  const p = P(), st = p.start && p.start[id] != null && p.start[id] !== '' ? +p.start[id] : null; if (rg.k === 'project') return st;
+  for (const d of Object.keys(S.readings).sort()) { if (d > rg.to) break; const r = S.readings[d]; if (r && r[id] != null && r[id] !== '') return st == null || d < p.startDate ? +r[id] : st; }
+  return st;
+}
+function scDir(id) { if (id !== 'weight') return METRIC_DEFS.find(m => m.id === id).dir; const d = +P().deficit || 0; return d > 0 ? -1 : d < 0 ? 1 : 0; }
+function bodyCard(date, rg) {
+  const W = SC_WORDS[rg.k], tiles = [];
+  let hl = '';
+  for (const [id, lab, u] of [['weight', 'Weight', ' kg'], ['fat', 'Body fat', ' %'], ['muscle', 'Muscle', ' kg']]) {
+    const cur = scBodyVal(id, rg.to), ref = cur == null ? null : scBodyRef(id, rg), dd = ref == null ? null : Math.round((cur - ref) * 10) / 10;
+    tiles.push({ l: lab, v: cur == null ? '—' : `${cur.toFixed(1)}<small>${u}</small>`, s: dd == null ? null : ARW(dd, FLAT[id]) + ' ' + Math.abs(dd).toFixed(1), c: dd == null ? '' : scCls(dd, scDir(id), FLAT[id]) });
+    if (id === 'weight' && dd != null) hl = `<b>${sgn(dd)}${Math.abs(dd).toFixed(1)} kg</b> ${W.body}`;
   }
-  const ia = intakeAverage(date, 7), days = []; for (let i = 0; i < 7; i++) { const d = addDays(date, -i); if (kcalOn(d) != null) days.push(d); }
-  if (ia) {
-    const tg = avgOf(days.map(d => nutritionTarget(d).kcal)), dk = Math.round(ia.kcal - tg), dp = ia.protein - p.protein;
-    out.push({ l: 'Avg kcal', v: gb(ia.kcal), d: sgn(dk) + gb(Math.abs(dk)), c: Math.abs(dk) <= 100 ? 'g' : dk > 0 ? 'r' : 'y', s: seriesFrom(date, 14, kcalOn), go: 'food' });
-    out.push({ l: 'Avg protein', v: ia.protein + 'g', d: sgn(dp) + Math.abs(dp), c: dp >= -10 ? 'g' : 'r', s: seriesFrom(date, 14, protOn), go: 'food' });
-  } else { out.push({ l: 'Avg kcal', v: '—', d: '', c: '', s: [], go: 'food' }); out.push({ l: 'Avg protein', v: '—', d: '', c: '', s: [], go: 'food' }); }
-  const st7 = seriesFrom(date, 7, stepsOn);
-  if (st7.length) { const prev = seriesFrom(addDays(date, -7), 7, stepsOn), a = avgOf(st7), pct = prev.length ? (a - avgOf(prev)) / avgOf(prev) * 100 : null;
-    out.push({ l: 'Steps / day', v: gb(a), d: pct == null ? '' : ARW(pct, 3) + Math.abs(Math.round(pct)) + '%', c: pct == null ? '' : pct > 3 ? 'g' : pct < -3 ? 'r' : 'y', s: seriesFrom(date, 14, stepsOn), go: 'food' }); }
-  else { const pw = powerLevel(date); out.push({ l: 'Perfect days', v: pw.n ? pw.perfect + '/' + pw.n : '—', d: '', c: '', s: [], go: 'journey' }); }
+  const rng = { week: '1w', month: '1m', project: 'all', all: 'log' }[rg.k];
+  return scCard({ cls: 'scbody', title: 'Body', hl, body: `<div class="scwc" id="scwc">${weightChart(rg.to, rng, 150)}</div>${scTiles(tiles)}`, more: ['body', 'Body details'] });
+}
+
+/* ---------- Strength: push / pull / legs and the lifts that moved ----------
+   A lift's strength in a session is its best set's estimated 1RM (exScore). Over a period: where it stood at the start (its last
+   session in the period before — week, month — else its first session in the period) against its last session in the period;
+   only lifts with both. Lifts done in sets only (the 5-min finishers are endurance). */
+function scLiftHist(name) {
+  const out = []; for (const s of S.sessions || []) { if (!s.finished) continue; const e = (s.ex || []).find(x => x.n === name); if (!e || typeIn(s, name) === 'max') continue;
+    const sc = exScore(e, 'main'); if (sc.v > 0 && sc.set) out.push({ date: s.date, v: sc.v, kg: +sc.set.kg || 0, reps: +sc.set.reps || 0 }); }
+  return out.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+}
+function scLifts(rg) {
+  const out = [];
+  for (const g of ['push', 'pull', 'legs']) for (const n of allExerciseNames(g)) {
+    if (out.some(x => x.n === n)) continue;
+    const h = scLiftHist(n), inP = h.filter(x => x.date >= rg.from && x.date <= rg.to); if (!inP.length) continue;
+    const prev = rg.win ? h.filter(x => x.date >= rg.prevFrom && x.date <= rg.prevTo) : [], b = inP[inP.length - 1];
+    const a = prev.length ? prev[prev.length - 1] : inP.length > 1 ? inP[0] : null; if (!a) continue;
+    out.push({ n, g, a, b, pct: (b.v / a.v - 1) * 100 });
+  }
   return out;
 }
-// The set of seven: earned ones lit, the one up for grabs today pinging, the dragon at the end (glowing once it waits); the
-// dragons summoned so far
-function radarHtml() {
-  const p = P(), td = today(), d0 = td < p.startDate ? p.startDate : td > p.endDate ? p.endDate : td; if (!dayInfo(d0).items) return '';
-  const js = journeyStats(), L = ballLog(), pl = dayPlan(d0), pre = td < p.startDate, over = td > p.endDate, n = js.count, doneT = !!L.byDate[td], live = !pre && !over && !L.waiting && !doneT;
-  let h = ''; for (let i = 1; i <= 7; i++) { const got = i <= n, cur = live && i === n + 1; const sz = cur ? 34 : 28; h += `<span class="rb${got ? ' got' : ''}${cur ? ' cur' : ''}"><span class="rbb">${ballSvg({ stars: i, state: 'hollow', size: sz })}</span>${got ? `<span class="rbf">${ballSvg({ stars: i, state: 'full', size: sz })}</span>` : ''}</span>`; }
-  h += `<span class="rb dr">${dragonBadgeSvg({ state: L.waiting ? 'ready' : 'locked', size: 34 })}</span>`;
-  const left = pre ? 'Starts ' + shortD(p.startDate) : over ? 'Project done' : L.waiting ? 'The dragon is waiting' : doneT ? n + ' / 7 · today done' : n + ' / 7 · next: ' + pl.title + ' today';
-  return `<button class="hp" data-go="journey"><div class="t"><span>Dragon radar</span><span>${js.chain > 1 ? IC4.flame + ' ' + js.chain + '-day chain' : ''}</span></div><div class="radar">${h}</div><div class="chainl"><span>${esc(left)}</span><span>${js.dragons} ${js.dragons === 1 ? 'dragon' : 'dragons'}</span></div></button>`;
+// the dead hang the same way: the last hang before (week, month) or the first in the period, against the last in it
+function scHang(rg) {
+  const L = Object.keys(S.days).filter(d => { const h = S.days[d] && S.days[d].hang; return h && +h.best > 0; }).sort().map(d => ({ date: d, v: Math.round(+S.days[d].hang.best) }));
+  const inP = L.filter(x => x.date >= rg.from && x.date <= rg.to); if (!inP.length) return null;
+  const prev = rg.win ? L.filter(x => x.date >= rg.prevFrom && x.date <= rg.prevTo) : [], b = inP[inP.length - 1], a = prev.length ? prev[prev.length - 1] : inP.length > 1 ? inP[0] : null;
+  return a && a.v !== b.v ? { a: a.v, b: b.v } : null;
+}
+const scAvgPct = L => L.length ? avgOf(L.map(x => x.pct)) : null;
+function strengthCard(rg) {
+  const L = scLifts(rg), all = scAvgPct(L), hang = scHang(rg), W = SC_WORDS[rg.k];
+  let body = '';
+  if (!L.length) body = '<div class="scnone">Not enough sessions to compare yet</div>';
+  else body = ['push', 'pull', 'legs'].map(g => { const v = scAvgPct(L.filter(x => x.g === g)), w = v == null ? 0 : Math.min(1, Math.abs(v) / 10);
+    return `<div class="scbar"><span class="n">${DAYTYPES[g].label.toUpperCase()}</span><span class="tr"><i class="${v != null && v < 0 ? 'neg' : ''}" style="width:${(w * 100).toFixed(0)}%"></i></span><span class="v ${v != null && Math.round(v) < 0 ? 'r' : ''}">${v == null ? '—' : scPct(v)}</span></div>`; }).join('');
+  // the lifts that moved most (a lift goal's lift first), then the dead hang if it moved
+  const gl = (S.goals || []).slice().sort((a, b) => (b.main ? 1 : 0) - (a.main ? 1 : 0)).find(g => g.type === 'lift' && g.exercise), first = gl ? L.find(x => x.n === gl.exercise) : null;
+  const top = (first ? [first] : []).concat(L.filter(x => x !== first && Math.abs(x.b.v - x.a.v) > 1e-9).sort((x, y) => Math.abs(y.pct) - Math.abs(x.pct))).slice(0, 3);
+  const arr = (a, b) => b > a ? '<i class="g">▲</i>' : b < a ? '<i class="r">▼</i>' : '<i class="y">●</i>';
+  body += top.map(x => `<div class="sclift"><span class="n">${esc(x.n)}</span><span class="v">${x.a.kg !== x.b.kg ? `${fmtHV(x.a.kg)} → ${fmtHV(x.b.kg)} kg` : x.a.reps !== x.b.reps ? `${fmtHV(x.b.kg)} kg × ${x.a.reps} → ${x.b.reps}` : `${fmtHV(x.b.kg)} kg × ${x.b.reps}`}${arr(x.a.v, x.b.v)}</span></div>`).join('');
+  if (hang) body += `<div class="sclift"><span class="n">Dead hang</span><span class="v">${fmtSecs(hang.a)} → ${fmtSecs(hang.b)}${arr(hang.a, hang.b)}</span></div>`;
+  return scCard({ cls: 'scstr', title: 'Strength', hl: all == null ? '' : `<b>${scPct(all)}</b> ${W.str}`, body, more: ['lifts', 'All lifts & records'] });
+}
+
+/* ---------- Food: kcal and protein against the targets, days on target ---------- */
+function scFood(rg) {
+  const p = P(), td = today(), o = { n: 0, kcal: 0, tgt: 0, prot: null, on: 0, days: 0 }; let pr = 0, prN = 0;
+  for (let d = rg.from; d <= rg.to && d <= td; d = addDays(d, 1)) {
+    const k = kcalOn(d), inP = d >= p.startDate && d <= p.endDate; if (k != null || (inP && d < td)) o.days++; if (k == null) continue;
+    const t = nutritionTarget(d).kcal; o.n++; o.kcal += k; o.tgt += t; if (Math.abs(k - t) <= 100) o.on++;
+    const pv = protOn(d); if (pv != null) { pr += pv; prN++; }
+  }
+  if (o.n) { o.kcal /= o.n; o.tgt /= o.n; } if (prN) o.prot = pr / prN; return o;
+}
+function foodCard(rg) {
+  const f = scFood(rg), p = P(), dk = f.n ? Math.round(f.kcal) - Math.round(f.tgt) : 0, dp = f.prot != null ? Math.round(f.prot) - Math.round(p.protein) : 0;
+  const tiles = [{ l: 'Kcal / day', v: f.n ? gb(f.kcal) : '—', s: f.n ? `${sgn(dk)}${gb(Math.abs(dk))} vs ${gb(f.tgt)}` : null, c: Math.abs(dk) <= 100 ? 'g' : dk > 0 ? 'r' : 'y' },
+    { l: 'Protein', v: f.prot != null ? `${Math.round(f.prot)}<small> g</small>` : '—', s: f.prot != null ? `${sgn(dp)}${Math.abs(dp)} vs ${Math.round(p.protein)}` : null, c: dp >= -10 ? 'g' : 'r' },
+    { l: 'On target', v: f.days ? `${f.on} / ${f.days}` : '—', s: f.days ? 'days' : null }];
+  return scCard({ cls: 'scfood', title: 'Food', hl: f.n ? `avg ${gb(f.kcal)} kcal` : '', body: scTiles(tiles), more: ['food', 'Food details'] });
+}
+
+/* ---------- Ki: points for what the days got done ---------- */
+function scKi(rg) {
+  const p = P(), td = today(), o = { total: 0, days: 0, of: 0, perfect: 0, best: 0, dragons: 0, prev: null, bars: [] }; let run = 0;
+  for (let d = rg.pFrom; d <= rg.pTo; d = addDays(d, 1)) {
+    o.total += kiDay(d); o.days++; const done = kiPerfect(d); if (d === td && !done) continue;
+    o.of++; if (done) { o.perfect++; run++; if (run > o.best) o.best = run; } else run = 0;
+  }
+  o.dragons = ballLog().summons.filter(d => d >= rg.from && d <= rg.to).length;
+  if (rg.win && rg.prevFrom >= p.startDate) o.prev = kiTotal(rg.prevFrom, rg.prevTo);
+  // the days of a week or a month; the weeks of the project
+  if (rg.win) for (let d = rg.from; d <= rg.to; d = addDays(d, 1)) o.bars.push({ d, v: kiDay(d) });
+  else for (let d = rg.pFrom; d <= rg.pTo; d = addDays(d, 7)) { let s = 0; for (let i = 0; i < 7; i++) { const x = addDays(d, i); if (x > rg.pTo) break; s += kiDay(x); } o.bars.push({ d, v: s }); }
+  return o;
+}
+function kiBars(o, rg) {
+  const bars = o.bars, n = bars.length; if (!n) return '';
+  const W = 356, H = 86, B = 16, slot = W / n, bw = Math.min(slot - (n > 20 ? 2 : n > 10 ? 4 : 8), 36), mx = Math.max(1, ...bars.map(b => b.v)), f1 = v => v.toFixed(1), cx = i => i * slot + slot / 2;
+  let s = bars.map((b, i) => { const x = cx(i) - bw / 2; if (!b.v) return `<rect x="${f1(x)}" y="${H - B - 3}" width="${f1(bw)}" height="3" rx="1.5" fill="rgba(160,255,130,.18)"/>`;
+    const h = Math.max(3, b.v / mx * (H - B - 6)); return `<rect class="kib" x="${f1(x)}" y="${f1(H - B - h)}" width="${f1(bw)}" height="${f1(h)}" rx="${Math.min(3, bw / 3).toFixed(1)}" fill="#8dff6a" opacity=".85"/>`; }).join('');
+  const lab = (x, t, a) => `<text x="${f1(x)}" y="${H - 2}" fill="#6fae63" font-size="10" letter-spacing=".5" text-anchor="${a}">${t}</text>`, day = d => fmtShort(d).toUpperCase();
+  if (rg.k === 'week') s += bars.map((b, i) => lab(cx(i), WD[parse(b.d).getDay()].slice(0, 3).toUpperCase(), 'middle')).join('');
+  else if (n <= 6) s += bars.map((b, i) => lab(cx(i), day(b.d), 'middle')).join('');
+  else s += lab(cx(0) - bw / 2, day(bars[0].d), 'start') + lab(cx(n - 1) + bw / 2, day(bars[n - 1].d), 'end');
+  return `<svg class="kibars" viewBox="0 0 ${W} ${H}" data-notr>${s}</svg>`;
+}
+function kiCard(rg) {
+  const o = scKi(rg), W = SC_WORDS[rg.k];
+  const hl = o.prev > 0 ? `<b>${scPct((o.total / o.prev - 1) * 100)}</b> ${W.ki}` : o.days ? `avg ${gb(o.total / o.days)} a day` : '';
+  const tiles = [{ l: 'Perfect days', v: o.of ? `${o.perfect} / ${o.of}` : '—', s: o.of ? Math.round(o.perfect / o.of * 100) + ' %' : null },
+    { l: 'Best streak', v: o.of ? String(o.best) : '—', s: o.of ? (o.best === 1 ? 'day in a row' : 'days in a row') : null }, { l: 'Dragons', v: String(o.dragons), s: 'summoned' }];
+  return scCard({ cls: 'scki', title: 'Ki', hl, body: `<div class="kibig"><b id="kin" data-c="${o.total}">${gb(o.total)}</b><span>Ki</span></div>${kiBars(o, rg)}${scTiles(tiles)}`, more: ['ki', 'Ki details'] });
+}
+// Ki details: the period's days, newest first, each with its Ki and what earned it
+function kiDetails(rg) {
+  const days = []; for (let d = rg.pTo; d >= rg.pFrom; d = addDays(d, -1)) days.push(d);
+  const rows = days.map(d => { const kp = kiParts(d), v = kiDay(d);
+    const parts = kp.parts.map(x => `<span><span${x.custom ? ' class="usertext"' : ''}>${esc(x.label)}</span> <b>+${x.pts}</b></span>`).join('') + (kp.run && kp.base ? '<span class="x15">×1.5</span>' : '');
+    return `<div class="kid"><div class="h"><span>${shortD(d)}</span><b>${v}</b></div>${parts ? `<div class="p">${parts}</div>` : ''}</div>`; }).join('');
+  return `<div class="hp sc br in kidl">${rows || '<div class="scnone">No days yet</div>'}</div>`;
+}
+function kiPeriodTotal(rg) { let t = 0; for (let d = rg.pFrom; d <= rg.pTo; d = addDays(d, 1)) t += kiDay(d); return t; }
+
+/* ---------- Past projects: each one in a line, and this one so far ---------- */
+function scMonths(a, b) { const x = parse(a), y = parse(b), m1 = MO[x.getMonth()], m2 = MO[y.getMonth()]; return m1 === m2 && x.getFullYear() === y.getFullYear() ? m1 : m1 + '–' + m2; }
+function scPastLine(dw, st) { const out = []; if (dw != null) out.push(`<span>${sgn(dw)}${Math.abs(dw).toFixed(1)} kg</span>`); if (st != null) out.push(`<span>strength ${scPct(st)}</span>`); return out.join(' · ') || '—'; }
+function pastCard() {
+  const A = S.archive || []; if (!A.length) return '';
+  const rows = A.map(b => { const p = b.project || {}, w = (b.summary || {}).weight || {}, dw = w.start != null && w.end != null ? Math.round((+w.end - +w.start) * 10) / 10 : null;
+    let st = null; try { st = withBundle(b, () => { const pp = P(); if (!pp || !pp.startDate) return null; const to = pp.endDate < today() ? pp.endDate : today(); return scAvgPct(scLifts({ k: 'project', from: pp.startDate, to, win: false })); }); } catch (e) { st = null; }
+    return `<button class="scrow" data-pastid="${esc(b.id)}"><span class="n"><span class="usertext">${esc(p.name || '')}</span>${p.startDate && p.endDate ? `<span data-notr> · ${scMonths(p.startDate, p.endDate)}</span>` : ''}</span><span class="v">${scPastLine(dw, st)}</span></button>`; }).join('');
+  const p = P(), td = today(); let me = '';
+  if (td >= p.startDate) { const w0 = p.start && +p.start.weight, w1 = scBodyVal('weight', scDate()), dw = w0 && w1 != null ? Math.round((w1 - w0) * 10) / 10 : null;
+    me = `<div class="scrow"><span class="n">This one, so far</span><span class="v">${scPastLine(dw, scAvgPct(scLifts(scRange('project'))))}</span></div>`; }
+  return `<div class="hp sc scpast"><div class="t"><span>Past projects</span><span class="hl">${A.length === 1 ? '1 project' : A.length + ' projects'}</span></div>${rows}${me}<button class="scmore" data-pastall><span>All past projects</span><span class="ch">›</span></button></div>`;
 }
 function plModal(date) {
   const pw = powerLevel(date), fs = fitnessScore(date), sg = signals(date);
@@ -5455,6 +5657,15 @@ function plModal(date) {
     ${sg.all.length ? `<div class="eyebrow" style="margin-top:14px">Last 7 days</div><div class="kv">${sg.all.map(x => `<span>${esc(x.label)}<br><span class="muted small">${esc(x.value)}${x.delta ? ' · ' + esc(x.delta) : ''}</span></span><b class="${x.state === 'good' ? 'ok' : x.state === 'bad' ? 'bad' : 'warn'}" style="font-size:18px">${x.arrow}</b>`).join('')}</div>` : ''}
     <div class="muted small" style="margin-top:12px">Power level = how far your 7-day weight and body-fat trend has moved from the start toward the goal (300 → 9001). Score = body on plan (50 %) + strength held (30 %) + perfect days (20 %). Green ↓ on things that should fall and green ↑ on things that should rise; yellow ● means no real change this week.</div>
     <button class="btn" data-close data-foot>Close</button>`);
+}
+
+/* ---------- Detail pages: pushed over the Scouter, back lands where you were ---------- */
+const SCD = { body: 'Body', food: 'Food', lifts: 'Lifts & records', ki: 'Ki' };
+function scdHtml() {
+  const k = SCD[R.params.k] ? R.params.k : 'body', date = scDate(), rg = scRange(scPer()); R._stabErr = k;
+  const top = `<div class="hhead"><div class="xtop"><button class="xb" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div style="min-width:0"><div class="bang">${SCD[k]}</div>${k === 'ki' ? `<div class="xs"><span>${SC_WORDS[rg.k].name}</span> · <span>${gb(kiPeriodTotal(rg))} Ki</span></div>` : ''}</div></div></div>`;
+  const body = k === 'body' ? bodyTab(date) : k === 'food' ? foodTab(date) : k === 'lifts' ? recordsTab() + trainingTab(date) : kiDetails(rg);
+  return `<div class="hudbg"></div><div class="hudlines"></div><div class="screen hudscr xfile scd">${top}<div id="hpane">${body}</div></div>${nav('dash')}`;
 }
 
 /* ---------- Body: weight against the plan, composition, science check ---------- */
@@ -5474,13 +5685,16 @@ function bodyTab(date) {
     <div><b>${Math.min(ph.endMin, ph.endMax).toFixed(1)}–${Math.max(ph.endMin, ph.endMax).toFixed(1)} kg</b><span>expected on ${fmtShort(goalDate())} if the deficit holds · plan ${(+ph.planEnd).toFixed(1)}</span></div></div></div>`;
 }
 // Weight chart: the plan's zone, every weigh-in, the trend line, where the trend lands on the last day and the goal
-function weightChart(date, rng) {
-  const p = P(), st = metricStatus('weight', date), Dd = goalT(), t = Math.max(0, Math.min(Dd, tOf(date))), span = rng === '2w' ? 14 : rng === '1m' ? 30 : null;
+// rng: '1w' · '2w' · '1m' (the last days, the first ones early on), 'all' (the project to the goal), 'log' ('all' with the weigh-ins
+// before Day 1 too); h: the height (the Scouter's card draws it lower)
+function weightChart(date, rng, h) {
+  const p = P(), st = metricStatus('weight', date), Dd = goalT(), t = Math.max(0, Math.min(Dd, tOf(date))), span = rng === '1w' ? 7 : rng === '2w' ? 14 : rng === '1m' ? 30 : null;
   let x0 = 0, x1 = Dd; if (span) { x0 = Math.max(0, t - span + 1); x1 = Math.min(Dd, Math.max(t, x0 + span - 1)); }
-  const W = 356, H = 196, L = 6, RM = 30, T = 16, B = 22, dOf = k => addDays(p.startDate, k);
-  const zone = []; for (let k = x0; k <= x1; k++) { const e = expected('weight', k), tl = tolerance('weight', k); zone.push([k, e + tl, e - tl]); }
+  if (rng === 'log') for (const d in S.readings) { const k = tOf(d), r = S.readings[d]; if (k < x0 && d <= date && r && r.weight != null && r.weight !== '') x0 = k; }
+  const W = 356, H = h || 196, L = 6, RM = 30, T = 16, B = 22, dOf = k => addDays(p.startDate, k);
+  const zone = []; for (let k = Math.max(0, x0); k <= x1; k++) { const e = expected('weight', k), tl = tolerance('weight', k); zone.push([k, e + tl, e - tl]); }
   const reads = [], trend = []; let first = null;
-  for (let k = 0; k <= Math.min(x1, t); k++) { const r = S.readings[dOf(k)]; if (r && r.weight != null && r.weight !== '') { if (first == null) first = k; if (k >= x0) reads.push([k, +r.weight]); } }
+  for (let k = Math.min(0, x0); k <= Math.min(x1, t); k++) { const r = S.readings[dOf(k)]; if (r && r.weight != null && r.weight !== '') { if (first == null) first = k; if (k >= x0) reads.push([k, +r.weight]); } }
   if (first != null && tOf(date) >= 0) for (let k = Math.max(x0, first); k <= Math.min(x1, t); k++) { const v = current('weight', dOf(k)); if (v != null) trend.push([k, v]); }
   const showEnd = x1 === Dd, proj = showEnd && st && st.proj != null && t < Dd && trend.length ? [[t, st.cur], [Dd, st.proj]] : null, goal = showEnd && st ? st.goal : null;
   const vals = zone.flatMap(z => [z[1], z[2]]).concat(reads.map(r => r[1]), trend.map(r => r[1]), proj ? [proj[1][1]] : [], goal != null ? [goal] : []);
@@ -5596,33 +5810,55 @@ function recordsTab() {
 }
 
 /* ---------- Bind + animations ---------- */
+// the tabs you arrive from (and a fresh start): the page comes in with its count-up and growing bars; back from a page of its
+// own, a refresh or a period switch: it is simply there
+const SC_ARRIVE = { today: 1, journey: 1, cal: 1 };
+const scReduce = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 function bindDash() {
-  const date = scDate(), tab = R.stab || 'scan';
-  const setTab = (k, dir) => { if ((R.stab || 'scan') === k) return; R._stabPrev = R.stab || 'scan'; R.stab = k; R._scMode = 'tab'; window.scrollTo(0, 0); render(); };
-  app.querySelectorAll('[data-stab]').forEach(b => b.onclick = () => setTab(b.dataset.stab));
-  const pp = app.querySelector('[data-past]'); if (pp) pp.onclick = () => go('past', {});
-  const order = STABS.map(x => x[0]); bindSwipe($('#hpane'), () => { const i = order.indexOf(tab); if (i < order.length - 1) setTab(order[i + 1]); }, () => { const i = order.indexOf(tab); if (i > 0) setTab(order[i - 1]); });
-  const tp = $('[data-tips]'); if (tp) tp.onclick = e => { e.stopPropagation(); openTips(); };
+  const date = scDate();
+  app.querySelectorAll('[data-per]').forEach(b => b.onclick = () => { const k = b.dataset.per; if (k === scPer()) return; scPerSet(k); vib(8); const y = window.scrollY; R._scMode = 'period'; render(); window.scrollTo(0, y); });
+  const tc = $('[data-tipcard]'); if (tc) tc.onclick = () => openTips();
   const pl = $('[data-pl]'); if (pl) pl.onclick = () => plModal(date);
-  app.querySelectorAll('[data-go]').forEach(b => b.onclick = () => { const g = b.dataset.go; if (g === 'journey') { R.stack = []; go('journey', {}, false, 'fade'); } else setTab(g); });
+  app.querySelectorAll('[data-goals]').forEach(b => b.onclick = () => go('habits', {}));
+  app.querySelectorAll('[data-scd]').forEach(b => b.onclick = () => go('scd', { k: b.dataset.scd }));
+  app.querySelectorAll('[data-pastid]').forEach(b => b.onclick = () => pastProjectModal(b.dataset.pastid));
+  const pa = $('[data-pastall]'); if (pa) pa.onclick = () => go('past', {});
+  let mode = R._scMode || (R._prevScreen == null || SC_ARRIVE[R._prevScreen] ? 'enter' : 'none'); R._scMode = null;
+  if (scReduce()) mode = 'none';
+  SC_RUN++;
+  if (mode === 'period') scAnim($('#hpane'), [{ opacity: .35 }, { opacity: 1 }], { duration: 220 });
+  if (mode === 'enter') scEnter();
+}
+// arriving: the power level and Ki count up, the bars grow, the weight line draws
+function scEnter() {
+  const p = $('#hpane'); if (!p) return; const D0 = 950, O = 120;
+  const n = $('#pln'); if (n) { const v = +n.textContent.replace(/\D/g, ''); scCount(n, v, D0, O, x => Math.round(x).toLocaleString('en-GB'));
+    scAnim(n, [{ textShadow: '0 0 0 rgba(140,255,110,0)' }, { textShadow: '0 0 22px rgba(140,255,110,.95)', offset: .8 }, { textShadow: '0 0 8px #6dff4f,0 0 18px #2fd82a' }], { duration: D0 + 300, delay: O, fill: 'none' }); }
+  const k = $('#kin'); if (k) scCount(k, +k.dataset.c, D0, O + 150);
+  p.querySelectorAll('.scbar .tr i,.scg .gb i').forEach((b, i) => scAnim(b, [{ transform: 'scaleX(0)' }, { transform: 'none' }], { duration: 700, delay: 140 + Math.min(i, 8) * 50 }));
+  p.querySelectorAll('.kibars .kib').forEach((b, i) => scAnim(b, [{ transform: 'scaleY(0)' }, { transform: 'none' }], { duration: 600, delay: 160 + Math.min(i, 30) * 18 }));
+  const t = p.querySelector('#scwc .tr'); if (t && t.getTotalLength) { const L = t.getTotalLength(); scAnim(t, [{ strokeDasharray: L + ' ' + L, strokeDashoffset: L }, { strokeDasharray: L + ' ' + L, strokeDashoffset: 0 }], { duration: 700, delay: 80 }); }
+}
+// the detail pages: their own ranges and tabs, the old interactions
+function bindScd() {
+  const date = scDate(), k = R.params.k;
+  const keepY = () => { const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); };
   app.querySelectorAll('[data-metric]').forEach(el => el.onclick = () => metricTooltip(el.dataset.metric, date));
-  app.querySelectorAll('[data-wr]').forEach(b => b.onclick = e => { e.stopPropagation(); if ((R.wrange || 'all') === b.dataset.wr) return; R.wrange = b.dataset.wr; app.querySelectorAll('[data-wr]').forEach(x => x.classList.toggle('on', x === b)); const h = $('#wchart'); h.innerHTML = weightChart(date, R.wrange); SC_RUN++; scBody(); });
-  app.querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { if ((R.frange || '7d') === b.dataset.fr) return; R.frange = b.dataset.fr; const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); });
+  app.querySelectorAll('[data-wr]').forEach(b => b.onclick = e => { e.stopPropagation(); if ((R.wrange || 'all') === b.dataset.wr) return; R.wrange = b.dataset.wr; app.querySelectorAll('[data-wr]').forEach(x => x.classList.toggle('on', x === b)); const h = $('#wchart'); h.innerHTML = weightChart(date, R.wrange); SC_RUN++; if (!scReduce()) scBody(); });
+  app.querySelectorAll('[data-fr]').forEach(b => b.onclick = () => { if ((R.frange || '7d') === b.dataset.fr) return; R.frange = b.dataset.fr; keepY(); });
   app.querySelectorAll('[data-lognut]').forEach(b => b.onclick = () => go('nutrition', { date: today() }));
-  const bp = $('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) toast(r.error, 2400); const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); };
-  app.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { const [k, d, key] = b.dataset.open.split('|'); if (k === 'mt') go('mt', { date: d }); else go('workout', { date: d, key }); });
+  const bp = $('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) toast(r.error, 2400); if (R.screen === 'scd') keepY(); };
+  app.querySelectorAll('[data-open]').forEach(b => b.onclick = () => { const [kk, d, key] = b.dataset.open.split('|'); if (kk === 'mt') go('mt', { date: d }); else go('workout', { date: d, key }); });
   const bindRows = () => app.querySelectorAll('#rrows [data-ex]').forEach(b => b.onclick = () => go('exfile', { name: b.dataset.ex, fam: b.dataset.fam || '' }));
   bindRows();
   app.querySelectorAll('[data-rtab]').forEach(b => b.onclick = () => { if ((R.rtab || 'pb') === b.dataset.rtab) return; R.rtab = b.dataset.rtab; const box = app.querySelector('.rtabs4'); box.classList.toggle('vol', R.rtab === 'vol'); box.classList.toggle('pb', R.rtab === 'pb'); app.querySelectorAll('[data-rtab]').forEach(x => x.classList.toggle('on', x === b));
     const hint = box.nextElementSibling; if (hint && hint.classList.contains('empty')) hint.remove(); if (R.rtab === 'vol') box.insertAdjacentHTML('afterend', '<div class="empty" style="margin:4px 0 0;font-size:12px">Most weight moved in one session (sets × reps × kg). Bodyweight exercises: most reps in one session.</div>');
-    $('#rrows').innerHTML = recordRows(records(), R.rtab); bindRows(); SC_RUN++; scRecords(); });
-  // how it comes in: a light touch when you arrive on a tab, nothing when the screen only refreshes
-  let mode = R._scMode || (R._prevScreen === 'dash' ? 'none' : 'enter'); R._scMode = null;
-  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) mode = 'none';
-  SC_RUN++;
-  if (mode === 'tab') { const ind = app.querySelector('.htabs .ind'), pi = order.indexOf(R._stabPrev || tab); if (ind && pi >= 0) { const to = ind.style.left; ind.style.transition = 'none'; ind.style.left = (pi * 20 + 2) + '%'; void ind.offsetWidth; ind.style.transition = ''; ind.style.left = to; } }
-  if (mode === 'tab') scAnim($('#hpane'), [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 240 });
-  if (mode !== 'none') { const f = { scan: scScan, body: scBody, training: scTraining, records: scRecords }[tab]; if (f) f(); }
+    $('#rrows').innerHTML = recordRows(records(), R.rtab); bindRows(); SC_RUN++; if (!scReduce()) scRecords(); });
+  // coming in from the Scouter: the same light touch the old tabs had; back from an exercise or a refresh: nothing
+  const mode = R._scMode || (R._prevScreen === 'dash' ? 'enter' : 'none'); R._scMode = null; SC_RUN++;
+  if (mode !== 'enter' || scReduce()) return;
+  if (k === 'body') scBody(); else if (k === 'lifts') { scRecords(); scTraining(); }
+  else if (k === 'ki') $('#hpane').querySelectorAll('.kid').forEach((r, i) => { if (i < 12) scAnim(r, [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 260, delay: 40 + i * 30 }); });
 }
 let SC_RUN = 0;
 function scAnim(el, kf, o) { return el && el.animate ? el.animate(kf, Object.assign({ fill: 'backwards', easing: 'cubic-bezier(.2,.8,.2,1)' }, o)) : null; }
@@ -5633,18 +5869,6 @@ function scCount(el, to, dur, delay, f) {
 }
 function scGrow(set, dur, delay) { const r = SC_RUN; set(0); setTimeout(() => { const t0 = performance.now(); const step = () => { const k = Math.min(1, (performance.now() - t0) / dur); if (r !== SC_RUN) { set(1); return; } set(1 - Math.pow(1 - k, 3)); if (k < 1) requestAnimationFrame(step); }; step(); }, delay || 0); }
 const scPop = (el, delay, dur) => scAnim(el, [{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.15)', opacity: 1, offset: .6 }, { transform: 'scale(1)', opacity: 1 }], { duration: dur || 260, delay });
-// Scan: everything is already there — the crosshair locks on, the power level counts up, the balls you collected pop in
-function scScan() {
-  const p = $('#hpane'); if (!p) return;
-  const ring = p.querySelector('.hero .ring'); scAnim(ring, [{ transform: 'scale(2.4) rotate(-110deg)', opacity: 0 }, { transform: 'scale(.92) rotate(6deg)', opacity: 1, offset: .72 }, { transform: 'none', opacity: 1 }], { duration: 520, delay: 60 });
-  scLater(600, () => scAnim(ring, [{ opacity: 1 }, { opacity: .2 }, { opacity: 1 }, { opacity: .2 }, { opacity: 1 }], { duration: 300, fill: 'none', easing: 'steps(4,end)' }));
-  const n = $('#pln'), plv = +n.textContent.replace(/\D/g, ''), pc = $('#plpct'), pct = +pc.textContent.replace(/\D/g, ''), D0 = 950, O = 120;
-  scCount(n, plv, D0, O, v => Math.round(v).toLocaleString('en-GB')); scCount(pc, pct, D0, O, v => Math.round(v) + ' %');
-  scAnim(n, [{ boxShadow: '0 0 0 rgba(140,255,110,0)' }, { boxShadow: '0 0 18px rgba(140,255,110,.7)', offset: .8 }, { boxShadow: '0 0 0 rgba(140,255,110,0)' }], { duration: D0 + 300, delay: O, fill: 'none' });
-  const segs = [...p.querySelectorAll('#plb i')], lit = segs.filter(x => x.classList.contains('on')).length; segs.forEach(x => x.classList.remove('on'));
-  segs.slice(0, lit).forEach((x, i) => scLater(O + Math.round(D0 * .85 * (i + 1) / lit), () => x.classList.add('on'))); setTimeout(() => segs.slice(0, lit).forEach(x => x.classList.add('on')), O + D0 + 120);
-  p.querySelectorAll('.rb .rbf').forEach((b, i) => scPop(b, 260 + i * 90, 360));
-}
 // Body: the trend line draws, then where it is heading
 function scBody() {
   const s = $('#wchart svg'); if (!s) return;
@@ -5652,7 +5876,6 @@ function scBody() {
   const pj = s.querySelector('.pj'); if (pj) { const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map(a => +pj.getAttribute(a)); scGrow(k => { pj.setAttribute('x2', x1 + (x2 - x1) * k); pj.setAttribute('y2', y1 + (y2 - y1) * k); }, 500, 700); }
   scAnim(s.querySelector('.goal'), [{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 1100 });
 }
-function scChart() { scBody(); }
 // Training: the numbers and bars fill; the list is simply there
 function scTraining() { const p = $('#hpane'); p.querySelectorAll('.kpis [data-c]').forEach((b, i) => scCount(b, +b.dataset.c, 750, 80 + i * 60)); p.querySelectorAll('.hbar .tr i,.hangs i').forEach((b, i) => scAnim(b, [{ transform: b.parentNode.classList.contains('hangs') ? 'scaleY(0)' : 'scaleX(0)' }, { transform: 'none' }], { duration: 700, delay: 120 + Math.min(i, 10) * 50 })); }
 // Records: static, only the NEW tags pop in
@@ -5711,7 +5934,7 @@ function bindExfile() {
   const name = R.params.name || '', fam = exFam(name, R.params.fam), kind = pbKind(name, fam === 'max' ? 'max' : 'main'), fv = v => kind === 'kg' ? (+v).toLocaleString('en-GB') + ' kg' : Math.round(v) + ' reps';
   app.querySelectorAll('[data-sess]').forEach(b => b.onclick = () => { const [d, key] = b.dataset.sess.split('|'); go('workout', { date: d, key }); });
   const gl = $('#xgl'); if (gl) wireSteppers(app.querySelector('.goal4'), inp => { const v = Math.max(0, Math.min(100, +inp.value || 0)); S.targets[name] = 1 + v / 100; save(); gl.innerHTML = exGoalLine(exRows(name, fam).filter(r => r.live && r.s.finished), S.targets[name], kind, fv); });
-  SC_RUN++; if (R._prevScreen !== 'dash' || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+  SC_RUN++; if ((R._prevScreen !== 'dash' && R._prevScreen !== 'scd') || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
   const p = $('#hpane'), l = p.querySelector('.xl2'); if (l && l.getTotalLength) { const L = l.getTotalLength(); scAnim(l, [{ strokeDasharray: L + ' ' + L, strokeDashoffset: L }, { strokeDasharray: L + ' ' + L, strokeDashoffset: 0 }], { duration: 700, delay: 80 }); }
   const xp = p.querySelector('.xpb'); if (xp) scPop(xp.lastElementChild, 700, 380);
 }
@@ -6936,6 +7159,27 @@ Object.assign(HR_DICT, {
 });
 // the day sheet's line: "Day 9 · Ball 7 of 7 · ~65 min · today" (pieces swapped one by one)
 HR_FRAG.push([/· Ball (\{\d+\}) of (\{\d+\})/g, '· Kugla $1 od $2'], [/· The dragon is waiting\b/g, '· Zmaj čeka'], [/· The dragon was waiting\b/g, '· Zmaj je čekao'], [/· Dragon summoned\b/g, '· Zmaj prizvan']);
+// v6 3b: the Scouter as one page (Skener) — the period switch, the cards, the detail pages
+Object.assign(HR_DICT, {
+  'Period': 'Razdoblje', 'Week': 'Tjedan', 'This week': 'Ovaj tjedan', 'This month': 'Ovaj mjesec', 'This project': 'Ovaj projekt', 'So far': 'Zasad',
+  'this week': 'ovaj tjedan', 'this month': 'ovaj mjesec', 'this project': 'ovaj projekt', 'so far': 'zasad',
+  'vs a week ago': 'u tjedan dana', 'vs a month ago': 'u mjesec dana', 'since day {0}': v => v[0] === '1' ? 'od prvog dana' : 'od dana ' + v[0], 'since the start': 'od početka',
+  'vs last week': 'prema prošlom tjednu', 'vs last month': 'prema prošlom mjesecu',
+  'Tip': 'Savjet', 'All tips ›': 'Svi savjeti ›', 'Last weigh-in': 'Zadnje vaganje', 'No weigh-in yet': 'Još nema vaganja',
+  '{0} of {1} on pace': '{0} od {1} u tempu', 'on pace': 'u tempu', 'behind': 'kasni', 'reached': 'dostignuto', '{0} → {1} of {2}': '{0} → {1} od {2}',
+  'Body details': 'Detalji tijela', 'Food details': 'Detalji prehrane', 'Ki details': 'Detalji Ki', 'All lifts & records': 'Sva dizanja i rekordi', 'Lifts & records': 'Dizanja i rekordi',
+  'All past projects': 'Svi prošli projekti', 'This one, so far': 'Ovaj, zasad', '{0} projects': v => v[0] + ' ' + hrPl(v[0], 'projekt', 'projekta', 'projekata'),
+  'strength +{0} %': 'snaga +{0} %', 'strength −{0} %': 'snaga −{0} %', 'strength ±{0} %': 'snaga ±{0} %', '±{0} kg': '±{0} kg',
+  'Not enough sessions to compare yet': 'Još nema dovoljno treninga za usporedbu', '{0} kg × {1} → {2}': '{0} kg × {1} → {2}',
+  '{0} s → {1} s': '{0} s → {1} s', '{0} s → {1}': '{0} s → {1}', '{0} → {1} s': '{0} → {1} s',
+  'Kcal / day': 'Kcal / dan', 'On target': 'Na cilju', 'avg {0} kcal': 'prosj. {0} kcal', '+{0} vs {1}': '+{0} prema {1}', '−{0} vs {1}': '−{0} prema {1}', '±{0} vs {1}': '±{0} prema {1}',
+  'day': 'dan', 'days': 'dana', 'Ki': 'Ki', '{0} Ki': '{0} Ki', 'avg {0} a day': 'prosj. {0} dnevno', 'Best streak': 'Najduži niz', 'day in a row': 'u komadu', 'days in a row': 'u komadu', 'Dragons': 'Zmajevi', 'summoned': 'prizvano',
+  'Kcal on target': 'Kcal na cilju', 'Protein on target': 'Proteini na cilju', 'No days yet': 'Još nema dana',
+  '●{0} since start': '●{0} od starta', 'Strength for your size (per kg^{0}): {1} → {2} (+{3} %)': 'Snaga za tvoju veličinu (po kg^{0}): {1} → {2} (+{3} %)',
+  'Strength for your size (per kg^{0}): {1} → {2} (-{3} %)': 'Snaga za tvoju veličinu (po kg^{0}): {1} → {2} (-{3} %)',
+});
+// chart labels are built from the Croatian month names already (4. STU · PRO): they stay as they are
+HR_MO.forEach(m => { const u = m.toUpperCase(); HR_DICT[u] = u; HR_DICT['{0}. ' + u] = '{0}. ' + u; });
 /* ---------- Boot ---------- */
 (async function boot() {
   i18nStart();   // Croatian: translate everything the app shows from here on
@@ -6950,7 +7194,7 @@ HR_FRAG.push([/· Ball (\{\d+\}) of (\{\d+\})/g, '· Kugla $1 od $2'], [/· The 
   if (shared.length === 1 && S.project) { R.stack = []; go('import', { file: shared[0] }, false); }
   else if (shared.length > 1 && S.project) { R.stack = []; startBatch(shared); }
   else start();
-  const bandTick = () => { if (!bandCfg() || document.hidden) return; bandFetch().then(r => { if (r.ok && r.changed && (R.screen === 'dash' || R.screen === 'profile')) render(); }); };
+  const bandTick = () => { if (!bandCfg() || document.hidden) return; bandFetch().then(r => { if (r.ok && r.changed && (R.screen === 'dash' || R.screen === 'scd' || R.screen === 'profile')) { const y = window.scrollY; render(); window.scrollTo(0, y); } }); };
   setTimeout(bandTick, 1500); setInterval(bandTick, 30 * 60 * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden && bandCfg() && (!S.health || !S.health.fetched || Date.now() - new Date(S.health.fetched) > 10 * 60 * 1000)) bandTick(); });
   // only a new calendar day moves Today along (you were on today's page when the day changed); otherwise you stay put

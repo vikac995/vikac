@@ -1,6 +1,6 @@
-# What to do now — updating to v5.7.0
+# What to do now — updating to v5.8.0
 
-This zip is the complete app at v5.7.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v5.8.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v5.7.0 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (from v5.0 it's the **gear** at the top right; before that a tab, called **Profile** before 1.6) → **Check for updates**. It should say "Version 5.7.0 found — reloading".
+1. Open the app on the phone. Go to **Settings** (from v5.0 it's the **gear** at the top right; before that a tab, called **Profile** before 1.6) → **Check for updates**. It should say "Version 5.8.0 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The phone's own bar under the app (orange before 4.0, dark now) and the app name come with the home-screen icon: Chrome refreshes them by itself within a few days, or right away when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -40,6 +40,7 @@ Nothing else changes: same address, same key, the bucket and the data stay. Work
 
 ## E. What changed since the version on your phone
 
+- v5.8.0 — **The one-page Scouter (v6 step 3b).** One switch at the top, *Week · Month · Project · All*, sets the whole page and compares it with the period before (opens on Project, then remembers your choice). From the top: the newest tip, Power level, your goals (main first, on pace or behind), Body (weight chart against the plan line, weight, body fat, muscle), Strength (push / pull / legs and the lifts that moved), Food (kcal, protein, days on target), **Ki** (the period's points, a small chart, perfect days, best streak, dragons) and past projects. Each card has a *details ›* row: the old Body, Food and Records tabs live there now, plus a Ki page that shows what each day earned. A day's Ki is now a whole number (.5 rounds up).
 - v5.7.0 — **Dragon balls, cycles and Journey (v6 step 3a).** **New ball rule:** every perfect day earns the next ball, on any day of the cycle; a missed day costs no balls, the set just waits. At 7 the ball in the tab bar becomes the dragon and stays until you hold it to summon; then the next perfect day starts again at the 1-star ball. Your past dragons are kept. **Cycles of any length:** Settings → *My plan* → the *+* tile adds a day, and a day's sheet has *Remove this day* (2–14 days). A new length starts with the next cycle; the current one finishes as planned. **Journey** is now *Cycles* and *Month*: finished cycles fold into one line (tap to open), the current cycle shows every day with what you did or what's planned, weight checkpoints every 5th day, and the cycles ahead fold up below.
 - v5.6.0 — **Habits & goals (v6 step 2b).** Settings → *Habits & goals*: every daily habit has an on/off switch; tap one to change its days (every day, chosen cycle days, or with certain workouts) and whether it counts for the ball (required, bonus, or auto as now). *+ Add a habit*: a tick (meal prep), a number with a target (water 3 L — a stepper on Today, done at the target) or steps from the band (done when reached). Changes apply from today on; past days keep their balls and points. **Goals**: body (weight, body fat or muscle), a lift, consistency or custom, each as the main goal or a side goal, with a one-line check whether the target is realistic. A main weight goal with your own target and date now drives the goal weight, the plan line and the power level.
 - v5.5.0 — **My plan and My profile (v6 step 2a).** Settings → *My plan*: phase (Cut / Maintain / Recomp / Bulk) with its kcal size, protein and motivation; length (*Ongoing* or a *Project* with cycles ↔ last day); the 8-day cycle — tap a day to change it, or hold and drag it onto another to swap (changes apply from today; past days keep what they were); the workouts. Settings → *My profile*: sex, age, height, activity (sitting / on my feet / physical work) and BMR, with the calculated value next to yours (*Use* takes it). **Estimates first:** with no band data, activity is estimated from your body and activity level plus your logged training (it replaces the old fixed band default); estimated numbers are marked *est.* — the kcal-left corner, the finished workout's kcal, Muay Thai sessions typed without kcal — and the Nutrition sheet says when the band or a screenshot would make it exact. Typed beats band beats estimate.
