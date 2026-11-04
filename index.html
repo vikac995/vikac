@@ -1258,6 +1258,26 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .t4strip .mb.cur{background:none;box-shadow:none}
 .t4strip .mb>img,.t4strip .mb>svg{transition:width .2s,height .2s,opacity .2s}
 .t4hero{margin-top:10px}
+/* smaller ring and day number; the strip shows date and weekday (weekday coloured by the day's training) */
+.t4head .day{font-size:31px}.t4head .day small{font-size:16px}
+.t4ring{width:140px;height:140px}
+.t4ring .ball{left:25px;top:25px;width:90px;height:90px}
+.t4ring.orb{margin:30px 0 26px}
+.t4orbit .ob,.t4orbit .ob>span{width:26px;height:26px}.t4orbit .ob{margin:-13px 0 0 -13px}
+.t4strip{gap:3px}
+.t4strip .arrow{width:24px;height:44px;flex:none;border-radius:8px;font-size:16px}
+.t4strip .mbw{flex:1;min-width:0;max-width:340px}
+.t4strip .mbs{gap:2px}
+.t4strip .mb{flex:1 1 0;min-width:0;width:auto;height:auto;padding:5px 0 4px;flex-direction:column;justify-content:flex-start;gap:2px}
+.t4strip .mb .mbb{height:25px;display:flex;align-items:center;justify-content:center}
+.t4strip .mb .mbb>img,.t4strip .mb .mbb>svg{width:22px!important;height:22px!important;opacity:.4;transition:width .2s,height .2s,opacity .2s}
+.t4strip .mb.got .mbb>img,.t4strip .mb.got .mbb>svg,.t4strip .mb.cur .mbb>img,.t4strip .mb.cur .mbb>svg{opacity:1}
+.t4strip .mb.cur .mbb>img,.t4strip .mb.cur .mbb>svg{width:25px!important;height:25px!important}
+.t4strip .mbd{font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.02em;color:var(--ink2);line-height:1}
+.t4strip .mbw2{font-family:"BarlowC",sans-serif;font-weight:700;font-size:10px;letter-spacing:.08em;line-height:1;text-transform:uppercase}
+.t4strip .mb:not(.cur) .mbd{color:var(--muted)}
+.t4strip .mbsel{height:100%;width:30px}
+.t4strip .mb.today::after{top:2px;right:3px}
 </style>
 </head>
 <body>
@@ -1265,7 +1285,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.7.1';
+const APP_VERSION = '4.7.2';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -3614,7 +3634,7 @@ function t4Ring(d, n, won, size) {
 const SHORT = { workout: 'finish the workout', mt: 'Muay Thai', nutrition: 'log nutrition', weigh: 'weigh in', hang: 'dead hangs', stretch: 'stretching', mobility: 'kick mobility' };
 function t4HeroHtml(date, info, cyc) {
   const dp = dayProgress(date), td = today(), future = date > td, won = cyc.todayDone;
-  const art = cyc.summonDay ? dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 114 }) : ballSvg({ stars: future ? dayStars(date) : cyc.star, state: won ? 'full' : 'hollow', size: 114 });
+  const art = cyc.summonDay ? dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 90 }) : ballSvg({ stars: future ? dayStars(date) : cyc.star, state: won ? 'full' : 'hollow', size: 90 });
   let cap;
   if (cyc.summonDay) cap = cyc.summoned ? '<div class="t4cap won">Dragon summoned</div>' : cyc.ready ? '<div class="t4cap won">7 / 7 balls · <b>the dragon is waiting</b></div>' : cyc.canSummon ? `<div class="t4cap">${dp.reqDone} of ${dp.req} · <b>finish the day to summon</b></div>` : `<div class="t4cap">${cyc.earned} / 7 balls · no summon this cycle</div>`;
   else if (won) cap = `<div class="t4cap won">${cyc.star}-star ball earned</div>`;
@@ -3622,8 +3642,8 @@ function t4HeroHtml(date, info, cyc) {
   else { const left = info.items.filter(it => it.req && !isDone(date, it.id)); cap = left.length === 1 ? `<div class="t4cap">${dp.reqDone} of ${dp.req} · <b>${left[0].id === 'workout' ? 'finish ' + esc(PROGRAM.workouts[left[0].key].name) : SHORT[left[0].id] || esc(left[0].label)}</b> for the ball</div>` : `<div class="t4cap">${dp.reqDone} of ${dp.req} to earn the <b>${cyc.star}-star ball</b></div>`; }
   // day 8: the seven balls of the cycle circle the dragon (lit ones collected); once the dragon has come they are gone
   const orbit = cyc.summonDay && !cyc.summoned ? `<div class="t4orbit ${cyc.canSummon ? 'on' : ''}">${[0, 1, 2, 3, 4, 5, 6].map(i => { const a = (-90 + i * 360 / 7) * Math.PI / 180;
-    return `<span class="ob" style="left:${(104 * Math.cos(a)).toFixed(1)}px;top:${(104 * Math.sin(a)).toFixed(1)}px"><span>${ballSvg({ stars: i + 1, state: i < cyc.earned ? 'full' : 'dim', size: 30 })}</span></span>`; }).join('')}</div>` : '';
-  return `<div class="t4hero"><div class="t4ring ${won ? 'won' : ''} ${orbit ? 'orb' : ''}" data-bigball>${t4Ring(dp.reqDone, dp.req, won)}<div class="ball" id="bigart">${art}</div>${orbit}</div>${cap}</div>`;
+    return `<span class="ob" style="left:${(86 * Math.cos(a)).toFixed(1)}px;top:${(86 * Math.sin(a)).toFixed(1)}px"><span>${ballSvg({ stars: i + 1, state: i < cyc.earned ? 'full' : 'dim', size: 26 })}</span></span>`; }).join('')}</div>` : '';
+  return `<div class="t4hero"><div class="t4ring ${won ? 'won' : ''} ${orbit ? 'orb' : ''}" data-bigball>${t4Ring(dp.reqDone, dp.req, won, 140)}<div class="ball" id="bigart">${art}</div>${orbit}</div>${cap}</div>`;
 }
 /* ---------- Day navigation: the header and the cycle strip stay put; only the day below them changes ----------
    Changing the day (swipe, ‹ ›, a day in the strip, ↩ Today) rewrites the header's words in place and moves the strip's
@@ -3633,14 +3653,15 @@ function t4StripBalls(date, cyc) {
   const td = today();
   return cyc.days.map(x => { const ok = x.comp === 'done' && x.cd <= 7, star = dayStars(x.date) - 0;
     const a = x.cd === 8 ? dragonBadgeSvg({ state: cyc.dragon ? 'done' : 'locked', size: 22 }) : ballSvg({ stars: star, state: ok ? 'full' : 'hollow', size: 22 });
-    return `<button class="mb ${ok || (x.cd === 8 && cyc.dragon) ? 'got' : ''} ${x.date === date ? 'cur' : ''} ${x.date === td ? 'today' : ''}" data-goto="${x.date}" aria-label="Day ${x.cd}${x.date === date ? ', shown' : ''}">${a}<i style="background:${DAYTYPES[x.type.k].color}"></i></button>`; }).join('');
+    const dt = parse(x.date), col = x.cd === 8 ? 'var(--gold)' : JCOL[x.type.k] || 'var(--muted)';
+    return `<button class="mb ${ok || (x.cd === 8 && cyc.dragon) ? 'got' : ''} ${x.date === date ? 'cur' : ''} ${x.date === td ? 'today' : ''}" data-goto="${x.date}" aria-label="${WD[dt.getDay()]} ${fmtShort(x.date)}, ${esc(x.cd === 8 ? 'summon day' : x.type.label)}${x.date === date ? ', shown' : ''}"><span class="mbb">${a}</span><span class="mbd">${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}</span><span class="mbw2" style="color:${col}">${WD[dt.getDay()].slice(0, 3)}</span></button>`; }).join('');
 }
 function t4StripHtml(date, cyc) { return `<div class="t4strip" id="t4strip" data-cyc="${cyc.num}"><button class="arrow" data-day="-1" aria-label="Previous day">‹</button><div class="mbw"><span class="mbsel"></span><div class="mbs">${t4StripBalls(date, cyc)}</div></div><button class="arrow" data-day="1" aria-label="Next day">›</button></div>`; }
 // the highlight behind the shown day glides to it (jumps when the strip changes cycle)
 function t4SelPlace(glide) {
   const st = $('#t4strip'); if (!st) return; const sel = st.querySelector('.mbsel'), cur = st.querySelector('.mb.cur'); if (!sel) return;
   if (!cur) { sel.style.opacity = 0; return; } sel.style.opacity = 1; sel.style.transition = glide ? '' : 'none';
-  sel.style.transform = `translateX(${cur.offsetLeft}px)`; if (!glide) { void sel.offsetWidth; sel.style.transition = ''; }
+  sel.style.width = cur.offsetWidth + 'px'; sel.style.transform = `translateX(${cur.offsetLeft}px)`; if (!glide) { void sel.offsetWidth; sel.style.transition = ''; }
 }
 function t4HeadText(date, info, cyc) { const td = today(); return WD[parse(date).getDay()].slice(0, 3) + ' ' + fmtShort(date) + ' · Cycle ' + cyc.num + (date === td ? '' : date < td ? ' · past' : ' · ahead'); }
 function t4HeadHtml(date, info, cyc) {
