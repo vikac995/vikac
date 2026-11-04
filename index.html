@@ -24,7 +24,7 @@
   --or:#FE7F0C;--or2:#FF9B45;--orsoft:rgba(254,127,12,.14);--yel:#FFD84D;--gold:#FFD84D;--goldbg:rgba(255,216,77,.13);
   --ok:#3DDC84;--oksoft:rgba(61,220,132,.13);--warn:#FFB74D;--warnsoft:rgba(255,183,77,.13);--bad:#FF6B5E;--badsoft:rgba(255,107,94,.13);
   --beam:#1FA2FF;--beam2:#8AF3FF;--blue:#5AB0FF;--bonus:#5AB0FF;--bonusbg:rgba(90,176,255,.13);
-  --push:#FF8A3D;--pull:#4C9BFF;--legs:#3FCB6B;--mt:#FF4F9A;--rest:#9A9AA6;
+  --push:#FF8A3D;--pull:#4C9BFF;--legs:#3FCB6B;--mt:#FF4F9A;--rest:#9A9AA6;--full:#F2C94C;--upper:#A97BFF;--lower:#2CC9B5;
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
   --shadow:none;--shadow-sm:none;
 }
@@ -563,7 +563,7 @@ hr{border-top-color:var(--line)}
 .ptabs{border-bottom:1px solid var(--line)}.ptabs button{color:var(--muted)}.ptabs button.on{color:var(--ink);border-bottom-color:var(--or)}
 .daytype{background:var(--s2);border:1.5px solid var(--line2);color:var(--ink);box-shadow:none}
 .daytype i{border-color:#000}
-.wtag{color:#0E0F12}.wtag.push{background:var(--push)}.wtag.pull{background:var(--pull)}.wtag.legs{background:var(--legs)}.wtag.mt{background:var(--mt)}.wtag.rest{background:var(--rest)}
+.wtag{color:#0E0F12}.wtag.push{background:var(--push)}.wtag.pull{background:var(--pull)}.wtag.legs{background:var(--legs)}.wtag.mt{background:var(--mt)}.wtag.rest{background:var(--rest)}.wtag.full{background:var(--full)}.wtag.upper{background:var(--upper)}.wtag.lower{background:var(--lower)}
 .eqi{background:#EFE7DB;border:0}
 .pbtag{background:var(--goldbg);color:var(--gold);border-color:rgba(255,216,77,.55)}
 /* modal, sheet, toast */
@@ -582,7 +582,7 @@ hr{border-top-color:var(--line)}
 .cell{background:var(--paper2);border:1.5px solid var(--line);color:var(--ink)}
 .cell.in{border-color:var(--line2)}.cell.today{box-shadow:0 0 0 2px var(--or)}.cell.sel{background:var(--or);color:#111}
 .cell .m{border-color:#000;background:var(--s3);color:var(--ink)}.cell .m.done{background:var(--ok);color:#0E0F12}
-.cell .w{color:#0E0F12}.cell .w.push{background:var(--push)}.cell .w.pull{background:var(--pull)}.cell .w.legs{background:var(--legs)}.cell .w.mt{background:var(--mt)}.cell .w.rest{background:var(--rest)}
+.cell .w{color:#0E0F12}.cell .w.push{background:var(--push)}.cell .w.pull{background:var(--pull)}.cell .w.legs{background:var(--legs)}.cell .w.mt{background:var(--mt)}.cell .w.rest{background:var(--rest)}.cell .w.full{background:var(--full)}.cell .w.upper{background:var(--upper)}.cell .w.lower{background:var(--lower)}
 .legend i{border-color:#000}
 .dl li{border-bottom-color:var(--line)}.dl li.today{background:var(--orsoft)}
 .cycrow{background:var(--card);border-color:var(--line)}.cycrow.cur{border-color:var(--or)}
@@ -1617,6 +1617,64 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 .cksug.skip{border-color:var(--line2);background:var(--card)}
 .cksug[hidden]{display:none}
 .ckrow .hopen{cursor:default}.ckrow .hopen:active{background:none}
+/* v6 4b: the setup questions and Where you are */
+.sq{padding-top:calc(12px + var(--sat))}
+.sqhd{display:flex;align-items:center;gap:12px}
+.sqb{width:44px;height:44px;flex:none;border-radius:13px;background:var(--card);border:1.5px solid var(--line2);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:0}
+.sqb:active{transform:translateY(1px)}
+.sqbar{flex:1;display:flex;gap:6px;padding:12px;border-radius:14px;background:var(--paper2);border:1.5px solid var(--line)}
+.sqbar i{flex:1;height:6px;border-radius:3px;background:var(--s3);transition:background .3s}
+.sqbar i.on{background:var(--or)}
+.sq .sqt{font-size:44px;margin:20px 2px 16px;color:#fff}
+.sqn{font-size:14px;color:var(--muted);margin:2px 3px 16px}
+.sq-connect .sqt,.sq-where .sqt{margin-bottom:14px}
+.seg4.s2{grid-template-columns:1fr 1fr}
+.sq .seg4 button{min-height:50px}
+.sqf{margin-top:14px}
+.sq .field input{min-height:50px}
+.sqshot{display:flex;align-items:flex-end}
+.sqshot .sy{width:100%;min-height:50px;justify-content:center;border:1.5px dashed rgba(255,155,69,.6);border-radius:12px;font-size:13px;text-transform:uppercase;padding:0 8px;text-align:center;line-height:1.1}
+.sqshot .sy svg{width:18px;height:18px;flex:none}
+.sqwarn{margin:4px 0 6px;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(255,107,94,.55);background:var(--badsoft);color:var(--bad);font-family:'BarlowC',sans-serif;font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:15px;text-align:center}
+.sqwarn[hidden]{display:none}
+.sq #fillStatus{min-height:18px;margin:2px 0}
+.botbar .btn:disabled{opacity:.4;box-shadow:none}
+.sqopts{display:grid;gap:9px}
+.sqopts button{min-height:74px;padding:12px 16px;border-radius:16px;background:var(--card);border:1.5px solid var(--line2);text-align:left;color:var(--ink);transition:background .15s,border-color .15s}
+.sqopts button b{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:20px;letter-spacing:.06em;text-transform:uppercase;line-height:1.1}
+.sqopts button small{display:block;font-size:14px;color:var(--muted);margin-top:3px}
+.sqopts button.on{border-color:var(--or);background:linear-gradient(160deg,#2a1b0d,var(--card) 75%)}
+.sqopts button.on small{color:var(--or2)}
+.sqbig{font-family:'Bangers',Impact,sans-serif;font-size:132px;line-height:1;text-align:center;color:var(--or);-webkit-text-stroke:2px #000;paint-order:stroke;text-shadow:5px 5px 0 #000;margin:6px 0 18px}
+.sqm{gap:5px}.sqm button{height:48px;font-size:17px}
+.sqends{display:flex;justify-content:space-between;margin:8px 2px 0;font-size:13.5px;color:var(--muted)}
+.sqdir button{min-height:64px;display:flex;align-items:center}
+.sqdir button b{font-size:16.5px}
+.sqchips button:disabled{opacity:.4}
+.sq .gchk{margin-top:10px}
+.sqweek{display:grid;grid-template-columns:repeat(var(--n,7),1fr);gap:5px;margin-top:14px;cursor:pointer}
+.sqd{display:block;min-width:0;padding:7px 2px 8px;border-radius:11px;background:var(--card);border:1.5px solid var(--line2);border-top:4px solid var(--c);text-align:center}
+.sqd small{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sqd b{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.02em;text-transform:uppercase;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sqfacts{background:var(--card);border:1.5px solid var(--line2);border-radius:16px;overflow:hidden}
+.sqfact{padding:13px 15px 14px;border-top:1px solid var(--line)}
+.sqfact:first-child{border-top:0}
+.sqfact .h{font-size:17px;line-height:1.35;color:var(--ink)}
+.sqfact .h b{font-family:'BarlowC',sans-serif;font-weight:700;font-size:21px;letter-spacing:.02em;color:var(--or2)}
+.sqfact .s{font-size:13.5px;line-height:1.4;color:var(--muted);margin-top:4px}
+.sqplan{margin-top:12px;padding:14px 16px 15px;border-radius:16px;border:1.5px solid rgba(254,127,12,.55);background:linear-gradient(160deg,#2a1b0d,var(--card) 70%);font-size:17px;line-height:1.55;color:var(--ink2)}
+.sqtap{display:inline;padding:0 1px;margin:0;border:0;border-bottom:2px dashed var(--or2);border-radius:0;background:none;min-height:0;font:inherit;font-weight:700;color:var(--ink);line-height:1.3;text-align:left}
+.sqtap:active{background:var(--orsoft)}
+.sqdoc{margin:18px 6px 0;font-size:13.5px;line-height:1.45;color:var(--muted);text-align:center}
+.sqrange{margin-top:10px;text-align:center;font-family:'BarlowC',sans-serif;font-weight:700;letter-spacing:.06em;font-size:14px;color:var(--muted);text-transform:uppercase}
+.sq-where .botbar .btn,.botbar .btn{flex:1}
+.sqchg>div{display:flex;align-items:baseline;gap:8px;padding:9px 2px;border-top:1px solid var(--line);font-size:16px;color:var(--ink)}
+.sqchg>div:first-child{border-top:0}
+.sqchg i{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-size:19px;width:12px;flex:none;text-align:center}
+.sqchg i.add{color:var(--ok)}.sqchg i.rem{color:var(--bad)}
+.sqchg .tl{margin-left:auto;font-size:13.5px;color:var(--muted);text-align:right}
+.sqkeepl{margin:8px 2px 0;font-size:13.5px;color:var(--muted)}
+.sq .nw{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -1624,7 +1682,7 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.9.0';
+const APP_VERSION = '5.10.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1691,8 +1749,65 @@ const PROGRAM = {
       EX('Cross body hammer curls', '1 × 3–5 heavy, 2 × 6–10 controlled', 3, 'hn'),
       EX('Face pulls', '5 min MAX', 1, 'max'),
     ]},
+    // v6 4b: the splits the setup suggests for 2–4 lifting days, built only from the exercises above (logging, PBs, records
+    // and the Scouter keep working: a lift counts under the push / pull / legs group it has in the workouts above).
+    // To be reviewed by the expert.
+    fullA: { name: 'Full body A', group: 'full', ex: [
+      EX('BB squats', '3 × 5 @ 85% 1RM', 3),
+      EX('DB bench press', '3 × 4–6 @ 2 RIR', 3),
+      EX('Weighted chins', '3 × 4–6 @ 2 RIR', 3),
+      EX('DB stiff leg deadlift', '1 × 3–5 heavy, 2 × 6–10', 3, 'hn'),
+      EX('DB side lateral raises', '1 × 3–5 heavy, 2 × 6–10', 3, 'hn'),
+      EX('Weighted pushups', '5 min MAX', 1, 'max'),
+    ]},
+    fullB: { name: 'Full body B', group: 'full', ex: [
+      EX('Deadlift', '3 × 5 @ 85% 1RM', 3),
+      EX('Incline DB bench press', '3 × 4–6 @ 2 RIR', 3),
+      EX('Lat pulldowns', '1 × 3–5 heavy, 2 × 6–10 controlled', 3, 'hn'),
+      EX('Alternating reverse DB lunges', '3 × 4–6 / side @ 2 RIR', 3),
+      EX('Face pulls', '1 × 3–5 heavy, 3 × 6–10 controlled', 4, 'hn'),
+      EX('Dips', '5 min MAX', 1, 'max'),
+    ]},
+    upperA: { name: 'Upper A', group: 'upper', ex: [
+      EX('DB bench press', '3 × 5 @ 85% 1RM', 3),
+      EX('Weighted chins', '3 × 4–6 @ 2 RIR', 3),
+      EX('DB overhead press', '3 × 4–6 @ 2 RIR', 3),
+      EX('Lat pulldowns', '1 × 3–5 heavy, 2 × 6–10 controlled', 3, 'hn'),
+      EX('Standing DB curls', '1 × 3–5 heavy, 2 × 6–10 controlled', 3, 'hn'),
+      EX('Triceps pushdown', '1 × 3–5 heavy, 2 × 6–10', 3, 'hn'),
+      EX('Pullups', '5 min MAX', 1, 'max'),
+    ]},
+    upperB: { name: 'Upper B', group: 'upper', ex: [
+      EX('Incline DB bench press', '3 × 5 @ 85% 1RM', 3),
+      EX('Lat pulldowns', '3 × 4–6 @ 2 RIR', 3),
+      EX('Close grip DB press', '3 × 4–6 @ 2 RIR', 3),
+      EX('Face pulls', '1 × 3–5 heavy, 3 × 6–10 controlled', 4, 'hn'),
+      EX('DB overhead extensions', '1 × 3–5 heavy, 2 × 6–10', 3, 'hn'),
+      EX('DB side lateral raises', '1 × 3–5 heavy, 2 × 6–10', 3, 'hn'),
+      EX('Dips', '5 min MAX', 1, 'max'),
+    ]},
+    lowerA: { name: 'Lower A', group: 'lower', ex: [
+      EX('BB squats', '3 × 5 @ 85% 1RM', 3),
+      EX('DB stiff leg deadlift', '3 × 4–6 @ 2 RIR', 3),
+      EX('Alternating reverse DB lunges', '1 × 3–5 heavy, 2 × 6–10', 3, 'hn'),
+      EX('Leg curl', '1 × 8 heavy, 2 × 12 controlled', 3, 'hn'),
+      EX('DB standing calf raises', '1 × 3–5 heavy, 2 × 6–10', 3, 'hn'),
+      EX('DB goblet squats', '5 min MAX', 1, 'max'),
+    ]},
+    lowerB: { name: 'Lower B', group: 'lower', ex: [
+      EX('Deadlift', '3 × 5 @ 85% 1RM', 3),
+      EX('DB alternating step ups', '3 × 4–6 @ 2 RIR', 3),
+      EX('Leg extension', '3 × 8 heavy, 1 × 12 controlled', 4, 'hn'),
+      EX('Leg curl', '1 × 8 heavy, 2 × 12 controlled', 3, 'hn'),
+      EX('DB seated calf raises', '1 × 3–5 heavy, 2 × 6–10', 3, 'hn'),
+      EX('Creeping lunges', '5 min MAX', 1, 'max'),
+    ]},
   },
 };
+// The lifting groups (push / pull / legs: the program above; full / upper / lower: the v6 4b splits) and the PPL group an
+// exercise has in the push / pull / legs workouts (the Scouter's bars, the training tile's art)
+const LIFT_GROUPS = ['push', 'pull', 'legs', 'full', 'upper', 'lower'], PPL = ['push', 'pull', 'legs'];
+function liftGroup(name) { for (const g of PPL) for (const k in PROGRAM.workouts) { const w = PROGRAM.workouts[k]; if (w.group === g && w.ex.some(e => e.n === name)) return g; } return null; }
 // Home-gym equipment per exercise (icons in the workout and Training screens). Pull-ups, chins, push-ups and dips count
 // as bodyweight even when weighted; the bench icon is added when the bench is needed.
 const EQUIP = {
@@ -2147,7 +2262,8 @@ function dayInfo0(date) {
   const plan = curPlan(), habits = habitsAt(date), vs = plan.variants || 'AB';
   // v6 3a: the cycle comes from the segments (cycles of any length); the A/B variant goes by the cycle's number
   const cy = cycAt(t), pat = planAt(date), cd = cy.cd, cyc = pat[cd] || { w: 'rest' }, cycleNum = cy.num;
-  const variant = vs[(cycleNum - 1) % vs.length];
+  // v6 4b: alt flips a day's variant, so a group twice in one cycle alternates (Upper A … Upper B, the next cycle B … A)
+  const variant = vs[(cycleNum - 1 + (cyc.alt ? 1 : 0)) % vs.length];
   // the plan says what the day is; you can change any day to whatever happened (Settings-free: the ⇄ on the training card)
   const planKey = cyc.w === 'rest' || cyc.w === 'mt' ? cyc.w : cyc.w + variant, ov = (S.days[date] || {}).plan;
   const key = ov && (ov === 'rest' || ov === 'mt' || PROGRAM.workouts[ov]) ? ov : planKey;
@@ -2278,10 +2394,10 @@ function kiTotal(fromDate, toDate) {
   for (let d = fromDate && fromDate > p.startDate ? fromDate : p.startDate; d <= last; d = addDays(d, 1)) sum += kiDay(d);
   return sum;
 }
-function workoutTag(info) { if (!info.items) return null; if (info.isMT) return { k: 'mt', t: 'MT' }; if (info.isRest) return { k: 'rest', t: 'Rest' }; const g = PROGRAM.workouts[info.workoutKey].group; return { k: g, t: g === 'push' ? 'Push ' + info.variant : g === 'pull' ? 'Pull ' + info.variant : 'Legs ' + info.variant }; }
+function workoutTag(info) { if (!info.items) return null; if (info.isMT) return { k: 'mt', t: 'MT' }; if (info.isRest) return { k: 'rest', t: 'Rest' }; const w = PROGRAM.workouts[info.workoutKey]; return { k: w.group, t: w.name }; }
 
 // Day types: label + colour for every kind of day, rest included
-const DAYTYPES = { push: { label: 'Push', color: '#E05A00' }, pull: { label: 'Pull', color: '#1C6DD0' }, legs: { label: 'Legs', color: '#1E8E3E' }, mt: { label: 'Muay Thai', color: '#C2185B' }, rest: { label: 'Rest', color: '#8A8A8A' } };
+const DAYTYPES = { push: { label: 'Push', color: '#E05A00' }, pull: { label: 'Pull', color: '#1C6DD0' }, legs: { label: 'Legs', color: '#1E8E3E' }, full: { label: 'Full body', color: '#C99A06' }, upper: { label: 'Upper', color: '#7B4FD6' }, lower: { label: 'Lower', color: '#0E9C8C' }, mt: { label: 'Muay Thai', color: '#C2185B' }, rest: { label: 'Rest', color: '#8A8A8A' } };
 function dayType(info) { if (!info.items) return null; if (info.isMT) return { k: 'mt', label: 'Muay Thai' }; if (info.isRest) return { k: 'rest', label: 'Rest' }; const w = PROGRAM.workouts[info.workoutKey]; return { k: w.group, label: w.name }; }
 // A cycle of the plan: its number, its days (up to the project's last day), first and last day. It says nothing about the
 // balls any more: they come from ballLog (every perfect day, whatever the cycle).
@@ -2803,6 +2919,128 @@ function phaseTargets(kind, motivation, o) {
   const kcal = Math.max(Math.ceil(lim.floor / 10) * 10, Math.round((b.burn - sd.v) / 10) * 10);
   return { kind: k, motivation: m, deficit: sd.v, kcal, protein: Math.round(b.weight * gkg / 5) * 5, pct: Math.round(pct * 100) / 100, gkg: Math.round(gkg * 100) / 100, cap: sd.cap,
     burn: b.burn, bmr: b.bmr, activity: b.activity, weight: Math.round(b.weight * 10) / 10, limits: lim };
+}
+
+/* ---------- The plan generator (v6 4b): the setup answers → a suggested plan ----------
+   suggestPlan(answers) is a pure function (the setup screens, Where you are, the re-run from Settings and the tests call it).
+   Answers: sex, age, height, weight, fat and muscle (optional), activity (sitting / feet / physical), level, motivation 1–10,
+   main and also (the directions: one main, up to two more), goalKg + goalBy (lose fat / build muscle as main), weekly (7 days)
+   or len (own cycle 2–14), lift (lifting days a cycle 2–6), minutes, prefer (weekdays / weekends), kit, sports ({ mt: 2, run: 1 … }),
+   start (the day the goal pace counts from), anchor (the date the cycle's day 1 falls on: weekdays), band (connected), bmr (keep
+   your own), and the two hand changes from Where you are: deficit, protein.
+   Daily burn = BMR (Katch-McArdle 370 + 21.6 × lean kg when the body fat is known, else Mifflin-St Jeor) + the everyday activity
+   estimate (BMR × 0.2 / 0.4 / 0.6) + the planned sessions' kcal averaged over the cycle (lifting 5 MET for the workout's planned
+   minutes, Muay Thai 8 MET for an hour; net kcal = (MET − 1) × kg × h, as the app estimates a day). The targets come from
+   phaseTargets (the phase's point for the motivation, inside the safety limits); a weight goal with a date sets the deficit to
+   its pace instead (still inside the limits; faster than 1 % a week for a loss, 0.5 % for a gain is flagged). */
+const DIRECTIONS = { lose: { label: 'Lose fat', kind: 'cut' }, muscle: { label: 'Build muscle', kind: 'bulk' }, strength: { label: 'Get stronger', kind: 'maintain' }, recomp: { label: 'Recomp', kind: 'recomp' }, maintain: { label: 'Maintain', kind: 'maintain' }, consistent: { label: 'Stay consistent', kind: 'maintain' } };
+const LEVELS = { beginner: { label: 'Beginner', sub: 'under 6 months' }, intermediate: { label: 'Intermediate', sub: '6 months – 2 years' }, advanced: { label: 'Advanced', sub: '2+ years' } };
+const KIT = { db: 'Dumbbells', cable: 'Cables or bands', gym: 'Full gym', bw: 'Bodyweight only' };
+const SPORTS = { mt: { label: 'Muay Thai' }, run: { label: 'Running', habit: 'Running' }, football: { label: 'Football', habit: 'Football' }, cycling: { label: 'Cycling', habit: 'Cycling' }, other: { label: 'Other', habit: 'Other sport' } };
+const MT_PLAN_MIN = 60;   // a planned Muay Thai session, for the energy estimate (the band or your log has the real minutes)
+// Body fat bands: where each starts (%), men / women. PLACEHOLDER — to be reviewed by the expert before it ships to others.
+const BODY_CATS = { m: [[2, 'essential'], [6, 'athletes'], [14, 'fitness'], [18, 'average'], [25, 'above average']], f: [[10, 'essential'], [14, 'athletes'], [21, 'fitness'], [25, 'average'], [32, 'above average']] };
+function bodyCat(fat, sex) {
+  const L = BODY_CATS[sex === 'f' ? 'f' : 'm']; let i = 0; for (let k = 0; k < L.length; k++) if (+fat >= L[k][0]) i = k;
+  return { key: L[i][1], lo: L[i][0], hi: i + 1 < L.length ? L[i + 1][0] - 1 : null };
+}
+const metK = (met, kg, min) => Math.round((met - 1) * kg * (+min || 0) / 60);
+// The lifting days in order: 2–3 Full body A / B, 4 Upper / Lower twice, 5–6 Push / Pull / Legs; a group's second day in a cycle
+// is its other variant (alt)
+function liftSeq(n) {
+  const g = n <= 3 ? ['full', 'full', 'full'] : n === 4 ? ['upper', 'lower', 'upper', 'lower'] : ['push', 'pull', 'legs', 'push', 'pull', 'legs'], seen = {}, out = [];
+  for (let i = 0; i < Math.min(n, g.length); i++) { const w = g[i], k = seen[w] || 0; seen[w] = k + 1; out.push(k % 2 ? { w, alt: 1 } : { w }); }
+  return out;
+}
+/* Where the days go: every placement of the lifting days (in their order) and the Muay Thai days is scored and the lowest wins
+   (ties: the first found). Two hard days running (the cycle wraps round) 10, three 4 more · legs / lower the day before Muay Thai 6 (full body 3)
+   · the same group two days running 3 · with a 7-day cycle, a training day on a day you'd rather not train while a rest day sits
+   on one you would 12 each (rest days go to the other days) · evenly spread lifting and Muay Thai days (the squared gaps, a little).
+   More lifting + Muay Thai days than the cycle has: Muay Thai days go first, then lifting days. */
+const PLAN_MEMO = new Map();
+function planCycle(o) {
+  const L = Math.max(CYC_MIN, Math.min(CYC_MAX, Math.round(+o.len) || 7)), n = Math.max(0, Math.min(L, Math.round(+o.lift) || 0)), want = Math.max(0, Math.round(+o.mt) || 0), m = Math.min(want, L - n);
+  const seq = liftSeq(n), dow0 = L === 7 && /^\d{4}-\d\d-\d\d$/.test(o.anchor || '') ? parse(o.anchor).getDay() : null, wkend = o.prefer === 'weekends';
+  const key = [L, n, want, dow0, wkend].join(); if (PLAN_MEMO.has(key)) return JSON.parse(PLAN_MEMO.get(key));   // the same answers, the same days
+  const pref = i => { if (dow0 == null) return true; const d = (dow0 + i) % 7, we = d === 0 || d === 6; return wkend ? we : !we; };
+  const t = new Array(L), gaps = (mask, k) => { if (k < 2) return 0; let s = 0, first = -1, prev = -1; for (let i = 0; i < L; i++) if (mask >> i & 1) { if (prev >= 0) s += (i - prev) * (i - prev); else first = i; prev = i; } return s + (first + L - prev) * (first + L - prev); };
+  const cost = (lm, mm) => {
+    let c = 0, li = 0;
+    for (let i = 0; i < L; i++) t[i] = lm >> i & 1 ? seq[li++].w : mm >> i & 1 ? 'mt' : 'rest';
+    for (let i = 0; i < L; i++) {
+      const a = t[i], b = t[(i + 1) % L];
+      if (a !== 'rest' && b !== 'rest') { c += 10; if (t[(i + 2) % L] !== 'rest' && L > 2) c += 4; }   // and three in a row
+      if (b === 'mt') c += a === 'legs' || a === 'lower' ? 6 : a === 'full' ? 3 : 0;
+      if (a !== 'rest' && a !== 'mt' && a === b) c += 3;
+    }
+    if (dow0 != null) { let off = 0, rest = 0; for (let i = 0; i < L; i++) { const h = t[i] !== 'rest'; if (h && !pref(i)) off++; if (!h && pref(i)) rest++; } c += 12 * Math.min(off, rest); }
+    return c + 0.1 * gaps(lm, n) + 0.05 * gaps(mm, m);
+  };
+  const bits = x => { let k = 0; while (x) { k += x & 1; x >>= 1; } return k; }, all = (1 << L) - 1, byBits = Array.from({ length: L + 1 }, () => []);
+  for (let x = 0; x <= all; x++) byBits[bits(x)].push(x);
+  let best = null, bc = Infinity;
+  // every set of n lifting days, and every set of m Muay Thai days among the others
+  for (const lm of byBits[n]) for (const mm of byBits[m]) { if (mm & lm) continue; const c = cost(lm, mm); if (c < bc - 1e-9) { bc = c; best = [lm, mm]; } }
+  const out = []; let li = 0;
+  for (let i = 0; i < L; i++) out.push(best[0] >> i & 1 ? Object.assign({}, seq[li++]) : best[1] >> i & 1 ? { w: 'mt' } : { w: 'rest' });
+  const res = { cycle: out, len: L, lift: n, mt: m, mtCut: want - m }; PLAN_MEMO.set(key, JSON.stringify(res)); return res;
+}
+// A bonus sport's days in the cycle (1-based): rest days first, then upper-body days, full body, Muay Thai, legs last; spread out,
+// and away from another sport's days
+function sportDays(cycle, n, taken) {
+  const L = cycle.length, pick = [], rank = w => w === 'rest' ? 0 : w === 'mt' ? 3 : w === 'legs' || w === 'lower' ? 4 : w === 'full' ? 2 : 1;
+  n = Math.max(0, Math.min(L, Math.round(+n) || 0));
+  while (pick.length < n) {
+    let bi = -1, bs = Infinity;
+    for (let i = 0; i < L; i++) { if (pick.includes(i)) continue; const dist = pick.length ? Math.min(...pick.map(j => Math.min(Math.abs(i - j), L - Math.abs(i - j)))) : 0, s = rank(cycle[i].w) * 10 + (taken[i] || 0) * 15 - dist; if (s < bs) { bs = s; bi = i; } }
+    pick.push(bi); taken[bi] = (taken[bi] || 0) + 1;
+  }
+  return pick.map(i => i + 1).sort((a, b) => a - b);
+}
+// The habits to start with: weigh-in and nutrition always (required); motivation 4+ dead hangs (every day); 7+ with Muay Thai
+// stretching for kicks and kick mobility (Muay Thai and leg / lower days), 7+ without it a steps habit (8,000: from the band when
+// connected, else a number); the other sports as bonus ticks on their days. The rest off. Built-in ids are kept.
+function suggestHabits(cycle, mot, sports, band) {
+  const hs = defaultHabits(), by = id => hs.find(h => h.id === id), mt = cycle.some(c => c.w === 'mt');
+  by('weigh').req = true; by('nutrition').req = true;
+  const hang = by('hang'); hang.sched = { kind: 'daily' }; if (mot < 4) hang.off = true;
+  for (const id of ['stretch', 'mobility']) { const h = by(id); h.sched = { kind: 'withWorkout', groups: ['legs', 'lower', 'mt'] }; if (!(mot >= 7 && mt)) h.off = true; }
+  if (mot >= 7 && !mt) hs.push(Object.assign({ id: 'h_steps', block: band ? 'band' : 'num', label: 'Steps', target: 8000, sched: { kind: 'daily' }, req: 'auto' }, band ? null : { unit: 'steps' }));
+  const taken = {}; for (const k of Object.keys(SPORTS)) if (k !== 'mt' && +(sports || {})[k] > 0) hs.push({ id: 'h_' + k, block: 'tick', label: SPORTS[k].habit, sched: { kind: 'cycleDays', days: sportDays(cycle, sports[k], taken) }, req: false });
+  return hs;
+}
+function suggestPlan(a) {
+  a = a || {}; const r1 = v => Math.round(v * 10) / 10, cl = (v, lo, hi, d) => Math.max(lo, Math.min(hi, Math.round(+v) || d));
+  const sex = a.sex === 'f' ? 'f' : 'm', age = +a.age || 30, height = +a.height || 175, weight = +a.weight > 0 ? +a.weight : 80, fat = +a.fat > 0 && +a.fat < 70 ? +a.fat : null;
+  const mot = cl(a.motivation, 1, 10, 7), act = ACTIVITY[a.activity] ? a.activity : 'sitting', level = LEVELS[a.level] ? a.level : 'intermediate';
+  const dirs = [a.main].concat(Array.isArray(a.also) ? a.also : []).filter((x, i, l) => DIRECTIONS[x] && l.indexOf(x) === i).slice(0, 3); if (!dirs.length) dirs.push('maintain');
+  const main = dirs[0], kind = DIRECTIONS[main].kind, weekly = a.weekly !== false, len = weekly ? 7 : cl(a.len, CYC_MIN, CYC_MAX, 7), lift = cl(a.lift, 2, 6, 3);
+  const sports = {}; for (const k in SPORTS) if (+(a.sports || {})[k] > 0) sports[k] = Math.max(1, Math.min(14, Math.round(+a.sports[k])));
+  const kit = (Array.isArray(a.kit) ? a.kit : []).filter((x, i, l) => KIT[x] && l.indexOf(x) === i), minutes = [30, 45, 60, 75].includes(+a.minutes) ? +a.minutes : 60;
+  // energy
+  const lean = fat != null ? weight * (1 - fat / 100) : null, own = +a.bmr > 0;
+  const bmr = own ? Math.round(+a.bmr) : lean != null ? Math.round(370 + 21.6 * lean) : mifflin(weight, height, age, sex), bmrHow = own ? 'own' : lean != null ? 'katch' : 'mifflin';
+  const cy = planCycle({ len, lift, mt: sports.mt || 0, prefer: a.prefer, anchor: weekly ? a.anchor || a.start : null });
+  let tk = 0; for (const c of cy.cycle) tk += c.w === 'mt' ? metK(MET_MT, weight, MT_PLAN_MIN) : c.w === 'rest' ? 0 : metK(MET_LIFT, weight, (workoutMinutes(c.w + 'A') + workoutMinutes(c.w + 'B')) / 2);
+  const activity = Math.round(bmr * ACTIVITY[act].f), training = Math.round(tk / cy.len), burn = bmr + activity + training;
+  // targets: the phase's point for the motivation; a weight goal with a date sets the pace (inside the safety limits)
+  const t = phaseTargets(kind, mot, { weight, sex, age, height, bmr, activity: activity + training });
+  let deficit = t.deficit, cap = t.cap, goal = null;
+  if ((main === 'lose' || main === 'muscle') && +a.goalKg > 0 && /^\d{4}-\d\d-\d\d$/.test(a.goalBy || '') && a.start && a.goalBy > a.start) {
+    const days = diffDays(a.start, a.goalBy), sg = main === 'lose' ? 1 : -1, kg = +a.goalKg, perWeek = kg * 7 / days, limPct = main === 'lose' ? 1 : 0.5, sd = safeDeficit(sg * kg * 7700 / days, t.limits);
+    deficit = sd.v; cap = sd.cap; goal = { kg, by: a.goalBy, target: r1(weight - sg * kg), perWeek, ok: perWeek <= weight * limPct / 100 + 1e-9, limPct, lose: sg > 0 };
+  }
+  if (kind !== 'maintain' && a.deficit != null && a.deficit !== '' && isFinite(+a.deficit)) { const sd = safeDeficit(+a.deficit, t.limits); deficit = sd.v; cap = sd.cap; }
+  const protein = +a.protein > 0 ? Math.round(+a.protein) : t.protein;
+  const habits = suggestHabits(cy.cycle, mot, sports, !!a.band), goals = [];
+  if (goal) goals.push({ id: 'g_main', type: 'body', metric: 'weight', target: goal.target, by: goal.by, main: true, created: a.start });
+  if (dirs.includes('consistent')) goals.push({ id: 'g_consistency', type: 'consistency', target: 6, main: false, created: a.start });
+  return {
+    profile: { sex, age, height, activity: act, level, directions: dirs, kit, sports, minutes, week: { weekly, len, lift, prefer: a.prefer === 'weekends' ? 'weekends' : 'weekdays' } },
+    kind, motivation: mot, deficit, protein, cap, limits: t.limits, kcal: Math.max(Math.ceil(t.limits.floor / 10) * 10, Math.round((burn - deficit) / 10) * 10), rate: deficit * 7 / 7700, goal,
+    bmr, bmrHow, activity, training, burn, body: fat != null ? { fat, cat: bodyCat(fat, sex), lean: r1(lean), sex } : null,
+    cycle: cy.cycle, len: cy.len, lift: cy.lift, mt: cy.mt, mtCut: cy.mtCut, trainDays: cy.lift + cy.mt, habits, goals, ongoing: true, dirs, main,
+  };
 }
 
 /* ---------- Check-in (v6 4a): the last day of every cycle ----------
@@ -3945,7 +4183,7 @@ function render(anim) {
   if (!fsIn && !fsOut) animate(app.querySelector('.screen'), anim);
   app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (b._held) { b._held = false; return; } if (b.dataset.nav === 'today' && restOn()) { go('workout', { date: REST.date, key: REST.key }, true, 'up'); return; } if (R.screen === b.dataset.nav && !R.stack.length && !app.querySelector('.errscr')) { if (R.screen === 'today' && R.date !== today() && dayInfo(today()).items) { const dir = today() > R.date ? 'right' : 'left'; R.date = today(); patchToday(dir); return; } window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
-  const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, scd: bindScd, exfile: bindExfile, project: bindProject, myplan: bindMyPlan, me: bindMe, habits: bindHabits, goal: bindGoal, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
+  const binder = { setupq: bindSq, today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, scd: bindScd, exfile: bindExfile, project: bindProject, myplan: bindMyPlan, me: bindMe, habits: bindHabits, goal: bindGoal, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
   R._prevScreen = R._curScreen; R._curScreen = R.screen;
   // the scouter paints the phone's status bar green
   const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = R.screen === 'dash' || R.screen === 'scd' || R.screen === 'exfile' ? '#0a2e12' : '#0E0F12';
@@ -3954,7 +4192,7 @@ function render(anim) {
   if (FS_SCREENS[R.screen]) fsBindDrag();
   if (fsIn) fsSlideUp(under); else if (fsOut) fsSlideDown(over);
 }
-function screenHtml(name) { return { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, scd: scdHtml, exfile: exfileHtml, project: projectHtml, myplan: myPlanHtml, me: meHtml, habits: habitsHtml, goal: goalHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[name]; }
+function screenHtml(name) { return { setupq: sqHtml, today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, scd: scdHtml, exfile: exfileHtml, project: projectHtml, myplan: myPlanHtml, me: meHtml, habits: habitsHtml, goal: goalHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[name]; }
 // A screen that throws shows this instead of freezing the app (and the tab or view that broke is reset, so the next tap works)
 function logError(e) { try { localStorage.setItem('vikac.lasterr', JSON.stringify({ at: new Date().toISOString(), v: APP_VERSION, screen: R.screen, msg: (e && e.message) || String(e), stack: ((e && e.stack) || '').slice(0, 900) })); } catch (x) {} }
 function errorScreen(e) {
@@ -3987,10 +4225,10 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 let timers = [];
 function stopTimers() { timers.forEach(t => clearInterval(t)); timers = []; }
 
-/* ---------- Setup (two steps) ---------- */
-// Defaults for a new project: after a past project, start today from its last readings; otherwise the built-in numbers
+/* ---------- Setup: the intro (name, Day 1) and then the questions (setup.js) ---------- */
+// Defaults for a new project: Day 1 today; after a past project, its last readings and numbers
 function newSetupData() {
-  ensureArchive(); const d = Object.assign(JSON.parse(JSON.stringify(DEFAULT_PROJECT)), { name: '' }), prev = S.archive[0];
+  ensureArchive(); const d = Object.assign(JSON.parse(JSON.stringify(DEFAULT_PROJECT)), { name: '', startDate: today() }), prev = S.archive[0];
   if (prev) {
     const td = today(); d.startDate = td; d.endDate = addDays(td, 58);
     const dates = Object.keys(prev.readings || {}).sort().reverse();
@@ -4354,7 +4592,7 @@ function projectChip(p) { const td = today(); if (td < p.startDate) return ['mut
 async function startNewProjectFlow() {
   const p = P();
   if (!await ask('Start a new project?', `<b>${esc(p.name)}</b> moves to Past projects with everything you logged. You can reopen it any time.`, 'Start new')) return;
-  archiveCurrent(); save(); R.setupData = null; R.setupStep = 1; R.editProject = false; R.stack = []; render('fade'); window.scrollTo(0, 0);
+  archiveCurrent(); save(); R.setupData = null; R.setupStep = 1; R.sq = null; R.editProject = false; R.stack = []; render('fade'); window.scrollTo(0, 0);
 }
 
 /* ---------- Project title lettering (setup screen) ---------- */
@@ -4375,6 +4613,7 @@ window.addEventListener('popstate', () => {
   const ov = topModal(), dr = document.querySelector('.summon');
   if (dr) { dr._close(); armBack(); return; }
   if (ov) ov.close ? ov.close() : ov.remove();
+  else if (sqPop()) {}   // the setup questions: one screen back
   else if (R.stack.length) back();
   else if (R.screen !== 'today') { R.stack = []; R.date = today(); go('today', {}, false); }
   else if (R.date !== today()) { R.date = today(); render(); }
@@ -4633,6 +4872,9 @@ function t4StripRefresh(date, cyc, dir) {
   else t4SelPlace(false);
 }
 function liftKind(info) { return info.workoutKey ? PROGRAM.workouts[info.workoutKey].group : info.isMT ? 'mt' : 'rest'; }
+// the tile's art: push / pull / legs have their own; Full body, Upper and Lower show their first lift's movement (squats → legs,
+// deadlift → pull, bench → push)
+function liftArtKind(info) { const k = liftKind(info); if (!info.workoutKey || PPL.includes(k)) return k; return liftGroup(PROGRAM.workouts[info.workoutKey].ex[0].n) || 'push'; }
 // New PBs set in one session: exercises where this session beats every other session
 function sessionPBs(s) { return s.ex.filter(e => { const t = exType(e.n), c = entryPB(e, t), o = exPB(e.n, t, s.id); return c > 0 && o && c > o.v; }).length; }
 function wtHtml(date, info, cyc) {
@@ -4650,7 +4892,7 @@ function wtHtml(date, info, cyc) {
         ${pl.length ? `<div class="pbs"><span class="pbtag">${TROPHY}PB</span>${pl.map(x => `<b>${esc(x.n)}</b> ${esc(x.v)}`).join(' · ')}</div>` : ''}</div>`; }
     const kinds = []; w.ex.forEach(e => (EQUIP[e.n] || '').split(' ').forEach(q => { if (q && !kinds.includes(q)) kinds.push(q); }));
     const started = s && s.ex.some(e => e.done || e.sets.some(st => st.kg || st.reps) || e.reps);
-    return `<div class="wt ${k}" data-wt>${liftArtHtml(k)}${lab}<div class="t h1">${esc(w.name)}</div><div class="s">${started ? s.ex.filter(e => e.done).length + '/' + w.ex.length + ' done' : w.ex.length + ' exercises'} · ~${m} min</div>${chg}
+    return `<div class="wt ${k}" data-wt>${liftArtHtml(liftArtKind(info))}${lab}<div class="t h1">${esc(w.name)}</div><div class="s">${started ? s.ex.filter(e => e.done).length + '/' + w.ex.length + ' done' : w.ex.length + ' exercises'} · ~${m} min</div>${chg}
       <div class="eqrow">${kinds.map(q => `<span class="eqi ${q}">${EQ_SVG[q]}</span>`).join('')}</div>
       <button class="btn big" data-startwo>${future ? 'Preview workout' : started ? 'Continue ▶' : 'Start workout ▶'}</button></div>`;
   }
@@ -4764,7 +5006,7 @@ const SWAP_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stro
 function planName(k) { return k === 'rest' ? 'Rest' : k === 'mt' ? 'Muay Thai' : PROGRAM.workouts[k] ? PROGRAM.workouts[k].name : k; }
 function chgHtml(info) { return info.planKey ? `<button class="chg" data-chg>${SWAP_IC}<span>${info.changed ? 'Plan: ' + esc(planName(info.planKey)) : 'Change'}</span></button>` : ''; }
 function changeDaySheet(date) {
-  const info = dayInfo(date); if (!info.items) return; const opts = ['pushA', 'pushB', 'pullA', 'pullB', 'legsA', 'legsB', 'mt', 'rest'];
+  const info = dayInfo(date); if (!info.items) return; const opts = planWorkoutKeys([info.dayKey, info.planKey]).concat(['mt', 'rest']);
   const sub = k => k === 'rest' ? 'weigh-in, food, hangs, stretching' : k === 'mt' ? 'minutes and kcal from the band' : PROGRAM.workouts[k].ex.length + ' exercises · ~' + workoutMinutes(k) + ' min';
   const col = k => JCOL[k === 'rest' || k === 'mt' ? k : PROGRAM.workouts[k].group] || 'var(--muted)';
   const row = k => `<button class="srow chrow ${info.dayKey === k ? 'cur' : ''}" data-k="${k}"><span class="cdot" style="background:${col(k)}"></span><span class="st"><b>${esc(planName(k))}</b><span>${sub(k)}</span></span>${info.planKey === k ? '<span class="stc off">Plan</span>' : ''}${info.dayKey === k ? '<span class="stc on">✓</span>' : ''}</button>`;
@@ -5241,7 +5483,14 @@ function importHtml() {
 IC4.journey = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="5" r="2.2"/><path d="M8 18.5c5 0 3-5 6-6.5s4 0 4-5"/></svg>';
 IC4.flame = '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 22c4 0 7-2.8 7-7 0-4-3-6.5-4-10-2 2-2.5 4-2.5 5.5C11 9 10 7.5 10 5.5 7 8 5 11 5 15c0 4.2 3 7 7 7z" fill="#FFD84D"/></svg>';
 IC4.chev = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
-const JCOL = { push: 'var(--push)', pull: 'var(--pull)', legs: 'var(--legs)', mt: 'var(--mt)', rest: 'var(--rest)' };
+const JCOL = { push: 'var(--push)', pull: 'var(--pull)', legs: 'var(--legs)', full: 'var(--full)', upper: 'var(--upper)', lower: 'var(--lower)', mt: 'var(--mt)', rest: 'var(--rest)' };
+// The day types the plan uses (now or on days already lived) and rest, in a fixed order: the Month legend (the built-in cycle
+// gives exactly the old one: Push, Pull, Legs, Muay Thai, Rest)
+function planTypes() { const plan = curPlan(), used = new Set(['rest']); const add = c => (c || []).forEach(x => x && used.add(x.w));
+  add(plan.cycle); (plan.prev || []).forEach(v => add(v && v.cycle)); return Object.keys(DAYTYPES).filter(k => used.has(k)); }
+// The workouts "Change the day" offers: both variants of every lifting group in the plan (or kept for days gone), plus extra keys
+function planWorkoutKeys(extra) { const gs = planTypes().filter(k => LIFT_GROUPS.includes(k)), out = []; for (const g of gs) for (const k in PROGRAM.workouts) if (PROGRAM.workouts[k].group === g) out.push(k);
+  for (const k of extra || []) if (k && PROGRAM.workouts[k] && !out.includes(k)) out.push(k); return out; }
 // What a project day is, in a few words: title, its kind (the colour) and the planned line
 function dayPlan(d) {
   const info = dayInfo(d); if (!info.items) return null;
@@ -5407,7 +5656,7 @@ function monthHtml() {
   return `<div class="mhead ${bn ? 'banner' : ''}">${bn ? `<div class="mbg" style="background-image:url(banner-${season}.png)"></div>` : ''}${s ? s.replace('class="sea"', 'class="sea l"') : ''}${s ? s.replace('class="sea"', 'class="sea r"') : ''}${!bn && ART['ground-' + season] ? `<div class="gr" style="background-image:url(ground-${season}.png)"></div>` : ''}
       <div class="mn"><span class="h1">${MONTHS[M - 1]}</span><div class="myr"><button class="mnav l" data-jm="-1" ${R.jmonth <= p.startDate.slice(0, 7) ? 'disabled' : ''} aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="cond mut">${Y}</span><button class="mnav r" data-jm="1" ${R.jmonth >= (isOngoing() ? horizonDate() : p.endDate).slice(0, 7) ? 'disabled' : ''} aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div></div></div>
     <div class="mgrid">${cells}</div>
-    <div class="leg4">${['push', 'pull', 'legs', 'mt', 'rest'].map(k => `<span><i style="background:${JCOL[k]}"></i>${{ push: 'Push', pull: 'Pull', legs: 'Legs', mt: 'Muay Thai', rest: 'Rest' }[k]}</span>`).join('')}</div>
+    <div class="leg4">${planTypes().map(k => `<span><i style="background:${JCOL[k]}"></i>${DAYTYPES[k].label}</span>`).join('')}</div>
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span class="mut" style="font-size:14px">${done} perfect of ${elapsed} day${elapsed === 1 ? '' : 's'}</span>${isOngoing() ? '' : `<b class="cond" style="font-size:16px">${Math.round(elapsed / (D() + 1) * 100)} % done · ${D() + 1 - elapsed} left</b>`}</div>`;
 }
 
@@ -6172,7 +6421,9 @@ function exRows(name, fam) {
 function exfileHtml() {
   const name = R.params.name || '', fam = exFam(name, R.params.fam), rows = exRows(name, fam), kind = pbKind(name, fam === 'max' ? 'max' : 'main');
   const fv = v => kind === 'kg' ? (+v).toLocaleString('en-GB') + ' kg' : Math.round(v) + ' reps';
-  const ws = Object.keys(PROGRAM.workouts).map(k => PROGRAM.workouts[k]).filter(w => w.ex.some(x => x.n === name && (x.type === 'max') === (fam === 'max'))), d0 = ws.length ? ws[0].ex.find(x => x.n === name) : null;
+  // the workouts it is in: the plan's (the built-in program: Push A · Push B), else every one
+  const wsAll = Object.keys(PROGRAM.workouts).map(k => PROGRAM.workouts[k]).filter(w => w.ex.some(x => x.n === name && (x.type === 'max') === (fam === 'max'))), wsPlan = wsAll.filter(w => planTypes().includes(w.group));
+  const ws = wsPlan.length ? wsPlan : wsAll, d0 = ws.length ? ws[0].ex.find(x => x.n === name) : null;
   const sub = ws.map(w => w.name).join(' · ') + (d0 && d0.s ? ' · ' + d0.s : '');
   const top = `<div class="hhead"><div class="xtop"><button class="xb" data-back aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><div style="min-width:0"><div class="bang">${esc(name)}${fam === 'max' && ws.length && allExerciseNames().includes(name) && exFam(name) === 'sets' ? ' (5 min)' : ''}</div><div class="xs">${esc(sub)}</div></div></div></div>`;
   let body = '';
@@ -6236,6 +6487,7 @@ Object.assign(IC4, {
   plan: SV('<rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3"/>'),
   user: SV('<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c1-4 4-6 7.5-6s6.5 2 7.5 6"/>'),
   habits: SV('<path d="M3.5 6.5l1.7 1.7L8.3 5M3.5 12.5l1.7 1.7 3.1-3.2M3.5 18.5l1.7 1.7 3.1-3.2M11.5 7h9M11.5 13h9M11.5 19h9"/>'),
+  quiz: SV('<rect x="5" y="4.5" width="14" height="17" rx="2.5"/><path d="M9 3h6v3H9z"/><path d="M8.5 11.5l1.6 1.6 3.2-3.2M8.5 17h7"/>'),
 });
 const agoTxt = t => { if (!t) return 'never'; const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago'; };
 // One row of a settings group: icon, title, line under it, an optional status chip, a chevron when it opens a page
@@ -6257,6 +6509,7 @@ function profileHtml() {
       ${srow({ ic: 'plan', tone: 'or', t: 'My plan', s: planSub(), go: 'myplan' })}
       ${srow({ ic: 'habits', t: 'Habits & goals', s: habitsSub(), go: 'habits' })}
       ${srow({ ic: 'user', t: 'My profile', s: profSub(), go: 'me' })}
+      ${srow({ ic: 'quiz', t: 'Setup questions', s: sqSub(), act: 'setupq', right: `<span class="chev">${IC4.chev}</span>` })}
       ${srow({ ic: 'flag', t: p.name, s: fmtShort(p.startDate) + (isOngoing() ? ' → ongoing' : ' → ' + fmtShort(p.endDate) + ' · goal ' + goalWeight() + ' kg'), chip: [chip[0] === 'or' ? 'or' : chip[0] === 'ok' ? 'on' : 'off', chip[1]], go: 'project' })}
       ${srow({ ic: 'plus', t: 'New project', s: 'this one moves to Past projects (in Scouter)', act: 'newp' })}</div>
     <div class="sgl">Connections</div><div class="sgrp">
@@ -6280,7 +6533,7 @@ function langSeg(k, cur) { return `<span class="lseg" data-notr role="group">${[
 function bindProfile() {
   app.querySelectorAll('[data-sgo]').forEach(b => b.onclick = () => go(b.dataset.sgo, {}));
   const mf = $('#mfpFile'), wb = app.querySelector('[data-go-cloud]'); if (wb) wb.onclick = () => ghOn() ? go('cloud', {}) : backupSheet();
-  const act = { newp: startNewProjectFlow, mfp: () => mf.click(), update: checkUpdates, reset: resetEverything, band: bandSheet, backup: backupSheet };
+  const act = { newp: startNewProjectFlow, mfp: () => mf.click(), update: checkUpdates, reset: resetEverything, band: bandSheet, backup: backupSheet, setupq: () => { R.sq = null; go('setupq', {}); } };
   app.querySelectorAll('[data-act]').forEach(b => b.onclick = () => act[b.dataset.act](b));
   app.querySelectorAll('[data-lset]').forEach(b => b.onclick = () => { if (b.classList.contains('on')) return; b.parentNode.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); setTimeout(() => setLangPart(b.dataset.lset, b.dataset.v), 120); });
   mf.onchange = async () => {
@@ -6303,7 +6556,7 @@ async function checkUpdates(row) {
 async function resetEverything() {
   if (!await ask('Delete everything?', 'The current project, past projects, all readings and workouts on this phone. Back up first if in doubt.', 'Delete all', true)) return;
   if (!await ask('Really?', 'This cannot be undone.', 'Yes, delete', true)) return;
-  S = { project: null, days: {}, readings: {}, sessions: [], targets: {}, archive: [], meta: { schema: 1, lastBackup: null, introSeen: true } }; save(); R.stack = []; R.setupData = null; R.setupStep = 1; render('fade');
+  S = { project: null, days: {}, readings: {}, sessions: [], targets: {}, archive: [], meta: { schema: 1, lastBackup: null, introSeen: true } }; save(); R.stack = []; R.setupData = null; R.setupStep = 1; R.sq = null; render('fade');
 }
 
 /* ---------- Project: name, dates, starting point (the targets live in My plan, height and age in My profile) ---------- */
@@ -6345,7 +6598,10 @@ function bindProject() {
 }
 
 /* ---------- My plan: phase, length, the cycle and the workouts — every change is saved at once ---------- */
-const DAY_TYPES = ['push', 'pull', 'legs', 'mt', 'rest'], TYPE_LABEL = { push: 'Push', pull: 'Pull', legs: 'Legs', mt: 'Muay Thai', rest: 'Rest' };
+const DAY_TYPES = ['push', 'pull', 'legs', 'full', 'upper', 'lower', 'mt', 'rest'], TYPE_LABEL = { push: 'Push', pull: 'Pull', legs: 'Legs', full: 'Full body', upper: 'Upper', lower: 'Lower', mt: 'Muay Thai', rest: 'Rest' };
+const TRAIN_TYPES = DAY_TYPES.filter(k => k !== 'rest');
+// the training day types the plan uses (a habit "with workouts" starts on all of them; the sheet offers the plan's types)
+function planTrainTypes() { return planTypes().filter(k => k !== 'rest'); }
 const fmtOff = v => v === 0 ? '±0' : (v < 0 ? '−' : '+') + fmtN(Math.abs(v));   // the day's kcal against maintenance
 function phaseSize(k) { const sz = (S.phase || {}).sizes || {}; return sz[k] != null ? sz[k] : Math.abs(PHASES[k].def); }
 function phaseOff(k) { const ph = S.phase || {}; if (ph.kind === k) return -(+ph.deficit || 0); return k === 'maintain' ? 0 : k === 'bulk' ? phaseSize(k) : -phaseSize(k); }
@@ -6364,7 +6620,7 @@ function myPlanHtml() {
   const p = P(), ph = S.phase, kind = ph.kind, og = isOngoing(), n = cycleLen(), cycles = projCycles();
   const seg = Object.keys(PHASES).map(k => `<button data-ph="${k}" class="${kind === k ? 'on' : ''}" aria-pressed="${kind === k}">${PHASES[k].label}<small>${fmtOff(phaseOff(k))}/day</small></button>`).join('');
   const len = ['ongoing', 'project'].map(k => `<button data-len="${k}" class="${(k === 'ongoing') === og ? 'on' : ''}" aria-pressed="${(k === 'ongoing') === og}">${k === 'ongoing' ? 'Ongoing' : 'Project'}</button>`).join('');
-  const lib = [['push', 'Push A/B'], ['pull', 'Pull A/B'], ['legs', 'Legs A/B'], ['mt', 'Muay Thai'], ['rest', 'Rest']].map(([k, l]) => `<span style="--c:${JCOL[k]}"><i></i>${l}</span>`).join('');
+  const lib = [['push', 'Push A/B'], ['pull', 'Pull A/B'], ['legs', 'Legs A/B'], ['full', 'Full body A/B'], ['upper', 'Upper A/B'], ['lower', 'Lower A/B'], ['mt', 'Muay Thai'], ['rest', 'Rest']].map(([k, l]) => `<span style="--c:${JCOL[k]}"><i></i>${l}</span>`).join('');
   return `<div class="screen pplan">${topbar('My plan', p.name)}
     <div class="sgl">Phase</div><div class="seg4" role="group" aria-label="Phase">${seg}</div>
     <div class="sgrp pcard">${kind === 'maintain' ? '' : prow(kind === 'bulk' ? 'Surplus' : 'Deficit', 'kcal / day', smallStepper('pdef', Math.abs(+ph.deficit || 0), '', 50))}
@@ -6413,10 +6669,13 @@ function cyclePaint(flash) {
   const pc = app.querySelector('[name=pcyc]'); if (pc && !KP.inp) pc.value = projCycles();
   const pe2 = app.querySelector('[name=pend]'); if (pe2) { pe2.value = S.project.endDate; pe2.previousElementSibling.textContent = dayYear(S.project.endDate); }
 }
-function cycleAdd() { if (S.plan.cycle.length >= CYC_MAX) return; if (editCycle(c => { c.push({ w: 'rest' }); })) save(); vib(15); cyclePaint([S.plan.cycle.length - 1]); }
-function cycleRemove(i) { if (S.plan.cycle.length <= CYC_MIN) return; if (editCycle(c => { c.splice(i, 1); })) save(); vib(15); cyclePaint(); }
-function cycleSet(i, w) { if (editCycle(c => { c[i].w = w; })) save(); cyclePaint([i]); }
-function cycleSwap(i, j) { if (i === j) return; if (editCycle(c => { const w = c[i].w; c[i].w = c[j].w; c[j].w = w; })) save(); vib(20); cyclePaint([i, j]); }
+// a lifting group on more than one day of the cycle alternates its variants there (its 2nd day is the other one: alt); a cycle
+// with each group once has no alt at all (the built-in program stays exactly as it was)
+function altFix(c) { const seen = {}; for (const d of c) { if (!LIFT_GROUPS.includes(d.w)) { delete d.alt; continue; } const k = seen[d.w] || 0; seen[d.w] = k + 1; if (k % 2) d.alt = 1; else delete d.alt; } return c; }
+function cycleAdd() { if (S.plan.cycle.length >= CYC_MAX) return; if (editCycle(c => { c.push({ w: 'rest' }); altFix(c); })) save(); vib(15); cyclePaint([S.plan.cycle.length - 1]); }
+function cycleRemove(i) { if (S.plan.cycle.length <= CYC_MIN) return; if (editCycle(c => { c.splice(i, 1); altFix(c); })) save(); vib(15); cyclePaint(); }
+function cycleSet(i, w) { if (editCycle(c => { c[i].w = w; altFix(c); })) save(); cyclePaint([i]); }
+function cycleSwap(i, j) { if (i === j) return; if (editCycle(c => { const w = c[i].w; c[i].w = c[j].w; c[j].w = w; altFix(c); })) save(); vib(20); cyclePaint([i, j]); }
 function cycleDaySheet(i) {
   const cur = S.plan.cycle[i].w;
   modal(`<div class="hdl"></div><div class="shd"><span class="h1">Day ${i + 1}</span><span></span></div>
@@ -6511,7 +6770,7 @@ function bandSheet() {
       bandSetCfg({ url, key }); btn.textContent = 'Checking…'; const r = await bandFetch(); if (!r.ok) { bandSetCfg(null); btn.textContent = 'Connect'; return toast(r.error, 2600); } b.close(); settingsRefresh(); toast(r.last ? 'Connected · band data found' : 'Connected · waiting for the first band data', 2600); };
   });
   const t = bandDay(today()) || {}, host = (() => { try { return new URL(c.url).host; } catch (e) { return c.url; } })();
-  setSheet('Band sync', h.last ? '<span class="stc on">On</span>' : '<span class="stc warn">Waiting</span>', `<div class="sgrp" id="bandkv">${kvr('Band data received', agoTxt(h.last))}${kvr('Last checked', agoTxt(h.fetched))}${kvr('Today', (t.steps != null ? fmtN(t.steps) + ' steps' : '— steps') + ' · ' + (t.active != null ? t.active + ' kcal' : '— kcal'))}${kvr('Inbox', esc(host))}</div>
+  return setSheet('Band sync', h.last ? '<span class="stc on">On</span>' : '<span class="stc warn">Waiting</span>', `<div class="sgrp" id="bandkv">${kvr('Band data received', agoTxt(h.last))}${kvr('Last checked', agoTxt(h.fetched))}${kvr('Today', (t.steps != null ? fmtN(t.steps) + ' steps' : '— steps') + ' · ' + (t.active != null ? t.active + ' kcal' : '— kcal'))}${kvr('Inbox', esc(host))}</div>
     <div class="lead4" style="margin-top:12px">Band → Mi Fitness → Health Connect → the inbox app sends new data every 30 minutes; the app picks it up when it is open.</div>
     <div class="row" data-foot><button class="btn sec" data-banddisc>Disconnect</button><button class="btn" data-bandsync>${IC4.sync}Sync now</button></div>`, b => {
     b.querySelector('[data-bandsync]').onclick = async e => { const btn = e.currentTarget; btn.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); btn.lastChild.textContent = 'Sync now'; if (!r.ok) toast(r.error, 2400);
@@ -6568,46 +6827,31 @@ function backupSheet() {
   });
 }
 
-/* ---------- New project: name and dates, then the starting point ---------- */
+/* ---------- First run: the intro (the name and Day 1), then the setup questions (setup.js) ----------
+   A plan starts ongoing (no end date): an end can be set later in My plan; the targets come from the questions. */
 function setupHtml() {
-  const d = R.setupData || (R.setupData = newSetupData()); ensureArchive(); const first = !S.archive.length, s = d.start, ph = first ? 'My first project' : 'New project';
-  const head = `<div class="setuphd"><div class="eyebrow4">${first ? 'First project' : 'New project'}</div><div class="center" id="ttl">${titleHtml(d.name || ph, !d.name)}</div><div class="steps"><i class="on"></i><i class="${R.setupStep >= 2 ? 'on' : ''}"></i></div></div>`;
-  if (R.setupStep === 1) return `<div class="screen bar sform">${head}
-    <div class="lead4 center">Name the mission and set the dates.</div>
+  if (R.setupStep > 1 && R.sq) return sqHtml();
+  const d = R.setupData || (R.setupData = newSetupData()); ensureArchive(); const first = !S.archive.length, ph = first ? 'My first project' : 'New project';
+  return `<div class="screen bar sform">
+    <div class="setuphd"><div class="eyebrow4">${first ? 'First project' : 'New project'}</div><div class="center" id="ttl">${titleHtml(d.name || ph, !d.name)}</div></div>
     <div class="field"><label>Project name</label><input name="name" value="${esc(d.name)}" placeholder="${ph}" maxlength="40"></div>
-    <div class="grid4"><div class="field"><label>Day 1</label><input name="startDate" type="date" value="${d.startDate}"></div><div class="field"><label>Final weigh-in</label><input name="endDate" type="date" value="${d.endDate}"></div></div>
-    <div class="grid4">${field4('deficit', 'Deficit / day (kcal)', d.deficit, '', 10)}${field4('protein', 'Protein / day (g)', d.protein, '', 5)}</div>
-    <div class="dbox" id="derived"></div>
+    <div class="field"><label>Day 1</label><input name="startDate" type="date" value="${d.startDate}"></div>
     ${S.archive.length ? `<button class="link center" id="setupCancel" style="width:100%;justify-content:center;margin-top:10px">Cancel — back to ${esc(S.archive[0].project.name)}</button>` : ''}</div>
     <div class="botbar"><button class="btn" id="next">Next</button></div>`;
-  return `<div class="screen bar sform">${head}
-    <div class="lead4 center">Your starting point — straight from the scale.</div>
-    <div class="secl"><span>${first ? 'Starting point' : 'From your last weigh-in'}</span><button class="sy" data-fill>${IC4.cam}Fill from screenshot</button></div>
-    <div class="grid4">${field4('weight', 'Weight (kg)', s.weight)}${field4('fat', 'Body fat (%)', s.fat)}${field4('muscle', 'Muscle (kg)', s.muscle)}${field4('skeletal', 'Skeletal (kg)', s.skeletal)}${field4('visceral', 'Visceral', s.visceral, '', 1)}${field4('water', 'Water (%)', s.water)}</div>
-    <div class="muted center small" id="fillStatus"></div>
-    <div class="dbox" id="derived"></div>
-    <details class="adv"><summary>Advanced: BMR, height, age, early water drop</summary>
-      <div class="grid4">${field4('bmr', 'BMR (kcal)', d.bmr, '', 10)}${field4('height', 'Height (cm)', d.height, '', 1)}${field4('age', 'Age', d.age, '', 1)}${field4('waterDrop', 'Early water drop (kg)', d.waterDrop)}</div>
-    </details><input type="file" accept="image/*" id="fillFile" hidden></div>
-    <div class="botbar"><button class="btn sec" id="prev">Back</button><button class="btn" id="startBtn">Start</button></div>`;
 }
 function bindSetup() {
-  const d = R.setupData;
-  const collect = () => { const o = readForm(app); for (const k in o) { if (k in d.start) d.start[k] = o[k]; else d[k] = o[k]; } };
-  const upd = () => { collect(); const el = $('#derived'); if (!el) return; const Dd = d.startDate && d.endDate ? diffDays(d.startDate, d.endDate) : 0;
-    el.innerHTML = R.setupStep === 1 ? (Dd > 0 ? `<b>${Dd} days</b>${d.start.weight && d.deficit ? ` → goal <b class="or">${(d.start.weight - d.deficit * Dd / 7700).toFixed(1)} kg</b>` : ''} · starting point next step` : 'Final weigh-in must come after Day 1') : derivedLine(Object.assign({ startDate: d.startDate, endDate: d.endDate, deficit: d.deficit }, d.start)); };
-  app.querySelectorAll('input').forEach(i => i.addEventListener('input', upd)); upd();
+  if (R.setupStep > 1 && R.sq) return bindSq();
+  const d = R.setupData || (R.setupData = newSetupData()), collect = () => { const o = readForm(app); d.name = o.name; d.startDate = o.startDate; };
+  app.querySelectorAll('input').forEach(i => i.addEventListener('input', collect));
   const nm = app.querySelector('[name=name]'); if (nm) nm.addEventListener('input', () => { $('#ttl').innerHTML = titleHtml(nm.value || nm.placeholder, !nm.value); });
-  const nx = $('#next'); if (nx) nx.onclick = () => { collect(); if (!d.startDate || !d.endDate || diffDays(d.startDate, d.endDate) < 7) return toast('End date must be at least a week after Day 1'); if (!d.deficit) return toast('Enter the daily deficit'); R.setupStep = 2; render('right'); window.scrollTo(0, 0); };
-  const pv = $('#prev'); if (pv) pv.onclick = () => { collect(); R.setupStep = 1; render('left'); window.scrollTo(0, 0); };
-  const sc = $('#setupCancel'); if (sc) sc.onclick = () => { const b = S.archive[0]; if (!b) return; reopenProject(b.id); save(); R.setupData = null; R.stack = []; R.date = today(); go('today', {}, false, 'fade'); };
-  const ff = $('#fillFile'); if (ff) { $('[data-fill]').onclick = () => ff.click(); ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, app, $('#fillStatus'), 'scale', () => upd()); ff.value = ''; }; }
-  const st = $('#startBtn'); if (st) st.onclick = () => {
-    collect(); if (!d.start.weight) return toast('Weight is required');
-    S.project = { name: (d.name || '').trim() || (S.archive.length ? 'New project' : 'My first project'), startDate: d.startDate, endDate: d.endDate, deficit: d.deficit, bmr: d.bmr || 1750, protein: d.protein || 180, waterDrop: d.waterDrop == null ? 0.5 : d.waterDrop, bandDefault: d.bandDefault == null ? 300 : d.bandDefault, height: d.height, age: d.age, start: { weight: d.start.weight, fat: d.start.fat, muscle: d.start.muscle, skeletal: d.start.skeletal, visceral: d.start.visceral, water: d.start.water } };
-    migrateState();   // plan, habits, phase, profile and goal for the new project (v6)
-    S.meta.createdAt = new Date().toISOString(); seedStartReading(); save(); R.stack = []; R.setupData = null; R.setupStep = 1; R.date = today(); go('today', {}, false, 'fade'); toast('Project started. Let\'s go!');
+  const nx = $('#next'); if (nx) nx.onclick = () => {
+    collect(); if (!/^\d{4}-\d\d-\d\d$/.test(d.startDate || '')) return toast('Pick Day 1');
+    // the questions keep their answers when you come back to change Day 1
+    if (!R.sq || R.sq.mode !== 'first') R.sq = sqNew('first');
+    const a = R.sq.a; if (a.start !== d.startDate) { if (!a.goalBy || a.goalBy <= d.startDate) a.goalBy = addDays(d.startDate, 84); a.start = d.startDate; }
+    R.setupStep = 2; render('right'); window.scrollTo(0, 0);
   };
+  const sc = $('#setupCancel'); if (sc) sc.onclick = () => { const b = S.archive[0]; if (!b) return; reopenProject(b.id); save(); R.setupData = null; R.sq = null; R.stack = []; R.date = today(); go('today', {}, false, 'fade'); };
 }
 
 /* ---------- Read screenshots: many at once, each to its own day ---------- */
@@ -6668,7 +6912,7 @@ function schedText(h) {
   const s = (h && h.sched) || {}, n = cycleLen();
   if (s.kind === 'cycleDays') { const d = [...new Set((s.days || []).filter(x => x >= 1 && x <= n))].sort((a, b) => a - b); return d.length >= n ? 'Every day' : !d.length ? 'No days' : d.length > 4 ? d.length + ' days a cycle' : (d.length === 1 ? 'Day ' : 'Days ') + d.join(' · '); }
   if (s.kind === 'withWorkout') { const g = DAY_TYPES.filter(k => (s.groups || []).includes(k)); if (!g.length) return 'No days'; if (g.length === DAY_TYPES.length) return 'Every day';
-    if (g.join() === 'push,pull,legs,mt') return 'Training days'; if (g.join() === 'rest') return 'Rest days';
+    if (g.join() === 'push,pull,legs,mt' || g.join() === TRAIN_TYPES.join() || g.join() === planTrainTypes().join()) return 'Training days'; if (g.join() === 'rest') return 'Rest days';
     const l = g.map(k => k === 'rest' ? 'rest' : TYPE_LABEL[k]); return 'On ' + (l.length === 1 ? l[0] : l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1]) + ' days'; }
   return 'Every day';
 }
@@ -6721,7 +6965,7 @@ function habitSheet(id) {
       + (own && h.block === 'band' ? `<div class="field"><label>Steps</label><input name="htarget" type="number" inputmode="numeric" step="500" value="${h.target == null ? 8000 : esc(h.target)}"></div>` : '')
       + `<div class="sgl">Schedule</div>${seg('hsk', [['daily', 'Every day'], ['cycleDays', 'Cycle days'], ['withWorkout', 'With workouts']], sk)}`
       + (sk === 'cycleDays' ? `<div class="dtog" style="--n:${n > 8 ? Math.ceil(n / 2) : n}" role="group" aria-label="Cycle days">${Array.from({ length: n }, (x, i) => i + 1).map(i => `<button data-hday="${i}" class="${days.includes(i) ? 'on' : ''}" aria-pressed="${days.includes(i)}">${i}</button>`).join('')}</div>` : '')
-      + (sk === 'withWorkout' ? `<div class="wtog" role="group" aria-label="Workouts">${DAY_TYPES.map(k => `<button data-hgrp="${k}" class="${grp.includes(k) ? 'on' : ''}" aria-pressed="${grp.includes(k)}" style="--c:${JCOL[k]}"><i></i>${TYPE_LABEL[k]}</button>`).join('')}</div>` : '')
+      + (sk === 'withWorkout' ? `<div class="wtog" role="group" aria-label="Workouts">${DAY_TYPES.filter(k => planTypes().includes(k) || grp.includes(k)).map(k => `<button data-hgrp="${k}" class="${grp.includes(k) ? 'on' : ''}" aria-pressed="${grp.includes(k)}" style="--c:${JCOL[k]}"><i></i>${TYPE_LABEL[k]}</button>`).join('')}</div>` : '')
       + `<div class="sgl">Counts for the ball</div>${seg('hreq', [['true', 'Required'], ['false', 'Bonus'], ['auto', 'Auto']], h.req == null ? 'auto' : h.req)}`;
   };
   const title = cur ? (own ? `<span class="usertext">${esc(cur.label)}</span>` : esc(cur.label)) : 'New habit';
@@ -6734,7 +6978,7 @@ function habitSheet(id) {
       box.querySelectorAll('[data-hblk]').forEach(x => x.onclick = () => { if (h.block === x.dataset.hblk) return; collect(); h.block = x.dataset.hblk; h.target = h.block === 'band' ? 8000 : null; if (h.block !== 'num') delete h.unit; vib(8); paint(true); });
       box.querySelectorAll('[data-hsk]').forEach(x => x.onclick = () => { const k = x.dataset.hsk; if (h.sched.kind === k) return; h.sched.kind = k;
         if (k === 'cycleDays' && !(h.sched.days || []).length) h.sched.days = Array.from({ length: n }, (y, i) => i + 1);
-        if (k === 'withWorkout' && !(h.sched.groups || []).length) h.sched.groups = ['push', 'pull', 'legs', 'mt']; vib(8); paint(); });
+        if (k === 'withWorkout' && !(h.sched.groups || []).length) h.sched.groups = planTrainTypes(); vib(8); paint(); });
       const tog = (attr, key, val) => box.querySelectorAll(`[data-${attr}]`).forEach(x => x.onclick = () => { const v = val(x.dataset[attr]), l = h.sched[key] = (h.sched[key] || []).slice(), i = l.indexOf(v); if (i >= 0) l.splice(i, 1); else l.push(v); x.classList.toggle('on', i < 0); x.setAttribute('aria-pressed', i < 0); vib(6); });
       tog('hday', 'days', Number); tog('hgrp', 'groups', String);
       box.querySelectorAll('[data-hreq]').forEach(x => x.onclick = () => { const v = x.dataset.hreq; h.req = v === 'auto' ? 'auto' : v === 'true'; box.querySelectorAll('[data-hreq]').forEach(y => { y.classList.toggle('on', y === x); y.setAttribute('aria-pressed', y === x); }); vib(6); });
@@ -6879,13 +7123,349 @@ function bindGoal() {
   const dl = $('[data-gdel]'); if (dl) dl.onclick = async () => { if (!await ask('Delete this goal?', '', 'Delete', true)) return; S.goals = (S.goals || []).filter(x => x.id !== R.params.id); planChanged(); back(); };
   chk();
 }
+/* ============ v6 4b: the setup questions, Where you are, and the same again from Settings ============
+   First run (no project yet): the intro (name, Day 1), six short questions — You · Fitness level · Motivation · Direction ·
+   Time · Kit and sports — then Connect (the band, nutrition from MFP), then Where you are with Start. From Settings → Setup
+   questions: the same six, prefilled with your answers and profile, then Where you are with Keep my plan (only the answers are
+   saved) or Apply from today (a sheet lists what changes; editPhase / editCycle / editHabits change it from today on — a new
+   cycle length from the next cycle — so the days already gone keep their targets, balls, Ki and logs).
+   The plan itself comes from suggestPlan (core.js). No helper lines on the question screens: the questions say enough.
+   R.sq: { mode 'first' | 'again', step 1–6 | 'connect' | 'where', a: the answers, hoff: { habit id: off } (Where you are's
+   switches), mfp: [MFP screenshots read in Connect, logged once the plan starts], ret: 'where' (Time opened from there) } */
+const SQ_N = 6, SQ_LIFT0 = { beginner: 3, intermediate: 4, advanced: 5 };
+const SQ_TITLE = { 1: 'About you', 2: 'Fitness level', 3: 'Motivation', 4: 'Direction', 5: 'Your week', 6: 'Kit and sports', connect: 'Connect', where: 'Where you are' };
+const SQ_BACK = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const SQ_SHORT = { push: 'Push', pull: 'Pull', legs: 'Legs', full: 'Full', upper: 'Upper', lower: 'Lower', mt: 'MT', rest: 'Rest' };
+const SQ_CAT = { essential: 'essential fat', athletes: 'athletic', fitness: 'fit', average: 'average', 'above average': 'above average' };
+const r1 = v => v == null || v === '' || isNaN(+v) ? null : Math.round(+v * 10) / 10;
+// Settings' row: your main direction and level once answered
+function sqSub() { const pr = S.profile || {}, d = Array.isArray(pr.directions) ? pr.directions[0] : null; return d && DIRECTIONS[d] ? DIRECTIONS[d].label + (LEVELS[pr.level] ? ' · ' + LEVELS[pr.level].label : '') : 'Six questions · a plan to compare'; }
+function sqNew(mode) { return { mode, step: 1, a: mode === 'again' ? sqFromState() : sqFirst(), hoff: {}, mfp: [] }; }
+function sqQ() { if (!R.sq) R.sq = sqNew(S.project ? 'again' : 'first'); return R.sq; }
+// a profile's answers into the answers (a new project after a past one starts from them)
+function sqTake(a, pr) {
+  if (!pr) return a; const w = pr.week || {};
+  if (pr.sex) a.sex = pr.sex; if (+pr.age > 0) a.age = +pr.age; if (+pr.height > 0) a.height = +pr.height; if (ACTIVITY[pr.activity]) a.activity = pr.activity; if (LEVELS[pr.level]) a.level = pr.level;
+  if (Array.isArray(pr.directions) && pr.directions.length) { a.main = pr.directions[0]; a.also = pr.directions.slice(1); }
+  if (Array.isArray(pr.kit)) a.kit = pr.kit.slice(); if (pr.sports) a.sports = Object.assign({}, pr.sports); if (+pr.minutes > 0) a.minutes = +pr.minutes;
+  if (w.weekly != null) a.weekly = !!w.weekly; if (+w.len > 0) a.len = +w.len; if (+w.lift > 0) a.lift = +w.lift; if (w.prefer) a.prefer = w.prefer;
+  return a;
+}
+// First run: empty, apart from what a past project left (its last readings, the profile)
+function sqFirst() {
+  const d = R.setupData || (R.setupData = newSetupData()), st = d.startDate || today(), prev = (S.archive || [])[0];
+  const a = { sex: 'm', age: null, height: null, weight: null, fat: null, muscle: null, skeletal: null, visceral: null, water: null, activity: 'sitting', level: null, motivation: 7, main: null, also: [],
+    goalKg: null, goalBy: addDays(st, 84), weekly: true, len: 7, lift: null, minutes: 60, prefer: 'weekdays', kit: [], sports: {}, start: st };
+  if (prev) { for (const k of ['weight', 'fat', 'muscle', 'skeletal', 'visceral', 'water']) a[k] = r1((d.start || {})[k]); a.age = +d.age || null; a.height = +d.height || null; sqTake(a, S.profile); }
+  return a;
+}
+// Again (Settings): your profile and answers; the time from the plan as it is; the weight and body from the latest readings
+function sqFromState() {
+  const pr = S.profile || {}, p = P(), ph = S.phase || {}, plan = curPlan(), td = today(), g = mainWeightGoal(), w = r1(bodyWeight(td));
+  const last = k => { const r = lastReading(k, td); return r ? r.v : p.start && p.start[k] != null && p.start[k] !== '' ? +p.start[k] : null; };
+  const len = plan.cycle.length, lifts = plan.cycle.filter(c => LIFT_GROUPS.includes(c.w)).length, mts = plan.cycle.filter(c => c.w === 'mt').length;
+  const a = sqTake({ sex: 'm', age: +p.age || null, height: +p.height || null, activity: prof().activity, level: null, main: { cut: 'lose', bulk: 'muscle', recomp: 'recomp' }[ph.kind] || 'maintain', also: [], kit: [], sports: {}, minutes: 60, prefer: 'weekdays' }, pr);
+  Object.assign(a, { weight: w, fat: r1(last('fat')), muscle: r1(last('muscle')), motivation: Math.max(1, Math.min(10, +ph.motivation || 7)), goalKg: g ? r1(Math.abs(w - g.target)) : null, goalBy: g ? g.by : addDays(td, 84),
+    weekly: len === 7, len, lift: Math.max(2, Math.min(6, lifts || 3)), start: td, bmr: +p.bmr || null });
+  if (mts) a.sports.mt = mts; else delete a.sports.mt;
+  return a;
+}
+// the date a new cycle's day 1 falls on (Again): the same length keeps the cycle running now, another starts with the next one
+function sqAnchor(len) { const p = S.project, t = tOf(today()); if (t < 0) return p.startDate; const c = cycAt(t); return addDays(p.startDate, len === c.len ? c.t0 : c.t0 + c.len); }
+function sqLift(a) { return a.lift || SQ_LIFT0[a.level] || 3; }
+// The suggestion for the answers as they are (with Where you are's habit switches; Again: merged into the habits you have)
+function sqSuggest() {
+  const q = sqQ(), a = q.a, len = a.weekly ? 7 : a.len;
+  const r = suggestPlan(Object.assign({}, a, { lift: sqLift(a), anchor: q.mode === 'again' ? sqAnchor(len) : a.start, band: !!bandCfg() }));
+  // a suggested habit of your own kind (Steps, Running…) is named in the app's language: its name is yours from then on
+  if (LANG === 'hr' && typeof trText === 'function') for (const h of r.habits) if (isCustomHabit(h.id)) { h.label = trText(h.label); if (h.unit) h.unit = trText(h.unit); }
+  const hs = (q.mode === 'again' ? sqMerge(Array.isArray(S.habits) ? S.habits : defaultHabits(), r.habits) : r.habits).map(h => { const o = q.hoff[h.id]; if (o == null) return h; const x = Object.assign({}, h); if (o) x.off = true; else delete x.off; return x; });
+  r.habits = hs; r.nHabits = hs.filter(h => !h.off).length; q.r = r; return r;
+}
+// The suggested habits over the ones you have: built-ins take the suggestion (on / off, days, how they count); a suggested habit
+// of your own kind (Steps, Running…) joins, or switches on one you already made with that name (its name and target stay yours);
+// one an earlier suggestion made (h_steps, h_run…) and this one doesn't is switched off; your other habits stay as they are
+const SQ_GEN = ['h_steps'].concat(Object.keys(SPORTS).map(k => 'h_' + k));
+function sqMerge(cur, gen) {
+  const out = cur.map(h => JSON.parse(JSON.stringify(h))), lab = s => String(s || '').trim().toLowerCase(), cp = x => JSON.parse(JSON.stringify(x));
+  const onOff = (h, g) => { if (g.off) h.off = true; else delete h.off; };
+  for (const g of gen) {
+    let i = out.findIndex(h => h.id === g.id);
+    if (i < 0 && isCustomHabit(g.id)) i = out.findIndex(h => isCustomHabit(h.id) && lab(h.label) === lab(g.label));
+    if (i < 0) out.push(cp(g));
+    else if (isCustomHabit(g.id)) { onOff(out[i], g); if (out[i].id === g.id) out[i].sched = cp(g.sched); }
+    else out[i] = cp(g);
+  }
+  for (const h of out) if (SQ_GEN.includes(h.id) && !gen.some(g => g.id === h.id)) h.off = true;
+  return out;
+}
+// any answer changed: Where you are's hand changes to the kcal and protein start over
+function sqTouch() { const a = sqQ().a; delete a.deficit; delete a.protein; }
+
+/* ---------- The screens ---------- */
+function sqHead() {
+  const st = R.sq.step, k = typeof st === 'number' ? st : SQ_N;
+  return `<div class="sqhd"><button class="sqb" data-sqback aria-label="Back">${SQ_BACK}</button><div class="sqbar" role="progressbar" aria-valuemin="0" aria-valuemax="${SQ_N}" aria-valuenow="${k}">${Array.from({ length: SQ_N }, (x, i) => `<i class="${i < k ? 'on' : ''}"></i>`).join('')}</div></div>
+    <div class="h1 sqt">${SQ_TITLE[st]}</div>`;
+}
+function sqHtml() {
+  const q = sqQ(), st = q.step, body = { 1: sq1, 2: sq2, 3: sq3, 4: sq4, 5: sq5, 6: sq6, connect: sqConnect, where: sqWhere }[st] || sq1;
+  const foot = st === 'where' ? (q.mode === 'first' ? '<button class="btn" id="startBtn">Start</button>' : '<button class="btn sec" data-sqkeep>Keep my plan</button><button class="btn" data-sqapply>Apply from today</button>')
+    : `<button class="btn" data-sqnext id="sqNext">${st === 'connect' ? 'Continue' : 'Next'}</button>`;
+  return `<div class="screen bar sq sq-${st}">${sqHead()}${body()}</div><div class="botbar">${foot}</div>`;
+}
+const sqSeg = (attr, opts, cur, cls) => `<div class="seg4 ${cls || ''}" role="group">${opts.map(([v, l]) => `<button data-${attr}="${v}" class="${String(cur) === String(v) ? 'on' : ''}" aria-pressed="${String(cur) === String(v)}">${l}</button>`).join('')}</div>`;
+const sqPill = (attr, opts, cur) => `<span class="lseg" role="group">${opts.map(([v, l]) => `<button data-${attr}="${v}" class="${String(cur) === String(v) ? 'on' : ''}" aria-pressed="${String(cur) === String(v)}">${l}</button>`).join('')}</span>`;
+// 1 · You: sex, age, height, weight, body fat and muscle (optional, or from the scale's screenshot), your day
+function sq1() {
+  const a = R.sq.a, minor = +a.age > 0 && +a.age < 18;
+  return `${sqSeg('sx', [['m', 'Man'], ['f', 'Woman']], a.sex, 's2')}
+    <div class="grid4 sqf">${field4('age', 'Age', a.age, '', 1)}${field4('height', 'Height (cm)', a.height, '', 1)}${field4('weight', 'Weight (kg)', a.weight)}${field4('fat', 'Body fat (%) · optional', a.fat)}${field4('muscle', 'Muscle (kg) · optional', a.muscle)}
+      <div class="field sqshot"><button class="sy" data-sqshot>${IC4.cam}<span>From a screenshot</span></button></div></div>
+    ${['skeletal', 'visceral', 'water'].map(k => `<input type="hidden" name="${k}" value="${a[k] == null ? '' : a[k]}">`).join('')}
+    <div class="sqwarn" id="sqminor" ${minor ? '' : 'hidden'}>Trening is for adults (18+)</div>
+    <div class="muted center small" id="fillStatus"></div>
+    <div class="sgl">Your day</div>${sqSeg('actv', Object.keys(ACTIVITY).map(k => [k, ACTIVITY[k].label]), a.activity, 's3')}
+    <input type="file" accept="image/*" id="fillFile" hidden>`;
+}
+// 2 · Fitness level
+function sq2() { const a = R.sq.a; return `<div class="sqopts" role="group" aria-label="Fitness level">${Object.keys(LEVELS).map(k => `<button data-lv="${k}" class="${a.level === k ? 'on' : ''}" aria-pressed="${a.level === k}"><b>${LEVELS[k].label}</b><small>${LEVELS[k].sub}</small></button>`).join('')}</div>`; }
+// 3 · Motivation 1–10
+function sq3() {
+  const a = R.sq.a;
+  return `<div class="sqbig" id="sqbig">${a.motivation}</div><div class="m10 sqm" role="group" aria-label="Motivation">${Array.from({ length: 10 }, (x, i) => i + 1).map(v => `<button data-mot="${v}" class="${a.motivation === v ? 'on' : ''}" aria-pressed="${a.motivation === v}">${v}</button>`).join('')}</div>
+    <div class="sqends"><span>Easy does it</span><span>Push me hard</span></div>`;
+}
+// 4 · Direction: one main, up to two more; a weight goal (kg, by when) for losing fat or building muscle
+function sq4() {
+  const a = R.sq.a, m = a.main, kg = m === 'lose' || m === 'muscle';
+  const main = Object.keys(DIRECTIONS).map(k => `<button data-dmain="${k}" class="${m === k ? 'on' : ''}" aria-pressed="${m === k}"><b>${DIRECTIONS[k].label}</b></button>`).join('');
+  const also = Object.keys(DIRECTIONS).filter(k => k !== m).map(k => { const on = a.also.includes(k); return `<button data-dalso="${k}" class="${on ? 'on' : ''}" aria-pressed="${on}" ${!on && a.also.length >= 2 ? 'disabled' : ''} style="--c:var(--or)"><i></i>${DIRECTIONS[k].label}</button>`; }).join('');
+  return `<div class="sgl">Main</div><div class="tgrid sqdir" role="group" aria-label="Main">${main}</div>
+    ${m ? `<div class="sgl">Also · up to 2</div><div class="wtog sqchips" role="group" aria-label="Also">${also}</div>` : ''}
+    ${kg ? `<div class="sgl">Goal · optional</div><div class="sgrp pcard">${prow(m === 'lose' ? 'Lose' : 'Gain', 'kg', decStepper('gkg', a.goalKg, 0.5))}${prow('By', '', dpick('gby', a.goalBy, 'By'))}</div><div class="gchk" id="sqpace" hidden></div>` : ''}`;
+}
+// the goal's pace against the phase's safe weekly rate (1 % a week losing, 0.5 % gaining)
+function sqPace(a) {
+  if (!(a.main === 'lose' || a.main === 'muscle') || !(+a.goalKg > 0) || !a.goalBy) return null;
+  const wk = diffDays(a.start, a.goalBy) / 7; if (wk <= 0) return { html: 'Pick a date after today', warn: true };
+  const lose = a.main === 'lose', r = +a.goalKg / wk, lim = lose ? 1 : 0.5, ok = r <= (+a.weight || 80) * lim / 100 + 1e-9;
+  return { html: `<b>${lose ? '−' : '+'}${r.toFixed(2)} kg</b> a week · ${ok ? 'realistic' : `faster than ${lim} % — try a later date`}`, warn: !ok };
+}
+// 5 · Time: weekly or your own cycle, lifting days, minutes, weekdays or weekends; the days it makes, as you tap
+function sq5() {
+  const a = R.sq.a, wk = a.weekly;
+  return `<div class="sgrp pcard">${prow('Schedule', '', sqPill('wk', [['1', 'Weekly'], ['0', 'Own cycle']], wk ? 1 : 0))}
+    ${wk ? '' : prow('Cycle length', 'days', smallStepper('qlen', a.len, '', 1))}
+    ${prow('Lifting days', wk ? 'a week' : 'a cycle', smallStepper('qlift', sqLift(a), '', 1))}
+    ${wk ? prow('Rather train on', '', sqPill('pref', [['weekdays', 'Weekdays'], ['weekends', 'Weekends']], a.prefer)) : ''}
+    <div class="prow col"><span class="pl">Minutes a session</span>${sqSeg('min', [[30, '30'], [45, '45'], [60, '60'], [75, '75+']], a.minutes)}</div></div>
+    <div class="sqweek" id="sqweek" data-sqtime style="--n:${sqCols(wk ? 7 : a.len)}">${sqWeekHtml()}</div>`;
+}
+const sqCols = n => n <= 7 ? 7 : Math.ceil(n / 2);   // 8 days: two rows of 4; 14: two of 7
+// the cycle as tiles: Mon … Sun for a week (the cycle starts on Day 1's weekday), Day 1 … n for your own length
+function sqWeekHtml(r) {
+  r = r || sqSuggest(); const q = R.sq, a = q.a, tile = (lab, c) => `<span class="sqd" style="--c:${JCOL[c.w] || 'var(--muted)'}"><small>${lab}</small><b>${SQ_SHORT[c.w] || c.w}</b></span>`;
+  if (r.len === 7) { const d0 = parse(q.mode === 'again' ? sqAnchor(7) : a.start).getDay(); return [1, 2, 3, 4, 5, 6, 0].map(wd => tile(WD[wd].slice(0, 3), r.cycle[(wd - d0 + 7) % 7])).join(''); }
+  return r.cycle.map((c, i) => tile(String(i + 1), c)).join('');
+}
+// 6 · Kit and sports (each sport: times a week / a cycle)
+function sq6() {
+  const a = R.sq.a, chip = (attr, k, l, on, col) => `<button data-${attr}="${k}" class="${on ? 'on' : ''}" aria-pressed="${on}" style="--c:${col || 'var(--or)'}"><i></i>${l}</button>`;
+  const rows = Object.keys(SPORTS).filter(k => +a.sports[k] > 0).map(k => prow(SPORTS[k].label, a.weekly ? 'times a week' : 'times a cycle', smallStepper('sp_' + k, a.sports[k], '', 1))).join('');
+  return `<div class="sgl">Kit</div><div class="wtog sqchips" role="group" aria-label="Kit">${Object.keys(KIT).map(k => chip('kit', k, KIT[k], a.kit.includes(k))).join('')}</div>
+    <div class="sgl">Sports</div><div class="wtog sqchips" role="group" aria-label="Sports">${Object.keys(SPORTS).map(k => chip('sp', k, SPORTS[k].label, +a.sports[k] > 0, k === 'mt' ? JCOL.mt : 'var(--beam)')).join('')}</div>
+    ${rows ? `<div class="sgrp pcard">${rows}</div>` : ''}`;
+}
+// Connect (first run): the band and nutrition from MFP screenshots, both optional
+function sqConnect() {
+  const bc = bandCfg(), q = R.sq, n = new Set(q.mfp.map(x => x.date)).size, chev = `<span class="chev">${IC4.chev}</span>`;
+  return `<div class="sgrp" style="margin-top:6px">${srow({ ic: 'watch', t: 'Connect the band', chip: bc ? ['on', 'On'] : ['off', 'Off'], act: 'sqband', right: chev })}
+    ${srow({ ic: 'fork', t: 'Nutrition from MFP', s: q.mfpMsg || (n ? n + (n === 1 ? ' day read' : ' days read') : ''), chip: n ? ['on', '✓'] : null, act: 'sqmfp', right: chev })}</div>
+    <input type="file" accept="image/*" multiple id="sqMfpFile" hidden>`;
+}
+
+/* ---------- Where you are: three facts (strength comes once there are sessions), the plan in one sentence ---------- */
+function sqBodyLine(b) { const c = b.cat, who = b.sex === 'f' ? 'women' : 'men'; return `${SQ_CAT[c.key]} for ${who} <span class="nw">(${c.hi == null ? c.lo + '+' : c.lo + '–' + c.hi} %)</span>`; }
+function sqWhere() {
+  const q = R.sq, a = q.a, r = sqSuggest(), how = { katch: 'Katch-McArdle', mifflin: 'Mifflin-St Jeor', own: 'My profile' }[r.bmrHow];
+  const facts = `<div class="sqfacts"><div class="sqfact"><div class="h">You burn about <b>${fmtN(Math.round(r.burn / 10) * 10)} kcal</b> a day</div><div class="s">BMR ${fmtN(r.bmr)} (${how}) + activity\u00a0${fmtN(r.activity)} + training\u00a0${fmtN(r.training)}</div></div>
+    ${r.body ? `<div class="sqfact"><div class="h"><b>${r.body.fat.toFixed(1)} %</b> body fat · ${sqBodyLine(r.body)}</div><div class="s">Lean mass ${r.body.lean.toFixed(1)} kg = ${(+a.weight).toFixed(1)} kg × ${(100 - r.body.fat).toFixed(1)} %</div></div>` : ''}</div>`;
+  return `${facts}<div class="sqplan" id="sqplan">${sqSentence(r)}</div>
+    <div class="sqweek" id="sqweek" data-sqtime style="--n:${sqCols(r.len)}">${sqWeekHtml(r)}</div>
+    <div class="sqdoc">Pregnant or managing a medical condition? Check with your doctor first.</div>`;
+}
+// "Based on your data and your goal of losing 4 kg by 31 Dec: about 0.5 kg a week, a daily deficit of about 540 kcal, 190 g
+// protein, 6 training days and 5 habits to start." Each number is a button that changes it.
+function sqSentence(r) {
+  const g = r.goal, k = r.kind, tap = (id, t) => `<span class="sqtap" role="button" tabindex="0" data-tap="${id}">${t}</span>`, wk = Math.abs(r.rate);
+  const lead = g ? `Based on your data and your goal of ${g.lose ? 'losing' : 'gaining'} ${fmtHV(g.kg)} kg by ${fmtShort(g.by)}:` : `Based on your data and your goal to ${{ lose: 'lose fat', muscle: 'build muscle', strength: 'get stronger', recomp: 'recomp', maintain: 'maintain', consistent: 'stay consistent' }[r.main]}:`;
+  const parts = [];
+  if (k !== 'maintain' && wk >= 0.05) parts.push(`<span>about ${wk.toFixed(1)} kg a week,</span>`);
+  parts.push(k === 'maintain' ? `<span>about ${fmtN(r.kcal)} kcal a day,</span>` : tap('def', k === 'bulk' ? `a daily surplus of about ${fmtN(-r.deficit)} kcal` : `a daily deficit of about ${fmtN(r.deficit)} kcal`) + '<span>,</span>');
+  parts.push(tap('prot', `${r.protein} g protein`) + '<span>,</span>');
+  parts.push(tap('days', `${r.trainDays} training days`));
+  parts.push(`<span>and</span> ${tap('habits', `${r.nHabits} ${r.nHabits === 1 ? 'habit' : 'habits'}`)} <span>to start.</span>`);
+  return `<span>${lead}</span> ${parts.join(' ')}`;
+}
+function sqPaintWhere() { if (R.sq.step !== 'where') return; const r = sqSuggest(), p = $('#sqplan'), w = $('#sqweek'); if (p) { p.innerHTML = sqSentence(r); bindSqTaps(); } if (w) w.innerHTML = sqWeekHtml(r); }
+function bindSqTaps() { app.querySelectorAll('[data-tap]').forEach(b => { b.onclick = () => ({ def: sqDefSheet, prot: sqProtSheet, days: () => sqJump(5), habits: sqHabitSheet })[b.dataset.tap](); b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); b.onclick(); } }; }); }
+// the deficit (or surplus) by hand, inside the safety limits
+function sqDefSheet() {
+  const q = R.sq, r = q.r, bulk = r.kind === 'bulk', max = Math.max(0, Math.floor((bulk ? r.limits.maxSur : r.limits.maxDef) / 10) * 10);
+  setSheet(bulk ? 'Daily surplus' : 'Daily deficit', '', `${bigStepper('sqdef', Math.abs(r.deficit), '', 10, 'kcal')}<div class="sqrange">Safe: 0 – ${fmtN(max)} kcal</div><button class="btn" data-close data-foot>Done</button>`, b => {
+    wireSteppers(b, inp => { let v = num(inp.value); if (v == null) return; v = Math.max(0, Math.min(max, Math.round(v))); if (String(v) !== inp.value) inp.value = v; q.a.deficit = bulk ? -v : v; sqPaintWhere(); });
+  });
+}
+function sqProtSheet() {
+  const q = R.sq, r = q.r, w = +q.a.weight || 80, lo = Math.round(w * 1.6 / 5) * 5, hi = Math.round(w * 2.4 / 5) * 5;
+  setSheet('Protein', '', `${bigStepper('sqprot', r.protein, '', 5, 'g')}<div class="sqrange">${lo} – ${hi} g</div><button class="btn" data-close data-foot>Done</button>`, b => {
+    wireSteppers(b, inp => { let v = num(inp.value); if (v == null) return; const c = Math.max(lo, Math.min(hi, Math.round(v))); if (c !== v && !KP.inp) inp.value = c; q.a.protein = c; sqPaintWhere(); });
+  });
+}
+// the habits it starts with, on / off
+function sqHabitSheet() {
+  const q = R.sq, row = h => `<div class="srow hrow ${h.off ? 'off' : ''}"><span class="hopen"><span class="si">${IC4[itemIc(h)] || ''}</span><span class="st"><b>${itemLab(h)}</b><em>${habitSubHtml(h)}</em></span></span><button class="sw ${h.off ? '' : 'on'}" role="switch" aria-checked="${!h.off}" aria-label="${esc(h.label)}" ${isCustomHabit(h.id) ? 'data-notr' : ''} data-sqh="${h.id}"><i></i></button></div>`;
+  setSheet('Habits', '', `<div class="sgrp" id="sqhl">${q.r.habits.map(row).join('')}</div><button class="btn" data-close data-foot>Done</button>`, b => {
+    b.querySelectorAll('[data-sqh]').forEach(x => x.onclick = () => { const id = x.dataset.sqh, h = q.r.habits.find(y => y.id === id); q.hoff[id] = !(h && h.off); sqPaintWhere();
+      const on = !q.hoff[id]; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); x.closest('.hrow').classList.toggle('off', !on); vib(8); });
+  });
+}
+
+/* ---------- Moving between the screens ---------- */
+function sqRender(dir) { render(dir); window.scrollTo(0, 0); }
+function sqJump(step) { const q = R.sq; q.ret = q.step === 'where' ? 'where' : null; q.step = step; sqRender('left'); }
+function sqBack() {
+  const q = R.sq, st = q.step;
+  if (st === 1) { if (q.mode === 'first') { R.setupStep = 1; render('left'); window.scrollTo(0, 0); } else { R.sq = null; back(); } return; }
+  q.ret = null; q.step = st === 'where' ? (q.mode === 'first' ? 'connect' : SQ_N) : st === 'connect' ? SQ_N : st - 1; sqRender('left');
+}
+// the phone's back button inside the questions: one screen back
+function sqPop() { if (!R.sq) return false; if (S.project ? R.screen !== 'setupq' : !(R.setupStep > 1)) return false; sqBack(); return true; }
+function sqNext() {
+  const q = R.sq, a = q.a, st = q.step;
+  if (st === 1) { if (+a.age > 0 && +a.age < 18) return; if (!(+a.age >= 18 && +a.age <= 100) || !(+a.height >= 100 && +a.height <= 250) || !(+a.weight >= 30 && +a.weight <= 350)) return toast('Fill in your age, height and weight'); }
+  if (st === 2 && !a.level) return toast('Pick your level');
+  if (st === 4 && !a.main) return toast('Pick a main direction');
+  if (q.ret === 'where' && typeof st === 'number') { q.ret = null; q.step = 'where'; return sqRender('right'); }
+  q.step = st === SQ_N ? (q.mode === 'first' ? 'connect' : 'where') : st === 'connect' ? 'where' : st + 1; sqRender('right');
+}
+function bindSq() {
+  const q = sqQ(), a = q.a, st = q.step, keep = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  const on = (sel, f) => app.querySelectorAll(sel).forEach(b => b.onclick = () => f(b));
+  const pick = (attr, key, val) => on(`[data-${attr}]`, b => { a[key] = val ? val(b.dataset[attr]) : b.dataset[attr]; sqTouch(); app.querySelectorAll(`[data-${attr}]`).forEach(x => { const o = x === b; x.classList.toggle('on', o); x.setAttribute('aria-pressed', o); }); vib(8); });
+  on('[data-sqback]', sqBack); on('[data-sqnext]', sqNext);
+  if (st === 1) {
+    pick('sx', 'sex'); pick('actv', 'activity');
+    const read = () => { const o = readForm(app); for (const k of ['age', 'height', 'weight', 'fat', 'muscle', 'skeletal', 'visceral', 'water']) a[k] = num(o[k]); sqTouch(); const m = $('#sqminor'), minor = +a.age > 0 && +a.age < 18; if (m) m.hidden = !minor; const nx = $('#sqNext'); if (nx) nx.disabled = minor; };
+    app.querySelectorAll('input').forEach(i => i.addEventListener('input', read)); const nx = $('#sqNext'); if (nx) nx.disabled = +a.age > 0 && +a.age < 18;
+    const ff = $('#fillFile'), status = t => { const el = $('#fillStatus'); if (el) el.textContent = t; };
+    on('[data-sqshot]', () => ff.click());
+    ff.onchange = async () => { const f = ff.files && ff.files[0]; ff.value = ''; if (!f) return; status('Reading…');
+      try { const res = await readImage(f, status); if (res.kind === 'mfp') { status(''); return toast('That is a MyFitnessPal screenshot — use it in Connect', 3500); }
+        const n = fillReadingForm(app, res.values || {}); read(); status(n ? 'Filled ' + n + ' of 6 values' : 'Nothing recognised — is this the right screenshot?'); }
+      catch (e) { status(''); toast('Could not read the image: ' + (e.message || e), 3500); } };
+  }
+  if (st === 2) pick('lv', 'level');
+  if (st === 3) on('[data-mot]', b => { a.motivation = +b.dataset.mot; sqTouch(); app.querySelectorAll('[data-mot]').forEach(x => { const o = x === b; x.classList.toggle('on', o); x.setAttribute('aria-pressed', o); }); const g = $('#sqbig'); if (g) { g.textContent = a.motivation; animate(g, 'fade'); } vib(8); });
+  if (st === 4) {
+    const pace = () => { const el = $('#sqpace'); if (!el) return; const c = sqPace(a); el.hidden = !c; el.className = 'gchk' + (c && c.warn ? ' warn' : ''); el.innerHTML = c ? c.html : ''; };
+    on('[data-dmain]', b => { const k = b.dataset.dmain; if (a.main === k) return; a.main = k; a.also = a.also.filter(x => x !== k); sqTouch(); vib(8); keep(); });
+    on('[data-dalso]', b => { const k = b.dataset.dalso, i = a.also.indexOf(k); if (i >= 0) a.also.splice(i, 1); else if (a.also.length < 2) a.also.push(k); sqTouch(); vib(6); keep(); });
+    wireSteppers(app, inp => { if (inp.name === 'gkg') { const v = num(inp.value); a.goalKg = v > 0 ? Math.min(60, v) : null; sqTouch(); pace(); } });
+    app.querySelectorAll('.dpick input').forEach(i => { i.addEventListener('click', () => { try { i.showPicker(); } catch (e) {} });
+      i.addEventListener('change', () => { if (!/^\d{4}-\d\d-\d\d$/.test(i.value)) return; a.goalBy = i.value; i.previousElementSibling.textContent = dayYear(i.value); sqTouch(); pace(); }); });
+    pace();
+  }
+  if (st === 5) {
+    const week = () => { const w = $('#sqweek'); if (w) { w.innerHTML = sqWeekHtml(); w.style.setProperty('--n', sqCols(a.weekly ? 7 : a.len)); } };
+    on('[data-wk]', b => { const v = b.dataset.wk === '1'; if (a.weekly === v) return; a.weekly = v; if (!v && !(a.len >= CYC_MIN)) a.len = 7; sqTouch(); vib(8); keep(); });
+    on('[data-pref]', b => { a.prefer = b.dataset.pref; sqTouch(); app.querySelectorAll('[data-pref]').forEach(x => { const o = x === b; x.classList.toggle('on', o); x.setAttribute('aria-pressed', o); }); vib(8); week(); });
+    pick('min', 'minutes', Number);
+    wireSteppers(app, inp => { const v = num(inp.value); if (v == null) return;
+      if (inp.name === 'qlen') { const c = Math.max(CYC_MIN, Math.min(CYC_MAX, Math.round(v))); if (String(c) !== inp.value && !KP.inp) inp.value = c; a.len = c; }
+      else if (inp.name === 'qlift') { const c = Math.max(2, Math.min(6, Math.round(v))); if (String(c) !== inp.value && !KP.inp) inp.value = c; a.lift = c; }
+      sqTouch(); week(); });
+  }
+  if (st === 6) {
+    on('[data-kit]', b => { const k = b.dataset.kit, i = a.kit.indexOf(k); if (i >= 0) a.kit.splice(i, 1); else { a.kit.push(k); if (k === 'bw') a.kit = ['bw']; else a.kit = a.kit.filter(x => x !== 'bw'); } sqTouch(); vib(6); keep(); });
+    on('[data-sp]', b => { const k = b.dataset.sp; if (+a.sports[k] > 0) delete a.sports[k]; else a.sports[k] = 2; sqTouch(); vib(6); keep(); });
+    wireSteppers(app, inp => { const v = num(inp.value), k = inp.name.slice(3); if (v == null || !SPORTS[k]) return; const c = Math.max(1, Math.min(a.weekly ? 7 : a.len, Math.round(v))); if (String(c) !== inp.value && !KP.inp) inp.value = c; a.sports[k] = c; sqTouch(); });
+  }
+  if (st === 'connect') {
+    on('[data-act="sqband"]', () => { const bg = bandSheet(); if (bg) { const c = bg.close; bg.close = () => { c(); if (R.sq && R.sq.step === 'connect') keep(); }; } });
+    const mf = $('#sqMfpFile'); on('[data-act="sqmfp"]', () => mf.click());
+    mf.onchange = async () => { const files = Array.from(mf.files || []); mf.value = ''; if (!files.length) return; q.mfpMsg = 'Reading…'; keep(); let bad = 0;
+      for (const f of files) { try { const res = await readImage(f, () => {}); const v = res.values || {}; if (res.kind === 'mfp' && v.kcal > 0) { q.mfp = q.mfp.filter(x => x.date !== (res.date || today())); q.mfp.push({ date: res.date || today(), values: v }); } else bad++; } catch (e) { bad++; } }
+      q.mfpMsg = bad && !q.mfp.length ? 'Not an MFP screenshot' : null; if (R.sq === q && q.step === 'connect') keep(); };
+  }
+  if (st === 'where') {
+    bindSqTaps(); on('[data-sqtime]', () => sqJump(5));
+    const sb = $('#startBtn'); if (sb) sb.onclick = sqStart;
+    on('[data-sqkeep]', sqKeep); on('[data-sqapply]', sqApplySheet);
+  }
+}
+
+/* ---------- Start (first run), Keep my plan, Apply from today ---------- */
+function sqStart() {
+  const q = R.sq, a = q.a, d = R.setupData || newSetupData(), r = sqSuggest(), st = a.start, cp = x => JSON.parse(JSON.stringify(x));
+  S.project = { name: (d.name || '').trim() || (S.archive && S.archive.length ? 'New project' : 'My first project'), startDate: st, endDate: addDays(st, ONGOING_DAYS), ongoing: true,
+    deficit: r.deficit, bmr: r.bmr, protein: r.protein, waterDrop: 0.5, bandDefault: 300, height: r.profile.height, age: r.profile.age,
+    start: { weight: +a.weight, fat: r1(a.fat), muscle: r1(a.muscle), skeletal: r1(a.skeletal), visceral: r1(a.visceral), water: r1(a.water) } };
+  S.phase = { kind: r.kind, deficit: r.deficit, bmr: r.bmr, protein: r.protein, waterDrop: 0.5, bandDefault: 300, motivation: r.motivation };
+  S.profile = cp(r.profile); S.plan = { cycle: cp(r.cycle), cycleLen: r.len, variants: 'AB' }; S.habits = cp(r.habits); delete S.habitsPrev; S.goals = cp(r.goals);
+  migrateState(); S.meta.createdAt = new Date().toISOString(); seedStartReading();
+  for (const m of q.mfp) if (m.date >= st && m.date <= today()) { const v = m.values, prev = day(m.date).nutrition || {}; day(m.date).nutrition = { kcal: v.kcal, protein: v.protein, carbs: v.carbs, fat: v.fat, band: prev.band, src: 'mfp-shot' }; }
+  save(); R.stack = []; R.setupData = null; R.setupStep = 1; R.sq = null; R.date = today(); go('today', {}, false, 'fade'); toast('Plan started. Let\'s go!');
+}
+// only the answers: the profile (sex, age, height, your day, level, directions, kit, sports, minutes, the week) and the motivation
+function sqSaveAnswers(r) { S.profile = Object.assign({}, S.profile, JSON.parse(JSON.stringify(r.profile))); if (S.phase) S.phase.motivation = r.motivation; planChanged(); }
+function sqKeep() { const r = sqSuggest(); sqSaveAnswers(r); R.sq = null; toast('Answers saved · the plan stays'); back(); }
+const sqSameCycle = (x, y) => JSON.stringify(x.map(c => [c.w, c.alt ? 1 : 0])) === JSON.stringify(y.map(c => [c.w, c.alt ? 1 : 0]));
+// What Apply from today changes, one short line each: [{ t }] or a habit [{ sign, label, own, tail }]
+function sqChanges(r) {
+  const ph = S.phase || {}, out = [], plan = curPlan(), a0 = +ph.deficit || 0, b0 = r.deficit, f = v => fmtN(Math.abs(v));
+  if (r.kind !== ph.kind && PHASES[ph.kind]) out.push({ t: `Phase ${PHASES[ph.kind].label} → ${PHASES[r.kind].label}` });
+  if (a0 !== b0) out.push({ t: a0 >= 0 && b0 >= 0 ? `Deficit ${f(a0)} → ${f(b0)} kcal` : a0 <= 0 && b0 <= 0 ? `Surplus ${f(a0)} → ${f(b0)} kcal` : a0 > 0 ? `Deficit ${f(a0)} → surplus ${f(b0)} kcal` : `Surplus ${f(a0)} → deficit ${f(b0)} kcal` });
+  if (+ph.protein !== r.protein) out.push({ t: `Protein ${ph.protein} → ${r.protein} g` });
+  if (+ph.motivation !== r.motivation) out.push({ t: `Motivation ${ph.motivation} → ${r.motivation}` });
+  if (!sqSameCycle(plan.cycle, r.cycle)) { const t = tOf(today()); if (t < 0) out.push({ t: r.len !== plan.cycle.length ? `Cycle ${plan.cycle.length} → ${r.len} days` : 'New cycle days' });
+    else { const c = cycAt(t); out.push({ t: r.len !== c.len ? `Cycle ${c.len} → ${r.len} days from cycle ${c.num + 1}` : 'New cycle days from today' }); } }
+  const cur = Array.isArray(S.habits) ? S.habits : defaultHabits(), js = x => JSON.stringify(x || { kind: 'daily' });
+  for (const h of r.habits) { const c = cur.find(x => x.id === h.id), on = !h.off, was = !!c && !c.off, own = isCustomHabit(h.id);
+    if (on && !was) out.push({ sign: '+', label: h.label, own }); else if (!on && was) out.push({ sign: '−', label: h.label, own });
+    else if (on && (js(c.sched) !== js(h.sched) || String(c.req) !== String(h.req))) out.push({ sign: '', label: h.label, own, tail: schedText(h), req: h.req === true ? 'required' : h.req === false ? 'bonus' : '' }); }
+  if (r.goal) { const g = mainWeightGoal(); if (!g || +g.target !== r.goal.target || g.by !== r.goal.by) out.push({ t: `Main goal ${fmtHV(r.goal.target)} kg by ${fmtShort(r.goal.by)}` }); }
+  if (r.dirs.includes('consistent') && !(S.goals || []).some(g => g.type === 'consistency')) out.push({ t: '+ Consistency goal · 6 of 7' });
+  return out;
+}
+function sqChgHtml(x) { return x.t ? `<div><span>${esc(x.t)}</span></div>` : `<div>${x.sign ? `<i class="${x.sign === '+' ? 'add' : 'rem'}">${x.sign}</i>` : ''}<span${x.own ? ' class="usertext"' : ''}>${esc(x.label)}</span>${x.tail ? `<span class="tl"><span>${esc(x.tail)}</span>${x.req ? `<span> · ${x.req}</span>` : ''}</span>` : ''}</div>`; }
+function sqApplySheet() {
+  const r = sqSuggest(), lines = sqChanges(r);
+  setSheet('Apply from today', '', `${lines.length ? `<div class="sqchg">${lines.map(sqChgHtml).join('')}</div><div class="sqkeepl">The days already gone stay as they are.</div>` : '<div class="lead4">Nothing to change in the plan. The answers are saved.</div>'}
+    <div class="row" data-foot><button class="btn sec" data-close>Cancel</button><button class="btn" data-sqok>Apply</button></div>`, b => {
+    b.classList.add('sqapply'); b.querySelector('[data-sqok]').onclick = () => { b.close(); sqApply(r); R.sq = null; toast(lines.length ? 'Plan changed from today' : 'Answers saved'); back(); };
+  });
+}
+function sqApply(r) {
+  const cp = x => JSON.parse(JSON.stringify(x));
+  sqSaveAnswers(r);
+  editPhase(ph => { ph.kind = r.kind; ph.deficit = r.deficit; ph.protein = r.protein; ph.motivation = r.motivation; });
+  if (!sqSameCycle(curPlan().cycle, r.cycle)) editCycle(c => { c.splice(0, c.length, ...cp(r.cycle)); });
+  editHabits(list => { list.splice(0, list.length, ...cp(r.habits)); });
+  if (!Array.isArray(S.goals)) S.goals = [];
+  if (r.goal) { const g = mainWeightGoal(); if (g) { g.target = r.goal.target; g.by = r.goal.by; } else { S.goals.forEach(x => { x.main = false; }); S.goals.push({ id: newGoalId(), type: 'body', metric: 'weight', target: r.goal.target, by: r.goal.by, main: true, created: today() }); } }
+  if (r.dirs.includes('consistent') && !S.goals.some(g => g.type === 'consistency')) S.goals.push({ id: newGoalId(), type: 'consistency', target: 6, main: false, created: today() });
+  planChanged();
+}
 
 /* ============ Language: English or Croatian ============
    The app is written in English. In Croatian, everything it shows is translated on its way to the screen: a watcher sees
    every piece of text the app puts on the page (screens, sheets, toasts, labels for screen readers) and swaps it for the
    Croatian from the dictionary below. Numbers, dates and names inside a sentence are lifted out first and put back in the
    right place, so one entry covers "Day 3 of 57" and "Day 41 of 90". Numbers get the Croatian decimal comma (83,2 kg) and
-   thousands dot (1.348 kcal); dates come out as "Pet 13. stu". Push, Pull, Legs, Muay Thai, RIR, PB and kg stay English.
+   thousands dot (1.348 kcal); dates come out as "Pet 13. stu". Push, Pull, Legs, Full body, Upper, Lower, Muay Thai, RIR, PB and
+   kg stay English.
    Three separate choices in Settings → Language, each English or Hrvatski: the interface, the exercise names and the
    stretching steps (exercise names can be Croatian in the English app and the other way round; stretches follow the
    interface until picked). What you type yourself is never touched. Changing any of them reloads the app. */
@@ -6929,7 +7509,7 @@ function i18nInit() {
   I18N.rx = new RegExp(
     `((?:(?:${WDR}),? )?\\d{1,2}\\.? (?:${MOR})\\b\\.?(?: \\d{4}\\.?)?)` +
     (names ? `|((?<![A-Za-z])(?:${names})(?![A-Za-z]))` : '|(\\u0000)') +
-    `|((?<![A-Za-z])(?:Push|Pull|Legs) [AB](?![A-Za-z]))` +
+    `|((?<![A-Za-z])(?:Push|Pull|Legs|Full body|Upper|Lower) [AB](?![A-Za-z]))` +
     `|(\\d+(?:[.,:/]\\d+)*)`, 'g');
   I18N.nrx = names ? new RegExp(`(?<![A-Za-z])(?:${names})(?![A-Za-z])`, 'g') : null;
   I18N.dict = HR_DICT; I18N.names = HR_NAMES;
@@ -7492,6 +8072,57 @@ for (const s of ['−', '+', '±']) for (const [en, hr] of [['on plan', 'po plan
     ['surplus stays {0} kcal a day.', 'suficit ostaje {0} kcal dnevno.'], ['kcal stay at maintenance.', 'kcal ostaju na održavanju.']];
   const sh = (s, k) => s.replace(/\{(\d+)\}/g, (m, i) => '{' + (+i + k) + '}');
   for (const [en, hr] of ch) { HR_DICT[en] = hr; HR_DICT['motivation {0} → {1}, ' + sh(en, 2)] = 'motivacija {0} → {1}, ' + sh(hr, 2); } }
+
+/* v6 4b: the setup questions, Where you are, the re-run from Settings, the new workouts */
+const hrNav = n => hrPl(n, 'navika', 'navike', 'navika');
+Object.assign(HR_DICT, {
+  'Pick Day 1': 'Odaberi prvi dan', 'Step {0} of {1}': 'Korak {0} od {1}', 'About you': 'O tebi', 'Fitness level': 'Razina forme', 'Direction': 'Smjer', 'Your week': 'Tvoj tjedan',
+  'Kit and sports': 'Oprema i sportovi', 'Connect': 'Poveži', 'Where you are': 'Gdje si sada', 'Continue': 'Nastavi', 'Keep my plan': 'Zadrži moj plan', 'Apply from today': 'Primijeni od danas',
+  'Body fat · optional': 'Tjelesna mast · neobavezno', 'Muscle · optional': 'Mišići · neobavezno', 'From a screenshot': 'Iz snimke zaslona', 'Trening is for adults ({0}+)': 'Trening je za odrasle ({0}+)',
+  'Your day': 'Tvoj dan', 'Filled {0} of {1} values': 'Popunjeno {0} od {1} vrijednosti', 'That is a MyFitnessPal screenshot — use it in Connect': 'To je snimka iz MyFitnessPala — iskoristi je u koraku Poveži',
+  'Fill in your age, height and weight': 'Upiši dob, visinu i težinu', 'Beginner': 'Početnik', 'under {0} months': 'manje od {0} mjeseci', 'Intermediate': 'Srednja razina',
+  '{0} months – {1} years': '{0} mjeseci – {1} godine', 'Advanced': 'Napredni', '{0}+ years': '{0}+ godine', 'Pick your level': 'Odaberi razinu', 'Easy does it': 'Lagano', 'Push me hard': 'Na najjače',
+  'Lose fat': 'Gubitak masnoće', 'Build muscle': 'Izgradnja mišića', 'Get stronger': 'Više snage', 'Stay consistent': 'Dosljednost', 'Also · up to {0}': 'Još · do {0}', 'Goal · optional': 'Cilj · neobavezno',
+  'Lose': 'Skini', 'Gain': 'Dobij', 'Pick a main direction': 'Odaberi glavni smjer', 'Weekly': 'Tjedno', 'Own cycle': 'Vlastiti ciklus', 'Lifting days': 'Dani s utezima', 'a week': 'tjedno', 'a cycle': 'po ciklusu',
+  'Rather train on': 'Radije treniram', 'Weekdays': 'Radnim danima', 'Weekends': 'Vikendom', 'Minutes a session': 'Minuta po treningu', '{0}+': '{0}+',
+  'Full body': 'Full body', 'Upper': 'Upper', 'Lower': 'Lower', 'Full': 'Full', 'Full body A/B': 'Full body A/B', 'Upper A/B': 'Upper A/B', 'Lower A/B': 'Lower A/B',
+  'Pon': 'Pon', 'Uto': 'Uto', 'Sri': 'Sri', 'Čet': 'Čet', 'Pet': 'Pet', 'Sub': 'Sub', 'Ned': 'Ned',
+  'Kit': 'Oprema', 'Dumbbells': 'Bučice', 'Cables or bands': 'Sajle ili gume', 'Full gym': 'Cijela teretana', 'Bodyweight only': 'Samo vlastita težina', 'Sports': 'Sportovi',
+  'Running': 'Trčanje', 'Football': 'Nogomet', 'Cycling': 'Biciklizam', 'Other sport': 'Drugi sport', 'times a week': 'puta tjedno', 'times a cycle': 'puta po ciklusu', 'Steps': 'Koraci',
+  'Connect the band': 'Poveži narukvicu', 'Nutrition from MFP': 'Prehrana iz MFP-a', '{0} day read': '{0} dan učitan', '{0} days read': v => v[0] + ' ' + hrPl(v[0], 'dan učitan', 'dana učitana', 'dana učitano'),
+  'Not an MFP screenshot': 'Nije snimka iz MFP-a', 'You burn about': 'Trošiš oko', 'a day': 'dnevno', '{0} kcal': '{0} kcal', '{0} %': '{0} %', '({0}–{1} %)': '({0}–{1} %)', '({0}+ %)': '({0}+ %)',
+  'Lean mass {0} kg = {1} kg × {2} %': 'Nemasna masa {0} kg = {1} kg × {2} %',
+  'Based on your data and your goal of losing {0} kg by {1}:': 'Prema tvojim podacima i cilju od −{0} kg do {1}:', 'Based on your data and your goal of gaining {0} kg by {1}:': 'Prema tvojim podacima i cilju od +{0} kg do {1}:',
+  'Based on your data and your goal to lose fat:': 'Prema tvojim podacima i cilju gubitka masnoće:', 'Based on your data and your goal to build muscle:': 'Prema tvojim podacima i cilju izgradnje mišića:',
+  'Based on your data and your goal to get stronger:': 'Prema tvojim podacima i cilju da postaneš jači:', 'Based on your data and your goal to recomp:': 'Prema tvojim podacima i cilju rekompozicije:',
+  'Based on your data and your goal to maintain:': 'Prema tvojim podacima i cilju održavanja:', 'Based on your data and your goal to stay consistent:': 'Prema tvojim podacima i cilju dosljednosti:',
+  'about {0} kg a week,': 'oko {0} kg tjedno,', 'a daily deficit of about {0} kcal': 'dnevni deficit od oko {0} kcal', 'a daily surplus of about {0} kcal': 'dnevni suficit od oko {0} kcal',
+  'about {0} kcal a day,': 'oko {0} kcal dnevno,', '{0} training days': v => v[0] + ' ' + hrPl(v[0], 'dan treninga', 'dana treninga', 'dana treninga'), 'and': 'i',
+  '{0} habits': v => v[0] + ' ' + hrNav(v[0]), '{0} habit': v => v[0] + ' ' + hrNav(v[0]), 'to start.': 'za početak.',
+  'Pregnant or managing a medical condition? Check with your doctor first.': 'Trudnoća ili zdravstveno stanje? Prvo se posavjetuj s liječnikom.',
+  'Daily deficit': 'Dnevni deficit', 'Daily surplus': 'Dnevni suficit', 'Safe: {0} – {1} kcal': 'Sigurno: {0} – {1} kcal', '{0} – {1} g': '{0} – {1} g', 'Habits': 'Navike',
+  'Deficit {0} → surplus {1} kcal': 'Deficit {0} → suficit {1} kcal', 'Surplus {0} → deficit {1} kcal': 'Suficit {0} → deficit {1} kcal', 'Protein {0} → {1} g': 'Proteini {0} → {1} g',
+  'Motivation {0} → {1}': 'Motivacija {0} → {1}', 'Cycle {0} → {1} days from cycle {2}': v => 'Ciklus ' + v[0] + ' → ' + v[1] + ' ' + dana(v[1]) + ' od ' + v[2] + '. ciklusa',
+  'Cycle {0} → {1} days': v => 'Ciklus ' + v[0] + ' → ' + v[1] + ' ' + dana(v[1]), 'New cycle days from today': 'Novi dani ciklusa od danas', 'New cycle days': 'Novi dani ciklusa',
+  '· required': '· obavezno', '· bonus': '· bonus', 'Main goal {0} kg by {1}': 'Glavni cilj {0} kg do {1}', '+ Consistency goal · {0} of {1}': '+ Cilj dosljednosti · {0} od {1}',
+  'The days already gone stay as they are.': 'Prošli dani ostaju kakvi jesu.', 'Nothing to change in the plan. The answers are saved.': 'U planu nema promjena. Odgovori su spremljeni.', 'Apply': 'Primijeni',
+  "Plan started. Let's go!": 'Plan je krenuo. Idemo!', 'Answers saved · the plan stays': 'Odgovori spremljeni · plan ostaje', 'Plan changed from today': 'Plan promijenjen od danas', 'Answers saved': 'Odgovori spremljeni',
+  'Setup questions': 'Pitanja za plan', 'Six questions · a plan to compare': 'Šest pitanja · plan za usporedbu', 'Also': 'Još',
+  // the setup's field labels before the unit moves into the box, and after (already Croatian)
+  'Body fat (%) · optional': 'Tjelesna mast (%) · neobavezno', 'Muscle (kg) · optional': 'Mišići (kg) · neobavezno', 'Tjelesna mast · neobavezno': 'Tjelesna mast · neobavezno', 'Mišići · neobavezno': 'Mišići · neobavezno',
+  'Visina': 'Visina', 'Težina': 'Težina', 'Dob': 'Dob',
+});
+// the energy line (BMR from Katch-McArdle, Mifflin-St Jeor or My profile) and the body fat band (men / women)
+for (const [en, hr] of [['Katch-McArdle', 'Katch-McArdle'], ['Mifflin-St Jeor', 'Mifflin-St Jeor'], ['My profile', 'Moj profil']]) HR_DICT['BMR {0} (' + en + ') + activity {1} + training {2}'] = 'BMR {0} (' + hr + ') + aktivnost {1} + trening {2}';
+for (const [c, ch] of [['essential fat', 'esencijalna mast'], ['athletic', 'sportaška razina'], ['fit', 'u formi'], ['average', 'prosječno'], ['above average', 'iznad prosjeka']])
+  for (const [w, wh] of [['men', 'muškarce'], ['women', 'žene']]) HR_DICT['body fat · ' + c + ' for ' + w] = 'masti · ' + ch + ' za ' + wh;
+// "Phase Cut → Maintain" and Settings' "Lose fat · Intermediate"
+{ const ph = [['Cut', 'Definicija'], ['Maintain', 'Održavanje'], ['Recomp', 'Rekomp'], ['Bulk', 'Masa']]; for (const [a, ah] of ph) for (const [b, bh] of ph) if (a !== b) HR_DICT['Phase ' + a + ' → ' + b] = 'Faza ' + ah + ' → ' + bh;
+  const dr = [['Lose fat', 'Gubitak masnoće'], ['Build muscle', 'Izgradnja mišića'], ['Get stronger', 'Više snage'], ['Recomp', 'Rekomp'], ['Maintain', 'Održavanje'], ['Stay consistent', 'Dosljednost']], lv = [['Beginner', 'Početnik'], ['Intermediate', 'Srednja razina'], ['Advanced', 'Napredni']];
+  for (const [d, dh] of dr) for (const [l, lh] of lv) HR_DICT[d + ' · ' + l] = dh + ' · ' + lh; }
+// a habit's days with the new day types: "On Legs, Lower and Muay Thai days" (every mix of the eight)
+{ const T = [['Push', 'Push'], ['Pull', 'Pull'], ['Legs', 'Legs'], ['Full body', 'Full body'], ['Upper', 'Upper'], ['Lower', 'Lower'], ['Muay Thai', 'Muay Thai'], ['rest', 'odmor']], list = (l, and) => l.length === 1 ? l[0] : l.slice(0, -1).join(', ') + and + l[l.length - 1];
+  for (let m = 1; m < 256; m++) { const pick = T.filter((x, i) => m & (1 << i)); HR_DICT['On ' + list(pick.map(x => x[0]), ' and ') + ' days'] = 'Dani: ' + list(pick.map(x => x[1]), ' i '); } }
 /* ---------- Boot ---------- */
 (async function boot() {
   i18nStart();   // Croatian: translate everything the app shows from here on
