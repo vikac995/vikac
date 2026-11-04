@@ -1313,6 +1313,9 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .todo li.bonus.done .st{background:var(--ok)}
 .todo li.bonus.just{animation-name:justGlow}
 .ok5.on.b{background:var(--ok)}
+/* a goal keeps its size when it is crossed out (only its colour and the line change) */
+.todo li.done{min-height:60px;padding:9px 12px}
+.todo li.done .ic{width:40px;height:40px}
 </style>
 </head>
 <body>
@@ -1320,7 +1323,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.8.3';
+const APP_VERSION = '4.8.4';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)

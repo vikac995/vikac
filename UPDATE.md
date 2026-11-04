@@ -1,6 +1,6 @@
-# What to do now — updating to v4.8.3
+# What to do now — updating to v4.8.4
 
-This zip is the complete app at v4.8.3 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v4.8.4 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v4.8.3 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.8.3 found — reloading".
+1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.8.4 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The phone's own bar under the app (orange before 4.0, dark now) and the app name come with the home-screen icon: Chrome refreshes them by itself within a few days, or right away when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -40,6 +40,7 @@ Nothing else changes: same address, same key, the bucket and the data stay. Work
 
 ## E. What changed since the version on your phone
 
+- v4.8.4 — Goals keep their size when crossed out (they used to shrink); the blue line through them stays.
 - v4.8.3 — Done goals are all green: the bonus ones (weigh-in, mobility, hangs…) no longer turn blue when ticked, on Today, in the day sheet and in the ball details.
 - v4.8.2 — **Calendar banners:** the Month view shows a season banner (banner-autumn.png … banner-summer.png) behind the month name, faded into the page; the month arrows sit either side of the year so they never cover the art. Seasons without a banner keep the old look.
 - v4.8.1 — The + on the Log button is solid white with a black edge (it looked like a hole). On Today the ‹ › arrows moved down beside the big ball, always at the same height (summon day included), and the days in the strip are bigger and easier to read.
