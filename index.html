@@ -1278,6 +1278,24 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .t4strip .mb:not(.cur) .mbd{color:var(--muted)}
 .t4strip .mbsel{height:100%;width:30px}
 .t4strip .mb.today::after{top:2px;right:3px}
+/* strip without arrows: bigger days; ‹ › either side of the big ball, always at the same height */
+.t4strip .mbw{max-width:none}
+.t4strip .mbs{gap:3px}
+.t4strip .mb{padding:6px 0 5px;gap:3px}
+.t4strip .mb .mbb{height:33px}
+.t4strip .mb .mbb>img,.t4strip .mb .mbb>svg{width:28px!important;height:28px!important}
+.t4strip .mb.cur .mbb>img,.t4strip .mb.cur .mbb>svg{width:32px!important;height:32px!important}
+.t4strip .mbd{font-size:12.5px}
+.t4strip .mbw2{font-size:11px}
+.t4strip .mbsel{border-radius:11px}
+.t4strip .mb.today::after{top:3px;right:4px;width:7px;height:7px}
+.t4stage{position:relative;padding-top:28px}
+.t4hero{margin-top:0}
+.t4ring.orb{margin:0 0 26px}
+.t4stage>.arrow{position:absolute;top:78px;z-index:3;width:40px;height:40px;padding:0;border-radius:50%;background:rgba(27,28,34,.88);border:1.5px solid var(--line2);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.t4stage>.arrow svg{width:20px;height:20px}
+.t4stage>.arrow:active{transform:scale(.92)}
+.t4stage>.arrow.sl{left:2px}.t4stage>.arrow.sr{right:2px}
 </style>
 </head>
 <body>
@@ -1285,7 +1303,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.8.0';
+const APP_VERSION = '4.8.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2917,7 +2935,7 @@ function markJust(kind) {
   }
   const f = app.querySelector('.nav .fab'); if (!f) return;
   clearTimeout(markJust.t); f.classList.remove('saved'); void f.offsetWidth; f.classList.add('saved'); f.innerHTML = IC4.check;
-  markJust.t = setTimeout(() => { if (!f.isConnected) return; f.classList.remove('saved'); f.innerHTML = IC4.plus; }, 1100);
+  markJust.t = setTimeout(() => { if (!f.isConnected) return; f.classList.remove('saved'); f.innerHTML = FAB_PLUS; }, 1100);
 }
 function toast(msg, ms) { let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.classList.remove('out'); t.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.add('out'); toastTimer = setTimeout(() => t.remove(), 200); }, ms || 1800); }
 // Navigation: a pushed screen slides in from the right, going back slides in from the left, tabs cross-fade
@@ -3608,6 +3626,8 @@ function fsBindDrag() {
 
 /* ============ Trening 4: Today, Quick log, Workout (dark) ============ */
 const SV = p => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+// the + on the round Log button: white with a black edge, so it reads as a solid mark, not a hole in the button
+const FAB_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke-linecap="round"><path d="M12 5v14M5 12h14" stroke="#000" stroke-width="6"/><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="3.4"/></svg>';
 const IC4 = {
   scale: SV('<rect x="3" y="4" width="18" height="16" rx="4"/><path d="M8 9a5 5 0 0 1 8 0M12 9l1.5-2"/>'),
   fork: SV('<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10"/><path d="M17 21V3c-2.5 1.5-3.5 4-3.5 7.5S15 14 17 14"/>'),
@@ -3632,7 +3652,7 @@ function nav(on) {
   return `<div class="nav${on === 'dash' ? ' hn' : ''}">
     <button data-nav="today" class="${on === 'today' ? 'on' : ''}">${ICONS.today}Today</button>
     <button data-nav="journey" class="${on === 'journey' || on === 'cal' ? 'on' : ''}">${IC4.journey}Journey</button>
-    <button class="fab" data-fab aria-label="Log">${IC4.plus}</button>
+    <button class="fab" data-fab aria-label="Log">${FAB_PLUS}</button>
     <button data-nav="dash" class="${on === 'dash' ? 'on' : ''}">${IC4.scouter}Scouter${unseenTips() ? `<span class="nbadge">${unseenTips()}</span>` : ''}</button>
     <button data-nav="profile" class="${on === 'profile' ? 'on' : ''}">${ICONS.settings}Settings</button>
   </div>`;
@@ -3697,7 +3717,9 @@ function t4StripBalls(date, cyc) {
     const dt = parse(x.date), col = x.cd === 8 ? 'var(--gold)' : JCOL[x.type.k] || 'var(--muted)';
     return `<button class="mb ${ok || (x.cd === 8 && cyc.dragon) ? 'got' : ''} ${x.date === date ? 'cur' : ''} ${x.date === td ? 'today' : ''}" data-goto="${x.date}" aria-label="${WD[dt.getDay()]} ${fmtShort(x.date)}, ${esc(x.cd === 8 ? 'summon day' : x.type.label)}${x.date === date ? ', shown' : ''}"><span class="mbb">${a}</span><span class="mbd">${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}</span><span class="mbw2" style="color:${col}">${WD[dt.getDay()].slice(0, 3)}</span></button>`; }).join('');
 }
-function t4StripHtml(date, cyc) { return `<div class="t4strip" id="t4strip" data-cyc="${cyc.num}"><button class="arrow" data-day="-1" aria-label="Previous day">‹</button><div class="mbw"><span class="mbsel"></span><div class="mbs">${t4StripBalls(date, cyc)}</div></div><button class="arrow" data-day="1" aria-label="Next day">›</button></div>`; }
+function t4StripHtml(date, cyc) { return `<div class="t4strip" id="t4strip" data-cyc="${cyc.num}"><div class="mbw"><span class="mbsel"></span><div class="mbs">${t4StripBalls(date, cyc)}</div></div></div>`; }
+// ‹ › sit either side of the big ball, on the same spot every day (the ball is always at the same height, summon day included)
+const T4_ARROWS = '<button class="arrow sl" data-day="-1" aria-label="Previous day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><button class="arrow sr" data-day="1" aria-label="Next day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>';
 // the highlight behind the shown day glides to it (jumps when the strip changes cycle)
 function t4SelPlace(glide) {
   const st = $('#t4strip'); if (!st) return; const sel = st.querySelector('.mbsel'), cur = st.querySelector('.mb.cur'); if (!sel) return;
@@ -3717,7 +3739,7 @@ function t4HeadUpdate(date, info, cyc) {
   if (chip) chip.textContent = pl.pl.toLocaleString('en-GB'); return true;
 }
 function bindTodayNav() {
-  app.querySelectorAll('#t4head [data-day], #t4strip [data-day]').forEach(b => b.onclick = e => { e.stopPropagation(); shiftDay(+b.dataset.day); });
+  app.querySelectorAll('#t4head [data-day], .t4stage > [data-day]').forEach(b => b.onclick = e => { e.stopPropagation(); shiftDay(+b.dataset.day); });
   app.querySelectorAll('#t4strip [data-goto]').forEach(b => b.onclick = e => { e.stopPropagation(); const d = b.dataset.goto; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; patchToday(dir); });
 }
 function t4StripRefresh(date, cyc, dir) {
@@ -3794,7 +3816,7 @@ function todayHtml() {
   if (info.phase === 'post') return `<div class="screen"><div class="t4pre"><div class="big" style="font-size:72px">Finished</div><div class="cond" style="font-size:16px;color:var(--muted)">${fmtDate(p.endDate)}</div></div>
     <div class="card" style="text-align:center;margin-top:22px">Progress has the verdict.</div><button class="btn" data-newp>Start a new project</button><button class="link" data-nav="profile" style="margin-top:8px">Extend it in Settings</button></div>${nav('today')}`;
   const cyc = cycleOf(date);
-  return `<div class="screen swipe">${t4HeadHtml(date, info, cyc)}${bk}${t4StripHtml(date, cyc)}<div id="t4body">${t4BodyHtml(date, info)}</div></div>${nav('today')}`;
+  return `<div class="screen swipe">${t4HeadHtml(date, info, cyc)}${bk}${t4StripHtml(date, cyc)}<div class="t4stage">${T4_ARROWS}<div id="t4body">${t4BodyHtml(date, info)}</div></div></div>${nav('today')}`;
 }
 // Go to R.date on Today: only the day slides in; the header, the strip and the tab bar stay (a full redraw only when
 // leaving or entering the project's days, e.g. back to the countdown)
