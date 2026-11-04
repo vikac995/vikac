@@ -1394,6 +1394,28 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .t4noterow.has{border-style:solid;background:var(--card)}.t4noterow.has .nlab>span{color:var(--ink);font-style:italic;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .sett .warnbox{margin:4px 0 6px;cursor:pointer}
 .hpast{display:block;width:100%;text-align:left;cursor:pointer}
+/* v5.1 · the ⇄ change chip, finished tiles with their result, Muay Thai sessions, the change-the-day sheet */
+.chg{display:inline-flex;align-items:center;gap:5px;margin-top:7px;min-height:0;padding:4px 10px 4px 8px;border-radius:999px;background:rgba(0,0,0,.32);border:1.5px solid rgba(255,255,255,.2);color:var(--ink);font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;position:relative;z-index:2;cursor:pointer}
+.chg svg{width:15px;height:15px}.chg:active{transform:scale(.96)}
+.wt.done .chg{margin-top:5px;padding:2px 9px 2px 7px;font-size:11.5px;background:rgba(0,0,0,.22)}
+.wt.done.res{display:block;padding:12px}
+.wt.done.res .top{display:flex;align-items:center;gap:12px}
+.wt.done.res .st4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:11px}
+.wt.done.res .st4>div{background:rgba(0,0,0,.25);border:1px solid rgba(61,220,132,.22);border-radius:11px;padding:7px 3px 6px;text-align:center;min-width:0}
+.wt.done.res .st4 b{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:19px;line-height:1.05;color:var(--ink);white-space:nowrap}
+.wt.done.res .st4 small{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#8fb59f;margin-top:2px}
+.wt.done.res .st4 em{display:block;font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;color:var(--ok);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wt.done.res .st4 em.n{color:#9aa0a8}.wt.done.res .st4 em.r{color:var(--warn)}
+.wt.done.res .pbs{margin-top:10px;font-size:13.5px;color:#d9d4cd;line-height:1.5}.wt.done.res .pbs .pbtag{margin-right:6px}.wt.done.res .pbs b{color:var(--ink);font-weight:600}
+.mts{background:var(--card);border:1.5px solid var(--line);border-radius:16px;overflow:hidden}
+.mts .r{display:flex;align-items:center;gap:12px;padding:11px 12px;border-top:1px solid var(--line)}.mts .r:first-child{border-top:0}
+.mts .ic{width:38px;height:38px;border-radius:11px;background:var(--s2);display:flex;align-items:center;justify-content:center;flex:none;color:var(--ink2)}.mts .ic svg{width:20px;height:20px}
+.mts .tt{flex:1;min-width:0}.mts .tt b{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:17px;letter-spacing:.04em}.mts .tt span{font-size:13px;color:var(--muted)}
+.mts .x{min-height:0;width:36px;height:36px;padding:0;color:var(--muted);font-size:22px;line-height:1}
+.mtadd{display:flex;width:100%;align-items:center;justify-content:center;gap:8px;margin-top:8px;padding:12px;border-radius:14px;border:1.5px dashed var(--line2);font-family:'BarlowC',sans-serif;font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--or2)}
+.mtadd[hidden],.mtaddf[hidden]{display:none}.mtaddf{margin-top:8px}
+.mttot{display:flex;justify-content:space-between;align-items:baseline;margin:12px 2px 2px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.mttot b{font-size:16px;color:var(--ink);letter-spacing:.04em}
+.chrow{min-height:58px}.chrow .cdot{width:12px;height:12px;border-radius:50%;flex:none;margin:0 4px}.chrow.cur{background:var(--orsoft)}
 </style>
 </head>
 <body>
@@ -1401,7 +1423,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.0.0';
+const APP_VERSION = '5.1.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1562,11 +1584,8 @@ async function bandFetch() {
     // kcal burned during those sessions come along too (unless typed by hand)
     for (const d in j.days || {}) { if (!P() || d < P().startDate || d > P().endDate) continue; const info = dayInfo(d); if (!info.items || !info.items.some(it => it.id === 'mt')) continue;
       const ws = (j.days[d].workouts || []).filter(w => MT_TYPES.test(w.type || '')), min = ws.reduce((a, w) => a + (+w.min || 0), 0), kc = ws.reduce((a, w) => a + (+w.kcal || 0), 0) || null; if (!min) continue;
-      const cur = day(d).mt;
-      if (cur && cur.src === 'cleared') continue;
-      if (cur && cur.minutes && cur.src !== 'band') { if (kc && cur.kcalSrc !== 'hand' && cur.kcal !== kc) cur.kcal = kc; continue; }
-      if (cur && cur.src === 'band' && +cur.minutes === min && (cur.kcal || null) === kc) continue;
-      day(d).mt = { minutes: min, kcal: cur && cur.kcalSrc === 'hand' ? cur.kcal : kc, kcalSrc: cur && cur.kcalSrc === 'hand' ? 'hand' : undefined, note: cur ? cur.note : '', src: 'band' }; }
+      const m = mtNorm(day(d).mt || (day(d).mt = { hand: [] })); if (m.noBand) continue;
+      m.band = { min, kcal: kc, n: ws.length }; mtRecalc(m); }
     const changed = JSON.stringify(S.health.days) !== before; save(); return { ok: true, changed, last: S.health.last };
   } catch (e) { return { ok: false, error: 'Inbox not reachable' }; }
 }
@@ -1607,8 +1626,21 @@ async function load() {
   if (navigator.storage && navigator.storage.persist) { try { navigator.storage.persist(); } catch (e) {} }
 }
 
+// Muay Thai on a day = the band's boxing / martial-arts sessions (added up) + sessions typed by hand. minutes and kcal are the
+// totals (what everything else reads). noBand: you cleared the band's part, so it isn't filled again.
+function mtNorm(m) {
+  if (!m || m.hand) return m;
+  if (m.src === 'band') { m.band = { min: +m.minutes || 0, kcal: m.kcal ? +m.kcal : null, n: 1 }; m.hand = []; }
+  else { m.hand = m.minutes ? [{ min: +m.minutes, kcal: m.kcal ? +m.kcal : null }] : []; if (m.src === 'cleared') m.noBand = true; }
+  delete m.src; delete m.kcalSrc; return m;
+}
+function mtRecalc(m) {
+  mtNorm(m); const b = m.band && !m.noBand ? m.band : null, mins = (b ? +b.min || 0 : 0) + m.hand.reduce((a, x) => a + (+x.min || 0), 0), kc = (b ? +b.kcal || 0 : 0) + m.hand.reduce((a, x) => a + (+x.kcal || 0), 0);
+  m.minutes = mins || null; m.kcal = kc || null; return m;
+}
+function mtSessions(m) { if (!m) return 0; mtNorm(m); return (m.band && !m.noBand && m.band.min ? m.band.n || 1 : 0) + m.hand.length; }
 // v5: one note per day. A Muay Thai session's own note joins the day's note (once; the session keeps no note of its own)
-function foldMtNotes(days) { for (const d in days || {}) { const x = days[d], m = x && x.mt; if (!m || !m.note) continue; const n = String(m.note).trim(); if (n && !(x.note || '').includes(n)) x.note = x.note ? x.note + ' · ' + n : n; delete m.note; } }
+function foldMtNotes(days) { for (const d in days || {}) { const x = days[d], m = x && x.mt; if (m) mtNorm(m); if (!m || !m.note) continue; const n = String(m.note).trim(); if (n && !(x.note || '').includes(n)) x.note = x.note ? x.note + ' · ' + n : n; delete m.note; } }
 
 /* ---------- Projects: the live one plus past ones, each a self-contained bundle ---------- */
 function ensureArchive() { if (!Array.isArray(S.archive)) S.archive = []; }
@@ -1662,19 +1694,23 @@ function dayInfo0(date) {
   if (t > Dd) return { t, idx, phase: 'post' };
   const cd = ((t % 8) + 8) % 8, cyc = PROGRAM.cycle[cd], cycleNum = Math.floor(t / 8) + 1;
   const variant = cycleNum % 2 === 1 ? 'A' : 'B';
-  const workoutKey = cyc.w === 'rest' || cyc.w === 'mt' ? null : cyc.w + variant;
+  // the plan says what the day is; you can change any day to whatever happened (Settings-free: the ⇄ on the training card)
+  const planKey = cyc.w === 'rest' || cyc.w === 'mt' ? cyc.w : cyc.w + variant, ov = (S.days[date] || {}).plan;
+  const key = ov && (ov === 'rest' || ov === 'mt' || PROGRAM.workouts[ov]) ? ov : planKey;
+  const w = key === 'rest' || key === 'mt' ? key : PROGRAM.workouts[key].group;
+  const workoutKey = w === 'rest' || w === 'mt' ? null : key;
   const items = [{ id: 'weigh', label: 'Morning weigh-in', sub: 'Log the scale' }];
-  if (cyc.w === 'mt') items.push({ id: 'mt', label: 'Muay Thai', sub: 'Bag work / class — log minutes' });
+  if (w === 'mt') items.push({ id: 'mt', label: 'Muay Thai', sub: 'Bag work / class — log minutes' });
   if (workoutKey) items.push({ id: 'workout', key: workoutKey, label: PROGRAM.workouts[workoutKey].name, sub: PROGRAM.workouts[workoutKey].ex.length + ' exercises' });
-  if (PROGRAM.mobilityDays.includes(cyc.d)) items.push({ id: 'mobility', label: 'Kick mobility warm-up', sub: 'Range of motion routine' });
+  if (w === 'mt' || w === 'legs') items.push({ id: 'mobility', label: 'Kick mobility warm-up', sub: 'Range of motion routine' });
   if (!cyc.noHang) items.push({ id: 'hang', label: 'Dead hangs — 3 min', sub: 'Log your best hang' });
   if (!cyc.noStretch) items.push({ id: 'stretch', label: 'Stretching for kicks', sub: '11 steps · ~13 min' });
   items.push({ id: 'nutrition', label: 'Nutrition', sub: 'Calories · protein · band kcal' });
   // Training days: the session and nutrition earn the ball, the rest is bonus. Rest days: everything is required.
-  const training = cyc.w !== 'rest';
+  const training = w !== 'rest';
   for (const it of items) it.req = !training || it.id === 'workout' || it.id === 'mt' || it.id === 'nutrition';
   items.sort((a, b) => (b.req ? 1 : 0) - (a.req ? 1 : 0));
-  return { t, idx, phase: t === Dd ? 'final' : 'on', cycleDay: cyc.d, cycleNum, variant, workoutKey, isRest: cyc.w === 'rest', isMT: cyc.w === 'mt', items, daysLeft: Dd - t, training };
+  return { t, idx, phase: t === Dd ? 'final' : 'on', cycleDay: cyc.d, cycleNum, variant, workoutKey, isRest: w === 'rest', isMT: w === 'mt', items, daysLeft: Dd - t, training, planKey, dayKey: key, changed: key !== planKey };
 }
 function day(date) { return S.days[date] || (S.days[date] = { done: {} }); }
 function isDone(date, id) {
@@ -3903,21 +3939,29 @@ function wtHtml(date, info, cyc) {
   const k = liftKind(info), td = today(), future = date > td, wd = WD[parse(date).getDay()].slice(0, 3) + ' ' + fmtShort(date);
   const lab = `<div class="lab2">${date === td ? 'Today\'s training' : 'Training'} <span>· ${wd}</span></div>`;
   const labR = `<div class="lab2">${date === td ? 'Today' : 'Rest'} <span>· ${wd}</span></div>`;
+  const chg = chgHtml(info), st4 = (v, l, em, cls) => `<div><b>${v}</b><small>${l}</small>${em ? `<em class="${cls || ''}">${em}</em>` : ''}</div>`;
   if (info.workoutKey) {
     const w = PROGRAM.workouts[info.workoutKey], s = S.sessions.find(x => x.date === date), m = workoutMinutes(info.workoutKey), lb = liftBand(date);
-    if (isDone(date, 'workout')) { const ss = s || { ex: [] }, n = ss.ex.filter(e => e.done).length, pbs = s ? sessionPBs(s) : 0;
-      return `<div class="wt done ${k}" data-wt>${liftArtHtml('done')}<div class="tx">${lab}<div class="t h1">${esc(s ? PROGRAM.workouts[s.key].name : w.name)}</div><div class="s">${s ? n + '/' + ss.ex.length + ' exercises' : 'Done'}${pbs ? ' · ' + pbs + ' PB' + (pbs > 1 ? 's' : '') : ''}${lb && lb.kcal ? ' · ' + lb.kcal + ' kcal' : ''}${s ? volDelta(s) : ''}</div></div><span class="ok">${IC4.check}</span></div>`; }
+    if (isDone(date, 'workout')) {
+      if (!s) return `<div class="wt done ${k}" data-wt>${liftArtHtml('done')}<div class="tx">${lab}<div class="t h1">${esc(w.name)}</div><div class="s">Done${lb && lb.kcal ? ' · ' + lb.kcal + ' kcal' : ''}</div>${chg}</div><span class="ok">${IC4.check}</span></div>`;
+      const vol = sessVol(s), vp = volPct(s), pl = sessionPBSets(s), vt = vol >= 1000 ? (vol / 1000).toFixed(1) + ' t' : vol ? fmtN(vol) + ' kg' : '—';
+      return `<div class="wt done res ${k}" data-wt><div class="top">${liftArtHtml('done')}<div class="tx">${lab}<div class="t h1">${esc(PROGRAM.workouts[s.key].name)}</div>${chg}</div><span class="ok">${IC4.check}</span></div>
+        <div class="st4">${st4(lb && lb.min ? lb.min + ' min' : '—', 'Time', lb && lb.min ? 'band' : 'no band', 'n')}${st4(lb && lb.kcal ? fmtN(lb.kcal) : '—', 'kcal', lb && lb.kcal ? 'band' : '', 'n')}${st4(vt, 'Volume', vp == null ? s.ex.filter(e => e.done).length + '/' + s.ex.length + ' done' : arrowNum(vp, x => x + ' %'), vp == null ? 'n' : vp >= 0 ? '' : 'r')}${st4(pl.length, pl.length === 1 ? 'PB' : 'PBs', pl.length ? 'new' : '—', pl.length ? '' : 'n')}</div>
+        ${pl.length ? `<div class="pbs"><span class="pbtag">${TROPHY}PB</span>${pl.map(x => `<b>${esc(x.n)}</b> ${esc(x.v)}`).join(' · ')}</div>` : ''}</div>`; }
     const kinds = []; w.ex.forEach(e => (EQUIP[e.n] || '').split(' ').forEach(q => { if (q && !kinds.includes(q)) kinds.push(q); }));
     const started = s && s.ex.some(e => e.done || e.sets.some(st => st.kg || st.reps) || e.reps);
-    return `<div class="wt ${k}" data-wt>${liftArtHtml(k)}${lab}<div class="t h1">${esc(w.name)}</div><div class="s">${started ? s.ex.filter(e => e.done).length + '/' + w.ex.length + ' done' : w.ex.length + ' exercises'} · ~${m} min</div>
+    return `<div class="wt ${k}" data-wt>${liftArtHtml(k)}${lab}<div class="t h1">${esc(w.name)}</div><div class="s">${started ? s.ex.filter(e => e.done).length + '/' + w.ex.length + ' done' : w.ex.length + ' exercises'} · ~${m} min</div>${chg}
       <div class="eqrow">${kinds.map(q => `<span class="eqi ${q}">${EQ_SVG[q]}</span>`).join('')}</div>
       <button class="btn big" data-startwo>${future ? 'Preview workout' : started ? 'Continue ▶' : 'Start workout ▶'}</button></div>`;
   }
   if (info.isMT) {
     const mt = (S.days[date] || {}).mt || {};
-    if (isDone(date, 'mt')) return `<div class="wt done mt" data-wt>${liftArtHtml('done')}<div class="tx">${lab}<div class="t h1">Muay Thai</div><div class="s">${mt.minutes ? mt.minutes + ' min' : 'Done'}${mt.kcal ? ' · ' + mt.kcal + ' kcal' : ''}${mt.src === 'band' ? ' · from the band' : ''}${mtDelta(date)}</div></div><span class="ok">${IC4.check}</span></div>`;
+    if (isDone(date, 'mt')) { const ns = mtSessions(mt) || 1, pm = mtPrevMin(date), dl = pm == null || !mt.minutes ? null : +mt.minutes - pm;
+      const cm = cyc.days.reduce((a, x) => a + (+(((S.days[x.date] || {}).mt || {}).minutes) || 0), 0), cn = cyc.days.reduce((a, x) => a + mtSessions((S.days[x.date] || {}).mt), 0);
+      return `<div class="wt done res mt" data-wt><div class="top">${liftArtHtml('done')}<div class="tx">${lab}<div class="t h1">Muay Thai</div>${chg}</div><span class="ok">${IC4.check}</span></div>
+        <div class="st4">${st4(ns, ns === 1 ? 'Session' : 'Sessions', mt.band && !mt.noBand && mt.band.min ? 'band' : 'typed', 'n')}${st4(mt.minutes ? mt.minutes + ' min' : '—', 'Time', dl == null ? '' : arrowNum(dl, x => x + ' min'), dl > 0 ? '' : dl < 0 ? 'r' : 'n')}${st4(mt.kcal ? fmtN(mt.kcal) : '—', 'kcal', '', 'n')}${st4(Math.floor(cm / 60) + ' h ' + pad(cm % 60), 'This cycle', cn + (cn === 1 ? ' session' : ' sessions'), 'n')}</div></div>`; }
     const mob = info.items.some(it => it.id === 'mobility');
-    return `<div class="wt mt" data-wt>${liftArtHtml('mt')}${lab}<div class="t h1">Muay Thai</div><div class="s">Minutes and kcal from the band${mob ? ' · kick mobility first' : ''}</div>
+    return `<div class="wt mt" data-wt>${liftArtHtml('mt')}${lab}<div class="t h1">Muay Thai</div><div class="s">Minutes and kcal from the band${mob ? ' · kick mobility first' : ''}</div>${chg}
       <button class="btn big" data-startwo>${future ? 'Open' : 'Log Muay Thai'}</button></div>`;
   }
   const title = cyc.summonDay ? 'Summon day' : 'Rest day';
@@ -3926,9 +3970,35 @@ function wtHtml(date, info, cyc) {
       <button class="btn big sumbtn" ${cyc.ready ? 'data-summon' : 'disabled'}><span class="sfill"></span><span class="slab">${cyc.ready ? 'Hold to summon' : IC4.lock + 'Summon'}</span></button></div>`;
   if (cyc.summoned) return `<div class="wt done rest summoned" data-wt><div class="art">${dragonBadgeSvg({ state: 'done', size: 58 })}</div><div class="tx">${labR}<div class="t h1">Dragon summoned</div></div><span class="ok">${IC4.check}</span></div>`;
   const noSum = cyc.summonDay && !cyc.canSummon ? `<div class="s">${cyc.earned} / 7 balls · no summon this cycle</div>` : '';
-  if (cyc.todayDone) return `<div class="wt done rest" data-wt>${liftArtHtml('done')}<div class="tx">${labR}<div class="t h1">${title}</div>${noSum}</div><span class="ok">${IC4.check}</span></div>`;
-  return `<div class="wt rest" data-wt>${liftArtHtml('rest')}${labR}<div class="t h1">${title}</div>${noSum}</div>`;
+  if (cyc.todayDone) return `<div class="wt done rest" data-wt>${liftArtHtml('done')}<div class="tx">${labR}<div class="t h1">${title}</div>${noSum}${chg}</div><span class="ok">${IC4.check}</span></div>`;
+  return `<div class="wt rest" data-wt>${liftArtHtml('rest')}${labR}<div class="t h1">${title}</div>${noSum}${chg}</div>`;
 }
+// ⇄ on the training card: change the day to whatever is on (or happened); it says what the plan was once changed
+const SWAP_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4L3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>';
+function planName(k) { return k === 'rest' ? 'Rest' : k === 'mt' ? 'Muay Thai' : PROGRAM.workouts[k] ? PROGRAM.workouts[k].name : k; }
+function chgHtml(info) { return info.planKey ? `<button class="chg" data-chg>${SWAP_IC}<span>${info.changed ? 'Plan: ' + esc(planName(info.planKey)) : 'Change'}</span></button>` : ''; }
+function changeDaySheet(date) {
+  const info = dayInfo(date); if (!info.items) return; const opts = ['pushA', 'pushB', 'pullA', 'pullB', 'legsA', 'legsB', 'mt', 'rest'];
+  const sub = k => k === 'rest' ? 'weigh-in, food, hangs, stretching' : k === 'mt' ? 'minutes and kcal from the band' : PROGRAM.workouts[k].ex.length + ' exercises · ~' + workoutMinutes(k) + ' min';
+  const col = k => JCOL[k === 'rest' || k === 'mt' ? k : PROGRAM.workouts[k].group] || 'var(--muted)';
+  const row = k => `<button class="srow chrow ${info.dayKey === k ? 'cur' : ''}" data-k="${k}"><span class="cdot" style="background:${col(k)}"></span><span class="st"><b>${esc(planName(k))}</b><span>${sub(k)}</span></span>${info.planKey === k ? '<span class="stc off">Plan</span>' : ''}${info.dayKey === k ? '<span class="stc on">✓</span>' : ''}</button>`;
+  modal(`<div class="hdl"></div><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="h1" style="font-size:32px">Change the day</span><span class="cond muted" style="font-size:13px">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)}</span></div>
+    <div class="muted" style="margin:4px 0 12px;font-size:14px">What's on, or what happened. The goals follow it.</div><div class="sgrp">${opts.map(row).join('')}</div>
+    ${info.changed ? `<button class="btn sec" data-plan style="margin-top:12px">Back to the plan · ${esc(planName(info.planKey))}</button>` : ''}`, b => {
+    b.classList.add('sheetbg');
+    const set = k => { const d = day(date); if (k === info.planKey) delete d.plan; else d.plan = k; save(); b.close(); if (R.screen === 'today') refreshToday(false); else render(); navBallRefresh(); toast(shortD(date) + ' is now ' + planName(k)); };
+    b.querySelectorAll('[data-k]').forEach(x => x.onclick = () => { if (x.dataset.k === info.dayKey) return b.close(); set(x.dataset.k); });
+    const bp = b.querySelector('[data-plan]'); if (bp) bp.onclick = () => set(info.planKey);
+  });
+}
+// PBs set in a session, each with the set that made it
+function sessionPBSets(s) {
+  return s.ex.map(e => { const t = exType(e.n), c = entryPB(e, t), o = exPB(e.n, t, s.id); if (!(c > 0 && o && c > o.v)) return null; const k = pbKind(e.n, t);
+    if (k !== 'kg') return { n: e.n, v: c + ' reps' };
+    const st = (e.sets || []).filter(x => +x.reps > 0 && +x.kg === c).sort((a, b) => b.reps - a.reps)[0]; return { n: e.n, v: c + ' kg × ' + (st ? st.reps : '') }; }).filter(Boolean);
+}
+function volPct(s) { const v = sessVol(s); if (!v) return null; const pv = S.sessions.filter(x => x.key === s.key && x.date < s.date && x.finished && sessVol(x) > 0).sort((a, b) => a.date < b.date ? 1 : -1)[0]; return pv ? Math.round((v - sessVol(pv)) / sessVol(pv) * 100) : null; }
+function mtPrevMin(date) { for (let i = 1; i <= 60; i++) { const x = (S.days[addDays(date, -i)] || {}).mt; if (x && +x.minutes > 0) return +x.minutes; } return null; }
 /* ---------- Feedback right after logging: how it compares, in an arrow and a word or two ----------
    Weigh-in: weight and body fat against the weigh-in before it (down is green on a cut). Nutrition: against the day's
    target (kcal under / over, protein hit / short). Dead hangs: against the last hang, with PB when it is one. Mobility and
@@ -4049,6 +4119,7 @@ function bindTodayBody(date, future) {
   const bb = body.querySelector('[data-bigball]'); if (bb) bb.onclick = () => showBalls(date);
   const openWT = () => { if (info.workoutKey) { const s = S.sessions.find(x => x.date === date); go('workout', { date, key: s ? s.key : info.workoutKey }); } else if (info.isMT) go('mt', { date }); else if (cycleOf(date).summoned) showDragon(date); else showBalls(date); };
   const wt = body.querySelector('[data-wt]'); if (wt) wt.onclick = openWT;
+  body.querySelectorAll('[data-chg]').forEach(c => c.onclick = e => { e.stopPropagation(); changeDaySheet(date); });
   startLiftAnim();
   body.querySelectorAll('[data-chk]').forEach(c => c.onclick = e => {
     e.stopPropagation(); if (future) return toast('That day hasn\'t happened yet');
@@ -4657,26 +4728,43 @@ function nutritionSheet(date) {
 
 /* ---------- Muay Thai ---------- */
 function mtSheet(date) {
-  const m = (S.days[date] || {}).mt || {}, past = [];
+  // one row per session: the band's (added up, as it records them) and the ones you typed; the day counts their total
+  const cur = mtNorm(JSON.parse(JSON.stringify((S.days[date] || {}).mt || { hand: [] }))), tm = mtSessionTime(date), past = [];
   for (const d in S.days) { const x = S.days[d].mt; if (x && x.minutes && d >= P().startDate && d <= today()) past.push(x); }
-  const tot = past.reduce((a, x) => a + (+x.minutes || 0), 0), tk = past.reduce((a, x) => a + (+x.kcal || 0), 0), tm = mtSessionTime(date);
-  const body = `<div class="lgbox">${bigStepper('minutes', m.minutes, '60', 5, 'min')}
-      ${m.src === 'band' ? `<div class="center" style="margin-top:10px"><span class="src">${IC4.watch}From the band${tm ? ' · ' + tm : ''}</span></div>` : ''}
+  const tot = past.reduce((a, x) => a + (+x.minutes || 0), 0), tk = past.reduce((a, x) => a + (+x.kcal || 0), 0), ns = past.reduce((a, x) => a + mtSessions(x), 0);
+  const rowsHtml = m => {
+    const b = m.band && !m.noBand && m.band.min ? `<div class="r"><span class="ic">${IC4.watch}</span><span class="tt"><b>${m.band.min} min${m.band.kcal ? ' · ' + fmtN(m.band.kcal) + ' kcal' : ''}</b><span>${m.band.n > 1 ? m.band.n + ' sessions · ' : ''}from the band${tm ? ' · ' + tm : ''}</span></span><button class="x" data-xband aria-label="Remove">×</button></div>` : '';
+    const h = m.hand.map((x, i) => `<div class="r"><span class="ic">${IC4.pen}</span><span class="tt"><b>${x.min} min${x.kcal ? ' · ' + fmtN(x.kcal) + ' kcal' : ''}</b><span>typed by hand</span></span><button class="x" data-xh="${i}" aria-label="Remove">×</button></div>`).join('');
+    mtRecalc(m); const n = mtSessions(m);
+    return (b || h ? `<div class="mts">${b}${h}</div>` : '') + (n ? `<div class="mttot"><span>This day</span><b>${n} session${n === 1 ? '' : 's'} · ${m.minutes} min${m.kcal ? ' · ' + fmtN(m.kcal) + ' kcal' : ''}</b></div>` : '');
+  };
+  const first = !mtSessions(cur);   // nothing yet: the form is open straight away
+  const body = `<div id="mtrows">${rowsHtml(cur)}</div>
+    <div class="mtaddf" id="mtadd" ${first ? '' : 'hidden'}><div class="lgbox">${bigStepper('minutes', '', '60', 5, 'min')}
       <div class="chips" style="justify-content:center;margin:12px 0 0">${[30, 45, 60, 90].map(v => `<button class="pill" data-pre="${v}">${v} min</button>`).join('')}</div></div>
-    <div class="grid4" style="margin-top:12px"><div class="field"><label>Calories burned</label><input name="kcal" type="number" inputmode="numeric" value="${m.kcal || ''}" placeholder="${m.src === 'band' ? 'from the band' : '—'}"></div><div class="field"><label>Note for the day</label><input name="note" value="${esc((S.days[date] || {}).note || '')}" placeholder="Pads, sparring…"></div></div>
-    ${m.src === 'band' ? '<div class="muted small center" style="margin-top:-4px">Change minutes or kcal to override the band.</div>' : ''}
-    ${past.length ? `<div class="secl" style="margin-top:14px"><span>This project</span><span>${past.length} session${past.length === 1 ? '' : 's'} · ${fmtN(tot)} min${tk ? ' · ' + fmtN(tk) + ' kcal' : ''}</span></div>` : ''}
-    ${m.minutes || ((S.days[date] || {}).done || {}).mt ? '<button class="link dl" data-clear>Clear this session</button>' : ''}`;
+      <div class="row" style="margin-top:10px;align-items:flex-end"><div class="field" style="flex:1;margin:0"><label>Calories burned</label><input name="kcal" type="number" inputmode="numeric" placeholder="—"></div><button class="btn sec" data-addok style="flex:none;width:auto;padding:0 18px">Add</button></div></div>
+    <button class="mtadd" data-addopen ${first ? 'hidden' : ''}>+ Add session</button>
+    <div class="field" style="margin-top:12px"><label>Note for the day</label><input name="note" value="${esc((S.days[date] || {}).note || '')}" placeholder="Pads, sparring…"></div>
+    ${past.length ? `<div class="secl" style="margin-top:14px"><span>This project</span><span>${ns} session${ns === 1 ? '' : 's'} · ${fmtN(tot)} min${tk ? ' · ' + fmtN(tk) + ' kcal' : ''}</span></div>` : ''}`;
   logSheet('Muay Thai', date, body, '<button class="btn" data-save>Save</button>', b => {
     wireSteppers(b);
+    const paint = () => { b.querySelector('#mtrows').innerHTML = rowsHtml(cur); bindRows(); };
+    const bindRows = () => {
+      const xb = b.querySelector('[data-xband]'); if (xb) xb.onclick = () => { cur.noBand = true; paint(); };
+      b.querySelectorAll('[data-xh]').forEach(x => x.onclick = () => { cur.hand.splice(+x.dataset.xh, 1); paint(); });
+    };
+    bindRows();
+    const form = b.querySelector('#mtadd'), open = b.querySelector('[data-addopen]');
+    open.onclick = () => { form.hidden = false; open.hidden = true; const i = form.querySelector('[name=minutes]'); if (i) i.focus(); };
     b.querySelectorAll('[data-pre]').forEach(x => x.onclick = () => { const i = b.querySelector('[name=minutes]'); i.value = x.dataset.pre; i.dispatchEvent(new Event('input')); });
-    b.querySelector('[data-save]').onclick = () => { const o = readForm(b); if (!o.minutes) return toast('Enter minutes'); const prev = day(date).mt || {};
-      const kcalHand = o.kcal != null && +o.kcal !== +(prev.kcal || 0) ? true : prev.kcalSrc === 'hand';
-      { const dn = String(o.note || '').trim(), dd = day(date); if (dn) dd.note = dn; else delete dd.note; }
-      day(date).mt = { minutes: o.minutes, kcal: o.kcal || null, kcalSrc: kcalHand && o.kcal ? 'hand' : undefined, src: prev.src === 'band' && +prev.minutes === +o.minutes ? 'band' : undefined };
+    const add = () => { const mi = +(b.querySelector('[name=minutes]').value || 0), kc = +(b.querySelector('[name=kcal]').value || 0); if (!mi) { toast('Enter minutes'); return false; }
+      cur.hand.push({ min: mi, kcal: kc || null }); b.querySelector('[name=minutes]').value = ''; b.querySelector('[name=kcal]').value = ''; form.hidden = true; open.hidden = false; paint(); return true; };
+    b.querySelector('[data-addok]').onclick = add;
+    b.querySelector('[data-save]').onclick = () => {
+      if (!form.hidden && +(b.querySelector('[name=minutes]').value || 0) && !add()) return;   // a session typed but not added yet counts
+      const dd = day(date), dn = String(b.querySelector('[name=note]').value || '').trim(); if (dn) dd.note = dn; else delete dd.note;
+      dd.mt = mtRecalc(cur); if (!dd.mt.minutes && dd.done) dd.done.mt = false;
       save(); b.close(); afterLog('mt'); vib(30); };
-    const cl = b.querySelector('[data-clear]'); if (cl) cl.onclick = async () => { if (!await ask('Clear this session?', 'Minutes and kcal for ' + shortD(date) + ' are removed and the day shows Muay Thai as not done. The band fills it again on its next sync unless you type your own.', 'Clear', true)) return;
-      const d = day(date); d.mt = { minutes: null, kcal: null, src: 'cleared' }; if (d.done) d.done.mt = false; save(); b.close(); afterLog(); };
   });
 }
 
@@ -5819,6 +5907,16 @@ Object.assign(HR_DICT, {
   'Steps, kcal and Muay Thai · synced just now': 'Koraci, kcal i Muay Thai · sinkronizirano upravo', 'Steps, kcal and Muay Thai · synced {0} min ago': 'Koraci, kcal i Muay Thai · sinkronizirano prije {0} min',
   'Steps, kcal and Muay Thai · synced {0} h ago': 'Koraci, kcal i Muay Thai · sinkronizirano prije {0} h', 'Steps, kcal and Muay Thai · synced {0} days ago': v => 'Koraci, kcal i Muay Thai · sinkronizirano prije ' + v[0] + ' ' + dana(v[0]),
   'Steps, kcal and Muay Thai · waiting for data': 'Koraci, kcal i Muay Thai · čeka podatke', 'Past projects': 'Prošli projekti',
+  'Change': 'Promijeni', 'Time': 'Vrijeme', 'band': 'narukvica', 'no band': 'bez narukvice', 'Volume': 'Volumen', '{0} done': '{0} gotovo', 'new': 'novo', 'PB': 'PB', 'PBs': 'PB-ovi',
+  'Change the day': 'Promijeni dan', "What's on, or what happened. The goals follow it.": 'Što je na rasporedu ili što se dogodilo. Ciljevi idu za tim.',
+  'Plan: {0}': 'Plan: {0}', 'Plan: Muay Thai': 'Plan: Muay Thai', 'Plan: Rest': 'Plan: odmor', 'Back to the plan · {0}': 'Natrag na plan · {0}', 'Back to the plan · Muay Thai': 'Natrag na plan · Muay Thai', 'Back to the plan · Rest': 'Natrag na plan · odmor',
+  '{0} is now {1}': '{0} je sada {1}', '{0} is now Rest': '{0} je sada odmor', '{0} is now Muay Thai': '{0} je sada Muay Thai',
+  'No session yet': 'Još nema treninga', 'Add': 'Dodaj', '+ Add session': '+ Dodaj trening', 'typed by hand': 'upisano ručno', 'typed': 'upisano', 'Remove': 'Ukloni', 'This day': 'Ovaj dan',
+  'Session': 'Trening', 'Sessions': 'Treninzi', 'This cycle': 'Ovaj ciklus', 'from the band': 's narukvice', '{0} sessions · from the band': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga') + ' · s narukvice',
+  '{0} session': v => v[0] + ' trening', '{0} sessions': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga'),
+  '{0} session · {1} min': v => v[0] + ' trening · ' + v[1] + ' min', '{0} sessions · {1} min': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga') + ' · ' + v[1] + ' min',
+  '{0} session · {1} min · {2} kcal': v => v[0] + ' trening · ' + v[1] + ' min · ' + v[2] + ' kcal', '{0} sessions · {1} min · {2} kcal': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga') + ' · ' + v[1] + ' min · ' + v[2] + ' kcal',
+  'weigh-in, food, hangs, stretching': 'vaganje, prehrana, visovi, istezanje',
   'v{0} · profile': 'v{0} · profil', '{0} / {1} exercises': '{0} / {1} vježbi', '{0} kg · {1} % fat': '{0} kg · {1} % masti', '{0} kg · {1} kg': '{0} kg · {1} kg',
 });
 /* ---------- Boot ---------- */
