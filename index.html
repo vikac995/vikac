@@ -843,27 +843,7 @@ html{background:#0E0F12}
 .seg{display:flex;margin:10px 0 0;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:4px}
 .seg button{flex:1;font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.08em;text-transform:uppercase;padding:7px 0;border-radius:8px;color:var(--muted);transition:background .2s,color .2s}
 .seg button.on{background:var(--ink);color:#111}
-.path{position:relative;margin:6px -6px 0}
-.pnode{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;padding:0;z-index:2}
-.pnode>img,.pnode>svg{width:100%!important;height:100%!important}
-.pnode.miss>*{opacity:.3;filter:grayscale(1)}
-.pnode.fut{border:2px dashed #4a4c57;background:rgba(255,255,255,.02)}
-.pnode.fut>img,.pnode.fut>svg{opacity:.35;width:70%!important;height:70%!important}
-.pnode.today{box-shadow:0 0 0 6px rgba(254,127,12,.3),0 0 26px rgba(254,127,12,.75)}
-.plab{position:absolute;transform:translateY(-50%);font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);line-height:1.15;z-index:2;pointer-events:none}
-.plab small{display:block;font-size:11px;color:var(--dim);letter-spacing:.04em}
-.plab.f{color:var(--muted)}
-.pban{position:absolute;left:18px;right:18px;display:flex;align-items:center;gap:10px;color:var(--gold);font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;transform:translateY(-50%)}
-.pban:before,.pban:after{content:"";flex:1;height:1.5px;background:linear-gradient(90deg,transparent,rgba(255,216,77,.55),transparent)}
-.pme{position:absolute;width:64px;height:96px;object-fit:contain;object-position:bottom;z-index:3;filter:drop-shadow(0 4px 8px rgba(0,0,0,.6));pointer-events:none}
 .wkh{display:flex;justify-content:space-between;margin:14px 4px 8px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
-.pday{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 7px;padding:8px 12px;border-radius:14px;background:var(--card);border:1.5px solid var(--line);text-align:left;color:var(--ink)}
-.pday.today{border-color:var(--or);background:linear-gradient(90deg,rgba(254,127,12,.14),var(--card));box-shadow:0 0 14px rgba(254,127,12,.25)}
-.pday.past{opacity:.72}
-.pday .dt{width:40px;text-align:center;flex:none}.pday .dt b{display:block;font-family:'Bangers',Impact,sans-serif;font-weight:400;font-size:25px;letter-spacing:.03em;line-height:1}.pday .dt span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
-.pday .pb4{width:34px;height:34px;flex:none}.pday .pb4>*{width:34px!important;height:34px!important}
-.pday .tt{flex:1;min-width:0}.pday .tt b{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:16px;letter-spacing:.05em;text-transform:uppercase}.pday .tt>span{font-size:12.5px;color:var(--muted)}
-.pday .tt .wtag{font-size:10.5px}
 .mhead{position:relative;height:104px;margin:10px -14px 0}
 .mhead .sea{position:absolute;bottom:20px;width:62px;height:62px;object-fit:contain;object-position:bottom;z-index:2}.mhead .sea.l{left:62px}.mhead .sea.r{right:62px;transform:scaleX(-1)}
 .mhead .gr{position:absolute;left:0;right:0;bottom:0;height:26px;background-repeat:repeat-x;background-size:auto 26px}
@@ -1206,27 +1186,10 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 @media (prefers-reduced-motion:reduce){.just,.just .st,.fab.saved svg{animation:none!important}}
 /* summon day: the seven balls circle the dragon; hold the button; the ceremony */
 .t4ring.orb{margin:34px 0 30px}
-.t4orbit{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
-.t4orbit .ob{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px}
-.t4orbit .ob>span{display:block;width:30px;height:30px;transition:scale .18s cubic-bezier(.3,1.6,.5,1),filter .18s}
-.t4orbit.on{animation:spin 48s linear infinite}
-.t4orbit.on .ob>span{animation:spin 48s linear infinite reverse}
-.t4orbit .ob.lit>span{scale:1.3;filter:drop-shadow(0 0 7px rgba(255,200,70,1)) drop-shadow(0 0 16px rgba(255,140,20,.75))}
 .t4ring.charging .ball{animation:charge .45s ease-in-out infinite alternate}
 @keyframes charge{to{filter:drop-shadow(0 0 22px rgba(255,205,90,.95)) brightness(1.18);scale:1.04}}
-.wt.summonday .art{display:flex;justify-content:center;align-items:flex-start}
-.wt.summonday.ready{border-color:#FFD84D;background:radial-gradient(circle at 82% 30%,rgba(255,216,77,.3),transparent 60%),linear-gradient(160deg,#231b08,#13110b 60%);box-shadow:0 0 0 4px rgba(255,216,77,.12)}
-.wt.summonday.ready .lab2{color:#FFD84D}
-.btn.sumbtn{width:100%;position:relative;overflow:hidden;background:linear-gradient(180deg,#FFE48A,#FFB627);box-shadow:0 4px 0 #8a5a00;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.btn.sumbtn .sfill{position:absolute;inset:0;background:linear-gradient(90deg,#FFF7D6,#FFE47A);transform-origin:0 50%;transform:scaleX(var(--p,0))}
-.btn.sumbtn .slab{position:relative;display:inline-flex;align-items:center;gap:8px}
-.btn.sumbtn .slab svg{width:22px;height:22px}
-.btn.sumbtn:disabled{background:#24252d;color:#77737a;border-color:#3b3d47;box-shadow:none}
-.btn.sumbtn.holding{transform:translateY(3px);box-shadow:0 1px 0 #8a5a00;animation:hum .08s linear infinite}
 @keyframes hum{25%{translate:.7px -.5px}50%{translate:-.6px .4px}75%{translate:.5px .5px}}
-.btn.sumbtn.call{animation:callp 1.1s ease-out 3}
 @keyframes callp{0%{box-shadow:0 4px 0 #8a5a00,0 0 0 0 rgba(255,216,77,.8)}100%{box-shadow:0 4px 0 #8a5a00,0 0 0 18px rgba(255,216,77,0)}}
-.btn.sumbtn.nudge{animation:nudge .4s}
 @keyframes nudge{20%,60%{translate:-5px 0}40%,80%{translate:5px 0}}
 .summon{position:fixed;inset:0;z-index:90;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;cursor:pointer}
 .summon>div{position:absolute}
@@ -1245,7 +1208,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .summon .shint{left:0;right:0;bottom:calc(5vh + var(--sab));text-align:center;font-size:13px;color:rgba(255,255,255,.5);opacity:0}
 .summon .sb{left:0;top:0;width:46px;height:46px;will-change:transform}
 .summon .sb.glow{filter:drop-shadow(0 0 9px rgba(255,195,70,.95)) drop-shadow(0 0 20px rgba(255,150,30,.6))}
-@media (prefers-reduced-motion:reduce){.t4orbit.on,.t4orbit.on .ob>span,.btn.sumbtn.holding,.btn.sumbtn.call,.summon .sdr.float>*{animation:none!important}}
+@media (prefers-reduced-motion:reduce){.summon .sdr.float>*{animation:none!important}}
 .wt.mt .s{margin-bottom:12px}  /* the button clears the kick art like on the lifting tiles (they have the equipment row) */
 /* Today: header and cycle strip are the fixed navigation; only the day below them slides */
 .t4head .d{display:flex;align-items:center;gap:8px;min-height:24px}
@@ -1263,7 +1226,6 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .t4ring{width:140px;height:140px}
 .t4ring .ball{left:25px;top:25px;width:90px;height:90px}
 .t4ring.orb{margin:30px 0 26px}
-.t4orbit .ob,.t4orbit .ob>span{width:26px;height:26px}.t4orbit .ob{margin:-13px 0 0 -13px}
 .t4strip{gap:3px}
 .t4strip .arrow{width:24px;height:44px;flex:none;border-radius:8px;font-size:16px}
 .t4strip .mbw{flex:1;min-width:0;max-width:340px}
@@ -1317,10 +1279,6 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .todo li.done{min-height:60px;padding:9px 12px}
 .todo li.done .ic{width:40px;height:40px}
 /* Journey path: the day's weigh-in under its date */
-.plab .pwt{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 7px;border-radius:7px;background:rgba(27,28,34,.92);border:1px solid var(--line2);font-size:11.5px;letter-spacing:.03em;color:var(--muted);text-transform:none;white-space:nowrap}
-.plab .pwt b{color:var(--ink);font-weight:700}
-.plab .pwt i{font-style:normal;font-size:9px}.plab .pwt i.dn{color:var(--ok)}.plab .pwt i.up{color:var(--warn)}
-.plab .pwt .pf{padding-left:6px;margin-left:2px;border-left:1px solid var(--line2);color:var(--ink2)}
 /* feedback chips on Today's goals and tiles: green = good, orange = worth a look, grey = no change */
 .dch{display:inline-block;vertical-align:1px;margin-left:2px;padding:1px 6px;border-radius:6px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.03em;line-height:1.35;text-transform:uppercase}
 .dch.gd{color:var(--ok);background:rgba(61,220,132,.13)}
@@ -1352,9 +1310,6 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .t4strip .mbw2{font-size:13px}
 @media (max-width:380px){.t4strip .mbd{font-size:13.5px}.t4strip .mbw2{font-size:12px}.t4strip .mb .mbb>img,.t4strip .mb .mbb>svg{width:28px!important;height:28px!important}.t4strip .mb.cur .mbb>img,.t4strip .mb.cur .mbb>svg{width:32px!important;height:32px!important}}
 .wt.done .lab2{font-size:11.5px;color:#7FE3A8;margin-bottom:1px}.wt.done .lab2 span{color:#9db8a8}
-.pchk{display:flex;align-items:center;gap:10px;margin:0 8px 8px;font-family:'BarlowC',sans-serif;font-weight:600;font-size:13px;letter-spacing:.04em;color:var(--muted);white-space:nowrap}
-.pchk::before,.pchk::after{content:"";flex:1;border-top:1.5px dashed var(--line2)}
-.pchk b{color:var(--ink);font-weight:700}
 .lseg{display:inline-flex;flex:none;padding:3px;border-radius:999px;background:var(--s2);border:1.5px solid var(--line2)}
 .lseg button{min-width:46px;height:30px;padding:0 10px;border-radius:999px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13.5px;letter-spacing:.08em;color:var(--muted);transition:background .15s,color .15s}
 .lseg button.on{background:var(--or);color:#0E0F12}
@@ -1523,6 +1478,67 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 .gex span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gex svg{width:16px;height:16px;flex:none;color:var(--dim)}
 .hbig{display:flex;align-items:baseline;justify-content:center;gap:8px;padding:8px 0 2px}.hbig b{font-family:'Bangers',Impact,sans-serif;font-weight:400;font-size:56px;line-height:1;letter-spacing:.03em;color:#fff}.hbig span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:17px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
 .hbar{height:10px;border-radius:6px;background:rgba(255,255,255,.08);margin:10px 4px 6px;overflow:hidden}.hbar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--or),var(--or2))}
+/* v6 3a: the Today strip scrolls sideways for a long cycle; a perfect day while the dragon waited shows a tick */
+.t4strip.long .mbw{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding:2px 0;overscroll-behavior-x:contain}
+.t4strip.long .mbw::-webkit-scrollbar{display:none}
+.t4strip.long .mbs{width:max-content;padding:0 2px}
+.t4strip.long .mb{flex:0 0 44px}
+.t4strip.long .mbsel{top:2px;height:calc(100% - 4px)}
+.mchk{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid var(--ok);background:var(--oksoft);box-sizing:border-box;flex:none}
+.mchk svg{width:58%;height:58%}.mchk svg path{stroke:var(--ok)}
+.t4strip .mb .mbb>.mchk{width:24px!important;height:24px!important}.t4strip .mb.cur .mbb>.mchk{width:28px!important;height:28px!important}
+/* My plan: + adds a day, a new length waits for the next cycle */
+.cadd{display:flex;align-items:center;justify-content:center;min-height:62px;border-radius:13px;border:1.5px dashed var(--line2);background:transparent;color:var(--or2)}.cadd svg{width:26px;height:26px}
+.jtop .jt{align-items:center}.jtop .jsub{margin-top:1px}
+.cadd:active{background:var(--orsoft)}
+.cpend{margin:9px 4px 0;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--or2)}
+.btn.crem{margin-top:10px;width:100%;color:var(--bad)}
+/* the ball sheet: the set of seven and the dragon */
+.bset{display:flex;align-items:center;gap:3px;margin:12px 0 2px}.bset>*{width:30px!important;height:30px!important;flex:none}.bset>.badge,.bset>img:last-child{width:34px!important;height:34px!important;margin-left:6px}
+/* Journey · Cycles: finished cycles folded, the one running now day by day, the ones ahead folded */
+.jcys{margin-top:10px}
+.jcy{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 10px;padding:12px 12px 12px 10px;border-radius:16px;background:var(--card);border:1.5px solid var(--line);text-align:left;color:var(--ink)}
+.jcy.ahead{background:rgba(255,255,255,.015);border:1.5px dashed var(--line2)}
+.jcy:active{background:var(--s2)}
+.jcy .jci{width:46px;height:46px;flex:none;display:flex;align-items:center;justify-content:center}.jcy .jci>*{width:44px!important;height:44px!important}
+.jcy .jct{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.jcy .jct b{font-family:'BarlowC',sans-serif;font-weight:700;font-size:16.5px;letter-spacing:.06em;text-transform:uppercase;line-height:1.1}
+.jcy .jcl{font-size:13.5px;color:var(--muted);line-height:1.3}.jcy .jcl i{font-style:normal}
+.jcy .jcb{display:flex;flex-wrap:wrap;gap:3px;margin-top:3px}.jcy .jcb>*{width:18px!important;height:18px!important}
+.jcy .jcv{width:22px;height:22px;flex:none;color:var(--muted);transition:transform .25s}.jcy.open .jcv{transform:rotate(90deg)}
+.jcy+.collapse.open{margin:-4px 0 12px}
+.jnow{margin:18px 4px 6px}
+.jdl{position:relative}
+.jd{position:relative;display:grid;grid-template-columns:44px 36px minmax(0,1fr) auto;column-gap:10px;align-items:start;width:100%;padding:9px 12px;border-radius:14px;border:1.5px solid transparent;text-align:left;color:var(--ink)}
+.jd::before,.jd::after{content:"";position:absolute;left:82.5px;width:3px;background:#34353e}
+.jd::before{top:-1.5px;height:28.5px}.jd::after{top:27px;bottom:-1.5px}
+.jd.past::before,.jd.past::after,.jd.today::before{background:var(--or);box-shadow:0 0 6px rgba(254,127,12,.45)}
+.jd.first::before,.jd.last::after{display:none}
+.jd .dt{text-align:center;padding-top:1px}
+.jd .dt b{display:block;font-family:'Bangers',Impact,sans-serif;font-weight:400;font-size:26px;line-height:1;letter-spacing:.03em}
+.jd .dt span{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12px;letter-spacing:.09em;text-transform:uppercase;margin-top:4px}
+.jd .jb{position:relative;z-index:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--paper)}
+.jd .jb>*{width:34px!important;height:34px!important}
+.jd.today .jb{box-shadow:0 0 0 3px rgba(254,127,12,.25),0 0 18px rgba(254,127,12,.75)}
+.jd .tt{min-width:0;padding-top:2px}
+.jd .tt b{display:flex;align-items:center;gap:6px;min-width:0;font-family:'BarlowC',sans-serif;font-weight:700;font-size:17px;letter-spacing:.05em;text-transform:uppercase;line-height:1.15}
+.jd .tt b>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jd .js{display:block;font-size:13.5px;color:var(--muted);margin-top:3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jd .js i{font-style:normal}.jd .js .jw{color:var(--or2)}.jd .js .dn{color:var(--ok);margin-left:4px}.jd .js .up{color:var(--warn);margin-left:4px}.jd .js .jmiss{color:var(--dim)}
+.jd .jn{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:13px;font-style:italic;color:var(--ink2);min-width:0}
+.jd .jn svg{width:13px;height:13px;flex:none;color:var(--muted)}.jd .jn .usertext{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.jd .jchg{display:inline-flex;flex:none;width:19px;height:19px;padding:2.5px;border-radius:6px;background:var(--s3);color:var(--or2)}.jd .jchg svg{width:14px;height:14px}
+.jd .jtag{align-self:center;font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--or2)}
+.jd .jok{align-self:center;width:26px;height:26px;border-radius:50%;background:var(--ok);display:flex;align-items:center;justify-content:center}.jd .jok svg{width:16px;height:16px}
+.jd.today{background:linear-gradient(90deg,rgba(254,127,12,.17),rgba(254,127,12,.05));border-color:var(--or);box-shadow:0 0 16px rgba(254,127,12,.22)}
+.jd.today .js{color:var(--ink2)}
+.jd.miss .tt b{color:var(--ink2)}
+.jd:active{background:var(--s2)}.jd.today:active{background:rgba(254,127,12,.2)}
+.jchk{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:0 5px;padding:1px 12px 9px 114px;font-family:'BarlowC',sans-serif;font-weight:600;font-size:13px;letter-spacing:.04em;color:var(--muted)}
+.jchk::before{content:"";position:absolute;left:84px;top:0;bottom:0;width:3px;background:#34353e}
+.jchk.lo::before{background:var(--or);box-shadow:0 0 6px rgba(254,127,12,.45)}.jchk.end::before{display:none}
+.jchk::after{content:"";flex:1;min-width:16px;border-top:1.5px dashed var(--line2);margin-left:4px}
+.jchk b{color:var(--ink);font-weight:700}.jchk .you b.okc{color:var(--ok)}.jchk .you b.badc{color:var(--warn)}
 </style>
 </head>
 <body>
@@ -1530,7 +1546,7 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.6.0';
+const APP_VERSION = '5.7.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1698,7 +1714,9 @@ function editHabits(fn) {
 function migrateState() {
   if (!S.plan || !Array.isArray(S.plan.cycle) || !S.plan.cycle.length) S.plan = defaultPlan();
   if (!Array.isArray(S.habits)) S.habits = defaultHabits();
+  normSegs();
   mirrorProject();
+  return migrateBalls();   // true when old dragons got their summon written in (worth saving once)
 }
 // S.phase / S.profile are the truth; their numbers are written into S.project too (an older app version reads only that).
 // ph.seen remembers what was last written there: a number in S.project that differs from it was changed by someone else —
@@ -1748,36 +1766,83 @@ function bmrCalc() {
 }
 // Every editor ends here: phase / profile → S.project, then saved (Today, the kcal left and Journey follow at once)
 function planChanged() { mirrorProject(); save(); }
-// A cycle's day pattern in effect on a date: an edit applies from the day it is made, the days before keep the pattern
-// they were lived under (S.plan.prev: [{ until, cycle }] — the last date each older pattern covers)
-function planAt(date) {
-  const plan = S.plan && Array.isArray(S.plan.cycle) && S.plan.cycle.length ? S.plan : PLAN0, prev = plan.prev;
-  if (Array.isArray(prev) && prev.length && date) for (const v of prev) if (date <= v.until && Array.isArray(v.cycle) && v.cycle.length === plan.cycle.length) return v.cycle;
-  return plan.cycle;
+/* Cycles of any length (2–14 days). S.plan.segs: [{ c, len }] — from cycle number c on, every cycle has len days (the first
+   entry is cycle 1). Without it the whole project runs on the pattern's own length (as before). A new length starts with the
+   next cycle: the cycle running now and every one before keep their days, length and number; the numbers simply go on. */
+const CYC_MIN = 2, CYC_MAX = 14;
+function curPlan() { return S.plan && Array.isArray(S.plan.cycle) && S.plan.cycle.length ? S.plan : PLAN0; }
+// the segments with the day each one starts on (t, 0 = Day 1)
+function segList() {
+  const plan = curPlan(), sg = Array.isArray(plan.segs) && plan.segs.length ? plan.segs : [{ c: 1, len: plan.cycle.length }], out = [];
+  let t = 0; for (let i = 0; i < sg.length; i++) { out.push({ c: sg[i].c, len: sg[i].len, t }); if (i + 1 < sg.length) t += (sg[i + 1].c - sg[i].c) * sg[i].len; }
+  return out;
 }
-// Change the cycle from today on (fn edits a copy of it); the days already gone keep theirs
+// Tidy S.plan.segs (sorted, starting at cycle 1, whole lengths, no two in a row of the same length); a second run changes nothing
+function normSegs() {
+  const plan = S.plan; if (!plan || !('segs' in plan)) return;
+  const raw = Array.isArray(plan.segs) ? plan.segs.filter(s => s && Number.isInteger(+s.c) && +s.c >= 1 && Number.isInteger(+s.len) && +s.len >= 1 && +s.len <= 60).map(s => ({ c: +s.c, len: +s.len })).sort((a, b) => a.c - b.c) : [];
+  const out = []; for (const s of raw) { if (out.length && out[out.length - 1].c === s.c) out.pop(); if (out.length && out[out.length - 1].len === s.len) continue; out.push(s); }
+  if (out.length) out[0].c = 1;
+  if (out.length > 1 || (out.length === 1 && Array.isArray(plan.cycle) && out[0].len !== plan.cycle.length)) { if (JSON.stringify(out) !== JSON.stringify(plan.segs)) plan.segs = out; } else delete plan.segs;
+}
+// The cycle of project day t (0 = Day 1): its number, the day in it (0-based), its length and its first day
+function cycAt(t) {
+  const sg = segList(); let s = sg[0]; for (const x of sg) if (x.t <= t) s = x; else break;
+  const k = Math.max(0, t - s.t), i = Math.floor(k / s.len);
+  return { num: s.c + i, cd: k - i * s.len, len: s.len, t0: s.t + i * s.len };
+}
+// the first day (t) of cycle number c
+function cycStartT(c) { const sg = segList(); let s = sg[0]; for (const x of sg) if (x.c <= c) s = x; else break; return s.t + (c - s.c) * s.len; }
+// A cycle's day pattern in effect on a date: an edit applies from the day it is made, the days before keep the pattern
+// they were lived under (S.plan.prev: [{ until, cycle }] — the last date each older pattern covers). The pattern always has
+// the length of the cycle the date falls in.
+function planAt(date) {
+  const plan = curPlan(), prev = plan.prev, n = date && S.project && S.project.startDate ? cycAt(Math.max(0, tOf(date))).len : plan.cycle.length;
+  if (Array.isArray(prev) && prev.length && date) for (const v of prev) if (v && date <= v.until && Array.isArray(v.cycle) && v.cycle.length === n) return v.cycle;
+  if (plan.cycle.length === n) return plan.cycle;
+  // only with hand-made or broken data: the latest kept pattern of that length, else the plan cut short or filled with rest days
+  if (Array.isArray(prev)) for (let i = prev.length - 1; i >= 0; i--) if (prev[i] && Array.isArray(prev[i].cycle) && prev[i].cycle.length === n) return prev[i].cycle;
+  return Array.from({ length: n }, (x, i) => plan.cycle[i] || { w: 'rest' });
+}
+// Change the cycle (fn edits a copy of it). The same length as the cycle running now: from today on, the days already gone
+// keep theirs. Another length: from the first day of the next cycle (a pending other length is replaced, or dropped when
+// the length goes back to the current one). Before Day 1 everything changes.
 function editCycle(fn) {
-  if (!S.plan || !Array.isArray(S.plan.cycle)) S.plan = defaultPlan();
-  const old = S.plan.cycle.map(c => Object.assign({}, c)), next = S.plan.cycle.map(c => Object.assign({}, c)); fn(next);
-  if (JSON.stringify(old) === JSON.stringify(next)) return false;
-  const p = S.project, y = addDays(today(), -1), prev = Array.isArray(S.plan.prev) ? S.plan.prev : [];
-  // only when project days lie behind today and no edit today already kept them
-  if (p && y >= p.startDate && !prev.some(v => v.until >= y)) { prev.push({ until: y, cycle: old }); prev.sort((a, b) => a.until < b.until ? -1 : 1); S.plan.prev = prev; }
-  S.plan.cycle = next; return true;
+  if (!S.plan || !Array.isArray(S.plan.cycle) || !S.plan.cycle.length) S.plan = defaultPlan();
+  const plan = S.plan, old = plan.cycle.map(c => Object.assign({}, c)), next = plan.cycle.map(c => Object.assign({}, c)); fn(next);
+  if (JSON.stringify(old) === JSON.stringify(next) || !next.length) return false;
+  const p = S.project, td = today();
+  if (!p || !p.startDate) { plan.cycle = next; plan.cycleLen = next.length; return true; }
+  const t = tOf(td); let from, segs = segList().map(s => ({ c: s.c, len: s.len }));
+  if (t < 0) { from = p.startDate; segs = [{ c: 1, len: next.length }]; }
+  else { const cur = cycAt(t); segs = segs.filter(s => s.c <= cur.num);
+    if (next.length === cur.len) from = td;
+    else { from = addDays(p.startDate, cur.t0 + cur.len); segs.push({ c: cur.num + 1, len: next.length }); } }
+  planFrom(from, next, segs); return true;
+}
+// next applies from the date `from` on, with the given segments; every day before keeps the pattern it has now
+function planFrom(from, next, segs) {
+  const plan = S.plan, p = S.project, y = addDays(from, -1);
+  const keep = p && y >= p.startDate ? planAt(y).map(c => Object.assign({}, c)) : null;   // read before anything changes
+  const prev = (Array.isArray(plan.prev) ? plan.prev : []).filter(v => v && v.until < y && Array.isArray(v.cycle));
+  if (keep) prev.push({ until: y, cycle: keep });
+  if (prev.length || Array.isArray(plan.prev)) plan.prev = prev;
+  plan.cycle = next; plan.cycleLen = next.length; plan.segs = segs; normSegs();
 }
 /* An ongoing plan has no end: S.project.endDate sits 10 years out (so an older version still works) and ongoing is set.
    The screens then show no total and look ahead only to the end of the next cycle; the goal numbers (goal weight, the plan
    line's end, power level) aim at that same point, until goals get their own page. */
 const ONGOING_DAYS = 3652;
 function isOngoing() { return !!(S.project && S.project.ongoing); }
-function cycleLen() { const c = S.plan && Array.isArray(S.plan.cycle) && S.plan.cycle.length ? S.plan.cycle.length : PLAN0.cycle.length; return c; }
-function horizonT() { const Dd = D(); if (!isOngoing()) return Dd; const n = cycleLen(), t = Math.max(0, tOf(today())); return Math.min(Dd, (Math.floor(t / n) + 2) * n - 1); }
+// the plan's length as edited (a new length waiting for the next cycle included)
+function cycleLen() { return curPlan().cycle.length; }
+function horizonT() { const Dd = D(); if (!isOngoing()) return Dd; const c = cycAt(Math.max(0, tOf(today()))); return Math.min(Dd, cycStartT(c.num + 2) - 1); }
 function goalDate() { return addDays(S.project.startDate, goalT()); }
 function horizonDate() { return addDays(S.project.startDate, horizonT()); }
 function setOngoing(on) {
   const p = S.project; if (!p || !!p.ongoing === !!on) return;
   if (on) { p.plannedEnd = p.endDate; p.endDate = addDays(p.startDate, ONGOING_DAYS); p.ongoing = true; }
-  else { const e = p.plannedEnd && p.plannedEnd > p.startDate ? p.plannedEnd : addDays(p.startDate, cycleLen() * 7 - 1); p.endDate = e; delete p.ongoing; }
+  else { const e = p.plannedEnd && p.plannedEnd > p.startDate ? p.plannedEnd : addDays(p.startDate, cycStartT(8) - 1); p.endDate = e; delete p.ongoing; }
 }
 const LS_KEY = 'vikac.state.v1';
 let idb = null;
@@ -1861,14 +1926,14 @@ function videoGet(name) { return vdbOpen().then(db => new Promise(res => { if (!
 function videoPut(name, blob) { return vdbOpen().then(db => new Promise(res => { if (!db) return res(false); try { const tx = db.transaction('v', 'readwrite'); tx.objectStore('v').put(blob, name); tx.oncomplete = () => res(true); tx.onerror = () => res(false); } catch (e) { res(false); } })); }
 function videoDel(name) { return vdbOpen().then(db => new Promise(res => { if (!db) return res(); try { const tx = db.transaction('v', 'readwrite'); tx.objectStore('v').delete(name); tx.oncomplete = () => res(); tx.onerror = () => res(); } catch (e) { res(); } })); }
 function videoNames() { return vdbOpen().then(db => new Promise(res => { if (!db) return res([]); try { const q = db.transaction('v').objectStore('v').getAllKeys(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); } catch (e) { res([]); } })); }
-// dayInfo and cycleOf are asked the same questions hundreds of times while one screen is drawn (the Journey path: every
+// dayInfo and cycleOf are asked the same questions hundreds of times while one screen is drawn (Journey's cycles: every
 // day, its cycle, its stars). The answers are kept only for that one stretch of work (until the current task ends) and
 // are dropped at once by a save, so anything changed afterwards is always read fresh.
-var MEMO = { td: '', info: new Map(), cyc: new Map(), armed: false };
-function memoReset() { MEMO.info.clear(); MEMO.cyc.clear(); MEMO.td = ''; }
+var MEMO = { td: '', info: new Map(), cyc: new Map(), balls: null, armed: false };
+function memoReset() { MEMO.info.clear(); MEMO.cyc.clear(); MEMO.balls = null; MEMO.td = ''; }
 function memoDay() {
   if (!MEMO.armed) { MEMO.armed = true; queueMicrotask(() => { memoReset(); MEMO.armed = false; }); }
-  const td = today(); if (MEMO.td !== td) { MEMO.info.clear(); MEMO.cyc.clear(); MEMO.td = td; }
+  const td = today(); if (MEMO.td !== td) { MEMO.info.clear(); MEMO.cyc.clear(); MEMO.balls = null; MEMO.td = td; }
 }
 function dayInfo(date) { memoDay(); if (MEMO.info.has(date)) return MEMO.info.get(date); const v = dayInfo0(date); MEMO.info.set(date, v); return v; }
 function cycleOf(date) { memoDay(); if (MEMO.cyc.has(date)) return MEMO.cyc.get(date); const v = cycleOf0(date); MEMO.cyc.set(date, v); return v; }
@@ -1888,7 +1953,9 @@ async function load() {
   if (raw) { try { const o = JSON.parse(raw); S = Object.assign(S, o); } catch (e) {} }
   if (!Array.isArray(S.archive)) S.archive = [];
   foldMtNotes(S.days); S.archive.forEach(b => foldMtNotes(b.days));
-  migrateState();   // not saved here: it comes out the same on every load, so the migration by itself never writes or pushes a sync
+  // not saved here: it comes out the same on every load, so the migration by itself never writes or pushes a sync — except
+  // once, when old dragons got their summon written in (v6 3a), so it is not done again on another day
+  if (migrateState()) save();
   if (navigator.storage && navigator.storage.persist) { try { navigator.storage.persist(); } catch (e) {} }
 }
 
@@ -1979,9 +2046,9 @@ function dayInfo0(date) {
   if (t < 0) return { t, idx, phase: 'pre' };
   if (t > Dd) return { t, idx, phase: 'post' };
   // v6: the pattern comes from S.plan, the daily items from S.habits (a state without them uses the built-in program)
-  const plan = S.plan && Array.isArray(S.plan.cycle) && S.plan.cycle.length ? S.plan : PLAN0, habits = habitsAt(date);
-  const pat = planAt(date), n = pat.length, vs = plan.variants || 'AB';
-  const cd = ((t % n) + n) % n, cyc = pat[cd], cycleNum = Math.floor(t / n) + 1;
+  const plan = curPlan(), habits = habitsAt(date), vs = plan.variants || 'AB';
+  // v6 3a: the cycle comes from the segments (cycles of any length); the A/B variant goes by the cycle's number
+  const cy = cycAt(t), pat = planAt(date), cd = cy.cd, cyc = pat[cd] || { w: 'rest' }, cycleNum = cy.num;
   const variant = vs[(cycleNum - 1) % vs.length];
   // the plan says what the day is; you can change any day to whatever happened (Settings-free: the ⇄ on the training card)
   const planKey = cyc.w === 'rest' || cyc.w === 'mt' ? cyc.w : cyc.w + variant, ov = (S.days[date] || {}).plan;
@@ -1996,7 +2063,7 @@ function dayInfo0(date) {
   for (const h of habits) if (!h.off && habitOn(h, cd + 1, w)) items.push(Object.assign({ id: h.id, label: h.label, sub: h.sub, req: h.req === 'auto' || h.req == null ? !training || h.id === 'nutrition' : !!h.req },
     isCustomHabit(h.id) ? { custom: true, block: h.block, unit: h.unit || '', target: +h.target || 0 } : null));
   items.sort((a, b) => (b.req ? 1 : 0) - (a.req ? 1 : 0));
-  return { t, idx, phase: t === Dd ? 'final' : 'on', cycleDay: cd + 1, cycleNum, variant, workoutKey, isRest: w === 'rest', isMT: w === 'mt', items, daysLeft: Dd - t, training, planKey, dayKey: key, changed: key !== planKey };
+  return { t, idx, phase: t === Dd ? 'final' : 'on', cycleDay: cd + 1, cycleNum, cycleLen: cy.len, cycleT0: cy.t0, variant, workoutKey, isRest: w === 'rest', isMT: w === 'mt', items, daysLeft: Dd - t, training, planKey, dayKey: key, changed: key !== planKey };
 }
 // Is a habit on today? cycleDays: day numbers of the cycle (1 = first); withWorkout: the day's type (after any change of the day)
 function habitOn(h, cycleDay, w) { const s = h.sched; return !s || s.kind === 'daily' ? true : s.kind === 'cycleDays' ? (s.days || []).includes(cycleDay) : s.kind === 'withWorkout' ? (s.groups || []).includes(w) : false; }
@@ -2125,21 +2192,62 @@ function workoutTag(info) { if (!info.items) return null; if (info.isMT) return 
 // Day types: label + colour for every kind of day, rest included
 const DAYTYPES = { push: { label: 'Push', color: '#E05A00' }, pull: { label: 'Pull', color: '#1C6DD0' }, legs: { label: 'Legs', color: '#1E8E3E' }, mt: { label: 'Muay Thai', color: '#C2185B' }, rest: { label: 'Rest', color: '#8A8A8A' } };
 function dayType(info) { if (!info.items) return null; if (info.isMT) return { k: 'mt', label: 'Muay Thai' }; if (info.isRest) return { k: 'rest', label: 'Rest' }; const w = PROGRAM.workouts[info.workoutKey]; return { k: w.group, label: w.name }; }
-// One cycle = 8 days. Days 1–7 can each earn a dragon ball (a perfect day); day 8 is the summon day: 7 balls + a perfect day 8 = the dragon.
+// A cycle of the plan: its number, its days (up to the project's last day), first and last day. It says nothing about the
+// balls any more: they come from ballLog (every perfect day, whatever the cycle).
 function cycleOf0(date) {
   const info = dayInfo(date); if (!info.items) return null;
-  const p = P(), first = (info.cycleNum - 1) * 8, days = [];
-  for (let i = 0; i < 8; i++) { const t = first + i; if (t > D()) break; const d = addDays(p.startDate, t); days.push({ date: d, cd: i + 1, comp: dayCompletion(d), type: dayType(dayInfo(d)) }); }
-  const earned = days.filter(x => x.cd <= 7 && x.comp === 'done').length;
-  const before = days.filter(x => x.cd <= 7 && x.cd < info.cycleDay && x.comp === 'done').length;
-  const todayDone = dayCompletion(date) === 'done', summonDay = info.cycleDay === 8;
-  const sevenByDay8 = days.filter(x => x.cd <= 7 && x.comp === 'done').length === 7 && days.length === 8;
-  // the dragon comes when you hold Summon on day 8 (7 balls + a perfect day 8); a day 8 already gone by counts without it
-  const d8 = days.find(x => x.cd === 8), dragon = !!(d8 && sevenByDay8 && d8.comp === 'done' && ((S.days[d8.date] || {}).summoned || d8.date < today()));
-  return { num: info.cycleNum, cd: info.cycleDay, days, earned, star: summonDay ? null : Math.min(7, before + 1), todayDone, summonDay, canSummon: summonDay && sevenByDay8, summoned: summonDay && dragon, ready: summonDay && sevenByDay8 && todayDone && !dragon, dragon, start: days[0].date, end: days[days.length - 1].date, type: dayType(info) };
+  const p = P(), Dd = D(), days = [];
+  for (let i = 0; i < info.cycleLen; i++) { const t = info.cycleT0 + i; if (t > Dd) break; const d = addDays(p.startDate, t); days.push({ date: d, cd: i + 1, comp: dayCompletion(d), type: dayType(dayInfo(d)) }); }
+  return { num: info.cycleNum, cd: info.cycleDay, len: info.cycleLen, days, todayDone: dayCompletion(date) === 'done', start: days[0].date, end: days[days.length - 1].date, type: dayType(info) };
 }
 // every cycle of the project (an ongoing one: the cycles so far)
-function allCycles() { const out = [], last = isOngoing() ? Math.max(0, Math.min(D(), tOf(today()))) : D(); let t = 0; while (t <= last) { const c = cycleOf(addDays(P().startDate, t)); if (!c) break; out.push(c); t += 8; } return out; }
+function allCycles() { const out = [], p = P(), last = isOngoing() ? Math.max(0, Math.min(D(), tOf(today()))) : D(); let t = 0; while (t <= last) { const c = cycleOf(addDays(p.startDate, t)); if (!c) break; out.push(c); t = tOf(c.end) + 1; } return out; }
+/* ---------- Dragon balls (v6 3a) ----------
+   Every perfect day earns the next ball of the set: the 1-star, then the 2-star … up to 7, on any day of any cycle. A missed or
+   partial day costs no ball (it only breaks the streak): the set waits. The 7th ball brings the dragon: the ball in the tab bar
+   turns into it and stays so, any day, until you hold it to summon; the summon starts a new set (the next perfect day earns the
+   1-star again). While the dragon waits, a perfect day earns no ball (it still counts for streaks and Ki).
+   One day in order: a dragon waiting since before the day and summoned on it goes first, so a perfect day then earns ball 1; a
+   day that brought the 7th ball and was summoned the same day counts first, then the set starts over. A summon on any other
+   day counts for nothing. Counted from Day 1 up to today, once per stretch of work (dropped on every save). */
+function ballLog() {
+  memoDay(); if (MEMO.balls) return MEMO.balls;
+  const L = { byDate: {}, next: {}, idle: {}, after: {}, count: 0, waiting: false, waitFrom: null, dragons: 0, summons: [], total: 0 }, p = S.project;
+  if (p && p.startDate && p.endDate) {
+    const td = today(), last = td < p.endDate ? td : p.endDate;
+    for (let d = p.startDate; d <= last; d = addDays(d, 1)) {
+      const sm = !!(S.days[d] && S.days[d].summoned), done = dayCompletion(d) === 'done';
+      const summon = () => { L.count = 0; L.waiting = false; L.waitFrom = null; L.dragons++; L.summons.push(d); };
+      if (L.waiting && sm) summon();
+      L.next[d] = L.waiting ? null : L.count + 1;   // what a perfect day earns (null: the dragon is waiting)
+      if (done) { if (L.waiting) L.idle[d] = true; else { L.byDate[d] = ++L.count; L.total++; if (L.count === 7) { L.waiting = true; L.waitFrom = d; if (sm) summon(); } } }
+      L.after[d] = { count: L.count, waiting: L.waiting };
+    }
+  }
+  MEMO.balls = L; return L;
+}
+function ballOf(date) { return ballLog().byDate[date] || null; }                   // the star earned that day, or null
+function nextStar() { const L = ballLog(); return L.waiting ? null : L.count + 1; }   // the ball a perfect day earns next (null while the dragon waits)
+function dragonWaiting() { return ballLog().waiting; }
+function summonOn(date) { const i = ballLog().summons.indexOf(date); return i < 0 ? 0 : i + 1; }   // which dragon was summoned that day (0: none)
+// the ball a day stands for: the one it earned, today's prospective one, or what a perfect day would have earned
+function dayStar(date) { const L = ballLog(); if (L.byDate[date]) return L.byDate[date]; if (date in L.next) return L.next[date]; return date > today() ? null : nextStar(); }
+/* Old data: under the old rule (a cycle of 8 days, balls on days 1–7) a past day 8 with seven perfect days before it and a
+   perfect day 8 was a dragon even without anybody holding Summon. Such days get the summon written in, so the history keeps
+   its dragons; summons already there stay as they are. Once per state (S.meta.balls), past projects included. */
+function migrateBalls() {
+  if (!S.meta) S.meta = {}; if (S.meta.balls >= 2) return false; let ch = false;
+  const one = () => {
+    const p = S.project; if (!p || !p.startDate || !p.endDate) return; const td = today(), Dd = D();
+    for (let t0 = 0; t0 + 7 <= Dd; t0 += 8) {
+      const d8 = addDays(p.startDate, t0 + 7); if (d8 >= td) break; if (S.days[d8] && S.days[d8].summoned) continue;
+      let all = true; for (let i = 0; i <= 7 && all; i++) all = dayCompletion(addDays(p.startDate, t0 + i)) === 'done';
+      if (all) { day(d8).summoned = d8; ch = true; }
+    }
+  };
+  memoReset(); try { one(); for (const b of Array.isArray(S.archive) ? S.archive : []) if (b && b.project) withBundle(b, one); } finally { memoReset(); }
+  S.meta.balls = 2; return ch;
+}
 // Overall performance of a training group: average change of the best set's e1RM (or reps) versus each exercise's first session
 function groupSummary(group, date) {
   const names = allExerciseNames(group), rows = [];
@@ -3276,7 +3384,7 @@ function heroArt(o) {
 function beamHeroArt() { return ART.heroBeam ? (ART.beam ? `<img src="hero-beam.png" alt="" style="width:46px;height:46px;object-fit:contain">` : `<img src="hero-beam.png" alt="" style="width:60px;height:40px;object-fit:contain">`) : `<svg viewBox="30 40 220 240" width="56" height="40">${heroSvg({ inner: true, pose: 'beam', level: 3, slim: 1, mood: 'cool' })}</svg>`; }
 function beamFxHtml() { return ART.heroBeam && ART.beam ? '<div class="beamfx"></div>' : ''; }
 function dragonBigArt() { return ART.dragon ? `<img class="dragonimg" src="dragon.png" alt="" style="width:min(92vw,440px);height:auto">` : dragonSvg(); }
-// Summon badge. state: 'ready' (faded, pulsing — waiting for day 8) | 'done' (full colour) | 'locked' (grey, padlock)
+// Summon badge. state: 'ready' (faded, pulsing — the dragon waiting to be summoned) | 'done' (full colour) | 'locked' (grey, padlock)
 function dragonBadgeSvg(o) {
   o = o || {}; const st = o.state || 'ready', size = o.size || 84;
   const ring = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="position:absolute;left:0;top:0"><circle cx="50" cy="50" r="47" fill="none" stroke="#1B1B1B" stroke-width="3" stroke-dasharray="6 5"/>${st === 'locked' ? '<rect x="40" y="46" width="20" height="16" rx="3" fill="#fff" stroke="#1B1B1B" stroke-width="2.5"/><path d="M44 46 v-5 a6 6 0 0 1 12 0 v5" fill="none" stroke="#1B1B1B" stroke-width="2.5"/>' : ''}</svg>`;
@@ -3295,7 +3403,8 @@ function dragonBadgeSvg(o) {
 const STAR_LAYOUTS = { 1: [[0, 0]], 2: [[-0.42, -0.42], [0.42, 0.42]], 3: [[0, -0.5], [-0.45, 0.3], [0.45, 0.3]], 4: [[-0.42, -0.42], [0.42, -0.42], [-0.42, 0.42], [0.42, 0.42]], 5: [[0, -0.52], [-0.5, -0.16], [0.5, -0.16], [-0.31, 0.44], [0.31, 0.44]], 6: [[-0.48, -0.28], [0, -0.52], [0.48, -0.28], [-0.48, 0.28], [0, 0.52], [0.48, 0.28]], 7: [[0, 0], [-0.5, -0.29], [0, -0.58], [0.5, -0.29], [-0.5, 0.29], [0, 0.58], [0.5, 0.29]] };
 function starPath(cx, cy, r) { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; d += (i ? 'L' : 'M') + (cx + rr * Math.cos(a)).toFixed(2) + ' ' + (cy + rr * Math.sin(a)).toFixed(2); } return d + 'Z'; }
 function ballSvg(o) {
-  o = o || {}; const n = Math.max(1, Math.min(7, o.stars || 1)), st = o.state || 'full', size = o.size || 84, id = 'b' + Math.random().toString(36).slice(2, 7);
+  o = o || {}; if (!o.stars) return orbSvg(o);
+  const n = Math.max(1, Math.min(7, o.stars || 1)), st = o.state || 'full', size = o.size || 84, id = 'b' + Math.random().toString(36).slice(2, 7);
   if (ART.balls) { const src = st === 'hollow' && ART.ballsHollow ? `ball-${n}-hollow.png` : `ball-${n}.png`; const fx = st === 'dim' ? 'filter:grayscale(1);opacity:.5' : st === 'hollow' && !ART.ballsHollow ? 'filter:saturate(.15);opacity:.45' : ''; return `<img src="${src}" alt="" style="width:${size}px;height:${size}px;object-fit:contain;display:block;${fx}">`; }
   const dim = st === 'dim', hollow = st === 'hollow';
   const sr = n === 1 ? 16 : n <= 3 ? 11 : n <= 5 ? 9.5 : 8.5, spread = n === 1 ? 0 : 24;
@@ -3310,6 +3419,16 @@ function ballSvg(o) {
     <path d="M22 66 C28 80 44 88 60 84" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" opacity="${hollow ? .2 : .45}"/>
     ${hollow ? `<circle cx="50" cy="50" r="46" fill="none" stroke="#1B1B1B" stroke-width="3" stroke-dasharray="6 5"/>` : ''}
   </svg>`;
+}
+// A ball without stars (a day ahead, a day that earned none): the hollow ball's dark glass with its orange rim. state 'hollow' |
+// 'faint' (further off) | 'dim' (grey: missed)
+function orbSvg(o) {
+  o = o || {}; const st = o.state || 'hollow', size = o.size || 84, id = 'o' + Math.random().toString(36).slice(2, 7), dim = st === 'dim';
+  return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" style="overflow:visible;opacity:${st === 'faint' ? .45 : dim ? .55 : 1}">
+    <defs><radialGradient id="${id}g" cx="40%" cy="36%" r="70%"><stop offset="0" stop-color="${dim ? '#6a6a6e' : '#5a2a0c'}"/><stop offset=".7" stop-color="${dim ? '#3c3c42' : '#2f1606'}"/><stop offset="1" stop-color="${dim ? '#77777d' : '#9a4a0e'}"/></radialGradient></defs>
+    <circle cx="50" cy="50" r="45" fill="url(#${id}g)" stroke="${dim ? '#8a8a90' : '#E0700F'}" stroke-width="4"/>
+    <circle cx="50" cy="50" r="47.5" fill="none" stroke="#000" stroke-width="2"/>
+    <ellipse cx="36" cy="30" rx="11" ry="6" fill="#fff" opacity="${dim ? .12 : .22}" transform="rotate(-30 36 30)"/></svg>`;
 }
 // Impact burst used in the tick animation
 function burstSvg() { return `<svg viewBox="0 0 50 50"><path d="M25 2 L29 16 L42 8 L34 20 L48 25 L34 30 L42 42 L29 34 L25 48 L21 34 L8 42 L16 30 L2 25 L16 20 L8 8 L21 16 Z" fill="#FFD400" stroke="#1B1B1B" stroke-width="2" stroke-linejoin="round"/></svg>`; }
@@ -3535,7 +3654,7 @@ function restoreTab(name) {
   app.textContent = ''; app.appendChild(c.box); window.scrollTo(0, c.y);
   R._prevScreen = R._curScreen; R._curScreen = R.screen; keepAwake(false);
   const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = R.screen === 'dash' ? '#0a2e12' : '#0E0F12';
-  if (R.screen === 'today') startLiftAnim();
+  if (R.screen === 'today') { startLiftAnim(); t4SelPlace(false); }   // a long cycle's strip lost its sideways scroll while away
   return true;
 }
 function render(anim) {
@@ -3576,7 +3695,7 @@ function screenHtml(name) { return { today: todayHtml, cal: journeyHtml, journey
 function logError(e) { try { localStorage.setItem('vikac.lasterr', JSON.stringify({ at: new Date().toISOString(), v: APP_VERSION, screen: R.screen, msg: (e && e.message) || String(e), stack: ((e && e.stack) || '').slice(0, 900) })); } catch (x) {} }
 function errorScreen(e) {
   console.error(e); logError(e); const sc = R.screen, msg = (e && e.message) || String(e), where = (((e && e.stack) || '').split('\n')[1] || '').trim();
-  if (sc === 'dash') R.stab = 'scan'; if (sc === 'journey' || sc === 'cal') R.jtab = 'path';
+  if (sc === 'dash') R.stab = 'scan'; if (sc === 'journey' || sc === 'cal') R.jtab = 'cycles';
   return `<div class="screen errscr"><div class="shead"><div class="h1">Oops</div></div><div class="lead4">This screen hit a bug and couldn't open. Your data is safe. A screenshot of this helps to fix it:</div><div class="dbox" style="font-family:monospace;font-size:12px;overflow-wrap:anywhere">v${APP_VERSION} · ${esc(sc)}${sc === 'dash' ? ' · ' + esc(R._stabErr || '') : ''}<br>${esc(msg)}<br>${esc(where)}</div><button class="btn" data-errhome style="margin-top:14px;width:100%">Back to Today</button></div>${nav(sc === 'exfile' ? 'dash' : sc === 'cal' ? 'journey' : sc)}`;
 }
 // Screen stays on while a workout is open (re-acquired when the app comes back to the front)
@@ -3642,12 +3761,6 @@ function ringSvg(pct, color, size) {
   const circ = 2 * Math.PI * 34;
   return `<svg viewBox="0 0 84 84" width="${size || 84}" height="${size || 84}"><circle cx="42" cy="42" r="34" fill="none" stroke="#26272E" stroke-width="10"/><circle cx="42" cy="42" r="34" fill="none" stroke="${color || '#FE7F0C'}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${circ * Math.max(0, Math.min(100, pct)) / 100} ${circ}" transform="rotate(-90 42 42)"/><circle cx="42" cy="42" r="34" fill="none" stroke="#1B1B1B" stroke-width="2"/><circle cx="42" cy="42" r="29" fill="#fff" stroke="#1B1B1B" stroke-width="2"/><text x="42" y="49" text-anchor="middle" font-family="Bangers,Impact" font-size="22" fill="#1B1B1B">${Math.round(pct)}%</text></svg>`;
 }
-function slotArt(cyc) {
-  if (!cyc) return '';
-  if (cyc.summonDay) return dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 56 });
-  return ballSvg({ stars: cyc.star, state: cyc.todayDone ? 'full' : 'hollow', size: 56 });
-}
-function slotCap(cyc) { if (!cyc) return ''; if (cyc.summonDay) return cyc.summoned ? 'Dragon summoned' : cyc.canSummon ? 'Summon today' : cyc.earned + '/7 · no summon'; return cyc.earned + '/7 collected'; }
 // Tick animation: the character's hands sit exactly at the start of the title's strike-through line and the beam
 // travels along that line to its end, growing in step with the strike-through (both from 0.1 s to 0.34 s)
 function fireBeam(li) {
@@ -3675,44 +3788,23 @@ function artGeom() {
   if (ART.beam) scan('beam.png', (d, W, H) => { let x0 = W, x1 = 0, y0 = H, y1 = 0; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d.data[(y * W + x) * 4 + 3] > 60) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } if (x1 > x0) { _artGeom.beam = [x0 / W, (x1 + 1) / W, y0 / H, (y1 + 1) / H]; if (R.screen === 'dash' && R.ptab === 'body') render(); } });
   return _artGeom;
 }
-/* ---------- Summon (day 8) ----------
-   Hold the button: the seven balls round the dragon light up one by one (the phone buzzes harder with each), and at the
-   seventh the ceremony plays: the sky goes dark, the balls fly in and spin together, a flash and a column of light, the
-   dragon rises out of it, then the balls turn to stone and scatter for the next cycle. Tap closes it (after the first
-   moment), or it ends by itself. A summoned day replays it from the tile, the day sheet or the Journey. */
+/* ---------- Summon ----------
+   Once the 7th ball is in, the ball in the tab bar is the dragon: hold it (from any tab) and the ceremony plays: the sky goes
+   dark, the seven balls fly out of it into a ring and spin together, a flash and a column of light, the dragon rises out of
+   it, then the balls turn to stone and scatter for the next set. Tap closes it (after the first moment), or it ends by itself.
+   A summon day replays it from the day sheet. For now it is the feel-good moment only, nothing more. */
 const SUMMON_HOLD = 1500;
-function bindSummonHold(btn, date) {
-  let t0 = 0, raf = 0, lit = 0; const lab = btn.querySelector('.slab'), ring = app.querySelector('.t4ring');
-  const balls = () => [...app.querySelectorAll('.t4orbit .ob')];
-  const reset = () => { cancelAnimationFrame(raf); t0 = 0; lit = 0; btn.style.setProperty('--p', 0); btn.classList.remove('holding'); balls().forEach(b => b.classList.remove('lit')); if (ring) ring.classList.remove('charging'); };
-  const tick = now => {
-    if (!t0) return; const p = Math.min(1, (now - t0) / SUMMON_HOLD), bs = balls(), n = Math.min(7, Math.floor(p * 7 + 1e-6));
-    btn.style.setProperty('--p', p.toFixed(3));
-    while (lit < n) { if (bs[lit]) bs[lit].classList.add('lit'); lit++; vib(10 + lit * 6); }
-    if (p >= 1) { t0 = 0; btn.classList.remove('holding'); btn.disabled = true; summonNow(date); return; }
-    raf = requestAnimationFrame(tick);
-  };
-  const start = () => { t0 = performance.now(); btn.classList.add('holding'); btn.classList.remove('call', 'nudge'); if (ring) ring.classList.add('charging'); clearTimeout(btn._lt); lab.textContent = 'Hold to summon'; raf = requestAnimationFrame(tick); };
-  const up = () => { if (!t0) return; const short = performance.now() - t0 < 350; reset();
-    if (short) { lab.textContent = 'Keep holding…'; btn.classList.remove('nudge'); void btn.offsetWidth; btn.classList.add('nudge'); clearTimeout(btn._lt); btn._lt = setTimeout(() => { lab.textContent = 'Hold to summon'; }, 1600); } };
-  btn.addEventListener('pointerdown', e => { if (e.button > 0 || t0) return; e.preventDefault(); e.stopPropagation(); try { btn.setPointerCapture(e.pointerId); } catch (x) {} start(); });
-  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => btn.addEventListener(ev, up));
-  btn.addEventListener('click', e => e.stopPropagation()); btn.addEventListener('contextmenu', e => e.preventDefault());
-  btn.addEventListener('keydown', e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat && !t0) { e.preventDefault(); start(); } });
-  btn.addEventListener('keyup', e => { if (e.key === ' ' || e.key === 'Enter') up(); });
-}
 function summonNow(date) {
-  const from = [...app.querySelectorAll('.t4orbit .ob > span')].map(b => { const r = b.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+  const nb = document.querySelector('.nav .navball .bb'), r = nb ? nb.getBoundingClientRect() : null, from = r && r.width ? Array.from({ length: 7 }, () => [r.left + r.width / 2, r.top + r.height / 2]) : null;
   day(date).summoned = new Date().toISOString(); save();
-  playSummon({ date, from, done: () => { if (R.screen === 'today') refreshToday(false); else render(); } });
+  playSummon({ date, from, done: () => { if (R.screen === 'today') refreshToday(false); else render(); navBallRefresh(true); } });
 }
 function showDragon(date) { playSummon({ date: date || R.date }); }
 function playSummon(o) {
   o = o || {}; if (document.querySelector('.summon')) return;
   if (KP.inp) kpClose();
-  const W = window.innerWidth, H = window.innerHeight, cx = W / 2, cy = H * 0.41, reduce = fsReduce(), cyc = cycleOf(o.date || today());
-  let sub = '';
-  if (cyc) { const all = allCycles(), k = all.filter(c => c.dragon && c.num <= cyc.num).length, of = all.filter(c => c.days.length === 8).length; sub = 'Cycle ' + cyc.num + ' · 7 / 7 balls' + (k ? ' · dragon ' + k + ' of ' + Math.max(of, k) : ''); }
+  const W = window.innerWidth, H = window.innerHeight, cx = W / 2, cy = H * 0.41, reduce = fsReduce(), k = summonOn(o.date || today());
+  const sub = k ? 'Dragon ' + k : '';
   const el = document.createElement('div'); el.className = 'summon'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'The dragon is summoned');
   el.innerHTML = `<div class="ssky"></div><div class="sflk"></div><div class="sglow"></div><div class="scol" style="transform-origin:50% ${(cy + H * 0.25).toFixed(0)}px"></div><div class="sdr">${dragonBigArt()}</div>
     <div class="stx"><div class="h">The dragon answers</div><div class="s">${esc(sub)}</div></div><div class="sfl"></div><div class="shint">Tap to close</div>`;
@@ -3768,16 +3860,18 @@ function playSummon(o) {
   an('.shint', [{ opacity: 0 }, { opacity: 1 }], { duration: 500, delay: B + 4300 });
   at(B + 9500, close);
 }
+// The ball sheet (a rest day's tile): the day's ball in words, the set of seven as it stood that day, what the day asks for
 function showBalls(date) {
-  const info = dayInfo(date), cyc = cycleOf(date); if (!info.items) return;
+  const info = dayInfo(date); if (!info.items) return; const L = ballLog(), m = dayMark(date), td = today();
   const rows = info.items.map(it => `<span>${itemLab(it)}${it.req ? '' : ' <span class="muted small">bonus</span>'}</span><b class="${isDone(date, it.id) ? 'ok' : 'muted'}" style="font-size:18px">${isDone(date, it.id) ? '✓' : '○'}</b>`).join('');
-  const head = cyc.summonDay ? (cyc.summoned ? 'Dragon summoned' : cyc.canSummon ? 'Summon day' : 'Summon day · locked') : (date === today() ? 'Today\'s ball' : 'Dragon ball');
-  const days = cyc.days.filter(x => x.cd <= 7).map(x => `<span class="chip daychip ${x.comp === 'done' ? 'ok' : x.comp === 'miss' ? 'bad' : 'muted'}" title="${x.type.label}">${x.cd}</span>`).join('');
-  modal(`<h3>${head}</h3><div class="muted">Cycle ${cyc.num} · ${cyc.earned} of 7 balls collected</div>
-    <div class="kv" style="margin:16px 0 18px">${rows}</div>
-    <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;margin-bottom:8px">This cycle</div>
-    <div class="chips" style="gap:8px">${days}</div>
-    <button class="btn" data-close data-foot>Close</button>`);
+  const head = m.k === 'dragon' ? 'Dragon summoned' : date === td ? 'Today\'s ball' : 'Dragon ball', sub = m.k === 'dragon' ? (m.star ? 'Ball ' + m.star + ' of 7' : '') : ballWords(date, m);
+  const at = L.after[date] || { count: L.count, waiting: L.waiting }, n = at.waiting ? 7 : at.count;
+  const set = [1, 2, 3, 4, 5, 6, 7].map(i => ballSvg({ stars: i, state: i <= n ? 'full' : 'hollow', size: 30 })).join('') + dragonBadgeSvg({ state: at.waiting ? 'ready' : 'locked', size: 34 });
+  modal(`<h3>${head}</h3>${sub && sub !== 'missed' ? `<div class="muted">${sub}</div>` : ''}<div class="bset">${set}</div>
+    <div class="kv" style="margin:12px 0 18px">${rows}</div>
+    ${m.k === 'dragon' ? '<button class="btn sec" data-dragon>See the dragon</button>' : ''}<button class="btn" data-close data-foot>Close</button>`, b => {
+    const dg = b.querySelector('[data-dragon]'); if (dg) dg.onclick = () => { b.close(); setTimeout(() => showDragon(date), 200); };
+  });
 }
 
 /* ---------- Calendar ---------- */
@@ -4144,15 +4238,17 @@ function itemSubHtml(date, it) { if (!isCustomHabit(it.id)) return esc(itemSub(d
 
 /* ---------- Nav: Journey · the ball (Today) · Scouter ----------
    Three places: what happened and what's coming, what to do now, how it's going. The ball in the middle is the Today tab:
-   its ring fills with today's goals and goes gold when the day's ball is earned; on day 8 it is the dragon (hold it to
-   summon, from any tab). Tapping it always brings you to today. Settings sit behind the gear at the top of each tab. */
+   its ring fills with today's goals and goes gold when the day is perfect; it shows today's ball (the next of the set). Once
+   the 7th ball is in it is the dragon, glowing, any day, until you hold it to summon (from any tab). Tapping it always brings
+   you to today. Settings sit behind the gear at the top of each tab. */
 function navBallState() {
   const td = today(), info = dayInfo(td);
   if (!info.items) return { cls: info.phase === 'post' ? 'won' : '', inner: `<span class="bl">${ballSvg({ stars: 1, state: info.phase === 'post' ? 'full' : 'hollow', size: 46 })}</span>` };
-  const cyc = cycleOf(td), dp = dayProgress(td), won = cyc.todayDone;
-  if (cyc.summonDay) { const st = cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked';
-    return { cls: 'sum ' + (cyc.ready && !cyc.summoned ? 'ready' : '') + (won ? ' won' : ''), inner: `<span class="rg">${t4Ring(dp.reqDone, dp.req, won, 68)}</span><span class="bl dg">${dragonBadgeSvg({ state: st, size: 50 })}</span>` }; }
-  return { cls: won ? 'won' : '', inner: `<span class="rg">${t4Ring(dp.reqDone, dp.req, won, 68)}</span><span class="bl">${ballSvg({ stars: cyc.star, state: won ? 'full' : 'hollow', size: 46 })}</span>` };
+  const dp = dayProgress(td), won = dayCompletion(td) === 'done', L = ballLog(), ring = `<span class="rg">${t4Ring(dp.reqDone, dp.req, won, 68)}</span>`, star = L.byDate[td];
+  if (L.waiting) return { cls: 'sum ready' + (won ? ' won' : ''), inner: ring + `<span class="bl dg">${dragonBadgeSvg({ state: 'ready', size: 50 })}</span>` };
+  // the 7th ball and the summon on the same day: the dragon, done, for the rest of the day
+  if (star === 7 && L.summons.includes(td)) return { cls: 'sum won', inner: ring + `<span class="bl dg">${dragonBadgeSvg({ state: 'done', size: 50 })}</span>` };
+  return { cls: won ? 'won' : '', inner: ring + `<span class="bl">${ballSvg({ stars: star || L.count + 1, state: star ? 'full' : 'hollow', size: 46 })}</span>` };
 }
 function nav(on) {
   const b = navBallState();
@@ -4176,14 +4272,14 @@ document.addEventListener('click', e => {
   const c = e.target.closest && e.target.closest('[data-shots]'); if (c) { let f = $('#shotPick'); if (!f) { f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.multiple = true; f.id = 'shotPick'; f.hidden = true; document.body.appendChild(f);
     f.onchange = () => { const files = Array.from(f.files || []); f.value = ''; if (!files.length) return; if (files.length === 1) go('import', { file: files[0] }); else startBatch(files); }; } f.click(); }
 });
-// day 8 with all seven balls: hold the ball in the tab bar to summon, from any tab (a tap still just opens Today)
+// the dragon waiting: hold the ball in the tab bar to summon, from any tab (a tap still just opens Today)
 document.addEventListener('pointerdown', e => {
   const nb = e.target.closest && e.target.closest('.nav .navball.ready'); if (!nb) return;
   const t0 = performance.now(); let raf = 0;
   const end = () => { cancelAnimationFrame(raf); nb.classList.remove('holding'); nb.style.removeProperty('--p'); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
   const up = () => { if (performance.now() - t0 > 350) nb._held = true; end(); };
   const tick = now => { const p = Math.min(1, (now - t0) / SUMMON_HOLD); if (now - t0 > 200) nb.classList.add('holding'); nb.style.setProperty('--p', p.toFixed(3));
-    if (p >= 1) { nb._held = true; end(); if (!cycleOf(today()).summoned) summonNow(today()); return; } raf = requestAnimationFrame(tick); };
+    if (p >= 1) { nb._held = true; end(); if (dragonWaiting()) summonNow(today()); return; } raf = requestAnimationFrame(tick); };
   window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up); raf = requestAnimationFrame(tick);
 });
 // backup reminder: a dot on the gear (the words are at the top of Settings)
@@ -4227,36 +4323,30 @@ function t4Ring(d, n, won, size) {
   return s + '</svg>';
 }
 const SHORT = { workout: 'finish the workout', mt: 'Muay Thai', nutrition: 'log nutrition', weigh: 'weigh in', hang: 'dead hangs', stretch: 'stretching', mobility: 'kick mobility' };
-function t4HeroHtml(date, info, cyc) {
-  const dp = dayProgress(date), td = today(), future = date > td, won = cyc.todayDone;
-  const art = cyc.summonDay ? dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.canSummon ? 'ready' : 'locked', size: 90 }) : ballSvg({ stars: future ? dayStars(date) : cyc.star, state: won ? 'full' : 'hollow', size: 90 });
-  // no caption under the ball: the ring, the card and the goals say it all. The one exception: a summon day without
-  // all seven balls, where nothing else says there is no summon
-  const cap = cyc.summonDay && !cyc.canSummon && !cyc.summoned ? `<div class="t4cap">${cyc.earned} / 7 balls · no summon this cycle</div>` : '';
-  // day 8: the seven balls of the cycle circle the dragon (lit ones collected); once the dragon has come they are gone
-  const orbit = cyc.summonDay && !cyc.summoned ? `<div class="t4orbit ${cyc.canSummon ? 'on' : ''}">${[0, 1, 2, 3, 4, 5, 6].map(i => { const a = (-90 + i * 360 / 7) * Math.PI / 180;
-    return `<span class="ob" style="left:${(86 * Math.cos(a)).toFixed(1)}px;top:${(86 * Math.sin(a)).toFixed(1)}px"><span>${ballSvg({ stars: i + 1, state: i < cyc.earned ? 'full' : 'dim', size: 26 })}</span></span>`; }).join('')}</div>` : '';
-  return `<div class="t4hero"><div class="t4ring ${won ? 'won' : ''} ${orbit ? 'orb' : ''}" data-bigball>${t4Ring(dp.reqDone, dp.req, won, 140)}<div class="ball" id="bigart">${art}</div>${orbit}</div>${cap}</div>`;
-}
 /* ---------- Day navigation: the header and the cycle strip stay put; only the day below them changes ----------
    Changing the day (swipe, ‹ ›, a day in the strip, ↩ Today) rewrites the header's words in place and moves the strip's
    highlight; the strip's balls slide only when you cross into another cycle; the day itself (ring, training, goals) slides
    in from the side you are heading to. Nothing above it reloads, so the controls never jump. */
+// The cycle's days (any length; a long cycle scrolls sideways). Each day shows the ball it earned; a past day without one a
+// dim ball, a perfect day while the dragon waited a tick, a summon day the dragon; today the ball it earns next (the dragon
+// while it waits); days ahead plain balls.
 function t4StripBalls(date, cyc) {
   const td = today();
-  return cyc.days.map(x => { const ok = x.comp === 'done' && x.cd <= 7, star = dayStars(x.date) - 0;
-    const a = x.cd === 8 ? dragonBadgeSvg({ state: cyc.dragon ? 'done' : 'locked', size: 22 }) : ballSvg({ stars: star, state: ok ? 'full' : 'hollow', size: 22 });
-    const dt = parse(x.date), col = x.cd === 8 ? 'var(--gold)' : JCOL[x.type.k] || 'var(--muted)';
-    return `<button class="mb ${ok || (x.cd === 8 && cyc.dragon) ? 'got' : ''} ${x.date === date ? 'cur' : ''} ${x.date === td ? 'today' : ''}" data-goto="${x.date}" data-al="${WD[dt.getDay()]} ${fmtShort(x.date)}, ${esc(x.cd === 8 ? 'summon day' : x.type.label)}" aria-label="${WD[dt.getDay()]} ${fmtShort(x.date)}, ${esc(x.cd === 8 ? 'summon day' : x.type.label)}${x.date === date ? ', shown' : ''}"><span class="mbb">${a}</span><span class="mbd">${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}</span><span class="mbw2" style="color:${col}">${WD[dt.getDay()].slice(0, 3)}</span></button>`; }).join('');
+  return cyc.days.map(x => { const m = dayMark(x.date), a = markArt(m, 22), got = m.k === 'ball' || m.k === 'dragon' || m.k === 'check';
+    const dt = parse(x.date), col = JCOL[x.type.k] || 'var(--muted)', al = `${WD[dt.getDay()]} ${fmtShort(x.date)}, ${esc(x.type.label)}`;
+    return `<button class="mb ${got ? 'got' : ''} ${x.date === date ? 'cur' : ''} ${x.date === td ? 'today' : ''}" data-goto="${x.date}" data-al="${al}" aria-label="${al}${x.date === date ? ', shown' : ''}"><span class="mbb">${a}</span><span class="mbd">${pad(dt.getDate())}/${pad(dt.getMonth() + 1)}</span><span class="mbw2" style="color:${col}">${WD[dt.getDay()].slice(0, 3)}</span></button>`; }).join('');
 }
-function t4StripHtml(date, cyc) { return `<div class="t4strip" id="t4strip" data-cyc="${cyc.num}"><div class="mbw"><span class="mbsel"></span><div class="mbs">${t4StripBalls(date, cyc)}</div></div></div>`; }
-// ‹ › sit either side of the big ball, on the same spot every day (the ball is always at the same height, summon day included)
+function t4StripHtml(date, cyc) { return `<div class="t4strip ${cyc.days.length > 9 ? 'long' : ''}" id="t4strip" data-cyc="${cyc.num}"><div class="mbw"><span class="mbsel"></span><div class="mbs">${t4StripBalls(date, cyc)}</div></div></div>`; }
+// ‹ › sit either side of the big ball, on the same spot every day (the ball is always at the same height)
 const T4_ARROWS = '<button class="arrow sl" data-day="-1" aria-label="Previous day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><button class="arrow sr" data-day="1" aria-label="Next day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>';
 // the highlight behind the shown day glides to it (jumps when the strip changes cycle)
 function t4SelPlace(glide) {
   const st = $('#t4strip'); if (!st) return; const sel = st.querySelector('.mbsel'), cur = st.querySelector('.mb.cur'); if (!sel) return;
   if (!cur) { sel.style.opacity = 0; return; } sel.style.opacity = 1; sel.style.transition = glide ? '' : 'none';
   sel.style.width = cur.offsetWidth + 'px'; sel.style.transform = `translateX(${cur.offsetLeft}px)`; if (!glide) { void sel.offsetWidth; sel.style.transition = ''; }
+  // a long cycle scrolls sideways: the shown day (today at first) is kept in view
+  const w = st.querySelector('.mbw'); if (w && w.scrollWidth > w.clientWidth + 1) { const x = cur.offsetLeft - (w.clientWidth - cur.offsetWidth) / 2, to = Math.max(0, Math.min(w.scrollWidth - w.clientWidth, x));
+    if (cur.offsetLeft < w.scrollLeft || cur.offsetLeft + cur.offsetWidth > w.scrollLeft + w.clientWidth || !glide) { if (glide && w.scrollTo) w.scrollTo({ left: to, behavior: 'smooth' }); else w.scrollLeft = to; } }
 }
 // the date itself is in the strip and on the training card, so the header keeps only the day count and the cycle
 function t4HeadText(date, info, cyc) { return 'Cycle ' + cyc.num; }
@@ -4278,7 +4368,7 @@ function t4StripRefresh(date, cyc, dir) {
     mb.querySelectorAll('.mb').forEach(b => { const on = b.dataset.goto === date; b.classList.toggle('cur', on); b.setAttribute('aria-label', b.dataset.al + (on ? ', shown' : '')); });
     return t4SelPlace(true);
   }
-  mb.innerHTML = t4StripBalls(date, cyc); st.dataset.cyc = cyc.num; bindTodayNav();
+  mb.innerHTML = t4StripBalls(date, cyc); st.dataset.cyc = cyc.num; st.classList.toggle('long', cyc.days.length > 9); bindTodayNav();
   if (crossed && dir) { animate(mb, dir); const sel = st.querySelector('.mbsel'); if (sel) sel.style.opacity = 0; clearTimeout(st._sel); st._sel = setTimeout(() => t4SelPlace(false), 250); }   // new cycle: the balls slide in, then the highlight appears
   else t4SelPlace(false);
 }
@@ -4314,14 +4404,8 @@ function wtHtml(date, info, cyc) {
     return `<div class="wt mt" data-wt>${liftArtHtml('mt')}${lab}<div class="t h1">Muay Thai</div><div class="s">Minutes and kcal from the band${mob ? ' · kick mobility first' : ''}</div>${chg}
       <button class="btn big" data-startwo>${future ? 'Open' : 'Log Muay Thai'}</button></div>`;
   }
-  const title = cyc.summonDay ? 'Summon day' : 'Rest day';
-  // day 8 with all seven balls: the Summon button (hold it), locked until the day's goals are done
-  if (cyc.summonDay && cyc.canSummon && !cyc.summoned && !future) return `<div class="wt rest summonday ${cyc.ready ? 'ready' : ''}" data-wt><div class="art">${cyc.ready ? heroArt({ level: 4, size: 104 }) : bodyArt({ date, size: 104, fallback: 2 })}</div>${labR}<div class="t h1">${title}</div><div class="s">7 / 7 balls · ${cyc.ready ? 'the dragon is waiting' : 'finish today\'s goals first'}</div>
-      <button class="btn big sumbtn" ${cyc.ready ? 'data-summon' : 'disabled'}><span class="sfill"></span><span class="slab">${cyc.ready ? 'Hold to summon' : IC4.lock + 'Summon'}</span></button></div>`;
-  if (cyc.summoned) return `<div class="wt done rest summoned" data-wt><div class="art">${dragonBadgeSvg({ state: 'done', size: 58 })}</div><div class="tx">${labR}<div class="t h1">Dragon summoned</div></div><span class="ok">${IC4.check}</span></div>`;
-  const noSum = cyc.summonDay && !cyc.canSummon ? `<div class="s">${cyc.earned} / 7 balls · no summon this cycle</div>` : '';
-  if (cyc.todayDone) return `<div class="wt done rest" data-wt>${liftArtHtml('done')}<div class="tx">${labR}<div class="t h1">${title}</div>${noSum}${chg}</div><span class="ok">${IC4.check}</span></div>`;
-  return `<div class="wt rest" data-wt>${liftArtHtml('rest')}${labR}<div class="t h1">${title}</div>${noSum}${chg}</div>`;
+  if (cyc.todayDone) return `<div class="wt done rest" data-wt>${liftArtHtml('done')}<div class="tx">${labR}<div class="t h1">Rest day</div>${chg}</div><span class="ok">${IC4.check}</span></div>`;
+  return `<div class="wt rest" data-wt>${liftArtHtml('rest')}${labR}<div class="t h1">Rest day</div>${chg}</div>`;
 }
 /* ---------- Kcal left: what you can still eat today ----------
    Budget = BMR + the band's active kcal so far (or what you typed, or the project default) − the deficit; eaten = what's
@@ -4450,7 +4534,8 @@ function volDelta(s) {
   return ' ' + dch(pct === 0 ? null : pct > 0, arrowNum(pct, x => x + ' % vol'));
 }
 function t4Rows(date, info) {
-  const future = date > today(), cyc = cycleOf(date), star = cyc && !cyc.summonDay ? (future ? dayStars(date) : cyc.star) : 7;
+  // the required goals carry the ball they earn (a plain ball for a day ahead or while the dragon waits)
+  const future = date > today(), star = future ? null : dayStar(date);
   const items = info.items.filter(it => it.id !== 'workout' && it.id !== 'mt');
   const done = items.filter(it => isDone(date, it.id)).length;
   return `<div class="secl"><span>${date === today() ? 'Today\'s goals' : 'Goals'}</span><span>${done} / ${items.length}</span></div><ul class="todo" id="list">${items.map(it => {
@@ -4510,14 +4595,12 @@ function bindToday() {
   bindTodayBody(date, future);
   if (R._wtShrink) { R._wtShrink = false; const wt = app.querySelector('.wt.done'); if (wt) wt.classList.add('shrink'); }
   // a ball completed on another screen (workout, weigh-in, nutrition…) is celebrated when you land back here
-  const cyc = cycleOf(date);
-  if (cyc && date === today() && cyc.todayDone) { const key = cyc.summonDay ? 'summon' : 'ball', flag = day(date).celebrated || {};
-    if (!flag[key]) setTimeout(() => celebrateDay(date), 450); }
+  if (date === today() && dayCompletion(date) === 'done' && !(day(date).celebrated || {}).ball) setTimeout(() => celebrateDay(date), 450);
 }
 function bindTodayBody(date, future) {
   const info = dayInfo(date), body = $('#t4body'); if (!body) return;
   const bb = body.querySelector('[data-bigball]'); if (bb) bb.onclick = () => showBalls(date);
-  const openWT = () => { if (info.workoutKey) { const s = S.sessions.find(x => x.date === date); if (date === today() && !(s && (s.finished || s.startedAt))) R._woStart = !(s && s.ex.some(e => e.done || e.sets.some(st => st.kg || st.reps))); go('workout', { date, key: s ? s.key : info.workoutKey }); } else if (info.isMT) go('mt', { date }); else if (cycleOf(date).summoned) showDragon(date); else showBalls(date); };
+  const openWT = () => { if (info.workoutKey) { const s = S.sessions.find(x => x.date === date); if (date === today() && !(s && (s.finished || s.startedAt))) R._woStart = !(s && s.ex.some(e => e.done || e.sets.some(st => st.kg || st.reps))); go('workout', { date, key: s ? s.key : info.workoutKey }); } else if (info.isMT) go('mt', { date }); else showBalls(date); };
   const wt = body.querySelector('[data-wt]'); if (wt) wt.onclick = openWT;
   const bu = body.querySelector('[data-bud]'); if (bu) bu.onclick = () => go('nutrition', { date });
   body.querySelectorAll('[data-chg]').forEach(c => c.onclick = e => { e.stopPropagation(); changeDaySheet(date); });
@@ -4532,9 +4615,8 @@ function bindTodayBody(date, future) {
   body.querySelectorAll('[data-open-item]').forEach(el => el.onclick = e => { const li = el.closest('li'); if (li.dataset.blk === 'tick') { const c = li.querySelector('[data-chk]'); if (c) c.onclick(e); return; } go(li.dataset.item, { date, key: li.dataset.key }); });
   const bp = body.querySelector('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) toast(r.error, 2400); refreshToday(false); };
   const nt = body.querySelector('[data-note]'); if (nt) nt.onclick = () => noteSheet(date);
-  const sm = body.querySelector('[data-summon]'); if (sm) bindSummonHold(sm, date);
 }
-// Re-draw the ring, the tile and the goals after a tick; celebrate a collected ball or a summoned dragon
+// Re-draw the ring, the tile and the goals after a tick; celebrate a collected ball
 function refreshToday(pop, tile) {
   if (R.screen !== 'today') return; const date = R.date, info = dayInfo(date), body = $('#t4body'); if (!body || !info.items) return;
   const cyc = cycleOf(date), was = R._lastDone; R._lastDone = cyc.todayDone;
@@ -4544,12 +4626,13 @@ function refreshToday(pop, tile) {
   navBallRefresh(cyc.todayDone && pop && !was);
   if (cyc.todayDone && pop && !was) celebrateDay(date);
 }
-// A ball: a buzz and a word. Day 8 with all seven: the Summon button lights up and calls you (the dragon comes when you hold it)
+// A perfect day: a buzz and a word for its ball. The 7th: the ball in the tab bar turns into the dragon (hold it to summon).
+// While the dragon waits a perfect day earns no ball, so there is nothing to say.
 function celebrateDay(date) {
-  const cyc = cycleOf(date); if (!cyc) return; const key = cyc.summonDay ? 'summon' : 'ball', flag = day(date).celebrated || {};
-  if (flag[key]) return; flag[key] = true; day(date).celebrated = flag; save();
-  navBallRefresh(true);
-  if (cyc.summonDay) { if (cyc.ready) { vib([30, 60, 30, 60, 90]); const b = $('[data-summon]'); if (b) b.classList.add('call'); } return; }
+  if (date > today() || dayCompletion(date) !== 'done') return; const flag = day(date).celebrated || {};
+  if (flag.ball) return; flag.ball = true; day(date).celebrated = flag; save();
+  navBallRefresh(true); const star = ballOf(date); if (!star) return;
+  if (star === 7) { vib([30, 60, 30, 60, 90, 60, 160]); toast('The dragon is waiting', 2600); return; }
   vib([40, 60, 40, 60, 120]); toast('Dragon ball collected!', 2400);
 }
 function refreshCycle(pop) { refreshToday(pop); }
@@ -4843,114 +4926,157 @@ function importHtml() {
 }
 
 
-/* ============ Stage 3: Journey (Path · Plan · Month) and the day sheet ============ */
+/* ============ Stage 3: Journey (Cycles · Month) and the day sheet ============ */
 IC4.journey = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.2"/><circle cx="18" cy="5" r="2.2"/><path d="M8 18.5c5 0 3-5 6-6.5s4 0 4-5"/></svg>';
 IC4.flame = '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 22c4 0 7-2.8 7-7 0-4-3-6.5-4-10-2 2-2.5 4-2.5 5.5C11 9 10 7.5 10 5.5 7 8 5 11 5 15c0 4.2 3 7 7 7z" fill="#FFD84D"/></svg>';
-const JCOL = { push: 'var(--push)', pull: 'var(--pull)', legs: 'var(--legs)', mt: 'var(--mt)', rest: 'var(--rest)', summon: 'var(--gold)' };
-// What a project day is, in a few words: title, tag, the planned line and the ball it earns
+IC4.chev = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>';
+const JCOL = { push: 'var(--push)', pull: 'var(--pull)', legs: 'var(--legs)', mt: 'var(--mt)', rest: 'var(--rest)' };
+// What a project day is, in a few words: title, its kind (the colour) and the planned line
 function dayPlan(d) {
   const info = dayInfo(d); if (!info.items) return null;
-  const cyc = cycleOf(d), w = info.workoutKey ? PROGRAM.workouts[info.workoutKey] : null, cd = info.cycleDay;
-  const k = w ? w.group : info.isMT ? 'mt' : cd === 8 ? 'summon' : 'rest';
-  const summoned = cd === 8 && cyc.summoned;
-  const title = w ? w.name : info.isMT ? 'Muay Thai' : summoned ? 'Dragon summoned' : cd === 8 ? 'Rest · summon' : 'Rest';
-  const sub = w ? w.ex.length + ' exercises · ~' + workoutMinutes(info.workoutKey) + ' min' : info.isMT ? 'minutes and kcal from the band' : summoned ? 'Cycle ' + cyc.num + ' · 7 / 7 balls' : cd === 8 ? '7 balls → the dragon' : info.items.filter(it => it.req).map(it => SHORT[it.id] || it.label).join(' · ');
-  return { info, cyc, w, k, title, sub, cd, tag: k === 'mt' ? 'MT' : k === 'summon' ? 'Dragon' : k.toUpperCase() };
+  const w = info.workoutKey ? PROGRAM.workouts[info.workoutKey] : null, k = w ? w.group : info.isMT ? 'mt' : 'rest';
+  const title = w ? w.name : info.isMT ? 'Muay Thai' : 'Rest';
+  const sub = w ? w.ex.length + ' exercises · ~' + workoutMinutes(info.workoutKey) + ' min' : info.isMT ? 'minutes and kcal from the band' : info.items.filter(it => it.req).map(it => SHORT[it.id] || it.label).join(' · ');
+  return { info, w, k, title, sub, cd: info.cycleDay };
 }
-// The ball (or dragon) a day shows: full when earned, hollow before; stars count the balls earned so far in that cycle
-// a day ahead shows the ball it earns if every day before it is earned too
-function dayStars(d) { const cyc = cycleOf(d); if (!cyc) return 1; const td = today(); let n = 0; for (const x of cyc.days) { if (x.cd > 7 || x.date === d) break; if (x.comp === 'done' || (d > td && x.date >= td)) n++; } return Math.min(7, n + 1); }
-function dayBallArt(d, size) {
-  const pl = dayPlan(d); if (!pl) return ''; const comp = dayCompletion(d), cyc = pl.cyc;
-  if (pl.cd === 8) { const all7 = cyc.days.filter(y => y.cd <= 7 && y.comp === 'done').length === 7; return dragonBadgeSvg({ state: cyc.dragon ? 'done' : all7 ? 'ready' : 'locked', size }); }
-  return ballSvg({ stars: dayStars(d), state: comp === 'done' ? 'full' : 'hollow', size });
+/* What a day shows where its ball sits (the strip, Journey, the day sheet, Month). k: 'ball' (earned; star), 'dragon' (summoned
+   that day), 'check' (perfect while the dragon waited: no ball), 'next' (today, not earned yet: the ball it earns, or the
+   dragon while it waits), 'miss' (a past day without a ball), 'ahead' (a day still to come) */
+function dayMark(d) {
+  const td = today(), L = ballLog();
+  if (d > td) return { k: 'ahead' };
+  if (L.summons.includes(d)) return { k: 'dragon', star: L.byDate[d] || null };
+  if (L.byDate[d]) return { k: 'ball', star: L.byDate[d] };
+  if (L.idle[d]) return { k: 'check' };
+  if (d === td) return { k: 'next', star: L.waiting ? null : L.count + 1, waiting: L.waiting };
+  return { k: 'miss' };
+}
+function markArt(m, size) {
+  if (m.k === 'ball') return ballSvg({ stars: m.star, state: 'full', size });
+  if (m.k === 'dragon') return dragonBadgeSvg({ state: 'done', size });
+  if (m.k === 'check') return `<span class="mchk" style="width:${size}px;height:${size}px">${IC4.check}</span>`;
+  if (m.k === 'next') return m.waiting ? dragonBadgeSvg({ state: 'ready', size }) : ballSvg({ stars: m.star, state: 'hollow', size });
+  return ballSvg({ stars: 0, state: m.k === 'miss' ? 'dim' : 'faint', size });
+}
+// the ball in words: "Ball 3 of 7", "The dragon is waiting", "Dragon summoned" (nothing for a day ahead)
+function ballWords(d, m) {
+  m = m || dayMark(d);
+  return m.k === 'dragon' ? 'Dragon summoned' : m.k === 'ball' ? 'Ball ' + m.star + ' of 7' : m.k === 'check' ? 'The dragon was waiting' : m.k === 'next' ? (m.waiting ? 'The dragon is waiting' : 'Ball ' + m.star + ' of 7') : m.k === 'miss' ? 'missed' : '';
 }
 function journeyStats() {
-  const td = today(); let balls = 0, dragons = 0;
-  for (const c of allCycles()) { const seven = c.days.filter(x => x.cd <= 7 && x.comp === 'done' && x.date <= td).length; balls += seven; if (c.dragon) dragons++; }
-  let chain = 0; let d = dayCompletion(td) === 'done' ? td : addDays(td, -1); while (d >= P().startDate && dayCompletion(d) === 'done') { chain++; d = addDays(d, -1); }
-  return { balls, dragons, chain };
+  const td = today(), L = ballLog(); let chain = 0, d = dayCompletion(td) === 'done' ? td : addDays(td, -1);
+  while (d >= P().startDate && dayCompletion(d) === 'done') { chain++; d = addDays(d, -1); }
+  return { count: L.waiting ? 7 : L.count, waiting: L.waiting, dragons: L.dragons, balls: L.total, chain };
 }
+// a stretch of days, short: "4–11 Nov", "28 Nov – 5 Dec"
+function dayRange(a, b) { const x = parse(a), y = parse(b); return x.getMonth() === y.getMonth() ? x.getDate() + (LANG === 'hr' ? '.' : '') + '–' + fmtShort(b) : fmtShort(a) + ' – ' + fmtShort(b); }
 function journeyHtml() {
-  const p = P(), td = today(), info = dayInfo(td), st = journeyStats(), tab = R.jtab || 'path';
+  const p = P(), td = today(), info = dayInfo(td), st = journeyStats(); if (R.jtab !== 'month') R.jtab = 'cycles'; const tab = R.jtab;
   const idx = info.items ? info.idx : info.phase === 'pre' ? 0 : D() + 1;
-  return `<div class="screen jo"><div class="jtop"><div class="jt"><div><div class="h1">Journey</div><div class="jsub">${info.phase === 'pre' ? 'Day 1 is ' + shortD(p.startDate) : isOngoing() ? 'Day ' + idx : 'Day ' + Math.min(idx, D()) + ' of ' + D()} · ${st.balls} ball${st.balls === 1 ? '' : 's'} · ${st.dragons} dragon${st.dragons === 1 ? '' : 's'}</div></div><span class="jtr">${st.chain > 1 ? `<span class="chain">${IC4.flame}${st.chain}-day chain</span>` : ''}${GEAR_BTN()}</span></div>
-    <div class="seg" id="jseg">${['path', 'plan', 'month'].map(t => `<button data-jt="${t}" class="${t === tab ? 'on' : ''}">${t}</button>`).join('')}</div></div>
-    <div id="jbody">${tab === 'plan' ? planHtml() : tab === 'month' ? monthHtml() : pathHtml()}</div></div>${nav('journey')}`;
+  const dl = info.phase === 'pre' ? 'Day 1 is ' + shortD(p.startDate) : isOngoing() ? 'Day ' + idx : 'Day ' + Math.min(idx, D()) + ' of ' + D();
+  return `<div class="screen jo"><div class="jtop"><div class="jt"><div class="h1">Journey</div><span class="jtr">${st.chain > 1 ? `<span class="chain">${IC4.flame}${st.chain}-day chain</span>` : ''}${GEAR_BTN()}</span></div><div class="jsub"><span>${dl}</span><span> · ${st.count} / 7 balls</span><span> · ${st.dragons} ${st.dragons === 1 ? 'dragon' : 'dragons'}</span></div>
+    <div class="seg" id="jseg">${['cycles', 'month'].map(t => `<button data-jt="${t}" class="${t === tab ? 'on' : ''}">${t}</button>`).join('')}</div></div>
+    <div id="jbody">${tab === 'month' ? monthHtml() : cyclesHtml()}</div></div>${nav('journey')}`;
 }
 function bindJourney() {
-  const order = ['path', 'plan', 'month'];
-  app.querySelectorAll('[data-jt]').forEach(b => b.onclick = () => { const k = b.dataset.jt, cur = R.jtab || 'path'; if (cur === k) return; jSetTab(k, order.indexOf(k) > order.indexOf(cur) ? 'right' : 'left'); });
-  bindSwipe($('#jbody'), () => { const i = order.indexOf(R.jtab || 'path'); if (R.jtab === 'month') return monthShift(1); if (i < 2) jSetTab(order[i + 1], 'right'); }, () => { const i = order.indexOf(R.jtab || 'path'); if (R.jtab === 'month' && monthShift(-1)) return; if (i > 0) jSetTab(order[i - 1], 'left'); });
+  const cur = () => R.jtab === 'month' ? 'month' : 'cycles';
+  app.querySelectorAll('[data-jt]').forEach(b => b.onclick = () => { const k = b.dataset.jt; if (cur() === k) return; jSetTab(k, k === 'month' ? 'right' : 'left'); });
+  bindSwipe($('#jbody'), () => { if (cur() === 'month') return monthShift(1); jSetTab('month', 'right'); }, () => { if (cur() === 'month' && !monthShift(-1)) jSetTab('cycles', 'left'); });
   app.querySelectorAll('[data-dsheet]').forEach(el => el.onclick = () => daySheet(el.dataset.dsheet));
   app.querySelectorAll('[data-jm]').forEach(b => b.onclick = e => { e.stopPropagation(); monthShift(+b.dataset.jm); });
-  if ((R.jtab || 'path') === 'path' && !R._jSwitch) scrollPathToToday(true);
+  app.querySelectorAll('[data-jcy]').forEach(b => b.onclick = () => jToggle(b));
+  if (cur() === 'cycles' && !R._jSwitch) scrollCyclesToToday(true);
 }
-// Switching Path · Plan · Month: the new tab is laid out and scrolled into place before the first frame, then slides in.
-// The path keeps the spot you left it at (today the first time).
+// Switching Cycles · Month: the new tab is laid out and scrolled into place before the first frame, then slides in.
+// Cycles keeps the spot you left it at (today the first time).
 function jSetTab(k, dir) {
-  const cur = R.jtab || 'path'; if (cur === k) return;
-  if (cur === 'path') R._pathY = window.scrollY;
+  const cur = R.jtab === 'month' ? 'month' : 'cycles'; if (cur === k) return;
+  if (cur === 'cycles') R._cycY = window.scrollY;
   R.jtab = k; R._jSwitch = true; render(); R._jSwitch = false;
-  window.scrollTo(0, k === 'path' ? (R._pathY != null ? R._pathY : pathTodayY()) : 0);
+  window.scrollTo(0, k === 'cycles' ? (R._cycY != null ? R._cycY : cyclesTodayY()) : 0);
   animate($('#jbody'), dir);
 }
-function pathTodayY() { const n = app.querySelector('.pnode.today') || app.querySelector('.pnode.next'); return n ? Math.max(0, n.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.42) : 0; }
-// the path opens with today in view (unless you are coming back to a spot you scrolled to); placed before the first frame
-function scrollPathToToday(instant, force) {
-  const run = () => { if (!force && window.scrollY > 0) return; if (R.screen !== 'journey' && R.screen !== 'cal') return; const y = pathTodayY(); R._pathY = null; window.scrollTo({ top: y, behavior: instant ? 'auto' : 'smooth' }); };
+function cyclesTodayY() { const n = app.querySelector('.jd.today') || app.querySelector('.jnow + .jdl .jd') || app.querySelector('.jcy:last-of-type'); return n ? Math.max(0, n.getBoundingClientRect().top + window.scrollY - window.innerHeight * 0.4) : 0; }
+// Cycles opens with today in view (unless you are coming back to a spot you scrolled to); placed before the first frame
+function scrollCyclesToToday(instant, force) {
+  const run = () => { if (!force && window.scrollY > 0) return; if (R.screen !== 'journey' && R.screen !== 'cal') return; const y = cyclesTodayY(); R._cycY = null; window.scrollTo({ top: y, behavior: instant ? 'auto' : 'smooth' }); };
   if (instant) requestAnimationFrame(run); else setTimeout(run, 30);
 }
 
-/* ---------- Path: every day of the project on one winding path ---------- */
-// a day's weigh-in under its date: weight (▼ / ▲ against the weigh-in before it) and body fat when the scale gave one
-function pathWeighHtml(d) {
+/* ---------- Cycles: every cycle of the plan. Finished ones folded into a card, the one running now day by day, the ones
+   ahead folded with what is in them; tap a card for its days. A project shows every cycle to its last day, an ongoing plan
+   the next two. ---------- */
+function journeyCycles() {
+  const p = P(), Dd = D(), tt = tOf(today()), curNum = tt < 0 ? 1 : tt > Dd ? Infinity : cycAt(tt).num, out = [];
+  for (let t = 0; t <= Dd;) { const c = cycleOf(addDays(p.startDate, t)); if (!c) break; if (isOngoing() && c.num > curNum + 2) break; out.push(c); t = tOf(c.end) + 1; }
+  return out;
+}
+// a day's weigh-in: weight (▼ / ▲ against the weigh-in before it)
+function jWeighHtml(d) {
   const r = S.readings[d]; if (!r || r.weight == null || r.weight === '') return '';
-  const w = +r.weight, pv = lastReading('weight', addDays(d, -1)), dl = pv ? w - pv.v : 0;
-  const ar = dl <= -0.05 ? `<i class="dn" aria-label="down ${Math.abs(dl).toFixed(1)} kg">▼</i>` : dl >= 0.05 ? `<i class="up" aria-label="up ${dl.toFixed(1)} kg">▲</i>` : '';
-  const f = r.fat != null && r.fat !== '' ? `<span class="pf">${(+r.fat).toFixed(1)} %</span>` : '';
-  return `<span class="pwt"><b>${w.toFixed(1)}</b> kg${ar}${f}</span>`;
+  const w = +r.weight, pv = lastReading('weight', addDays(d, -1)), dl = pv ? +(w - pv.v).toFixed(1) : 0;
+  return `<span class="jw">${w.toFixed(1)} kg</span>${dl ? `<span class="${dl < 0 ? 'dn' : 'up'}">${dl < 0 ? '▼' : '▲'}${Math.abs(dl).toFixed(1)}</span>` : ''}`;
 }
-function pathHtml() {
-  const p = P(), td = today(), W = 384, GAP = 84, BAN = 56; let y = 34, h = '', pts = [], ty = null, firstFut = false; const lv = (powerLevel(td) || {}).stage, me = bodySrc(td, lv);
-  for (let t = 0, last = horizonT(); t <= last; t++) {   // ongoing: up to the end of the next cycle
-    const d = addDays(p.startDate, t), pl = dayPlan(d); if (!pl) continue;
-    if (pl.cd === 1) { const c = pl.cyc, got = c.days.filter(x => x.cd <= 7 && x.comp === 'done' && x.date <= td).length; h += `<div class="pban" style="top:${y - 6}px"><span>Cycle ${c.num} · ${got} / 7</span></div>`; y += BAN; }
-    const x = W / 2 + 104 * Math.sin(t * 0.92), comp = dayCompletion(d), past = d < td, isT = d === td;
-    pts.push([x, y]); if (isT || (ty == null && d > td)) ty = y;
-    const cls = isT ? 'today' : d > td ? 'fut' : comp === 'done' ? 'got' : 'miss', big = pl.cd === 8 ? 62 : isT ? 58 : 52;
-    const left = x > W / 2, room = (left ? x : W - x) - 34 - (isT ? 70 : 0) - 6, lab = `<div class="plab ${d > td ? 'f' : ''}" style="top:${y}px;max-width:${(room / W * 100).toFixed(2)}%;${left ? `right:${((W - x + 34 + (isT ? 70 : 0)) / W * 100).toFixed(2)}%;text-align:right` : `left:${((x + 34 + (isT ? 70 : 0)) / W * 100).toFixed(2)}%`}">Day ${t + 1} · ${esc(pl.title)}<small>${isT ? 'Today · ' : ''}${shortD(d)}${past && comp !== 'done' && pl.cd !== 8 ? ' · missed' : ''}</small>${pathWeighHtml(d)}</div>`;
-    const nx = d > td && !firstFut; if (nx) firstFut = true;
-    h += `<button class="pnode ${cls} ${nx ? 'next' : ''}" data-dsheet="${d}" style="left:${(x / W * 100).toFixed(2)}%;top:${y}px;width:${big}px;height:${big}px;margin:${-big / 2}px 0 0 ${-big / 2}px">${dayBallArt(d, big)}</button>${lab}`;
-    if (isT && me) h += `<img class="pme" src="${me}" alt="" style="${left ? `left:${((x - 34 - 64) / W * 100).toFixed(2)}%` : `left:${((x + 34) / W * 100).toFixed(2)}%`};top:${y - 62}px" onerror="this.remove()">`;
-    y += GAP;
+// one day: the date, its ball on the line, what it was (or is planned to be) and how it went
+function jRow(d, first, last) {
+  const pl = dayPlan(d); if (!pl) return ''; const info = pl.info, td = today(), isT = d === td, fut = d > td, comp = dayCompletion(d), m = dayMark(d), dt = parse(d);
+  const parts = [], note = (S.days[d] || {}).note, miss = !fut && !isT && comp !== 'done';
+  if (fut) parts.push(esc(pl.sub));
+  else {
+    if (info.workoutKey) { const s = S.sessions.find(x => x.date === d); if (s) { const v = sessVol(s); parts.push(`<span>${s.ex.filter(e => e.done).length}/${s.ex.length}${v ? ' · ' + (v >= 1000 ? (v / 1000).toFixed(1) + ' t' : fmtN(v) + ' kg') : ''}</span>`); } }
+    if (info.isMT) { const mt = (S.days[d] || {}).mt; if (mt && +mt.minutes > 0) parts.push(`<span>${+mt.minutes} min</span>`); }
+    const wh = jWeighHtml(d); if (wh) parts.push(wh);
+    const gi = info.items.filter(it => it.id !== 'workout' && it.id !== 'mt');
+    if (isT || !parts.length) parts.push(`<span>${gi.filter(it => isDone(d, it.id)).length} / ${gi.length} goals</span>`);
+    if (miss) parts.push('<span class="jmiss">missed</span>');
   }
-  const H = y - GAP + 50;
-  let path = ''; pts.forEach(([x, yy], i) => { if (!i) path += `M${x.toFixed(1)} ${yy}`; else { const [px, py] = pts[i - 1]; path += ` C${px.toFixed(1)} ${(py + yy) / 2} ${x.toFixed(1)} ${(py + yy) / 2} ${x.toFixed(1)} ${yy}`; } });
-  const cut = ty == null ? H : ty;
-  return `<div class="path" style="height:${H}px"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" width="100%" height="${H}" style="position:absolute;left:0;top:0"><defs><clipPath id="pp"><rect x="0" y="0" width="${W}" height="${cut}"/></clipPath><clipPath id="pf"><rect x="0" y="${cut}" width="${W}" height="${H}"/></clipPath></defs>
-    <path d="${path}" fill="none" stroke="#FE7F0C" stroke-width="6" stroke-linecap="round" clip-path="url(#pp)" style="filter:drop-shadow(0 0 7px rgba(254,127,12,.75))" vector-effect="non-scaling-stroke"/>
-    <path d="${path}" fill="none" stroke="#4a4c57" stroke-width="4" stroke-dasharray="2 10" stroke-linecap="round" clip-path="url(#pf)" vector-effect="non-scaling-stroke"/></svg>${h}</div>`;
+  const right = isT ? '<span class="jtag">Today</span>' : !fut && comp === 'done' ? `<span class="jok">${IC4.check}</span>` : '';
+  const chg = info.changed ? `<span class="jchg" aria-label="Changed">${SWAP_IC}</span>` : '';
+  return `<button class="jd ${fut ? 'fut' : isT ? 'today' : 'past'} ${miss ? 'miss' : ''} ${first ? 'first' : ''} ${last ? 'last' : ''}" data-dsheet="${d}"><span class="dt"><b>${dt.getDate()}</b><span style="color:${JCOL[pl.k] || 'var(--muted)'}">${WD[dt.getDay()].slice(0, 3)}</span></span>
+    <span class="jb ${m.k}">${markArt(m, 34)}</span><span class="tt"><b><span>${esc(pl.title)}</span>${chg}</b><span class="js">${parts.join('<i> · </i>')}</span>${note && !fut ? `<span class="jn">${IC4.pen}<span class="usertext">${esc(note)}</span></span>` : ''}</span>${right}</button>`;
 }
-
-/* ---------- Plan: this cycle and the next, day by day ---------- */
-function planRows(c) {
-  const td = today();
-  return c.days.map(x => { const pl = dayPlan(x.date), comp = x.comp, isT = x.date === td, past = x.date < td;
-    const st = past || isT ? (comp === 'done' ? `<span class="ok4">${IC4.check}</span>` : isT ? '<span class="cond orc" style="font-size:12px">TODAY</span>' : '<span class="cond mut" style="font-size:11.5px">MISSED</span>') : '';
-    // the weekday carries the training colour (as in the Today strip), so no tag repeats the title
-    const col = pl.k === 'summon' ? 'var(--gold)' : JCOL[pl.k] || 'var(--muted)', idx = pl.info.idx;
-    // every 5th day: where the plan puts the weight that day
-    const chk = idx % 5 === 0 ? `<div class="pchk"><span>Day ${idx} · should be at <b>${expected('weight', tOf(x.date)).toFixed(1)} kg</b></span></div>` : '';
-    return `<button class="pday ${isT ? 'today' : ''} ${past ? 'past' : ''}" data-dsheet="${x.date}"><span class="dt"><b>${parse(x.date).getDate()}</b><span style="color:${col}">${WD[parse(x.date).getDay()].slice(0, 3)}</span></span><span class="pb4">${dayBallArt(x.date, 34)}</span><span class="tt"><b>${esc(pl.title)}</b><span>${esc(pl.sub)}</span></span>${st}</button>${chk}`; }).join('');
+// every 5th day: where the plan puts the weight that day, and once there, what the scale said
+function jCheck(d, end) {
+  const info = dayInfo(d); if (!info.items || info.idx % 5) return ''; const td = today(), exp = expected('weight', tOf(d)), r = S.readings[d], dfc = +P().deficit || 0;
+  let you = ''; if (d <= td && r && r.weight != null && r.weight !== '') { const w = +r.weight, good = dfc > 0 ? w <= exp + 0.05 : dfc < 0 ? w >= exp - 0.05 : Math.abs(w - exp) <= 0.5; you = `<span class="you"> · you <b class="${good ? 'okc' : 'badc'}">${w.toFixed(1)}</b>${good ? ' ✓' : ''}</span>`; }
+  return `<div class="jchk ${d < td ? 'lo' : ''} ${end ? 'end' : ''}"><span>Day ${info.idx} · should be at</span> <b>${exp.toFixed(1)} kg</b>${you}</div>`;
 }
-function planHtml() {
-  const td = today(), p = P(), info = dayInfo(td), cur = cycleOf(info.items ? td : info.phase === 'pre' ? p.startDate : p.endDate); if (!cur) return '';
-  const nxStart = addDays(cur.end, 1), nx = nxStart <= p.endDate ? cycleOf(nxStart) : null;
-  const lifts = c => c.days.filter(x => dayInfo(x.date).workoutKey); const mins = c => lifts(c).reduce((a, x) => a + workoutMinutes(dayInfo(x.date).workoutKey), 0);
-  const hm = m => Math.floor(m / 60) + ' h ' + pad(m % 60) + ' min';
-  return `<div class="wkh"><span>This cycle · ${cur.num}</span><span>${lifts(cur).length} lifts · ~${hm(mins(cur))}</span></div>${planRows(cur)}
-    ${nx ? `<div class="wkh" style="margin-top:16px"><span>Next cycle · ${nx.num}</span><span>${shortD(nx.start)} – ${shortD(nx.end)}</span></div>${planRows(nx)}` : '<div class="muted center" style="margin:18px 0">The project ends with this cycle.</div>'}`;
+function jRows(c) { return c.days.map((x, i) => jRow(x.date, i === 0, i === c.days.length - 1) + jCheck(x.date, i === c.days.length - 1)).join(''); }
+// a folded cycle: done ones say how it went (perfect days, the dragon, kg) and show the balls they earned; ones ahead what is in them
+function jCard(c, state) {
+  const L = ballLog(), td = today(), open = !!(R.jopen || {})[c.num], head = `Cycle ${c.num} · ${dayRange(c.start, c.end)}`;
+  let art, line, balls = '';
+  if (state === 'done') {
+    const perf = c.days.filter(x => x.comp === 'done').length, sm = L.summons.filter(d => d >= c.start && d <= c.end).length, got = c.days.filter(x => L.byDate[x.date]).map(x => L.byDate[x.date]);
+    const ws = c.days.map(x => S.readings[x.date]).filter(r => r && r.weight != null && r.weight !== ''), kg = ws.length > 1 ? +(+ws[ws.length - 1].weight - +ws[0].weight).toFixed(1) : null;
+    line = `<span>${perf} / ${c.days.length} perfect</span>${sm ? `<span> · ${sm > 1 ? sm + ' dragons summoned' : 'dragon summoned'}</span>` : ''}${kg != null ? `<span> · ${kg < 0 ? '−' : kg > 0 ? '+' : '±'}${Math.abs(kg).toFixed(1)} kg</span>` : ''}`;
+    art = sm ? dragonBadgeSvg({ state: 'done', size: 44 }) : got.length ? ballSvg({ stars: got[got.length - 1], state: 'full', size: 44 }) : ballSvg({ stars: 0, state: 'dim', size: 44 });
+    if (got.length) balls = `<span class="jcb">${got.map(n => ballSvg({ stars: n, state: 'full', size: 18 })).join('')}</span>`;
+  } else {
+    const ds = c.days.map(x => dayInfo(x.date)), lifts = ds.filter(i => i.workoutKey).length, mts = ds.filter(i => i.isMT).length;
+    line = [lifts ? `<span>${lifts} ${lifts === 1 ? 'lift' : 'lifts'}</span>` : '', mts ? `<span>${mts} Muay Thai</span>` : '', `<span>starts ${shortD(c.start)}</span>`].filter(Boolean).join('<i> · </i>');
+    art = ballSvg({ stars: 0, state: 'faint', size: 44 });
+  }
+  return `<button class="jcy ${state} ${open ? 'open' : ''}" data-jcy="${c.num}" aria-expanded="${open}"><span class="jci">${art}</span><span class="jct"><b>${head}</b><span class="jcl">${line}</span>${balls}</span><span class="jcv">${IC4.chev}</span></button>
+    <div class="collapse ${open ? 'open' : ''}" data-jcd="${c.num}"><div><div class="jdl ${state === 'done' ? 'lo' : ''}">${open ? jRows(c) : ''}</div></div></div>`;
+}
+function cyclesHtml() {
+  const p = P(), td = today(), list = journeyCycles(), pre = td < p.startDate;
+  if (!R.jopen) R.jopen = {};
+  return `<div class="jcys">${list.map((c, i) => {
+    const state = c.end < td ? 'done' : c.start > td && !(pre && i === 0) ? 'ahead' : 'now';
+    if (state !== 'now') return jCard(c, state);
+    const right = pre ? `Starts ${shortD(c.start)}` : `Now · ${cycleOf(td).cd} / ${c.len}`;
+    return `<div class="wkh jnow"><span>Cycle ${c.num} · ${dayRange(c.start, c.end)}</span><span class="orc">${right}</span></div><div class="jdl">${jRows(c)}</div>`;
+  }).join('')}</div>`;
+}
+// open or fold a cycle's days (filled the first time they are opened)
+function jToggle(b) {
+  const n = +b.dataset.jcy, box = app.querySelector(`[data-jcd="${n}"]`); if (!box) return; const on = !b.classList.contains('open');
+  R.jopen = R.jopen || {}; if (on) R.jopen[n] = true; else delete R.jopen[n];
+  const list = box.querySelector('.jdl');
+  if (on && !list.children.length) { const p = P(), c = cycleOf(addDays(p.startDate, cycStartT(n))); if (c) { list.innerHTML = jRows(c); list.querySelectorAll('[data-dsheet]').forEach(el => el.onclick = () => daySheet(el.dataset.dsheet)); } }
+  b.classList.toggle('open', on); b.setAttribute('aria-expanded', on); box.classList.toggle('open', on); vib(8);
 }
 
 /* ---------- Month: the calendar ---------- */
@@ -4964,7 +5090,7 @@ function monthHtml() {
   for (let d = 1; d <= dim; d++) { const ds = Y + '-' + pad(M) + '-' + pad(d), pl = dayPlan(ds);
     if (!pl) { cells += `<div class="mc out"><b>${d}</b></div>`; continue; }
     const comp = dayCompletion(ds), got = comp === 'done', past = ds < td;
-    cells += `<button class="mc ${ds === td ? 'today' : ''} ${past && !got ? 'miss' : ''}" data-dsheet="${ds}"><b>${d}</b>${got ? `<span class="mb4">${dayBallArt(ds, 22)}</span>` : ''}<i style="background:${JCOL[pl.k]};opacity:${past || ds === td ? 1 : .5}"></i></button>`; }
+    cells += `<button class="mc ${ds === td ? 'today' : ''} ${past && !got ? 'miss' : ''}" data-dsheet="${ds}"><b>${d}</b>${got ? `<span class="mb4">${markArt(dayMark(ds), 22)}</span>` : ''}<i style="background:${JCOL[pl.k]};opacity:${past || ds === td ? 1 : .5}"></i></button>`; }
   // a season banner (one dark scene behind the month name); without one, the older season sprites and ground strip
   const bn = ART['banner-' + season], s = !bn && ART['season-' + season] ? `<img class="sea" src="season-${season}.png" alt="">` : '';
   return `<div class="mhead ${bn ? 'banner' : ''}">${bn ? `<div class="mbg" style="background-image:url(banner-${season}.png)"></div>` : ''}${s ? s.replace('class="sea"', 'class="sea l"') : ''}${s ? s.replace('class="sea"', 'class="sea r"') : ''}${!bn && ART['ground-' + season] ? `<div class="gr" style="background-image:url(ground-${season}.png)"></div>` : ''}
@@ -4976,10 +5102,9 @@ function monthHtml() {
 
 /* ---------- The day sheet: any day, ahead or behind ---------- */
 function daySheet(d) {
-  const pl = dayPlan(d); if (!pl) return; const td = today(), info = pl.info, future = d > td, comp = dayCompletion(d), cyc = pl.cyc;
-  const when = d === td ? 'today' : d === addDays(td, 1) ? 'tomorrow' : d === addDays(td, -1) ? 'yesterday' : '';
-  const ballTxt = pl.cd === 8 ? (cyc.summoned ? ' · dragon summoned' : ' · summon day') : !future && d !== td && comp !== 'done' ? ' · missed' : '';
-  const head = `<div class="hdl"></div><div class="dsh"><span class="dsb">${dayBallArt(d, 54)}</span><div><div class="h1">${shortD(d)} · ${esc(pl.title)}</div><div class="mut" style="font-size:13.5px;margin-top:3px">Day ${info.idx}${ballTxt}${pl.w ? ' · ~' + workoutMinutes(info.workoutKey) + ' min' : ''}${when ? ' · ' + when : ''}</div></div></div>`;
+  const pl = dayPlan(d); if (!pl) return; const td = today(), info = pl.info, future = d > td, m = dayMark(d), sm = m.k === 'dragon';
+  const when = d === td ? 'today' : d === addDays(td, 1) ? 'tomorrow' : d === addDays(td, -1) ? 'yesterday' : '', bw = ballWords(d, m);
+  const head = `<div class="hdl"></div><div class="dsh"><span class="dsb">${markArt(m, 54)}</span><div><div class="h1">${shortD(d)} · ${esc(pl.title)}</div><div class="mut" style="font-size:13.5px;margin-top:3px">Day ${info.idx}${bw ? ' · ' + bw : ''}${pl.w ? ' · ~' + workoutMinutes(info.workoutKey) + ' min' : ''}${when ? ' · ' + when : ''}</div></div></div>`;
   let body = '', btn = '';
   if (future && pl.w) {
     const tg = nutritionTarget(d), mob = info.items.some(it => it.id === 'mobility'), own = info.items.filter(it => isCustomHabit(it.id)).map(it => `<span>${itemLab(it)}</span>`).join('');
@@ -4987,7 +5112,7 @@ function daySheet(d) {
       return `<div class="xr"><span class="n">${esc(e.n)}<small>${esc(e.s)}${last ? ' · last ' + esc(last.short) : ''}</small></span>${pb ? `<span class="pbtag">${TROPHY}PB</span><span class="pv">${fmtPB(e.n, e.type, pb.v)}</span>` : ''}</div>`; }).join('')}</div>`;
     btn = `<button class="btn" data-ow>Open the workout</button>`;
   } else if (future) {
-    const req = info.items.filter(it => it.req), bon = info.items.filter(it => !it.req), row = (it, r) => `<div class="xr"><span class="dot4 ${r ? 'req' : ''}">${r ? dayBallArt(d, 22) : ''}</span><span class="n">${itemLab(it)}<small>${itemSubHtml(d, it)}</small></span></div>`;
+    const req = info.items.filter(it => it.req), bon = info.items.filter(it => !it.req), row = (it, r) => `<div class="xr"><span class="dot4 ${r ? 'req' : ''}">${r ? markArt(m, 22) : ''}</span><span class="n">${itemLab(it)}<small>${itemSubHtml(d, it)}</small></span></div>`;
     body = `<div class="tchips"><span>~${fmtN(nutritionTarget(d).kcal)} kcal</span><span>${P().protein} g protein</span></div><div class="secl" style="margin:14px 2px 6px"><span>Earns the ball</span><span></span></div><div class="xl" style="margin-top:0">${req.map(it => row(it, true)).join('')}</div>${bon.length ? `<div class="secl" style="margin:14px 2px 6px"><span>Bonus</span><span></span></div><div class="xl" style="margin-top:0">${bon.map(it => row(it, false)).join('')}</div>` : ''}`;
     btn = `<button class="btn sec" data-od>Open the day</button>`;
   } else {
@@ -4998,8 +5123,8 @@ function daySheet(d) {
         if (it.id === 'mt') { const m = (S.days[d] || {}).mt; if (m && m.minutes) sub = m.minutes + ' min' + (m.kcal ? ' · ' + m.kcal + ' kcal' : ''); }
         return `<div class="xr"><span class="ok5 ${dn ? 'on' : ''} ${it.req ? '' : 'b'}">${dn ? IC4.check : ''}</span><span class="n">${esc(it.label)}<small>${esc(sub)}</small></span></div>`; }).join('')}
       ${h && (h.steps || h.active) ? `<div class="xr"><span class="ok5 w">${IC4.watch}</span><span class="n">Band<small>${h.steps != null ? fmtN(h.steps) + ' steps' : ''}${h.active != null ? ' · ' + h.active + ' active kcal' : ''}</small></span></div>` : ''}</div>
-      ${note ? `<div class="q" style="margin:10px 4px 0">“${esc(note)}”</div>` : ''}`;
-    const wk = info.workoutKey ? `<button class="btn" data-ow>Open the workout</button>` : info.isMT ? `<button class="btn" data-omt>Open Muay Thai</button>` : cyc.summoned && pl.cd === 8 ? `<button class="btn" data-dragon>See the dragon</button>` : '';
+      ${note ? `<div class="q usertext" style="margin:10px 4px 0">“${esc(note)}”</div>` : ''}`;
+    const wk = info.workoutKey ? `<button class="btn" data-ow>Open the workout</button>` : info.isMT ? `<button class="btn" data-omt>Open Muay Thai</button>` : sm ? `<button class="btn" data-dragon>See the dragon</button>` : '';
     btn = wk ? `<div class="row">${wk}<button class="btn sec" data-od>${d === td ? 'Today' : 'The day'}</button></div>` : `<button class="btn ${d === td ? '' : 'sec'}" data-od>${d === td ? 'Open today' : 'Open the day'}</button>`;
   }
   modal(head + body + `<div style="margin-top:12px">${btn}</div>`, b => {
@@ -5007,7 +5132,7 @@ function daySheet(d) {
     const ow = b.querySelector('[data-ow]'); if (ow) ow.onclick = () => { b.close(); const s = S.sessions.find(x => x.date === d); go('workout', { date: d, key: s ? s.key : info.workoutKey }); };
     const om = b.querySelector('[data-omt]'); if (om) om.onclick = () => { b.close(); go('mt', { date: d }); };
     const dg = b.querySelector('[data-dragon]'); if (dg) dg.onclick = () => { b.close(); setTimeout(() => showDragon(d), 200); };
-    const art = b.querySelector('.dsb'); if (art && pl.cd === 8 && cyc.summoned) art.onclick = () => { b.close(); setTimeout(() => showDragon(d), 200); };
+    const art = b.querySelector('.dsb'); if (art && sm) art.onclick = () => { b.close(); setTimeout(() => showDragon(d), 200); };
     const od = b.querySelector('[data-od]'); if (od) od.onclick = () => { b.close(); R.date = d; go('today', {}); };
   });
 }
@@ -5313,14 +5438,15 @@ function vitalTiles(date) {
   else { const pw = powerLevel(date); out.push({ l: 'Perfect days', v: pw.n ? pw.perfect + '/' + pw.n : '—', d: '', c: '', s: [], go: 'journey' }); }
   return out;
 }
-// This cycle's balls: earned ones lit, the one up for grabs today pinging, the dragon at the end
+// The set of seven: earned ones lit, the one up for grabs today pinging, the dragon at the end (glowing once it waits); the
+// dragons summoned so far
 function radarHtml() {
-  const p = P(), td = today(), d0 = td < p.startDate ? p.startDate : td > p.endDate ? p.endDate : td, cyc = cycleOf(d0); if (!cyc) return '';
-  const js = journeyStats(), pl = dayPlan(d0), pre = td < p.startDate, over = td > p.endDate, live = !pre && !over && cyc.cd <= 7 && !cyc.todayDone;
-  let h = ''; for (let i = 1; i <= 7; i++) { const got = i <= cyc.earned, cur = live && i === cyc.earned + 1; const sz = cur ? 34 : 28; h += `<span class="rb${got ? ' got' : ''}${cur ? ' cur' : ''}"><span class="rbb">${ballSvg({ stars: i, state: 'hollow', size: sz })}</span>${got ? `<span class="rbf">${ballSvg({ stars: i, state: 'full', size: sz })}</span>` : ''}</span>`; }
-  h += `<span class="rb dr">${dragonBadgeSvg({ state: cyc.summoned ? 'done' : cyc.earned === 7 ? 'ready' : 'locked', size: 34 })}</span>`;
-  const left = pre ? 'Starts ' + shortD(p.startDate) : over ? 'Project done' : cyc.summonDay ? (cyc.summoned ? 'Dragon summoned' : cyc.canSummon ? '7 / 7 · summon today' : cyc.earned + ' / 7 · no summon') : cyc.todayDone ? cyc.earned + ' / 7 · today done' : cyc.earned + ' / 7 · next: ' + pl.title + ' today';
-  return `<button class="hp" data-go="journey"><div class="t"><span>Cycle ${cyc.num} · dragon radar</span><span>${js.chain > 1 ? IC4.flame + ' ' + js.chain + '-day chain' : ''}</span></div><div class="radar">${h}</div><div class="chainl"><span>${esc(left)}</span><span>Balls ${js.balls} · dragons ${js.dragons}</span></div></button>`;
+  const p = P(), td = today(), d0 = td < p.startDate ? p.startDate : td > p.endDate ? p.endDate : td; if (!dayInfo(d0).items) return '';
+  const js = journeyStats(), L = ballLog(), pl = dayPlan(d0), pre = td < p.startDate, over = td > p.endDate, n = js.count, doneT = !!L.byDate[td], live = !pre && !over && !L.waiting && !doneT;
+  let h = ''; for (let i = 1; i <= 7; i++) { const got = i <= n, cur = live && i === n + 1; const sz = cur ? 34 : 28; h += `<span class="rb${got ? ' got' : ''}${cur ? ' cur' : ''}"><span class="rbb">${ballSvg({ stars: i, state: 'hollow', size: sz })}</span>${got ? `<span class="rbf">${ballSvg({ stars: i, state: 'full', size: sz })}</span>` : ''}</span>`; }
+  h += `<span class="rb dr">${dragonBadgeSvg({ state: L.waiting ? 'ready' : 'locked', size: 34 })}</span>`;
+  const left = pre ? 'Starts ' + shortD(p.startDate) : over ? 'Project done' : L.waiting ? 'The dragon is waiting' : doneT ? n + ' / 7 · today done' : n + ' / 7 · next: ' + pl.title + ' today';
+  return `<button class="hp" data-go="journey"><div class="t"><span>Dragon radar</span><span>${js.chain > 1 ? IC4.flame + ' ' + js.chain + '-day chain' : ''}</span></div><div class="radar">${h}</div><div class="chainl"><span>${esc(left)}</span><span>${js.dragons} ${js.dragons === 1 ? 'dragon' : 'dragons'}</span></div></button>`;
 }
 function plModal(date) {
   const pw = powerLevel(date), fs = fitnessScore(date), sg = signals(date);
@@ -5723,9 +5849,14 @@ function profSub() { const pr = prof(); return (pr.sex === 'f' ? 'Woman' : 'Man'
 const prow = (label, sub, right, cls) => `<div class="prow ${cls || ''}"><span class="pl">${label}${sub ? `<small>${sub}</small>` : ''}</span>${right}</div>`;
 const dayYear = d => shortD(d) + ' ' + d.slice(0, 4);
 const dpick = (name, d, al) => `<label class="dpick"><b>${dayYear(d)}</b><input type="date" name="${name}" value="${d}" aria-label="${al || (name === 'pend' ? 'Last day' : 'First day')}"></label>`;
-function cycleTiles(skip) { return S.plan.cycle.map((c, i) => i === skip ? '' : `<button class="ctile" data-ci="${i}" style="--c:${JCOL[c.w] || 'var(--muted)'}"><small>Day ${i + 1}</small><b>${TYPE_LABEL[c.w] || c.w}</b></button>`).join(''); }
+function cycleTiles(skip, add) { return S.plan.cycle.map((c, i) => i === skip ? '' : `<button class="ctile" data-ci="${i}" style="--c:${JCOL[c.w] || 'var(--muted)'}"><small>Day ${i + 1}</small><b>${TYPE_LABEL[c.w] || c.w}</b></button>`).join('') + (add && S.plan.cycle.length < CYC_MAX ? `<button class="cadd" data-cadd aria-label="Add a day">${IC4.plus}</button>` : ''); }
+// how many cycles the project has, counted with their real lengths (a last cycle cut short counts when half of it is in)
+function projCycles() { const c = cycAt(D()); return Math.max(1, c.num - 1 + Math.round((c.cd + 1) / c.len)); }
+// a new length waiting for the next cycle: { len, c (its first cycle), date }
+function pendingLen() { const p = S.project; if (!p) return null; const t = tOf(today()); if (t < 0) return null; const cur = cycAt(t), sg = segList().find(x => x.c > cur.num); return sg ? { len: sg.len, c: sg.c, date: addDays(p.startDate, sg.t) } : null; }
+function pendingHtml() { const pd = pendingLen(); return pd ? `<div class="cpend">${pd.len} days from cycle ${pd.c} · ${shortD(pd.date)}</div>` : ''; }
 function myPlanHtml() {
-  const p = P(), ph = S.phase, kind = ph.kind, og = isOngoing(), n = cycleLen(), cycles = Math.max(1, Math.round((D() + 1) / n));
+  const p = P(), ph = S.phase, kind = ph.kind, og = isOngoing(), n = cycleLen(), cycles = projCycles();
   const seg = Object.keys(PHASES).map(k => `<button data-ph="${k}" class="${kind === k ? 'on' : ''}" aria-pressed="${kind === k}">${PHASES[k].label}<small>${fmtOff(phaseOff(k))}/day</small></button>`).join('');
   const len = ['ongoing', 'project'].map(k => `<button data-len="${k}" class="${(k === 'ongoing') === og ? 'on' : ''}" aria-pressed="${(k === 'ongoing') === og}">${k === 'ongoing' ? 'Ongoing' : 'Project'}</button>`).join('');
   const lib = [['push', 'Push A/B'], ['pull', 'Pull A/B'], ['legs', 'Legs A/B'], ['mt', 'Muay Thai'], ['rest', 'Rest']].map(([k, l]) => `<span style="--c:${JCOL[k]}"><i></i>${l}</span>`).join('');
@@ -5735,9 +5866,9 @@ function myPlanHtml() {
       ${prow('Protein', 'g / day', smallStepper('pprot', ph.protein, '', 5))}
       <div class="prow col"><span class="pl">Motivation</span><div class="m10" role="group" aria-label="Motivation">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(v => `<button data-mot="${v}" class="${+ph.motivation === v ? 'on' : ''}" aria-pressed="${+ph.motivation === v}">${v}</button>`).join('')}</div></div></div>
     <div class="sgl fx"><span>Length</span><span class="lseg" role="group" aria-label="Length">${len}</span></div>
-    <div class="sgrp pcard">${prow('First day', '', dpick('pstart', p.startDate))}${prow('Cycle length', '', `<b class="pv">${n} days</b>`)}
+    <div class="sgrp pcard">${prow('First day', '', dpick('pstart', p.startDate))}${prow('Cycle length', '', `<b class="pv" data-clen>${n} days</b>`)}
       ${og ? '' : prow('Cycles', '', smallStepper('pcyc', cycles, '', 1))}${prow('Last day', '', og ? '<b class="pv">Ongoing</b>' : dpick('pend', p.endDate), 'pendrow')}</div>
-    <div class="sgl">The cycle</div><div class="cyc8" id="cyc8">${cycleTiles()}</div>
+    <div class="sgl">The cycle</div><div class="cyc8" id="cyc8">${cycleTiles(null, true)}</div><div id="cpend">${pendingHtml()}</div>
     <div class="sgl">Workouts</div><div class="lib">${lib}<button class="add" data-newwo>+ New workout</button></div>
   </div>`;
 }
@@ -5751,7 +5882,7 @@ function bindMyPlan() {
     const v = num(inp.value); if (v == null) return;
     if (inp.name === 'pdef') { ph.deficit = ph.kind === 'bulk' ? -v : v; planChanged(); segLab(); }
     else if (inp.name === 'pprot') { if (v > 0) { ph.protein = v; planChanged(); } }
-    else if (inp.name === 'pcyc') { const c = Math.max(1, Math.min(200, Math.round(v))); if (String(c) !== inp.value && !KP.inp) inp.value = c; S.project.endDate = addDays(S.project.startDate, c * cycleLen() - 1); planChanged(); const pe = app.querySelector('[name=pend]'); if (pe) { pe.value = S.project.endDate; pe.previousElementSibling.textContent = dayYear(S.project.endDate); } }
+    else if (inp.name === 'pcyc') { const c = Math.max(1, Math.min(200, Math.round(v))); if (String(c) !== inp.value && !KP.inp) inp.value = c; S.project.endDate = addDays(S.project.startDate, cycStartT(c + 1) - 1); planChanged(); const pe = app.querySelector('[name=pend]'); if (pe) { pe.value = S.project.endDate; pe.previousElementSibling.textContent = dayYear(S.project.endDate); } }
   });
   app.querySelectorAll('[data-mot]').forEach(b => b.onclick = () => { ph.motivation = +b.dataset.mot; planChanged(); app.querySelectorAll('[data-mot]').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); vib(8); });
   app.querySelectorAll('[data-len]').forEach(b => b.onclick = () => { const on = b.dataset.len === 'ongoing'; if (on === isOngoing()) return; setOngoing(on); planChanged(); vib(10); keepY(); });
@@ -5759,13 +5890,21 @@ function bindMyPlan() {
     i.addEventListener('change', () => { const v = i.value, p = S.project; if (!/^\d{4}-\d\d-\d\d$/.test(v)) return;
       if (i.name === 'pstart') { if (v === p.startDate) return; const len = D(); p.startDate = v; p.endDate = addDays(v, isOngoing() ? ONGOING_DAYS : len); reseedStart(); planChanged(); keepY(); return; }
       if (v <= p.startDate) { i.value = p.endDate; return toast('Final weigh-in must come after Day 1'); }
-      p.endDate = v; planChanged(); i.previousElementSibling.textContent = dayYear(v); const c = app.querySelector('[name=pcyc]'); if (c) c.value = Math.max(1, Math.round((D() + 1) / cycleLen())); }); });
+      p.endDate = v; planChanged(); i.previousElementSibling.textContent = dayYear(v); const c = app.querySelector('[name=pcyc]'); if (c) c.value = projCycles(); }); });
   bindCycleGrid($('#cyc8'));
   const nw = $('[data-newwo]'); if (nw) nw.onclick = () => toast('Workout builder comes later');
 }
-// The cycle's tiles: tap one for its sheet (pick the day's training, or swap it with another day); hold one, then drag it
-// onto another to swap the two
-function cyclePaint(flash) { const g = $('#cyc8'); if (!g) return; g.innerHTML = cycleTiles(); (flash || []).forEach(i => { const t = g.querySelector(`[data-ci="${i}"]`); if (t) { t.classList.add('just'); setTimeout(() => t.classList.remove('just'), 1100); } }); }
+// The cycle's tiles: tap one for its sheet (pick the day's training, swap it with another day, or remove it); hold one, then
+// drag it onto another to swap the two; + adds a rest day at the end. 2 to 14 days; a new length starts with the next cycle.
+function cyclePaint(flash) {
+  const g = $('#cyc8'); if (!g) return; g.innerHTML = cycleTiles(null, true); (flash || []).forEach(i => { const t = g.querySelector(`[data-ci="${i}"]`); if (t) { t.classList.add('just'); setTimeout(() => t.classList.remove('just'), 1100); } });
+  const pe = $('#cpend'); if (pe) pe.innerHTML = pendingHtml();
+  const ln = app.querySelector('[data-clen]'); if (ln) ln.textContent = cycleLen() + ' days';
+  const pc = app.querySelector('[name=pcyc]'); if (pc && !KP.inp) pc.value = projCycles();
+  const pe2 = app.querySelector('[name=pend]'); if (pe2) { pe2.value = S.project.endDate; pe2.previousElementSibling.textContent = dayYear(S.project.endDate); }
+}
+function cycleAdd() { if (S.plan.cycle.length >= CYC_MAX) return; if (editCycle(c => { c.push({ w: 'rest' }); })) save(); vib(15); cyclePaint([S.plan.cycle.length - 1]); }
+function cycleRemove(i) { if (S.plan.cycle.length <= CYC_MIN) return; if (editCycle(c => { c.splice(i, 1); })) save(); vib(15); cyclePaint(); }
 function cycleSet(i, w) { if (editCycle(c => { c[i].w = w; })) save(); cyclePaint([i]); }
 function cycleSwap(i, j) { if (i === j) return; if (editCycle(c => { const w = c[i].w; c[i].w = c[j].w; c[j].w = w; })) save(); vib(20); cyclePaint([i, j]); }
 function cycleDaySheet(i) {
@@ -5773,18 +5912,20 @@ function cycleDaySheet(i) {
   modal(`<div class="hdl"></div><div class="shd"><span class="h1">Day ${i + 1}</span><span></span></div>
     <div class="sgrp" id="ctypes">${DAY_TYPES.map(k => `<button class="srow chrow ${cur === k ? 'cur' : ''}" data-w="${k}"><span class="cdot" style="background:${JCOL[k]}"></span><span class="st"><b>${TYPE_LABEL[k]}</b></span>${cur === k ? '<span class="stc on">✓</span>' : ''}</button>`).join('')}</div>
     <button class="btn sec cswapb" data-swapopen>${SWAP_IC}<span>Swap with…</span></button>
-    <div class="cswap" hidden><div class="sgl">Swap Day ${i + 1} with</div><div class="cyc8 mini">${cycleTiles(i)}</div></div>`, b => {
+    <div class="cswap" hidden><div class="sgl">Swap Day ${i + 1} with</div><div class="cyc8 mini">${cycleTiles(i)}</div></div>
+    ${S.plan.cycle.length > CYC_MIN ? '<button class="btn ghost crem" data-cremove>Remove this day</button>' : ''}`, b => {
     b.classList.add('sheetbg');
+    const rm = b.querySelector('[data-cremove]'); if (rm) rm.onclick = () => { b.close(); cycleRemove(i); };
     b.querySelectorAll('[data-w]').forEach(x => x.onclick = () => { b.close(); if (x.dataset.w !== cur) cycleSet(i, x.dataset.w); });
     const so = b.querySelector('[data-swapopen]'), sw = b.querySelector('.cswap');
-    so.onclick = () => { sw.hidden = false; so.hidden = true; b.querySelector('#ctypes').hidden = true; const f = sw.querySelector('.ctile'); if (f) f.focus(); };
+    so.onclick = () => { sw.hidden = false; so.hidden = true; b.querySelector('#ctypes').hidden = true; if (rm) rm.hidden = true; const f = sw.querySelector('.ctile'); if (f) f.focus(); };
     sw.querySelectorAll('[data-ci]').forEach(x => x.onclick = () => { b.close(); cycleSwap(i, +x.dataset.ci); });
   });
 }
 function bindCycleGrid(g) {
   if (!g) return; let st = null;
   const tileAt = (x, y) => { for (const t of g.querySelectorAll('.ctile')) { if (t === st.el) continue; const r = t.getBoundingClientRect(); if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return t; } return null; };
-  g.addEventListener('click', e => { const t = e.target.closest('.ctile'); if (!t || Date.now() < (g._quiet || 0)) return; cycleDaySheet(+t.dataset.ci); });
+  g.addEventListener('click', e => { if (e.target.closest('[data-cadd]')) return cycleAdd(); const t = e.target.closest('.ctile'); if (!t || Date.now() < (g._quiet || 0)) return; cycleDaySheet(+t.dataset.ci); });
   g.addEventListener('pointerdown', e => {
     const el = e.target.closest('.ctile'); if (!el || e.button > 0 || st) return;
     st = { el, i: +el.dataset.ci, x0: e.clientX, y0: e.clientY, id: e.pointerId, lifted: false, over: null };
@@ -6064,7 +6205,7 @@ function habitSheet(id) {
       + (own && h.block === 'num' ? `<div class="grid4"><div class="field"><label>Target</label><input name="htarget" type="number" inputmode="decimal" step="any" value="${h.target == null ? '' : esc(h.target)}" placeholder="3"></div><div class="field"><label>Unit</label><input name="hunit" maxlength="10" value="${esc(h.unit || '')}" placeholder="L" autocapitalize="off"></div></div>` : '')
       + (own && h.block === 'band' ? `<div class="field"><label>Steps</label><input name="htarget" type="number" inputmode="numeric" step="500" value="${h.target == null ? 8000 : esc(h.target)}"></div>` : '')
       + `<div class="sgl">Schedule</div>${seg('hsk', [['daily', 'Every day'], ['cycleDays', 'Cycle days'], ['withWorkout', 'With workouts']], sk)}`
-      + (sk === 'cycleDays' ? `<div class="dtog" style="--n:${n}" role="group" aria-label="Cycle days">${Array.from({ length: n }, (x, i) => i + 1).map(i => `<button data-hday="${i}" class="${days.includes(i) ? 'on' : ''}" aria-pressed="${days.includes(i)}">${i}</button>`).join('')}</div>` : '')
+      + (sk === 'cycleDays' ? `<div class="dtog" style="--n:${n > 8 ? Math.ceil(n / 2) : n}" role="group" aria-label="Cycle days">${Array.from({ length: n }, (x, i) => i + 1).map(i => `<button data-hday="${i}" class="${days.includes(i) ? 'on' : ''}" aria-pressed="${days.includes(i)}">${i}</button>`).join('')}</div>` : '')
       + (sk === 'withWorkout' ? `<div class="wtog" role="group" aria-label="Workouts">${DAY_TYPES.map(k => `<button data-hgrp="${k}" class="${grp.includes(k) ? 'on' : ''}" aria-pressed="${grp.includes(k)}" style="--c:${JCOL[k]}"><i></i>${TYPE_LABEL[k]}</button>`).join('')}</div>` : '')
       + `<div class="sgl">Counts for the ball</div>${seg('hreq', [['true', 'Required'], ['false', 'Bonus'], ['auto', 'Auto']], h.req == null ? 'auto' : h.req)}`;
   };
@@ -6778,6 +6919,23 @@ for (const a of ['habit', 'habits']) for (const b of ['goal', 'goals']) HR_DICT[
 for (let n = 2; n <= 4; n++) HR_DICT['Days ' + Array.from({ length: n }, (x, i) => '{' + i + '}').join(' · ')] = 'Dani ' + Array.from({ length: n }, (x, i) => '{' + i + '}').join(' · ');
 { const T = [['Push', 'Push'], ['Pull', 'Pull'], ['Legs', 'Legs'], ['Muay Thai', 'Muay Thai'], ['rest', 'odmor']], list = (l, and) => l.length === 1 ? l[0] : l.slice(0, -1).join(', ') + and + l[l.length - 1];
   for (let m = 1; m < 31; m++) { const pick = T.filter((x, i) => m & (1 << i)); HR_DICT['On ' + list(pick.map(x => x[0]), ' and ') + ' days'] = 'Dani: ' + list(pick.map(x => x[1]), ' i '); } }
+/* v6 3a: balls on every perfect day, the dragon on the nav ball, cycles of any length, Journey Cycles */
+Object.assign(HR_DICT, {
+  'Dragon {0}': 'Zmaj {0}', 'The dragon is waiting': 'Zmaj čeka', 'The dragon was waiting': 'Zmaj je čekao', 'Ball {0} of {1}': 'Kugla {0} od {1}', 'No ball': 'Bez kugle',
+  'cycles': 'ciklusi', 'Cycles': 'Ciklusi', '· {0} / {1} balls': '· {0} / {1} kugli',
+  '· {0} dragons': v => '· ' + v[0] + ' ' + hrPl(v[0], 'zmaj', 'zmaja', 'zmajeva'), '· {0} dragon': v => '· ' + v[0] + ' ' + hrPl(v[0], 'zmaj', 'zmaja', 'zmajeva'),
+  '{0} dragons': v => v[0] + ' ' + hrPl(v[0], 'zmaj', 'zmaja', 'zmajeva'), '{0} dragon': v => v[0] + ' ' + hrPl(v[0], 'zmaj', 'zmaja', 'zmajeva'),
+  'Cycle {0} · {1}–{2}': 'Ciklus {0} · {1}–{2}', 'Cycle {0} · {1}.–{2}': 'Ciklus {0} · {1}.–{2}', 'Cycle {0} · {1} – {2}': 'Ciklus {0} · {1} – {2}',
+  'Now · {0} / {1}': 'Sada · {0} / {1}', '{0} / {1} perfect': '{0} / {1} savršenih', '· dragon summoned': '· zmaj prizvan',
+  '· {0} dragons summoned': v => '· ' + v[0] + ' ' + hrPl(v[0], 'zmaj prizvan', 'zmaja prizvana', 'zmajeva prizvano'),
+  '· −{0} kg': '· −{0} kg', '· +{0} kg': '· +{0} kg', '· ±{0} kg': '· ±{0} kg',
+  '{0} lifts': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga'), '{0} lift': v => v[0] + ' ' + hrPl(v[0], 'trening', 'treninga', 'treninga'), '{0} Muay Thai': '{0} Muay Thai',
+  'starts {0}': 'počinje {0}', '{0} / {1} goals': '{0} / {1} ciljeva', 'missed': 'propušteno', '· you': '· izvagano', 'Changed': 'Promijenjeno',
+  'Add a day': 'Dodaj dan', 'Remove this day': 'Ukloni ovaj dan', '{0} days from cycle {1} · {2}': v => v[0] + ' ' + dana(v[0]) + ' od ' + v[1] + '. ciklusa · ' + v[2],
+  '{0} · {1} t': '{0} · {1} t', '{0} · {1} kg': '{0} · {1} kg', 'Dragon radar': 'Zmajev radar', '{0} / {1} · today done': '{0} / {1} · danas gotovo', 'Dragon summoned': 'Zmaj prizvan',
+});
+// the day sheet's line: "Day 9 · Ball 7 of 7 · ~65 min · today" (pieces swapped one by one)
+HR_FRAG.push([/· Ball (\{\d+\}) of (\{\d+\})/g, '· Kugla $1 od $2'], [/· The dragon is waiting\b/g, '· Zmaj čeka'], [/· The dragon was waiting\b/g, '· Zmaj je čekao'], [/· Dragon summoned\b/g, '· Zmaj prizvan']);
 /* ---------- Boot ---------- */
 (async function boot() {
   i18nStart();   // Croatian: translate everything the app shows from here on
