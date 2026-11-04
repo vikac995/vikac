@@ -1443,7 +1443,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.2.0';
+const APP_VERSION = '5.3.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1556,6 +1556,46 @@ const DEFAULT_PROJECT = {
   start: { weight: 83.3, fat: 22.7, muscle: 60.9, skeletal: 33.5, visceral: 10, water: 55 },
 };
 let S = { project: null, days: {}, readings: {}, sessions: [], targets: {}, archive: [], meta: { schema: 1, lastBackup: null, introSeen: true, createdAt: null } };
+/* ---------- v6 engine underneath: plan, habits, phase, profile, goals ----------
+   Additive only: S.project keeps every field it had, so an older app version and older backups keep working. Its numbers are
+   mirrored into S.phase / S.profile (which P() reads); the day pattern and the daily items come from S.plan / S.habits. The
+   defaults reproduce the hard-coded program exactly, so nothing on screen changes. */
+const PHASE_KEYS = ['deficit', 'bmr', 'protein', 'waterDrop', 'bandDefault'], PROFILE_KEYS = ['height', 'age'];
+function defaultPlan() { return { cycleLen: PROGRAM.cycle.length, cycle: PROGRAM.cycle.map(c => Object.assign({ w: c.w }, c.noHang ? { noHang: true } : null, c.noStretch ? { noStretch: true } : null)), variants: 'AB' }; }
+// Every daily item that isn't the session. Ids stay the v5 ones (done flags are keyed by them); req 'auto' = the v5 rule
+function defaultHabits() {
+  const on = flag => PROGRAM.cycle.filter(c => !c[flag]).map(c => c.d);   // hang and stretch: every cycle day but day 5
+  return [
+    { id: 'weigh', block: 'log', label: 'Morning weigh-in', sub: 'Log the scale', sched: { kind: 'daily' }, req: 'auto' },
+    { id: 'mobility', block: 'routine', label: 'Kick mobility warm-up', sub: 'Range of motion routine', sched: { kind: 'withWorkout', groups: ['mt', 'legs'] }, req: 'auto' },
+    { id: 'hang', block: 'number', label: 'Dead hangs — 3 min', sub: 'Log your best hang', sched: { kind: 'cycleDays', days: on('noHang') }, req: 'auto' },
+    { id: 'stretch', block: 'routine', label: 'Stretching for kicks', sub: '11 steps · ~13 min', sched: { kind: 'cycleDays', days: on('noStretch') }, req: 'auto' },
+    { id: 'nutrition', block: 'log', label: 'Nutrition', sub: 'Calories · protein · band kcal', sched: { kind: 'daily' }, req: 'auto' },
+  ];
+}
+const PLAN0 = defaultPlan(), HABITS0 = defaultHabits();   // what a state without its own uses (a past project, see withBundle)
+// Fills in whatever is missing, never renames or removes anything, and a second run changes nothing. Runs on load, after a
+// restore (old backups have none of this) and when a project starts or is reopened.
+function migrateState() {
+  if (!S.plan || !Array.isArray(S.plan.cycle) || !S.plan.cycle.length) S.plan = defaultPlan();
+  if (!Array.isArray(S.habits)) S.habits = defaultHabits();
+  mirrorProject();
+}
+// S.project's numbers → S.phase / S.profile and the main goal. Every change of those numbers ends here, so the copies only
+// differ after an older app version (which knows only S.project) changed it — and then S.project is the newer one.
+function mirrorProject() {
+  const p = S.project; if (!p) return;
+  if (!S.phase) S.phase = { kind: 'cut', deficit: p.deficit, bmr: p.bmr, protein: p.protein, waterDrop: p.waterDrop, bandDefault: p.bandDefault, motivation: 7 };
+  if (!S.profile) S.profile = { sex: 'm', age: p.age, height: p.height };
+  const ph = S.phase, pr = S.profile; if (ph.kind == null) ph.kind = 'cut'; if (ph.motivation == null) ph.motivation = 7; if (pr.sex == null) pr.sex = 'm';
+  for (const k of PHASE_KEYS) if (ph[k] !== p[k]) ph[k] = p[k];
+  for (const k of PROFILE_KEYS) if (pr[k] !== p[k]) pr[k] = p[k];
+  // the goal is still what the deficit gives by the final weigh-in, so it follows the project's numbers
+  const gw = p.start && +p.start.weight && p.startDate && p.endDate ? goalWeight() : null, target = Number.isFinite(gw) ? gw : null;
+  if (!Array.isArray(S.goals)) S.goals = [];
+  let g = S.goals.find(x => x && x.main && x.type === 'body'); if (!g) S.goals.unshift(g = { type: 'body', main: true, metric: 'weight', target, by: p.endDate });
+  if (g.metric === 'weight') { if (g.target !== target) g.target = target; if (g.by !== p.endDate) g.by = p.endDate; }
+}
 const LS_KEY = 'vikac.state.v1';
 let idb = null;
 function idbOpen() {
@@ -1643,6 +1683,7 @@ async function load() {
   if (raw) { try { const o = JSON.parse(raw); S = Object.assign(S, o); } catch (e) {} }
   if (!Array.isArray(S.archive)) S.archive = [];
   foldMtNotes(S.days); S.archive.forEach(b => foldMtNotes(b.days));
+  migrateState();   // not saved here: it comes out the same on every load, so the migration by itself never writes or pushes a sync
   if (navigator.storage && navigator.storage.persist) { try { navigator.storage.persist(); } catch (e) {} }
 }
 
@@ -1665,7 +1706,7 @@ function foldMtNotes(days) { for (const d in days || {}) { const x = days[d], m 
 /* ---------- Projects: the live one plus past ones, each a self-contained bundle ---------- */
 function ensureArchive() { if (!Array.isArray(S.archive)) S.archive = []; }
 function bundleCurrent() { return { id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), project: S.project, days: S.days, readings: S.readings, sessions: S.sessions, targets: S.targets, tips: S.tips || { log: [] }, archivedAt: new Date().toISOString(), summary: projectSummary() }; }
-function loadBundle(b) { S.project = b.project; S.days = b.days || {}; S.readings = b.readings || {}; S.sessions = b.sessions || []; S.targets = b.targets || {}; S.tips = b.tips || { log: [] }; }
+function loadBundle(b) { S.project = b.project; S.days = b.days || {}; S.readings = b.readings || {}; S.sessions = b.sessions || []; S.targets = b.targets || {}; S.tips = b.tips || { log: [] }; mirrorProject(); }
 function clearLive() { S.project = null; S.days = {}; S.readings = {}; S.sessions = []; S.targets = {}; S.tips = { log: [] }; }
 // Park the live project under past projects (with everything logged) and leave the app ready for a new one
 function archiveCurrent() { ensureArchive(); if (!S.project) return null; const b = bundleCurrent(); S.archive.unshift(b); clearLive(); return b; }
@@ -1702,9 +1743,17 @@ function fmtDate(s) { const d = parse(s); return WD[d.getDay()] + ', ' + d.getDa
 function fmtShort(s) { const d = parse(s); return d.getDate() + ' ' + MO[d.getMonth()]; }
 
 /* ---------- Project helpers ---------- */
-const P = () => S.project;
-function D() { return diffDays(P().startDate, P().endDate); }           // days of deficit (58)
-function tOf(date) { return diffDays(P().startDate, date); }            // 0 on Day 1
+// The live project with its numbers read from the phase and profile (v6). It is a copy: to change a number, change S.project
+// and call mirrorProject() (an older app version reads S.project, so both stay filled)
+function P() {
+  const p = S.project, ph = S.phase, pr = S.profile; if (!p || (!ph && !pr)) return p; const o = Object.assign({}, p);
+  if (ph) for (const k of PHASE_KEYS) if (ph[k] !== undefined) o[k] = ph[k];
+  if (pr) for (const k of PROFILE_KEYS) if (pr[k] !== undefined) o[k] = pr[k];
+  return o;
+}
+// the dates live on the project itself: read straight, so these hot paths make no copy
+function D() { const p = S.project; return diffDays(p.startDate, p.endDate); }           // days of deficit (58)
+function tOf(date) { return diffDays(S.project.startDate, date); }            // 0 on Day 1
 function goalWeight() { const p = P(); return Math.round((p.start.weight - p.deficit * D() / 7700) * 10) / 10; }
 function rate() { return (P().start.weight - goalWeight()) / D(); }     // kg/day
 
@@ -1712,26 +1761,27 @@ function dayInfo0(date) {
   const t = tOf(date), idx = t + 1, Dd = D();
   if (t < 0) return { t, idx, phase: 'pre' };
   if (t > Dd) return { t, idx, phase: 'post' };
-  const cd = ((t % 8) + 8) % 8, cyc = PROGRAM.cycle[cd], cycleNum = Math.floor(t / 8) + 1;
-  const variant = cycleNum % 2 === 1 ? 'A' : 'B';
+  // v6: the pattern comes from S.plan, the daily items from S.habits (a state without them uses the built-in program)
+  const plan = S.plan && Array.isArray(S.plan.cycle) && S.plan.cycle.length ? S.plan : PLAN0, habits = Array.isArray(S.habits) ? S.habits : HABITS0;
+  const n = plan.cycle.length, vs = plan.variants || 'AB';
+  const cd = ((t % n) + n) % n, cyc = plan.cycle[cd], cycleNum = Math.floor(t / n) + 1;
+  const variant = vs[(cycleNum - 1) % vs.length];
   // the plan says what the day is; you can change any day to whatever happened (Settings-free: the ⇄ on the training card)
   const planKey = cyc.w === 'rest' || cyc.w === 'mt' ? cyc.w : cyc.w + variant, ov = (S.days[date] || {}).plan;
   const key = ov && (ov === 'rest' || ov === 'mt' || PROGRAM.workouts[ov]) ? ov : planKey;
   const w = key === 'rest' || key === 'mt' ? key : PROGRAM.workouts[key].group;
   const workoutKey = w === 'rest' || w === 'mt' ? null : key;
-  const items = [{ id: 'weigh', label: 'Morning weigh-in', sub: 'Log the scale' }];
-  if (w === 'mt') items.push({ id: 'mt', label: 'Muay Thai', sub: 'Bag work / class — log minutes' });
-  if (workoutKey) items.push({ id: 'workout', key: workoutKey, label: PROGRAM.workouts[workoutKey].name, sub: PROGRAM.workouts[workoutKey].ex.length + ' exercises' });
-  if (w === 'mt' || w === 'legs') items.push({ id: 'mobility', label: 'Kick mobility warm-up', sub: 'Range of motion routine' });
-  if (!cyc.noHang) items.push({ id: 'hang', label: 'Dead hangs — 3 min', sub: 'Log your best hang' });
-  if (!cyc.noStretch) items.push({ id: 'stretch', label: 'Stretching for kicks', sub: '11 steps · ~13 min' });
-  items.push({ id: 'nutrition', label: 'Nutrition', sub: 'Calories · protein · band kcal' });
-  // Training days: the session and nutrition earn the ball, the rest is bonus. Rest days: everything is required.
-  const training = w !== 'rest';
-  for (const it of items) it.req = !training || it.id === 'workout' || it.id === 'mt' || it.id === 'nutrition';
+  // Training days: the session and nutrition earn the ball, the rest is bonus. Rest days: everything is required (req 'auto').
+  const training = w !== 'rest', items = [];
+  if (w === 'mt') items.push({ id: 'mt', label: 'Muay Thai', sub: 'Bag work / class — log minutes', req: true });
+  if (workoutKey) items.push({ id: 'workout', key: workoutKey, label: PROGRAM.workouts[workoutKey].name, sub: PROGRAM.workouts[workoutKey].ex.length + ' exercises', req: true });
+  // the session goes first: with 'auto' only it and nutrition are required on a training day, so the sort below gives the v5 order
+  for (const h of habits) if (habitOn(h, cd + 1, w)) items.push({ id: h.id, label: h.label, sub: h.sub, req: h.req === 'auto' || h.req == null ? !training || h.id === 'nutrition' : !!h.req });
   items.sort((a, b) => (b.req ? 1 : 0) - (a.req ? 1 : 0));
-  return { t, idx, phase: t === Dd ? 'final' : 'on', cycleDay: cyc.d, cycleNum, variant, workoutKey, isRest: w === 'rest', isMT: w === 'mt', items, daysLeft: Dd - t, training, planKey, dayKey: key, changed: key !== planKey };
+  return { t, idx, phase: t === Dd ? 'final' : 'on', cycleDay: cd + 1, cycleNum, variant, workoutKey, isRest: w === 'rest', isMT: w === 'mt', items, daysLeft: Dd - t, training, planKey, dayKey: key, changed: key !== planKey };
 }
+// Is a habit on today? cycleDays: day numbers of the cycle (1 = first); withWorkout: the day's type (after any change of the day)
+function habitOn(h, cycleDay, w) { const s = h.sched; return !s || s.kind === 'daily' ? true : s.kind === 'cycleDays' ? (s.days || []).includes(cycleDay) : s.kind === 'withWorkout' ? (s.groups || []).includes(w) : false; }
 function day(date) { return S.days[date] || (S.days[date] = { done: {} }); }
 function isDone(date, id) {
   const d = S.days[date] || { done: {} };   // a weigh-in or a finished workout counts even before anything else touched the day
@@ -1801,6 +1851,34 @@ function dayCompletion(date) {
   const dp = dayProgress(date); if (!dp) return 'none';
   if (dp.req && dp.reqDone >= dp.req) return 'done'; if (dp.reqDone + dp.bonusDone > 0) return 'part';
   return date < today() ? 'miss' : 'future';
+}
+/* ---------- Ki (v6): points for what a day got done — computed only, nothing shows it yet ----------
+   Workout or Muay Thai done +3 · calories within 100 of the target +2 · protein target reached +1 · every other required item
+   done +1 · every bonus item done +1; all of it ×1.5 on a day inside a run of 7+ perfect days in a row (counting forward too,
+   so a run's first days get it once the 7th is done). Days outside the project or in the future: 0. */
+function kiPerfect(d) { const p = S.project; return !!p && d >= p.startDate && d <= p.endDate && d <= today() && dayCompletion(d) === 'done'; }
+function kiInRun7(date) {
+  if (!kiPerfect(date)) return false; let n = 1;
+  for (let d = addDays(date, -1); n < 7 && kiPerfect(d); d = addDays(d, -1)) n++;
+  for (let d = addDays(date, 1); n < 7 && kiPerfect(d); d = addDays(d, 1)) n++;
+  return n >= 7;
+}
+function kiForDay(date) {
+  if (!S.project || date > today()) return 0; const info = dayInfo(date); if (!info.items) return 0;
+  const n = (S.days[date] || {}).nutrition, tg = nutritionTarget(date); let pts = 0;
+  for (const it of info.items) {
+    if (it.id === 'workout' || it.id === 'mt') { if (isDone(date, it.id)) pts += 3; }
+    else if (it.id === 'nutrition') { if (n && n.kcal && Math.abs(+n.kcal - tg.kcal) <= 100) pts += 2; if (n && +n.protein >= tg.protein) pts += 1; }
+    else if (isDone(date, it.id)) pts += 1;   // every other item, required or bonus
+  }
+  return kiInRun7(date) ? pts * 1.5 : pts;
+}
+// Ki over a stretch of days (both ends included; the whole project so far without them)
+function kiTotal(fromDate, toDate) {
+  const p = S.project; if (!p) return 0; const td = today(); let sum = 0;
+  const last = [toDate || td, p.endDate, td].sort()[0];
+  for (let d = fromDate && fromDate > p.startDate ? fromDate : p.startDate; d <= last; d = addDays(d, 1)) sum += kiForDay(d);
+  return sum;
 }
 // American letter grades from a percentage
 function gradeOf(pct) { if (pct == null) return '—'; const g = [[97, 'A+'], [93, 'A'], [90, 'A−'], [87, 'B+'], [83, 'B'], [80, 'B−'], [77, 'C+'], [73, 'C'], [70, 'C−'], [67, 'D+'], [63, 'D'], [60, 'D−']]; for (const [p, l] of g) if (pct >= p) return l; return 'F'; }
@@ -2052,8 +2130,9 @@ function fmtSecs(sec) { sec = Math.round(+sec || 0); return sec >= 60 ? Math.flo
 function hangPB() { let best = null; for (const b of allBundles()) for (const d in b.days || {}) { const h = b.days[d].hang; if (h && +h.best > 0 && (!best || +h.best > best.v)) best = { v: +h.best, date: d }; } return best; }
 // Run fn with a past project temporarily live (for day-based numbers like streaks), then restore
 function withBundle(b, fn) {
-  if (b.id === 'live') return fn(); const keep = { project: S.project, days: S.days, readings: S.readings, sessions: S.sessions, targets: S.targets, tips: S.tips };
-  try { S.project = b.project; S.days = b.days || {}; S.readings = b.readings || {}; S.sessions = b.sessions || []; S.targets = b.targets || {}; S.tips = b.tips || { log: [] }; return fn(); }
+  if (b.id === 'live') return fn(); const keep = { project: S.project, days: S.days, readings: S.readings, sessions: S.sessions, targets: S.targets, tips: S.tips, phase: S.phase, profile: S.profile, plan: S.plan, habits: S.habits, goals: S.goals };
+  // a past project counts with its own numbers and the built-in program it was logged under, not the live phase / plan
+  try { S.project = b.project; S.days = b.days || {}; S.readings = b.readings || {}; S.sessions = b.sessions || []; S.targets = b.targets || {}; S.tips = b.tips || { log: [] }; S.phase = S.profile = S.plan = S.habits = S.goals = undefined; return fn(); }
   finally { Object.assign(S, keep); }
 }
 function longestStreak() {
@@ -2324,7 +2403,7 @@ async function ghConnect(repo, token) {
   await ghPush(true);
   return { connected: true, remoteNewer: false };
 }
-async function ghRestore() { const pulled = await ghPull(); if (!pulled.exists) throw new Error('Nothing on GitHub yet'); S = pulled.data; GH.sha = pulled.sha; GH.conflict = null; GH.pending = false; GH.lastSync = new Date().toISOString(); GH.lastRemoteUpdatedAt = S.meta.updatedAt || null; ghSave(); save(); clearTimeout(syncTimer); GH.pending = false; ghSave(); return S; }
+async function ghRestore() { const pulled = await ghPull(); if (!pulled.exists) throw new Error('Nothing on GitHub yet'); S = pulled.data; migrateState(); GH.sha = pulled.sha; GH.conflict = null; GH.pending = false; GH.lastSync = new Date().toISOString(); GH.lastRemoteUpdatedAt = S.meta.updatedAt || null; ghSave(); save(); clearTimeout(syncTimer); GH.pending = false; ghSave(); return S; }
 function ghDisconnect() { GH = { repo: '', token: '', path: GH.path, sha: null, lastSync: null, lastError: null, pending: false, conflict: null, lastRemoteUpdatedAt: null }; ghSave(); }
 function ghStatus() {
   if (!ghOn()) return { state: 'off', text: 'Not connected' };
@@ -5323,10 +5402,11 @@ function bindProject() {
   app.querySelectorAll('input').forEach(i => i.addEventListener('input', upd)); upd();
   const ff = $('#fillFile'); $('[data-fill]').onclick = () => ff.click();
   ff.onchange = () => { const f = ff.files && ff.files[0]; if (f) runFill(f, app, $('#fillStatus'), 'scale', upd); ff.value = ''; };
-  const en = $('[data-endp]'); if (en) en.onclick = async () => { if (!await ask('End the project today?', 'Today becomes the final day. You can still extend it later here, or start a new project.', 'End today')) return; S.project.endDate = today(); save(); back(); };
+  const en = $('[data-endp]'); if (en) en.onclick = async () => { if (!await ask('End the project today?', 'Today becomes the final day. You can still extend it later here, or start a new project.', 'End today')) return; S.project.endDate = today(); mirrorProject(); save(); back(); };
   $('#saveP').onclick = () => {
     const o = readForm(app); if (!o.weight || !o.startDate || !o.endDate || diffDays(o.startDate, o.endDate) < 1) return toast('Check the dates and the weight');
     Object.assign(S.project, { name: (o.name || '').trim() || S.project.name, startDate: o.startDate, endDate: o.endDate, deficit: o.deficit, bmr: o.bmr, protein: o.protein, bandDefault: o.bandDefault, waterDrop: o.waterDrop, height: o.height, age: o.age, start: { weight: o.weight, fat: o.fat, muscle: o.muscle, skeletal: o.skeletal, visceral: o.visceral, water: o.water } });
+    mirrorProject();   // the phase / profile / goal copies follow (v6)
     for (const d in S.readings) if (S.readings[d].seeded) delete S.readings[d]; seedStartReading(); save(); back();
   };
 }
@@ -5417,7 +5497,7 @@ function backupSheet() {
       csv: () => { const rows = [['date', 'weight', 'fat', 'muscle', 'skeletal', 'visceral', 'water', 'kcal', 'protein', 'band', 'balance', 'balls']]; const dates = new Set([...Object.keys(S.readings), ...Object.keys(S.days)]); [...dates].sort().forEach(d => { const r = S.readings[d] || {}, n = (S.days[d] || {}).nutrition || {}, nc = nutritionCalc(d); rows.push([d, r.weight, r.fat, r.muscle, r.skeletal, r.visceral, r.water, n.kcal, n.protein, n.band, nc ? nc.balance : '', tOf(d) >= 0 ? dragonBalls(d).balls : ''].map(x => x == null ? '' : x)); }); download('vikac-readings-' + today() + '.csv', rows.map(r => r.join(',')).join('\n'), 'text/csv'); },
     };
     b.querySelectorAll('[data-act]').forEach(x => x.onclick = () => act[x.dataset.act]());
-    b.querySelector('#restoreFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = async () => { let o; try { o = JSON.parse(rd.result); if (!o.days || !('project' in o)) throw 0; } catch (err) { return toast('Not a valid backup file'); } b.close(); if (await ask('Restore this backup?', 'Everything on this phone is replaced by the backup file.', 'Restore')) { S = o; if (!Array.isArray(S.archive)) S.archive = []; save(); toast('Restored'); R.stack = []; R.date = today(); go('today', {}, false, 'fade'); } }; rd.readAsText(f); e.target.value = ''; };
+    b.querySelector('#restoreFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = async () => { let o; try { o = JSON.parse(rd.result); if (!o.days || !('project' in o)) throw 0; } catch (err) { return toast('Not a valid backup file'); } b.close(); if (await ask('Restore this backup?', 'Everything on this phone is replaced by the backup file.', 'Restore')) { S = o; if (!Array.isArray(S.archive)) S.archive = []; migrateState(); save(); toast('Restored'); R.stack = []; R.date = today(); go('today', {}, false, 'fade'); } }; rd.readAsText(f); e.target.value = ''; };
   });
 }
 
@@ -5458,6 +5538,7 @@ function bindSetup() {
   const st = $('#startBtn'); if (st) st.onclick = () => {
     collect(); if (!d.start.weight) return toast('Weight is required');
     S.project = { name: (d.name || '').trim() || (S.archive.length ? 'New project' : 'My first project'), startDate: d.startDate, endDate: d.endDate, deficit: d.deficit, bmr: d.bmr || 1750, protein: d.protein || 180, waterDrop: d.waterDrop == null ? 0.5 : d.waterDrop, bandDefault: d.bandDefault == null ? 300 : d.bandDefault, height: d.height, age: d.age, start: { weight: d.start.weight, fat: d.start.fat, muscle: d.start.muscle, skeletal: d.start.skeletal, visceral: d.start.visceral, water: d.start.water } };
+    migrateState();   // plan, habits, phase, profile and goal for the new project (v6)
     S.meta.createdAt = new Date().toISOString(); seedStartReading(); save(); R.stack = []; R.setupData = null; R.setupStep = 1; R.date = today(); go('today', {}, false, 'fade'); toast('Project started. Let\'s go!');
   };
 }

@@ -1,6 +1,6 @@
-# What to do now — updating to v5.2.0
+# What to do now — updating to v5.3.0
 
-This zip is the complete app at v5.2.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v5.3.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v5.2.0 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (from v5.0 it's the **gear** at the top right; before that a tab, called **Profile** before 1.6) → **Check for updates**. It should say "Version 5.2.0 found — reloading".
+1. Open the app on the phone. Go to **Settings** (from v5.0 it's the **gear** at the top right; before that a tab, called **Profile** before 1.6) → **Check for updates**. It should say "Version 5.3.0 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The phone's own bar under the app (orange before 4.0, dark now) and the app name come with the home-screen icon: Chrome refreshes them by itself within a few days, or right away when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -40,6 +40,7 @@ Nothing else changes: same address, same key, the bucket and the data stay. Work
 
 ## E. What changed since the version on your phone
 
+- v5.3.0 — **New engine underneath (v6 step 1), nothing looks different.** Your plan (the 8-day cycle), phase (cut: deficit, BMR, protein), profile and daily habits are now stored as their own settings instead of being fixed in the code, so later updates can let you edit them. Your data is converted once on first open, and everything old is kept alongside the new, so nothing can be lost. Ki (consistency points) is now counted in the background; it shows up in a later update.
 - v5.2.0 — **Kcal left** is the first card on Today: what you can still eat, in one big number (budget − eaten). Eaten is what you logged (your MFP day — planned meals count as eaten, so screenshot the plan in the morning); the budget is BMR + the band's active kcal so far − your deficit and grows with every band sync, so late in the evening it's close to final. Over budget turns it orange; protein still to go and what a 30-minute walk would add sit underneath. Tap it to open Nutrition. **Rest timer:** logging a set (both numbers in) starts the rest — 3:00 after the heavy 3 × 5 sets, 2:00 after the others — docked above Finish, with the next set and last time's numbers; +15 adds time, Skip ends it. At zero the phone buzzes and it turns green: GO. Leave the workout and the ball in the tab bar keeps counting; tap it to go straight back. It runs on the clock, so it's right after the phone sleeps (it can only buzz while the app is open).
 - v5.1.0 — **Change any day:** the ⇄ **Change** chip on the training card lets you set the day to Push A/B, Pull A/B, Legs A/B, Muay Thai or Rest — what's on or what happened. The goals follow it (kick mobility goes with Muay Thai and Legs), the strip, Plan and Path show it, the chip then says what the plan was, and *Back to the plan* undoes it. **Finished workouts** show their result: time and kcal (from the band's Strength sessions, added up), volume with the change against the same workout last time, and the new PBs by name with the set that made them. **Muay Thai** is now a list of sessions: the band's boxing sessions (added up) plus any you type with *+ Add session*; the day counts the total, and the finished card shows sessions, minutes (vs your last Muay Thai day), kcal and this cycle's total.
 - v5.0.0 — **New layout, step 1.** Three tabs: **Journey · the ball · Scouter**. The dragon ball in the middle *is* Today: its ring fills with the day's goals, it turns gold when the ball is earned, on day 8 it's the dragon (hold it to summon, from any tab), and tapping it always brings you back to today. The big ball at the top of Today, its ‹ › arrows, the ↩ Today chip, the PL chip and the **+ button** are gone: everything is logged on Today, one tap per goal. **Camera** (top of Today) reads one or many scale / MFP screenshots, each saved to the day it shows. **Note** is the last row on Today, one per day; the Muay Thai note field now writes the same note (old Muay Thai notes were moved into their day's note). **Settings** is a page behind the **gear** (top right of every tab), grouped as Project · Connections · Files · Language · App; the yellow backup box became an orange dot on the gear. **Past projects** moved to Scouter (bottom of Scan). Step 2 (Journey Cycles view, one-page Scouter) comes next.

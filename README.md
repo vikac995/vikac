@@ -1,4 +1,4 @@
-# Vikač High Kikač — install guide (v5.2.0)
+# Vikač High Kikač — install guide (v5.3.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.
 
