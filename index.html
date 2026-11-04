@@ -1316,6 +1316,11 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 /* a goal keeps its size when it is crossed out (only its colour and the line change) */
 .todo li.done{min-height:60px;padding:9px 12px}
 .todo li.done .ic{width:40px;height:40px}
+/* Journey path: the day's weigh-in under its date */
+.plab .pwt{display:inline-flex;align-items:center;gap:4px;margin-top:4px;padding:2px 7px;border-radius:7px;background:rgba(27,28,34,.92);border:1px solid var(--line2);font-size:11.5px;letter-spacing:.03em;color:var(--muted);text-transform:none;white-space:nowrap}
+.plab .pwt b{color:var(--ink);font-weight:700}
+.plab .pwt i{font-style:normal;font-size:9px}.plab .pwt i.dn{color:var(--ok)}.plab .pwt i.up{color:var(--warn)}
+.plab .pwt .pf{padding-left:6px;margin-left:2px;border-left:1px solid var(--line2);color:var(--ink2)}
 </style>
 </head>
 <body>
@@ -1323,7 +1328,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.8.4';
+const APP_VERSION = '4.8.5';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -4244,6 +4249,14 @@ function scrollPathToToday(instant, force) {
 }
 
 /* ---------- Path: every day of the project on one winding path ---------- */
+// a day's weigh-in under its date: weight (▼ / ▲ against the weigh-in before it) and body fat when the scale gave one
+function pathWeighHtml(d) {
+  const r = S.readings[d]; if (!r || r.weight == null || r.weight === '') return '';
+  const w = +r.weight, pv = lastReading('weight', addDays(d, -1)), dl = pv ? w - pv.v : 0;
+  const ar = dl <= -0.05 ? `<i class="dn" aria-label="down ${Math.abs(dl).toFixed(1)} kg">▼</i>` : dl >= 0.05 ? `<i class="up" aria-label="up ${dl.toFixed(1)} kg">▲</i>` : '';
+  const f = r.fat != null && r.fat !== '' ? `<span class="pf">${(+r.fat).toFixed(1)} %</span>` : '';
+  return `<span class="pwt"><b>${w.toFixed(1)}</b> kg${ar}${f}</span>`;
+}
 function pathHtml() {
   const p = P(), td = today(), W = 384, GAP = 84, BAN = 56; let y = 34, h = '', pts = [], ty = null, firstFut = false; const lv = (powerLevel(td) || {}).stage, me = bodySrc(td, lv);
   for (let t = 0; t <= D(); t++) {
@@ -4252,7 +4265,7 @@ function pathHtml() {
     const x = W / 2 + 104 * Math.sin(t * 0.92), comp = dayCompletion(d), past = d < td, isT = d === td;
     pts.push([x, y]); if (isT || (ty == null && d > td)) ty = y;
     const cls = isT ? 'today' : d > td ? 'fut' : comp === 'done' ? 'got' : 'miss', big = pl.cd === 8 ? 62 : isT ? 58 : 52;
-    const left = x > W / 2, room = (left ? x : W - x) - 34 - (isT ? 70 : 0) - 6, lab = `<div class="plab ${d > td ? 'f' : ''}" style="top:${y}px;max-width:${(room / W * 100).toFixed(2)}%;${left ? `right:${((W - x + 34 + (isT ? 70 : 0)) / W * 100).toFixed(2)}%;text-align:right` : `left:${((x + 34 + (isT ? 70 : 0)) / W * 100).toFixed(2)}%`}">Day ${t + 1} · ${esc(pl.title)}<small>${isT ? 'Today · ' : ''}${shortD(d)}${past && comp !== 'done' && pl.cd !== 8 ? ' · missed' : ''}</small></div>`;
+    const left = x > W / 2, room = (left ? x : W - x) - 34 - (isT ? 70 : 0) - 6, lab = `<div class="plab ${d > td ? 'f' : ''}" style="top:${y}px;max-width:${(room / W * 100).toFixed(2)}%;${left ? `right:${((W - x + 34 + (isT ? 70 : 0)) / W * 100).toFixed(2)}%;text-align:right` : `left:${((x + 34 + (isT ? 70 : 0)) / W * 100).toFixed(2)}%`}">Day ${t + 1} · ${esc(pl.title)}<small>${isT ? 'Today · ' : ''}${shortD(d)}${past && comp !== 'done' && pl.cd !== 8 ? ' · missed' : ''}</small>${pathWeighHtml(d)}</div>`;
     const nx = d > td && !firstFut; if (nx) firstFut = true;
     h += `<button class="pnode ${cls} ${nx ? 'next' : ''}" data-dsheet="${d}" style="left:${(x / W * 100).toFixed(2)}%;top:${y}px;width:${big}px;height:${big}px;margin:${-big / 2}px 0 0 ${-big / 2}px">${dayBallArt(d, big)}</button>${lab}`;
     if (isT && me) h += `<img class="pme" src="${me}" alt="" style="${left ? `left:${((x - 34 - 64) / W * 100).toFixed(2)}%` : `left:${((x + 34) / W * 100).toFixed(2)}%`};top:${y - 62}px" onerror="this.remove()">`;
