@@ -1485,6 +1485,44 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .usebmr{min-height:34px;padding:4px 14px;background:var(--or);border-color:var(--or);color:#0E0F12;flex:none}
 em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-size:.78em;letter-spacing:.06em;color:var(--warn);margin-left:2px}
 .wtst{display:flex;align-items:center;gap:6px}.wtst button{width:36px;height:36px;min-height:0;padding:0;border-radius:10px;background:var(--card);border:1.5px solid var(--line2);color:var(--ink);font-size:18px}.wtst b{min-width:36px;text-align:center;font-size:20px}.wtst i{font-style:normal;color:var(--muted);font-size:12px}
+/* v6 · Habits & goals: the on / off switch, habit rows, the habit sheet's day toggles, goal rows, the goal editor */
+.sw{position:relative;flex:none;width:52px;height:30px;min-height:0;padding:0;border-radius:999px;background:var(--s3);border:1.5px solid var(--line2);transition:background .18s,border-color .18s}
+.sw i{position:absolute;top:2.5px;left:3px;width:22px;height:22px;border-radius:50%;background:#8d8981;box-shadow:0 1px 3px rgba(0,0,0,.45);transition:transform .22s cubic-bezier(.3,1.3,.5,1),background .18s}
+.sw.on{background:var(--ok);border-color:var(--ok)}.sw.on i{transform:translateX(21px);background:#fff}
+.srow.hrow{padding:0 14px 0 0;gap:10px}
+.hrow .hopen{flex:1;min-width:0;display:flex;align-items:center;gap:12px;align-self:stretch;padding:11px 0 11px 14px;text-align:left;color:inherit;transition:background .15s}
+.hrow .hopen:active{background:var(--s2)}
+.srow .st em{display:block;font-style:normal;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.srow .st em i{font-style:normal}
+.hrow.off .si{opacity:.45}.hrow.off .st em{opacity:.7}
+.srow.addrow{min-height:54px}.srow.addrow .st b{color:var(--or2)}
+.srow.grow{min-height:62px}
+.gtag{flex:none;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--or2)}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.tgrid.t3{grid-template-columns:repeat(3,1fr);gap:6px}
+.tgrid button{min-height:62px;padding:10px 12px 9px;border-radius:14px;background:var(--card);border:1.5px solid var(--line2);text-align:left;color:var(--ink);transition:background .15s,border-color .15s}
+.tgrid button b{display:block;font-family:'BarlowC',sans-serif;font-weight:700;font-size:16px;letter-spacing:.06em;text-transform:uppercase;line-height:1.1}
+.tgrid button small{display:block;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.25}
+.tgrid.t3 button{padding:9px 10px 8px}.tgrid.t3 button b{font-size:14.5px}
+.tgrid button.on{border-color:var(--or);background:var(--orsoft)}
+.tgrid button:active{transform:translateY(1px)}
+.dtog{display:grid;grid-template-columns:repeat(var(--n,8),1fr);gap:5px;margin-top:8px}
+.dtog button{height:40px;border-radius:10px;background:var(--s2);border:1.5px solid var(--line2);font-family:'BarlowC',sans-serif;font-weight:700;font-size:16px;color:var(--ink2)}
+.dtog button.on{background:var(--or);border-color:var(--or);color:#0E0F12}
+.wtog{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.wtog button{display:inline-flex;align-items:center;min-height:36px;padding:5px 12px;border-radius:999px;background:var(--s2);border:1.5px solid var(--line2);font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.wtog button i{width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:7px;opacity:.45}
+.wtog button.on{color:var(--ink);border-color:var(--c);background:var(--card)}.wtog button.on i{opacity:1}
+.hsheet .sgl{margin:16px 2px 8px}.hsheet .field{margin-bottom:8px}.hsheet .grid4{margin-top:0}
+.gedit .tgrid{margin-top:6px}.gedit .pv{text-transform:none}
+.gchk{margin-top:12px;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(61,220,132,.4);background:linear-gradient(160deg,#16231b,var(--card) 70%);font-size:14.5px;line-height:1.4;color:var(--ink2)}
+.gchk b{color:var(--ink);font-weight:700}
+.gchk.warn{border-color:rgba(255,155,69,.6);background:linear-gradient(160deg,#2a1b0d,var(--card) 70%);color:var(--or2)}
+.gchk[hidden]{display:none}
+.prow input.pin{width:172px;flex:none;height:42px;padding:6px 12px;text-align:right;font-size:16px}
+.gex{display:inline-flex;align-items:center;gap:4px;min-height:40px;max-width:215px;padding:0 6px 0 12px;border-radius:11px;background:var(--s2);border:1.5px solid var(--line2);font-family:'BarlowC',sans-serif;font-weight:700;font-size:15.5px;letter-spacing:.03em;color:var(--ink);text-transform:none}
+.gex span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gex svg{width:16px;height:16px;flex:none;color:var(--dim)}
+.hbig{display:flex;align-items:baseline;justify-content:center;gap:8px;padding:8px 0 2px}.hbig b{font-family:'Bangers',Impact,sans-serif;font-weight:400;font-size:56px;line-height:1;letter-spacing:.03em;color:#fff}.hbig span{font-family:'BarlowC',sans-serif;font-weight:700;font-size:17px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.hbar{height:10px;border-radius:6px;background:rgba(255,255,255,.08);margin:10px 4px 6px;overflow:hidden}.hbar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--or),var(--or2))}
 </style>
 </head>
 <body>
@@ -1492,7 +1530,7 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.5.0';
+const APP_VERSION = '5.6.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -1628,6 +1666,33 @@ function defaultHabits() {
   ];
 }
 const PLAN0 = defaultPlan(), HABITS0 = defaultHabits();   // what a state without its own uses (a past project, see withBundle)
+/* Your own habits (v6): id 'h_…' (made once, never changes), block 'tick' (one tap), 'num' (a number with a target and a unit:
+   the day's value in S.days[date].habits[id], done when it reaches the target) or 'band' (steps from the band, done when they
+   reach the target). Built-in ones keep their ids and logging; any habit can be switched off (off: true). */
+const isCustomHabit = id => typeof id === 'string' && id.slice(0, 2) === 'h_';
+function newHabitId() { let id; do id = 'h_' + Date.now().toString(36).slice(-4) + Math.random().toString(36).slice(2, 6); while (habitsAll().some(h => h.id === id)); return id; }
+// every habit the live project knows, today's and the ones only past days still have
+function habitsAll() { const out = Array.isArray(S.habits) ? S.habits.slice() : []; for (const v of S.habitsPrev || []) for (const h of v.habits || []) if (!out.some(x => x.id === h.id)) out.push(h); return out; }
+// The habits a day was lived under: an edit (on / off, schedule, counting, a habit added or deleted) applies from the day it
+// is made, the days before keep theirs (S.habitsPrev: [{ until, habits }] — the last date each older list covers, as S.plan.prev)
+function habitsAt(date) {
+  if (!Array.isArray(S.habits)) return HABITS0; const prev = S.habitsPrev;
+  if (Array.isArray(prev) && prev.length && date) for (const v of prev) if (date <= v.until && Array.isArray(v.habits)) return v.habits;
+  return S.habits;
+}
+function habitDef(date, id) { return habitsAt(date).find(h => h.id === id) || habitsAll().find(h => h.id === id) || null; }
+// a number habit's value on a day (null when nothing is logged)
+function habitVal(date, id) { const x = (S.days[date] || {}).habits, v = x ? x[id] : null; return v == null || v === '' || isNaN(+v) ? null : +v; }
+// Change the habits from today on (fn edits a copy of the list); the days already gone keep theirs
+function editHabits(fn) {
+  if (!Array.isArray(S.habits)) S.habits = defaultHabits();
+  const old = JSON.parse(JSON.stringify(S.habits)), next = JSON.parse(JSON.stringify(S.habits)); fn(next);
+  if (JSON.stringify(old) === JSON.stringify(next)) return false;
+  const p = S.project, y = addDays(today(), -1), prev = Array.isArray(S.habitsPrev) ? S.habitsPrev : [];
+  // only when project days lie behind today and no edit today already kept them
+  if (p && y >= p.startDate && !prev.some(v => v.until >= y)) { prev.push({ until: y, habits: old }); prev.sort((a, b) => a.until < b.until ? -1 : 1); S.habitsPrev = prev; }
+  S.habits = next; return true;
+}
 // Fills in whatever is missing, never renames or removes anything, and a second run changes nothing. Runs on load, after a
 // restore (old backups have none of this) and when a project starts or is reopened.
 function migrateState() {
@@ -1648,14 +1713,31 @@ function mirrorProject() {
   for (const k of keys) if ((!seen || p[k] !== seen[k]) && p[k] !== undefined && box(k)[k] !== p[k]) { box(k)[k] = p[k]; if (k === 'deficit') { const kd = phaseKind(+p[k] || 0, ph.kind); if (kd !== ph.kind) ph.kind = kd; } }
   for (const k of keys) { const v = box(k)[k]; if (v !== undefined && p[k] !== v) p[k] = v; }
   if (!seen || keys.some(k => seen[k] !== p[k])) { const s = {}; for (const k of keys) if (p[k] !== undefined) s[k] = p[k]; ph.seen = s; }
-  // the goal is still what the deficit gives by the final weigh-in, so it follows the numbers (an ongoing plan has no
-  // final weigh-in: its goal is left as it was until goals get their own page)
-  if (!Array.isArray(S.goals)) S.goals = [];
+  normGoals();
+  // the plan's own weight goal (auto) is what the deficit gives by the final weigh-in, so it follows the numbers (an ongoing
+  // plan has no final weigh-in: it is left as it was). A state without any goal gets it as its main goal.
   if (p.ongoing) return;
-  const gw = p.start && +p.start.weight && p.startDate && p.endDate ? goalWeight() : null, target = Number.isFinite(gw) ? gw : null;
-  let g = S.goals.find(x => x && x.main && x.type === 'body'); if (!g) S.goals.unshift(g = { type: 'body', main: true, metric: 'weight', target, by: p.endDate });
-  if (g.metric === 'weight') { if (g.target !== target) g.target = target; if (g.by !== p.endDate) g.by = p.endDate; }
+  const gw = p.start && +p.start.weight && p.startDate && p.endDate ? planGoalWeight() : null, target = Number.isFinite(gw) ? gw : null;
+  let g = S.goals.find(x => x.auto && x.type === 'body' && x.metric === 'weight');
+  if (!g && !S.goals.length) S.goals.unshift(g = { id: 'g_weight', type: 'body', metric: 'weight', target, by: p.endDate, main: true, auto: true, created: p.startDate });
+  if (g) { if (g.target !== target) g.target = target; if (g.by !== p.endDate) g.by = p.endDate; }
 }
+/* Goals (v6): { id, type 'body' | 'lift' | 'consistency' | 'custom', metric (body: weight | fat | muscle), exercise (lift), name and
+   unit (custom), target, by (the date; consistency has none), main (one at most), created; auto: the plan's own weight goal,
+   whose target and date follow the plan until you set your own; vals: a custom goal's values by date }. The step-1 goal had
+   no id: it becomes the plan's own weight goal. Running it twice changes nothing. */
+function normGoals() {
+  if (!Array.isArray(S.goals)) S.goals = [];
+  if (S.goals.some(g => !g || typeof g !== 'object')) S.goals = S.goals.filter(g => g && typeof g === 'object');
+  const used = new Set(S.goals.map(g => g.id).filter(Boolean));
+  S.goals.forEach((g, i) => {
+    if (g.id) return; let id = g.type === 'body' && g.metric === 'weight' && g.main ? 'g_weight' : 'g_' + (g.type || 'goal') + i; while (used.has(id)) id += 'x'; used.add(id); g.id = id;
+    if (g.type === 'body' && g.metric === 'weight' && g.auto == null) g.auto = true;
+  });
+  for (const g of S.goals) { if (typeof g.main !== 'boolean') g.main = !!g.main; if (!g.created && S.project) g.created = S.project.startDate; }
+  let one = false; for (const g of S.goals) if (g.main) { if (one) g.main = false; else one = true; }
+}
+function newGoalId() { let id; do id = 'g_' + Date.now().toString(36).slice(-4) + Math.random().toString(36).slice(2, 6); while ((S.goals || []).some(g => g.id === id)); return id; }
 // The profile with its defaults (a past project has none: the built-in numbers)
 function prof() { const pr = S.profile || {}, p = S.project || {}; return { sex: pr.sex || 'm', age: pr.age != null ? pr.age : p.age, height: pr.height != null ? pr.height : p.height, activity: ACTIVITY[pr.activity] ? pr.activity : 'sitting' }; }
 // BMR from the profile and the latest weight (Mifflin-St Jeor 1990): 10 W + 6.25 H − 5 A + 5 (men) / − 161 (women)
@@ -1690,7 +1772,8 @@ const ONGOING_DAYS = 3652;
 function isOngoing() { return !!(S.project && S.project.ongoing); }
 function cycleLen() { const c = S.plan && Array.isArray(S.plan.cycle) && S.plan.cycle.length ? S.plan.cycle.length : PLAN0.cycle.length; return c; }
 function horizonT() { const Dd = D(); if (!isOngoing()) return Dd; const n = cycleLen(), t = Math.max(0, tOf(today())); return Math.min(Dd, (Math.floor(t / n) + 2) * n - 1); }
-function goalDate() { return addDays(S.project.startDate, horizonT()); }
+function goalDate() { return addDays(S.project.startDate, goalT()); }
+function horizonDate() { return addDays(S.project.startDate, horizonT()); }
 function setOngoing(on) {
   const p = S.project; if (!p || !!p.ongoing === !!on) return;
   if (on) { p.plannedEnd = p.endDate; p.endDate = addDays(p.startDate, ONGOING_DAYS); p.ongoing = true; }
@@ -1878,15 +1961,25 @@ function P() {
 // the dates live on the project itself: read straight, so these hot paths make no copy
 function D() { const p = S.project; return diffDays(p.startDate, p.endDate); }           // days of deficit (58)
 function tOf(date) { return diffDays(S.project.startDate, date); }            // 0 on Day 1
-function goalWeight() { const p = P(); return Math.round((p.start.weight - p.deficit * horizonT() / 7700) * 10) / 10; }
-function rate() { return (P().start.weight - goalWeight()) / Math.max(1, horizonT()); }     // kg/day
+// What the deficit gives by the end of the plan (the goal when you set none of your own)
+function planGoalWeight() { const p = P(); return Math.round((p.start.weight - p.deficit * horizonT() / 7700) * 10) / 10; }
+// The main goal when it is a weight you set yourself (target and date): the goal weight, the plan line and the power level aim
+// at it. Without one (no main goal, the plan's own, or another kind) everything works from the plan as before.
+function mainWeightGoal() {
+  const p = S.project; if (!p || !Array.isArray(S.goals)) return null;
+  const g = S.goals.find(x => x && x.main && !x.auto && x.type === 'body' && x.metric === 'weight');
+  return g && +g.target > 0 && /^\d{4}-\d\d-\d\d$/.test(g.by || '') && g.by > p.startDate ? g : null;
+}
+function goalT() { const g = mainWeightGoal(); return g ? diffDays(S.project.startDate, g.by) : horizonT(); }   // days from Day 1 to the goal
+function goalWeight() { const g = mainWeightGoal(); return g ? Math.round(+g.target * 10) / 10 : planGoalWeight(); }
+function rate() { return (P().start.weight - goalWeight()) / Math.max(1, goalT()); }     // kg/day
 
 function dayInfo0(date) {
   const t = tOf(date), idx = t + 1, Dd = D();
   if (t < 0) return { t, idx, phase: 'pre' };
   if (t > Dd) return { t, idx, phase: 'post' };
   // v6: the pattern comes from S.plan, the daily items from S.habits (a state without them uses the built-in program)
-  const plan = S.plan && Array.isArray(S.plan.cycle) && S.plan.cycle.length ? S.plan : PLAN0, habits = Array.isArray(S.habits) ? S.habits : HABITS0;
+  const plan = S.plan && Array.isArray(S.plan.cycle) && S.plan.cycle.length ? S.plan : PLAN0, habits = habitsAt(date);
   const pat = planAt(date), n = pat.length, vs = plan.variants || 'AB';
   const cd = ((t % n) + n) % n, cyc = pat[cd], cycleNum = Math.floor(t / n) + 1;
   const variant = vs[(cycleNum - 1) % vs.length];
@@ -1900,7 +1993,8 @@ function dayInfo0(date) {
   if (w === 'mt') items.push({ id: 'mt', label: 'Muay Thai', sub: 'Bag work / class — log minutes', req: true });
   if (workoutKey) items.push({ id: 'workout', key: workoutKey, label: PROGRAM.workouts[workoutKey].name, sub: PROGRAM.workouts[workoutKey].ex.length + ' exercises', req: true });
   // the session goes first: with 'auto' only it and nutrition are required on a training day, so the sort below gives the v5 order
-  for (const h of habits) if (habitOn(h, cd + 1, w)) items.push({ id: h.id, label: h.label, sub: h.sub, req: h.req === 'auto' || h.req == null ? !training || h.id === 'nutrition' : !!h.req });
+  for (const h of habits) if (!h.off && habitOn(h, cd + 1, w)) items.push(Object.assign({ id: h.id, label: h.label, sub: h.sub, req: h.req === 'auto' || h.req == null ? !training || h.id === 'nutrition' : !!h.req },
+    isCustomHabit(h.id) ? { custom: true, block: h.block, unit: h.unit || '', target: +h.target || 0 } : null));
   items.sort((a, b) => (b.req ? 1 : 0) - (a.req ? 1 : 0));
   return { t, idx, phase: t === Dd ? 'final' : 'on', cycleDay: cd + 1, cycleNum, variant, workoutKey, isRest: w === 'rest', isMT: w === 'mt', items, daysLeft: Dd - t, training, planKey, dayKey: key, changed: key !== planKey };
 }
@@ -1915,6 +2009,11 @@ function isDone(date, id) {
   if (id === 'hang') return !!(d.hang && d.hang.best);
   if (id === 'mt') return !!(d.mt && d.mt.minutes);
   if (id === 'workout') return S.sessions.some(s => s.date === date && s.finished);
+  if (isCustomHabit(id)) {   // a number reaching its target, the band's steps reaching theirs
+    const h = habitDef(date, id); if (!h) return false;
+    if (h.block === 'num') { const v = habitVal(date, id); return v != null && v > 0 && v >= (+h.target || 0); }
+    if (h.block === 'band') { const b = bandDay(date), st = b ? +b.steps || 0 : 0; return st > 0 && st >= (+h.target || 0); }
+  }
   return false;
 }
 
@@ -2060,7 +2159,7 @@ const METRIC_DEFS = [
   { id: 'visceral', label: 'Visceral fat', short: 'Visceral', unit: '', dec: 0, dir: -1, avg: 14 },
 ];
 function expected(id, t) {
-  const p = P(), s = p.start, r = rate(), Dd = Math.max(1, horizonT());
+  const p = P(), s = p.start, r = rate(), Dd = Math.max(1, goalT()); t = Math.min(t, Dd);   // the line holds at the goal after its date
   const wd = p.deficit > 0 ? p.waterDrop || 0 : 0;   // the early water drop comes with a deficit
   const rw = r - wd * (1 - Math.exp(-Dd / 4)) / Dd;                     // weight line still lands exactly on the goal
   const W = tt => s.weight - rw * tt - wd * (1 - Math.exp(-tt / 4));
@@ -2106,7 +2205,7 @@ function rate14(id, date) { // units/day: regression slope over 14 days when the
 }
 function metricStatus(id, date) {
   const def = METRIC_DEFS.find(m => m.id === id), p = P(), s = p.start; if (s[id] == null || s[id] === '') return null;
-  const Dg = horizonT(), t = Math.max(0, Math.min(Dg, tOf(date))), exp = expected(id, t), tol = tolerance(id, t), cur = current(id, date);
+  const Dg = goalT(), t = Math.max(0, Math.min(Dg, tOf(date))), exp = expected(id, t), tol = tolerance(id, t), cur = current(id, date);
   const goal = expected(id, Dg), start = +s[id];
   const o = { id, def, t, exp, tol, cur, goal, start, daysLeft: Dg - t, state: 'nodata', text: 'No readings yet. Hop on the scale!', cls: 'muted' };
   if (cur == null) return o;
@@ -2255,10 +2354,11 @@ function fmtSecs(sec) { sec = Math.round(+sec || 0); return sec >= 60 ? Math.flo
 function hangPB() { let best = null; for (const b of allBundles()) for (const d in b.days || {}) { const h = b.days[d].hang; if (h && +h.best > 0 && (!best || +h.best > best.v)) best = { v: +h.best, date: d }; } return best; }
 // Run fn with a past project temporarily live (for day-based numbers like streaks), then restore
 function withBundle(b, fn) {
-  if (b.id === 'live') return fn(); const keep = { project: S.project, days: S.days, readings: S.readings, sessions: S.sessions, targets: S.targets, tips: S.tips, phase: S.phase, profile: S.profile, plan: S.plan, habits: S.habits, goals: S.goals };
+  if (b.id === 'live') return fn(); const keep = { project: S.project, days: S.days, readings: S.readings, sessions: S.sessions, targets: S.targets, tips: S.tips, phase: S.phase, profile: S.profile, plan: S.plan, habits: S.habits, habitsPrev: S.habitsPrev, goals: S.goals };
   // a past project counts with its own numbers and the built-in program it was logged under, not the live phase / plan
-  try { S.project = b.project; S.days = b.days || {}; S.readings = b.readings || {}; S.sessions = b.sessions || []; S.targets = b.targets || {}; S.tips = b.tips || { log: [] }; S.phase = S.profile = S.plan = S.habits = S.goals = undefined; return fn(); }
-  finally { Object.assign(S, keep); }
+  // the day answers kept for this stretch of work belong to the live project (the same dates can mean other days here)
+  try { memoReset(); S.project = b.project; S.days = b.days || {}; S.readings = b.readings || {}; S.sessions = b.sessions || []; S.targets = b.targets || {}; S.tips = b.tips || { log: [] }; S.phase = S.profile = S.plan = S.habits = S.habitsPrev = S.goals = undefined; return fn(); }
+  finally { Object.assign(S, keep); memoReset(); }
 }
 function longestStreak() {
   let best = null;
@@ -2400,7 +2500,7 @@ const KCAL_FAT = 9440, KCAL_LEAN = 1816;           // per kg of fat tissue / lea
 function leanFraction(fatMassKg, protected_) { const f = 10.4 / (Math.max(3, fatMassKg) + 10.4); return protected_ ? f * 0.3 : f; }
 function energyDensity(fatMassKg, protected_) { const pl = leanFraction(fatMassKg, protected_); return KCAL_FAT * (1 - pl) + KCAL_LEAN * pl; }
 // day-by-day simulation of the plan with the deficit eroding ~22 kcal/day per kg lost (expenditure falls with body mass); returns end weight
-function simulateEnd(density) { const p = P(); let w = p.start.weight; for (let i = 0, n = horizonT(); i < n; i++) { const d = Math.max(0, p.deficit - 22 * (p.start.weight - w)); w -= d / density; } return w; }
+function simulateEnd(density) { const p = P(); let w = p.start.weight; for (let i = 0, n = goalT(); i < n; i++) { const d = Math.max(0, p.deficit - 22 * (p.start.weight - w)); w -= d / density; } return w; }
 function physiology() {
   const p = P(), F = p.start.weight * (p.start.fat || 22) / 100;
   const lo = energyDensity(F, false), hi = energyDensity(F, true);
@@ -3308,7 +3408,7 @@ function markJust(kind) {
 }
 function toast(msg, ms) { let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.classList.remove('out'); t.textContent = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.add('out'); toastTimer = setTimeout(() => t.remove(), 200); }, ms || 1800); }
 // Navigation: a pushed screen slides in from the right, going back slides in from the left, tabs cross-fade
-function go(screen, params, push, anim) { if (LOG_SHEETS[screen]) return openLogSheet(screen, (params || {}).date); const pushed = push !== false && R.screen !== screen; if (pushed) R.stack.push({ screen: R.screen, params: R.params, date: R.date, y: window.scrollY }); R.screen = screen; R.params = params || {}; render(anim || (pushed ? 'right' : 'fade')); if (!R._restored) window.scrollTo(0, 0); }
+function go(screen, params, push, anim) { if (LOG_SHEETS[screen] || isCustomHabit(screen)) return openLogSheet(screen, (params || {}).date); const pushed = push !== false && R.screen !== screen; if (pushed) R.stack.push({ screen: R.screen, params: R.params, date: R.date, y: window.scrollY }); R.screen = screen; R.params = params || {}; render(anim || (pushed ? 'right' : 'fade')); if (!R._restored) window.scrollTo(0, 0); }
 // Going back lands where you were: same screen, same day, same scroll position
 function back() { const s = R.stack.pop(); if (s) { R.screen = s.screen; R.params = s.params; if (s.date) R.date = s.date; render('left'); window.scrollTo(0, s.y || 0); } else go('today', {}, false, 'left'); }
 // Entrance animation for a freshly rendered element: 'right' | 'left' | 'fade' | 'up'
@@ -3462,7 +3562,7 @@ function render(anim) {
   if (!fsIn && !fsOut) animate(app.querySelector('.screen'), anim);
   app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (b._held) { b._held = false; return; } if (b.dataset.nav === 'today' && restOn()) { go('workout', { date: REST.date, key: REST.key }, true, 'up'); return; } if (R.screen === b.dataset.nav && !R.stack.length && !app.querySelector('.errscr')) { if (R.screen === 'today' && R.date !== today() && dayInfo(today()).items) { const dir = today() > R.date ? 'right' : 'left'; R.date = today(); patchToday(dir); return; } window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); if (b.classList.contains('plchip')) R.stab = 'scan'; go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
-  const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, exfile: bindExfile, project: bindProject, myplan: bindMyPlan, me: bindMe, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
+  const binder = { today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, exfile: bindExfile, project: bindProject, myplan: bindMyPlan, me: bindMe, habits: bindHabits, goal: bindGoal, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
   R._prevScreen = R._curScreen; R._curScreen = R.screen;
   // the scouter paints the phone's status bar green
   const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = R.screen === 'dash' || R.screen === 'exfile' ? '#0a2e12' : '#0E0F12';
@@ -3471,7 +3571,7 @@ function render(anim) {
   if (FS_SCREENS[R.screen]) fsBindDrag();
   if (fsIn) fsSlideUp(under); else if (fsOut) fsSlideDown(over);
 }
-function screenHtml(name) { return { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, exfile: exfileHtml, project: projectHtml, myplan: myPlanHtml, me: meHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[name]; }
+function screenHtml(name) { return { today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, exfile: exfileHtml, project: projectHtml, myplan: myPlanHtml, me: meHtml, habits: habitsHtml, goal: goalHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[name]; }
 // A screen that throws shows this instead of freezing the app (and the tab or view that broke is reset, so the next tap works)
 function logError(e) { try { localStorage.setItem('vikac.lasterr', JSON.stringify({ at: new Date().toISOString(), v: APP_VERSION, screen: R.screen, msg: (e && e.message) || String(e), stack: ((e && e.stack) || '').slice(0, 900) })); } catch (x) {} }
 function errorScreen(e) {
@@ -3525,6 +3625,10 @@ function shiftDay(n) { const p = P(); let d = n === 0 ? today() : addDays(R.date
   if (d > p.endDate) return; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; patchToday(dir); }
 function itemSub(date, it) {
   let sub = it.sub; const d = S.days[date] || { done: {} };
+  if (isCustomHabit(it.id)) { const h = habitDef(date, it.id) || it, tg = +h.target || 0;   // plain text (itemSubHtml keeps the unit as typed)
+    if (h.block === 'num') { const v = habitVal(date, it.id); return (v == null ? 0 : fmtHV(v)) + ' / ' + fmtHV(tg) + (h.unit ? ' ' + h.unit : ''); }
+    if (h.block === 'band') { const b = bandDay(date); return (b && b.steps != null ? fmtN(b.steps) : '—') + ' / ' + fmtN(tg) + ' steps'; }
+    return schedText(h); }
   if (it.id === 'weigh') { const r = S.readings[date]; if (r) sub = r.weight + ' kg' + (r.fat ? ' · ' + r.fat + ' % fat' : ''); else { const lr = lastReading('weight', addDays(date, -1)); if (lr) { const g = diffDays(lr.date, date); sub = 'Last ' + lr.v + ' kg · ' + (g <= 1 ? 'yesterday' : g + ' days ago'); } else sub = 'Log the scale'; } }
   if (it.id === 'nutrition') { const n = d.nutrition; if (n && n.kcal) sub = (+n.kcal).toLocaleString('en-GB') + ' kcal · ' + (n.protein || 0) + ' g protein' + (n.carbs != null && n.carbs !== '' ? ' · C ' + n.carbs : '') + (n.fat != null && n.fat !== '' ? ' · F ' + n.fat : ''); else { sub = date > today() ? 'Plan it in MFP' : 'Screenshot your MFP day, or type it'; } }
   if (it.id === 'hang') { const h = hangPB(); sub = h ? 'PB ' + fmtSecs(h.v) : 'No PB yet'; }
@@ -3666,7 +3770,7 @@ function playSummon(o) {
 }
 function showBalls(date) {
   const info = dayInfo(date), cyc = cycleOf(date); if (!info.items) return;
-  const rows = info.items.map(it => `<span>${esc(it.label)}${it.req ? '' : ' <span class="muted small">bonus</span>'}</span><b class="${isDone(date, it.id) ? 'ok' : 'muted'}" style="font-size:18px">${isDone(date, it.id) ? '✓' : '○'}</b>`).join('');
+  const rows = info.items.map(it => `<span>${itemLab(it)}${it.req ? '' : ' <span class="muted small">bonus</span>'}</span><b class="${isDone(date, it.id) ? 'ok' : 'muted'}" style="font-size:18px">${isDone(date, it.id) ? '✓' : '○'}</b>`).join('');
   const head = cyc.summonDay ? (cyc.summoned ? 'Dragon summoned' : cyc.canSummon ? 'Summon day' : 'Summon day · locked') : (date === today() ? 'Today\'s ball' : 'Dragon ball');
   const days = cyc.days.filter(x => x.cd <= 7).map(x => `<span class="chip daychip ${x.comp === 'done' ? 'ok' : x.comp === 'miss' ? 'bad' : 'muted'}" title="${x.type.label}">${x.cd}</span>`).join('');
   modal(`<h3>${head}</h3><div class="muted">Cycle ${cyc.num} · ${cyc.earned} of 7 balls collected</div>
@@ -4016,6 +4120,27 @@ const IC4 = {
   back: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="#F4EFE8" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
 const ITEM_IC = { weigh: 'scale', nutrition: 'fork', hang: 'hang', stretch: 'stretch', mobility: 'kick', workout: 'dumb', mt: 'glove' };
+// your own habits: a tick box, a drop for a number with a target, the watch for the band's steps
+Object.assign(IC4, {
+  tickbox: SV('<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 12.2l2.4 2.4 4.8-5"/>'),
+  drop: SV('<path d="M12 3.5c3.2 4.2 6 7.6 6 10.9a6 6 0 0 1-12 0c0-3.3 2.8-6.7 6-10.9z"/><path d="M9.2 14.6a2.9 2.9 0 0 0 2.6 2.6"/>'),
+});
+function itemIc(it) { return ITEM_IC[it.id] || (it.block === 'num' ? 'drop' : it.block === 'band' ? 'watch' : 'tickbox'); }
+// a daily item's name: your own habits' names are as you typed them (never translated)
+function itemLab(it) { return isCustomHabit(it.id) ? `<span class="usertext">${esc(it.label)}</span>` : esc(it.label); }
+// a number as a habit shows it: 2.5 · 3 · 1,250
+const fmtHV = v => Math.abs(+v) >= 1000 ? fmtN(Math.round(+v)) : String(+(+v).toFixed(2));
+// your own habit's value against its target: "2.5 / 3 L", "6,420 / 8,000 steps" (null for a tick)
+function habitValHtml(date, it) {
+  const h = habitDef(date, it.id) || it, tg = +h.target || 0;
+  if (h.block === 'num') { const v = habitVal(date, it.id); return `${v == null ? 0 : fmtHV(v)} / ${fmtHV(tg)}${h.unit ? ` <span class="usertext">${esc(h.unit)}</span>` : ''}`; }
+  if (h.block === 'band') { const b = bandDay(date), st = b && b.steps != null ? +b.steps : null; return `${st == null ? '—' : fmtN(st)} / ${fmtN(tg)} steps`; }
+  return null;
+}
+// how many of a habit's days in a row ending at date were done
+function habitRun(date, id) { let n = 0; for (let i = 0; i < 90; i++) { const x = addDays(date, -i), inf = dayInfo(x); if (!inf.items) break; if (!inf.items.some(y => y.id === id)) continue; if (isDone(x, id)) n++; else break; } return n; }
+// the second line of a daily item, as HTML (your own habits: the value, or the days for a tick)
+function itemSubHtml(date, it) { if (!isCustomHabit(it.id)) return esc(itemSub(date, it)); const v = habitValHtml(date, it); return v != null ? v : esc(schedText(habitDef(date, it.id) || it)); }
 
 /* ---------- Nav: Journey · the ball (Today) · Scouter ----------
    Three places: what happened and what's coming, what to do now, how it's going. The ball in the middle is the Today tab:
@@ -4282,6 +4407,7 @@ function dch(good, txt) { return `<span class="dch ${good == null ? 'eq' : good 
 function arrowNum(dl, fmt) { return dl > 0 ? '▲' + fmt(dl) : dl < 0 ? '▼' + fmt(-dl) : '='; }
 function itemFeedback(date, it) {
   const d = S.days[date] || {};
+  if (isCustomHabit(it.id)) { const v = itemSubHtml(date, it); if (it.block !== 'tick' || !isDone(date, it.id)) return v; const n = habitRun(date, it.id); return v + (n >= 2 ? ' ' + dch(true, n + ' in a row') : ''); }
   if (it.id === 'weigh') {
     const r = S.readings[date]; if (!r || r.weight == null || r.weight === '') return null;
     const w = +r.weight, pw = lastReading('weight', addDays(date, -1)); let h = w.toFixed(1) + ' kg';
@@ -4330,7 +4456,7 @@ function t4Rows(date, info) {
   return `<div class="secl"><span>${date === today() ? 'Today\'s goals' : 'Goals'}</span><span>${done} / ${items.length}</span></div><ul class="todo" id="list">${items.map(it => {
     const dn = isDone(date, it.id), fb = itemFeedback(date, it), sub = fb != null ? fb : it.id === 'hang' && hangPB() ? `<span class="pbtag">${TROPHY}PB</span> ${fmtSecs(hangPB().v)}` : esc(itemSub(date, it));
     const st = dn ? `<span class="st" data-chk>${IC4.check}</span>` : it.req ? `<span class="st" data-chk>${ballSvg({ stars: star, state: 'hollow', size: 30 })}</span>` : `<span class="st circ" data-chk></span>`;
-    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}"><span class="ic" data-open-item>${IC4[ITEM_IC[it.id]] || ''}</span><div class="lab" data-open-item><div class="t">${esc(it.label)}</div><div class="s">${sub}</div></div>${st}<div class="zap">${beamHeroArt()}</div>${beamFxHtml()}</li>`;
+    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}${it.req ? ' req' : ' bonus'}" data-item="${it.id}" data-key="${it.key || ''}"${it.block ? ` data-blk="${it.block}"` : ''}><span class="ic" data-open-item>${IC4[itemIc(it)] || ''}</span><div class="lab" data-open-item><div class="t">${itemLab(it)}</div><div class="s">${sub}</div></div>${st}<div class="zap">${beamHeroArt()}</div>${beamFxHtml()}</li>`;
   }).join('')}</ul>`;
 }
 function bandTodayHtml(date) {
@@ -4399,11 +4525,11 @@ function bindTodayBody(date, future) {
   body.querySelectorAll('[data-chk]').forEach(c => c.onclick = e => {
     e.stopPropagation(); if (future) return toast('That day hasn\'t happened yet');
     const li = c.closest('li'), id = li.dataset.item, d = day(date);
-    if (li.classList.contains('done')) { d.done[id] = false; if (['weigh', 'nutrition', 'hang'].includes(id) && isDone(date, id)) { toast('Logged data keeps it done — clear it inside'); return; } save(); refreshToday(false); return; }
+    if (li.classList.contains('done')) { d.done[id] = false; if ((['weigh', 'nutrition', 'hang'].includes(id) || (isCustomHabit(id) && li.dataset.blk !== 'tick')) && isDone(date, id)) { toast('Logged data keeps it done — clear it inside'); return; } save(); refreshToday(false); return; }
     d.done[id] = true; save(); li.classList.add('done'); c.innerHTML = IC4.check; c.classList.remove('circ');
     fireBeam(li); vib(30); setTimeout(() => refreshToday(true), 700);
   });
-  body.querySelectorAll('[data-open-item]').forEach(el => el.onclick = () => { const li = el.closest('li'); go(li.dataset.item, { date, key: li.dataset.key }); });
+  body.querySelectorAll('[data-open-item]').forEach(el => el.onclick = e => { const li = el.closest('li'); if (li.dataset.blk === 'tick') { const c = li.querySelector('[data-chk]'); if (c) c.onclick(e); return; } go(li.dataset.item, { date, key: li.dataset.key }); });
   const bp = body.querySelector('[data-bandpull]'); if (bp) bp.onclick = async e => { e.stopPropagation(); bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); if (!r.ok) toast(r.error, 2400); refreshToday(false); };
   const nt = body.querySelector('[data-note]'); if (nt) nt.onclick = () => noteSheet(date);
   const sm = body.querySelector('[data-summon]'); if (sm) bindSummonHold(sm, date);
@@ -4440,12 +4566,13 @@ function quickLog() {
     stretch: '11 steps · ~13 min', mobility: 'warm-up routine' };
   const items = info.items ? info.items : [{ id: 'weigh' }, { id: 'nutrition' }];
   const lab = it => it.id === 'workout' ? PROGRAM.workouts[it.key].name : { weigh: 'Weight', nutrition: 'Food', hang: 'Dead hang', mt: 'Muay Thai', stretch: 'Stretching', mobility: 'Mobility' }[it.id] || it.label;
-  const tile = (k, ic, t, s, done, attr) => `<button class="qtile ${done ? 'done' : ''}" data-q="${k}" ${attr || ''}>${done ? `<span class="qok">${IC4.check}</span>` : ''}<span class="ic">${IC4[ic]}</span><b>${esc(t)}</b><span>${esc(s)}</span></button>`;
+  // t and s are HTML here (your own habits' names and units are kept as typed)
+  const tile = (k, ic, t, s, done, attr) => `<button class="qtile ${done ? 'done' : ''}" data-q="${k}" ${attr || ''}>${done ? `<span class="qok">${IC4.check}</span>` : ''}<span class="ic">${IC4[ic]}</span><b>${t}</b><span>${s}</span></button>`;
   const tiles = items.map(it => { const done = info.items ? isDone(date, it.id) : false, s = it.id === 'workout' ? (() => { const x = S.sessions.find(y => y.date === date && y.key === it.key); return x && x.finished ? 'finished' : x ? x.ex.filter(e => e.done).length + ' / ' + x.ex.length + ' exercises' : PROGRAM.workouts[it.key].ex.length + ' exercises'; })() : sub[it.id] || '';
-    return tile(it.id, ITEM_IC[it.id] || 'pen', lab(it), s, done, it.key ? `data-key="${it.key}"` : ''); }).join('');
+    return isCustomHabit(it.id) ? tile(it.id, itemIc(it), itemLab(it), itemSubHtml(date, it), done, `data-blk="${it.block}"`) : tile(it.id, ITEM_IC[it.id] || 'pen', esc(lab(it)), esc(s), done, it.key ? `data-key="${it.key}"` : ''); }).join('');
   const dp = info.items ? dayProgress(date) : null, nDone = info.items ? info.items.filter(it => isDone(date, it.id)).length : 0;
   const bg = modal(`<div class="hdl"></div><div style="display:flex;justify-content:space-between;align-items:baseline"><span class="h1" style="font-size:34px">Log</span><span class="cond muted" style="font-size:13px">${WD[parse(date).getDay()].slice(0, 3)} ${fmtShort(date)}${dp ? ' · ' + nDone + ' / ' + info.items.length + ' done' : ''}</span></div>
-    <div class="qtiles">${tiles}${tile('note', 'pen', 'Note', d.note ? '“' + (d.note.length > 18 ? d.note.slice(0, 17).trim() + '…' : d.note) + '”' : 'for this day', !!d.note)}</div>
+    <div class="qtiles">${tiles}${tile('note', 'pen', 'Note', esc(d.note ? '“' + (d.note.length > 18 ? d.note.slice(0, 17).trim() + '…' : d.note) + '”' : 'for this day'), !!d.note)}</div>
     ${bandCfg() ? `<div style="margin-top:14px">${bandTodayHtml(date)}</div>` : ''}
     <div class="qshot"><button class="shutter" data-q="shots" aria-label="Read a screenshot (MFP or scale)"><span>${IC4.cam}</span></button></div>
     <input type="file" accept="image/*" multiple id="qShots" style="display:none">`, b => {
@@ -4453,6 +4580,7 @@ function quickLog() {
     b.querySelectorAll('[data-q]').forEach(t => t.onclick = () => { const k = t.dataset.q;
       if (k === 'shots') return b.querySelector('#qShots').click();
       b.close(); if (k === 'note') return setTimeout(() => noteSheet(date), 180);
+      if (t.dataset.blk === 'tick') { const dd = day(date); dd.done = dd.done || {}; dd.done[k] = !isDone(date, k); save(); afterLog(dd.done[k] ? k : null); if (dd.done[k]) vib(30); return; }
       if (k === 'workout') { const x = S.sessions.find(y => y.date === date); return go('workout', { date, key: x ? x.key : t.dataset.key }); }
       go(k, { date }); });
     const f = b.querySelector('#qShots'); f.onchange = () => { const files = Array.from(f.files || []); f.value = ''; if (!files.length) return; b.close(); if (files.length === 1) go('import', { file: files[0] }); else startBatch(files); };
@@ -4826,7 +4954,7 @@ function planHtml() {
 }
 
 /* ---------- Month: the calendar ---------- */
-function monthShift(n) { const p = P(), [Y, M] = (R.jmonth || today().slice(0, 7)).split('-').map(Number), dt = new Date(Y, M - 1 + n, 1), m = dt.getFullYear() + '-' + pad(dt.getMonth() + 1); if (m < p.startDate.slice(0, 7) || m > (isOngoing() ? goalDate() : p.endDate).slice(0, 7)) return false; R.jmonth = m; const jb = $('#jbody'); jb.innerHTML = monthHtml(); animate(jb, n > 0 ? 'right' : 'left'); bindJourney(); return true; }
+function monthShift(n) { const p = P(), [Y, M] = (R.jmonth || today().slice(0, 7)).split('-').map(Number), dt = new Date(Y, M - 1 + n, 1), m = dt.getFullYear() + '-' + pad(dt.getMonth() + 1); if (m < p.startDate.slice(0, 7) || m > (isOngoing() ? horizonDate() : p.endDate).slice(0, 7)) return false; R.jmonth = m; const jb = $('#jbody'); jb.innerHTML = monthHtml(); animate(jb, n > 0 ? 'right' : 'left'); bindJourney(); return true; }
 function monthHtml() {
   const p = P(), td = today(); if (!R.jmonth) R.jmonth = (td >= p.startDate ? (td > p.endDate ? p.endDate : td) : p.startDate).slice(0, 7);
   const [Y, M] = R.jmonth.split('-').map(Number), first = new Date(Y, M - 1, 1), dim = new Date(Y, M, 0).getDate(), startCol = (first.getDay() + 6) % 7, season = seasonOf(M);
@@ -4840,7 +4968,7 @@ function monthHtml() {
   // a season banner (one dark scene behind the month name); without one, the older season sprites and ground strip
   const bn = ART['banner-' + season], s = !bn && ART['season-' + season] ? `<img class="sea" src="season-${season}.png" alt="">` : '';
   return `<div class="mhead ${bn ? 'banner' : ''}">${bn ? `<div class="mbg" style="background-image:url(banner-${season}.png)"></div>` : ''}${s ? s.replace('class="sea"', 'class="sea l"') : ''}${s ? s.replace('class="sea"', 'class="sea r"') : ''}${!bn && ART['ground-' + season] ? `<div class="gr" style="background-image:url(ground-${season}.png)"></div>` : ''}
-      <div class="mn"><span class="h1">${MONTHS[M - 1]}</span><div class="myr"><button class="mnav l" data-jm="-1" ${R.jmonth <= p.startDate.slice(0, 7) ? 'disabled' : ''} aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="cond mut">${Y}</span><button class="mnav r" data-jm="1" ${R.jmonth >= (isOngoing() ? goalDate() : p.endDate).slice(0, 7) ? 'disabled' : ''} aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div></div></div>
+      <div class="mn"><span class="h1">${MONTHS[M - 1]}</span><div class="myr"><button class="mnav l" data-jm="-1" ${R.jmonth <= p.startDate.slice(0, 7) ? 'disabled' : ''} aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button><span class="cond mut">${Y}</span><button class="mnav r" data-jm="1" ${R.jmonth >= (isOngoing() ? horizonDate() : p.endDate).slice(0, 7) ? 'disabled' : ''} aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button></div></div></div>
     <div class="mgrid">${cells}</div>
     <div class="leg4">${['push', 'pull', 'legs', 'mt', 'rest'].map(k => `<span><i style="background:${JCOL[k]}"></i>${{ push: 'Push', pull: 'Pull', legs: 'Legs', mt: 'Muay Thai', rest: 'Rest' }[k]}</span>`).join('')}</div>
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span class="mut" style="font-size:14px">${done} perfect of ${elapsed} day${elapsed === 1 ? '' : 's'}</span>${isOngoing() ? '' : `<b class="cond" style="font-size:16px">${Math.round(elapsed / (D() + 1) * 100)} % done · ${D() + 1 - elapsed} left</b>`}</div>`;
@@ -4854,17 +4982,18 @@ function daySheet(d) {
   const head = `<div class="hdl"></div><div class="dsh"><span class="dsb">${dayBallArt(d, 54)}</span><div><div class="h1">${shortD(d)} · ${esc(pl.title)}</div><div class="mut" style="font-size:13.5px;margin-top:3px">Day ${info.idx}${ballTxt}${pl.w ? ' · ~' + workoutMinutes(info.workoutKey) + ' min' : ''}${when ? ' · ' + when : ''}</div></div></div>`;
   let body = '', btn = '';
   if (future && pl.w) {
-    const tg = nutritionTarget(d), mob = info.items.some(it => it.id === 'mobility');
-    body = `<div class="tchips"><span>~${fmtN(tg.kcal)} kcal</span><span>${tg.protein} g protein</span><span>Weigh-in</span>${mob ? '<span>Kick mobility</span>' : ''}</div><div class="xl">${pl.w.ex.map(e => { const last = lastFor(e.n, d), pb = exPB(e.n, e.type, null);
+    const tg = nutritionTarget(d), mob = info.items.some(it => it.id === 'mobility'), own = info.items.filter(it => isCustomHabit(it.id)).map(it => `<span>${itemLab(it)}</span>`).join('');
+    body = `<div class="tchips"><span>~${fmtN(tg.kcal)} kcal</span><span>${tg.protein} g protein</span><span>Weigh-in</span>${mob ? '<span>Kick mobility</span>' : ''}${own}</div><div class="xl">${pl.w.ex.map(e => { const last = lastFor(e.n, d), pb = exPB(e.n, e.type, null);
       return `<div class="xr"><span class="n">${esc(e.n)}<small>${esc(e.s)}${last ? ' · last ' + esc(last.short) : ''}</small></span>${pb ? `<span class="pbtag">${TROPHY}PB</span><span class="pv">${fmtPB(e.n, e.type, pb.v)}</span>` : ''}</div>`; }).join('')}</div>`;
     btn = `<button class="btn" data-ow>Open the workout</button>`;
   } else if (future) {
-    const req = info.items.filter(it => it.req), bon = info.items.filter(it => !it.req), row = (it, r) => `<div class="xr"><span class="dot4 ${r ? 'req' : ''}">${r ? dayBallArt(d, 22) : ''}</span><span class="n">${esc(it.label)}<small>${esc(itemSub(d, it))}</small></span></div>`;
+    const req = info.items.filter(it => it.req), bon = info.items.filter(it => !it.req), row = (it, r) => `<div class="xr"><span class="dot4 ${r ? 'req' : ''}">${r ? dayBallArt(d, 22) : ''}</span><span class="n">${itemLab(it)}<small>${itemSubHtml(d, it)}</small></span></div>`;
     body = `<div class="tchips"><span>~${fmtN(nutritionTarget(d).kcal)} kcal</span><span>${P().protein} g protein</span></div><div class="secl" style="margin:14px 2px 6px"><span>Earns the ball</span><span></span></div><div class="xl" style="margin-top:0">${req.map(it => row(it, true)).join('')}</div>${bon.length ? `<div class="secl" style="margin:14px 2px 6px"><span>Bonus</span><span></span></div><div class="xl" style="margin-top:0">${bon.map(it => row(it, false)).join('')}</div>` : ''}`;
     btn = `<button class="btn sec" data-od>Open the day</button>`;
   } else {
     const h = bandDay(d), note = (S.days[d] || {}).note;
     body = `<div class="xl">${info.items.map(it => { const dn = isDone(d, it.id); let sub = itemSub(d, it);
+        if (isCustomHabit(it.id)) return `<div class="xr"><span class="ok5 ${dn ? 'on' : ''} ${it.req ? '' : 'b'}">${dn ? IC4.check : ''}</span><span class="n">${itemLab(it)}<small>${itemSubHtml(d, it)}</small></span></div>`;
         if (it.id === 'workout') { const s = S.sessions.find(x => x.date === d); if (s) { const pbs = sessionPBs(s), lb = liftBand(d); sub = s.ex.filter(e => e.done).length + ' / ' + s.ex.length + ' exercises' + (s.finished ? '' : ' · not finished') + (lb && lb.kcal ? ' · ' + lb.kcal + ' kcal' : ''); return `<div class="xr"><span class="ok5 ${dn ? 'on' : ''} ${it.req ? '' : 'b'}">${dn ? IC4.check : ''}</span><span class="n">${esc(it.label)}<small>${sub}</small></span>${pbs ? `<span class="pbtag">${TROPHY}${pbs} PB</span>` : ''}</div>`; } }
         if (it.id === 'mt') { const m = (S.days[d] || {}).mt; if (m && m.minutes) sub = m.minutes + ' min' + (m.kcal ? ' · ' + m.kcal + ' kcal' : ''); }
         return `<div class="xr"><span class="ok5 ${dn ? 'on' : ''} ${it.req ? '' : 'b'}">${dn ? IC4.check : ''}</span><span class="n">${esc(it.label)}<small>${esc(sub)}</small></span></div>`; }).join('')}
@@ -4955,7 +5084,7 @@ document.addEventListener('keydown', e => { if (!KP.inp) return; const k = e.key
    (go('weigh' | 'nutrition' | 'hang' | 'mt' | 'mobility', { date }) opens the sheet, so every old link keeps working.) */
 const EST = '<em class="est">est.</em>';   // marks a number that is an estimate
 const LOG_SHEETS = { weigh: weighSheet, nutrition: nutritionSheet, hang: hangSheet, mt: mtSheet, mobility: mobilitySheet };
-function openLogSheet(kind, date) { const f = LOG_SHEETS[kind]; if (!f) return; const closing = document.querySelector('.modalbg.out'); setTimeout(() => f(date || R.date), closing ? 150 : 0); }
+function openLogSheet(kind, date) { const f = LOG_SHEETS[kind] || (isCustomHabit(kind) ? d => habitLogSheet(kind, d) : null); if (!f) return; const closing = document.querySelector('.modalbg.out'); setTimeout(() => f(date || R.date), closing ? 150 : 0); }
 function logSheet(title, date, body, foot, onbind) {
   return modal(`<div class="hdl"></div><div class="shd"><span class="h1">${title}</span><span class="cond muted">${shortD(date)}</span></div>${body}<div data-foot class="sfoot">${foot}</div>`, b => { b.classList.remove('hudm'); b.classList.add('sheetbg', 'logsh'); onbind(b); });
 }
@@ -5082,6 +5211,32 @@ function mobilitySheet(date) {
   });
 }
 
+/* ---------- Your own habits: a number with a target (a stepper), the band's steps (the day's count, Sync) ----------
+   A tick habit has no sheet: one tap ticks it (or unticks it). */
+// − / + moves by a step that suits the target: 0.25 for 3 L, 0.5 for 8 h, 1 for 20 pages, 10 for 300 kcal
+function habitStep(tg) { tg = +tg || 0; return tg < 5 ? 0.25 : tg < 12 ? 0.5 : tg < 100 ? 1 : tg < 1000 ? 10 : 100; }
+function habitLogSheet(id, date) {
+  const h = habitDef(date, id); if (!h) return;
+  if (h.block === 'tick') { const d = day(date); d.done = d.done || {}; d.done[id] = !isDone(date, id); save(); afterLog(d.done[id] ? id : null); if (d.done[id]) vib(30); return; }
+  const tg = +h.target || 0, title = `<span class="usertext">${esc(h.label)}</span>`, unit = h.unit ? `<span class="usertext">${esc(h.unit)}</span>` : '';
+  if (h.block === 'band') {
+    const paint = () => { const b = bandDay(date) || {}, st = b.steps != null ? +b.steps : null;
+      return `<div class="hbig"><b>${st == null ? '—' : fmtN(st)}</b><span>/ ${fmtN(tg)} steps</span></div><div class="hbar"><i style="width:${(Math.max(0, Math.min(1, (st || 0) / Math.max(1, tg))) * 100).toFixed(1)}%"></i></div>`; };
+    return logSheet(title, date, `<div class="lgbox" id="hband">${paint()}</div>`, bandCfg() ? `<button class="btn" data-hsync>${IC4.sync}<span>Sync now</span></button>` : '<button class="btn sec" data-close>Close</button>', b => {
+      const sy = b.querySelector('[data-hsync]'); if (sy) sy.onclick = async () => { sy.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); sy.lastChild.textContent = 'Sync now'; if (!r.ok) return toast(r.error, 2400); b.querySelector('#hband').innerHTML = paint(); afterLog(isDone(date, id) ? id : null); };
+    });
+  }
+  const v = habitVal(date, id), hint = x => `${x != null && x >= tg && tg > 0 ? '✓ ' : ''}Target ${fmtHV(tg)}${unit ? ' ' + unit : ''}`;
+  const stp = h.unit ? bigStepper('hv', v, '0', habitStep(tg), esc(h.unit)).replace(`<span>${esc(h.unit)}</span>`, `<span class="usertext">${esc(h.unit)}</span>`) : bigStepper('hv', v, '0', habitStep(tg));
+  logSheet(title, date, `<div class="lgbox">${stp}<div class="lghint" id="hvh">${hint(v)}</div></div>${v != null ? '<button class="link dl" data-del>Delete this entry</button>' : ''}`, '<button class="btn" data-save>Save</button>', b => {
+    wireSteppers(b, inp => { b.querySelector('#hvh').innerHTML = hint(inp.value === '' ? null : +inp.value); });
+    b.querySelector('[data-save]').onclick = () => { const x = num(b.querySelector('[name=hv]').value), d = day(date);
+      if (x == null) { if (d.habits) delete d.habits[id]; } else { d.habits = d.habits || {}; d.habits[id] = x; }
+      save(); b.close(); afterLog(isDone(date, id) ? id : null); vib(30); };
+    const dl = b.querySelector('[data-del]'); if (dl) dl.onclick = () => { const d = day(date); if (d.habits) delete d.habits[id]; if (d.done) d.done[id] = false; save(); b.close(); afterLog(); };
+  });
+}
+
 /* ============ Stage 4: Scouter — the green HUD (Scan · Body · Food · Training · Records) and exercise files ============ */
 IC4.scouter = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="8" height="6.5" rx="1.6" fill="currentColor" fill-opacity=".25"/><path d="M10.5 9.5l6 2.5"/><circle cx="18.5" cy="13.5" r="3"/><path d="M18.5 16.5v3"/></svg>';
 const TRO4 = '<svg class="tro" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 0 1-10 0z" fill="#F5B90F" stroke="#1B1B1B" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 5H4.2v1.6A3.4 3.4 0 0 0 7.6 10M17 5h2.8v1.6A3.4 3.4 0 0 1 16.4 10" fill="none" stroke="#FFD84D" stroke-width="1.6" stroke-linecap="round"/><path d="M12 13v3.5" stroke="#FFD84D" stroke-width="1.8"/><path d="M8.5 21h7l-.8-3.2H9.3z" fill="#E0A100" stroke="#1B1B1B" stroke-width="1.5" stroke-linejoin="round"/></svg>';
@@ -5194,7 +5349,7 @@ function bodyTab(date) {
 }
 // Weight chart: the plan's zone, every weigh-in, the trend line, where the trend lands on the last day and the goal
 function weightChart(date, rng) {
-  const p = P(), st = metricStatus('weight', date), Dd = horizonT(), t = Math.max(0, Math.min(Dd, tOf(date))), span = rng === '2w' ? 14 : rng === '1m' ? 30 : null;
+  const p = P(), st = metricStatus('weight', date), Dd = goalT(), t = Math.max(0, Math.min(Dd, tOf(date))), span = rng === '2w' ? 14 : rng === '1m' ? 30 : null;
   let x0 = 0, x1 = Dd; if (span) { x0 = Math.max(0, t - span + 1); x1 = Math.min(Dd, Math.max(t, x0 + span - 1)); }
   const W = 356, H = 196, L = 6, RM = 30, T = 16, B = 22, dOf = k => addDays(p.startDate, k);
   const zone = []; for (let k = x0; k <= x1; k++) { const e = expected('weight', k), tl = tolerance('weight', k); zone.push([k, e + tl, e - tl]); }
@@ -5449,6 +5604,7 @@ Object.assign(IC4, {
   chev: SV('<path d="M9 5.5l6.5 6.5L9 18.5"/>'),
   plan: SV('<rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3"/>'),
   user: SV('<circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5c1-4 4-6 7.5-6s6.5 2 7.5 6"/>'),
+  habits: SV('<path d="M3.5 6.5l1.7 1.7L8.3 5M3.5 12.5l1.7 1.7 3.1-3.2M3.5 18.5l1.7 1.7 3.1-3.2M11.5 7h9M11.5 13h9M11.5 19h9"/>'),
 });
 const agoTxt = t => { if (!t) return 'never'; const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' days ago'; };
 // One row of a settings group: icon, title, line under it, an optional status chip, a chevron when it opens a page
@@ -5468,6 +5624,7 @@ function profileHtml() {
     ${warn ? `<div class="warnbox" data-go-cloud><span>${esc(warn)}</span></div>` : ''}
     <div class="sgl">Project</div><div class="sgrp">
       ${srow({ ic: 'plan', tone: 'or', t: 'My plan', s: planSub(), go: 'myplan' })}
+      ${srow({ ic: 'habits', t: 'Habits & goals', s: habitsSub(), go: 'habits' })}
       ${srow({ ic: 'user', t: 'My profile', s: profSub(), go: 'me' })}
       ${srow({ ic: 'flag', t: p.name, s: fmtShort(p.startDate) + (isOngoing() ? ' → ongoing' : ' → ' + fmtShort(p.endDate) + ' · goal ' + goalWeight() + ' kg'), chip: [chip[0] === 'or' ? 'or' : chip[0] === 'ok' ? 'on' : 'off', chip[1]], go: 'project' })}
       ${srow({ ic: 'plus', t: 'New project', s: 'this one moves to Past projects (in Scouter)', act: 'newp' })}</div>
@@ -5565,7 +5722,7 @@ function planSub() { const ph = P(), k = (S.phase || {}).kind || phaseKind(+ph.d
 function profSub() { const pr = prof(); return (pr.sex === 'f' ? 'Woman' : 'Man') + ' · ' + pr.age + ' · ' + pr.height + ' cm · BMR ' + fmtN(P().bmr); }
 const prow = (label, sub, right, cls) => `<div class="prow ${cls || ''}"><span class="pl">${label}${sub ? `<small>${sub}</small>` : ''}</span>${right}</div>`;
 const dayYear = d => shortD(d) + ' ' + d.slice(0, 4);
-const dpick = (name, d) => `<label class="dpick"><b>${dayYear(d)}</b><input type="date" name="${name}" value="${d}" aria-label="${name === 'pend' ? 'Last day' : 'First day'}"></label>`;
+const dpick = (name, d, al) => `<label class="dpick"><b>${dayYear(d)}</b><input type="date" name="${name}" value="${d}" aria-label="${al || (name === 'pend' ? 'Last day' : 'First day')}"></label>`;
 function cycleTiles(skip) { return S.plan.cycle.map((c, i) => i === skip ? '' : `<button class="ctile" data-ci="${i}" style="--c:${JCOL[c.w] || 'var(--muted)'}"><small>Day ${i + 1}</small><b>${TYPE_LABEL[c.w] || c.w}</b></button>`).join(''); }
 function myPlanHtml() {
   const p = P(), ph = S.phase, kind = ph.kind, og = isOngoing(), n = cycleLen(), cycles = Math.max(1, Math.round((D() + 1) / n));
@@ -5846,6 +6003,225 @@ function bindBatch() {
   const dn = $('#batchDone'); if (dn) dn.onclick = () => { b.rows.forEach(r => { try { URL.revokeObjectURL(r.thumb); } catch (e) {} }); R.batch = null; if (R.stack.length) { back(); return; } R.date = today(); go('today', {}, false, 'fade'); };
   const add = $('[data-addshots]'), inp = $('#addShots'); if (add && inp) { add.onclick = () => inp.click(); inp.onchange = () => { const files = Array.from(inp.files || []); inp.value = ''; if (!files.length) return; const n = b.rows.length; files.forEach((f, k) => b.rows.push({ i: n + k, file: f, thumb: URL.createObjectURL(f), status: 'reading', kind: null, date: null, values: null, note: '', late: null })); const y = window.scrollY; render(); window.scrollTo(0, y); }; }
   if (b && b.rows.some(r => r.status === 'reading')) runBatch();
+}
+
+/* ---------- Habits & goals: the daily habits (on / off, days, how they count, your own) and the goals ----------
+   A habit switched off, edited, added or deleted changes from today on: the days already gone keep what they had, so their
+   balls, perfect days and Ki never change (editHabits). Goals: one main goal; a weight you set as the main goal sets the goal
+   weight, the plan line and the power level (mainWeightGoal). */
+const HB_BLOCKS = { tick: ['Tick', 'one tap'], num: ['Number', 'with a target'], band: ['From the band', 'steps'] };
+const HB_PH = { tick: 'Meal prep', num: 'Water', band: 'Steps' };
+function habitsSub() { const n = (S.habits || []).filter(h => !h.off).length, g = (S.goals || []).length; return n + (n === 1 ? ' habit' : ' habits') + ' · ' + g + (g === 1 ? ' goal' : ' goals'); }
+// a habit's days in a few words: Every day · Days 2 · 4 · 6 · 7 days a cycle · On Legs and Muay Thai days
+function schedText(h) {
+  const s = (h && h.sched) || {}, n = cycleLen();
+  if (s.kind === 'cycleDays') { const d = [...new Set((s.days || []).filter(x => x >= 1 && x <= n))].sort((a, b) => a - b); return d.length >= n ? 'Every day' : !d.length ? 'No days' : d.length > 4 ? d.length + ' days a cycle' : (d.length === 1 ? 'Day ' : 'Days ') + d.join(' · '); }
+  if (s.kind === 'withWorkout') { const g = DAY_TYPES.filter(k => (s.groups || []).includes(k)); if (!g.length) return 'No days'; if (g.length === DAY_TYPES.length) return 'Every day';
+    if (g.join() === 'push,pull,legs,mt') return 'Training days'; if (g.join() === 'rest') return 'Rest days';
+    const l = g.map(k => k === 'rest' ? 'rest' : TYPE_LABEL[k]); return 'On ' + (l.length === 1 ? l[0] : l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1]) + ' days'; }
+  return 'Every day';
+}
+// the row's second line: the days, your own habit's target, how it counts when not the usual (each part its own words)
+function habitSubHtml(h) {
+  const p = [`<i>${esc(schedText(h))}</i>`], own = isCustomHabit(h.id);
+  if (own && h.block === 'num') p.push(`<i>${fmtHV(+h.target || 0)}${h.unit ? ` <i class="usertext">${esc(h.unit)}</i>` : ''}</i>`);
+  if (own && h.block === 'band') p.push(`<i>${fmtN(+h.target || 0)} steps</i>`);
+  if (h.req === true || h.req === false) p.push(`<i>${h.req ? 'required' : 'bonus'}</i>`);
+  return p.join(' · ');
+}
+function habitRow(h) {
+  const on = !h.off, own = isCustomHabit(h.id);
+  return `<div class="srow hrow ${on ? '' : 'off'}" data-hrow="${h.id}"><button class="hopen" data-hopen="${h.id}"><span class="si">${IC4[itemIc(h)] || ''}</span><span class="st"><b${own ? ' class="usertext"' : ''}>${esc(h.label)}</b><em>${habitSubHtml(h)}</em></span></button><button class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${on}" aria-label="${esc(h.label)}" data-hsw="${h.id}"><i></i></button></div>`;
+}
+function habitsHtml() {
+  const hs = Array.isArray(S.habits) ? S.habits : [], gs = (S.goals || []).slice().sort((a, b) => (b.main ? 1 : 0) - (a.main ? 1 : 0));
+  return `<div class="screen pplan hgp">${topbar('Habits & goals', '')}
+    <div class="sgl">Daily habits</div><div class="sgrp" id="hlist">${hs.map(habitRow).join('')}<button class="srow addrow" data-hadd><span class="st"><b>+ Add a habit</b></span></button></div>
+    <div class="sgl">Goals</div><div class="sgrp" id="glist">${gs.map(goalRow).join('')}<button class="srow addrow" data-gadd><span class="st"><b>+ Add goal</b></span></button></div>
+  </div>`;
+}
+function habitsRefresh() { if (R.screen !== 'habits') return; const y = window.scrollY; render(); window.scrollTo(0, y); }
+function bindHabits() {
+  app.querySelectorAll('[data-hsw]').forEach(b => b.onclick = () => {
+    const id = b.dataset.hsw; editHabits(list => { const x = list.find(h => h.id === id); if (x) { if (x.off) delete x.off; else x.off = true; } }); save();
+    const on = !(S.habits.find(h => h.id === id) || {}).off; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); b.closest('.hrow').classList.toggle('off', !on); vib(10);
+  });
+  app.querySelectorAll('[data-hopen]').forEach(b => b.onclick = () => habitSheet(b.dataset.hopen));
+  const ha = $('[data-hadd]'); if (ha) ha.onclick = () => habitSheet(null);
+  app.querySelectorAll('[data-gid]').forEach(b => b.onclick = () => go('goal', { id: b.dataset.gid }));
+  const ga = $('[data-gadd]'); if (ga) ga.onclick = () => go('goal', {});
+}
+// A habit's sheet: name (your own), target and unit (a number), the days, how it counts. A new one starts with its block.
+function habitSheet(id) {
+  const cur = id ? (S.habits || []).find(h => h.id === id) : null; if (id && !cur) return;
+  const own = !cur || isCustomHabit(cur.id), n = cycleLen(), h = cur ? JSON.parse(JSON.stringify(cur)) : { block: 'tick', label: '', sched: { kind: 'daily' }, req: false };
+  h.sched = Object.assign({ kind: 'daily' }, h.sched);
+  const seg = (attr, opts, cur2) => `<div class="seg4 s3" role="group">${opts.map(([v, l]) => `<button data-${attr}="${v}" class="${String(cur2) === String(v) ? 'on' : ''}" aria-pressed="${String(cur2) === String(v)}">${l}</button>`).join('')}</div>`;
+  const form = () => {
+    const sk = h.sched.kind, days = h.sched.days || [], grp = h.sched.groups || [];
+    return (cur ? '' : `<div class="tgrid t3" role="group" aria-label="Kind">${Object.keys(HB_BLOCKS).map(k => `<button data-hblk="${k}" class="${h.block === k ? 'on' : ''}" aria-pressed="${h.block === k}"><b>${HB_BLOCKS[k][0]}</b><small>${HB_BLOCKS[k][1]}</small></button>`).join('')}</div>`)
+      + (own ? `<div class="field" style="margin-top:${cur ? 0 : 14}px"><label>Name</label><input name="hname" maxlength="32" value="${esc(h.label)}" placeholder="${HB_PH[h.block] || ''}" autocapitalize="sentences"></div>` : '')
+      + (own && h.block === 'num' ? `<div class="grid4"><div class="field"><label>Target</label><input name="htarget" type="number" inputmode="decimal" step="any" value="${h.target == null ? '' : esc(h.target)}" placeholder="3"></div><div class="field"><label>Unit</label><input name="hunit" maxlength="10" value="${esc(h.unit || '')}" placeholder="L" autocapitalize="off"></div></div>` : '')
+      + (own && h.block === 'band' ? `<div class="field"><label>Steps</label><input name="htarget" type="number" inputmode="numeric" step="500" value="${h.target == null ? 8000 : esc(h.target)}"></div>` : '')
+      + `<div class="sgl">Schedule</div>${seg('hsk', [['daily', 'Every day'], ['cycleDays', 'Cycle days'], ['withWorkout', 'With workouts']], sk)}`
+      + (sk === 'cycleDays' ? `<div class="dtog" style="--n:${n}" role="group" aria-label="Cycle days">${Array.from({ length: n }, (x, i) => i + 1).map(i => `<button data-hday="${i}" class="${days.includes(i) ? 'on' : ''}" aria-pressed="${days.includes(i)}">${i}</button>`).join('')}</div>` : '')
+      + (sk === 'withWorkout' ? `<div class="wtog" role="group" aria-label="Workouts">${DAY_TYPES.map(k => `<button data-hgrp="${k}" class="${grp.includes(k) ? 'on' : ''}" aria-pressed="${grp.includes(k)}" style="--c:${JCOL[k]}"><i></i>${TYPE_LABEL[k]}</button>`).join('')}</div>` : '')
+      + `<div class="sgl">Counts for the ball</div>${seg('hreq', [['true', 'Required'], ['false', 'Bonus'], ['auto', 'Auto']], h.req == null ? 'auto' : h.req)}`;
+  };
+  const title = cur ? (own ? `<span class="usertext">${esc(cur.label)}</span>` : esc(cur.label)) : 'New habit';
+  modal(`<div class="hdl"></div><div class="shd"><span class="h1">${title}</span><span class="cond muted">${cur && own ? HB_BLOCKS[h.block][0] : ''}</span></div><div id="hform">${form()}</div>
+    <div class="row" data-foot>${cur && own ? '<button class="btn sec" data-hdel>Delete</button>' : ''}<button class="btn" data-hsave>${cur ? 'Save' : 'Add habit'}</button></div>`, b => {
+    b.classList.add('sheetbg', 'logsh', 'hsheet'); const box = b.querySelector('#hform');
+    const collect = () => { const o = readForm(box); if (o.hname != null) h.label = String(o.hname); if (o.hunit != null) h.unit = String(o.hunit).trim(); if ('htarget' in o) h.target = o.htarget; };
+    const paint = kept => { if (!kept) collect(); box.innerHTML = form(); applyUnits(box); bindForm(); };
+    const bindForm = () => {
+      box.querySelectorAll('[data-hblk]').forEach(x => x.onclick = () => { if (h.block === x.dataset.hblk) return; collect(); h.block = x.dataset.hblk; h.target = h.block === 'band' ? 8000 : null; if (h.block !== 'num') delete h.unit; vib(8); paint(true); });
+      box.querySelectorAll('[data-hsk]').forEach(x => x.onclick = () => { const k = x.dataset.hsk; if (h.sched.kind === k) return; h.sched.kind = k;
+        if (k === 'cycleDays' && !(h.sched.days || []).length) h.sched.days = Array.from({ length: n }, (y, i) => i + 1);
+        if (k === 'withWorkout' && !(h.sched.groups || []).length) h.sched.groups = ['push', 'pull', 'legs', 'mt']; vib(8); paint(); });
+      const tog = (attr, key, val) => box.querySelectorAll(`[data-${attr}]`).forEach(x => x.onclick = () => { const v = val(x.dataset[attr]), l = h.sched[key] = (h.sched[key] || []).slice(), i = l.indexOf(v); if (i >= 0) l.splice(i, 1); else l.push(v); x.classList.toggle('on', i < 0); x.setAttribute('aria-pressed', i < 0); vib(6); });
+      tog('hday', 'days', Number); tog('hgrp', 'groups', String);
+      box.querySelectorAll('[data-hreq]').forEach(x => x.onclick = () => { const v = x.dataset.hreq; h.req = v === 'auto' ? 'auto' : v === 'true'; box.querySelectorAll('[data-hreq]').forEach(y => { y.classList.toggle('on', y === x); y.setAttribute('aria-pressed', y === x); }); vib(6); });
+    };
+    bindForm();
+    b.querySelector('[data-hsave]').onclick = () => {
+      collect(); const sk = h.sched.kind;
+      if (own && !h.label.trim()) return toast('Name the habit');
+      if (own && (h.block === 'num' || h.block === 'band') && !(+h.target > 0)) return toast('Set a target');
+      const sched = sk === 'cycleDays' ? { kind: sk, days: (h.sched.days || []).slice().sort((x, y) => x - y) } : sk === 'withWorkout' ? { kind: sk, groups: DAY_TYPES.filter(k => (h.sched.groups || []).includes(k)) } : { kind: 'daily' };
+      if ((sched.days && !sched.days.length) || (sched.groups && !sched.groups.length)) return toast('Pick at least one day');
+      const req = h.req == null ? 'auto' : h.req;
+      // the same days in another order are no change (nothing is saved for the days gone then)
+      const same = (a, b2) => JSON.stringify(Object.assign({}, a, { days: (a.days || []).slice().sort(), groups: (a.groups || []).slice().sort() })) === JSON.stringify(Object.assign({}, b2, { days: (b2.days || []).slice().sort(), groups: (b2.groups || []).slice().sort() }));
+      if (cur) editHabits(list => { const x = list.find(y => y.id === cur.id); if (!x) return; if (!same(x.sched || { kind: 'daily' }, sched)) x.sched = sched; x.req = req; if (own) { x.label = h.label.trim(); if (x.block === 'num') { x.target = +h.target; x.unit = h.unit || ''; } if (x.block === 'band') x.target = +h.target; } });
+      else editHabits(list => list.push(Object.assign({ id: newHabitId(), block: h.block, label: h.label.trim(), sched, req }, h.block === 'num' ? { unit: h.unit || '', target: +h.target } : h.block === 'band' ? { target: +h.target } : null)));
+      save(); b.close(); habitsRefresh(); vib(15);
+    };
+    const del = b.querySelector('[data-hdel]'); if (del) del.onclick = async () => { b.close(); if (!await ask('Delete this habit?', 'It goes from today on. The days before keep it.', 'Delete', true)) return; editHabits(list => { const i = list.findIndex(y => y.id === cur.id); if (i >= 0) list.splice(i, 1); }); save(); habitsRefresh(); };
+  });
+}
+
+/* ---------- Goals: rows with now → target, and the editor ---------- */
+const GOAL_TYPES = [['body', 'Body', 'weight, body fat, muscle'], ['lift', 'A lift', 'one exercise'], ['consistency', 'Consistency', 'perfect days'], ['custom', 'Custom', 'any number']];
+const BODY_M = { weight: ['Weight', 'kg'], fat: ['Body fat', '%'], muscle: ['Muscle', 'kg'] };
+const GOAL_TAG = { body: 'Body', lift: 'Lift', consistency: 'Days', custom: 'Custom' };
+// where the body is now: the trend (weight) or the recent average, else the last reading, else the starting point
+function goalBodyNow(m) { const td = today(); let v = current(m, td); if (v == null) { const lr = lastReading(m, td); v = lr ? lr.v : null; } if (v == null && S.project && S.project.start) { const s = S.project.start[m]; v = s == null || s === '' ? null : +s; } return v; }
+// a lift's best logged set: the heaviest weight (most reps at it), every project, 5-min finishers left out
+function liftBest(name) {
+  let best = null; if (!name) return null;
+  for (const s of allSessions()) { const e = (s.ex || []).find(x => x.n === name); if (!e || typeIn(s, name) === 'max') continue;
+    for (const st of e.sets || []) { const kg = +st.kg || 0, r = +st.reps || 0; if (!r || !(kg > 0)) continue; if (!best || kg > best.kg || (kg === best.kg && r > best.reps)) best = { kg, reps: r, date: s.date }; } }
+  return best;
+}
+const liftStep = name => (EQUIP[name] || '').split(' ').includes('bb') ? 2.5 : 1;
+// the exercises a lift goal can be about: every one done in sets (the 5-min finishers aren't)
+function liftNames(group) { const out = []; for (const k in PROGRAM.workouts) { const w = PROGRAM.workouts[k]; if (group && w.group !== group) continue; for (const e of w.ex) if (e.type !== 'max' && !out.includes(e.n)) out.push(e.n); } return out; }
+function perfect7() { let n = 0; for (let i = 0; i < 7; i++) { const d = addDays(today(), -i); if (!S.project || tOf(d) < 0) break; if (dayCompletion(d) === 'done') n++; } return n; }
+function goalNow(g) {
+  if (g.type === 'body') return goalBodyNow(BODY_M[g.metric] ? g.metric : 'weight');
+  if (g.type === 'lift') { const b = liftBest(g.exercise); return b ? b.kg : null; }
+  if (g.type === 'consistency') return perfect7();
+  const ks = Object.keys(g.vals || {}).filter(d => d <= today()).sort(); return ks.length ? +g.vals[ks[ks.length - 1]] : null;
+}
+// what a goal row shows: the plan's own weight goal follows the plan (its target and date are worked out, not stored)
+function goalShow(g) {
+  const p = S.project, by = g.auto ? (isOngoing() ? horizonDate() : p.endDate) : g.by, tg = g.auto ? planGoalWeight() : +g.target, bys = by ? `<i>by ${fmtShort(by)}</i>` : '';
+  if (g.type === 'body') { const m = BODY_M[g.metric] ? g.metric : 'weight', now = goalNow(g); return { title: BODY_M[m][0], line: `<i>${now == null ? '—' : now.toFixed(1)} → ${(+tg).toFixed(1)}${BODY_M[m][1] === '%' ? ' %' : ' kg'}</i> · ${bys}`, target: tg, by }; }
+  if (g.type === 'lift') { const now = goalNow(g); return { title: g.exercise || '—', line: `<i>${now == null ? '—' : fmtHV(now)} → ${fmtHV(tg)} kg</i> · ${bys}`, target: tg, by }; }
+  if (g.type === 'consistency') return { title: 'Consistency', line: `<i>${goalNow(g)} → ${tg} perfect days of 7</i>`, target: tg };
+  const now = goalNow(g); return { title: g.name || '—', user: true, line: `<i>${now == null ? '—' : fmtHV(now)} → ${fmtHV(tg)}${g.unit ? ` <i class="usertext">${esc(g.unit)}</i>` : ''}</i> · ${bys}`, target: tg, by };
+}
+function goalRow(g) {
+  const v = goalShow(g);
+  return `<button class="srow grow" data-gid="${esc(g.id)}"><span class="st"><b${v.user ? ' class="usertext"' : ''}>${esc(v.title)}</b><em>${v.line}</em></span>${g.main ? '<span class="stc or">Main</span>' : `<span class="gtag">${g.auto ? 'Plan' : GOAL_TAG[g.type] || ''}</span>`}<span class="chev">${IC4.chev}</span></button>`;
+}
+// The editor works on a draft (kept with the page, so a type change or a trip to the exercise list keeps what you typed)
+function goalDraft() {
+  if (R.params.draft) return R.params.draft;
+  const g = R.params.id ? (S.goals || []).find(x => x.id === R.params.id) : null; let d;
+  if (g) { d = JSON.parse(JSON.stringify(g)); if (g.auto) { const sh = goalShow(g); d.target = sh.target; d.by = sh.by; d.shown = { target: sh.target, by: sh.by }; } if (g.type === 'custom') d.now = goalNow(g); if (!d.by) d.by = goalBy0(); }
+  else { d = { type: 'body', metric: 'weight', main: !(S.goals || []).some(x => x.main) }; goalFill(d, true); }
+  return (R.params.draft = d);
+}
+// a type's starting numbers (reset: the type or the measure just changed)
+function goalBy0() { const td = today(), p = S.project; return p && !isOngoing() && p.endDate > td ? p.endDate : addDays(td, 84); }   // the project's last day, else 12 weeks out
+function goalFill(d, reset) {
+  const td = today(), p = S.project;
+  if (!d.by || d.by <= td) d.by = goalBy0();
+  if (d.type === 'body') { if (!BODY_M[d.metric]) d.metric = 'weight'; if (reset || d.target == null) { const now = goalBodyNow(d.metric); d.target = d.metric === 'weight' ? planGoalWeight() : now == null ? null : Math.round((now + (d.metric === 'fat' ? -2 : 1)) * 2) / 2; } }
+  else if (d.type === 'lift') { if (reset) d.target = null; if (d.exercise && d.target == null) { const b = liftBest(d.exercise); d.target = b ? b.kg + liftStep(d.exercise) * 2 : null; } }
+  else if (d.type === 'consistency') { if (reset || !(d.target >= 1 && d.target <= 7)) d.target = 6; }
+  else if (reset) { d.target = null; d.now = null; }
+}
+// One line before saving: the pace the goal asks for against what is realistic (body: 1 % of body weight a week; muscle
+// 0.25 kg a week; a lift: 0.5 kg a week intermediate, 1 kg a week beginner)
+function goalCheck(d) {
+  if (d.type === 'consistency' || d.type === 'custom' || !(+d.target > 0) || !d.by) return null;
+  const wk = diffDays(today(), d.by) / 7; if (wk <= 0) return { html: 'Pick a date after today', warn: true };
+  const sg = v => (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2);
+  if (d.type === 'body') {
+    const m = d.metric, now = goalBodyNow(m); if (now == null) return null; if (Math.abs(d.target - now) < 0.05) return { html: 'Already there' };
+    if (m === 'muscle') { const r = (d.target - now) / wk, ok = Math.abs(r) <= 0.25; return { html: `<b>${sg(r)} kg</b> a week · ${ok ? 'realistic' : 'ambitious, try a later date'}`, warn: !ok }; }
+    const bw = goalBodyNow('weight') || +P().start.weight || 80, r = m === 'fat' ? bw * (d.target - now) / 100 / wk : (d.target - now) / wk, ok = Math.abs(r) <= bw * 0.01;
+    return { html: `<b>${sg(r)} kg${m === 'fat' ? ' fat' : ''}</b> a week · ${ok ? 'realistic' : 'faster than 1 % — try a later date'}`, warn: !ok };
+  }
+  const b = liftBest(d.exercise); if (!b) return null; const r = (d.target - b.kg) / wk; if (r <= 0) return { html: 'Already there' };
+  return { html: `<b>+${r.toFixed(2)} kg</b> a week · ${r <= 0.5 ? 'realistic' : r <= 1 ? 'realistic for a beginner' : 'ambitious, try a later date'}`, warn: r > 1 };
+}
+const decStepper = (name, val, step) => smallStepper(name, val, '', step).replace('inputmode="numeric"', 'inputmode="decimal"');
+function goalHtml() {
+  const d = goalDraft(), id = R.params.id, chk = goalCheck(d);
+  const main = prow('Main goal or side goal', '', `<span class="lseg" role="group" aria-label="Main goal or side goal">${[['1', 'Main'], ['0', 'Side']].map(([v, l]) => `<button data-gmain="${v}" class="${!!d.main === (v === '1') ? 'on' : ''}" aria-pressed="${!!d.main === (v === '1')}">${l}</button>`).join('')}</span>`);
+  const by = d.type === 'consistency' ? '' : prow('By', '', dpick('gby', d.by || goalBy0(), 'By'));
+  let rows = '';
+  if (d.type === 'body') { const m = d.metric, now = goalBodyNow(m), u = BODY_M[m][1];
+    rows = `<div class="prow col"><div class="seg4 s3" role="group" aria-label="Measure">${Object.keys(BODY_M).map(k => `<button data-gmet="${k}" class="${m === k ? 'on' : ''}" aria-pressed="${m === k}">${BODY_M[k][0]}</button>`).join('')}</div></div>`
+      + prow('Now', '', `<b class="pv">${now == null ? '—' : now.toFixed(1) + (u === '%' ? ' %' : ' kg')}</b>`) + prow('Target', u === '%' ? '%' : 'kg', decStepper('gtarget', d.target, 0.5)) + by + main; }
+  else if (d.type === 'lift') { const b = liftBest(d.exercise);
+    rows = prow('Exercise', '', `<button class="gex" data-gex><span>${d.exercise ? esc(d.exercise) : 'Pick'}</span>${IC4.chev}</button>`)
+      + prow('Now', '', `<b class="pv">${b ? fmtHV(b.kg) + ' kg × ' + b.reps : '—'}</b>`) + prow('Target', 'kg', decStepper('gtarget', d.target, d.exercise ? liftStep(d.exercise) : 1)) + by + main; }
+  else if (d.type === 'consistency') rows = prow('Now', '', `<b class="pv">${perfect7()} / 7</b>`) + prow('Target', 'perfect days of 7', smallStepper('gtarget', d.target, '', 1)) + main;
+  else rows = prow('Name', '', `<input class="pin usertext" name="gname" maxlength="28" value="${esc(d.name || '')}" placeholder="Pages read" autocapitalize="sentences">`)
+      + prow('Unit', '', `<input class="pin usertext" name="gunit" maxlength="10" value="${esc(d.unit || '')}" placeholder="pages" autocapitalize="off">`)
+      + prow('Now', '', decStepper('gnow', d.now, 1)) + prow('Target', '', decStepper('gtarget', d.target, 1)) + by + main;
+  return `<div class="screen bar pplan gedit">${topbar(id ? 'Edit goal' : 'New goal', '')}
+    <div class="tgrid" role="group" aria-label="Type">${GOAL_TYPES.map(([k, t, s]) => `<button data-gty="${k}" class="${d.type === k ? 'on' : ''}" aria-pressed="${d.type === k}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>
+    <div class="sgrp pcard">${rows}</div>
+    <div class="gchk ${chk && chk.warn ? 'warn' : ''}" id="gchk" ${chk ? '' : 'hidden'}>${chk ? chk.html : ''}</div></div>
+  <div class="botbar">${id ? '<button class="btn sec" data-gdel>Delete</button>' : ''}<button class="btn" data-gsave>${id ? 'Save' : 'Add goal'}</button></div>`;
+}
+function bindGoal() {
+  const d = goalDraft(), keepY = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  const chk = () => { const el = $('#gchk'); if (!el) return; const c = goalCheck(d); el.hidden = !c; el.className = 'gchk' + (c && c.warn ? ' warn' : ''); el.innerHTML = c ? c.html : ''; };
+  app.querySelectorAll('[data-gty]').forEach(b => b.onclick = () => { if (d.type === b.dataset.gty) return; d.type = b.dataset.gty; goalFill(d, true); vib(8); keepY(); });
+  app.querySelectorAll('[data-gmet]').forEach(b => b.onclick = () => { if (d.metric === b.dataset.gmet) return; d.metric = b.dataset.gmet; goalFill(d, true); vib(8); keepY(); });
+  app.querySelectorAll('[data-gmain]').forEach(b => b.onclick = () => { d.main = b.dataset.gmain === '1'; app.querySelectorAll('[data-gmain]').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }); vib(8); });
+  wireSteppers(app, inp => { const v = num(inp.value); if (inp.name === 'gtarget') { d.target = d.type === 'consistency' && v != null ? Math.max(1, Math.min(7, Math.round(v))) : v; if (d.type === 'consistency' && v != null && String(d.target) !== inp.value && !KP.inp) inp.value = d.target; } else if (inp.name === 'gnow') d.now = v; chk(); });
+  app.querySelectorAll('input.pin').forEach(i => i.addEventListener('input', () => { if (i.name === 'gname') d.name = i.value; else if (i.name === 'gunit') d.unit = i.value; }));
+  app.querySelectorAll('.dpick input').forEach(i => { i.addEventListener('click', () => { try { i.showPicker(); } catch (e) {} });
+    i.addEventListener('change', () => { if (!/^\d{4}-\d\d-\d\d$/.test(i.value)) return; d.by = i.value; i.previousElementSibling.textContent = dayYear(i.value); chk(); }); });
+  const gx = $('[data-gex]'); if (gx) gx.onclick = () => setSheet('Exercise', '', ['push', 'pull', 'legs'].map(g => `<div class="sgl">${TYPE_LABEL[g]}</div><div class="sgrp">${liftNames(g).map(n => { const b = liftBest(n), on = d.exercise === n;
+      return `<button class="srow chrow ${on ? 'cur' : ''}" data-exn="${esc(n)}"><span class="cdot" style="background:${JCOL[g]}"></span><span class="st"><b>${esc(n)}</b>${b ? `<span>${fmtHV(b.kg)} kg × ${b.reps}</span>` : ''}</span>${on ? '<span class="stc on">✓</span>' : ''}</button>`; }).join('')}</div>`).join(''), b => {
+    b.querySelectorAll('[data-exn]').forEach(x => x.onclick = () => { b.close(); if (d.exercise !== x.dataset.exn) { d.exercise = x.dataset.exn; d.target = null; goalFill(d); } keepY(); }); });
+  $('[data-gsave]').onclick = () => {
+    if (d.type === 'lift' && !d.exercise) return toast('Pick an exercise');
+    if (d.type === 'custom' && !String(d.name || '').trim()) return toast('Name the goal');
+    if (!(+d.target > 0)) return toast('Set a target');
+    if (d.type !== 'consistency' && !(d.by > today())) return toast('Pick a date after today');
+    const ex = R.params.id ? (S.goals || []).find(x => x.id === R.params.id) : null, g = ex || { id: newGoalId(), created: today() };
+    // the plan's own weight goal stays the plan's while its target and date are left as they were
+    const keepAuto = !!(ex && ex.auto && d.shown && d.type === 'body' && d.metric === 'weight' && +d.target === +d.shown.target && d.by === d.shown.by), was = ex ? goalNow(ex) : null;
+    for (const k of ['metric', 'exercise', 'name', 'unit', 'by', 'auto']) delete g[k];
+    g.type = d.type; g.target = +d.target; g.main = !!d.main;
+    if (d.type === 'body') g.metric = d.metric; else if (d.type === 'lift') g.exercise = d.exercise; else if (d.type === 'custom') { g.name = String(d.name).trim(); g.unit = String(d.unit || '').trim(); }
+    if (d.type !== 'consistency') g.by = d.by; if (keepAuto) g.auto = true;
+    if (d.type === 'custom') { if (d.now != null && (!ex || ex.type !== 'custom' || +d.now !== was)) { g.vals = Object.assign({}, g.vals); g.vals[today()] = +d.now; } } else delete g.vals;
+    if (!ex) S.goals.push(g); if (g.main) S.goals.forEach(x => { if (x !== g) x.main = false; });
+    planChanged(); vib(15); back();
+  };
+  const dl = $('[data-gdel]'); if (dl) dl.onclick = async () => { if (!await ask('Delete this goal?', '', 'Delete', true)) return; S.goals = (S.goals || []).filter(x => x.id !== R.params.id); planChanged(); back(); };
+  chk();
 }
 
 /* ============ Language: English or Croatian ============
@@ -6372,6 +6748,36 @@ for (const src in hrSrc) for (const [en, hr] of [[' − {2}', ' − {2}'], [' + 
   HR_DICT['BMR {0} + ' + src + ' {1}' + en] = 'BMR {0} + ' + hrSrc[src] + ' {1}' + hr;
   HR_DICT['Calories · BMR {0} + ' + src + ' {1}' + en] = 'Kalorije · BMR {0} + ' + hrSrc[src] + ' {1}' + hr;
 }
+
+/* v6 · Habits & goals */
+const hrKor = n => hrPl(n, 'korak', 'koraka', 'koraka');
+Object.assign(HR_DICT, {
+  'Habits & goals': 'Navike i ciljevi', 'Daily habits': 'Dnevne navike', '+ Add a habit': '+ Dodaj naviku', '+ Add goal': '+ Dodaj cilj',
+  'Every day': 'Svaki dan', 'No days': 'Nijedan dan', 'Training days': 'Dani treninga', 'Rest days': 'Dani odmora', '{0} days a cycle': v => v[0] + ' ' + dana(v[0]) + ' u ciklusu',
+  'required': 'obavezno', '{0} steps': v => v[0] + ' ' + hrKor(v[0]), '{0} / {1} steps': v => v[0] + ' / ' + v[1] + ' ' + hrKor(v[1]), '— / {0} steps': v => '— / ' + v[0] + ' ' + hrKor(v[0]),
+  '/ {0} steps': v => '/ ' + v[0] + ' ' + hrKor(v[0]), '{0} steps · {1} active kcal': v => v[0] + ' ' + hrKor(v[0]) + ' · ' + v[1] + ' aktivnih kcal',
+  'New habit': 'Nova navika', 'Add habit': 'Dodaj naviku', 'Kind': 'Vrsta', 'Tick': 'Kvačica', 'one tap': 'jedan dodir', 'Number': 'Broj', 'with a target': 's ciljem', 'From the band': 'S narukvice', 'steps': 'koraci',
+  'Target': 'Cilj', 'Unit': 'Jedinica', 'Schedule': 'Raspored', 'Cycle days': 'Dani ciklusa', 'With workouts': 'Uz treninge',
+  'Counts for the ball': 'Broji se za kuglu', 'Required': 'Obavezno', 'Auto': 'Auto', 'Name the habit': 'Upiši naziv navike', 'Set a target': 'Postavi cilj', 'Pick at least one day': 'Odaberi barem jedan dan',
+  'Delete this habit?': 'Obrisati ovu naviku?', 'It goes from today on. The days before keep it.': 'Nestaje od danas. Prethodni dani je zadržavaju.',
+  'Target {0}': 'Cilj {0}', '✓ Target {0}': '✓ Cilj {0}', 'Meal prep': 'Priprema obroka', 'L': 'L', 'Pages read': 'Pročitane stranice', 'pages': 'stranice',
+  'New goal': 'Novi cilj', 'Edit goal': 'Uredi cilj', 'Add goal': 'Dodaj cilj', 'Type': 'Vrsta', 'Measure': 'Mjera', 'weight, body fat, muscle': 'težina, mast, mišići',
+  'A lift': 'Dizanje', 'one exercise': 'jedna vježba', 'Consistency': 'Dosljednost', 'perfect days': 'savršeni dani', 'Custom': 'Vlastiti', 'any number': 'bilo koji broj',
+  'Now': 'Sada', 'By': 'Do', 'Main goal or side goal': 'Glavni ili sporedni cilj', 'Main': 'Glavni', 'Side': 'Sporedni', 'Exercise': 'Vježba', 'Pick': 'Odaberi', 'Lift': 'Dizanje', 'Days': 'Dani',
+  'perfect days of {0}': v => 'savršenih dana od ' + v[0], '{0} → {1} perfect days of {2}': v => v[0] + ' → ' + v[1] + ' savršenih dana od ' + v[2],
+  'by {0}': 'do {0}', '{0} → {1} %': '{0} → {1} %', '— → {0} kg': '— → {0} kg', '— → {0} %': '— → {0} %', '{0} kg × {1}': '{0} kg × {1}',
+  '−{0} kg': '−{0} kg', '+{0} kg': '+{0} kg', '−{0} kg fat': '−{0} kg masti', '+{0} kg fat': '+{0} kg masti',
+  'a week · realistic': 'tjedno · realno', 'a week · realistic for a beginner': 'tjedno · realno za početnika', 'a week · ambitious, try a later date': 'tjedno · ambiciozno, probaj kasniji datum',
+  'a week · faster than {0} % — try a later date': 'tjedno · brže od {0} % — probaj kasniji datum', 'Pick a date after today': 'Odaberi datum nakon današnjeg', 'Already there': 'Već si tu',
+  'Pick an exercise': 'Odaberi vježbu', 'Name the goal': 'Upiši naziv cilja', 'Delete this goal?': 'Obrisati ovaj cilj?',
+  'Everything on this phone is replaced by the backup file.': 'Sve na ovom mobitelu zamjenjuje se datotekom kopije.', '{0} · Rest': '{0} · Odmor',
+});
+// habits and goals counts: 5 navika · 1 cilj
+for (const a of ['habit', 'habits']) for (const b of ['goal', 'goals']) HR_DICT['{0} ' + a + ' · {1} ' + b] = v => v[0] + ' ' + hrPl(v[0], 'navika', 'navike', 'navika') + ' · ' + v[1] + ' ' + hrPl(v[1], 'cilj', 'cilja', 'ciljeva');
+// a habit's days: "Days 2 · 4 · 6" and "On Legs and Muay Thai days" (every mix of the day types)
+for (let n = 2; n <= 4; n++) HR_DICT['Days ' + Array.from({ length: n }, (x, i) => '{' + i + '}').join(' · ')] = 'Dani ' + Array.from({ length: n }, (x, i) => '{' + i + '}').join(' · ');
+{ const T = [['Push', 'Push'], ['Pull', 'Pull'], ['Legs', 'Legs'], ['Muay Thai', 'Muay Thai'], ['rest', 'odmor']], list = (l, and) => l.length === 1 ? l[0] : l.slice(0, -1).join(', ') + and + l[l.length - 1];
+  for (let m = 1; m < 31; m++) { const pick = T.filter((x, i) => m & (1 << i)); HR_DICT['On ' + list(pick.map(x => x[0]), ' and ') + ' days'] = 'Dani: ' + list(pick.map(x => x[1]), ' i '); } }
 /* ---------- Boot ---------- */
 (async function boot() {
   i18nStart();   // Croatian: translate everything the app shows from here on

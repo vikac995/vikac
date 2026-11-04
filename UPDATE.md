@@ -1,6 +1,6 @@
-# What to do now — updating to v5.5.0
+# What to do now — updating to v5.6.0
 
-This zip is the complete app at v5.5.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v5.6.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v5.5.0 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (from v5.0 it's the **gear** at the top right; before that a tab, called **Profile** before 1.6) → **Check for updates**. It should say "Version 5.5.0 found — reloading".
+1. Open the app on the phone. Go to **Settings** (from v5.0 it's the **gear** at the top right; before that a tab, called **Profile** before 1.6) → **Check for updates**. It should say "Version 5.6.0 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The phone's own bar under the app (orange before 4.0, dark now) and the app name come with the home-screen icon: Chrome refreshes them by itself within a few days, or right away when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -40,6 +40,7 @@ Nothing else changes: same address, same key, the bucket and the data stay. Work
 
 ## E. What changed since the version on your phone
 
+- v5.6.0 — **Habits & goals (v6 step 2b).** Settings → *Habits & goals*: every daily habit has an on/off switch; tap one to change its days (every day, chosen cycle days, or with certain workouts) and whether it counts for the ball (required, bonus, or auto as now). *+ Add a habit*: a tick (meal prep), a number with a target (water 3 L — a stepper on Today, done at the target) or steps from the band (done when reached). Changes apply from today on; past days keep their balls and points. **Goals**: body (weight, body fat or muscle), a lift, consistency or custom, each as the main goal or a side goal, with a one-line check whether the target is realistic. A main weight goal with your own target and date now drives the goal weight, the plan line and the power level.
 - v5.5.0 — **My plan and My profile (v6 step 2a).** Settings → *My plan*: phase (Cut / Maintain / Recomp / Bulk) with its kcal size, protein and motivation; length (*Ongoing* or a *Project* with cycles ↔ last day); the 8-day cycle — tap a day to change it, or hold and drag it onto another to swap (changes apply from today; past days keep what they were); the workouts. Settings → *My profile*: sex, age, height, activity (sitting / on my feet / physical work) and BMR, with the calculated value next to yours (*Use* takes it). **Estimates first:** with no band data, activity is estimated from your body and activity level plus your logged training (it replaces the old fixed band default); estimated numbers are marked *est.* — the kcal-left corner, the finished workout's kcal, Muay Thai sessions typed without kcal — and the Nutrition sheet says when the band or a screenshot would make it exact. Typed beats band beats estimate.
 - v5.4.0 — **Workout clock:** tapping *Start workout* starts a clock in the workout's header; *Finish* stops it and the summary asks for the time (− / + to correct it). It stops counting at 3 hours if you forget to finish. That time is the workout's time on the finished card unless the band recorded the session. **The rest timer is now optional:** the *Rest timer off / on* switch sits in the workout's header (off to start; the app remembers). **Kcal left** now says where the activity number comes from (band and its time, *yours* or *estimate*) and the budget line reads *BMR + activity − deficit*.
 - v5.3.0 — **New engine underneath (v6 step 1), nothing looks different.** Your plan (the 8-day cycle), phase (cut: deficit, BMR, protein), profile and daily habits are now stored as their own settings instead of being fixed in the code, so later updates can let you edit them. Your data is converted once on first open, and everything old is kept alongside the new, so nothing can be lost. Ki (consistency points) is now counted in the background; it shows up in a later update.
