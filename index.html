@@ -1233,7 +1233,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 .summon .ssky{inset:0;background:radial-gradient(ellipse 95% 70% at 50% 41%,#211a08 0%,#0a0a0d 55%,#020203 100%);opacity:0}
 .summon .sflk{inset:0;background:#d6defc;opacity:0}
 .summon .sglow{left:50%;top:41%;width:150vw;height:150vw;max-width:900px;max-height:900px;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(255,214,110,.5) 0,rgba(255,150,30,.18) 38%,rgba(0,0,0,0) 66%);opacity:0}
-.summon .scol{left:50%;top:0;bottom:0;width:150px;margin-left:-75px;background:linear-gradient(90deg,rgba(255,210,110,0),rgba(255,214,120,.5) 32%,#fffbea 50%,rgba(255,214,120,.5) 68%,rgba(255,210,110,0));filter:blur(5px);transform:scaleY(0);opacity:0}
+.summon .scol{left:50%;top:-25vh;bottom:-25vh;width:150px;margin-left:-75px;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 24%,#000 76%,transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 24%,#000 76%,transparent 100%);background:linear-gradient(90deg,rgba(255,210,110,0),rgba(255,214,120,.5) 32%,#fffbea 50%,rgba(255,214,120,.5) 68%,rgba(255,210,110,0));filter:blur(5px);transform:scaleY(0);opacity:0}
 .summon .sdr{inset:0;display:flex;align-items:center;justify-content:center;padding-bottom:18vh;opacity:0}
 .summon .sdr img{max-width:min(90vw,460px);max-height:58vh;width:auto!important;height:auto!important;filter:drop-shadow(0 0 26px rgba(255,200,90,.55))}
 .summon .sdr>svg{width:min(90vw,440px);height:auto}
@@ -1254,7 +1254,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.6.1';
+const APP_VERSION = '4.6.2';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -3139,7 +3139,7 @@ function playSummon(o) {
   let sub = '';
   if (cyc) { const all = allCycles(), k = all.filter(c => c.dragon && c.num <= cyc.num).length, of = all.filter(c => c.days.length === 8).length; sub = 'Cycle ' + cyc.num + ' · 7 / 7 balls' + (k ? ' · dragon ' + k + ' of ' + Math.max(of, k) : ''); }
   const el = document.createElement('div'); el.className = 'summon'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'The dragon is summoned');
-  el.innerHTML = `<div class="ssky"></div><div class="sflk"></div><div class="sglow"></div><div class="scol" style="transform-origin:50% ${cy}px"></div><div class="sdr">${dragonBigArt()}</div>
+  el.innerHTML = `<div class="ssky"></div><div class="sflk"></div><div class="sglow"></div><div class="scol" style="transform-origin:50% ${(cy + H * 0.25).toFixed(0)}px"></div><div class="sdr">${dragonBigArt()}</div>
     <div class="stx"><div class="h">The dragon answers</div><div class="s">${esc(sub)}</div></div><div class="sfl"></div><div class="shint">Tap to close</div>`;
   document.body.appendChild(el); lockBody();
   const $s = q => el.querySelector(q), T = [], anims = []; let raf = 0, closed = false, t0 = performance.now();

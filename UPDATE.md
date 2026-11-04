@@ -1,6 +1,6 @@
-# What to do now — updating to v4.6.1
+# What to do now — updating to v4.6.2
 
-This zip is the complete app at v4.6.1 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v4.6.2 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +12,7 @@ This zip is the complete app at v4.6.1 — whatever version the phone is on, one
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.6.1 found — reloading".
+1. Open the app on the phone. Go to **Settings** (called **Profile** in versions before 1.6) → **Check for updates**. It should say "Version 4.6.2 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The phone's own bar under the app (orange before 4.0, dark now) and the app name come with the home-screen icon: Chrome refreshes them by itself within a few days, or right away when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -40,6 +40,7 @@ Nothing else changes: same address, same key, the bucket and the data stay. Work
 
 ## E. What changed since the version on your phone
 
+- v4.6.2 — The column of light in the summon fades out softly at both ends while it grows (no hard square edge).
 - v4.6.1 — The Muay Thai tile leaves room for its kick art above the button (like the lifting tiles).
 - v4.6.0 — **Summon day:** on day 8 the cycle's seven balls circle the dragon on Today. Once the day's goals are done, the tile turns gold with a **Hold to summon** button: hold it and the balls light up one by one (the phone buzzes harder with each), then the summon plays full screen — the sky goes dark, the balls fly in and spin together, a flash and a column of light, the dragon rises, and the balls turn to stone and scatter for the next cycle. Tap to close. Tap the "Dragon summoned" tile (or the day in Journey) to watch it again. Journey labels no longer run off the edge.
 - v4.5.4 — **Fewer messages:** saving no longer pops up "Saved!" (weight, food, hangs, Muay Thai, mobility, stretching, notes, band sync, Settings). On Today the row you logged glows once and its tick pops; on other tabs the + button turns into a green tick for a second. Messages that are left (errors, update checks, a collected dragon ball) are a smaller, quieter dark pill.
