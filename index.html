@@ -1254,7 +1254,7 @@ body.kpopen.kpbar .botbar{bottom:var(--kb,280px)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '4.6.2';
+const APP_VERSION = '4.7.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -2709,16 +2709,28 @@ function dragonSvg() { return dragonArt({ segs: [[16, 156, 60, 96, 112, 206, 156
    landscape 3:2, facing right), dragon.png (landscape 3:2), ball-1.png … ball-7.png (square; optional ball-N-hollow.png
    for the uncollected look), season-<autumn|winter|spring|summer>.png (square figure standing at the bottom edge; the
    right-hand one is mirrored), ground-<season>.png (a tile repeated sideways, 4:1). Missing files → the built-in SVG art. */
-const ART_FILES = ['hero', 'heroBeam', 'heroAura', 'heroBolts', 'beam', 'dragon', 'dragonBadge', 'balls', 'ballsHollow', 'season-autumn', 'season-winter', 'season-spring', 'season-summer', 'ground-autumn', 'ground-winter', 'ground-spring', 'ground-summer', 'lift-push', 'lift-legs', 'lift-pull', 'lift-mt', 'lift-rest', 'lift-done'];
+const ART_FILES = ['hero', 'body', 'heroBeam', 'heroAura', 'heroBolts', 'beam', 'dragon', 'dragonBadge', 'balls', 'ballsHollow', 'season-autumn', 'season-winter', 'season-spring', 'season-summer', 'ground-autumn', 'ground-winter', 'ground-spring', 'ground-summer', 'lift-push', 'lift-legs', 'lift-pull', 'lift-mt', 'lift-rest', 'lift-done'];
 const ART = {};
 try { const a = JSON.parse(localStorage.getItem('vikac.art') || '{}'); for (const k of ART_FILES) ART[k] = !!a[k]; } catch (e) { for (const k of ART_FILES) ART[k] = false; }
 // Which custom PNGs exist on the server (checked on every open): hero-0.png stands for the set hero-0…4,
 // ball-1.png for ball-1…7, ball-1-hollow.png for the optional hollow set; seasons and grounds are per file
 function probeArt(done) {
   const test = src => new Promise(ok => { const im = new Image(); im.onload = () => ok(true); im.onerror = () => ok(false); im.src = src + '?v=' + Date.now(); });
-  const files = { hero: 'hero-0.png', heroBeam: 'hero-beam.png', heroAura: 'hero-aura.png', heroBolts: 'hero-bolts.png', beam: 'beam.png', dragon: 'dragon.png', dragonBadge: 'dragon-badge.png', balls: 'ball-1.png', ballsHollow: 'ball-1-hollow.png' }; for (const k of ART_FILES) if (!files[k]) files[k] = k + '.png';
+  const files = { hero: 'hero-0.png', body: 'body-1.png', heroBeam: 'hero-beam.png', heroAura: 'hero-aura.png', heroBolts: 'hero-bolts.png', beam: 'beam.png', dragon: 'dragon.png', dragonBadge: 'dragon-badge.png', balls: 'ball-1.png', ballsHollow: 'ball-1-hollow.png' }; for (const k of ART_FILES) if (!files[k]) files[k] = k + '.png';
   Promise.all(ART_FILES.map(k => test(files[k]))).then(res => { let changed = false; ART_FILES.forEach((k, i) => { if (ART[k] !== res[i]) changed = true; ART[k] = res[i]; }); try { localStorage.setItem('vikac.art', JSON.stringify(ART)); } catch (e) {} if (changed && done) done(); });
 }
+// The body you see is your real one: the 7-day body-fat trend picks one of six bodies, body-0.png (25 % and over) …
+// body-5.png (under 13 %), 3 % apart. With no reading yet the project's starting body fat is used.
+const BODY_BANDS = [25, 22, 19, 16, 13];
+function bodyFat(date) { let f = null; try { f = current('fat', date || today()); } catch (e) {} if (f == null || isNaN(f)) { const st = (P() || {}).start || {}; f = st.fat != null && st.fat !== '' ? +st.fat : null; } return f; }
+function bodyLevel(date) { const f = bodyFat(date); if (f == null) return 1; let i = 0; while (i < BODY_BANDS.length && f < BODY_BANDS[i]) i++; return i; }
+// The character as he is now (body: true), or the powered-up final form (level 4) once the goal is reached
+function bodyArt(o) {
+  o = o || {}; const w = o.size || 84, h = Math.round(w * 1.5);
+  if (ART.body) return `<img class="heroimg" src="body-${bodyLevel(o.date)}.png" alt="" style="width:${w}px;height:${h}px">`;
+  return heroArt(Object.assign({}, o, { level: o.fallback != null ? o.fallback : 1 }));
+}
+function bodySrc(date, stage) { return stage === 4 && ART.hero ? 'hero-4.png' : ART.body ? 'body-' + bodyLevel(date) + '.png' : ART.hero ? 'hero-' + Math.max(0, Math.min(4, stage || 0)) + '.png' : null; }
 // The standing character: a PNG when one is uploaded, else the drawn one
 function heroArt(o) {
   o = o || {}; if (!ART.hero) return heroSvg(o);
@@ -3632,7 +3644,7 @@ function wtHtml(date, info, cyc) {
   }
   const title = cyc.summonDay ? 'Summon day' : 'Rest day';
   // day 8 with all seven balls: the Summon button (hold it), locked until the day's goals are done
-  if (cyc.summonDay && cyc.canSummon && !cyc.summoned && !future) return `<div class="wt rest summonday ${cyc.ready ? 'ready' : ''}" data-wt><div class="art">${heroArt({ level: cyc.ready ? 4 : 2, size: 104 })}</div>${lab.replace('Today\'s training', 'Today').replace('>Training', '>Rest')}<div class="t h1">${title}</div><div class="s">7 / 7 balls · ${cyc.ready ? 'the dragon is waiting' : 'finish today\'s goals first'}</div>
+  if (cyc.summonDay && cyc.canSummon && !cyc.summoned && !future) return `<div class="wt rest summonday ${cyc.ready ? 'ready' : ''}" data-wt><div class="art">${cyc.ready ? heroArt({ level: 4, size: 104 }) : bodyArt({ date, size: 104, fallback: 2 })}</div>${lab.replace('Today\'s training', 'Today').replace('>Training', '>Rest')}<div class="t h1">${title}</div><div class="s">7 / 7 balls · ${cyc.ready ? 'the dragon is waiting' : 'finish today\'s goals first'}</div>
       <button class="btn big sumbtn" ${cyc.ready ? 'data-summon' : 'disabled'}><span class="sfill"></span><span class="slab">${cyc.ready ? 'Hold to summon' : IC4.lock + 'Summon'}</span></button></div>`;
   if (cyc.summoned) return `<div class="wt done rest summoned" data-wt><div class="art">${dragonBadgeSvg({ state: 'done', size: 58 })}</div><div class="tx"><div class="t h1">Dragon summoned</div><div class="s">Cycle ${cyc.num} · 7 / 7 balls</div></div><span class="ok">${IC4.check}</span></div>`;
   if (cyc.todayDone) return `<div class="wt done rest" data-wt>${liftArtHtml('done')}<div class="tx"><div class="t h1">${title}</div><div class="s">${cyc.summonDay ? 'Day complete' : cyc.star + '-star ball earned'}</div></div><span class="ok">${IC4.check}</span></div>`;
@@ -4070,7 +4082,7 @@ function scrollPathToToday(instant, force) {
 
 /* ---------- Path: every day of the project on one winding path ---------- */
 function pathHtml() {
-  const p = P(), td = today(), W = 384, GAP = 84, BAN = 56; let y = 34, h = '', pts = [], ty = null, firstFut = false; const lv = (powerLevel(td) || {}).stage, me = 'hero-' + (typeof lv === 'number' ? Math.max(0, Math.min(4, lv)) : 0) + '.png';
+  const p = P(), td = today(), W = 384, GAP = 84, BAN = 56; let y = 34, h = '', pts = [], ty = null, firstFut = false; const lv = (powerLevel(td) || {}).stage, me = bodySrc(td, lv);
   for (let t = 0; t <= D(); t++) {
     const d = addDays(p.startDate, t), pl = dayPlan(d); if (!pl) continue;
     if (pl.cd === 1) { const c = pl.cyc, got = c.days.filter(x => x.cd <= 7 && x.comp === 'done' && x.date <= td).length; h += `<div class="pban" style="top:${y - 6}px"><span>Cycle ${c.num} · ${got} / 7</span></div>`; y += BAN; }
@@ -4080,7 +4092,7 @@ function pathHtml() {
     const left = x > W / 2, room = (left ? x : W - x) - 34 - (isT ? 70 : 0) - 6, lab = `<div class="plab ${d > td ? 'f' : ''}" style="top:${y}px;max-width:${(room / W * 100).toFixed(2)}%;${left ? `right:${((W - x + 34 + (isT ? 70 : 0)) / W * 100).toFixed(2)}%;text-align:right` : `left:${((x + 34 + (isT ? 70 : 0)) / W * 100).toFixed(2)}%`}">Day ${t + 1} · ${esc(pl.title)}<small>${isT ? 'Today · ' : ''}${shortD(d)}${past && comp !== 'done' && pl.cd !== 8 ? ' · missed' : ''}</small></div>`;
     const nx = d > td && !firstFut; if (nx) firstFut = true;
     h += `<button class="pnode ${cls} ${nx ? 'next' : ''}" data-dsheet="${d}" style="left:${(x / W * 100).toFixed(2)}%;top:${y}px;width:${big}px;height:${big}px;margin:${-big / 2}px 0 0 ${-big / 2}px">${dayBallArt(d, big)}</button>${lab}`;
-    if (isT && ART.hero) h += `<img class="pme" src="${me}" alt="" style="${left ? `left:${((x - 34 - 64) / W * 100).toFixed(2)}%` : `left:${((x + 34) / W * 100).toFixed(2)}%`};top:${y - 62}px" onerror="this.remove()">`;
+    if (isT && me) h += `<img class="pme" src="${me}" alt="" style="${left ? `left:${((x - 34 - 64) / W * 100).toFixed(2)}%` : `left:${((x + 34) / W * 100).toFixed(2)}%`};top:${y - 62}px" onerror="this.remove()">`;
     y += GAP;
   }
   const H = y - GAP + 50;
@@ -4386,7 +4398,7 @@ function scanTab(date) {
   const pw = powerLevel(date), on = Math.round(pw.prog * 20), rc = reportCard(date), pct = Math.round(pw.prog * 100);
   const vt = vitalTiles(date);
   return `<div class="hp br in" data-pl><div class="t"><span>Power level · ${hudDay(date)}</span><span class="sig"><i></i><i></i><i></i></span></div>
-    <div class="plrow"><div class="hero"><div class="glow"></div><div class="hart">${heroArt({ level: pw.stage, size: 120 })}</div><div class="ring"></div></div>
+    <div class="plrow"><div class="hero"><div class="glow"></div><div class="hart">${pw.stage === 4 ? heroArt({ level: 4, size: 120 }) : bodyArt({ date, size: 120, fallback: pw.stage })}</div><div class="ring"></div></div>
     <div class="pl"><span class="lab">POWER LEVEL</span><div class="num" id="pln">${pw.pl.toLocaleString('en-GB')}</div><div class="bar" id="plb">${Array.from({ length: 20 }, (_, k) => `<i class="${k < on ? 'on' : ''}"></i>`).join('')}</div>
       <div class="scale"><span>START</span><span id="plpct">${pct} %</span><span>GOAL 9001</span></div>
       <div class="status ${pw.warn ? 'warn' : ''}"><span id="plst">${esc(pw.status.toUpperCase())}</span><span class="pdots go"><i>.</i><i>.</i><i>.</i></span></div></div></div>
