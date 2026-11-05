@@ -1,3 +1,4 @@
+- v5.11.2 TEST — Progress contrast and power-level visibility, calendar typography, workout segmented progress strip, Settings heading, toast contrast. Visual QA on synthetic browser data; not production validated.
 # What to do now — updating to v5.10.0
 
 This zip is the complete app at v5.10.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.

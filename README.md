@@ -1,4 +1,4 @@
-STEADY v5.11.1 TEST BUILD — visual revision only. See STEADY-RELEASE-NOTES.md.
+STEADY v5.11.2 TEST BUILD — visual revision only. See STEADY-RELEASE-NOTES.md.
 
 # Vikač High Kikač — install guide (v5.10.0)
 
