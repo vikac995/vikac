@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content">
 <title>Trening</title>
-<meta name="theme-color" content="#0E0F12">
-<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#F8FAF5">
+<meta name="color-scheme" content="light">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -1675,6 +1675,163 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 .sqchg .tl{margin-left:auto;font-size:13.5px;color:var(--muted);text-align:right}
 .sqkeepl{margin:8px 2px 0;font-size:13.5px;color:var(--muted)}
 .sq .nw{white-space:nowrap}
+
+/* STEADY concept skin for Trening v5.10.0 — experimental visual release.
+   Intentionally avoids changes to persistence, training, analytics and sync. */
+:root{
+  --paper:#F8FAF5;--paper2:#F0F5EB;--card:#FFFFFF;--s2:#EDF3E9;--s3:#E1EBDD;
+  --ink:#19342C;--ink2:#405F53;--muted:#6F8378;--dim:#97A79C;
+  --line:#DFE8DD;--line2:#D0DFD1;--k:#18342A;
+  --or:#17634C;--or2:#21775B;--orsoft:#E3F0E5;
+  --yel:#D7EC79;--gold:#B68A35;--goldbg:#F8F1D9;
+  --ok:#21805A;--oksoft:#E2F3E9;--warn:#BE8140;--warnsoft:#FFF1DE;
+  --bad:#D65E56;--badsoft:#FCEAE9;
+  --blue:#5477AE;--bonus:#5477AE;--bonusbg:#EBEFF9;
+  --shadow:0 4px 18px rgba(27,62,43,.045);
+  --shadow-sm:0 2px 8px rgba(27,62,43,.035);
+}
+html,body{background:#F8FAF5!important;color:var(--ink)!important;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.44}
+body{background-image:none!important}
+body::before{content:"";height:4px;position:fixed;left:0;right:0;top:0;z-index:40;background:linear-gradient(90deg,#17634C 0%,#80AD70 58%,#D7EC79 100%);pointer-events:none}
+button,input,textarea,select{font-family:inherit}
+button{touch-action:manipulation}
+.screen{padding-left:19px;padding-right:19px;padding-bottom:calc(108px + var(--sab));max-width:610px}
+.bang,.h1,.title,.sec-h,.card h3,.modal h3,.ex .nm,.sqt,.wt .t,.jtop .h1,.t4head .day,.jd .dt b,.jcy .jct b,.sgl{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif!important;letter-spacing:-.035em!important;text-transform:none!important;-webkit-text-stroke:0!important;text-shadow:none!important;font-weight:800!important;line-height:1.16!important}
+.h1{color:var(--ink)!important}
+.sec-h{font-size:22px!important;margin-top:24px;margin-bottom:11px;letter-spacing:-.04em!important}
+.sec-h::after{height:1px;background:var(--line);transform:none}
+.card{border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:18px;background:#fff;margin-bottom:12px}
+.card.flat{border:1px solid var(--line)}
+.card h3{font-size:21px}
+.btn{border:1px solid #17634C;border-radius:15px;background:#17634C;color:#fff;font-size:15px!important;font-weight:750;letter-spacing:-.01em!important;text-transform:none;box-shadow:none;min-height:50px}
+.btn:active{transform:scale(.99)}
+.btn.sec{background:#E7F1E6;color:#17634C;border-color:#CDE1D2}
+.btn.ghost{color:var(--or);border-color:var(--line2)}
+.link{color:var(--or);text-transform:none!important}
+.pill,.daytype,.seg,.seg button,.chip{border-radius:999px;box-shadow:none!important}
+.seg{background:#EDF3EA;border:1px solid var(--line)}
+.seg button{font-family:inherit!important;font-weight:700!important;letter-spacing:-.01em!important;text-transform:none!important}
+.seg button.on{background:#17634C!important;color:white!important;box-shadow:none!important}
+.nav{left:0;right:0;border-top:1px solid #DCE8DC;background:rgba(255,255,255,.98);padding-top:9px;box-shadow:0 -6px 32px rgba(31,70,45,.055);backdrop-filter:blur(12px)}
+.nav button{font-family:inherit;font-size:11px;font-weight:750;letter-spacing:-.01em;text-transform:none;color:#788A7D}
+.nav button.on{color:#17634C!important}
+.nav.nav3{align-items:center;padding:8px max(12px,calc((100vw - 600px)/2)) calc(7px + var(--sab));gap:6px}
+.nav.nav3 .navball{width:auto!important;flex:1;min-height:54px;margin:0;color:#788A7D}
+.nav.nav3 .navball .bb{display:none!important}
+.nav.nav3 .navball .nl{font-size:11px!important;font-weight:750!important;letter-spacing:-.01em!important}
+.nav.nav3 .navball::before{content:'⌂';font-family:system-ui;font-size:26px;font-weight:500;line-height:26px;height:26px}
+.nav.nav3 .navball.on::before{color:#17634C}
+.nav.nav3 .tb{padding:4px 0 2px;min-height:54px}
+.nav.nav3 .tb svg{width:25px;height:25px;stroke-width:1.9}
+.nav.nav3 .navball.on,.nav.nav3 .tb.on{background:#E9F3E7;border-radius:14px}
+.nav .nbadge{background:#D65E56;color:#fff}
+.topbar{background:#F8FAF5;background-image:none;border-bottom:1px solid var(--line);padding-left:18px;padding-right:18px}
+.topbar .back{background:#E7F1E6;border:1px solid #D6E4D4;border-radius:13px;box-shadow:none}
+.topbar .back svg path{filter:none;stroke:#17634C}
+.hib,.hbtns .hib{background:#fff!important;border:1px solid var(--line)!important;border-radius:13px!important;color:#17634C!important;box-shadow:none!important}
+.hib svg{stroke:currentColor!important}
+/* Today: quiet header and restrained day navigation */
+.t4head{padding-top:calc(16px + var(--sat));align-items:center;margin-bottom:12px}
+.t4head .day{font-size:32px!important;color:#1B392D!important}
+.t4head .day small{font-size:15px!important;color:var(--muted)}
+.t4head .dt,.t4head .d{font-family:inherit!important;letter-spacing:0!important;font-size:13px!important;text-transform:none!important;color:var(--muted)!important}
+.t4strip{background:#fff;padding:12px 7px;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);margin-top:0;overflow:hidden}
+.t4strip .arrow{background:#F0F5EF;border:1px solid var(--line);color:#17634C}
+.t4strip .mb{border-radius:11px}
+.t4stage{padding-top:16px}
+.t4stage>.arrow{background:#fff;color:#17634C;border:1px solid var(--line);box-shadow:var(--shadow)}
+/* Main workout: promote the next action */
+.wt{background:#E8F1E5!important;border:1px solid #D3E4D2!important;border-radius:24px!important;box-shadow:none!important;color:#19382E!important;padding:18px!important;margin:0 0 16px!important}
+.wt .t,.wt .lab2,.wt .tx,.wt .s{color:#19382E!important;text-shadow:none!important;-webkit-text-stroke:0!important}
+.wt .t{font-size:27px!important;font-weight:850!important;line-height:1.1}
+.wt .lab2{font-family:inherit!important;text-transform:none!important;letter-spacing:0!important;font-size:12px!important;color:#567363!important;font-weight:750!important}
+.wt .s{color:#567363!important}
+.wt .chg,.wt .change{color:#17634C!important}
+.wt .st4{border-color:#D3E4D2!important}
+.wt .st4 b{color:#19382E!important}
+.wt .st4 small{color:#567363!important}
+.wt .ok{background:#17634C!important;color:#fff!important}
+/* Budgets and habits remain functional, but visually quiet */
+.budget,.bcard,.kbudget,.kcalcard,.t4budget{border:1px solid var(--line)!important;background:#fff!important;color:var(--ink)!important;border-radius:21px!important;box-shadow:var(--shadow)!important}
+.hrow,.t4noterow,.ckc{background:#fff!important;color:var(--ink)!important;border:1px solid var(--line)!important;border-radius:17px!important;box-shadow:none!important}
+.hrow{margin-bottom:7px}
+.hrow .hopen{color:var(--ink)}
+.ckc .lab b{font-family:inherit!important;text-transform:none!important;letter-spacing:-.01em!important;color:var(--ink)}
+.ckc .ic{background:#E5EFE6!important;color:#17634C!important}
+.t4noterow{padding:13px!important;margin-top:14px}
+/* Journey */
+.jtop{background:rgba(248,250,245,.97);margin-left:-19px;margin-right:-19px;padding-left:19px;padding-right:19px;border-bottom:1px solid var(--line)}
+.jtop .h1{font-size:31px!important}
+.jsub{color:var(--muted)}
+.jcy{background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px;box-shadow:var(--shadow)}
+.jcy.ahead{background:#F3F7F1;border:1px dashed #CBDACC}
+.jcy .jct b{font-size:16px!important;letter-spacing:-.02em!important}
+.jd{border-radius:14px}
+.jd.today{background:#E9F3E7;border-color:#B6D4BA;box-shadow:none}
+.jd .dt b{font-size:22px!important}
+.jd::before,.jd::after,.jchk::before{background:#D7E5D7}
+.jd.past::before,.jd.past::after,.jd.today::before{background:#69A78A;box-shadow:none}
+.jd .jb{background:#F8FAF5}
+.jd.today .jb{box-shadow:0 0 0 2px #B6D4BA}
+.jd .tt b{font-family:inherit!important;text-transform:none!important;letter-spacing:-.02em!important;font-size:16px!important}
+.jd .jtag{font-family:inherit!important;font-size:12px;color:#17634C}
+/* Progress: replace the bright HUD while preserving existing cards and statistics */
+.hudbg{background:#F8FAF5!important}
+.hudlines{display:none!important}
+.hudscr{color:var(--ink)!important}
+.hudscr button{color:var(--ink)}
+.hhead{background:rgba(248,250,245,.97)!important;margin-left:-19px;margin-right:-19px;padding:calc(18px + var(--sat)) 19px 12px;border-bottom:1px solid var(--line)}
+.htop .bang{font-size:31px!important;color:var(--ink)!important}
+.scper{background:#E9F1E7!important;border:1px solid var(--line)!important;border-radius:14px!important;padding:4px!important}
+.scper button{border:0!important;border-radius:10px!important;background:transparent!important;color:#668073!important;font-family:inherit!important;font-size:12px!important;letter-spacing:0!important;text-transform:none!important}
+.scper button.on{background:#17634C!important;color:white!important}
+.hp{border:1px solid var(--line)!important;border-radius:20px!important;background:#fff!important;box-shadow:var(--shadow)!important;padding:16px!important;color:var(--ink)!important;margin-top:13px}
+.hudscr .hp .t{color:#5D7769!important;font-family:inherit!important;font-size:12px!important;font-weight:800!important;letter-spacing:.01em!important;text-transform:none!important}
+.hudscr .hp .tx,.hudscr .hp .hl{color:#486558!important;font-family:inherit!important;text-transform:none!important}
+.hudscr .g{color:#17634C!important}.hudscr .r{color:#C95853!important}
+.hudscr .mono{font-family:inherit!important}
+.hudscr .hp .num,.hudscr .hp .big{color:var(--ink)!important}
+.hudscr .sctip{background:#E8F1E5!important;border-color:#D4E5D3!important}
+.hudscr .sctip .t{color:#17634C!important}
+.hudscr .sctip .tx{color:#1E4636!important}
+.scpl{background:#17634C!important;border-color:#17634C!important;color:#fff!important}
+.scpl .pli,.scpl .pli *{color:#fff!important}
+.scpl .plst{background:#D8EC79!important;color:#183E2C!important}
+.scpl .hero .glow{opacity:.2}
+/* Settings */
+.sett .sgl{font-size:13px!important;color:#547261!important;margin:24px 0 9px!important;letter-spacing:0!important}
+.sgrp{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}
+.srow{border-color:var(--line);min-height:65px}
+.srow:active{background:#F1F6EF}
+.srow .st b{font-family:inherit!important;text-transform:none!important;letter-spacing:-.01em!important;color:var(--ink)!important}
+/* Workout logger */
+.ex{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:14px}
+.ex.open{border-color:#A7CDB3;box-shadow:0 0 0 2px #E5F2E8}
+.ex .nm{font-size:17px!important;letter-spacing:-.02em!important;color:var(--ink)}
+.ex .sch{color:var(--muted)}
+.ex .pick{border-color:#C6DCCD;background:#E8F2E9;color:#17634C}
+.ex .pick.on{background:#17634C;color:#fff}
+.modalbg{background:rgba(18,46,33,.40)}
+.modal{background:#fff;border:1px solid var(--line);border-radius:23px;box-shadow:0 20px 65px rgba(20,57,38,.13)}
+.modalbg.sheetbg .modal{border:1px solid var(--line);border-radius:28px 28px 0 0}
+.modal h3{font-size:24px!important}
+.hdl{background:#CEDCD0}
+input,textarea,select{accent-color:#17634C}
+/* Setup and forms */
+.sqbar{background:#EAF2E8;border-color:var(--line)}
+.sqbar i.on{background:#17634C}
+.sq .sqt{color:var(--ink)!important;font-size:35px!important}
+.sqb{background:#fff;border-color:var(--line);color:#17634C}
+.sqopts button.on,.sqopts .on{border-color:#17634C!important;background:#EAF4E9!important;color:#17634C!important}
+/* Avoid coloring text as if it were a game score */
+.pbtag,.streak,.chain{box-shadow:none!important}
+@media(min-width:850px){
+ body{background:#E7EFE5!important}
+ .screen{background:#F8FAF5;min-height:100vh;border-left:1px solid #DDE8DC;border-right:1px solid #DDE8DC}
+ .nav{max-width:610px;left:50%;right:auto;width:100%;transform:translateX(-50%)}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
+
 </style>
 </head>
 <body>
@@ -1682,7 +1839,7 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.10.0';
+const APP_VERSION = '5.11.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -4752,7 +4909,7 @@ function navBallState() {
 function nav(on) {
   const b = navBallState();
   return `<div class="nav nav3${on === 'dash' ? ' hn' : ''}">
-    <button data-nav="journey" class="tb ${on === 'journey' || on === 'cal' ? 'on' : ''}">${IC4.journey}Journey</button>
+    <button data-nav="journey" class="tb ${on === 'journey' || on === 'cal' ? 'on' : ''}">${IC4.journey}Plan</button>
     <button data-nav="today" class="navball ${on === 'today' ? 'on' : ''} ${b.cls}" aria-label="Today"><span class="bb">${b.inner}</span><span class="nl">Today</span></button>
     <button data-nav="dash" class="tb ${on === 'dash' ? 'on' : ''}">${IC4.scouter}Scouter${unseenTips() ? `<span class="nbadge">${unseenTips()}</span>` : ''}</button>
   </div>`;
@@ -5097,7 +5254,7 @@ function bandTodayHtml(date) {
 }
 function t4BodyHtml(date, info) {
   const cyc = cycleOf(date), note = (S.days[date] || {}).note;
-  return budgetHtml(date) + checkinCardHtml(date) + wtHtml(date, info, cyc) + t4Rows(date, info) + `<div class="t4noterow ${note ? 'has' : ''}" data-note><span class="ic">${IC4.pen}</span><span class="nlab"><b>Note</b>${note ? `<span class="usertext">${esc(note)}</span>` : '<span>How did it go?</span>'}</span></div>` + bandTodayHtml(date);
+  return wtHtml(date, info, cyc) + budgetHtml(date) + checkinCardHtml(date) + t4Rows(date, info) + `<div class="t4noterow ${note ? 'has' : ''}" data-note><span class="ic">${IC4.pen}</span><span class="nlab"><b>Note</b>${note ? `<span class="usertext">${esc(note)}</span>` : '<span>How did it go?</span>'}</span></div>` + bandTodayHtml(date);
 }
 function todayHtml() {
   const date = R.date, info = dayInfo(date), p = P(), td = today();
@@ -5534,7 +5691,7 @@ function journeyHtml() {
   const p = P(), td = today(), info = dayInfo(td), st = journeyStats(); if (R.jtab !== 'month') R.jtab = 'cycles'; const tab = R.jtab;
   const idx = info.items ? info.idx : info.phase === 'pre' ? 0 : D() + 1;
   const dl = info.phase === 'pre' ? 'Day 1 is ' + shortD(p.startDate) : isOngoing() ? 'Day ' + idx : 'Day ' + Math.min(idx, D()) + ' of ' + D();
-  return `<div class="screen jo"><div class="jtop"><div class="jt"><div class="h1">Journey</div><span class="jtr">${st.chain > 1 ? `<span class="chain">${IC4.flame}${st.chain}-day chain</span>` : ''}${GEAR_BTN()}</span></div><div class="jsub"><span>${dl}</span><span> · ${st.count} / 7 balls</span><span> · ${st.dragons} ${st.dragons === 1 ? 'dragon' : 'dragons'}</span></div>
+  return `<div class="screen jo"><div class="jtop"><div class="jt"><div class="h1">Your plan</div><span class="jtr">${st.chain > 1 ? `<span class="chain">${IC4.flame}${st.chain}-day chain</span>` : ''}${GEAR_BTN()}</span></div><div class="jsub"><span>${dl}</span><span> · ${st.count} / 7 balls</span><span> · ${st.dragons} ${st.dragons === 1 ? 'dragon' : 'dragons'}</span></div>
     <div class="seg" id="jseg">${['cycles', 'month'].map(t => `<button data-jt="${t}" class="${t === tab ? 'on' : ''}">${t}</button>`).join('')}</div></div>
     <div id="jbody">${tab === 'month' ? monthHtml() : cyclesHtml()}</div></div>${nav('journey')}`;
 }
@@ -5986,7 +6143,7 @@ const scTiles = list => `<div class="sct">${list.map(x => `<div><div class="l">$
 function dashHtml() {
   const date = scDate(), k = scPer(), rg = scRange(k); R._stabErr = k;
   return `<div class="hudbg"></div><div class="hudlines"></div><div class="screen hudscr scp">
-    <div class="hhead"><div class="htop"><span class="bang">Scouter</span><span class="htr">${GEAR_BTN()}</span></div>${scPerBar(k)}</div>
+    <div class="hhead"><div class="htop"><span class="bang">Progress</span><span class="htr">${GEAR_BTN()}</span></div>${scPerBar(k)}</div>
     <div id="hpane">${tipCardHtml()}${plCard(date)}${goalsCard()}${bodyCard(date, rg)}${strengthCard(rg)}${foodCard(rg)}${kiCard(rg)}${pastCard()}</div></div>${nav('dash')}`;
 }
 function scPerBar(k) { const L = scPers(); return `<div class="scper n${L.length}" role="group" aria-label="Period">${L.map(([v, l]) => `<button data-per="${v}" class="${v === k ? 'on' : ''}" aria-pressed="${v === k}">${l}</button>`).join('')}</div>`; }
