@@ -1832,6 +1832,69 @@ input,textarea,select{accent-color:#17634C}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
 
+
+/* STEADY trial v2 — focused contrast and component repairs. Built atop experimental 5.11 visual shell.
+   No changes to training algorithms, persistence, or session data. */
+:root{--paper:#F7F8F4;--paper2:#F1F4EE;--card:#FFFFFF;--s2:#F1F4EE;--s3:#E8EEE7;--ink:#183D32;--ink2:#35584D;--muted:#62796F;--dim:#83958C;--line:#DEE7DE;--line2:#C9DACA;--or:#176A51;--or2:#176A51;--orsoft:#E4F1E8;--ok:#16815B;--yel:#D7EA8C}
+html,body{background:#F7F8F4!important;color:#183D32!important}
+body::before{display:none!important}
+.screen{padding-bottom:calc(118px + var(--sab));}
+/* Workout page: readable white sticky bar replaces the inherited charcoal header */
+.wbar{background:#fff!important;color:#183D32!important;border-bottom:1px solid #DEE7DE!important;margin:-10px -19px 0!important;padding:calc(12px + var(--sat)) 19px 10px!important;box-shadow:0 3px 12px rgba(25,59,43,.035)!important;gap:11px!important}
+.wbar .tt,.wbar .tt *{color:#183D32!important;text-shadow:none!important;-webkit-text-stroke:0!important}
+.wbar .tt .h1{font-family:Inter,system-ui,sans-serif!important;font-weight:800!important;font-size:clamp(21px,5.4vw,27px)!important;line-height:1.17!important;letter-spacing:-.04em!important}
+.wbar .tt .s{font-family:Inter,system-ui,sans-serif!important;font-size:12px!important;font-weight:650!important;color:#63786E!important;letter-spacing:0!important;text-transform:none!important}
+.wbar .back{background:#F2F6F0!important;border:1px solid #DAE6D8!important;color:#176A51!important;box-shadow:none!important}
+.wbar .back svg path{stroke:#176A51!important}
+.wbar .cnt,.wbar .count{color:#176A51!important}
+/* The actual budget selector is .bud, not .budget/.kcalcard. No gradients. */
+.bud,.bud.over{background:#FFFFFF!important;background-image:none!important;border:1px solid #DCE7DD!important;border-radius:22px!important;color:#183D32!important;box-shadow:0 5px 16px rgba(25,59,43,.045)!important;padding:20px!important;margin-top:16px!important}
+.bud .h{font-family:Inter,system-ui,sans-serif!important;text-transform:none!important;letter-spacing:0!important;font-size:13px!important;font-weight:760!important;color:#466B59!important}
+.bud .h b{color:#62796F!important;font-size:11px!important;letter-spacing:0!important}
+.bud .big{margin-top:7px!important;gap:9px!important}
+.bud .big b{font-family:Inter,system-ui,sans-serif!important;font-weight:850!important;letter-spacing:-.055em!important;font-size:clamp(43px,12vw,56px)!important;line-height:1.08!important;color:#183D32!important}
+.bud .big span{font-family:Inter,system-ui,sans-serif!important;font-size:13px!important;font-weight:750!important;color:#61796E!important;letter-spacing:0!important;text-transform:none!important}
+.bud.over .big b{color:#B45A35!important}
+.bud .bar{background:#E8EEE7!important;height:9px!important;border-radius:999px!important;margin:14px 0 12px!important}
+.bud .bar i{background:#176A51!important;border-radius:999px!important}
+.bud.over .bar i{background:#CF773A!important}
+.bud .ln{font-family:Inter,system-ui,sans-serif!important;font-size:13px!important;color:#62796F!important}
+.bud .ln b{color:#183D32!important}
+.bud .eq{font-family:Inter,system-ui,sans-serif!important;font-size:12px!important;color:#62796F!important;line-height:1.5!important}
+.bud .pr{gap:7px!important;margin-top:12px!important}
+.bud .pr span{font-family:Inter,system-ui,sans-serif!important;text-transform:none!important;letter-spacing:0!important;font-size:12px!important;font-weight:680!important;border:1px solid #DCE8DD!important;background:#EDF4ED!important;color:#235744!important;padding:7px 11px!important}
+/* Main training: remove grey completion-tiles and inconsistent character clash */
+.wt,.wt.done,.wt.done.res{background:#E9F3E9!important;background-image:none!important;border:1px solid #CFE2D2!important;color:#183D32!important;box-shadow:none!important}
+.wt.done.res{padding:18px!important}
+.wt.done.res .st4{gap:7px!important}
+.wt.done.res .st4>div,.wt .st4>div{background:#FFF!important;border:1px solid #DAE7DB!important;border-radius:13px!important;min-height:72px!important;padding:10px 3px!important}
+.wt .st4 b,.wt.done.res .st4 b{color:#183D32!important;font-family:Inter,system-ui,sans-serif!important;font-size:clamp(15px,4vw,20px)!important;letter-spacing:-.04em!important;font-weight:800!important}
+.wt .st4 small,.wt.done.res .st4 small{color:#668073!important;font-family:Inter,system-ui,sans-serif!important;font-size:11px!important;font-weight:650!important;letter-spacing:0!important;text-transform:none!important}
+.wt .art{filter:none!important}
+/* The personal illustration stays for this test; render it in a dedicated small tile. */
+.wt.done .art{width:52px!important;height:52px!important;object-fit:contain!important}
+/* Exercise cards: compact, consistent hierarchy */
+.ex{margin-top:10px!important;padding:16px!important;border:1px solid #DDE7DE!important;border-radius:18px!important;background:#fff!important;box-shadow:0 3px 12px rgba(25,59,43,.035)!important}
+.ex.open{border-color:#8DBAA0!important;box-shadow:0 0 0 2px rgba(23,106,81,.08)!important}
+.ex .nm{font-family:Inter,system-ui,sans-serif!important;color:#183D32!important;font-size:16px!important;font-weight:760!important;line-height:1.36!important;letter-spacing:-.025em!important}
+.ex .sch{font-family:Inter,system-ui,sans-serif!important;color:#657D71!important;font-size:12.5px!important;line-height:1.55!important;font-weight:500!important}
+.ex .pick{border-color:#CBDCD1!important;background:#F2F7F2!important;color:#176A51!important}
+.ex .pick.on{background:#176A51!important;border-color:#176A51!important;color:#fff!important}
+.ex.done .sch{color:#5F776B!important}
+/* Consistent form controls and completed-workout actions */
+.ex .steps .step,.ex .stepper,.ex input{color:#183D32!important}
+.btn,.btn.sec{font-family:Inter,system-ui,sans-serif!important;font-weight:780!important;text-transform:none!important;letter-spacing:-.015em!important}
+/* Progress: no fake HUD styling, keep readable chart geometry */
+.hudbg{background:#F7F8F4!important}.hudsweep,.hudlines{display:none!important}
+.hudscr .hp,.hudscr .hp *{text-shadow:none!important}
+.hudscr .hp{background:#fff!important;color:#183D32!important;border:1px solid #DCE7DD!important}
+.hudscr .hp .num,.hudscr .hp .big{color:#183D32!important;text-shadow:none!important}
+/* Constrain headers and footers on small devices */
+.nav.nav3{background:#fff!important;box-shadow:0 -3px 16px rgba(22,57,43,.045)!important}
+.nav.nav3 .tb,.nav.nav3 .navball{color:#6B8074!important}
+.nav.nav3 .tb.on,.nav.nav3 .navball.on{color:#176A51!important;background:#E9F3EA!important}
+@media(max-width:370px){.screen{padding-left:13px!important;padding-right:13px!important}.wbar{margin-left:-13px!important;margin-right:-13px!important;padding-left:13px!important;padding-right:13px!important}.wt.done.res .st4 small{font-size:10px!important}}
+
 </style>
 </head>
 <body>
@@ -1839,7 +1902,7 @@ input,textarea,select{accent-color:#17634C}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.11.0';
+const APP_VERSION = '5.11.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)

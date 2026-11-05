@@ -1,3 +1,5 @@
+STEADY v5.11.1 TEST BUILD — visual revision only. See STEADY-RELEASE-NOTES.md.
+
 # Vikač High Kikač — install guide (v5.10.0)
 
 This folder is the whole app. Put it on any HTTPS address and add it to your phone's home screen once; after that it opens full screen from its own icon, works offline, and keeps all data on the phone.

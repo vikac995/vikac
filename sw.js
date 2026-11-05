@@ -1,5 +1,5 @@
 /* Vikač High Kikač service worker — bump CACHE on every release */
-const CACHE = 'vikac-v5.11.0-steady';
+const CACHE = 'vikac-v5.11.1-steady-v2';
 const ASSETS = ['index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(ASSETS.map(a => c.add(a).catch(() => null)))).then(() => self.skipWaiting()));
