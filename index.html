@@ -181,6 +181,9 @@ input::placeholder{color:#5f5b56}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--or);color:var(--ink);font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:18px;border:2.5px solid var(--line2);border-radius:10px;padding:12px 18px;min-height:50px;width:100%;box-shadow:var(--shadow);transition:transform .08s,box-shadow .08s}
 .btn:active{transform:translate(3px,3px);box-shadow:none}
 .btn.sec{background:var(--card)}
+/* v5.10.1: optional previous-session weights; never marks unperformed sets as logged */
+.use-last-weights{display:inline-flex;align-items:center;gap:6px;margin:8px 0 12px;padding:8px 12px;border:1.5px solid var(--or2);border-radius:10px;color:var(--or2);font-family:'BarlowC',sans-serif;font-weight:700;font-size:13px;letter-spacing:.03em;background:transparent;min-height:40px}
+.use-last-weights:active{background:rgba(254,127,12,.13)}
 .btn.ghost{background:transparent;box-shadow:none;border-color:var(--muted);color:var(--muted)}
 .btn.sm{width:auto;min-height:42px;padding:6px 14px;font-size:15px;box-shadow:var(--shadow-sm)}
 .btn.run{background:var(--beam);color:#fff}
@@ -1682,7 +1685,7 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.10.0';
+const APP_VERSION = '5.10.1';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -5258,6 +5261,7 @@ function workoutHtml() {
       <div class="hd" data-tog><button class="pick ${e.done ? 'on' : ''}" data-exdone aria-label="Done">${IC4.check}</button><div class="grow"><div class="nm">${i + 1}. ${esc(e.n)}${eqIcons(e.n)}</div><div class="sch"><span class="cs">${exClosedSub(s, i, date)}</span><span class="os">${esc(def.s)} · ${restLabel(type, def.s)}</span></div></div><span class="pbmini">${npb ? `<span class="pbtag">${TROPHY}PB</span>${fmtPB(e.n, type, npb)}` : ''}</span><button class="vid has" data-vid hidden>▶ Video</button></div>
       <div class="collapse ${isOpen ? 'open' : ''}"><div><div class="exb"><div class="vbox" hidden></div>
         ${last ? `<div class="last"><span>Last <b>${esc(last.label)}</b></span>${pb ? `<span class="r"><span class="pbtag">${TROPHY}PB</span><b class="pbv">${fmtPB(e.n, type, pb.v)}</b></span>` : ''}</div>${last.note ? `<div class="q">“${esc(last.note)}”</div>` : ''}` : (pb ? `<div class="last"><span>First time on this one</span><span class="r"><span class="pbtag">${TROPHY}PB</span><b class="pbv">${fmtPB(e.n, type, pb.v)}</b></span></div>` : '')}
+        ${last && type !== 'max' && (last.e.sets || []).some(st => Number(st.kg) > 0) && !s.finished ? `<button class="use-last-weights" type="button" data-use-last aria-label="Use last weights for empty sets">↺ Use last weights</button>` : ''}
         ${body}
         <textarea class="qn usertext" data-f="note" rows="1" placeholder="✎ Quick note for next time">${esc(e.note)}</textarea>
       </div></div></div>
@@ -5290,6 +5294,24 @@ function bindWorkout() {
     const e = s.ex[i], def = w.ex[i], type = def.type;
     box.querySelector('[data-tog]').onclick = ev => { if (ev.target.closest('[data-exdone],[data-vid]')) return; setOpen(box.classList.contains('open') ? -1 : i); };
     box.querySelector('[data-exdone]').onclick = ev => { ev.stopPropagation(); e.done = !e.done; save(); paintHead(i); paintProgress(); };
+    // Fill only blank, completely unlogged sets. Reps remain empty until the user actually trains.
+    const useLast = box.querySelector('[data-use-last]');
+    if (useLast) useLast.onclick = ev => {
+      ev.stopPropagation();
+      if (s.finished || e.done) return;
+      const previous = lastFor(e.n, date);
+      if (!previous || !previous.e || !Array.isArray(previous.e.sets)) return;
+      let copied = 0;
+      for (let j = 0; j < e.sets.length; j++) {
+        const st = e.sets[j], old = previous.e.sets[j];
+        if (!old || !(Number(old.kg) > 0) || st.kg !== '' && st.kg != null || st.reps !== '' && st.reps != null) continue;
+        const input = box.querySelector(`input[data-set="${j}"][data-f="kg"]`);
+        if (!input) continue;
+        st.kg = String(old.kg); input.value = st.kg; copied++;
+      }
+      if (copied) { save(); paintHead(i); vib(10); toast('Previous weights filled · log reps as you train'); }
+      else toast('No empty sets to fill');
+    };
     // finishing an exercise folds it up and opens the next one, once you are out of its fields
     const maybeAdvance = () => { if (e.done || s.finished) return; if (!exComplete(e, type)) return; e.done = true; save(); vib(20); paintProgress();
       // a "New PB!" gets its moment before the card folds
@@ -8032,6 +8054,9 @@ Object.assign(HR_DICT, {
 // the day sheet's line: "Day 9 · Ball 7 of 7 · ~65 min · today" (pieces swapped one by one)
 HR_FRAG.push([/· Ball (\{\d+\}) of (\{\d+\})/g, '· Kugla $1 od $2'], [/· The dragon is waiting\b/g, '· Zmaj čeka'], [/· The dragon was waiting\b/g, '· Zmaj je čekao'], [/· Dragon summoned\b/g, '· Zmaj prizvan']);
 // v6 3b: the Scouter as one page (Skener) — the period switch, the cards, the detail pages
+Object.assign(HR_DICT, {
+  'Use last weights': 'Preuzmi zadnje težine', 'Use last weights for empty sets': 'Preuzmi zadnje težine za prazne serije', 'Previous weights filled · log reps as you train': 'Zadnje težine unesene · upiši ponavljanja nakon serije', 'No empty sets to fill': 'Nema praznih serija za popuniti',
+});
 Object.assign(HR_DICT, {
   'Period': 'Razdoblje', 'Week': 'Tjedan', 'This week': 'Ovaj tjedan', 'This month': 'Ovaj mjesec', 'This project': 'Ovaj projekt', 'So far': 'Zasad',
   'this week': 'ovaj tjedan', 'this month': 'ovaj mjesec', 'this project': 'ovaj projekt', 'so far': 'zasad',

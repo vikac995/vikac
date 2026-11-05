@@ -1,6 +1,8 @@
-# What to do now — updating to v5.10.0
+# What to do now — updating to v5.10.1
 
-This zip is the complete app at v5.10.0 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+This zip is the complete app at v5.10.1 — whatever version the phone is on, one upload brings it up to date. Your logged days, weigh-ins and workouts stay on the phone — nothing is wiped by an update.
+
+**New in v5.10.1:** The workout logger now offers **Use last weights** on exercises with a previously finished set. It fills weights into empty, unlogged sets without filling repetitions or replacing already entered data. The user still logs each performed set. No training plan, target, or history is changed.
 
 ## A. Upload the new files (3 minutes)
 
@@ -12,7 +14,7 @@ This zip is the complete app at v5.10.0 — whatever version the phone is on, on
 
 ## B. Get the new version onto the phone (1 minute)
 
-1. Open the app on the phone. Go to **Settings** (from v5.0 it's the **gear** at the top right; before that a tab, called **Profile** before 1.6) → **Check for updates**. It should say "Version 5.10.0 found — reloading".
+1. Open the app on the phone. Go to **Settings** (from v5.0 it's the **gear** at the top right; before that a tab, called **Profile** before 1.6) → **Check for updates**. It should say "Version 5.10.1 found — reloading".
    - If it says you already have the latest version, close the app completely (swipe it away from recent apps), wait a minute, open it again and tap Check for updates once more.
 2. The phone's own bar under the app (orange before 4.0, dark now) and the app name come with the home-screen icon: Chrome refreshes them by itself within a few days, or right away when the icon is re-added: long-press the icon → remove it, open `https://vikac995.github.io/vikac/` in Chrome → menu ⋮ → **Add to Home screen** → Install. It will now be called **Trening**. (Your data is in Chrome's storage, not in the icon, so it survives this.)
 
@@ -40,6 +42,7 @@ Nothing else changes: same address, same key, the bucket and the data stay. Work
 
 ## E. What changed since the version on your phone
 
+- v5.10.1 — **Use last weights.** Optional per-exercise shortcut that fills only empty sets from the last completed workout, leaving repetitions blank and current logged sets intact.
 - v5.10.0 — **Setup questions and Where you are (v6 step 4b).** A new install now asks six short questions (about you, fitness level, motivation, direction, your week, kit and sports), then shows *Where you are*: what you burn a day and how it was worked out, your body fat against the usual ranges, and the suggested plan in one sentence (pace, deficit, protein, training days, habits) — tap any part to change it, then Start. The plan is generated from your answers: phase and targets inside the safety limits, a training week (Full body for 2–3 lifting days, Upper/Lower for 4, Push/Pull/Legs for 5–6, sport days in between), habits by motivation and your goals. Six new workouts (Full body, Upper, Lower — A and B) built from the existing exercises. **For you:** Settings → *Setup questions* runs it again with your answers filled in; *Keep my plan* only saves the answers, *Apply from today* shows exactly what would change before it changes anything, and past days stay as they are.
 - v5.9.0 — **End-of-cycle check-in (v6 step 4a).** On the last day of each cycle a check-in card sits on Today under the kcal left (*Week N* with a 7-day cycle). It isn't needed for the ball; doing it earns +2 Ki. Tap it: weight trend against the plan, main lifts held, kcal and protein days on target, habits done, how the cycle felt (1–5) and your motivation, then at most one suggestion (for example a 100 kcal change, or a habit moved to bonus) that you accept or skip. Changes apply from today; past days keep their targets. Switch it off on *Habits & goals*. In *My plan*, tapping a motivation now also sets the deficit to match it (you can still fine-tune the deficit by hand). Safety limits on every suggestion: at most 1 % of body weight lost a week (0.5 % gained) and never under 1,500 kcal for men / 1,200 for women.
 - v5.8.0 — **The one-page Scouter (v6 step 3b).** One switch at the top, *Week · Month · Project · All*, sets the whole page and compares it with the period before (opens on Project, then remembers your choice). From the top: the newest tip, Power level, your goals (main first, on pace or behind), Body (weight chart against the plan line, weight, body fat, muscle), Strength (push / pull / legs and the lifts that moved), Food (kcal, protein, days on target), **Ki** (the period's points, a small chart, perfect days, best streak, dragons) and past projects. Each card has a *details ›* row: the old Body, Food and Records tabs live there now, plus a Ki page that shows what each day earned. A day's Ki is now a whole number (.5 rounds up).
