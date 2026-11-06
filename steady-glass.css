@@ -1,0 +1,261 @@
+/* STEADY — cohesive glass UI system over Trening v5.13.0 compiled functional core.
+   Design tokens and component styling are intentionally in a separate file for review/merging.
+   No core data/storage/sync code is changed by this stylesheet. */
+:root, html[data-steady-theme="dark"]{
+ color-scheme:dark;
+ --paper:#09120f;--paper2:#101e19;--card:#1b2b23;--s2:#243b31;--s3:#2e493b;
+ --ink:#f2f8f3;--ink2:#cfddd3;--muted:#a5b7aa;--dim:#779082;
+ --line:rgba(231,255,240,.095);--line2:rgba(234,255,239,.15);--k:#050c09;
+ --or:#c9f68f;--or2:#b9e88b;--orsoft:rgba(190,241,139,.1);
+ --yel:#dcf4aa;--gold:#c9f68f;--goldbg:rgba(204,243,155,.13);
+ --ok:#82dda7;--oksoft:rgba(130,221,167,.12);--warn:#e8d393;--warnsoft:rgba(232,211,147,.13);
+ --bad:#ff9a9a;--badsoft:rgba(255,154,154,.12);--beam:#76d6b5;--beam2:#c5ffe5;--blue:#9abfff;
+ --bonus:#b6b2fb;--bonusbg:rgba(182,178,251,.12);
+ --push:#8fd8a8;--pull:#8cbef0;--legs:#bee77e;--mt:#e2a5dd;--rest:#82978d;
+ --full:#c5e897;--upper:#b1a0ec;--lower:#73d5c5;
+ --g-bg:linear-gradient(165deg,rgba(22,56,43,.92),rgba(9,22,18,.97));
+ --g-surface:rgba(35,57,45,.61);--g-surface2:rgba(41,68,53,.78);
+ --g-glass:rgba(33,58,45,.48);--g-border:rgba(214,254,221,.15);
+ --g-highlight:rgba(248,255,245,.16);--g-shadow:0 14px 36px rgba(0,0,0,.17);
+ --g-ease:cubic-bezier(.2,.8,.2,1);--g-spring:cubic-bezier(.18,1.15,.34,1);
+}
+html[data-steady-theme="light"]{
+ color-scheme:light;
+ --paper:#edf4ef;--paper2:#e4efe7;--card:#ffffff;--s2:#e5efe8;--s3:#d6e6d9;
+ --ink:#102b20;--ink2:#385346;--muted:#62786a;--dim:#819689;
+ --line:rgba(26,92,56,.08);--line2:rgba(23,92,53,.13);--k:#0d241b;
+ --or:#176749;--or2:#1f7956;--orsoft:rgba(26,113,77,.08);
+ --yel:#265e39;--gold:#176749;--goldbg:rgba(26,113,77,.08);
+ --ok:#18784e;--oksoft:rgba(24,120,78,.09);--warn:#9e6c25;--warnsoft:rgba(158,108,37,.09);
+ --bad:#c34f55;--badsoft:rgba(195,79,85,.09);--beam:#1f8866;--beam2:#a5e5c7;--blue:#386ca5;
+ --bonus:#7468bb;--bonusbg:rgba(116,104,187,.08);
+ --push:#2f8964;--pull:#4479ad;--legs:#7d9a34;--mt:#aa659d;--rest:#789184;
+ --full:#789e51;--upper:#806bac;--lower:#2c9c89;
+ --g-bg:linear-gradient(160deg,#e7f3e9,#f7faf7);
+ --g-surface:rgba(255,255,255,.74);--g-surface2:rgba(255,255,255,.94);
+ --g-glass:rgba(255,255,255,.7);--g-border:rgba(255,255,255,.86);
+ --g-highlight:rgba(255,255,255,.98);--g-shadow:0 12px 34px rgba(19,57,35,.08);
+}
+html{background:var(--paper)!important}
+html,body{overflow-x:clip;}
+body{background:radial-gradient(ellipse 80vw 54vh at 18% 12%,color-mix(in srgb,var(--beam) 12%,transparent),transparent 75%),radial-gradient(ellipse 75vw 55vh at 94% 60%,color-mix(in srgb,var(--bonus) 8%,transparent),transparent 75%),var(--paper)!important;color:var(--ink);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:15px;letter-spacing:-.012em}
+body:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:radial-gradient(circle at 25% 16%,color-mix(in srgb,var(--beam) 11%,transparent),transparent 35%);}
+/* remove comics, heavy letterspacing and black outlines */
+.bang,.cond,.title,.big,.big2,.num,.score,.lvl,.head,.t4head .dt,.t4head .dtc,.hhead .bang,.topbar .t,.wohd .t,
+.t4top .big,.t4pre .big,.cycrow .n,.cal .mh .m,.st4 b,.scpl b,.hnum,.hero .num,
+.btn,.link,.sec,.muted,.tabs button,.seg4 button,.scper button,.ex .nm,.eq,.sc-top,
+label,.srow b,.hbar,.hp .t,.wt .h1,.t4top,.n4,.nav .nl,.nav .tb,.dl .w,.jrow b,.sq .h{
+ font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;
+ font-style:normal!important;text-shadow:none!important;-webkit-text-stroke:0!important;paint-order:normal!important;
+ transform:none;letter-spacing:-.03em;
+}
+.title,.bang{font-weight:800!important;line-height:1.12;letter-spacing:-.042em;text-transform:none}
+.title{color:var(--ink);font-size:clamp(28px,8vw,42px)!important}
+.cond{font-weight:700!important;letter-spacing:.015em;text-transform:none}
+label,.sec2,.eyebrow{font-size:12px;letter-spacing:.035em!important;color:var(--muted);text-transform:none}
+h1,h2,h3{line-height:1.12;letter-spacing:-.035em}
+button,input,textarea,select{font-family:inherit}
+button{touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--or)!important;outline-offset:3px}
+/* Main layout and readable glass surface system. */
+.screen{max-width:600px;padding:calc(12px + var(--sat)) 17px calc(110px + var(--sab));}
+.screen.bar{padding-bottom:calc(178px + var(--sab))}
+.card,.ex,.cycrow,.jcy,.hist,.tip,.target,.stp,.sqfacts,.sqplan,.profilebox,.gbox,.hcard,.hp,.hpanel,.sccard,.wt,
+.todo li,.t4band,.t4stage .wt,.bandtoday,.goals,.bud,.bcard,.scrow,.scd-box,.sq .card,.cal,
+.qtile,.ctile,.step,.affix,.dl,.task,.hbody,.scpl,.scgoal,.scbody,.scfood,.sctrain,.scki,
+.scc,.scdcard,.plist,.pj,.daycard,.wtcard{
+ background:var(--g-surface)!important;
+ border:1px solid var(--g-border)!important;
+ border-radius:23px!important;
+ box-shadow:inset 0 1px 0 var(--g-highlight),var(--g-shadow)!important;
+ color:var(--ink);
+}
+.card,.ex,.wt,.cal{padding:17px;margin-bottom:14px}
+.card.flat{box-shadow:inset 0 1px 0 var(--g-highlight)!important}
+.card:before,.card:after{pointer-events:none}
+/* Actual glass blur reserved for floating layers; ordinary cards remain cheap to scroll. */
+.topbar,.nav,.modal,.mnav,.hhead,.scper,.botbar,.rdock,.t4head,
+.steady-theme-switch,.topfab{background:var(--g-surface2)!important;border:1px solid var(--g-border)!important;
+ backdrop-filter:blur(18px) saturate(135%);-webkit-backdrop-filter:blur(18px) saturate(135%);
+ box-shadow:inset 0 1px 0 var(--g-highlight),var(--g-shadow)!important;}
+.topbar,.t4head{border-radius:0 0 22px 22px!important;color:var(--ink)}
+body.scrolled .t4head{background:var(--g-surface2)!important;border-color:var(--g-border)!important}
+.topbar .back,.hib,.gear,.vibt,.hbtn{background:var(--g-surface2)!important;border:1px solid var(--g-border)!important;border-radius:15px!important;color:var(--ink)!important;box-shadow:inset 0 1px 0 var(--g-highlight)!important}
+.topbar .back svg path{stroke:var(--ink)!important;filter:none}
+.nav{position:fixed!important;left:12px!important;right:12px!important;max-width:568px!important;margin:0 auto!important;bottom:calc(10px + var(--sab))!important;
+ border-radius:26px!important;min-height:74px;z-index:30!important;padding:8px 12px!important}
+.nav.nav3{padding:7px 10px 8px!important}
+.nav button{border-radius:16px!important;transition:color .22s var(--g-ease),background .22s var(--g-ease),transform .3s var(--g-spring)}
+.nav button.on{color:var(--or)!important;background:var(--orsoft)!important}
+.nav button:active{transform:scale(.93)}
+.nav .navball{background:none!important}
+.nav .navball .bb{border-radius:50%;border:1px solid var(--g-border);box-shadow:0 3px 18px color-mix(in srgb,var(--or) 20%,transparent)!important;background:var(--g-surface2)!important}
+.nav .nl{font-size:12px!important;font-weight:750!important}
+.nav .tb{font-size:12px!important;font-weight:650!important}
+.nav svg{stroke-width:1.85px}
+/* buttons: tactile, readable, rounded, with calm spring feedback */
+.btn,.hact{color:var(--paper)!important;background:var(--or)!important;border:1px solid color-mix(in srgb,var(--or) 82%,white)!important;
+ border-radius:16px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 8px 18px color-mix(in srgb,var(--or) 13%,transparent)!important;
+ text-transform:none!important;letter-spacing:-.015em!important;font-weight:750!important;
+ transition:transform .28s var(--g-spring),filter .22s,box-shadow .22s!important}
+html[data-steady-theme="dark"] .btn,html[data-steady-theme="dark"] .hact{color:#102319!important}
+html[data-steady-theme="light"] .btn,html[data-steady-theme="light"] .hact{color:white!important}
+.btn:active,.hact:active{transform:scale(.975)!important}
+.btn.sec,.btn.ghost{background:var(--g-surface2)!important;border-color:var(--g-border)!important;color:var(--ink)!important;box-shadow:inset 0 1px 0 var(--g-highlight)!important}
+.btn.run{background:var(--beam)!important;color:#fff!important}
+.link{color:var(--or2)!important;font-weight:700!important;text-transform:none!important}
+.pill,.chip,.stp,.scper button,.tabs button,.seg4 button,.sqpill{border-radius:999px!important;background:var(--g-surface2)!important;border:1px solid var(--g-border)!important;color:var(--ink2)}
+.tabs button.on,.seg4 button.on,.scper button.on,.ptabs button.on,.chip.on{background:var(--orsoft)!important;border-color:color-mix(in srgb,var(--or) 52%,transparent)!important;color:var(--or)!important;box-shadow:inset 0 1px 0 var(--g-highlight)!important}
+input,textarea,select,.affix,.numin{background:color-mix(in srgb,var(--g-surface2) 80%,transparent)!important;border:1px solid var(--line2)!important;
+ border-radius:13px!important;color:var(--ink)!important;box-shadow:inset 0 1px 0 var(--g-highlight)!important}
+input:focus,textarea:focus,select:focus{box-shadow:0 0 0 2px color-mix(in srgb,var(--or) 32%,transparent)!important;border-color:var(--or)!important}
+input::placeholder,textarea::placeholder{color:var(--muted)!important;opacity:.75}
+button:disabled{opacity:.45}
+/* Today — compact journal, no comic illustration cards */
+.t4head{margin:-12px -17px 8px!important;padding:calc(15px + var(--sat)) 18px 12px!important}
+.t4head .dt{font-size:26px;font-weight:800!important;line-height:1.08}
+.t4head .dtc{font-size:13px!important;color:var(--or)!important}
+.t4head .hact{border-radius:999px!important;font-size:12px}
+.t4strip{margin:9px -2px 15px!important;overflow:hidden}
+.mb,.mb.cur,.mb.today{background:var(--g-surface)!important;border-color:var(--g-border)!important;border-radius:14px!important}
+.mb.cur{border:1px solid var(--or)!important;background:var(--orsoft)!important}
+.mbsel{background:var(--orsoft)!important;border-color:var(--or)!important;border-radius:15px!important}
+.mbw{overflow-x:auto;scrollbar-width:none}
+.t4stage,.t4body{min-width:0}
+.wt:not(.done){position:relative;overflow:hidden;background:linear-gradient(135deg,color-mix(in srgb,var(--or) 10%,var(--g-surface)),var(--g-surface))!important;border-color:color-mix(in srgb,var(--or) 33%,var(--g-border))!important}
+.wt .h1{font-size:clamp(23px,6vw,32px)!important;font-weight:820!important;line-height:1.06!important;letter-spacing:-.04em!important}
+.wt .art,.wt .herostack{filter:none!important}
+.wt .st4{background:transparent!important}
+.st4>div,.st4 .s,.st4 .tile{border-radius:14px!important;background:var(--g-surface2)!important;border:1px solid var(--g-border)!important;box-shadow:none!important}
+.st4 b,.st4 .n{color:var(--ink)!important;font-weight:770}
+.wt .btn,.wt [data-startwo]{min-height:52px;border-radius:16px!important}
+.bud,.bud *{text-shadow:none!important}
+.bud{background:var(--g-surface)!important;border-color:var(--g-border)!important;color:var(--ink)!important}
+.bud .n,.bud .big,.bud .amt,.bud b{color:var(--ink)!important}
+.bud .bar,.bud .track{background:var(--s3)!important}
+.bud .fill,.bud .bar i{background:var(--or)!important}
+.todo{gap:8px}
+.todo li{padding:13px!important;border-radius:16px!important;min-height:56px}
+.todo li.done{background:color-mix(in srgb,var(--ok) 7%,var(--g-surface))!important}
+.todo .chk{border-radius:11px;background:var(--g-surface2)!important}
+.todo li.done .chk{background:var(--ok)!important;color:var(--paper)!important}
+/* Plan / calendar / timeline */
+.jrow,.jcy,.cycrow,.jcard,.jdate{border-color:var(--g-border)!important}
+.jrow.cur,.jcard.cur{background:var(--orsoft)!important;border-color:var(--or)!important}
+.cal{background:var(--g-surface)!important}
+.cal .mh{background:linear-gradient(125deg,color-mix(in srgb,var(--beam) 16%,transparent),transparent)!important;padding:14px 8px!important;margin:-4px -4px 12px!important;border-radius:18px}
+.cal .mh .m{font-size:30px!important;font-weight:800!important;letter-spacing:-.04em!important;color:var(--ink)}
+.cal .mh .m small{font-size:14px!important;color:var(--muted)!important}
+.cal .mh button{border:1px solid var(--g-border)!important;background:var(--g-surface2)!important;color:var(--ink)!important;border-radius:13px!important}
+.cal .mh .season,.cal .ground,.cal .banner,.seasonbanner,.monthbanner{display:none!important}
+.wd,.grid{gap:4px!important}
+.cell{border:1px solid var(--g-border)!important;border-radius:12px!important;background:var(--g-surface2)!important;color:var(--ink)}
+.cell.sel,.cell.today{border-color:var(--or)!important;box-shadow:0 0 0 1px var(--or)!important;background:var(--orsoft)!important;color:var(--ink)}
+.cycrow .balls .mb{background:var(--g-surface2)!important;border-color:var(--g-border)!important}
+/* Progress replaces neon CRT with charts and deep-glass panels. */
+.hudbg,.hudlines,.scanlines,.scan,.gridlines,.hudglow,.hhead:before,.hhead:after{display:none!important}
+.hudscr,.scp{background:none!important;color:var(--ink)!important}
+.hhead{position:sticky;top:0!important;z-index:11;margin:-12px -17px 16px;padding:calc(13px + var(--sat)) 17px 14px;border-radius:0 0 23px 23px!important}
+.hhead .bang{font-size:32px!important;color:var(--ink)!important;filter:none!important}
+#hpane{display:flex;flex-direction:column;gap:13px}
+.hp,.sc,.scpl,.scgoal,.scbody{background:var(--g-surface)!important;border:1px solid var(--g-border)!important;box-shadow:inset 0 1px 0 var(--g-highlight),var(--g-shadow)!important;border-radius:23px!important;color:var(--ink)!important}
+.hp .t,.hp .l,.hp h3,.sc .t,.sc .h{color:var(--ink)!important;text-shadow:none!important}
+.hp .num,.scpl .num,.scpl .n,.power,.powernum,.powerlevel{color:var(--or)!important;text-shadow:none!important;-webkit-text-stroke:0!important;filter:none!important}
+.scpl .hero,.scpl .hart{background:transparent!important;filter:none!important}
+.scpl .glow{background:radial-gradient(circle,color-mix(in srgb,var(--or) 15%,transparent),transparent 65%)!important;filter:none!important}
+.scgoal .nm,.scgoal .v,.scgoal b,.goalrow,.goalrow b{color:var(--ink)!important}
+.sc .good,.sc .pos,.sc .up{color:var(--ok)!important}
+.sc .bad,.sc .down{color:var(--bad)!important}
+.sc svg text,.chart text{fill:var(--muted)!important}
+.sc svg .gridline,.sc svg .axis{stroke:var(--line2)!important}
+.scper{border-radius:999px!important;padding:4px}
+.scper button{border-radius:999px!important;font-weight:680!important}
+.scper button.on{background:var(--or)!important;color:var(--paper)!important}
+html[data-steady-theme="dark"] .scper button.on{color:#102319!important}
+html[data-steady-theme="light"] .scper button.on{color:white!important}
+/* Workout full logger, exercise cards and fixed bottom controls */
+.wohd,.whead,.exhead{color:var(--ink)!important}
+.ex{border-radius:21px!important;margin-bottom:10px;padding:15px!important}
+.ex.on{border-color:var(--or)!important;background:color-mix(in srgb,var(--or) 7%,var(--g-surface))!important}
+.ex .nm{font-size:18px!important;letter-spacing:-.018em!important;text-transform:none!important;font-weight:780!important;line-height:1.25!important}
+.ex .sch,.ex .last{color:var(--muted)!important}
+.ex .last{border:1px solid var(--line2)!important;background:var(--g-surface2)!important;border-radius:13px!important}
+.eq .eqi{background:var(--g-surface2)!important;border:1px solid var(--g-border)!important;filter:saturate(.3) hue-rotate(65deg)}
+.step,.stp,.stp button,.setrow,.sets>div{border-color:var(--line2)!important}
+.step{background:var(--g-surface2)!important;border-radius:14px!important}
+.ex .vbox video{border:1px solid var(--g-border)!important;border-radius:18px!important}
+.ex .vbox{margin:12px 0}
+.rdock,.wbar,.segbar,.botbar{border-color:var(--g-border)!important;box-shadow:inset 0 1px 0 var(--g-highlight),0 -12px 30px rgba(0,0,0,.08)!important}
+.wbar,.segbar{background:var(--g-surface2)!important}
+.wbar .p,.segbar .p{background:var(--or)!important}
+.restrow,.resttimer{background:var(--g-surface2)!important;color:var(--ink)!important}
+/* Settings and deep forms */
+.srow,.kvr,.prow,.sqfact,.sqchg>div,.hist,.scrow{border-color:var(--line2)!important}
+.srow .ic,.eqi,.srow .ico{background:var(--g-surface2)!important;border:1px solid var(--g-border)!important;border-radius:13px!important;color:var(--or)!important}
+.steady-theme{margin-top:16px!important}
+.steady-theme-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.steady-theme-head svg{width:22px;height:22px;color:var(--or)}
+.steady-theme-head strong{font-size:17px;letter-spacing:-.02em}
+.steady-theme-head small{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.steady-theme-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.steady-theme-options button{background:var(--g-surface2);border:1px solid var(--g-border);border-radius:14px;padding:12px 5px;color:var(--ink2);font-weight:700;font-size:13px}
+.steady-theme-options button.on{background:var(--orsoft);color:var(--or);border-color:var(--or)}
+.sqplan{background:var(--g-surface)!important;color:var(--ink2)!important;border:1px solid var(--g-border)!important}
+.sqfact .h b{color:var(--or)!important}
+.sq .card{box-shadow:var(--g-shadow)!important}
+/* Modal and alerts */
+.modal{background:var(--g-surface2)!important;border-radius:26px!important;color:var(--ink)!important;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%)}
+.modal .btn{min-height:47px}
+.toast,.warnbox{background:var(--g-surface2)!important;color:var(--ink)!important;border:1px solid var(--g-border)!important;border-radius:16px!important;box-shadow:var(--g-shadow)!important}
+/* Neutral, original milestones instead of orange Dragon Balls. */
+.steady-token{filter:drop-shadow(0 3px 9px rgba(104,203,147,.22))}
+.bbig,.bigball .art,.ring84,.bb{filter:none!important}
+.sb.glow{filter:drop-shadow(0 0 13px var(--or))}
+.summon,.summonarea,.sbg,.scol{background:radial-gradient(ellipse at center,color-mix(in srgb,var(--beam) 18%,transparent),var(--paper) 75%)!important}
+.hudlines,.power-bg{background:none!important}
+/* Small brand mark on the entry experience; no copyrighted character assets. */
+.steady-brand{display:flex;gap:10px;align-items:center;padding:10px 2px 18px;color:var(--ink)}
+.steady-brand svg{width:35px;height:35px}
+.steady-brand span{font-size:13px;font-weight:820;letter-spacing:.22em}
+/* Motion that communicates state; respect user and OS preferences. */
+@keyframes steady-rise{from{opacity:0;transform:translateY(11px)}to{opacity:1;transform:translateY(0)}}
+@keyframes steady-pulse{0%{transform:scale(.78);opacity:.6}65%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes steady-sheen{from{background-position:-220% 50%}to{background-position:220% 50%}}
+.screen>.card,.screen>.cal,.screen>.tip,.screen>.hp{animation:steady-rise .4s var(--g-ease) both}
+.nav .navball.pop .bb,.nav .navball.won .bb{animation:steady-pulse .5s var(--g-spring)}
+.topfab{border-radius:999px!important;color:var(--ink)!important}
+html[data-steady-theme="dark"] .topfab svg{color:var(--or)!important}
+body.scrolled .topfab{background:var(--g-surface2)!important}
+@media(max-width:399px){.screen{padding-left:13px;padding-right:13px}.t4head,.hhead{margin-left:-13px!important;margin-right:-13px!important}.card,.ex,.wt,.cal{padding:13px}.nav{left:8px!important;right:8px!important}.t4head .dt{font-size:23px}.wt .h1{font-size:23px!important}.eq .eqi{width:26px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+/* Segmented selection slides on top of the glass track. */
+.gind{position:absolute;z-index:0;background:var(--orsoft);border:1px solid color-mix(in srgb,var(--or) 46%,transparent);border-radius:999px;box-shadow:inset 0 1px 0 var(--g-highlight);transition:left .34s var(--g-spring),top .34s var(--g-spring),width .34s var(--g-spring),height .34s var(--g-spring);pointer-events:none}
+.scper,.tabs,.seg4,.ptabs{position:relative;isolation:isolate}
+.scper button,.tabs button,.seg4 button,.ptabs button{position:relative;z-index:1}
+/* Dense progress and onboarding surfaces must not inherit the legacy black HUD. */
+.hudbg,.hudlines,.htr:before,.scpl:before,.hpl:before,.scpl .glow:after{opacity:0!important;pointer-events:none!important}
+.sqplan strong,.sqplan b,.sqplan .h{color:var(--ink)!important}
+.sqplan .s,.sqfact .s{color:var(--muted)!important}
+.hudbg+.hudlines{display:none!important}
+/* Subtle activity highlight; no decorative pulse during focused logging. */
+@media(prefers-reduced-motion:no-preference){.nav button.on:not(.navball) svg{animation:steady-pulse .37s var(--g-spring)}}
+/* Final typographic normalization: source widgets still declare comic fonts in hundreds of
+   deep selectors; apply the STEADY font explicitly throughout the app without touching the SVG geometry. */
+#app :where(*):not(svg):not(svg *){font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;font-style:normal!important;-webkit-text-stroke:0!important;text-shadow:none!important;letter-spacing:-.018em!important}
+#app :where(.bang,.h1,.jtitle,.scpl .n,.t4head .dt,.ex .nm,.topbar .t,.sq .sqt){font-weight:800!important;line-height:1.12!important;letter-spacing:-.042em!important}
+#app :where(.bang,.title,.jtitle,.jhead .h){text-transform:capitalize!important}
+#app .ex .eqi svg *{filter:none!important;stroke:#18432F!important}
+#app .eqi svg [fill]:not([fill="none"]){fill:#97D9B4!important}
+#app .eqi{filter:none!important;background:var(--orsoft)!important}
+#app .t4head .dt,#app .jhead .bang{font-size:clamp(25px,6.4vw,31px)!important}
+#app .scpl .num,#app .scpl [data-c]{color:var(--or)!important;text-shadow:none!important;filter:none!important}
+#app .scpl .powering{background:var(--orsoft)!important;color:var(--or)!important}
+/* Onboarding hero with a restrained, recognizable glass icon. */
+.steady-welcome{display:flex;align-items:center;gap:14px;padding:15px;margin:0 0 20px;border:1px solid var(--g-border);border-radius:24px;
+ background:linear-gradient(110deg,color-mix(in srgb,var(--or) 13%,var(--g-surface)),var(--g-surface));box-shadow:inset 0 1px 0 var(--g-highlight),var(--g-shadow)}
+.steady-welcome svg{flex:none;width:51px;height:51px;filter:drop-shadow(0 3px 12px color-mix(in srgb,var(--or) 16%,transparent))}
+.steady-welcome b{display:block;font-size:20px!important;font-weight:830!important;letter-spacing:-.04em!important;color:var(--ink)}
+.steady-welcome small{font-size:13px;color:var(--muted);display:block;margin-top:2px;line-height:1.35}
+/* Profile and plan dividers need visibility in both light and dark palettes. */
+#app .srow,#app .kvr,#app .prow,#app .sqfact{border-top-color:var(--line2)!important}
+#app .scpl .hart{transform:none!important}
