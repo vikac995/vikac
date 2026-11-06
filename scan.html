@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0A1226">
+<title>Barcode Scan Test</title>
+<style>
+:root{--bg:#0A1226;--card:#141F40;--card2:#1C2A55;--line:#2A3A6E;--fg:#EEF1FA;--mut:#9AA5C6;--accent:#F2D06B;--accent-fg:#141A33;--ok:#7ADBA3;--bad:#FF8A8A;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
+.wrap{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:22px;margin:4px 0 0}
+p{margin:0;color:var(--mut)}
+.cam{position:relative;border-radius:18px;overflow:hidden;background:#000;aspect-ratio:4/3;border:1px solid var(--line)}
+video{width:100%;height:100%;object-fit:cover;display:block}
+.frame{position:absolute;left:12%;right:12%;top:32%;bottom:32%;border:2px solid var(--accent);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.35);pointer-events:none}
+.cam .hint{position:absolute;left:0;right:0;bottom:10px;text-align:center;font-size:13px;color:#fff;text-shadow:0 1px 3px #000}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+button,input{font:inherit;color:inherit}
+.btn{flex:1;min-height:46px;border-radius:999px;border:0;background:var(--accent);color:var(--accent-fg);font-weight:700;padding:0 18px;cursor:pointer}
+.btn.sec{background:var(--card2);color:var(--fg);border:1px solid var(--line)}
+input{flex:1;min-width:0;min-height:46px;border-radius:14px;border:1px solid var(--line);background:var(--card);padding:0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.res{display:flex;gap:12px;align-items:flex-start}
+.res img{width:64px;height:64px;object-fit:contain;background:#fff;border-radius:10px;flex:none}
+.res b{display:block;font-size:16px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-variant-numeric:tabular-nums}
+.kv span{color:var(--mut)}
+.tag{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px}
+.tag.ok{background:rgba(122,219,163,.15);color:var(--ok)}
+.tag.no{background:rgba(255,138,138,.15);color:var(--bad)}
+.stats{display:flex;gap:16px;font-variant-numeric:tabular-nums}
+.stats div b{display:block;font-size:22px}
+.stats div span{font-size:12px;color:var(--mut)}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+li{display:flex;justify-content:space-between;gap:10px;font-size:13px;border-top:1px solid var(--line);padding-top:6px}
+li span{color:var(--mut);white-space:nowrap}
+small{color:var(--mut);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Barcode scan test</h1>
+  <p>Point the camera at a barcode on any food package. It looks the product up in Open Food Facts, the free database the app would use. Scan what's in your kitchen to see how much it knows.</p>
+
+  <div class="cam" id="cam" hidden><video id="video" playsinline muted></video><div class="frame"></div><div class="hint" id="hint">Hold the barcode inside the frame</div></div>
+  <div class="row"><button class="btn" id="start">Start camera</button><button class="btn sec" id="stop" hidden>Stop</button></div>
+  <div class="row"><input id="code" inputmode="numeric" placeholder="Or type the number under the barcode"><button class="btn sec" id="look" style="flex:none">Look up</button></div>
+  <small id="engine"></small>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="card">
+    <div class="stats"><div><b id="nScan">0</b><span>scanned</span></div><div><b id="nFound">0</b><span>found</span></div><div><b id="nKcal">0</b><span>with kcal</span></div><div><b id="pct">–</b><span>hit rate</span></div></div>
+    <ul id="log"></ul>
+    <div class="row"><button class="btn sec" id="copy">Copy the list</button><button class="btn sec" id="clear">Clear</button></div>
+    <small>The list stays on this phone. Copy it and paste it to Claude when you're done.</small>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let stream=null,running=false,detector=null,zx=null,last='',lastAt=0;
+let log=[];try{log=JSON.parse(localStorage.getItem('scanlog')||'[]')}catch(e){}
+
+const FIELDS='product_name,product_name_hr,product_name_en,brands,nutriments,serving_size,quantity,image_front_small_url,countries_tags';
+async function lookup(code){
+  code=String(code).replace(/\D/g,'');if(code.length<8){show({code,error:'That doesn\'t look like a full barcode (8–14 digits).'});return}
+  show({code,loading:true});
+  const t0=performance.now();
+  try{
+    const r=await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=${FIELDS}`);
+    const j=await r.json();const ms=Math.round(performance.now()-t0);
+    if(j.status!==1||!j.product){record(code,null,ms);show({code,missing:true,ms});return}
+    const p=j.product,n=p.nutriments||{};
+    const item={code,name:p.product_name_en||p.product_name||p.product_name_hr||'(no name)',brand:p.brands||'',qty:p.quantity||'',serving:p.serving_size||'',img:p.image_front_small_url||'',
+      kcal:n['energy-kcal_100g']??(n['energy_100g']!=null?Math.round(n['energy_100g']/4.184):null),prot:n.proteins_100g,carb:n.carbohydrates_100g,fat:n.fat_100g,hr:(p.countries_tags||[]).includes('en:croatia')};
+    record(code,item,ms);show({...item,ms});
+  }catch(e){show({code,error:'No connection to the database. Check the internet and try again.'})}
+}
+function record(code,item,ms){
+  log=log.filter(x=>x.code!==code);
+  log.unshift({code,found:!!item,kcal:item&&item.kcal!=null,name:item?item.name:'',brand:item?item.brand:'',ms});
+  try{localStorage.setItem('scanlog',JSON.stringify(log.slice(0,200)))}catch(e){}
+  renderLog();
+}
+const f=v=>v==null?'—':(Math.round(v*10)/10).toString();
+function show(o){
+  const el=$('result');el.hidden=false;
+  if(o.loading){el.innerHTML=`<b>${o.code}</b><small>Looking up…</small>`;return}
+  if(o.error){el.innerHTML=`<b>${o.code}</b><small>${o.error}</small>`;return}
+  if(o.missing){el.innerHTML=`<div><span class="tag no">Not in the database</span></div><b>${o.code}</b><small>In the app this is where "Add it from the label" would open. (${o.ms} ms)</small>`;return}
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  el.innerHTML=`<div><span class="tag ok">Found</span> ${o.kcal==null?'<span class="tag no">no kcal</span>':''} ${o.hr?'<span class="tag ok">sold in Croatia</span>':''}</div>
+   <div class="res">${o.img?`<img src="${esc(o.img)}" alt="">`:''}<div><b>${esc(o.name)}</b><small>${esc(o.brand)}${o.qty?' · '+esc(o.qty):''}</small></div></div>
+   <div class="kv"><span>Per 100 g</span><span></span><span>Calories</span><b>${o.kcal==null?'—':Math.round(o.kcal)+' kcal'}</b><span>Protein</span><b>${f(o.prot)} g</b><span>Carbs</span><b>${f(o.carb)} g</b><span>Fat</span><b>${f(o.fat)} g</b>${o.serving?`<span>Serving</span><b>${esc(o.serving)}</b>`:''}</div>
+   <small>${o.code} · answered in ${o.ms} ms</small>`;
+}
+function renderLog(){
+  const n=log.length,fd=log.filter(x=>x.found).length,kc=log.filter(x=>x.kcal).length;
+  $('nScan').textContent=n;$('nFound').textContent=fd;$('nKcal').textContent=kc;$('pct').textContent=n?Math.round(fd/n*100)+'%':'–';
+  $('log').innerHTML=log.slice(0,30).map(x=>`<li><div>${x.found?(x.name||'(no name)').replace(/</g,'&lt;'):'Not found'}<br><small>${x.code}</small></div><span>${x.found?(x.kcal?'✓ kcal':'no kcal'):'✗'}</span></li>`).join('');
+}
+
+async function start(){
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})}
+  catch(e){$('engine').textContent='The camera could not start: '+(e.name==='NotAllowedError'?'permission was refused. Allow the camera for this site in Chrome\'s settings.':e.message)+' You can still type the number.';return}
+  $('cam').hidden=false;$('start').hidden=true;$('stop').hidden=false;
+  const v=$('video');v.srcObject=stream;await v.play();running=true;
+  if('BarcodeDetector' in window){
+    try{const fm=await BarcodeDetector.getSupportedFormats();detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e'].filter(x=>fm.includes(x))});$('engine').textContent='Scanner: the phone\'s built-in barcode detector.';loopNative();return}catch(e){}
+  }
+  $('engine').textContent='Scanner: loading the fallback reader…';
+  try{await loadScript('https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js');zx=new ZXing.BrowserMultiFormatReader();$('engine').textContent='Scanner: ZXing (fallback; the phone has no built-in detector).';
+    zx.decodeFromVideoElementContinuously(v,(res)=>{if(res)hit(res.getText())});}
+  catch(e){$('engine').textContent='No scanner available in this browser. Type the number instead.'}
+}
+function loadScript(src){return new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)})}
+async function loopNative(){
+  if(!running)return;
+  try{const r=await detector.detect($('video'));if(r.length)hit(r[0].rawValue)}catch(e){}
+  setTimeout(()=>requestAnimationFrame(loopNative),120);
+}
+function hit(code){
+  const now=Date.now();if(code===last&&now-lastAt<4000)return;last=code;lastAt=now;
+  if(navigator.vibrate)navigator.vibrate(40);$('hint').textContent='Got '+code;$('code').value=code;lookup(code);
+}
+function stop(){running=false;if(zx)try{zx.reset()}catch(e){}if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$('cam').hidden=true;$('start').hidden=false;$('stop').hidden=true}
+
+$('start').onclick=start;$('stop').onclick=stop;
+$('look').onclick=()=>lookup($('code').value);
+$('code').addEventListener('keydown',e=>{if(e.key==='Enter')lookup($('code').value)});
+$('copy').onclick=async()=>{const t=['code\tfound\tkcal\tname\tbrand\tms',...log.map(x=>[x.code,x.found?'yes':'no',x.kcal?'yes':'no',x.name,x.brand,x.ms].join('\t'))].join('\n');
+  try{await navigator.clipboard.writeText(t);$('copy').textContent='Copied'}catch(e){$('copy').textContent='Copy failed'}setTimeout(()=>$('copy').textContent='Copy the list',1500)};
+$('clear').onclick=()=>{if($('clear').dataset.arm){log=[];try{localStorage.removeItem('scanlog')}catch(e){}renderLog();$('clear').textContent='Clear';delete $('clear').dataset.arm}else{$('clear').textContent='Tap again to clear';$('clear').dataset.arm=1;setTimeout(()=>{$('clear').textContent='Clear';delete $('clear').dataset.arm},3000)}};
+renderLog();
+</script>
+</body>
+</html>
