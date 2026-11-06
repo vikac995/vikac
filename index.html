@@ -1675,6 +1675,26 @@ em.est{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-s
 .sqchg .tl{margin-left:auto;font-size:13.5px;color:var(--muted);text-align:right}
 .sqkeepl{margin:8px 2px 0;font-size:13.5px;color:var(--muted)}
 .sq .nw{white-space:nowrap}
+
+/* ===== v5.13: the living header and the one contextual pill ===== */
+.t4head{position:sticky;top:0;z-index:15;margin:0 -14px 2px;padding:calc(8px + var(--sat)) 16px 6px;transition:background .25s,box-shadow .25s,border-color .25s;border-bottom:1px solid transparent}
+body.scrolled .t4head{background:rgba(14,15,18,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom-color:var(--line);box-shadow:0 10px 24px -14px rgba(0,0,0,.7)}
+.t4head .dtc{display:none}
+body.scrolled .t4head .dt{display:none}
+body.scrolled .t4head .dtc{display:inline;font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:13px;color:var(--or2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+.t4head .hib[data-shots]{max-width:40px;transition:max-width .25s cubic-bezier(.2,.8,.2,1),opacity .18s,margin .25s cubic-bezier(.2,.8,.2,1),transform .25s cubic-bezier(.18,1.25,.32,1),border-width .25s;overflow:hidden}
+body.scrolled .t4head .hib[data-shots]{max-width:0;opacity:0;margin-left:-8px;border-width:0;transform:scale(.6);pointer-events:none}
+.hact{display:inline-flex;align-items:center;height:36px;border-radius:999px;background:var(--or);color:#120c05;font-family:'BarlowC',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:13.5px;white-space:nowrap;max-width:0;padding:0;border:0 solid #000;box-shadow:0 3px 0 #7a3a00;opacity:0;transform:translateY(8px) scale(.9);overflow:hidden;pointer-events:none;transition:max-width .28s cubic-bezier(.2,.8,.2,1),opacity .2s,transform .35s cubic-bezier(.18,1.25,.32,1),padding .28s cubic-bezier(.2,.8,.2,1),border-width .28s}
+.hact.show{max-width:230px;padding:0 14px;border-width:2px;opacity:1;transform:none;pointer-events:auto}
+.hact:active{transform:translateY(2px) scale(.97);box-shadow:0 1px 0 #7a3a00}
+.topfab{position:fixed;right:14px;bottom:calc(92px + var(--sab));z-index:19;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px 0 11px;border-radius:999px;background:rgba(45,46,54,.97);color:var(--ink);border:1.5px solid var(--line2);font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;max-width:calc(100vw - 28px);box-shadow:0 10px 26px rgba(0,0,0,.5);opacity:0;transform:translateY(16px) scale(.9);pointer-events:none;transition:opacity .2s cubic-bezier(.2,.8,.2,1),transform .38s cubic-bezier(.18,1.25,.32,1)}
+.topfab svg{flex:none;color:var(--or);transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+.topfab b{font-weight:700;overflow:hidden;text-overflow:ellipsis;text-transform:none;letter-spacing:0}
+.topfab b:empty{display:none}
+.topfab.show{opacity:1;transform:none;pointer-events:auto}
+.topfab.show:active{transform:scale(.95)}
+body.kpopen .topfab,body.locked .topfab{opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){.topfab,.hact,.t4head,.t4head .hib[data-shots]{transition:none}}
 </style>
 <style id="glass">
 /* ===== Glass preview: translucent surfaces, floating bars, sliding controls. Overrides only; the comic art and fonts stay. ===== */
@@ -1766,6 +1786,12 @@ input,textarea,select{border-radius:14px;background:rgba(14,15,18,.5)}
 .nav.nav3 .navball .bb.gbump{animation:gbump .5s cubic-bezier(.2,.9,.3,1.3)}
 @media (prefers-reduced-motion:reduce){.gbump,.nav.nav3 .navball .bb.gbump{animation:none}.scper .gind,.tabs .gind,.seg4 .gind,.ptabs .gind{transition:none}}
 
+/* the living header and the pill in glass */
+body.scrolled .t4head{background:var(--glass2);background-image:none;border:1px solid var(--edge);border-top:0;border-radius:0 0 24px 24px;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),var(--gshadow)}
+.hact{background:linear-gradient(180deg,#FF9B45,var(--or) 55%,#E06A00);border-color:rgba(255,255,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 16px rgba(254,127,12,.28);color:#120c05}
+.hact:active{transform:scale(.96);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 3px 10px rgba(254,127,12,.2)}
+.topfab{bottom:calc(96px + var(--sab));background:var(--glass3);border:1px solid var(--edge2);color:var(--ink);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),0 12px 28px rgba(0,0,0,.4)}
+
 </style>
 </head>
 <body>
@@ -1773,7 +1799,7 @@ input,textarea,select{border-radius:14px;background:rgba(14,15,18,.5)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.12.0';
+const APP_VERSION = '5.13.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -8034,6 +8060,7 @@ Object.assign(HR_DICT, {
   'Budget = BMR {0} + band {1} − {2} deficit': 'Budžet = BMR {0} + narukvica {1} − {2} deficit', 'Protein {0} g to go': 'Još {0} g proteina', 'Protein ✓': 'Proteini ✓', '{0} min walk ≈ +{1}': '{0} min hoda ≈ +{1}',
   'Screenshot your MFP day, or type it': 'Snimka MFP dana ili upiši ručno', 'Plan it in MFP': 'Isplaniraj u MFP-u', 'band synced {0}': 'narukvica sinkr. {0}', 'band': 'narukvica', 'kcal over': 'kcal preko',
   'then': 'zatim', 'set {0} of {1}': 'serija {0} od {1}', '{0} done · ~{1} min': '{0} gotovo · ~{1} min', 'NEXT SET': 'SLJEDEĆA', 'Go': 'Kreni', 'GO': 'KRENI', 'Skip': 'Preskoči',
+  'Top': 'Vrh', 'Next set': 'Sljedeća serija', 'Done ✓': 'Gotovo ✓',
   'Rest timer on': 'Odmor: uključen', 'Rest timer off': 'Odmor: isključen', 'Workout time': 'Trajanje treninga', '(stopped at 3 h)': '(zaustavljeno na 3 h)', 'timer': 'štoperica', 'no data': 'nema podataka',
   'activity: yours': 'aktivnost: tvoja', 'activity: estimate': 'aktivnost: procjena', 'band {0}': 'narukvica {0}', 'Budget = BMR {0} + activity {1} − {2} deficit': 'Budžet = BMR {0} + aktivnost {1} − {2} deficit',
   'v{0} · profile': 'v{0} · profil', '{0} / {1} exercises': '{0} / {1} vježbi', '{0} kg · {1} % fat': '{0} kg · {1} % masti', '{0} kg · {1} kg': '{0} kg · {1} kg',
@@ -8214,6 +8241,65 @@ for (const [c, ch] of [['essential fat', 'esencijalna mast'], ['athletic', 'spor
 // a habit's days with the new day types: "On Legs, Lower and Muay Thai days" (every mix of the eight)
 { const T = [['Push', 'Push'], ['Pull', 'Pull'], ['Legs', 'Legs'], ['Full body', 'Full body'], ['Upper', 'Upper'], ['Lower', 'Lower'], ['Muay Thai', 'Muay Thai'], ['rest', 'odmor']], list = (l, and) => l.length === 1 ? l[0] : l.slice(0, -1).join(', ') + and + l[l.length - 1];
   for (let m = 1; m < 256; m++) { const pick = T.filter((x, i) => m & (1 << i)); HR_DICT['On ' + list(pick.map(x => x[0]), ' and ') + ' days'] = 'Dani: ' + list(pick.map(x => x[1]), ' i '); } }
+/* ---------- Motion: the page's scroll state as classes on <body>, headers that turn into what you are doing, and the one
+   floating pill that appears only when it has something to do (Back to top, the set you should be on, Today's row).
+   body.scrolled  the page has left the top — on past 72 px, off under 40 (the gap stops it flickering on the line)
+   body.deep      more than a screen down
+   body.up        the finger is bringing the page back up — that is when Back to top shows
+   Everything here reads the page once per frame on scroll; the looks are CSS transitions, so nothing is animated by hand. */
+(function () {
+  const B = document.body; let last = 0, raf = 0, upAcc = 0, pill = null;
+  const UP = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+  function pillEl() {
+    if (pill) return pill;
+    pill = document.createElement('button'); pill.type = 'button'; pill.className = 'topfab'; pill.id = 'topfab'; pill.innerHTML = UP + '<span>Top</span><b></b>';
+    pill.onclick = () => { vib(8); if (pill._box) { const b = pill._box; pill._box = null; if (typeof glideTo === 'function') glideTo(b, 104, 320); else b.scrollIntoView({ behavior: 'smooth', block: 'start' }); } else if (pill._y != null) { window.scrollTo({ top: pill._y, behavior: 'smooth' }); pill._y = null; } else window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    document.body.appendChild(pill); return pill;
+  }
+  function setPill(show, label, name, box, y, arrowDown) {
+    const p = pillEl(); p._box = box || null; p._y = y == null ? null : y;
+    if (show) { const s = p.querySelector('span'), b = p.querySelector('b'); if (s.textContent !== label) s.textContent = label; const n = name ? ' · ' + name : ''; if (b.textContent !== n) b.textContent = n; p.querySelector('svg').style.transform = arrowDown ? 'rotate(180deg)' : ''; }
+    p.classList.toggle('show', !!show);
+  }
+  const inView = (el, top, bottom) => { const r = el.getBoundingClientRect(), h = window.innerHeight; return r.top < h - (bottom || 120) && r.bottom > (top || 110); };
+  const exName = box => { const nm = box.querySelector('.nm'); let t = ''; if (nm) nm.childNodes.forEach(n => { if (n.nodeType === 3) t += n.textContent; }); return t.replace(/^\d+\.\s*/, '').trim(); };
+  function tick() {
+    raf = 0; if (B.classList.contains('locked')) return;   // a sheet is up: the page under it stays as it was
+    const st = window.scrollY, dy = st - last; last = st;
+    if (st > 72) B.classList.add('scrolled'); else if (st < 40) B.classList.remove('scrolled');
+    const deep = st > window.innerHeight * .8; B.classList.toggle('deep', deep);
+    if (dy < 0) upAcc += -dy; else if (dy > 0) upAcc = 0; const up = upAcc > 24; B.classList.toggle('up', up);
+    const scr = typeof R !== 'undefined' ? R.screen : '';
+    if (scr === 'workout') {
+      // the open card is the set you should be on; while it is off the screen the pill brings you back (not during a rest, the dock has that)
+      const box = app.querySelector('.ex.open'), resting = !!document.querySelector('.rdock');
+      if (box && !box.classList.contains('done') && !resting && !inView(box, 120, 150)) setPill(true, 'Next set', exName(box), box, null, box.getBoundingClientRect().top > 0); else setPill(false);
+    } else if (scr === 'journey' && R.jtab !== 'month' && app.querySelector('.jd.today') && !inView(app.querySelector('.jd.today'), 130, 100) && B.classList.contains('scrolled')) {
+      const row = app.querySelector('.jd.today'); setPill(true, 'Today', '', null, Math.max(0, row.getBoundingClientRect().top + window.scrollY - 150), row.getBoundingClientRect().top > 0);
+    } else if (typeof FS_SCREENS !== 'undefined' && FS_SCREENS[scr]) setPill(false);
+    else setPill(deep && up, 'Top');
+    todayHead();
+  }
+  // Today's header: once the day scrolls past, Day N stays and the cycle text becomes the training with its one button
+  function todayHead() {
+    const h = $('#t4head'); if (!h) return; const on = B.classList.contains('scrolled') && (typeof R === 'undefined' || R.screen === 'today'); if (h._on === on) return; h._on = on;
+    let chip = h.querySelector('.hact'), dtc = h.querySelector('.dtc');
+    if (!chip) { chip = document.createElement('button'); chip.type = 'button'; chip.className = 'hact'; chip.onclick = () => { const wt = app.querySelector('#t4body [data-wt]'); if (wt) wt.click(); }; const hb = h.querySelector('.hbtns'); if (hb) hb.insertBefore(chip, hb.firstChild); }
+    if (!dtc) { dtc = document.createElement('span'); dtc.className = 'dtc'; const dt = h.querySelector('.dt'); if (dt) dt.after(dtc); }
+    if (!on) { chip.classList.remove('show'); return; }
+    const wt = app.querySelector('#t4body [data-wt]'), t = wt && wt.querySelector('.t'), btn = wt && wt.querySelector('[data-startwo]');
+    dtc.textContent = t ? t.textContent : '';
+    const label = btn ? btn.textContent.replace(/\s*▶\s*$/, '') : wt && wt.classList.contains('done') ? (wt.classList.contains('rest') ? '' : 'Done ✓') : '';
+    chip.textContent = label; chip.classList.toggle('show', !!label);
+  }
+  const schedule = () => { if (!raf) raf = requestAnimationFrame(tick); };
+  window.addEventListener('scroll', schedule, { passive: true });
+  window.addEventListener('resize', schedule);
+  // a new screen (or a patched day) needs the state read again even if nothing scrolled
+  if (typeof render === 'function') { const r0 = render; render = function () { const out = r0.apply(this, arguments); last = window.scrollY; upAcc = 0; B.classList.remove('up'); schedule(); return out; }; }
+  if (typeof patchToday === 'function') { const p0 = patchToday; patchToday = function () { const out = p0.apply(this, arguments); const h = $('#t4head'); if (h) h._on = null; schedule(); return out; }; }
+  schedule();
+})();
 /* ---------- Glass preview: sliding panes under segmented controls, a bump on the tab you tapped ---------- */
 (function () {
   const SEGS = '.scper,.tabs,.seg4,.ptabs';
