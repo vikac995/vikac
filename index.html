@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, interactive-widget=resizes-content">
-<title>STEADY · Fitness</title>
+<title>Trening</title>
 <meta name="theme-color" content="#0E0F12">
 <meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1696,7 +1696,103 @@ body.scrolled .t4head .hib[data-shots]{max-width:0;opacity:0;margin-left:-8px;bo
 body.kpopen .topfab,body.locked .topfab{opacity:0;pointer-events:none}
 @media (prefers-reduced-motion:reduce){.topfab,.hact,.t4head,.t4head .hib[data-shots]{transition:none}}
 </style>
-<link rel="stylesheet" href="steady-glass.css">
+<style id="glass">
+/* ===== Glass preview: translucent surfaces, floating bars, sliding controls. Overrides only; the comic art and fonts stay. ===== */
+:root{
+  --glass:rgba(38,40,46,.52);--glass2:rgba(50,52,60,.6);--glass3:rgba(66,69,78,.7);
+  --edge:rgba(255,255,255,.12);--edge2:rgba(255,255,255,.22);--spec:rgba(255,255,255,.24);
+  --gshadow:0 10px 28px rgba(0,0,0,.42);--blur:blur(16px) saturate(160%);
+  --amb1:#2B1A0E;--amb2:#101F30;--amb3:#1E1A14;--amb4:#0A0B0D;
+  --card:var(--glass);--paper2:rgba(28,30,36,.55);--s2:var(--glass2);--s3:var(--glass3);--line:var(--edge);--line2:var(--edge2);
+}
+html,body{background:var(--amb4)}
+body{background:radial-gradient(60% 46% at 14% 14%,var(--amb1) 0,transparent 70%),radial-gradient(52% 44% at 88% 36%,var(--amb2) 0,transparent 70%),radial-gradient(56% 46% at 50% 96%,var(--amb3) 0,transparent 70%),var(--amb4);background-attachment:fixed;background-size:cover}
+
+/* the material */
+.card,.step,.tip,.avatar,.hist,.cycrow,.jcy,.qtile,.ctile,.stp,.target,.affix,input,textarea,select,.pill,.chip,.tabs button,.seg4 button,.todo li,.t4band,.ex .last,.ex .last .use,.mnav,.sqplan,.kb .track,.modal{
+  background:var(--glass);border:1px solid var(--edge);
+  box-shadow:inset 0 1px 0 var(--spec),inset 0 -1px 0 rgba(0,0,0,.25),var(--gshadow);
+}
+.card,.step,.todo li,.jcy,.hist,.cycrow,.avatar,.tip,.t4band{border-radius:20px}
+.todo li{border-width:1px;box-shadow:inset 0 1px 0 var(--spec),0 6px 16px rgba(0,0,0,.28)}
+.todo li.req,.todo li.bonus{border-width:1px;box-shadow:inset 0 1px 0 var(--spec),0 6px 16px rgba(0,0,0,.28)}
+.todo li.done{background:rgba(28,30,36,.45)}
+.todo .chk{background:var(--glass2);border:1px solid var(--edge2);border-radius:10px;box-shadow:inset 0 1px 0 var(--spec)}
+.todo li.done .chk{background:var(--ok);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 6px 14px rgba(61,220,132,.35)}
+.pill,.chip,.tabs button,.seg4 button,.ex .last .use,.mnav,.affix,.stp,.qtile,.ctile{box-shadow:inset 0 1px 0 var(--spec),0 4px 12px rgba(0,0,0,.2)}
+.pill,.chip{border-radius:999px}
+.chip{padding:4px 11px}
+.tabs button,.seg4 button{border-radius:14px}
+.tabs button.on,.seg4 button.on{background:var(--glass3);border-color:var(--edge2);color:var(--ink);box-shadow:inset 0 1px 0 var(--spec),0 0 0 1px rgba(254,127,12,.55),0 6px 18px rgba(0,0,0,.25)}
+.ctile{border-top:1px solid var(--edge)}
+.ctile::before{content:"";position:absolute;left:12px;right:12px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--c)}
+input,textarea,select{border-radius:14px;background:rgba(14,15,18,.5)}
+.affix{border-radius:14px}
+.affix:focus-within{box-shadow:inset 0 1px 0 var(--spec),0 0 0 2px rgba(254,127,12,.45)}
+.affix input{background:transparent;box-shadow:none}
+.kvr,.prow,.srow,.sqchg>div{border-top-color:var(--edge)}
+.target{border-style:solid;border-radius:16px}
+.ex .last{border-style:solid;border-radius:14px}
+
+/* buttons: glass with an orange core */
+.btn{border:1px solid rgba(255,255,255,.28);border-radius:999px;background:linear-gradient(180deg,#FF9B45,var(--or) 55%,#E06A00);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -1px 0 rgba(0,0,0,.2),0 10px 24px rgba(254,127,12,.28)}
+.btn:active{transform:scale(.985);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 4px 12px rgba(254,127,12,.2)}
+.btn.sec{background:var(--glass2);color:var(--ink);border:1px solid var(--edge2);box-shadow:inset 0 1px 0 var(--spec),var(--gshadow)}
+.btn.ghost{background:transparent;box-shadow:none;border-color:var(--edge2)}
+.btn.sm{box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 6px 14px rgba(254,127,12,.22)}
+.btn.run{background:linear-gradient(180deg,#5FC0FF,var(--beam) 55%,#1079C8);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 10px 24px rgba(31,162,255,.3)}
+.btn.danger{background:var(--glass2);border-color:rgba(255,107,94,.5)}
+
+/* floating bars */
+.topbar{background:var(--glass2);background-image:none;border:1px solid var(--edge);border-radius:0 0 24px 24px;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),var(--gshadow)}
+.topbar .back{background:var(--glass3);border:1px solid var(--edge2);border-radius:14px;box-shadow:inset 0 1px 0 var(--spec)}
+.wbar,.segbar{background:rgba(10,11,13,.6);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
+.nav{left:12px;right:12px;bottom:calc(12px + var(--sab));max-width:536px;margin:0 auto;border-radius:999px;border:1px solid var(--edge);background:var(--glass2);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),var(--gshadow);padding:4px 10px 4px}
+.nav.nav3{padding:6px 10px 7px}
+.nav button{border-radius:999px;transition:color .2s}
+.nav button.on{color:var(--or2)}
+.nav svg{transition:transform .2s}
+.nav.nav3 .navball .bb{border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 20px rgba(0,0,0,.6)}
+.screen{padding-bottom:calc(104px + var(--sab))}
+.screen.bar{padding-bottom:calc(166px + var(--sab))}
+.rdock{bottom:calc(104px + var(--sab));background:rgba(28,19,11,.72);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid rgba(254,127,12,.6)}
+.botbar{background:linear-gradient(rgba(10,11,13,0),rgba(10,11,13,.85) 40%);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.botbar .rest,.botbar .dur{background:var(--glass2);border:1px solid var(--edge2);border-radius:999px;box-shadow:inset 0 1px 0 var(--spec)}
+.player{background:var(--glass2);border:1px solid rgba(254,127,12,.5);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),0 0 22px rgba(254,127,12,.18),var(--gshadow)}
+
+/* sheets */
+.modalbg{background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.modal{background:var(--glass2);border:1px solid var(--edge2);border-radius:26px;-webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%);box-shadow:inset 0 1px 0 var(--spec),0 24px 60px rgba(0,0,0,.6)}
+
+/* the Today banner and the dragon-ball strip */
+.band{clip-path:none;border-radius:0 0 26px 26px;background:linear-gradient(160deg,rgba(254,127,12,.92),rgba(224,106,0,.88));background-image:none;border:1px solid rgba(255,255,255,.22);border-top:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 12px 30px rgba(254,127,12,.25)}
+.band::after{display:none}
+.t4band{border-radius:16px}
+
+/* sliding pane for segmented controls (positioned by glass.js) */
+.scper,.tabs,.seg4,.ptabs{position:relative}
+.scper .gind,.tabs .gind,.seg4 .gind,.ptabs .gind{position:absolute;z-index:0;pointer-events:none;border-radius:12px;background:var(--glass3);border:1px solid var(--edge2);box-shadow:inset 0 1px 0 var(--spec),0 4px 14px rgba(0,0,0,.28);transition:left .3s cubic-bezier(.3,.9,.25,1.05),width .3s cubic-bezier(.3,.9,.25,1.05),top .3s,height .3s}
+.scper .gind{background:rgba(141,255,106,.28);border-color:rgba(141,255,106,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 0 14px rgba(110,255,80,.35);border-radius:9px}
+.ptabs .gind{border-radius:12px 12px 0 0;background:var(--glass2)}
+.scper button,.tabs button,.seg4 button,.ptabs button{position:relative;z-index:1}
+.scper button.on{background:transparent;box-shadow:none;color:#dfffd0}
+.tabs button.on,.seg4 button.on{background:transparent;border-color:var(--edge);box-shadow:inset 0 1px 0 var(--spec),0 4px 12px rgba(0,0,0,.2)}
+.ptabs{border-bottom-color:var(--edge)}
+.ptabs button.on{border-bottom-color:var(--or)}
+
+/* motion */
+@keyframes gbump{0%{transform:scale(1)}40%{transform:scale(1.26)}70%{transform:scale(.94)}100%{transform:scale(1)}}
+.gbump{animation:gbump .42s cubic-bezier(.2,.9,.3,1.3)}
+.nav.nav3 .navball .bb.gbump{animation:gbump .5s cubic-bezier(.2,.9,.3,1.3)}
+@media (prefers-reduced-motion:reduce){.gbump,.nav.nav3 .navball .bb.gbump{animation:none}.scper .gind,.tabs .gind,.seg4 .gind,.ptabs .gind{transition:none}}
+
+/* the living header and the pill in glass */
+body.scrolled .t4head{background:var(--glass2);background-image:none;border:1px solid var(--edge);border-top:0;border-radius:0 0 24px 24px;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),var(--gshadow)}
+.hact{background:linear-gradient(180deg,#FF9B45,var(--or) 55%,#E06A00);border-color:rgba(255,255,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 16px rgba(254,127,12,.28);color:#120c05}
+.hact:active{transform:scale(.96);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 3px 10px rgba(254,127,12,.2)}
+.topfab{bottom:calc(96px + var(--sab));background:var(--glass3);border:1px solid var(--edge2);color:var(--ink);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),0 12px 28px rgba(0,0,0,.4)}
+
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -4834,11 +4930,11 @@ function startLiftAnim() {
 
 /* ---------- Today ---------- */
 function t4Ring(d, n, won, size) {
-  size = size || 176; const R0 = size * .449, C = size / 2, gap = n > 1 ? 14 : 0; let s = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><defs><linearGradient id="t4rg" x1="0" x2="1"><stop offset="0" stop-color="#9CE8BC"/><stop offset="1" stop-color="#63D69A"/></linearGradient></defs>`;
-  if (n === 1) return s + `<circle cx="${C}" cy="${C}" r="${R0}" fill="none" stroke="${d ? (won ? '#C9F68F' : 'url(#t4rg)') : '#29483B'}" stroke-width="${size * .06}" ${d ? `style="filter:drop-shadow(0 0 ${won ? 10 : 6}px ${won ? 'rgba(201,246,143,.85)' : 'rgba(99,214,154,.4)'})"` : ''}/></svg>`;
+  size = size || 176; const R0 = size * .449, C = size / 2, gap = n > 1 ? 14 : 0; let s = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><defs><linearGradient id="t4rg" x1="0" x2="1"><stop offset="0" stop-color="#FFC266"/><stop offset="1" stop-color="#FE7F0C"/></linearGradient></defs>`;
+  if (n === 1) return s + `<circle cx="${C}" cy="${C}" r="${R0}" fill="none" stroke="${d ? (won ? '#FFD84D' : 'url(#t4rg)') : '#26272E'}" stroke-width="${size * .06}" ${d ? `style="filter:drop-shadow(0 0 ${won ? 10 : 6}px ${won ? 'rgba(255,216,77,.9)' : 'rgba(254,127,12,.85)'})"` : ''}/></svg>`;
   for (let i = 0; i < n; i++) {
     const a0 = -90 + i * 360 / n + gap / 2, a1 = -90 + (i + 1) * 360 / n - gap / 2, p = a => [C + R0 * Math.cos(a * Math.PI / 180), C + R0 * Math.sin(a * Math.PI / 180)], [x0, y0] = p(a0), [x1, y1] = p(a1), large = (a1 - a0) > 180 ? 1 : 0, on = i < d;
-    s += `<path d="M${x0.toFixed(1)} ${y0.toFixed(1)} A${R0} ${R0} 0 ${large} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" fill="none" stroke="${on ? (won ? '#C9F68F' : 'url(#t4rg)') : '#29483B'}" stroke-width="${size * .06}" stroke-linecap="round" ${on ? `style="filter:drop-shadow(0 0 ${won ? 10 : 6}px ${won ? 'rgba(201,246,143,.85)' : 'rgba(99,214,154,.4)'})"` : ''}/>`;
+    s += `<path d="M${x0.toFixed(1)} ${y0.toFixed(1)} A${R0} ${R0} 0 ${large} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}" fill="none" stroke="${on ? (won ? '#FFD84D' : 'url(#t4rg)') : '#26272E'}" stroke-width="${size * .06}" stroke-linecap="round" ${on ? `style="filter:drop-shadow(0 0 ${won ? 10 : 6}px ${won ? 'rgba(255,216,77,.9)' : 'rgba(254,127,12,.85)'})"` : ''}/>`;
   }
   return s + '</svg>';
 }
@@ -8240,88 +8336,6 @@ for (const [c, ch] of [['essential fat', 'esencijalna mast'], ['athletic', 'spor
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
   window.addEventListener('resize', () => segs().forEach(s => place(s, null)));
 })();
-/* STEADY Visual Adapter — imported before v5.13 boot.
-   Deliberately keeps all training, nutrition, history, localStorage and sync functions untouched.
-   It rebrands the presentation assets and visible words. The existing seven-step reward rule remains
-   in place under neutral milestone visuals; this is NOT a new reward engine. */
-(function(){
- const glyph=(size=90,mode='neutral',label='S')=>{
-   const id='steady'+(++glyph.seq),won=mode==='full'||mode==='done',hollow=mode==='hollow'||mode==='faint'||mode==='locked';
-   const fill=won?'#9EE7A8':'#244D3E',edge=won?'#D8FFC0':'#7AB89D';
-   return `<svg class="steady-token" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true" style="opacity:${mode==='dim'?'.45':mode==='faint'?'.3':'1'}"><defs><linearGradient id="${id}" x1=".1" y1="0" x2=".8" y2="1"><stop stop-color="${won?'#E7FFC1':'#3D7260'}"/><stop offset=".54" stop-color="${fill}"/><stop offset="1" stop-color="${won?'#1C8060':'#143A2D'}"/></linearGradient></defs><circle cx="50" cy="50" r="43" fill="url(#${id})" stroke="${edge}" stroke-width="2.5"/><circle cx="50" cy="50" r="35" stroke="${won?'#123C2B':'#8CC5A5'}" stroke-width="1.4" fill="none" stroke-opacity=".45"/><path d="M29 52c13-6 12-18 23-18 6 0 8 5 5 10-5 8-19 6-17 15 1 6 11 10 26-6" fill="none" stroke="${won?'#16432D':'#BDE9C9'}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="72" cy="29" r="4" fill="${won?'#135A3A':'#A1C7B6'}"/></svg>`;
- };
- glyph.seq=0;
- const human=(o={})=>{
-  const size=Number(o.size)||84,height=Math.round(size*1.38);
-  return `<svg class="steady-avatar" width="${size}" height="${height}" viewBox="0 0 140 194" role="img" aria-label="Fitness avatar"><defs><linearGradient id="steadyWear" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9EE4B8"/><stop offset="1" stop-color="#1F8465"/></linearGradient></defs><ellipse cx="70" cy="181" rx="39" ry="7" fill="#09251B" opacity=".3"/><path d="M53 126L44 175M86 126L97 175" stroke="#344E49" stroke-width="20" stroke-linecap="round"/><path d="M40 177L20 181M100 177l18 4" stroke="#B7DCCA" stroke-width="11" stroke-linecap="round"/><path d="M46 67q24-14 48 0l14 66q-39 27-77 0z" fill="url(#steadyWear)" stroke="#B7F0C7" stroke-opacity=".6" stroke-width="2"/><path d="M42 78L21 113M99 78l21 35" stroke="#D3A786" stroke-width="17" stroke-linecap="round"/><path d="M20 112l-9 6M121 112l9 6" stroke="#D3A786" stroke-width="9" stroke-linecap="round"/><rect x="61" y="49" width="17" height="23" rx="7" fill="#D3A786"/><ellipse cx="70" cy="37" rx="27" ry="31" fill="#E3B89A"/><path d="M44 35q-3-30 29-30 29-3 25 27-7-16-18-18-21 20-36 21z" fill="#243D33"/><circle cx="61" cy="39" r="2.1" fill="#253D31"/><circle cx="80" cy="39" r="2.1" fill="#253D31"/><path d="M63 54q8 5 15-1" fill="none" stroke="#885E50" stroke-width="2" stroke-linecap="round"/><path d="M52 98h36" stroke="#C8FFD3" stroke-opacity=".4" stroke-width="2"/></svg>`;
- };
- // Preserve the original function contracts so no caller's data format changes.
- ballSvg=function(o){o=o||{};return glyph(o.size||84,o.state||'full');};
- orbSvg=function(o){o=o||{};return glyph(o.size||84,o.state||'hollow');};
- dragonBadgeSvg=function(o){o=o||{};return `<span class="steady-milestone-badge" aria-label="Milestone">${glyph(o.size||84,o.state||'locked')}</span>`;};
- dragonBigArt=function(){return `<div class="steady-milestone-hero" aria-label="Milestone reward">${glyph(180,'done')}</div>`;};
- heroArt=function(o){return human(o);};
- bodyArt=function(o){return human(o);};
- beamHeroArt=function(){return human({size:50});};
- heroSvg=function(o){o=o||{};if(o.inner)return `<g><circle cx="125" cy="72" r="31" fill="#DEB69B"/><path d="M81 119q43-35 86 0l18 144H67z" fill="#2B906C"/><path d="M81 136L43 193M172 136l37 57" stroke="#D5AC8E" stroke-width="21" stroke-linecap="round"/></g>`;return human(o);};
- bodyBeamHtml=function(o){o=o||{};const k=Math.round(100*Math.max(0,Math.min(1,Number(o.frac)||0)));return `<div class="steady-beam" style="border:1px solid var(--line2);background:var(--g-surface);border-radius:18px;padding:13px 15px;margin:10px 0"><div style="display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-bottom:9px"><span>Progress towards goal</span><strong style="color:var(--or)">${k}%</strong></div><div style="height:10px;border-radius:99px;background:var(--s3);overflow:hidden"><div style="height:100%;width:${k}%;border-radius:99px;background:var(--or)"></div></div></div>`;};
- // Type and strings are presentation-only: internal IDs remain 'ball', 'dragon', etc. for compatibility.
- const repl=[
-  [/Vikač High Kikač/gi,'STEADY'],[/\bScouter\b/gi,'Progress'],[/\bJourney\b/gi,'Plan'],
-  [/\bDragon summoned\b/gi,'Milestone claimed'],[/\bSee the dragon\b/gi,'View your milestone'],
-  [/\bDragon balls\b/gi,'Milestone tokens'],[/\bDragon ball\b/gi,'Milestone token'],
-  [/\bdragons\b/gi,'rewards'],[/\bdragon\b/gi,'reward'],[/\bballs\b/gi,'tokens'],[/\bball\b/gi,'token'],
-  [/\bSummon\b/g,'Claim'],[/\bPower level\b/gi,'Progress score'],[/\bPowering up\b/gi,'On your way'],[/\bKi\s+perfect\b/gi,'Consistency'],[/\bFIRST PROJECT\b/g,'GET STARTED'],
-  [/\bSkauter\b/gi,'Napredak'],[/\bPutovanje\b/gi,'Plan'],[/\bzmajeva\b/gi,'nagrada'],[/\bzmaja\b/gi,'nagrada'],[/\bzmaj\b/gi,'nagrada'],[/\bkugli\b/gi,'tokena'],[/\bkugle\b/gi,'tokena'],[/\bkugla\b/gi,'token']
- ];
- const originalTitle=document.title;
- const applyBrand=()=>{
-  document.title='STEADY · Fitness';
-  const root=document.getElementById('app');if(!root)return;
-  const walk=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
-  const list=[];while(walk.nextNode()){
-   const n=walk.currentNode;if(!n.nodeValue||!n.nodeValue.trim())continue;
-   const pa=n.parentElement;if(!pa||pa.closest('script,style,textarea,option,[contenteditable],svg'))continue;
-   if(n.nodeValue.length>280)continue;list.push(n);
-  }
-  for(const n of list){let s=n.nodeValue;for(const [rx,v] of repl)s=s.replace(rx,v);if(s!==n.nodeValue)n.nodeValue=s;}
-  if(root.querySelector('.screen') && !root.querySelector('.topbar') && !root.querySelector('.nav') && !root.querySelector('.sq') && !root.querySelector('.steady-welcome') && /FIRST PROJECT|GET STARTED/.test(root.innerText||'')){
-    const host=root.querySelector('.screen');
-    if(host){const welcome=document.createElement('div');welcome.className='steady-welcome';welcome.innerHTML=`<svg viewBox="0 0 100 100" role="img" aria-label="STEADY"><rect x="3" y="3" width="94" height="94" rx="27" fill="#153F30" stroke="#A5E5BA" stroke-width="2"/><path d="M27 54c18-6 18-23 35-23 12 0 13 11 4 18-10 8-29 5-29 17 0 10 17 12 36-6" fill="none" stroke="#D0FF9F" stroke-width="10" stroke-linecap="round"/></svg><div><b>Welcome to STEADY</b><small>Strong habits. Clear progress. Your pace.</small></div>`;host.insertBefore(welcome,host.firstChild);}
-  }
-  let gear=root.querySelector('.steady-theme');
-  if(!gear && root.querySelector('.screen')){
-    // profile/settings pages are independent renders. Add a real, accessible theme picker to those pages.
-    const onProfile=!!(root.querySelector('.topbar') && /settings|postavke/i.test(root.querySelector('.topbar').textContent||''));
-    if(onProfile){
-      const screen=root.querySelector('.screen');if(screen){
-        gear=document.createElement('section');gear.className='card steady-theme';
-        gear.innerHTML=`<div class="steady-theme-head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m17-7-2 2M7 17l-2 2M5 5l2 2m12 12-2-2"/></svg><div><strong>Appearance</strong><small>Choose your preferred STEADY theme.</small></div></div><div class="steady-theme-options" role="group" aria-label="Appearance"><button data-steady-theme="system">System</button><button data-steady-theme="light">Light</button><button data-steady-theme="dark">Dark</button></div>`;
-        screen.appendChild(gear);
-      }
-    }
-  }
-  if(gear){const mode=window.__steadyMode||'system';gear.querySelectorAll('[data-steady-theme]').forEach(b=>{b.classList.toggle('on',b.dataset.steadyTheme===mode);b.setAttribute('aria-pressed',b.dataset.steadyTheme===mode?'true':'false');});}
- };
- const setTheme=(mode,save=true)=>{
-   if(!['system','light','dark'].includes(mode))mode='system';window.__steadyMode=mode;
-   const resolved=mode==='system'?(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):mode;
-   document.documentElement.dataset.steadyTheme=resolved;
-   if(save)try{localStorage.setItem('steady.theme',mode)}catch(e){}
-   requestAnimationFrame(applyBrand);
- };
- let initial='system';try{initial=localStorage.getItem('steady.theme')||'system'}catch(e){}
- setTheme(initial,false);
- document.addEventListener('click',e=>{const b=e.target.closest?.('[data-steady-theme]');if(!b)return;setTheme(b.dataset.steadyTheme);},true);
- const mq=matchMedia('(prefers-color-scheme: light)'); if(mq.addEventListener)mq.addEventListener('change',()=>{if(window.__steadyMode==='system')setTheme('system',false)});
- document.addEventListener('DOMContentLoaded',()=>{
-  const root=document.getElementById('app');if(!root)return;
-  let pending=0;const tick=()=>{pending=0;applyBrand()};
-  const watch=new MutationObserver(()=>{if(!pending)pending=requestAnimationFrame(tick)});
-  watch.observe(root,{childList:true,subtree:true,characterData:true});applyBrand();
- });
-})();
-
 /* ---------- Boot ---------- */
 (async function boot() {
   i18nStart();   // Croatian: translate everything the app shows from here on
