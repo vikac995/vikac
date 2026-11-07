@@ -1763,6 +1763,88 @@ body.kpopen .topfab,body.locked .topfab{opacity:0;pointer-events:none}
 .scnundo{position:fixed;left:14px;right:14px;bottom:calc(98px + var(--sab));z-index:80;max-width:532px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:#1b281e;border:1.5px solid rgba(61,220,132,.6);box-shadow:0 12px 30px rgba(0,0,0,.6);animation:rdIn .3s cubic-bezier(.2,.8,.2,1);transition:opacity .2s,transform .2s}
 .scnundo span{flex:1;min-width:0;font-size:14px;color:#dfffe9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scnundo button{flex:none;border:0;background:none;color:#7dffb0;font-weight:800;font-size:15px;text-transform:uppercase;letter-spacing:.06em}
 .scnundo.out{opacity:0;transform:translateY(10px)}
+/* ===== v6.0 the new layout (body.nl) ===== */
+body.nl{--nl-ok:#3DDC84;--nl-acc:#FE9A3C;--nl-track:rgba(255,255,255,.09);--nl-card:#16171b;--nl-line:rgba(255,255,255,.07)}
+.nl .nlscr{padding-top:calc(6px + var(--sat))}
+.nlhead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:8px 2px 12px}
+.nlh1{font-family:'Head',system-ui,sans-serif;font-size:34px;line-height:1.05;letter-spacing:-.02em;color:#fff}
+.nlsub{margin-top:3px;font-size:14px;color:var(--muted)}
+.nlweek{display:flex;align-items:center;gap:2px;margin:0 -4px 14px}
+.nlwk{flex:none;width:26px;height:44px;border:0;background:none;color:var(--muted);display:flex;align-items:center;justify-content:center}.nlwk svg{width:18px;height:18px}
+.nlday{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0 4px;border-radius:14px;border:1px solid transparent;background:none;color:var(--ink)}
+.nlday .w{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.nlday.td .w{color:var(--nl-acc)}.nlday.on{background:var(--nl-card);border-color:var(--nl-line)}
+.nlday .nlring text{font-weight:700;font-family:system-ui,sans-serif}
+.nlday .k{width:4px;height:4px;border-radius:50%;background:transparent}.nlday.lift .k{background:var(--nl-acc)}.nlday.mt .k{background:#E0567A}
+.nlring.miss circle:first-child{stroke:rgba(255,120,90,.35)}
+.nlnext{position:relative;border-radius:22px;padding:16px 16px 14px;background:linear-gradient(150deg,#2b1c0e,var(--nl-card) 70%);border:1px solid rgba(254,154,60,.35);margin-bottom:12px;cursor:pointer}
+.nlnext.live{background:linear-gradient(150deg,#3a210b,var(--nl-card) 70%);border-color:var(--nl-acc);box-shadow:0 0 0 3px rgba(254,154,60,.12)}
+.nlnext.done{background:linear-gradient(150deg,#13261a,var(--nl-card) 70%);border-color:rgba(61,220,132,.35)}
+.nlnext.rest{background:linear-gradient(150deg,#13202c,var(--nl-card) 70%);border-color:rgba(110,170,255,.25);cursor:default}
+.nll{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--nl-acc)}.nlnext.done .nll{color:var(--nl-ok)}.nlnext.rest .nll{color:#8fb6ff}
+.nlt{margin-top:4px;font-family:'Head',system-ui,sans-serif;font-size:28px;line-height:1.1;letter-spacing:-.015em;color:#fff}
+.nlm{margin-top:4px;font-size:14px;color:#cfcac3}
+.nlrow{display:flex;align-items:center;gap:10px;margin-top:14px}
+.nlbtn{flex:1;height:50px;border-radius:14px;border:0;background:var(--nl-acc);color:#1a1006;font-weight:800;font-size:16px}
+.nlnext>.nlbtn{width:100%;margin-top:14px}
+.nlchg{flex:none;height:50px;padding:0 14px;border-radius:14px;border:1px solid var(--nl-line);background:rgba(255,255,255,.04);color:var(--ink);font-weight:600;font-size:14px}
+.nlnext.done .nlchg,.nlnext.rest .nlchg{position:absolute;right:12px;top:12px;height:34px;font-size:13px}
+.nlfood{margin-bottom:6px}.nl .nlfood .bud{margin-top:0}
+.nlqf{display:flex;gap:8px;overflow-x:auto;padding:10px 2px 4px;scrollbar-width:none;align-items:center}.nlqf::-webkit-scrollbar{display:none}
+.nlqf>span{flex:none;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-right:2px}
+.nlqf button{flex:none;display:flex;flex-direction:column;align-items:flex-start;padding:8px 12px;border-radius:14px;border:1px solid var(--nl-line);background:var(--nl-card);color:var(--ink);text-align:left}
+.nlqf b{font-size:13.5px;font-weight:600;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis}.nlqf small{font-size:11.5px;color:var(--muted)}
+.nlsec{display:flex;justify-content:space-between;align-items:baseline;margin:16px 4px 8px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.nllist{list-style:none;margin:0;padding:0;border-radius:18px;background:var(--nl-card);border:1px solid var(--nl-line);overflow:hidden}
+.nllist li{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 14px;border-top:1px solid var(--nl-line);transition:opacity .3s,transform .3s}.nllist li:first-child{border-top:0}
+.nllist li.going{opacity:.35;transform:translateX(10px)}
+.nllist .ic{flex:none;width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;color:#d8d3cc}.nllist .ic svg{width:22px;height:22px}
+.nllist .lab{flex:1;min-width:0}.nllist .t{font-weight:700;font-size:15.5px}.nllist .t em{font-style:normal;font-weight:500;font-size:12px;color:var(--muted);margin-left:4px}
+.nllist .s{font-size:13px;color:var(--muted);margin-top:1px}.nllist li.done .t{color:var(--muted)}
+.nlchk{flex:none;width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,.22);background:none;color:#0c1a11;display:flex;align-items:center;justify-content:center}
+.nlchk.on{background:var(--nl-ok);border-color:var(--nl-ok)}.nlchk svg{width:18px;height:18px;stroke-width:3}
+.nlallok{justify-content:center;gap:8px;color:var(--nl-ok);font-weight:700}.nlallok span{display:flex}.nlallok svg{width:20px;height:20px}
+.nlfold{display:block;margin:8px auto 0;border:0;background:none;color:var(--muted);font-weight:600;font-size:13.5px;padding:6px 10px}
+.donel{margin-top:6px;opacity:.8}
+.nlnote{display:flex;align-items:center;gap:12px;width:100%;margin-top:14px;padding:12px 14px;border-radius:18px;border:1px dashed rgba(255,255,255,.14);background:none;color:var(--ink);text-align:left}
+.nlnote .ic{color:var(--muted);display:flex}.nlnote .ic svg{width:22px;height:22px}.nlnote b{display:block;font-size:15px}.nlnote span span{display:block;font-size:13px;color:var(--muted)}
+.nlback{display:block;margin:14px auto 0;border:1px solid var(--nl-line);background:var(--nl-card);color:var(--ink);border-radius:999px;padding:9px 16px;font-weight:600}
+/* tab bar */
+.nav.nlnav{display:flex;align-items:flex-end;justify-content:space-around;gap:0;padding:6px 6px calc(8px + var(--sab));background:rgba(14,15,18,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--nl-line)}
+.nltab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;color:#7d7973;font-size:11.5px;font-weight:600;padding:6px 0 2px;position:relative}
+.nltab svg{width:24px;height:24px}.nltab.on{color:#fff}.nltab.on svg{color:var(--nl-acc)}
+.nlplus{flex:none;width:56px;height:56px;margin:0 6px 4px;border-radius:18px;border:0;background:var(--nl-acc);color:#1a1006;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(254,154,60,.35)}
+.nlplus svg{width:28px;height:28px;stroke-width:2.6}.nlplus:active{transform:scale(.95)}
+.nltab.nlgear svg{width:22px;height:22px}
+/* + Log sheet */
+.nllog .nlgl{margin:14px 2px 8px;font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.nlgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.nltile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:92px;padding:12px;border-radius:16px;border:1px solid var(--nl-line);background:var(--nl-card);color:var(--ink);text-align:left}
+.nltile .ic{display:flex;color:#d8d3cc}.nltile .ic svg{width:24px;height:24px}.nltile b{font-size:14px;line-height:1.15}.nltile small{font-size:11.5px;color:var(--muted);line-height:1.2}
+.nltile.hot{border-color:rgba(61,220,132,.45);background:linear-gradient(150deg,#14261b,var(--nl-card))}.nltile.hot .ic{color:#7dffb0}
+/* Plan */
+.nl .jo .jtop .nlhead{padding-bottom:6px}.nlplanlinks{display:flex;gap:8px;margin:0 0 12px}
+.nlplanlinks button{flex:1;display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:14px;border:1px solid var(--nl-line);background:var(--nl-card);color:var(--ink);font-weight:600;font-size:14px}.nlplanlinks svg{width:18px;height:18px;color:var(--muted)}
+.nl .jo .chain,.nl .jo .jsub{display:none}
+/* Progress */
+.nlseg{display:flex;padding:3px;border-radius:12px;background:var(--nl-card);border:1px solid var(--nl-line);margin-bottom:12px}.nlseg button{flex:1;height:36px;border:0;border-radius:9px;background:none;color:var(--muted);font-weight:700;font-size:14px}.nlseg button.on{background:#2a2b31;color:#fff}
+.nlcard{border-radius:20px;padding:14px;background:var(--nl-card);border:1px solid var(--nl-line);margin-bottom:12px}
+.nlch{display:flex;justify-content:space-between;align-items:center;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.nlch .go{display:flex;align-items:center;gap:2px;color:var(--nl-acc);text-transform:none;letter-spacing:0;font-size:13.5px}.nlch .go svg{width:16px;height:16px}
+.nlbig{display:flex;align-items:baseline;gap:8px;margin-top:6px}.nlbig b{font-family:'Head',system-ui,sans-serif;font-size:40px;line-height:1;color:#fff;letter-spacing:-.02em}.nlbig span{color:var(--muted);font-size:14px}.nlbig em{margin-left:auto;font-style:normal;font-weight:700;font-size:15px}.nlbig em.ok,.nllifts b.ok{color:var(--nl-ok)}.nlbig em.warn{color:var(--nl-acc)}
+.nlspark{display:block;width:100%;height:110px;margin-top:8px}.nlspark .d{fill:rgba(255,255,255,.35)}.nlspark .t{fill:none;stroke:var(--nl-acc);stroke-width:2.5;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}.nlspark .g{stroke:var(--nl-ok);stroke-dasharray:4 4;stroke-width:1.2;vector-effect:non-scaling-stroke}.nlspark .gt{fill:var(--nl-ok);font-size:10px}
+.nlkv{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--muted)}.nlkv b{color:var(--ink)}
+.nl3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.nl3>div{padding:10px;border-radius:14px;background:rgba(255,255,255,.035)}
+.nl3 b{display:block;font-family:'Head',system-ui,sans-serif;font-size:22px;color:#fff;letter-spacing:-.01em}.nl3 span{display:block;font-size:12.5px;color:var(--ink)}.nl3 em{display:block;font-style:normal;font-size:11.5px;color:var(--muted);margin-top:2px}
+.nllifts{margin-top:10px;border-top:1px solid var(--nl-line)}.nllifts div{display:flex;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid var(--nl-line);font-size:14px}.nllifts div:last-child{border-bottom:0}.nllifts span{color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nlbars{margin-top:10px;display:flex;flex-direction:column;gap:9px}.nlbars div{display:grid;grid-template-columns:1fr 90px 42px;align-items:center;gap:10px;font-size:14px}.nlbars span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nlbars i{height:8px;border-radius:5px;background:var(--nl-track);overflow:hidden}.nlbars u{display:block;height:100%;border-radius:5px;background:var(--nl-ok)}.nlbars b{text-align:right;font-size:13px}
+.nlempty{padding:14px 2px 4px;color:var(--muted);font-size:14px}
+.nlplain{display:flex;align-items:center;justify-content:center;gap:4px;width:100%;margin-top:2px;padding:12px;border-radius:16px;border:1px solid var(--nl-line);background:none;color:var(--ink);font-weight:600}.nlplain svg{width:16px;height:16px}
+/* the detail screens keep their charts, without the green scouter look */
+.nl .hudbg,.nl .hudlines,.nl .hudsweep{display:none}.nl .hudscr{filter:saturate(.12) brightness(1.08)}
+.nl .navball,.nl .t4strip{display:none}
+body.nl .nlhead .hib.gear{display:none}
+body.nl .nlgear{position:relative}body.nl .nlgear>i{position:absolute;top:4px;right:calc(50% - 16px);width:8px;height:8px;border-radius:50%;background:#FE7F0C}
 </style>
 </head>
 <body>
@@ -1770,7 +1852,7 @@ body.kpopen .topfab,body.locked .topfab{opacity:0;pointer-events:none}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.16.0';
+const APP_VERSION = '6.0.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -7413,6 +7495,261 @@ const SCN_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 document.addEventListener('click', e => { const b = e.target.closest('[data-scan]'); if (!b) return; e.stopPropagation(); e.preventDefault(); scanOpen(b.closest('[data-bud]')); }, true);
 // home-screen shortcut: Trening → Scan food opens Today with the scanner
 if (/[?&]scan=1/.test(location.search)) { try { history.replaceState(null, '', './'); } catch (e) {} let tries = 0; const t = setInterval(() => { tries++; if (R.screen === 'today' && document.querySelector('[data-bud]')) { clearInterval(t); setTimeout(() => scanOpen(document.querySelector('[data-bud]')), 250); } else if (tries > 40) clearInterval(t); }, 150); }
+/* ============ v6.0 — the new layout (Settings → App → New layout) ============
+   A full pass on how the app is organised, behind a switch so the old layout is one tap away.
+   Principles:
+   1. One place per action. Everything you log starts from the same "+" in the middle of the tab bar (food by barcode,
+      quick food, typing or screenshot; weigh-in; workout; Muay Thai; habits; note). The cards on Today are shortcuts
+      to the same sheets, never different ones.
+   2. Today reads top to bottom as a day does: what's next → food → the checklist → the note. Done things fold away.
+   3. Three tabs, plain names: Today, Plan (what's coming), Progress (how it's going). Settings behind the gear.
+   4. Progress opens with the numbers you check most: weight trend, food, training, habits — one period switch.
+   5. Settings groups by how often you need it: Your plan (daily) · Data · App.
+   6. No game vocabulary: no balls, dragon, power level or chain — complete days, streaks of complete days, PBs.
+   Everything else is shared with the old layout: the same data, workout screen, sheets, scanner and bubble. */
+function NL() { try { return localStorage.getItem('vikac.nl') === '1'; } catch (e) { return false; } }
+function setNL(on) { try { localStorage.setItem('vikac.nl', on ? '1' : '0'); } catch (e) {} document.body.classList.toggle('nl', on); R.stack = []; R.date = today(); go('today', {}, false, 'fade'); window.scrollTo(0, 0); }
+document.body.classList.toggle('nl', NL());
+
+const NI = {
+  today: SV('<path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/>'),
+  plan: SV('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M7.5 13.5h3M13.5 13.5h3M7.5 17h3"/>'),
+  progress: SV('<path d="M4 19.5h16M6.5 16l4-5 3 3 4.5-6.5"/><path d="M15 7.5h3v3"/>'),
+  plus: SV('<path d="M12 5v14M5 12h14"/>'),
+  scan: SV('<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16M7.5 8v8M10.5 8v8M13 8v8M16.5 8v8"/>'),
+  type: SV('<rect x="3.5" y="6" width="17" height="12" rx="2"/><path d="M7 10h1M10.5 10h1M14 10h1M17 10h0M7 14h10"/>'),
+  shot: SV('<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>'),
+  chev: SV('<path d="M9 6l6 6-6 6"/>'),
+  check: SV('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+};
+// a plain completion ring for a day: done, part, missed, ahead
+function nlRing(st, size, label) {
+  const s = size || 28, r = s / 2 - 2.5, c = 2 * Math.PI * r, f = st.frac == null ? 0 : st.frac;
+  const col = st.state === 'done' ? 'var(--nl-ok)' : 'var(--nl-acc)';
+  return `<svg class="nlring ${st.state}" viewBox="0 0 ${s} ${s}" width="${s}" height="${s}"><circle cx="${s / 2}" cy="${s / 2}" r="${r}" fill="none" stroke="var(--nl-track)" stroke-width="3"/>${f > 0 ? `<circle cx="${s / 2}" cy="${s / 2}" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 ${s / 2} ${s / 2})"/>` : ''}${st.state === 'done' ? `<path d="M${s * .32} ${s * .52}l${s * .12} ${s * .12} ${s * .24}-${s * .26}" fill="none" stroke="var(--nl-ok)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>` : label != null ? `<text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-size="${s * .36}" fill="currentColor">${label}</text>` : ''}</svg>`;
+}
+function nlDayState(date) {
+  const dp = dayProgress(date); if (!dp) return { state: 'none', frac: 0 };
+  const all = dp.req + dp.bonus, got = dp.reqDone + dp.bonusDone, c = dayCompletion(date);
+  return { state: c === 'done' ? 'done' : c === 'miss' ? 'miss' : date > today() ? 'ahead' : got ? 'part' : 'none', frac: c === 'done' ? 1 : all ? got / all : 0 };
+}
+function nlStreak() { let n = 0, d = today(); if (dayCompletion(d) !== 'done') d = addDays(d, -1); for (let i = 0; i < 400; i++) { if (!dayInfo(d).items || dayCompletion(d) !== 'done') break; n++; d = addDays(d, -1); } return n; }
+
+/* ---------- the tab bar: Today · Plan · + · Progress ---------- */
+const _nav = nav;
+nav = function (on) {
+  if (!NL()) return _nav(on);
+  const t = (k, lab, ic, act) => `<button data-nav="${k}" class="nltab ${act ? 'on' : ''}">${ic}<span>${lab}</span></button>`;
+  return `<div class="nav nlnav">${t('today', 'Today', NI.today, on === 'today')}${t('journey', 'Plan', NI.plan, on === 'journey' || on === 'cal')}<button class="nlplus" data-nlplus aria-label="Log something">${NI.plus}</button>${t('dash', 'Progress', NI.progress, on === 'dash')}${`<button data-gear class="nltab nlgear">${ICONS.settings}${backupWarn() ? '<i></i>' : ''}<span>Settings</span></button>`}</div>`;
+};
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-nlplus]'); if (b) { e.stopPropagation(); nlLogSheet(); } }, true);
+
+/* ---------- Today ---------- */
+function nlHeadHtml(date, info) {
+  const d = parse(date), td = today(), p = P(), rel = date === td ? 'Today' : date === addDays(td, -1) ? 'Yesterday' : date === addDays(td, 1) ? 'Tomorrow' : WD[d.getDay()];
+  const sub = `${WD[d.getDay()].slice(0, 3)} ${d.getDate()} ${MO[d.getMonth()]} · ${isOngoing() ? 'Day ' + info.idx : 'Day ' + info.idx + ' of ' + D()}`;
+  return `<div class="nlhead"><div><div class="nlh1">${rel}</div><div class="nlsub">${sub}</div></div>${GEAR_BTN()}</div>`;
+}
+// the week the day is in, Monday to Sunday, each day with a ring; tap a day to see it
+function nlWeekHtml(date) {
+  const d = parse(date), dow = (d.getDay() + 6) % 7, mon = addDays(date, -dow), td = today(), L = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  return `<div class="nlweek"><button class="nlwk" data-nlwk="-7" aria-label="Previous week">${SV('<path d="M15 6l-6 6 6 6"/>')}</button>${Array.from({ length: 7 }, (_, i) => { const x = addDays(mon, i), on = x === date, inf = dayInfo(x), st = inf.items ? nlDayState(x) : { state: 'none', frac: 0 };
+    const kind = inf.items ? (inf.workoutKey ? 'lift' : inf.isMT ? 'mt' : 'rest') : '';
+    return `<button class="nlday ${on ? 'on' : ''} ${x === td ? 'td' : ''} ${kind}" data-nlgo="${x}"><span class="w">${L[i]}</span>${nlRing(st, 30, parse(x).getDate())}<i class="k"></i></button>`; }).join('')}<button class="nlwk" data-nlwk="7" aria-label="Next week">${SV('<path d="M9 6l6 6-6 6"/>')}</button></div>`;
+}
+// "Up next": the one thing to do now, big
+function nlNextHtml(date, info) {
+  const td = today(), live = typeof liveWorkout === 'function' ? liveWorkout() : null, future = date > td;
+  if (live && date === td) { const w = PROGRAM.workouts[live.key], dn = live.s.ex.filter(e => e.done).length;
+    return `<div class="nlnext live" data-nlwork="${live.key}"><div class="nll">Workout in progress</div><div class="nlt">${esc(w.name)}</div><div class="nlm">${dn} of ${live.s.ex.length} exercises · <span id="nlclk">${clockTxt(live.s)}</span></div><button class="nlbtn">Continue</button></div>`; }
+  if (info.workoutKey) {
+    const s = S.sessions.find(x => x.date === date), w = PROGRAM.workouts[s ? s.key : info.workoutKey];
+    if (s && s.finished) { const pbs = sessionPBs(s), vol = s.ex.reduce((a, e) => a + e.sets.reduce((b, st) => b + (+st.kg || 0) * (+st.reps || 0), 0), 0);
+      return `<div class="nlnext done" data-nlwork="${s.key}"><div class="nll">${date === td ? 'Trained today' : 'Trained'}</div><div class="nlt">${esc(w.name)} ✓</div><div class="nlm">${s.minutes ? s.minutes + ' min · ' : ''}${fmtN(Math.round(vol))} kg moved${pbs ? ' · ' + pbs + ' PB' + (pbs > 1 ? 's' : '') : ''}</div><button class="nlchg" data-chg>Change day</button></div>`; }
+    const started = s && s.ex.some(e => e.done || e.sets.some(st => st.kg || st.reps));
+    return `<div class="nlnext" data-nlwork="${s ? s.key : info.workoutKey}"><div class="nll">${future ? 'Planned' : date === td ? 'Up next' : 'Not logged'}</div><div class="nlt">${esc(w.name)}</div><div class="nlm">${w.ex.length} exercises · ~${workoutMinutes(s ? s.key : info.workoutKey)} min${info.changed ? ' · changed' : ''}</div><div class="nlrow"><button class="nlbtn">${future ? 'Preview' : started ? 'Continue' : 'Start workout'}</button><button class="nlchg" data-chg>Change day</button></div></div>`;
+  }
+  if (info.isMT) { const dn = isDone(date, 'mt'), m = (S.days[date] || {}).mt;
+    return `<div class="nlnext ${dn ? 'done' : ''}" data-nlopen="mt"><div class="nll">${dn ? 'Done' : date === td ? 'Up next' : 'Planned'}</div><div class="nlt">Muay Thai${dn ? ' ✓' : ''}</div><div class="nlm">${dn && m ? (m.min || '') + ' min' : 'Log the session when you\'re back'}</div><div class="nlrow">${dn ? '' : '<button class="nlbtn">Log session</button>'}<button class="nlchg" data-chg>Change day</button></div></div>`; }
+  // rest day: the next open item, or a quiet "rest" card
+  const open = info.items.filter(it => it.id !== 'workout' && it.id !== 'mt' && !isDone(date, it.id));
+  return `<div class="nlnext rest"><div class="nll">Rest day</div><div class="nlt">${open.length ? 'Recover, then ' + esc(open[0].label.toLowerCase()) : 'Nothing left — rest well'}</div><div class="nlm">${open.length ? open.length + ' thing' + (open.length > 1 ? 's' : '') + ' on the list below' : 'Everything for today is done'}</div><button class="nlchg" data-chg>Change day</button></div>`;
+}
+// the food card: the existing Kcal left card, plus the quick foods as one-tap chips (undo for 5 s)
+function nlFoodHtml(date) {
+  const b = budgetHtml(date); if (!b) return '';
+  const q = date <= today() ? quickFoods().slice(0, 6) : [];
+  return `<div class="nlfood">${b}${q.length ? `<div class="nlqf"><span>Quick add</span>${q.map((x, i) => `<button data-nlqf="${i}"><b>${esc(x.n)}</b><small>${x.k} kcal</small></button>`).join('')}</div>` : ''}</div>`;
+}
+function nlListHtml(date, info) {
+  const items = info.items.filter(it => it.id !== 'workout' && it.id !== 'mt'), future = date > today();
+  const open = items.filter(it => !isDone(date, it.id)), done = items.filter(it => isDone(date, it.id));
+  const row = it => { const dn = isDone(date, it.id), fb = itemFeedback(date, it), sub = fb != null ? fb : esc(itemSub(date, it));
+    return `<li class="${dn ? 'done' : ''}${future ? ' future' : ''}" data-item="${it.id}" data-key="${it.key || ''}"${it.block ? ` data-blk="${it.block}"` : ''}><span class="ic" data-open-item>${IC4[itemIc(it)] || ''}</span><div class="lab" data-open-item><div class="t">${itemLab(it)}${it.req ? '' : ' <em>optional</em>'}</div><div class="s">${sub}</div></div><button class="nlchk ${dn ? 'on' : ''}" data-nlchk aria-label="Done">${dn ? NI.check : ''}</button></li>`; };
+  const fold = R._nlFold !== false;
+  return `<div class="nlsec"><span>${date === today() ? 'Today\'s list' : 'List'}</span><span>${done.length} / ${items.length}</span></div>
+    <ul class="nllist">${open.map(row).join('')}${!open.length ? `<li class="nlallok"><span>${NI.check}</span>All done${date === today() ? ' for today' : ''}</li>` : ''}</ul>
+    ${done.length ? `<button class="nlfold" data-nlfold>${fold ? 'Show' : 'Hide'} ${done.length} done</button><ul class="nllist donel" ${fold ? 'hidden' : ''}>${done.map(row).join('')}</ul>` : ''}`;
+}
+function nlTodayHtml() {
+  const date = R.date, info = dayInfo(date);
+  if (!info.items) return _todayHtml();
+  const note = (S.days[date] || {}).note;
+  return `<div class="screen nlscr nltoday">${nlHeadHtml(date, info)}${nlWeekHtml(date)}
+    ${checkinCardHtml(date)}${nlNextHtml(date, info)}${nlFoodHtml(date)}${nlListHtml(date, info)}
+    <button class="nlnote ${note ? 'has' : ''}" data-note><span class="ic">${IC4.pen}</span><span><b>Note</b>${note ? `<span class="usertext">${esc(note)}</span>` : '<span>How did the day go?</span>'}</span></button>
+    ${date !== today() ? `<button class="nlback" data-nlgo="${today()}">Back to today</button>` : ''}</div>${nav('today')}`;
+}
+function nlBindToday() {
+  const date = R.date, info = dayInfo(date); if (!info.items) return _bindToday(); const future = date > today();
+  app.querySelectorAll('[data-nlgo]').forEach(b => b.onclick = () => { const d = b.dataset.nlgo; if (d === R.date) return; const dir = d > R.date ? 'right' : 'left'; R.date = d; render(dir); window.scrollTo(0, 0); });
+  app.querySelectorAll('[data-nlwk]').forEach(b => b.onclick = () => { const d = addDays(R.date, +b.dataset.nlwk), p = P(); if (d < p.startDate && !dayInfo(d).items) return toast('The plan starts ' + fmtShort(p.startDate)); R.date = d; render(+b.dataset.nlwk > 0 ? 'right' : 'left'); });
+  bindSwipe(app.querySelector('.screen'), () => nlShift(1), () => nlShift(-1));
+  const nx = app.querySelector('[data-nlwork]'); if (nx) nx.onclick = e => { if (e.target.closest('[data-chg]')) return; const key = nx.dataset.nlwork, s = S.sessions.find(x => x.date === date); if (date === today() && !(s && (s.finished || s.startedAt))) R._woStart = !(s && s.ex.some(x => x.done || x.sets.some(st => st.kg || st.reps))); go('workout', { date, key: s ? s.key : key }); };
+  const mt = app.querySelector('[data-nlopen]'); if (mt) mt.onclick = e => { if (e.target.closest('[data-chg]')) return; go(mt.dataset.nlopen, { date }); };
+  app.querySelectorAll('[data-chg]').forEach(c => c.onclick = e => { e.stopPropagation(); changeDaySheet(date); });
+  const bu = app.querySelector('[data-bud]'); if (bu) bu.onclick = () => go('nutrition', { date });
+  const ck = app.querySelector('[data-ck]'); if (ck) ck.onclick = () => future ? toast('That day hasn\'t happened yet') : checkinSheet(date);
+  const nt = app.querySelector('[data-note]'); if (nt) nt.onclick = () => noteSheet(date);
+  const fd = app.querySelector('[data-nlfold]'); if (fd) fd.onclick = () => { R._nlFold = !(R._nlFold !== false); const l = app.querySelector('.donel'); l.hidden = R._nlFold; fd.textContent = (R._nlFold ? 'Show ' : 'Hide ') + l.children.length + ' done'; };
+  app.querySelectorAll('[data-nlqf]').forEach(b => b.onclick = e => { e.stopPropagation(); nlQuickAdd(date, quickFoods()[+b.dataset.nlqf], b); });
+  app.querySelectorAll('[data-open-item]').forEach(el => el.onclick = () => { const li = el.closest('li'); if (li.dataset.blk === 'tick') return li.querySelector('[data-nlchk]').click(); go(li.dataset.item, { date, key: li.dataset.key }); });
+  app.querySelectorAll('[data-nlchk]').forEach(c => c.onclick = e => {
+    e.stopPropagation(); if (future) return toast('That day hasn\'t happened yet'); const li = c.closest('li'), id = li.dataset.item, d = day(date);
+    if (li.classList.contains('done')) { d.done[id] = false; if ((['weigh', 'nutrition', 'hang'].includes(id) || (isCustomHabit(id) && li.dataset.blk !== 'tick')) && isDone(date, id)) return toast('Logged data keeps it done — clear it inside'); save(); return nlRefresh(); }
+    if (['weigh', 'nutrition', 'hang'].includes(id) && !isDone(date, id)) return go(id, { date });   // a log needs its numbers
+    d.done[id] = true; save(); c.classList.add('on'); c.innerHTML = NI.check; vib(25); li.classList.add('going'); setTimeout(nlRefresh, 380);
+  });
+  const ck2 = $('#nlclk'), live = typeof liveWorkout === 'function' ? liveWorkout() : null; if (ck2 && live) timers.push(setInterval(() => { ck2.textContent = clockTxt(live.s); }, 1000));
+  if (date === today() && dayCompletion(date) === 'done' && !(day(date).celebrated || {}).ball) { const f = day(date).celebrated || {}; f.ball = true; day(date).celebrated = f; save(); setTimeout(() => toast('Day complete ✓', 1800), 400); }
+}
+function nlShift(n) { const d = addDays(R.date, n); if (!dayInfo(d).items) return; R.date = d; render(n > 0 ? 'right' : 'left'); window.scrollTo(0, 0); }
+function nlRefresh() { if (R.screen !== 'today') return; const y = window.scrollY; R._scMode = 'none'; render(); window.scrollTo(0, y); }
+function nlQuickAdd(date, q, el) {
+  if (!q) return; const d = day(date), before = JSON.parse(JSON.stringify(d.nutrition || null)), n = d.nutrition || (d.nutrition = {});
+  n.kcal = (+n.kcal || 0) + (+q.k || 0); n.protein = (+n.protein || 0) + (+q.p || 0); n.carbs = (+n.carbs || 0) + (+q.c || 0); n.fat = (+n.fat || 0) + (+q.f || 0);
+  (n.items || (n.items = [])).push({ name: q.n, kcal: +q.k || 0, protein: +q.p || 0, at: new Date().toISOString(), quick: true });
+  const oldLeft = kcalLeftNow(date); save(); vib([15, 30, 15]); nlRefresh(); setTimeout(() => scanCountdown(oldLeft + (+q.k || 0), kcalLeftNow(date)), 60);
+  scanUndoBar(`${q.n} · ${q.k} kcal`, () => { if (before == null) delete day(date).nutrition; else day(date).nutrition = before; save(); nlRefresh(); });
+}
+
+/* ---------- + Log: every way to log, in one sheet ---------- */
+function nlLogSheet() {
+  const date = R.screen === 'today' && R.date <= today() ? R.date : today(), info = dayInfo(date), td = date === today();
+  const live = typeof liveWorkout === 'function' ? liveWorkout() : null, s = info.workoutKey ? S.sessions.find(x => x.date === date) : null;
+  const tile = (attr, ic, t, sub, cls) => `<button class="nltile ${cls || ''}" ${attr}><span class="ic">${ic}</span><b>${t}</b>${sub ? `<small>${sub}</small>` : ''}</button>`;
+  const habits = (info.items || []).filter(it => !['workout', 'mt', 'weigh', 'nutrition'].includes(it.id));
+  modal(`<div class="hdl"></div><div class="shd"><span class="h1">Log</span><span class="cond muted">${td ? 'Today' : shortD(date)}</span></div>
+    <div class="nlgl">Food</div><div class="nlgrid">${tile('data-lg="scan"', NI.scan, 'Scan barcode', 'Can I eat this?', 'hot')}${tile('data-lg="nutrition"', IC4.fork, 'Type or quick food', 'kcal and macros')}${tile('data-shots', NI.shot, 'From screenshot', 'MFP or the scale')}</div>
+    <div class="nlgl">Body & training</div><div class="nlgrid">${tile('data-lg="weigh"', IC4.scale, 'Weigh-in', isDone(date, 'weigh') ? 'done today' : 'morning')}${info.workoutKey || live ? tile('data-lg="workout"', IC4.dumb, live ? 'Continue workout' : s && s.finished ? 'Workout ✓' : 'Workout', PROGRAM.workouts[(live && live.key) || (s && s.key) || info.workoutKey].name) : ''}${tile('data-lg="mt"', IC4.glove, 'Muay Thai', 'a session')}</div>
+    ${habits.length ? `<div class="nlgl">Habits</div><div class="nlgrid">${habits.map(it => tile(`data-lgi="${it.id}"`, IC4[itemIc(it)] || '', esc(it.label), isDone(date, it.id) ? 'done ✓' : '')).join('')}</div>` : ''}
+    <div class="nlgl">Day</div><div class="nlgrid">${tile('data-lg="note"', IC4.pen, 'Note', '')}${tile('data-lg="chg"', SV('<path d="M7 7h11l-3-3M17 17H6l3 3"/>'), 'Change the day', planName(info.dayKey || 'rest'))}</div>`, b => {
+    b.classList.remove('hudm'); b.classList.add('sheetbg', 'nllog');
+    const run = fn => { b.close(); setTimeout(fn, 230); };
+    b.querySelectorAll('[data-lg]').forEach(x => x.onclick = () => { const k = x.dataset.lg;
+      if (k === 'scan') return run(() => { if (R.screen !== 'today' || R.date !== date) { R.date = date; R.stack = []; go('today', {}, false); } setTimeout(() => scanOpen(document.querySelector('[data-bud]')), 120); });
+      if (k === 'workout') return run(() => { const key = (live && live.key) || (s && s.key) || info.workoutKey; if (td && !(s && (s.finished || s.startedAt))) R._woStart = true; go('workout', { date, key }); });
+      if (k === 'note') return run(() => noteSheet(date)); if (k === 'chg') return run(() => changeDaySheet(date));
+      run(() => go(k, { date })); });
+    b.querySelectorAll('[data-lgi]').forEach(x => x.onclick = () => { const id = x.dataset.lgi, it = habits.find(h => h.id === id);
+      if (it && (it.block === 'tick' || (!LOG_SHEETS[id] && !isCustomHabit(id) && id !== 'stretch'))) { const d = day(date); d.done[id] = !isDone(date, id); save(); vib(20); b.close(); nlRefresh(); return; }
+      run(() => go(id, { date })); });
+    b.querySelectorAll('[data-shots]').forEach(x => x.addEventListener('click', () => b.close()));
+  });
+}
+
+/* ---------- Plan (was Journey): the cycles and the month, plus the plan's own settings ---------- */
+const _journeyHtml = journeyHtml;
+journeyHtml = function () {
+  if (!NL()) return _journeyHtml();
+  // the cycle list draws its balls through these: swap in a plain dot while it renders
+  const sv = [ballSvg, orbSvg, dragonBadgeSvg], dot = o => { o = o || {}; const z = o.size || 44, on = o.state === 'full' || o.state === 'done' || o.state === 'live'; return `<svg viewBox="0 0 24 24" width="${z}" height="${z}" style="display:block"><circle cx="12" cy="12" r="${on ? 7 : 8}" fill="${on ? 'var(--acc,#FE7F0C)' : 'none'}" stroke="${on ? 'none' : 'currentColor'}" stroke-width="1.6" opacity="${on ? 1 : .3}"/></svg>`; };
+  ballSvg = dot; orbSvg = dot; dragonBadgeSvg = dot;
+  let h; try { h = _journeyHtml(); } finally { [ballSvg, orbSvg, dragonBadgeSvg] = sv; }
+  h = h.replace(/<span> · (\d+ dragons summoned|dragon summoned)<\/span>/g, '').replace(/ perfect<\/span>/g, ' complete</span>');
+  const p = P(), st = journeyStats(), info = dayInfo(today()), streak = nlStreak();
+  const top = `<div class="nlhead"><div><div class="nlh1">Plan</div><div class="nlsub">${esc(p.name)} · ${info.items ? (isOngoing() ? 'day ' + info.idx : 'day ' + info.idx + ' of ' + D()) : ''}${streak > 1 ? ' · ' + streak + ' complete days in a row' : ''}</div></div>${GEAR_BTN()}</div>
+    <div class="nlplanlinks"><button data-sgo2="myplan">${SV('<path d="M4 6h16M4 12h10M4 18h7"/>')}Training & phase</button><button data-sgo2="habits">${IC4.tickbox || ''}Habits & goals</button></div>`;
+  return h.replace(/<div class="jtop"><div class="jt">[\s\S]*?<\/div><div class="jsub">[\s\S]*?<\/div>/, '<div class="jtop">' + top);
+};
+const _bindJourney = bindJourney;
+bindJourney = function () { _bindJourney(); if (!NL()) return; app.querySelectorAll('[data-sgo2]').forEach(b => b.onclick = () => go(b.dataset.sgo2, {})); };
+
+/* ---------- Progress (was Scouter): the four things you check, one period switch ---------- */
+function nlRange(per) { const td = today(), p = P(); const from = per === 'week' ? addDays(td, -6) : per === 'month' ? addDays(td, -29) : p.startDate; return { from: from < p.startDate && per !== 'all' ? (per === 'week' || per === 'month' ? from : p.startDate) : from, to: td }; }
+function nlDays(from, to) { const out = []; for (let d = from; d <= to; d = addDays(d, 1)) out.push(d); return out; }
+function nlSpark(pts, opt) {
+  const W = 320, H = 110, o = opt || {}; if (pts.length < 2) return '<div class="nlempty">Not enough weigh-ins yet</div>';
+  const xs = pts.map(p => p.x), ys = pts.map(p => p.y).concat(o.goal != null ? [o.goal] : []), x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys) - .3, y1 = Math.max(...ys) + .3;
+  const X = x => 8 + (x - x0) / Math.max(1, x1 - x0) * (W - 16), Y = y => 8 + (1 - (y - y0) / Math.max(.1, y1 - y0)) * (H - 22);
+  const tr = o.trend || [], line = a => a.map((p, i) => (i ? 'L' : 'M') + X(p.x).toFixed(1) + ' ' + Y(p.y).toFixed(1)).join(' ');
+  return `<svg class="nlspark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${o.goal != null ? `<line x1="8" x2="${W - 8}" y1="${Y(o.goal)}" y2="${Y(o.goal)}" class="g"/><text x="${W - 10}" y="${Y(o.goal) - 4}" text-anchor="end" class="gt">goal ${o.goal}</text>` : ''}
+    ${pts.map(p => `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="2.6" class="d"/>`).join('')}${tr.length > 1 ? `<path d="${line(tr)}" class="t"/>` : ''}</svg>`;
+}
+function nlProgressHtml() {
+  const per = R.nlper || 'month', r = nlRange(per), days = nlDays(r.from, r.to).filter(d => dayInfo(d).items || d <= today()), p = P(), td = today();
+  // weight
+  const rd = days.map((d, i) => { const x = S.readings[d]; return x && x.weight != null && x.weight !== '' ? { x: i, y: +x.weight, d } : null; }).filter(Boolean);
+  const tr = days.map((d, i) => { const v = current('weight', d); return v ? { x: i, y: Math.round(v * 10) / 10 } : null; }).filter(Boolean);
+  const wNow = current('weight', td), wFrom = tr.length ? tr[0].y : null, wd = wNow != null && wFrom != null ? Math.round((wNow - wFrom) * 10) / 10 : null, gw = goalWeight();
+  const lr = lastReading('fat', td), lm = lastReading('muscle', td);
+  // food
+  const fdays = days.filter(d => d < td && S.days[d] && S.days[d].nutrition && +S.days[d].nutrition.kcal > 0);
+  const avg = a => a.length ? Math.round(a.reduce((x, y) => x + y, 0) / a.length) : null;
+  const kAvg = avg(fdays.map(d => +S.days[d].nutrition.kcal)), tAvg = avg(fdays.map(d => { try { return nutritionTarget(d).kcal; } catch (e) { return 0; } })), pAvg = avg(fdays.map(d => +S.days[d].nutrition.protein || 0));
+  const onT = fdays.filter(d => { try { return +S.days[d].nutrition.kcal <= nutritionTarget(d).kcal + 100; } catch (e) { return false; } }).length, pT = phaseAt(td).protein;
+  // training
+  const planned = days.filter(d => d <= td && dayInfo(d).items && (dayInfo(d).workoutKey || dayInfo(d).isMT)).length;
+  const sess = S.sessions.filter(s => s.finished && s.date >= r.from && s.date <= r.to), mtd = days.filter(d => dayInfo(d).items && isDone(d, 'mt')).length;
+  const vol = sess.reduce((a, s) => a + s.ex.reduce((b, e) => b + e.sets.reduce((c, st) => c + (+st.kg || 0) * (+st.reps || 0), 0), 0), 0), pbs = sess.reduce((a, s) => a + sessionPBs(s), 0);
+  // best lift changes in the period: each exercise, first vs best score
+  const lifts = {}; sess.slice().sort((a, b) => a.date < b.date ? -1 : 1).forEach(s => s.ex.forEach(e => { const t = exType(e.n), v = exScore(e, t).v; if (!(v > 0)) return; const L = lifts[e.n] || (lifts[e.n] = { first: v, best: v, t }); L.best = Math.max(L.best, v); }));
+  const lrows = Object.entries(lifts).map(([n, L]) => ({ n, d: L.best - L.first, L })).sort((a, b) => b.d - a.d).slice(0, 4);
+  // habits
+  const hd = days.filter(d => d < td && dayInfo(d).items), comp = hd.filter(d => dayCompletion(d) === 'done').length, by = {};
+  hd.forEach(d => dayInfo(d).items.forEach(it => { if (it.id === 'workout' || it.id === 'mt') return; const b = by[it.id] || (by[it.id] = { lab: it.label, n: 0, ok: 0 }); b.n++; if (isDone(d, it.id)) b.ok++; }));
+  const pct = (a, b) => b ? Math.round(a / b * 100) : 0, f1 = v => v == null ? '—' : (Math.round(v * 10) / 10).toFixed(1);
+  const seg = ['week', 'month', 'all'].map(k => `<button data-nlper="${k}" class="${per === k ? 'on' : ''}">${k === 'week' ? '7 days' : k === 'month' ? '30 days' : 'All'}</button>`).join('');
+  return `<div class="screen nlscr nlprog"><div class="nlhead"><div><div class="nlh1">Progress</div><div class="nlsub">${per === 'all' ? 'Since ' + fmtShort(p.startDate) : fmtShort(r.from) + ' – ' + fmtShort(r.to)}</div></div>${GEAR_BTN()}</div>
+    <div class="nlseg">${seg}</div>
+    <div class="nlcard" data-scd="body"><div class="nlch"><span>Weight</span><span class="go">Details ${NI.chev}</span></div>
+      <div class="nlbig"><b>${f1(wNow)}</b><span>kg trend</span>${wd != null ? `<em class="${wd <= 0 ? 'ok' : 'warn'}">${wd > 0 ? '+' : ''}${wd.toFixed(1)} kg</em>` : ''}</div>
+      ${nlSpark(rd, { trend: tr, goal: gw })}
+      <div class="nlkv"><span>Goal <b>${gw ? gw + ' kg' : '—'}</b>${gw && wNow ? ` · ${f1(Math.abs(wNow - gw))} kg to go` : ''}</span><span>${lr ? 'Fat <b>' + lr.v + ' %</b>' : ''}${lm ? ' · Muscle <b>' + lm.v + ' kg</b>' : ''}</span></div></div>
+    <div class="nlcard" data-scd="food"><div class="nlch"><span>Food</span><span class="go">Details ${NI.chev}</span></div>
+      ${fdays.length ? `<div class="nl3"><div><b>${fmtN(kAvg)}</b><span>kcal a day</span><em>target ${fmtN(tAvg)}</em></div><div><b>${pAvg}</b><span>g protein</span><em>target ${pT}</em></div><div><b>${onT}/${fdays.length}</b><span>days on target</span><em>${pct(onT, fdays.length)} %</em></div></div>` : '<div class="nlempty">No logged days in this period</div>'}</div>
+    <div class="nlcard" data-scd="lifts"><div class="nlch"><span>Training</span><span class="go">All lifts ${NI.chev}</span></div>
+      <div class="nl3"><div><b>${sess.length + mtd}/${planned}</b><span>sessions</span><em>${mtd ? mtd + ' Muay Thai' : 'planned days'}</em></div><div><b>${fmtN(Math.round(vol / 1000 * 10) / 10)}</b><span>tonnes moved</span><em>${sess.length} lifting</em></div><div><b>${pbs}</b><span>PBs</span><em>new bests</em></div></div>
+      ${lrows.length ? `<div class="nllifts">${lrows.map(x => `<div><span>${esc(x.n)}</span><b class="${x.d > 0 ? 'ok' : ''}">${x.d > 0 ? '▲ ' : ''}${fmtPB(x.n, x.L.t, pbKind(x.n, x.L.t) === 'kg' ? Math.round(x.L.best * 10) / 10 : Math.round(x.L.best))}</b></div>`).join('')}</div>` : ''}</div>
+    <div class="nlcard"><div class="nlch"><span>Habits</span><span>${comp}/${hd.length} complete days</span></div>
+      ${Object.keys(by).length ? `<div class="nlbars">${Object.values(by).sort((a, b) => pct(b.ok, b.n) - pct(a.ok, a.n)).map(b => `<div><span>${esc(b.lab)}</span><i><u style="width:${pct(b.ok, b.n)}%"></u></i><b>${pct(b.ok, b.n)} %</b></div>`).join('')}</div>` : '<div class="nlempty">Nothing to show yet</div>'}
+      <div class="nlkv"><span>Longest run of complete days <b>${nlBestRun(hd)}</b></span><span>Now <b>${nlStreak()}</b></span></div></div>
+    <button class="nlplain" data-scd="ki">Day-by-day log ${NI.chev}</button></div>${nav('dash')}`;
+}
+function nlBestRun(ds) { let b = 0, c = 0; ds.forEach(d => { if (dayCompletion(d) === 'done') { c++; b = Math.max(b, c); } else c = 0; }); return b; }
+const _dashHtml = dashHtml, _bindDash = bindDash;
+dashHtml = function () { return NL() ? nlProgressHtml() : _dashHtml(); };
+bindDash = function () { if (!NL()) return _bindDash(); app.querySelectorAll('[data-nlper]').forEach(b => b.onclick = () => { R.nlper = b.dataset.nlper; const y = window.scrollY; render(); window.scrollTo(0, y); }); app.querySelectorAll('[data-scd]').forEach(b => b.onclick = () => go('scd', { k: b.dataset.scd })); };
+
+/* ---------- Settings: grouped by how often you need it; the layout switch lives under App ---------- */
+const _profileHtml = profileHtml;
+profileHtml = function () {
+  const h = _profileHtml(), sw = `<div class="srow"><span class="si">${NI.today}</span><span class="st"><b>New layout</b><span>Today · Plan · Progress</span></span><button class="sw ${NL() ? 'on' : ''}" role="switch" aria-checked="${NL()}" data-nlsw aria-label="New layout"></button></div>`;
+  let out = h.replace(/(<div class="sgl">[^<]*Language[^<]*<\/div><div class="sgrp">)/i, '<div class="sgl">Layout</div><div class="sgrp">' + sw + '</div>$1');
+  if (out === h) out = h.replace('</div></div>' + nav('profile'), sw + '</div></div>' + nav('profile'));
+  if (!NL()) return out;
+  return out.replace(/<div class="sgl">Project<\/div>/, '<div class="sgl">Your plan</div>').replace(/<div class="sgl">Connections<\/div>/, '<div class="sgl">Data</div>').replace(/<\/div>\s*<div class="sgl">Files<\/div><div class="sgrp">/, '');
+};
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-nlsw]'); if (!b) return; e.stopPropagation(); const on = !NL(); b.classList.toggle('on', on); vib(15); setTimeout(() => setNL(on), 200); }, true);
+
+/* ---------- the rest of the old vocabulary, off in the new layout ---------- */
+const _todayHtml = todayHtml, _bindToday = bindToday, _refreshToday = refreshToday, _patchToday = patchToday, _celebrateDay = celebrateDay, _showBalls = showBalls;
+todayHtml = function () { return NL() ? nlTodayHtml() : _todayHtml(); };
+bindToday = function () { return NL() ? nlBindToday() : _bindToday(); };
+refreshToday = function () { return NL() ? nlRefresh() : _refreshToday.apply(this, arguments); };
+patchToday = function (dir) { if (!NL()) return _patchToday(dir); render(dir); window.scrollTo(0, 0); };
+celebrateDay = function (date) { if (!NL()) return _celebrateDay(date); };
+showBalls = function (date) { if (!NL()) return _showBalls(date); go('journey', {}); };
 /* ============ v6 4b: the setup questions, Where you are, and the same again from Settings ============
    First run (no project yet): the intro (name, Day 1), six short questions — You · Fitness level · Motivation · Direction ·
    Time · Kit and sports — then Connect (the band, nutrition from MFP), then Where you are with Start. From Settings → Setup
