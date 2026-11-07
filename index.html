@@ -1695,103 +1695,19 @@ body.scrolled .t4head .hib[data-shots]{max-width:0;opacity:0;margin-left:-8px;bo
 .topfab.show:active{transform:scale(.95)}
 body.kpopen .topfab,body.locked .topfab{opacity:0;pointer-events:none}
 @media (prefers-reduced-motion:reduce){.topfab,.hact,.t4head,.t4head .hib[data-shots]{transition:none}}
-</style>
-<style id="glass">
-/* ===== Glass preview: translucent surfaces, floating bars, sliding controls. Overrides only; the comic art and fonts stay. ===== */
-:root{
-  --glass:rgba(38,40,46,.52);--glass2:rgba(50,52,60,.6);--glass3:rgba(66,69,78,.7);
-  --edge:rgba(255,255,255,.12);--edge2:rgba(255,255,255,.22);--spec:rgba(255,255,255,.24);
-  --gshadow:0 10px 28px rgba(0,0,0,.42);--blur:blur(16px) saturate(160%);
-  --amb1:#2B1A0E;--amb2:#101F30;--amb3:#1E1A14;--amb4:#0A0B0D;
-  --card:var(--glass);--paper2:rgba(28,30,36,.55);--s2:var(--glass2);--s3:var(--glass3);--line:var(--edge);--line2:var(--edge2);
-}
-html,body{background:var(--amb4)}
-body{background:radial-gradient(60% 46% at 14% 14%,var(--amb1) 0,transparent 70%),radial-gradient(52% 44% at 88% 36%,var(--amb2) 0,transparent 70%),radial-gradient(56% 46% at 50% 96%,var(--amb3) 0,transparent 70%),var(--amb4);background-attachment:fixed;background-size:cover}
-
-/* the material */
-.card,.step,.tip,.avatar,.hist,.cycrow,.jcy,.qtile,.ctile,.stp,.target,.affix,input,textarea,select,.pill,.chip,.tabs button,.seg4 button,.todo li,.t4band,.ex .last,.ex .last .use,.mnav,.sqplan,.kb .track,.modal{
-  background:var(--glass);border:1px solid var(--edge);
-  box-shadow:inset 0 1px 0 var(--spec),inset 0 -1px 0 rgba(0,0,0,.25),var(--gshadow);
-}
-.card,.step,.todo li,.jcy,.hist,.cycrow,.avatar,.tip,.t4band{border-radius:20px}
-.todo li{border-width:1px;box-shadow:inset 0 1px 0 var(--spec),0 6px 16px rgba(0,0,0,.28)}
-.todo li.req,.todo li.bonus{border-width:1px;box-shadow:inset 0 1px 0 var(--spec),0 6px 16px rgba(0,0,0,.28)}
-.todo li.done{background:rgba(28,30,36,.45)}
-.todo .chk{background:var(--glass2);border:1px solid var(--edge2);border-radius:10px;box-shadow:inset 0 1px 0 var(--spec)}
-.todo li.done .chk{background:var(--ok);border-color:transparent;box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 6px 14px rgba(61,220,132,.35)}
-.pill,.chip,.tabs button,.seg4 button,.ex .last .use,.mnav,.affix,.stp,.qtile,.ctile{box-shadow:inset 0 1px 0 var(--spec),0 4px 12px rgba(0,0,0,.2)}
-.pill,.chip{border-radius:999px}
-.chip{padding:4px 11px}
-.tabs button,.seg4 button{border-radius:14px}
-.tabs button.on,.seg4 button.on{background:var(--glass3);border-color:var(--edge2);color:var(--ink);box-shadow:inset 0 1px 0 var(--spec),0 0 0 1px rgba(254,127,12,.55),0 6px 18px rgba(0,0,0,.25)}
-.ctile{border-top:1px solid var(--edge)}
-.ctile::before{content:"";position:absolute;left:12px;right:12px;top:0;height:3px;border-radius:0 0 3px 3px;background:var(--c)}
-input,textarea,select{border-radius:14px;background:rgba(14,15,18,.5)}
-.affix{border-radius:14px}
-.affix:focus-within{box-shadow:inset 0 1px 0 var(--spec),0 0 0 2px rgba(254,127,12,.45)}
-.affix input{background:transparent;box-shadow:none}
-.kvr,.prow,.srow,.sqchg>div{border-top-color:var(--edge)}
-.target{border-style:solid;border-radius:16px}
-.ex .last{border-style:solid;border-radius:14px}
-
-/* buttons: glass with an orange core */
-.btn{border:1px solid rgba(255,255,255,.28);border-radius:999px;background:linear-gradient(180deg,#FF9B45,var(--or) 55%,#E06A00);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -1px 0 rgba(0,0,0,.2),0 10px 24px rgba(254,127,12,.28)}
-.btn:active{transform:scale(.985);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 4px 12px rgba(254,127,12,.2)}
-.btn.sec{background:var(--glass2);color:var(--ink);border:1px solid var(--edge2);box-shadow:inset 0 1px 0 var(--spec),var(--gshadow)}
-.btn.ghost{background:transparent;box-shadow:none;border-color:var(--edge2)}
-.btn.sm{box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 6px 14px rgba(254,127,12,.22)}
-.btn.run{background:linear-gradient(180deg,#5FC0FF,var(--beam) 55%,#1079C8);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 10px 24px rgba(31,162,255,.3)}
-.btn.danger{background:var(--glass2);border-color:rgba(255,107,94,.5)}
-
-/* floating bars */
-.topbar{background:var(--glass2);background-image:none;border:1px solid var(--edge);border-radius:0 0 24px 24px;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),var(--gshadow)}
-.topbar .back{background:var(--glass3);border:1px solid var(--edge2);border-radius:14px;box-shadow:inset 0 1px 0 var(--spec)}
-.wbar,.segbar{background:rgba(10,11,13,.6);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur)}
-.nav{left:12px;right:12px;bottom:calc(12px + var(--sab));max-width:536px;margin:0 auto;border-radius:999px;border:1px solid var(--edge);background:var(--glass2);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),var(--gshadow);padding:4px 10px 4px}
-.nav.nav3{padding:6px 10px 7px}
-.nav button{border-radius:999px;transition:color .2s}
-.nav button.on{color:var(--or2)}
-.nav svg{transition:transform .2s}
-.nav.nav3 .navball .bb{border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 20px rgba(0,0,0,.6)}
-.screen{padding-bottom:calc(104px + var(--sab))}
-.screen.bar{padding-bottom:calc(166px + var(--sab))}
-.rdock{bottom:calc(104px + var(--sab));background:rgba(28,19,11,.72);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid rgba(254,127,12,.6)}
-.botbar{background:linear-gradient(rgba(10,11,13,0),rgba(10,11,13,.85) 40%);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.botbar .rest,.botbar .dur{background:var(--glass2);border:1px solid var(--edge2);border-radius:999px;box-shadow:inset 0 1px 0 var(--spec)}
-.player{background:var(--glass2);border:1px solid rgba(254,127,12,.5);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),0 0 22px rgba(254,127,12,.18),var(--gshadow)}
-
-/* sheets */
-.modalbg{background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.modal{background:var(--glass2);border:1px solid var(--edge2);border-radius:26px;-webkit-backdrop-filter:blur(26px) saturate(170%);backdrop-filter:blur(26px) saturate(170%);box-shadow:inset 0 1px 0 var(--spec),0 24px 60px rgba(0,0,0,.6)}
-
-/* the Today banner and the dragon-ball strip */
-.band{clip-path:none;border-radius:0 0 26px 26px;background:linear-gradient(160deg,rgba(254,127,12,.92),rgba(224,106,0,.88));background-image:none;border:1px solid rgba(255,255,255,.22);border-top:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 12px 30px rgba(254,127,12,.25)}
-.band::after{display:none}
-.t4band{border-radius:16px}
-
-/* sliding pane for segmented controls (positioned by glass.js) */
-.scper,.tabs,.seg4,.ptabs{position:relative}
-.scper .gind,.tabs .gind,.seg4 .gind,.ptabs .gind{position:absolute;z-index:0;pointer-events:none;border-radius:12px;background:var(--glass3);border:1px solid var(--edge2);box-shadow:inset 0 1px 0 var(--spec),0 4px 14px rgba(0,0,0,.28);transition:left .3s cubic-bezier(.3,.9,.25,1.05),width .3s cubic-bezier(.3,.9,.25,1.05),top .3s,height .3s}
-.scper .gind{background:rgba(141,255,106,.28);border-color:rgba(141,255,106,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 0 14px rgba(110,255,80,.35);border-radius:9px}
-.ptabs .gind{border-radius:12px 12px 0 0;background:var(--glass2)}
-.scper button,.tabs button,.seg4 button,.ptabs button{position:relative;z-index:1}
-.scper button.on{background:transparent;box-shadow:none;color:#dfffd0}
-.tabs button.on,.seg4 button.on{background:transparent;border-color:var(--edge);box-shadow:inset 0 1px 0 var(--spec),0 4px 12px rgba(0,0,0,.2)}
-.ptabs{border-bottom-color:var(--edge)}
-.ptabs button.on{border-bottom-color:var(--or)}
-
-/* motion */
-@keyframes gbump{0%{transform:scale(1)}40%{transform:scale(1.26)}70%{transform:scale(.94)}100%{transform:scale(1)}}
-.gbump{animation:gbump .42s cubic-bezier(.2,.9,.3,1.3)}
-.nav.nav3 .navball .bb.gbump{animation:gbump .5s cubic-bezier(.2,.9,.3,1.3)}
-@media (prefers-reduced-motion:reduce){.gbump,.nav.nav3 .navball .bb.gbump{animation:none}.scper .gind,.tabs .gind,.seg4 .gind,.ptabs .gind{transition:none}}
-
-/* the living header and the pill in glass */
-body.scrolled .t4head{background:var(--glass2);background-image:none;border:1px solid var(--edge);border-top:0;border-radius:0 0 24px 24px;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),var(--gshadow)}
-.hact{background:linear-gradient(180deg,#FF9B45,var(--or) 55%,#E06A00);border-color:rgba(255,255,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 16px rgba(254,127,12,.28);color:#120c05}
-.hact:active{transform:scale(.96);box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 3px 10px rgba(254,127,12,.2)}
-.topfab{bottom:calc(96px + var(--sab));background:var(--glass3);border:1px solid var(--edge2);color:var(--ink);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:inset 0 1px 0 var(--spec),0 12px 28px rgba(0,0,0,.4)}
-
+/* v5.14 the bubble: floating round rest timer / workout shortcut, draggable, snaps to a side, dropped on ✕ to end */
+.bub{position:fixed;z-index:60;width:68px;height:68px;padding:0;border-radius:50%;border:0;background:radial-gradient(circle at 50% 40%,#2a1a0e,#0A0B0D 72%);box-shadow:0 0 0 2px #000,0 10px 26px rgba(0,0,0,.7),0 0 18px rgba(254,127,12,.25);color:var(--ink);display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;transition:box-shadow .25s}
+.bub>svg{position:absolute;inset:0;width:68px;height:68px;overflow:visible}
+.bub .tt{position:relative;display:flex;flex-direction:column;align-items:center;line-height:1}.bub .tt b{font-family:'BarlowC',sans-serif;font-weight:800;font-size:19px;letter-spacing:.02em;font-variant-numeric:tabular-nums}.bub .tt small{font-family:'BarlowC',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;color:var(--muted);margin-top:2px}
+.bub.go .tt small{color:#3DDC84}.bub.go{box-shadow:0 0 0 2px #000,0 10px 26px rgba(0,0,0,.7),0 0 22px rgba(61,220,132,.45)}
+.bub.wo{border:3px solid var(--or)}.bub.wo .ic svg{width:28px;height:28px;display:block}.bub.wo .ic{position:relative;color:var(--or2)}.bub.wo small{position:absolute;bottom:7px;left:0;right:0;text-align:center;font-family:'BarlowC',sans-serif;font-weight:700;font-size:9px;letter-spacing:.08em;color:var(--muted)}
+.bub.held{cursor:grabbing;transform:scale(1.06)}.bub.drag{box-shadow:0 0 0 2px #000,0 18px 40px rgba(0,0,0,.8),0 0 22px rgba(254,127,12,.35)}
+.bubx{position:fixed;left:50%;bottom:calc(96px + var(--sab));z-index:59;width:62px;height:62px;margin-left:-31px;border-radius:50%;background:rgba(0,0,0,.55);border:2px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;opacity:0;transform:scale(.6);transition:opacity .2s,transform .2s,background .2s;pointer-events:none}
+.bubx.show{opacity:1;transform:scale(1)}.bubx.over{background:#D64545;transform:scale(1.25)}
+.vfloat{margin:6px 0 0;display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;border:1px solid var(--line2);background:#15161a;color:var(--ink);font:600 13px/1 inherit}
+.qfs{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 2px}.qf{display:inline-flex;flex-direction:column;align-items:flex-start;padding:8px 12px;border-radius:14px;border:1px solid var(--line2);background:#15161a;color:var(--ink);text-align:left}
+.qf b{font-size:14px;line-height:1.1}.qf small{color:var(--muted);font-size:11px;margin-top:2px}.qf.add{color:var(--or2);justify-content:center}.qf.ed{border-color:#D64545;color:#ff9b9b}
+.qfnew{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:6px;margin-top:8px}.qfnew .qf.add{grid-column:1/-1;align-items:center}.qfnew input{min-width:0}
 </style>
 </head>
 <body>
@@ -1799,7 +1715,7 @@ body.scrolled .t4head{background:var(--glass2);background-image:none;border:1px 
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.13.0';
+const APP_VERSION = '5.14.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -4607,7 +4523,9 @@ function bindVideo(box, name) {
   videoExists(name).then(ok => { if (ok) btn.hidden = false; });
   btn.onclick = () => {
     if (!vb.hidden) { const v = vb.querySelector('video'); if (v) v.pause(); vb.hidden = true; btn.textContent = '▶ Video'; return; }
-    if (!vb.firstChild) vb.innerHTML = `<video src="${videoSrc(name)}" controls playsinline preload="metadata"></video>`;
+    // v5.14: Float = picture-in-picture, a small window that stays over this app and over other apps on the phone
+    if (!vb.firstChild) { vb.innerHTML = `<video src="${videoSrc(name)}" controls playsinline preload="metadata" autopictureinpicture></video>${document.pictureInPictureEnabled ? '<button type="button" class="vfloat" data-float>⧉ Float the video</button>' : ''}`;
+      const fb = vb.querySelector('[data-float]'); if (fb) fb.onclick = async () => { const v = vb.querySelector('video'); try { if (document.pictureInPictureElement) { await document.exitPictureInPicture(); return; } await v.play(); await v.requestPictureInPicture(); vib(10); } catch (e) { toast('Floating video is not available here'); } }; }
     vb.hidden = false; btn.textContent = '▼ Hide video'; const v = vb.querySelector('video'); if (v) v.play().catch(() => {});
   };
 }
@@ -5915,6 +5833,24 @@ function weighSheet(date) {
   });
 }
 
+/* ---------- Quick foods (v5.14): one tap adds a food's numbers to the day's totals ----------
+   Kept in S.quick as {n, k, p, c, f}. Tap = add to the fields (nothing is saved until Save); Edit = remove, or add a new one. */
+function quickFoods() { if (!S.quick) S.quick = [{ n: 'Protein shake (water)', k: 120, p: 24, c: 3, f: 2 }, { n: 'Chicken breast 100 g', k: 120, p: 23, c: 0, f: 3 }, { n: 'Greek yoghurt 200 g', k: 130, p: 20, c: 8, f: 0 }, { n: 'Eggs ×2', k: 150, p: 13, c: 1, f: 10 }]; return S.quick; }
+function quickFoodsHtml(editing) { return quickFoods().map((q, i) => `<button type="button" class="qf ${editing ? 'ed' : ''}" data-qf="${i}"><b>${editing ? '− ' : ''}${esc(q.n)}</b><small>${q.k} kcal · ${q.p} P · ${q.c} C · ${q.f} F</small></button>`).join('') + (editing ? '<button type="button" class="qf add" data-qfadd><b>+ New</b></button>' : ''); }
+function bindQuickFoods(b, upd) {
+  const box = b.querySelector('#qfs'), form = b.querySelector('#qfnew'), ed = b.querySelector('[data-qfedit]'); if (!box) return; let editing = false;
+  const paint = () => { box.innerHTML = quickFoodsHtml(editing); ed.textContent = editing ? 'Done' : 'Edit'; form.hidden = true; };
+  ed.onclick = () => { editing = !editing; paint(); };
+  box.onclick = e => { const a = e.target.closest('[data-qfadd]'); if (a) { form.hidden = false; form.querySelector('[data-q=n]').focus(); return; }
+    const t = e.target.closest('[data-qf]'); if (!t) return; const i = +t.dataset.qf, q = quickFoods()[i];
+    if (editing) { quickFoods().splice(i, 1); save(); paint(); return; }
+    [['kcal', 'k'], ['protein', 'p'], ['carbs', 'c'], ['fat', 'f']].forEach(([f, k]) => { const inp = b.querySelector(`[name=${f}]`); inp.value = String((+inp.value || 0) + (+q[k] || 0)); });
+    upd(); vib(12); toast('+ ' + q.n + ' · ' + q.k + ' kcal', 1200); t.animate && t.animate([{ transform: 'scale(.94)' }, { transform: 'none' }], { duration: 160 }); };
+  const add = () => { const g = k => form.querySelector(`[data-q=${k}]`).value; if (!g('n').trim()) return toast('Give it a name'); quickFoods().push({ n: g('n').trim(), k: +g('k') || 0, p: +g('p') || 0, c: +g('c') || 0, f: +g('f') || 0 }); save(); form.querySelectorAll('input').forEach(i => i.value = ''); editing = false; paint(); vib(12); };
+  form.querySelector('[data-qfsave]').onclick = add;
+  form.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+}
+
 /* ---------- Nutrition ---------- */
 function nutritionSheet(date) {
   const n = (S.days[date] || {}).nutrition || {}, p = phaseAt(date), bk = bandKcal(date), has = n.kcal || n.protein || n.carbs || n.fat;
@@ -5924,6 +5860,7 @@ function nutritionSheet(date) {
   const body = `<div class="card tgc"><div class="lab4" id="tgtlab">${tl(bk)}</div><div class="tg4" id="tgt">${targetHtml(date)}</div></div>
     <div class="grid4" style="margin-top:12px"><div class="field"><label>Calories eaten</label><input name="kcal" type="number" inputmode="numeric" value="${n.kcal || ''}"></div><div class="field"><label>Protein (g)</label><input name="protein" type="number" inputmode="numeric" value="${n.protein || ''}"></div>
       <div class="field"><label>Carbs (g)</label><input name="carbs" type="number" inputmode="numeric" value="${n.carbs == null ? '' : n.carbs}"></div><div class="field"><label>Fat (g)</label><input name="fat" type="number" inputmode="numeric" value="${n.fat == null ? '' : n.fat}"></div></div>
+    <div class="secl" style="margin-top:4px"><span>Quick foods</span><button class="link" data-qfedit style="font-size:12px">Edit</button></div><div class="qfs" id="qfs">${quickFoodsHtml()}</div><div class="qfnew" id="qfnew" hidden><input placeholder="Name" data-q="n"><input placeholder="kcal" type="number" inputmode="numeric" data-q="k"><input placeholder="P" type="number" inputmode="numeric" data-q="p"><input placeholder="C" type="number" inputmode="numeric" data-q="c"><input placeholder="F" type="number" inputmode="numeric" data-q="f"><button type="button" class="qf add" data-qfsave><b>Add</b></button></div>
     <div class="secl" style="margin-top:4px"><span>Band</span>${bandCfg() ? `<button class="sy" data-bandpull>${IC4.sync}${last || 'Sync'}</button>` : '<span></span>'}</div>
     <div class="field"><label>Band: extra kcal burned</label><input name="band" type="number" inputmode="numeric" value="${n.band == null ? '' : n.band}" placeholder="${(bandDay(date) || {}).active || activityEst() + exerciseEst(date).v}"></div>
     <div class="muted small" style="margin:-6px 2px 0" id="bandnote">${note(bk)}</div>
@@ -5937,6 +5874,7 @@ function nutritionSheet(date) {
       try { b.querySelector('#calc').innerHTML = nutritionCalcHtml(nutritionCalc(date), phaseAt(date), date); b.querySelector('#tgt').innerHTML = targetHtml(date); b.querySelector('#tgtlab').textContent = tl(bandKcal(date)); b.querySelector('#bandnote').textContent = note(bandKcal(date)); }
       finally { if (keep === undefined) delete d().nutrition; else d().nutrition = keep; } };
     b.querySelectorAll('input[name]').forEach(i => i.addEventListener('input', upd));
+    bindQuickFoods(b, upd);
     const bp = b.querySelector('[data-bandpull]'); if (bp) bp.onclick = async () => { bp.lastChild.textContent = 'Syncing…'; const r = await bandFetch(); bp.lastChild.textContent = r.ok ? new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'Sync'; if (!r.ok) return toast(r.error, 2400);
       const k = bandKcal(date), bi = b.querySelector('[name=band]'); if (k.src === 'band') bi.placeholder = (bandDay(date) || {}).active || bi.placeholder; upd(); };
     const ff = b.querySelector('#fillFile'); b.querySelector('[data-fill]').onclick = () => ff.click();
@@ -8300,42 +8238,79 @@ for (const [c, ch] of [['essential fat', 'esencijalna mast'], ['athletic', 'spor
   if (typeof patchToday === 'function') { const p0 = patchToday; patchToday = function () { const out = p0.apply(this, arguments); const h = $('#t4head'); if (h) h._on = null; schedule(); return out; }; }
   schedule();
 })();
-/* ---------- Glass preview: sliding panes under segmented controls, a bump on the tab you tapped ---------- */
-(function () {
-  const SEGS = '.scper,.tabs,.seg4,.ptabs';
-  let pending = null, pendingNav = null, lastNav = null;
-  const segs = () => Array.from(document.querySelectorAll(SEGS));
-  const key = el => el.className.split(' ')[0] + '#' + segs().filter(x => x.className.split(' ')[0] === el.className.split(' ')[0]).indexOf(el);
-  const rectOf = (seg, b) => ({ l: b.offsetLeft, t: b.offsetTop, w: b.offsetWidth, h: b.offsetHeight });
-  function place(seg, from) {
-    const on = seg.querySelector('button.on'); if (!on) { const g = seg.querySelector('.gind'); if (g) g.remove(); return; }
-    let g = seg.querySelector('.gind'); const fresh = !g;
-    if (fresh) { g = document.createElement('span'); g.className = 'gind'; seg.insertBefore(g, seg.firstChild); }
-    const to = rectOf(seg, on);
-    const set = r => { g.style.left = r.l + 'px'; g.style.top = r.t + 'px'; g.style.width = r.w + 'px'; g.style.height = r.h + 'px'; };
-    if (from) { g.style.transition = 'none'; set(from); void g.offsetWidth; g.style.transition = ''; requestAnimationFrame(() => set(to)); }
-    else { if (fresh) g.style.transition = 'none'; set(to); if (fresh) { void g.offsetWidth; g.style.transition = ''; } }
+/* ============ v5.14: the bubble ============
+   One round floating thing instead of the docked rest bar and the ball in the tab bar.
+   Log a set and it appears, counting UP from 0:00 (the ring shows how far you are into the usual rest: 3:00 after the
+   heavy sets, 2:00 after the others; at that point it turns green and buzzes once, and keeps counting so you know how
+   long you really rested). Drag it anywhere; let go and it settles against the nearer side; drop it on the ✕ that
+   appears at the bottom to end the rest. Leave the workout mid-way and the workout itself shrinks into the bubble
+   (a dumbbell, or the timer while one is running); tap it to come back. Goes away by itself after 10 minutes of rest. */
+const BUB = { el: null, x: null, pos: (() => { try { return JSON.parse(localStorage.getItem('vikac.bubble') || 'null') || { side: 'right', y: .58 }; } catch (e) { return { side: 'right', y: .58 }; } })(), drag: null, tick: 0, settled: false };
+function bubSavePos() { try { localStorage.setItem('vikac.bubble', JSON.stringify(BUB.pos)); } catch (e) {} }
+// the workout that is running right now (started, not finished), if any
+function liveWorkout() { const d = today(), s = S.sessions.find(x => x.date === d && x.startedAt && !x.finished); return s ? { date: d, key: s.key, s } : null; }
+function bubWant() { return !!REST || (!!liveWorkout() && R.screen !== 'workout'); }
+function bubEl() {
+  if (BUB.el) return BUB.el;
+  const el = document.createElement('button'); el.type = 'button'; el.className = 'bub'; el.setAttribute('aria-label', 'Rest timer'); document.body.appendChild(el);
+  const x = document.createElement('div'); x.className = 'bubx'; x.innerHTML = '<span>✕</span>'; document.body.appendChild(x);
+  BUB.el = el; BUB.x = x; bubPlace(el, false); bubBindDrag(el); return el;
+}
+function bubRect() { const vw = innerWidth, vh = innerHeight; return { vw, vh, size: 68, top: 70, bottom: 110 }; }
+function bubPlace(el, animate) {
+  const r = bubRect(), left = BUB.pos.side === 'left' ? 10 : r.vw - r.size - 10, top = Math.max(r.top, Math.min(r.vh - r.bottom - r.size, BUB.pos.y * r.vh));
+  if (animate && el.animate && !fsReduce()) { const b = el.getBoundingClientRect(); el.style.left = left + 'px'; el.style.top = top + 'px'; el.animate([{ transform: `translate(${b.left - left}px,${b.top - top}px)` }, { transform: 'none' }], { duration: 420, easing: 'cubic-bezier(.2,1.25,.35,1)' }); }
+  else { el.style.left = left + 'px'; el.style.top = top + 'px'; }
+}
+function bubBindDrag(el) {
+  let d = null;
+  el.addEventListener('pointerdown', e => { const b = el.getBoundingClientRect(); d = { id: e.pointerId, x0: e.clientX, y0: e.clientY, l: b.left, t: b.top, moved: false }; el.setPointerCapture(e.pointerId); el.classList.add('held'); });
+  el.addEventListener('pointermove', e => { if (!d || e.pointerId !== d.id) return; const dx = e.clientX - d.x0, dy = e.clientY - d.y0; if (!d.moved && Math.abs(dx) + Math.abs(dy) > 6) { d.moved = true; el.classList.add('drag'); BUB.x.classList.add('show'); }
+    if (!d.moved) return; const r = bubRect(); el.style.left = Math.max(4, Math.min(r.vw - r.size - 4, d.l + dx)) + 'px'; el.style.top = Math.max(r.top - 20, Math.min(r.vh - r.size - 30, d.t + dy)) + 'px';
+    const xb = BUB.x.getBoundingClientRect(), eb = el.getBoundingClientRect(), over = Math.hypot(eb.left + eb.width / 2 - (xb.left + xb.width / 2), eb.top + eb.height / 2 - (xb.top + xb.height / 2)) < 60;
+    if (over !== BUB.x.classList.contains('over')) { BUB.x.classList.toggle('over', over); vib(8); } });
+  const up = e => { if (!d || e.pointerId !== d.id) return; el.classList.remove('held', 'drag'); const over = BUB.x.classList.contains('over'); BUB.x.classList.remove('show', 'over'); const moved = d.moved; d = null;
+    if (!moved) return bubTap();
+    if (over) { vib(20); if (REST) restStop(); else bubDismissWorkout(); return; }
+    const r = bubRect(), b = el.getBoundingClientRect(); BUB.pos = { side: b.left + b.width / 2 < r.vw / 2 ? 'left' : 'right', y: +((b.top) / r.vh).toFixed(3) }; bubSavePos(); bubPlace(el, true); };
+  el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
+}
+function bubTap() { vib(10); const lw = liveWorkout(); if (R.screen !== 'workout' && (lw || (REST && REST.date))) go('workout', lw ? { date: lw.date, key: lw.key } : { date: REST.date, key: REST.key }); }
+// dropping the workout bubble on ✕ only hides it until the next set is logged (the workout itself stays as it is)
+function bubDismissWorkout() { BUB.hiddenFor = (liveWorkout() || {}).s; bubSync(); }
+function bubRemove() { if (BUB.tick) { clearInterval(BUB.tick); BUB.tick = 0; } const el = BUB.el; if (!el) return; BUB.el = null; const x = BUB.x; BUB.x = null;
+  if (el.animate && !fsReduce()) { el.animate([{ transform: 'none', opacity: 1 }, { transform: 'scale(.6)', opacity: 0 }], { duration: 180, easing: 'ease-in' }).onfinish = () => el.remove(); } else el.remove(); if (x) x.remove(); }
+function bubSync() {
+  const d = $('#rdock'); if (d) d.remove();
+  const lw = liveWorkout(); if (!REST && BUB.hiddenFor && lw && BUB.hiddenFor === lw.s) return bubRemove();
+  if (REST) BUB.hiddenFor = null;
+  if (!bubWant()) return bubRemove();
+  const el = bubEl(); if (!BUB.tick) BUB.tick = setInterval(bubPaint, 250); bubPaint();
+  if (!el._shown) { el._shown = true; if (el.animate && !fsReduce()) el.animate([{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1.08)', opacity: 1, offset: .7 }, { transform: 'none', opacity: 1 }], { duration: 380, easing: 'cubic-bezier(.2,.8,.2,1)' }); }
+}
+function bubPaint() {
+  const el = BUB.el; if (!el) return;
+  if (REST) {
+    const start = REST.end - REST.total * 1000, sec = Math.max(0, Math.floor((Date.now() - start) / 1000)), frac = Math.min(1, sec / REST.total), over = sec >= REST.total;
+    if (over && !REST.go) { REST.go = true; restSave(); vib([120, 80, 160]); }
+    if (sec > 600) return restStop();
+    const col = over ? '#3DDC84' : frac > .5 ? '#FE7F0C' : '#FFB454', mmss = Math.floor(sec / 60) + ':' + pad(sec % 60);
+    el.className = 'bub tmr' + (over ? ' go' : '') + (el.classList.contains('held') ? ' held' : '') + (el.classList.contains('drag') ? ' drag' : '');
+    const h = `${restRing(frac, col, 31)}<span class="tt"><b>${mmss}</b><small>${over ? 'GO' : 'REST'}</small></span>`; if (el._h !== h) { el.innerHTML = h; el._h = h; }
+    el.title = REST.next ? 'then ' + REST.next : '';
+  } else {
+    el.className = 'bub wo' + (el.classList.contains('held') ? ' held' : '') + (el.classList.contains('drag') ? ' drag' : '');
+    const lw = liveWorkout(), h = `<span class="ic">${IC4.dumb}</span><small>${lw ? clockTxt(lw.s).replace(/^(\d+):(\d+)$/, '$1:$2') : ''}</small>`; if (el._h !== h) { el.innerHTML = h; el._h = h; }
+    el.title = 'Back to the workout';
   }
-  function sweep() {
-    segs().forEach(seg => {
-      const k = key(seg);
-      if (pending && pending.key === k) { place(seg, pending.from); pending = null; } else place(seg, null);
-    });
-    const onNav = document.querySelector('.nav button.on'); const nv = onNav ? onNav.dataset.nav : null;
-    if (onNav && nv !== lastNav && pendingNav === nv) { const t = onNav.querySelector('.bb') || onNav.querySelector('svg'); if (t) { t.classList.remove('gbump'); void t.offsetWidth; t.classList.add('gbump'); } }
-    lastNav = nv; pendingNav = null;
-  }
-  document.addEventListener('click', e => {
-    const b = e.target.closest && e.target.closest('button'); if (!b) return;
-    const seg = b.closest(SEGS);
-    if (seg && !b.classList.contains('on') && !b.classList.contains('gind')) { const on = seg.querySelector('button.on'); pending = { key: key(seg), from: on ? rectOf(seg, on) : null }; }
-    const nb = b.closest('.nav button'); if (nb) pendingNav = nb.dataset.nav;
-  }, true);
-  const mo = new MutationObserver(() => { if (mo._t) return; mo._t = requestAnimationFrame(() => { mo._t = null; sweep(); }); });
-  const start = () => { const app = document.getElementById('app'); if (!app) return; mo.observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] }); sweep(); };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-  window.addEventListener('resize', () => segs().forEach(s => place(s, null)));
-})();
+}
+// the old pieces now feed the bubble: no docked bar, no timer in the tab-bar ball
+restPaint = function () { if (!REST) return; bubSync(); };
+const _restStop = restStop; restStop = function () { _restStop(); bubSync(); };
+const _restStart = restStart; restStart = function (o) { _restStart(o); bubSync(); };
+const _render = render; render = function () { _render.apply(this, arguments); setTimeout(bubSync, 0); };
+addEventListener('resize', () => { if (BUB.el) bubPlace(BUB.el, false); });
+if (REST || liveWorkout()) setTimeout(bubSync, 900);
 /* ---------- Boot ---------- */
 (async function boot() {
   i18nStart();   // Croatian: translate everything the app shows from here on
