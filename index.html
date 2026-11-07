@@ -1724,10 +1724,45 @@ body.kpopen .topfab,body.locked .topfab{opacity:0;pointer-events:none}
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
-@font-face,.bang,.title,input.big,.bandtoday .bt b,.affix.big .sfx,.band .h,.band .right .big,.cyc-top .mid .c,.cyc-top .mid .d,.cycrow .n,.topbar .t,.card h3,.sec-h,.ov b,.grade,.beam.metric .val b,.modal h3,.step .tm .t,.player .big,.avatar.progress .score,.score,.cal .mh .m,.dl .n,.dragon .msg,.kpi .v,.target .v,.pbpop,.reccard .rechd,.h1,.bang.h1,.btn.big,.t4pre .big,.wbar .prog b,.lgv input,.tg4 .v,.player .pring b,.summon .stx .h,.bud .big b,.rdock .tm,.nav.nav3 .navball .tt b,.hbig b,.jd .dt b,.sqbig{letter-spacing:-.01em;-webkit-text-stroke:0}
+.bang,.title,input.big,.bandtoday .bt b,.affix.big .sfx,.band .h,.band .right .big,.cyc-top .mid .c,.cyc-top .mid .d,.cycrow .n,.topbar .t,.card h3,.sec-h,.ov b,.grade,.beam.metric .val b,.modal h3,.step .tm .t,.player .big,.avatar.progress .score,.score,.cal .mh .m,.dl .n,.dragon .msg,.kpi .v,.target .v,.pbpop,.reccard .rechd,.h1,.bang.h1,.btn.big,.t4pre .big,.wbar .prog b,.lgv input,.tg4 .v,.player .pring b,.summon .stx .h,.bud .big b,.rdock .tm,.nav.nav3 .navball .tt b,.hbig b,.jd .dt b,.sqbig{letter-spacing:-.01em;-webkit-text-stroke:0}
 .title{transform:none}
 .title,.band .h,.band .right .big,.cyc-top .mid .c,.cyc-top .mid .d,.player .big,.avatar.progress .score,.score,.dragon .msg,.h1,.bang.h1,.t4pre .big,.summon .stx .h,.sqbig{text-shadow:0 1px 12px rgba(0,0,0,.45)}
 .htop .bang,.xtop .bang{-webkit-text-stroke:0;letter-spacing:0}
+/* v5.16 "Can I eat this?": the Kcal left card opens into a barcode scanner */
+.bud{position:relative}.bud .pr{padding-right:54px}.scnbtn{position:absolute;right:10px;bottom:10px;width:46px;height:46px;border-radius:15px;border:1.5px solid rgba(61,220,132,.55);background:rgba(61,220,132,.12);color:#bdf5d2;display:flex;align-items:center;justify-content:center;z-index:2}
+.scnbtn svg{width:26px;height:26px}.scnbtn:active{transform:scale(.94)}
+.modalbg.scnscrim{display:block;padding:0;z-index:70;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.scn{position:fixed;z-index:71;transform-origin:0 0;border-radius:26px;background:linear-gradient(170deg,#132018,#0f1412 60%);border:2px solid rgba(61,220,132,.5);box-shadow:0 30px 80px rgba(0,0,0,.7);display:flex;flex-direction:column;overflow:hidden;max-width:560px;margin:0 auto}
+@media (min-width:600px){.scn{left:calc(50% - 280px)!important;width:560px!important}}
+.scnh{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 10px}
+.scnh .lb{font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:#8fb59f}
+.scnh .kl{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.scnh .kl>b{font-family:'Head',system-ui,sans-serif;font-size:44px;line-height:1;color:#e9ffe9;letter-spacing:-.01em}
+.scnh #scnArrow{display:inline-flex;align-items:baseline;gap:8px}.scnh #scnArrow i{font-style:normal;color:#8fb59f;font-size:24px}.scnh #scnArrow b{font-family:'Head',system-ui,sans-serif;font-size:44px;line-height:1;color:#7dffb0;letter-spacing:-.01em}.scnh #scnArrow b.ov{color:var(--or2)}.scnh #scnArrow em{font-style:normal;font-family:'BarlowC',sans-serif;font-weight:700;font-size:14px;color:#8fb59f;text-transform:uppercase;letter-spacing:.06em}
+.scnx{flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--line2);background:rgba(255,255,255,.06);color:var(--ink);font-size:16px}
+.scnbody{flex:1;overflow-y:auto;padding:0 14px calc(14px + var(--sab))}
+.scncam{position:relative;border-radius:20px;overflow:hidden;background:#000;aspect-ratio:4/3.2;border:1px solid rgba(255,255,255,.08)}
+.scncam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.scnret{position:absolute;left:10%;right:10%;top:28%;bottom:28%;border-radius:18px;box-shadow:0 0 0 999px rgba(0,0,0,.35);border:2px solid rgba(125,255,176,.85)}
+.scnret i{position:absolute;left:8%;right:8%;top:50%;height:2px;background:linear-gradient(90deg,transparent,#7dffb0,transparent);box-shadow:0 0 12px #3DDC84;animation:scnline 1.6s ease-in-out infinite alternate}
+@keyframes scnline{from{transform:translateY(-38px)}to{transform:translateY(38px)}}
+.scncam.hit .scnret{border-color:#fff;box-shadow:0 0 0 999px rgba(0,0,0,.5),0 0 30px #3DDC84}
+.scnmsg{position:absolute;left:0;right:0;bottom:12px;text-align:center;font-family:'BarlowC',sans-serif;font-weight:700;letter-spacing:.06em;color:#dfffe9;text-shadow:0 1px 6px #000}
+.scnl{margin:14px 2px 8px;font-family:'BarlowC',sans-serif;font-weight:700;font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.scnrec{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}.scnrec::-webkit-scrollbar{display:none}
+.scnrec button{flex:none;max-width:170px;text-align:left;padding:9px 12px;border-radius:14px;border:1px solid var(--line2);background:#15161a;color:var(--ink)}.scnrec b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scnrec small{color:var(--muted);font-size:11.5px}
+.scntype{display:flex;gap:8px;margin-top:12px}.scntype input{flex:1;min-width:0;height:44px;border-radius:12px;border:1px solid var(--line2);background:#15161a;color:var(--ink);padding:0 12px;font-size:16px}.scntype button{flex:none;padding:0 14px;border-radius:12px;border:1px solid var(--line2);background:#1b1d22;color:var(--ink);font-weight:600}
+.scnwait{padding:60px 10px;text-align:center;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:12px}.scnwait .spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(125,255,176,.25);border-top-color:#7dffb0;animation:scnspin .8s linear infinite}@keyframes scnspin{to{transform:rotate(360deg)}}
+.scnprod{display:flex;gap:12px;align-items:center;padding:12px;border-radius:18px;background:#15161a;border:1px solid var(--line2)}.scnprod img,.scnprod .noimg{width:64px;height:64px;flex:none;border-radius:12px;object-fit:contain;background:#fff}.scnprod .noimg{background:#1f2126;display:flex;align-items:center;justify-content:center;color:var(--muted)}.scnprod .noimg svg{width:28px;height:28px}
+.scnprod b{display:block;font-size:17px;line-height:1.2}.scnprod small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.scnchips{display:flex;flex-wrap:wrap;gap:8px}.scnchips button{padding:9px 13px;border-radius:999px;border:1px solid var(--line2);background:#15161a;color:var(--ink);font-weight:600;font-size:14px}.scnchips button.on{background:rgba(61,220,132,.18);border-color:#3DDC84;color:#bdf5d2}
+.scnamt{display:flex;align-items:center;gap:10px;margin-top:12px}.scnamt>button{width:52px;height:52px;border-radius:16px;border:1px solid var(--line2);background:#15161a;color:var(--ink);font-size:24px}
+.scnamt label{flex:1;display:flex;align-items:baseline;justify-content:center;gap:6px;height:52px;border-radius:16px;border:1px solid var(--line2);background:#0d0e11}.scnamt input{width:5ch;border:0;background:transparent;color:var(--ink);text-align:right;font-family:'Head',system-ui,sans-serif;font-size:30px;padding-top:6px}.scnamt span{color:var(--muted);font-weight:700}
+.scnmac{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}.scnmac span{padding:8px 4px;border-radius:12px;background:#15161a;text-align:center;font-size:11.5px;color:var(--muted)}.scnmac b{display:block;font-family:'Head',system-ui,sans-serif;font-size:19px;color:var(--ink)}
+.scnact{margin-top:14px}.scnfoot{display:flex;justify-content:space-between;margin-top:10px;padding:0 2px}.scnfoot .link{font-size:13.5px}
+.scnmiss input{width:100%}
+.scnundo{position:fixed;left:14px;right:14px;bottom:calc(98px + var(--sab));z-index:80;max-width:532px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:#1b281e;border:1.5px solid rgba(61,220,132,.6);box-shadow:0 12px 30px rgba(0,0,0,.6);animation:rdIn .3s cubic-bezier(.2,.8,.2,1);transition:opacity .2s,transform .2s}
+.scnundo span{flex:1;min-width:0;font-size:14px;color:#dfffe9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scnundo button{flex:none;border:0;background:none;color:#7dffb0;font-weight:800;font-size:15px;text-transform:uppercase;letter-spacing:.06em}
+.scnundo.out{opacity:0;transform:translateY(10px)}
 </style>
 </head>
 <body>
@@ -1735,7 +1770,7 @@ body.kpopen .topfab,body.locked .topfab{opacity:0;pointer-events:none}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '5.15.0';
+const APP_VERSION = '5.16.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -7221,6 +7256,163 @@ function quickFoodSheet(i) {
     const d = b.querySelector('[data-qdel]'); if (d) d.onclick = async () => { if (!await ask('Delete ' + q.n + '?', 'It disappears from the Nutrition sheet. Days you already logged stay as they are.', 'Delete', true)) return; quickFoods().splice(i, 1); save(); b.close(); settingsRefreshQ(); };
   });
 }
+/* ============ v5.16: "Can I eat this?" — barcode scanning built into the Kcal left card ============
+   The barcode button sits on the Kcal left card. Tap it and the card itself opens up into the scanner: the camera,
+   with your kcal left still on top. Point it at a barcode; the product slides in with a portion (one serving, 100 g,
+   the whole pack, or ± 10 g), and the number above shows what would be left after eating it — "1,600 → 1,330".
+   Eat it adds it to the day; Just checking closes without logging (the late-night "does this fit?" question).
+   Products are looked up in Open Food Facts and remembered on the phone, so a second scan is instant and works offline.
+   Not in the database: type the label once (per 100 g) and it is remembered too. Recent scans are one tap away
+   without the camera. Also: long-press the Trening icon on the home screen → "Scan food". */
+const SCN = { el: null, stream: null, run: false, det: null, zx: null, item: null, g: 100, from: null, date: null, last: '', lastAt: 0 };
+function products() { if (!S.products) S.products = {}; return S.products; }
+function recentScans() { if (!S.recentScans) S.recentScans = []; return S.recentScans; }
+const scnF = v => v == null || isNaN(v) ? 0 : +v;
+function scanPart(it, g) { const k = g / 100; return { kcal: Math.round(scnF(it.kcal) * k), protein: Math.round(scnF(it.prot) * k), carbs: Math.round(scnF(it.carb) * k), fat: Math.round(scnF(it.fat) * k) }; }
+function packGrams(q) { const m = String(q || '').replace(',', '.').match(/([\d.]+)\s*(kg|g|ml|cl|l)\b/i); if (!m) return null; const v = +m[1], u = m[2].toLowerCase(); return Math.round(u === 'kg' || u === 'l' ? v * 1000 : u === 'cl' ? v * 10 : v) || null; }
+function kcalLeftNow(date) { try { const tg = nutritionTarget(date), n = (S.days[date] || {}).nutrition || {}; return Math.round(tg.kcal - (+n.kcal || 0)); } catch (e) { return null; } }
+
+function scanOpen(fromEl) {
+  if (SCN.el) return; const date = R.date || today(); SCN.date = date; SCN.item = null;
+  const r = fromEl ? fromEl.getBoundingClientRect() : { left: 12, top: 120, width: innerWidth - 24, height: 200 }; SCN.from = r;
+  const scrim = document.createElement('div'); scrim.className = 'modalbg scnscrim'; scrim.close = () => scanClose(true); document.body.appendChild(scrim);
+  const el = document.createElement('div'); el.className = 'scn'; document.body.appendChild(el); SCN.el = el; SCN.scrim = scrim; lockBody();
+  el.innerHTML = `<div class="scnh"><div><span class="lb">Kcal left</span><div class="kl"><b id="scnNow">${fmtN(Math.abs(kcalLeftNow(date) || 0))}</b><span id="scnArrow"></span></div></div><button class="scnx" data-scnclose aria-label="Close">✕</button></div>
+    <div class="scnbody" id="scnBody">${scanCamHtml()}</div>`;
+  const to = { left: 10, top: Math.max(12, (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0) + 12), width: innerWidth - 20, height: innerHeight - 24 };
+  Object.assign(el.style, { left: to.left + 'px', top: to.top + 'px', width: to.width + 'px', height: Math.min(to.height, 760) + 'px' });
+  if (el.animate && !fsReduce()) { const sx = r.width / to.width, sy = r.height / Math.min(to.height, 760); el.animate([{ transform: `translate(${r.left - to.left}px,${r.top - to.top}px) scale(${sx},${sy})`, borderRadius: '18px' }, { transform: 'none', borderRadius: '26px' }], { duration: 420, easing: 'cubic-bezier(.2,.9,.2,1)' }); scrim.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300 }); }
+  el.addEventListener('click', scanClick); scrim.onclick = () => scanClose();
+  vib(10); scanStart();
+}
+function scanCamHtml() {
+  const rec = recentScans().map(c => products()[c]).filter(Boolean).slice(0, 8);
+  return `<div class="scncam"><video id="scnVid" playsinline muted></video><div class="scnret"><i></i></div><div class="scnmsg" id="scnMsg">Point at a barcode</div></div>
+    ${rec.length ? `<div class="scnl">Recent</div><div class="scnrec">${rec.map(p => `<button data-scnrec="${esc(p.code)}"><b>${esc(p.name)}</b><small>${p.kcal == null ? '—' : Math.round(p.kcal) + ' kcal / 100 g'}</small></button>`).join('')}</div>` : ''}
+    <div class="scntype"><input id="scnCode" inputmode="numeric" placeholder="or type the barcode" autocomplete="off"><button data-scntype>Look up</button></div>`;
+}
+async function scanStart() {
+  const msg = t => { const m = $('#scnMsg'); if (m) m.textContent = t; };
+  try { SCN.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }); }
+  catch (e) { msg(e && e.name === 'NotAllowedError' ? 'Camera not allowed — type the number below' : 'No camera — type the number below'); return; }
+  if (!SCN.el) return scanStopCam();
+  const v = $('#scnVid'); if (!v) return; v.srcObject = SCN.stream; try { await v.play(); } catch (e) {} SCN.run = true;
+  if ('BarcodeDetector' in window) { try { const fm = await BarcodeDetector.getSupportedFormats(); SCN.det = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'].filter(x => fm.includes(x)) }); return scanLoop(); } catch (e) {} }
+  msg('Loading the reader…');
+  try { await new Promise((ok, no) => { if (window.ZXing) return ok(); const s = document.createElement('script'); s.src = 'https://unpkg.com/@zxing/library@0.21.3/umd/index.min.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+    const hints = new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E]); hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+    const rd = new ZXing.MultiFormatReader(); rd.setHints(hints); const c = document.createElement('canvas'); SCN.zx = { reset() {} }; msg('Point at a barcode');
+    // decode a frame every ~200 ms (the middle band of the picture, where the frame is)
+    const tick = () => { if (!SCN.run) return; const w = v.videoWidth, h = v.videoHeight; if (w && h) { const ch = Math.round(h * .6); c.width = w; c.height = ch; const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(v, 0, (h - ch) / 2, w, ch, 0, 0, w, ch);
+      try { const r = rd.decode(new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(new ZXing.HTMLCanvasElementLuminanceSource(c)))); if (r) scanHit(r.getText()); } catch (e) {} }
+      if (SCN.run) setTimeout(tick, 200); };
+    tick(); }
+  catch (e) { msg('No scanner in this browser — type the number below'); }
+}
+async function scanLoop() { if (!SCN.run || !SCN.det) return; const v = $('#scnVid'); try { if (v && v.readyState >= 2) { const r = await SCN.det.detect(v); if (r.length) scanHit(r[0].rawValue); } } catch (e) {} if (SCN.run) setTimeout(() => requestAnimationFrame(scanLoop), 110); }
+function scanStopCam() { SCN.run = false; if (SCN.zx) { try { SCN.zx.reset(); } catch (e) {} SCN.zx = null; } if (SCN.stream) { SCN.stream.getTracks().forEach(t => t.stop()); SCN.stream = null; } SCN.det = null; }
+function scanHit(code) {
+  code = String(code).replace(/\D/g, ''); if (code.length < 8) return; const now = Date.now(); if (code === SCN.last && now - SCN.lastAt < 2500) return; SCN.last = code; SCN.lastAt = now;
+  vib([18, 40, 18]); const c = SCN.el && SCN.el.querySelector('.scncam'); if (c) c.classList.add('hit'); scanLookup(code);
+}
+async function scanLookup(code) {
+  const body = $('#scnBody'); if (!body) return; const cached = products()[code];
+  if (cached) return scanShow(cached);
+  scanStopCam(); body.innerHTML = `<div class="scnwait"><span class="spin"></span>Looking up ${esc(code)}…</div>`;
+  try {
+    const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,product_name_en,product_name_hr,brands,nutriments,serving_size,serving_quantity,quantity,image_front_small_url`);
+    const j = await r.json(); if (!SCN.el) return;
+    if (j.status !== 1 || !j.product) return scanMissing(code);
+    const p = j.product, n = p.nutriments || {};
+    const it = { code, name: p.product_name_en || p.product_name || p.product_name_hr || 'Unnamed product', brand: (p.brands || '').split(',')[0].trim(), qty: p.quantity || '', serving: +p.serving_quantity || null, servingTxt: p.serving_size || '', img: p.image_front_small_url || '',
+      kcal: n['energy-kcal_100g'] != null ? +n['energy-kcal_100g'] : n.energy_100g != null ? Math.round(n.energy_100g / 4.184) : null, prot: n.proteins_100g, carb: n.carbohydrates_100g, fat: n.fat_100g };
+    if (it.kcal == null) return scanMissing(code, it);
+    products()[code] = it; save(); scanShow(it);
+  } catch (e) { if (!SCN.el) return; body.innerHTML = `<div class="scnwait">No connection to the food database.<button class="btn sec" data-scnagain style="margin-top:14px">Scan again</button></div>`; }
+}
+function scanMissing(code, partial) {
+  scanStopCam(); const body = $('#scnBody'); if (!body) return; const p = partial || {};
+  body.innerHTML = `<div class="scnmiss"><div class="scnl" style="margin-top:0">Not in the database yet</div><p class="muted small" style="margin:2px 0 12px">Type it from the label once (per 100 g) and the phone remembers it.</p>
+    <div class="grid4"><div class="field" style="grid-column:1/-1"><label>Name</label><input id="smN" value="${esc(p.name || '')}" autocomplete="off"></div>
+    <div class="field"><label>Calories</label><input id="smK" type="number" inputmode="decimal" placeholder="kcal"></div><div class="field"><label>Protein</label><input id="smP" type="number" inputmode="decimal" placeholder="g"></div>
+    <div class="field"><label>Carbs</label><input id="smC" type="number" inputmode="decimal" placeholder="g"></div><div class="field"><label>Fat</label><input id="smF" type="number" inputmode="decimal" placeholder="g"></div></div>
+    <div class="row" style="margin-top:6px"><button class="btn sec" data-scnagain>Scan again</button><button class="btn" data-scnsavemiss data-code="${esc(code)}">Save</button></div></div>`;
+}
+function scanShow(it) {
+  scanStopCam(); SCN.item = it; const pack = packGrams(it.qty);
+  SCN.g = it.serving || (pack && pack <= 100 ? pack : 100);
+  const chips = [];
+  if (it.serving) chips.push([it.serving, '1 serving · ' + it.serving + ' g']);
+  chips.push([100, '100 g']);
+  if (pack && pack !== 100 && pack !== it.serving) chips.push([pack, 'Whole pack · ' + pack + ' g']);
+  const body = $('#scnBody'); if (!body) return;
+  body.innerHTML = `<div class="scnres"><div class="scnprod">${it.img ? `<img src="${esc(it.img)}" alt="">` : `<span class="noimg">${IC4.fork || ''}</span>`}<div><b>${esc(it.name)}</b><small>${esc([it.brand, it.qty].filter(Boolean).join(' · '))}</small><small>${Math.round(it.kcal)} kcal · ${Math.round(scnF(it.prot))} g protein per 100 g</small></div></div>
+    <div class="scnl">How much</div><div class="scnchips">${chips.map(([g, l]) => `<button data-scng="${g}">${l}</button>`).join('')}</div>
+    <div class="scnamt"><button data-scnstep="-10">−</button><label><input id="scnG" type="number" inputmode="numeric" value="${SCN.g}"><span>g</span></label><button data-scnstep="10">+</button></div>
+    <div class="scnmac" id="scnMac"></div>
+    <div class="row scnact"><button class="btn sec" data-scnclose>Just checking</button><button class="btn" data-scneat>Eat it</button></div>
+    <div class="scnfoot"><button class="link" data-scnagain>Scan another</button><button class="link" data-scnquick>☆ Keep as quick food</button></div></div>`;
+  const gi = $('#scnG'); gi.oninput = () => { SCN.g = Math.max(0, Math.round(+gi.value || 0)); scanPreview(); };
+  const rs = recentScans(), i = rs.indexOf(it.code); if (i >= 0) rs.splice(i, 1); if (it.code) { rs.unshift(it.code); rs.length = Math.min(rs.length, 12); } save();
+  scanPreview(); const res = body.firstChild; if (res.animate && !fsReduce()) res.animate([{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'none' }], { duration: 340, easing: 'cubic-bezier(.2,.9,.2,1)' });
+}
+function scanPreview() {
+  const it = SCN.item; if (!it) return; const part = scanPart(it, SCN.g), now = kcalLeftNow(SCN.date), after = now == null ? null : now - part.kcal;
+  const ar = $('#scnArrow'); if (ar) ar.innerHTML = after == null ? '' : `<i>→</i><b class="${after < 0 ? 'ov' : ''}">${fmtN(Math.abs(after))}</b><em>${after < 0 ? 'over' : 'left'}</em>`;
+  const m = $('#scnMac'); if (m) m.innerHTML = `<span><b>${part.kcal}</b> kcal</span><span><b>${part.protein}</b> g protein</span><span><b>${part.carbs}</b> g carbs</span><span><b>${part.fat}</b> g fat</span>`;
+  document.querySelectorAll('[data-scng]').forEach(b => b.classList.toggle('on', +b.dataset.scng === SCN.g)); const gi = $('#scnG'); if (gi && +gi.value !== SCN.g && document.activeElement !== gi) gi.value = SCN.g;
+}
+function scanEat() {
+  const it = SCN.item; if (!it || !(SCN.g > 0)) return toast('Choose how much');
+  const date = SCN.date, part = scanPart(it, SCN.g), d = day(date), before = JSON.parse(JSON.stringify(d.nutrition || null)), oldLeft = kcalLeftNow(date);
+  const n = d.nutrition || (d.nutrition = {}); n.kcal = (+n.kcal || 0) + part.kcal; n.protein = (+n.protein || 0) + part.protein; n.carbs = (+n.carbs || 0) + part.carbs; n.fat = (+n.fat || 0) + part.fat;
+  (n.items || (n.items = [])).push({ name: it.name, g: SCN.g, kcal: part.kcal, protein: part.protein, at: new Date().toISOString(), code: it.code || null });
+  save(); vib([25, 50, 35]); const name = it.name, kc = part.kcal;
+  scanClose(false, () => { afterLog('nutrition'); setTimeout(() => scanCountdown(oldLeft, kcalLeftNow(date)), 120);
+    scanUndoBar(`${name} · ${kc} kcal`, () => { if (before == null) delete day(date).nutrition; else day(date).nutrition = before; save(); afterLog(); }); });
+}
+// the big number on the card counts down to its new value
+function scanCountdown(from, to) {
+  const b = document.querySelector('.bud .big b'); if (!b || from == null || to == null || from === to || fsReduce()) return;
+  const t0 = performance.now(), dur = 900, ease = x => 1 - Math.pow(1 - x, 3);
+  const step = t => { const k = Math.min(1, (t - t0) / dur), v = Math.round(from + (to - from) * ease(k)); b.textContent = fmtN(Math.abs(v)); if (k < 1) requestAnimationFrame(step); else b.textContent = fmtN(Math.abs(to)); };
+  requestAnimationFrame(step); const card = b.closest('.bud'); if (card && card.animate) card.animate([{ boxShadow: '0 0 0 0 rgba(61,220,132,.0)' }, { boxShadow: '0 0 0 6px rgba(61,220,132,.35)' }, { boxShadow: '0 0 0 0 rgba(61,220,132,0)' }], { duration: 900 });
+}
+function scanUndoBar(text, undo) {
+  const old = document.querySelector('.scnundo'); if (old) old.remove();
+  const bar = document.createElement('div'); bar.className = 'scnundo'; bar.innerHTML = `<span>Logged · ${esc(text)}</span><button>Undo</button>`; document.body.appendChild(bar);
+  const kill = () => { bar.classList.add('out'); setTimeout(() => bar.remove(), 220); }; const t = setTimeout(kill, 5000);
+  bar.querySelector('button').onclick = () => { clearTimeout(t); undo(); kill(); vib(10); };
+}
+function scanQuick() { const it = SCN.item; if (!it) return; const p = scanPart(it, SCN.g); quickFoods().push({ n: it.name + ' ' + SCN.g + ' g', k: p.kcal, p: p.protein, c: p.carbs, f: p.fat }); save(); toast('Added to quick foods', 1400); vib(10); }
+function scanClick(e) {
+  const t = e.target.closest('button'); if (!t) return; const ds = t.dataset;
+  if ('scnclose' in ds) return scanClose();
+  if ('scneat' in ds) return scanEat();
+  if ('scnquick' in ds) return scanQuick();
+  if ('scnagain' in ds) { SCN.item = null; SCN.last = ''; const ar = $('#scnArrow'); if (ar) ar.innerHTML = ''; $('#scnBody').innerHTML = scanCamHtml(); return scanStart(); }
+  if (ds.scng) { SCN.g = +ds.scng; vib(8); return scanPreview(); }
+  if (ds.scnstep) { SCN.g = Math.max(0, SCN.g + +ds.scnstep); vib(6); return scanPreview(); }
+  if (ds.scnrec) { const p = products()[ds.scnrec]; if (p) { vib(10); scanShow(p); } return; }
+  if ('scntype' in ds) { const c = ($('#scnCode') || {}).value || ''; if (c.replace(/\D/g, '').length < 8) return toast('A barcode has 8–14 digits'); return scanLookup(c.replace(/\D/g, '')); }
+  if ('scnsavemiss' in ds) { const g = id => ($('#' + id) || {}).value || '', name = g('smN').trim(); if (!name || !(+g('smK') >= 0) || g('smK') === '') return toast('Name and calories, please');
+    const it = { code: ds.code, name, brand: '', qty: '', serving: null, img: '', kcal: +g('smK'), prot: +g('smP') || 0, carb: +g('smC') || 0, fat: +g('smF') || 0, own: true }; products()[ds.code] = it; save(); return scanShow(it); }
+}
+function scrimEl() { return SCN.scrim; }
+function scanClose(fromPop, after) {
+  const el = SCN.el; if (!el) return; scanStopCam(); SCN.el = null; if (scrimEl()) scrimEl().classList.add('out');
+  const scrim = SCN.scrim; unlockBody(); const card = document.querySelector('[data-bud]'), r = card ? card.getBoundingClientRect() : SCN.from, b = el.getBoundingClientRect();
+  const done = () => { el.remove(); if (scrim) scrim.remove(); if (after) after(); };
+  if (el.animate && !fsReduce() && r) { el.animate([{ transform: 'none', opacity: 1 }, { transform: `translate(${r.left - b.left}px,${r.top - b.top}px) scale(${r.width / b.width},${r.height / b.height})`, opacity: .2 }], { duration: 320, easing: 'cubic-bezier(.4,0,.2,1)' }).onfinish = done; if (scrim) scrim.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300 }); }
+  else done();
+}
+// the barcode button on the Kcal left card (the card itself still opens Nutrition)
+const _budgetHtml = budgetHtml;
+budgetHtml = function (date) { const h = _budgetHtml(date); if (!h || date !== today()) return h; return h.replace('<div class="h"><span>', `<button class="scnbtn" data-scan aria-label="Scan a barcode">${SCN_IC}</button><div class="h"><span>`); };
+const SCN_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M7.5 8v8M10.5 8v8M13 8v8M16.5 8v8" stroke-width="1.6"/></svg>';
+document.addEventListener('click', e => { const b = e.target.closest('[data-scan]'); if (!b) return; e.stopPropagation(); e.preventDefault(); scanOpen(b.closest('[data-bud]')); }, true);
+// home-screen shortcut: Trening → Scan food opens Today with the scanner
+if (/[?&]scan=1/.test(location.search)) { try { history.replaceState(null, '', './'); } catch (e) {} let tries = 0; const t = setInterval(() => { tries++; if (R.screen === 'today' && document.querySelector('[data-bud]')) { clearInterval(t); setTimeout(() => scanOpen(document.querySelector('[data-bud]')), 250); } else if (tries > 40) clearInterval(t); }, 150); }
 /* ============ v6 4b: the setup questions, Where you are, and the same again from Settings ============
    First run (no project yet): the intro (name, Day 1), six short questions — You · Fitness level · Motivation · Direction ·
    Time · Kit and sports — then Connect (the band, nutrition from MFP), then Where you are with Start. From Settings → Setup
