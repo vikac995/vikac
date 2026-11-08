@@ -1,5 +1,5 @@
 /* Vikač High Kikač service worker — bump CACHE on every release */
-const CACHE = 'vikac-v6.1.0';
+const CACHE = 'vikac-v6.2.0';
 const ASSETS = ['index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(ASSETS.map(a => c.add(a).catch(() => null)))).then(() => self.skipWaiting()));
@@ -23,6 +23,7 @@ self.addEventListener('fetch', e => {
   // custom art PNGs: network first so a re-upload shows up without a version bump, cache when offline
   if (/\/(hero-[0-9a-z]+|lift-[a-z]+(-[0-9])?|beam|dragon|dragon-badge|ball-[1-7](-hollow)?|season-[a-z]+|ground-[a-z]+)\.png$/.test(url.pathname)) { e.respondWith(fetch(e.request).then(r => { if (r.ok) caches.open(CACHE).then(c => c.put(e.request, r.clone())); return r; }).catch(() => caches.match(e.request))); return; }
   if (isOcr(url.pathname)) { e.respondWith(caches.open(OCR_CACHE).then(c => c.match(e.request).then(r => r || fetch(e.request).then(res => { if (res.ok) c.put(e.request, res.clone()); return res; })))); return; }
+  if (/demo\.html$/.test(url.pathname)) return;   // the demo page goes straight to the network and is never cached as the app
   const isPage = e.request.mode === 'navigate' || url.pathname.endsWith('index.html') || url.pathname.endsWith('/');
   if (isPage) {
     e.respondWith(fetch(new Request(e.request, { cache: 'no-cache' })).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put('index.html', copy)); return r; }).catch(() => caches.match('index.html')));

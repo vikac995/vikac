@@ -2507,6 +2507,114 @@ body.oui .seg button.on{background:var(--float);color:var(--ink);box-shadow:0 2p
 body.oui:not(.lt) .seg button.on{background:rgba(255,255,255,.16)}
 body.oui.lt .hudscr{filter:saturate(.2)}
 body.oui.lt .hudscr svg{filter:brightness(.42) contrast(1.5) saturate(.6)}
+/* ===== v6.2 Today as a home screen ===== */
+.hgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));grid-auto-rows:78px;grid-auto-flow:row dense;gap:14px 12px;margin:2px 0 6px}
+.hslot{position:relative;min-width:0}.hslot.szL{grid-column:span 4;grid-row:span 2}.hslot.szS{grid-column:span 2;grid-row:span 2}.hslot.szP{grid-column:span 2;grid-row:span 1}
+.hstack{position:absolute;inset:0;border-radius:26px;touch-action:pan-y;transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
+.hstack::after{content:"";position:absolute;inset:-5px;border-radius:30px;border:1.5px solid color-mix(in srgb,var(--ink) 22%,transparent);background:color-mix(in srgb,var(--ink) 4%,transparent);opacity:0;transition:opacity .2s;pointer-events:none;z-index:-1}
+.hslot.touch .hstack::after,.hstack.hlifted::after{opacity:1}
+.hstack.hpress{transform:scale(.97)}.hstack.hlifted{transform:scale(.985)}
+.hstack{overflow:visible;clip-path:inset(-6px round 30px)}
+.hw{position:absolute;inset:0;border-radius:26px;background:var(--card);box-shadow:var(--lift);padding:15px 16px;overflow:hidden;color:var(--ink);cursor:pointer;will-change:transform;-webkit-user-select:none;user-select:none}
+.hw.hnext{padding:0;background:none;box-shadow:none}.hw .nlnext{height:100%;margin:0;padding:16px 16px 14px}
+.hw .nlnext .nlt{font-size:22px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}.hw .nlnext .nlm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hw .nlnext .nlrow{margin-top:12px}.hw .nlnext .nlbtn,.hw .nlnext .nlchg{height:44px}.hw .nlnext>.nlbtn{margin-top:12px;height:44px}
+.hdots{position:absolute;left:0;right:0;bottom:-11px;display:flex;justify-content:center;gap:5px;opacity:0;transition:opacity .25s;pointer-events:none}
+.hdots i{width:5px;height:5px;border-radius:50%;background:color-mix(in srgb,var(--ink) 30%,transparent)}.hdots i.on{background:var(--ink)}
+.hslot.touch .hdots{opacity:1}
+.hwl{font-size:13.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hwt{margin-top:2px;font-size:21px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hwm{margin-top:3px;font-size:13px;color:var(--muted)}.hwm.ok{color:var(--ok)}.hwm b{color:var(--ink)}
+.hwe{margin-top:10px;font-size:14px;color:var(--muted);line-height:1.35}
+.hwbig{display:flex;align-items:baseline;gap:6px;margin-top:2px}.hwbig b{font-size:44px;font-weight:700;line-height:1.05;letter-spacing:-.02em!important;font-variant-numeric:tabular-nums}.hwbig span{font-size:14px;color:var(--muted)}
+.hwbig.sm b{font-size:36px}.hwbig.over b{color:var(--bad)}
+.hwbar{height:9px;border-radius:6px;background:var(--nl-track);margin:10px 0 8px;overflow:hidden}.hwbar u{display:block;height:100%;border-radius:6px;background:var(--ok);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.hwkv{display:flex;justify-content:space-between;font-size:13.5px;color:var(--muted)}.hwkv b{color:var(--ink);font-weight:600}
+.hwfab{position:absolute;right:12px;top:12px;width:42px;height:42px;border-radius:50%;border:0;background:var(--acc-soft);color:var(--acc);display:flex;align-items:center;justify-content:center}.hwfab svg{width:22px;height:22px}
+.hwrows{margin-top:8px;display:flex;flex-direction:column;gap:6px}.hwrows>div{display:flex;justify-content:space-between;gap:10px;font-size:14px}.hwrows span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hwrows b{flex:none;font-weight:600}.hwrows small{color:var(--muted);font-weight:400}
+.hwmac{display:grid;grid-template-columns:62px 1fr auto;align-items:center;gap:10px;margin-top:9px;font-size:14px}.hwmac i{height:8px;border-radius:5px;background:var(--nl-track);overflow:hidden}.hwmac u{display:block;height:100%;border-radius:5px;transition:width .6s cubic-bezier(.2,.8,.2,1)}.hwmac b{font-weight:700;font-variant-numeric:tabular-nums}.hwmac small{color:var(--muted);font-weight:400}
+.hwqa{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.hwqa button{border:0;border-radius:16px;background:var(--s2);color:var(--ink);padding:9px 11px;text-align:left;display:flex;flex-direction:column;min-width:0}.hwqa b{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hwqa small{font-size:11.5px;color:var(--muted)}
+.hwweek{display:flex;justify-content:space-between;margin:10px 0 2px}.hwd{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11.5px;color:var(--muted);font-weight:600}
+.hwd i{width:26px;height:26px;border-radius:50%;background:var(--nl-track)}.hwd.ok i{background:var(--ok)}.hwd.ok.mt i{background:#E0567A}.hwd.plan i{background:transparent;box-shadow:inset 0 0 0 2px var(--acc)}.hwd.plan.mt i{box-shadow:inset 0 0 0 2px #E0567A}.hwd.miss i{background:transparent;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--bad) 60%,transparent)}.hwd.td span{color:var(--acc)}
+.hwsp{display:block;width:100%;height:30px;margin-top:8px}.hwsp polyline{fill:none;stroke:var(--acc);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+.hwring{position:relative;width:72px;height:72px;margin:6px 0 0}.hwring svg{width:72px;height:72px}.hwring .t{fill:none;stroke:var(--nl-track);stroke-width:7}.hwring .f{fill:none;stroke:var(--acc);stroke-width:7;stroke-linecap:round}.hwring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700}
+.hw.szP{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:24px}.hw.szP div{min-width:0}.hw.szP b{display:block;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hw.szP small{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hpi{flex:none;width:38px;height:38px;border-radius:50%;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--c);display:flex;align-items:center;justify-content:center}.hpi svg{width:21px;height:21px}
+.hwadd{display:flex;align-items:center;gap:8px;font-size:13.5px;animation:hdrop .45s cubic-bezier(.2,.9,.25,1)}.hwadd span{display:flex;color:var(--ok)}.hwadd span svg{width:16px;height:16px}.hwadd b{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hwadd em{margin-left:auto;font-style:normal;font-weight:700;color:var(--ok)}
+@keyframes hdrop{from{opacity:0;transform:translateY(-10px);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}
+/* rolling digits */
+.hrolling{display:inline-flex;align-items:baseline}
+.rd{display:inline-block;height:1.05em;line-height:1.05;overflow:hidden;vertical-align:bottom;-webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+.rdc{display:flex;flex-direction:column;transition:transform .75s cubic-bezier(.2,.75,.2,1) var(--dl,0ms)}.rdc span{height:1.05em;display:block;text-align:center}.rdc.go{transform:translateY(var(--e))!important}
+.rs{display:inline-block}
+/* long-press menu */
+.hmenubg{position:fixed;inset:0;z-index:70}
+.hmenu{position:fixed;min-width:220px;max-width:calc(100vw - 20px);border-radius:24px;background:var(--sheet);color:var(--ink);box-shadow:var(--flshadow);backdrop-filter:blur(26px) saturate(170%);-webkit-backdrop-filter:blur(26px) saturate(170%);padding:6px;opacity:0;transform:scale(.88);transition:opacity .15s,transform .2s cubic-bezier(.2,.9,.25,1.15)}
+.hmenubg.in .hmenu{opacity:1;transform:none}.hmenubg.out .hmenu{opacity:0;transform:scale(.94);transition-duration:.12s}
+.hmh{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 40px 8px;position:relative}.hmh b{font-size:15.5px;font-weight:700}.hmi{position:absolute;right:8px;top:6px;width:32px;height:32px;border:0;border-radius:50%;background:none;color:var(--muted);display:flex;align-items:center;justify-content:center}.hmi svg{width:19px;height:19px}
+.hmlist{display:flex;flex-direction:column;padding:2px 0 4px}.hmlist button{display:flex;align-items:center;gap:12px;border:0;background:none;color:var(--ink);padding:10px 12px;border-radius:14px;font-size:15px;text-align:left}.hmlist button:active{background:var(--s2)}
+.hmlist span{width:30px;height:30px;border-radius:50%;background:var(--acc-soft);color:var(--acc);display:flex;align-items:center;justify-content:center;flex:none}.hmlist span svg{width:17px;height:17px}
+.hmact{display:flex;gap:4px;border-top:1px solid var(--line);padding:6px 2px 2px}.hmact button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:0;background:none;color:var(--ink);font-size:12px;padding:8px 4px;border-radius:14px;min-width:64px}.hmact button:active{background:var(--s2)}.hmact svg{width:21px;height:21px}
+.hmn{position:absolute;left:calc(var(--nx) - 8px);width:16px;height:8px;background:var(--sheet)}.hmenu.above .hmn{bottom:-8px;clip-path:polygon(0 0,100% 0,50% 100%)}.hmenu.below .hmn{top:-8px;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.nllist li.hpress{background:var(--s2)}.nllist li.hlifted{background:var(--s2)}
+/* panels that grow out of things */
+.hpanelbg{align-items:center!important;justify-content:center;padding:16px!important;z-index:65}
+.hpanelbg::before{background:var(--scrim)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.hpanel{position:relative;width:100%;max-width:440px;max-height:86vh;overflow:auto;border-radius:30px;background:var(--sheet);color:var(--ink);box-shadow:var(--flshadow);padding:18px 16px 16px;backdrop-filter:blur(30px) saturate(170%);-webkit-backdrop-filter:blur(30px) saturate(170%);transform-origin:center}
+.hpanelbg.out .hpanel{pointer-events:none}
+.hpt{font-size:20px;font-weight:700;padding:2px 4px 12px}.hpt small{font-size:13px;color:var(--muted);font-weight:500;margin-left:6px}
+.hcar{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:12px 2px 8px;scrollbar-width:none}.hcar::-webkit-scrollbar{display:none}
+.hcard{position:relative;flex:none;width:76%;scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}.hcard:first-child{margin-left:12%}.hcard:last-child{margin-right:12%}
+.hprev{position:relative;width:100%;pointer-events:none}.hprev.szL{aspect-ratio:2.05}.hprev.szS{aspect-ratio:1;width:62%}.hprev.szP{height:78px;width:62%}.hprev .hw{position:absolute;inset:0;transform:none!important;visibility:visible!important}
+.hcn{font-size:13px;color:var(--muted);text-align:center}
+.hminus{position:absolute;left:-6px;top:-8px;z-index:2;width:28px;height:28px;border-radius:50%;border:0;background:#fff;color:#111;box-shadow:0 2px 8px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}.hminus svg{width:16px;height:16px;stroke-width:3}
+.hplus{width:100%;aspect-ratio:2.05;border:0;border-radius:24px;background:var(--s3);color:var(--ink);display:flex;align-items:center;justify-content:center}.hplus span svg{width:40px;height:40px;stroke-width:1.6}
+.hdots.static{position:static;opacity:1;margin:6px 0 4px}
+.hdone{display:block;width:100%;height:50px;margin-top:12px;border:0;border-radius:999px;background:var(--acc);color:var(--acc-ink);font-weight:700;font-size:16px}
+.hplist{display:flex;flex-direction:column;gap:6px}.hpa{border-radius:20px;transition:background .2s}.hpa.open{background:var(--s2)}
+.hpar{display:flex;align-items:center;gap:12px;width:100%;border:0;background:none;color:var(--ink);padding:10px;text-align:left;font-size:16px}.hpar b{flex:1;font-weight:600}.hpar em{font-style:normal;color:var(--muted);font-size:14px}
+.hpw{display:flex;flex-direction:column;gap:14px;padding:4px 14px 16px}.hpwi{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px}
+.hadd{border:0;border-radius:999px;background:var(--acc);color:var(--acc-ink);font-weight:700;padding:8px 26px;font-size:14.5px}
+.hed{display:flex;flex-direction:column;gap:6px}.hedr{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:16px;background:var(--s2)}.hedr div{flex:1;min-width:0}.hedr b{display:block;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.hedr small{font-size:12px;color:var(--muted)}
+.hedr button{flex:none;width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--ink);display:flex;align-items:center;justify-content:center}.hedr button:disabled{opacity:.25}.hedr button svg{width:20px;height:20px}
+.hplusrow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:10px;height:46px;border:0;border-radius:999px;background:var(--acc-soft);color:var(--acc);font-weight:700;font-size:15px}.hplusrow svg{width:20px;height:20px}
+.hlink{display:block;margin:10px auto 0;border:0;background:none;color:var(--muted);font-size:13.5px}
+/* All (drawer) */
+.hdrawer{display:block!important;padding:0!important;z-index:66}
+.hdrawer::before{background:color-mix(in srgb,var(--paper) 55%,transparent)!important;backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%)}
+.hdw{position:absolute;inset:0;overflow-y:auto;padding:calc(14px + var(--sat)) 14px calc(120px + var(--sab));opacity:0;transform:scale(1.04);transition:opacity .16s ease-out,transform .22s cubic-bezier(.2,.9,.25,1)}
+.hdrawer.in .hdw{opacity:1;transform:none}.hdrawer.out .hdw{opacity:0;transform:scale(1.03);transition-duration:.12s}
+.hdh{padding:22px 8px 18px}.hdh b{font-size:30px;font-weight:700}
+.hdgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 6px}
+.happ{display:flex;flex-direction:column;align-items:center;gap:6px;border:0;background:none;color:var(--ink);font-size:12px;text-align:center;padding:0;min-width:0}.happ>span:last-child{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hai{width:56px;height:56px;border-radius:18px;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 85%,#fff),var(--c));color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 3px 10px color-mix(in srgb,var(--c) 30%,transparent);transition:transform .25s cubic-bezier(.3,1.6,.5,1),filter .15s}.hai svg{width:27px;height:27px}
+.happ:active .hai{transform:scale(.92);filter:brightness(.85)}
+.hdlist{display:flex;flex-direction:column;margin-top:18px;border-radius:22px;background:var(--card);overflow:hidden}.hdlist button{display:flex;align-items:center;gap:12px;border:0;background:none;color:var(--ink);padding:11px 14px;text-align:left}.hdlist button+button{border-top:1px solid var(--line)}.hdlist button>span{width:34px;height:34px;border-radius:50%;background:var(--acc-soft);color:var(--acc);display:flex;align-items:center;justify-content:center;flex:none}.hdlist button>span svg{width:18px;height:18px}.hdlist b{display:block;font-size:15px;font-weight:600}.hdlist small{font-size:12.5px;color:var(--muted)}
+.hds{position:absolute;left:50%;bottom:calc(22px + var(--sab));transform:translateX(-50%);width:min(78vw,360px);height:48px;border-radius:999px;display:flex;align-items:center;gap:8px;padding:0 8px 0 16px;background:var(--float);box-shadow:var(--flshadow);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);transition:opacity .15s,transform .2s;z-index:2}
+.hds.away{opacity:0;transform:translate(-50%,8px)}.hds>span{display:flex;color:var(--muted)}.hds>span svg{width:20px;height:20px}
+.hds input{flex:1;min-width:0;height:44px;border:0!important;background:none!important;box-shadow:none!important;padding:0!important;font-size:16px;color:var(--ink)}.hds input::-webkit-search-cancel-button{display:none}
+.hdx{width:32px;height:32px;border:0;border-radius:50%;background:var(--s2);color:var(--ink);display:flex;align-items:center;justify-content:center}.hdx svg{width:16px;height:16px}
+/* the floating Search pill on Today */
+.hpill{position:fixed;left:50%;bottom:calc(92px + var(--sab));z-index:19;transform:translateX(-50%);display:flex;align-items:center;gap:8px;height:42px;padding:0 20px 0 16px;border:0;border-radius:999px;background:var(--float);color:var(--ink);font-size:15px;box-shadow:var(--flshadow);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);transition:opacity .15s,transform .22s cubic-bezier(.2,.9,.25,1)}
+.hpill svg{width:19px;height:19px;color:var(--muted)}.hpill.away{opacity:0;transform:translate(-50%,10px);pointer-events:none}.hpill.gone{opacity:0;transform:translate(-50%,16px);pointer-events:none;visibility:hidden;transition:opacity .15s,transform .2s,visibility 0s .2s}
+body.oui .htoday{padding-bottom:calc(150px + var(--sab))}
+/* toasts: the One UI pill (regular weight, centred, fade in place) */
+body.oui .toast{bottom:calc(150px + var(--sab));padding:11px 20px;font-size:15px;font-weight:400;background:color-mix(in srgb,#14151d 72%,transparent)!important;color:rgba(255,255,255,.88)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:none!important;animation:toastfade .18s ease-out}
+body.oui .toast.out{transform:none}
+@keyframes toastfade{from{opacity:0}to{opacity:1}}
+body.oui .scnundo{left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:calc(100vw - 32px);bottom:calc(150px + var(--sab));border:0!important;border-radius:999px;padding:8px 8px 8px 20px;background:color-mix(in srgb,#14151d 72%,transparent)!important;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:none!important;animation:toastfade .18s ease-out}
+body.oui .scnundo span{color:rgba(255,255,255,.88);font-size:15px}body.oui .scnundo button{color:#9db4ff;font-weight:700;font-size:15px;text-transform:none!important;letter-spacing:0!important;padding:6px 12px;border-radius:999px}
+body.oui .scnundo.out{opacity:0;transform:translateX(-50%)}
+.hrolling span{font-size:inherit!important;color:inherit!important;font-weight:inherit}
+/* lit search ring (a conic gradient that turns behind a 2px mask) */
+@property --ha{syntax:'<angle>';initial-value:0deg;inherits:false}
+.hds::before{content:"";position:absolute;inset:-2px;border-radius:inherit;padding:2px;background:conic-gradient(from var(--ha),#7B61FF,#2FC5F5,#4CD488,#FFB547,#FF5FA2,#7B61FF);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .25s;pointer-events:none}
+.hds.lit::before{opacity:1;animation:hring 3s linear infinite}
+@keyframes hring{to{--ha:360deg}}
+.hdh b{background:linear-gradient(90deg,var(--ink),color-mix(in srgb,var(--acc) 70%,var(--ink)));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hrolling{display:inline-flex!important;align-items:baseline}.hrolling>.rd,.hrolling>.rs{display:inline-block!important}.hrolling .rdc{display:flex!important;flex-direction:column}.hrolling .rdc>span{display:block!important}
+.hdw [hidden]{display:none!important}
+body.oui .hds input:focus{box-shadow:none!important}
 
 </style>
 </head>
@@ -2515,7 +2623,7 @@ body.oui.lt .hudscr svg{filter:brightness(.42) contrast(1.5) saturate(.6)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '6.1.0';
+const APP_VERSION = '6.2.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -9601,6 +9709,358 @@ document.addEventListener('click', e => {
   if (document.startViewTransition && !fsReduce()) document.startViewTransition(ouiApply); else ouiApply();
 }, true);
 ouiApply();
+/* ============ v6.2: Today as a home screen (One UI look only) ============
+   Today's top is a grid of widgets, like the One UI home screen: stacks you swipe through (dots and a frame only while
+   touched, they wrap round, 7 at most), long-press for a menu that grows out of the widget (its shortcuts, then
+   Edit stack / Create stack · Remove · Widgets), an editor that grows out of the stack, a widget picker by app.
+   A floating Search pill above the tab bar opens "All": every action and screen in one grid, with search across
+   actions, exercises, quick foods, scanned products and settings. Floating pills step aside while a list is flung. */
+const HW = {};   // widget registry: id → { app, name, size: L (4×2) | S (2×2) | P (2×1), html(date), tap(date), sc: shortcuts }
+const HAPPS = {
+  train: { name: 'Training', col: '#6E6FF0', ic: () => IC4.dumb },
+  food: { name: 'Food', col: '#16A34A', ic: () => IC4.fork },
+  body: { name: 'Body', col: '#0EA5E9', ic: () => IC4.scale },
+  plan: { name: 'Plan', col: '#F59E0B', ic: () => SV('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>') },
+  mt: { name: 'Muay Thai', col: '#E0567A', ic: () => SV('<path d="M7 14c0-4 2-8 6-8s5 3 5 6-2 6-6 6H9a2 2 0 0 1-2-2z"/><path d="M7 14H5"/>') },
+};
+const H_SZ = { L: '4×2', S: '2×2', P: '2×1' };
+const hFmt = v => v == null ? '—' : (Math.round(v * 10) / 10).toFixed(1);
+const hRel = d => { const td = today(); return d === td ? 'today' : d === addDays(td, -1) ? 'yesterday' : shortD(d); };
+
+/* ---------- the widgets ---------- */
+HW.next = { app: 'train', name: 'Up next', size: 'L', html: d => nlNextHtml(d, dayInfo(d)), cls: 'hnext',
+  sc: d => { const i = dayInfo(d), out = []; if (i.workoutKey) out.push(['Start the workout', IC4.dumb, () => { const s = S.sessions.find(x => x.date === d); go('workout', { date: d, key: s ? s.key : i.workoutKey }); }]); if (i.isMT) out.push(['Log Muay Thai', HAPPS.mt.ic(), () => go('mt', { date: d })]); out.push(['Change the day', SV('<path d="M7 7h11l-3-3M17 17H6l3 3"/>'), () => changeDaySheet(d)]); return out; } };
+function hLastSession(d) { return S.sessions.filter(s => s.finished && s.date <= d).sort((a, b) => a.date < b.date ? 1 : -1)[0]; }
+HW.lastsess = { app: 'train', name: 'Last session', size: 'L',
+  html: d => { const s = hLastSession(d); if (!s) return `<div class="hwl">Last session</div><div class="hwe">No finished workout yet</div>`;
+    const w = PROGRAM.workouts[s.key] || { name: s.key }, vol = s.ex.reduce((a, e) => a + e.sets.reduce((b, st) => b + (+st.kg || 0) * (+st.reps || 0), 0), 0), pbs = sessionPBs(s);
+    const top = s.ex.filter(e => e.sets.some(st => +st.kg > 0)).slice(0, 3).map(e => { const b = e.sets.reduce((m, st) => (+st.kg || 0) > (+m.kg || 0) ? st : m, {}); return `<div><span>${esc(e.n)}</span><b>${b.kg} × ${b.reps}</b></div>`; }).join('');
+    return `<div class="hwl">Last session · ${hRel(s.date)}</div><div class="hwt">${esc(w.name)}</div><div class="hwm">${s.minutes ? s.minutes + ' min · ' : ''}${fmtN(Math.round(vol / 100) / 10)} t${pbs ? ' · ' + pbs + ' PB' + (pbs > 1 ? 's' : '') : ''}</div><div class="hwrows">${top}</div>`; },
+  tap: d => { const s = hLastSession(d); if (s) go('workout', { date: s.date, key: s.key }); } };
+HW.week = { app: 'train', name: 'This week', size: 'L',
+  html: d => { const x = parse(d), mon = addDays(d, -((x.getDay() + 6) % 7)), td = today(); let plan = 0, done = 0, mt = 0, vol = 0;
+    const cells = Array.from({ length: 7 }, (_, i) => { const dd = addDays(mon, i), inf = dayInfo(dd), s = S.sessions.find(z => z.date === dd && z.finished); let st = 'rest', lab = '';
+      if (inf.workoutKey) { plan++; st = s ? 'ok' : dd < td ? 'miss' : 'plan'; lab = (PROGRAM.workouts[inf.workoutKey] || {}).name || ''; if (s) { done++; vol += s.ex.reduce((a, e) => a + e.sets.reduce((b, q) => b + (+q.kg || 0) * (+q.reps || 0), 0), 0); } }
+      else if (inf.isMT) { plan++; const ok = isDone(dd, 'mt'); if (ok) { done++; mt++; } st = ok ? 'ok mt' : dd < td ? 'miss' : 'plan mt'; lab = 'Muay Thai'; }
+      return `<div class="hwd ${st} ${dd === td ? 'td' : ''}"><i></i><span>${'MTWTFSS'[i]}</span></div>`; }).join('');
+    return `<div class="hwl">This week</div><div class="hwbig"><b data-roll="wk:${mon}" data-v="${done}">${done}</b><span>of ${plan} sessions</span></div><div class="hwweek">${cells}</div><div class="hwm">${fmtN(Math.round(vol / 100) / 10)} t lifted${mt ? ' · ' + mt + ' Muay Thai' : ''}</div>`; },
+  tap: () => go('journey', {}) };
+const foodSc = d => [['Scan a barcode', NI.scan, () => hScan(d)], ['Type it or a quick food', IC4.fork, () => go('nutrition', { date: d })], ['From a screenshot', NI.shot, () => { const b = document.createElement('button'); b.dataset.shots = ''; b.hidden = true; document.body.appendChild(b); b.click(); b.remove(); }], ['Edit quick foods', SV('<path d="M4 7h16M4 12h10M4 17h7"/>'), () => go('quickfoods', {})]];
+HW.kcal = { app: 'food', name: 'Kcal left', size: 'L', sc: foodSc,
+  html: d => { if (d > today()) return `<div class="hwl">Kcal left</div><div class="hwe">Starts on the day</div>`; let tg; try { tg = nutritionTarget(d); } catch (e) { return ''; }
+    const n = (S.days[d] || {}).nutrition || {}, eaten = +n.kcal || 0, left = Math.round(tg.kcal - eaten), f = Math.max(0, Math.min(1, eaten / tg.kcal));
+    return `<div class="hwl">Kcal left${d === today() ? '' : ' · ' + hRel(d)}</div><div class="hwbig ${left < 0 ? 'over' : ''}"><b data-roll="kcal:${d}" data-v="${Math.abs(left)}">${fmtN(Math.abs(left))}</b><span>${left < 0 ? 'kcal over' : 'kcal'}</span></div><div class="hwbar"><u style="width:${(f * 100).toFixed(1)}%"></u></div>${hAddedHtml(d) || `<div class="hwkv"><span>Eaten <b data-roll="eat:${d}" data-v="${eaten}">${fmtN(eaten)}</b></span><span>Budget <b>${fmtN(Math.round(tg.kcal))}</b></span></div>`}${d === today() ? `<button class="hwfab" data-hscan aria-label="Scan a barcode">${NI.scan}</button>` : ''}`; },
+  tap: d => go('nutrition', { date: d }) };
+HW.macros = { app: 'food', name: 'Macros', size: 'L', sc: foodSc,
+  html: d => { let t; try { t = macroTargets(d); } catch (e) { return ''; } const n = (S.days[d] || {}).nutrition || {};
+    const row = (l, v, g, c) => `<div class="hwmac"><span>${l}</span><i><u style="width:${Math.min(100, (+v || 0) / g * 100).toFixed(1)}%;background:${c}"></u></i><b><span data-roll="m${l}:${d}" data-v="${Math.round(+v || 0)}">${Math.round(+v || 0)}</span><small> / ${g} g</small></b></div>`;
+    return `<div class="hwl">Macros${d === today() ? '' : ' · ' + hRel(d)}</div>${row('Protein', n.protein, t.protein, 'var(--acc)')}${row('Carbs', n.carbs, t.carbs, '#F59E0B')}${row('Fat', n.fat, t.fat, '#0EA5E9')}`; },
+  tap: d => go('nutrition', { date: d }) };
+HW.quick = { app: 'food', name: 'Quick add', size: 'L', sc: foodSc,
+  html: d => { const q = quickFoods().slice(0, 4); if (d > today()) return `<div class="hwl">Quick add</div><div class="hwe">Starts on the day</div>`;
+    return `<div class="hwl">Quick add</div><div class="hwqa">${q.map((x, i) => `<button data-hqa="${i}"><b>${esc(x.n)}</b><small>${x.k} kcal · ${x.p || 0} g P</small></button>`).join('')}</div>`; },
+  tap: () => go('quickfoods', {}) };
+HW.scans = { app: 'food', name: 'Last scans', size: 'L', sc: foodSc,
+  html: d => { const pr = typeof products === 'function' ? products() : {}, rec = (typeof recentScans === 'function' ? recentScans() : []).map(c => pr[c] && Object.assign({ code: c }, pr[c])).filter(Boolean).slice(0, 3);
+    if (!rec.length) return `<div class="hwl">Last scans</div><div class="hwe">Scan a barcode and it waits here for next time</div>${d === today() ? `<button class="hwfab" data-hscan aria-label="Scan a barcode">${NI.scan}</button>` : ''}`;
+    return `<div class="hwl">Last scans</div><div class="hwrows">${rec.map(p => `<div data-hprod="${esc(p.code)}"><span>${esc(p.name || p.code)}</span><b>${Math.round(scnF(p.kcal))}<small> kcal/100 g</small></b></div>`).join('')}</div>`; },
+  tap: d => hScan(d) };
+HW.weight = { app: 'body', name: 'Weight', size: 'S', sc: d => [['Weigh-in', IC4.scale, () => go('weigh', { date: d })], ['Body details', HAPPS.body.ic(), () => go('scd', { k: 'body' })]],
+  html: d => { const w = current('weight', d), w7 = current('weight', addDays(d, -7)), ch = w != null && w7 != null ? w - w7 : null, pts = [];
+    for (let i = 13; i >= 0; i--) { const x = lastReading('weight', addDays(d, -i)); if (x && x.date === addDays(d, -i)) pts.push(x.v); }
+    let sp = ''; if (pts.length > 1) { const mn = Math.min(...pts), mx = Math.max(...pts), r = mx - mn || 1; sp = `<svg class="hwsp" viewBox="0 0 100 30" preserveAspectRatio="none"><polyline points="${pts.map((v, i) => (i / (pts.length - 1) * 100).toFixed(1) + ',' + (27 - (v - mn) / r * 24).toFixed(1)).join(' ')}"/></svg>`; }
+    return `<div class="hwl">Weight</div><div class="hwbig sm"><b ${w != null ? `data-roll="w:${d}" data-v="${hFmt(w)}"` : ''}>${hFmt(w)}</b><span>kg</span></div><div class="hwm ${ch != null && ch < 0 ? 'ok' : ''}">${ch == null ? 'trend' : (ch < 0 ? '▼ ' : ch > 0 ? '▲ ' : '± ') + Math.abs(ch).toFixed(1) + ' kg in 7 days'}</div>${sp}`; },
+  tap: () => go('scd', { k: 'body' }) };
+HW.bodyfat = { app: 'body', name: 'Body fat', size: 'S', sc: d => HW.weight.sc(d),
+  html: d => { const f = lastReading('fat', d), m = lastReading('muscle', d); return `<div class="hwl">Body fat</div><div class="hwbig sm"><b>${f ? hFmt(f.v) : '—'}</b><span>%</span></div><div class="hwm">${f ? hRel(f.date) : 'from the scale'}</div>${m ? `<div class="hwm">Muscle <b>${hFmt(m.v)} kg</b></div>` : ''}`; },
+  tap: () => go('scd', { k: 'body' }) };
+HW.days = { app: 'plan', name: 'Days to go', size: 'S', sc: () => [['Plan', HAPPS.plan.ic(), () => go('journey', {})], ['Progress', NI.progress, () => go('dash', {})]],
+  html: d => { const i = dayInfo(d); if (!i.items) return ''; const tot = isOngoing() ? null : D(), f = tot ? i.idx / tot : 0, r = 30, c = 2 * Math.PI * r;
+    return `<div class="hwl">${esc(P().name)}</div><div class="hwring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="${r}" class="t"/><circle cx="36" cy="36" r="${r}" class="f" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 36 36)"/></svg><b>${i.idx}</b></div><div class="hwm">${tot ? (tot - i.idx) + ' days to go' : 'day ' + i.idx}</div>`; },
+  tap: () => go('journey', {}) };
+HW.weighpill = { app: 'body', name: 'Weigh-in', size: 'P', sc: d => HW.weight.sc(d),
+  html: d => { const r = lastReading('weight', d), dn = isDone(d, 'weigh'); return `<span class="hpi" style="--c:${HAPPS.body.col}">${IC4.scale}</span><div><b>${dn ? 'Weighed ✓' : 'Weigh-in'}</b><small>${r ? hFmt(r.v) + ' kg · ' + hRel(r.date) : 'no weigh-in yet'}</small></div>`; },
+  tap: d => go('weigh', { date: d }) };
+[0, 1, 2].forEach(i => { HW['qa' + i] = { app: 'food', name: 'Quick food ' + (i + 1), size: 'P', sc: foodSc,
+  html: () => { const q = quickFoods()[i]; return q ? `<span class="hpi" style="--c:${HAPPS.food.col}">${NI.plus}</span><div><b>${esc(q.n)}</b><small>${q.k} kcal · one tap</small></div>` : `<div><b>Quick food ${i + 1}</b><small>add it in Settings</small></div>`; },
+  tap: (d, el) => { const q = quickFoods()[i]; if (!q) return go('quickfoods', {}); if (d > today()) return toast('That day hasn\'t happened yet'); nlQuickAdd(d, q, el); } }; });
+HW.mtpill = { app: 'mt', name: 'Muay Thai', size: 'P', sc: d => [['Log Muay Thai', HAPPS.mt.ic(), () => go('mt', { date: d })]],
+  html: d => { const m = (S.days[d] || {}).mt, dn = isDone(d, 'mt'); return `<span class="hpi" style="--c:${HAPPS.mt.col}">${HAPPS.mt.ic()}</span><div><b>${dn ? 'Muay Thai ✓' : 'Log Muay Thai'}</b><small>${dn && m && m.min ? m.min + ' min' : 'a session'}</small></div>`; },
+  tap: d => go('mt', { date: d }) };
+function hScan(d) { if (R.screen !== 'today' || R.date !== today()) { R.date = today(); R.stack = []; go('today', {}, false); } setTimeout(() => scanOpen(app.querySelector('[data-hscan]') || app.querySelector('.hgrid')), 80); }
+
+/* ---------- layout (kept on this phone) ---------- */
+const H_DEF = [{ w: ['next', 'lastsess', 'week'] }, { w: ['kcal', 'macros', 'quick', 'scans'] }, { w: ['weight', 'bodyfat', 'days'] }, { w: ['weighpill'] }, { w: ['qa0'] }];
+function hLayout() { if (HW._lay) return HW._lay; let l = null; try { l = JSON.parse(localStorage.getItem('vikac.home') || 'null'); } catch (e) {}
+  if (!Array.isArray(l)) l = JSON.parse(JSON.stringify(H_DEF)); l = l.map(s => ({ w: (s.w || []).filter(id => HW[id]), c: s.c || 0 })).filter(s => s.w.length); HW._lay = l; return l; }
+function hSave() { try { localStorage.setItem('vikac.home', JSON.stringify(HW._lay.map(s => ({ w: s.w, c: s.c })))); } catch (e) {} }
+function hWidgetHtml(id, d, i, cur) { const w = HW[id]; let h = ''; try { h = w.html(d) || ''; } catch (e) { h = ''; } if (!h) h = `<div class="hwl">${esc(w.name)}</div><div class="hwe">Nothing for this day</div>`;
+  return `<div class="hw ${w.cls || ''} sz${w.size}" data-hw="${id}" style="transform:translateX(${i === cur ? 0 : 'calc(100% + 16px)'});${i === cur ? '' : 'visibility:hidden'}">${h}</div>`; }
+function hGridHtml(d) {
+  return `<div class="hgrid">${hLayout().map((s, k) => { const sz = HW[s.w[0]].size, cur = ((s.c || 0) % s.w.length + s.w.length) % s.w.length;
+    return `<div class="hslot sz${sz}" data-slot="${k}"><div class="hstack" data-n="${s.w.length}">${s.w.map((id, i) => hWidgetHtml(id, d, i, cur)).join('')}</div>${s.w.length > 1 ? `<div class="hdots">${s.w.map((_, i) => `<i class="${i === cur ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>`; }).join('')}</div>`;
+}
+
+/* ---------- Today in the One UI look ---------- */
+const _nlTodayHtmlH = nlTodayHtml, _nlBindTodayH = nlBindToday;
+nlTodayHtml = function () {
+  if (!document.body.classList.contains('oui')) return _nlTodayHtmlH();
+  const date = R.date, info = dayInfo(date); if (!info.items) return _nlTodayHtmlH();
+  const note = (S.days[date] || {}).note;
+  return `<div class="screen nlscr nltoday htoday">${nlHeadHtml(date, info)}${nlWeekHtml(date)}${checkinCardHtml(date)}${hGridHtml(date)}${nlListHtml(date, info)}
+    <button class="nlnote ${note ? 'has' : ''}" data-note><span class="ic">${IC4.pen}</span><span><b>Note</b>${note ? `<span class="usertext">${esc(note)}</span>` : '<span>How did the day go?</span>'}</span></button>
+    ${date !== today() ? `<button class="nlback" data-nlgo="${today()}">Back to today</button>` : ''}</div>${nav('today')}`;
+};
+nlBindToday = function () {
+  _nlBindTodayH(); if (!app.querySelector('.hgrid')) return;
+  const date = R.date;
+  app.querySelectorAll('.hslot').forEach(hBindSlot);
+  hRollAll(app.querySelector('.hgrid'));
+  app.querySelectorAll('[data-hscan]').forEach(b => b.onclick = e => { e.stopPropagation(); scanOpen(b); });
+  app.querySelectorAll('[data-hqa]').forEach(b => b.onclick = e => { e.stopPropagation(); if (date > today()) return; nlQuickAdd(date, quickFoods()[+b.dataset.hqa], b); });
+  app.querySelectorAll('[data-hprod]').forEach(b => b.onclick = e => { e.stopPropagation(); const c = b.dataset.hprod; scanOpen(b); setTimeout(() => { try { scanHit(c); } catch (x) {} }, 350); });
+  // long-press a list row: the same kind of menu
+  app.querySelectorAll('.nllist li[data-item]').forEach(li => hLongPress(li, () => hRowMenu(li, date)));
+};
+
+/* a stack: drag sideways through it (the neighbour slides in, clipped to the slot), snap, wrap; dots and frame while touched */
+function hBindSlot(slot) {
+  const k = +slot.dataset.slot, st = slot.querySelector('.hstack'), ws = [...st.children], n = ws.length, L = hLayout()[k];
+  let cur = ((L.c || 0) % n + n) % n, p = null, hideT = 0, swallow = false;
+  const W = () => st.offsetWidth + 16;
+  const place = (dx, anim) => { ws.forEach((w, i) => { let off = i === cur ? 0 : i === (cur + 1) % n ? 1 : i === (cur - 1 + n) % n ? -1 : 9; if (n === 2 && i !== cur) off = dx > 0 ? -1 : 1;
+      w.style.transition = anim ? 'transform .28s cubic-bezier(.2,.8,.25,1)' : 'none'; w.style.visibility = off === 9 || (off !== 0 && dx === 0 && !anim) ? 'hidden' : ''; w.style.transform = `translateX(${off * W() + dx}px)`; }); };
+  const touch = on => { clearTimeout(hideT); if (on) slot.classList.add('touch'); else hideT = setTimeout(() => slot.classList.remove('touch'), 900); };
+  const dots = () => slot.querySelectorAll('.hdots i').forEach((d, i) => d.classList.toggle('on', i === cur));
+  const tapW = e => { const w = ws[cur], id = w.dataset.hw; if (e.target.closest('button,[data-hprod],[data-nlwork] .nlbtn')) return; const hw = HW[id]; if (hw.tap) { vib(8); hw.tap(R.date, w); } };
+  // Up next keeps its own click handler (from the plain layout); the others open their app
+  ws.forEach(w => { if (!w.querySelector('[data-nlwork],[data-nlopen]')) w.addEventListener('click', e => { if (swallow) { swallow = false; return; } tapW(e); }); else w.addEventListener('click', e => { if (swallow) { swallow = false; e.stopPropagation(); } }, true); });
+  hLongPress(st, () => { swallow = true; p = null; place(0, true); hWidgetMenu(slot, k, cur); }, () => p && p.h);
+  ['touchstart', 'touchmove', 'touchend'].forEach(t => st.addEventListener(t, e => { if (n > 1 || t !== 'touchstart') e.stopPropagation(); }, { passive: true }));   // no day-swipe from inside a stack
+  if (n < 2) return;
+  st.addEventListener('pointerdown', e => { if (e.button) return; p = { x: e.clientX, y: e.clientY, t: performance.now(), h: false, v: false, id: e.pointerId }; touch(true); });
+  st.addEventListener('pointermove', e => { if (!p || e.pointerId !== p.id || p.v) return; const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    if (!p.h) { if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { p.v = true; touch(false); return; } if (Math.abs(dx) < 8) return; p.h = true; try { st.setPointerCapture(e.pointerId); } catch (x) {} }
+    place(dx, false); });
+  const up = e => { if (!p || e.pointerId !== p.id) return; const was = p; p = null; touch(false); if (!was.h) return; swallow = true; setTimeout(() => { swallow = false; }, 50);
+    const dx = e.clientX - was.x, v = dx / Math.max(1, performance.now() - was.t);
+    if (Math.abs(dx) > st.offsetWidth * .22 || Math.abs(v) > .45) { cur = (cur + (dx < 0 ? 1 : -1) + n) % n; L.c = cur; hSave(); vib(6); place(dx < 0 ? W() + dx : dx - W(), false); requestAnimationFrame(() => requestAnimationFrame(() => place(0, true))); dots(); }
+    else place(0, true); };
+  st.addEventListener('pointerup', up); st.addEventListener('pointercancel', up);
+}
+// long-press: shrink a little, buzz, then the menu (cancelled by a move or an early lift)
+function hLongPress(el, fire, busy) {
+  let t = 0, x = 0, y = 0;
+  el.addEventListener('pointerdown', e => { if (e.button) return; x = e.clientX; y = e.clientY; clearTimeout(t); el.classList.add('hpress'); t = setTimeout(() => { if (busy && busy()) return; el.classList.remove('hpress'); vib(18); fire(); }, 480); });
+  el.addEventListener('pointermove', e => { if (Math.abs(e.clientX - x) + Math.abs(e.clientY - y) > 9) { clearTimeout(t); el.classList.remove('hpress'); } });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(k => el.addEventListener(k, () => { clearTimeout(t); el.classList.remove('hpress'); }));
+  el.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+/* ---------- the long-press menu: grows from the widget, notch pointing at it ---------- */
+function hMenu(anchor, title, items, actions, info) {
+  hMenuClose(); const r = anchor.getBoundingClientRect(), bg = document.createElement('div'); bg.className = 'hmenubg';
+  bg.innerHTML = `<div class="hmenu" role="menu"><div class="hmh"><b>${esc(title)}</b>${info ? `<button class="hmi" data-hinfo aria-label="About">${SV('<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>')}</button>` : ''}</div>
+    ${items.length ? `<div class="hmlist">${items.map((it, i) => `<button data-hm="${i}"><span>${it[1] || ''}</span>${esc(it[0])}</button>`).join('')}</div>` : ''}
+    ${actions.length ? `<div class="hmact">${actions.map((a, i) => `<button data-ha="${i}"><span>${a[1]}</span>${esc(a[0])}</button>`).join('')}</div>` : ''}<i class="hmn"></i></div>`;
+  document.body.appendChild(bg); const m = bg.firstChild, mh = m.offsetHeight, mw = m.offsetWidth;
+  const below = r.top - mh - 14 < 70, top = below ? Math.min(innerHeight - mh - 20, r.bottom + 10) : r.top - mh - 10, left = Math.max(10, Math.min(innerWidth - mw - 10, r.left + r.width / 2 - mw / 2));
+  m.style.top = top + 'px'; m.style.left = left + 'px'; m.classList.add(below ? 'below' : 'above'); m.style.setProperty('--nx', Math.max(24, Math.min(mw - 24, r.left + r.width / 2 - left)) + 'px');
+  m.style.transformOrigin = `${r.left + r.width / 2 - left}px ${below ? '0' : '100%'}`; anchor.classList.add('hlifted');
+  requestAnimationFrame(() => bg.classList.add('in'));
+  const close = () => { hMenuClose(); };
+  bg._close = close; bg._anchor = anchor; bg.onclick = e => { if (e.target === bg) close(); };
+  m.querySelectorAll('[data-hm]').forEach(b => b.onclick = () => { close(); vib(8); setTimeout(items[+b.dataset.hm][2], 120); });
+  m.querySelectorAll('[data-ha]').forEach(b => b.onclick = () => { close(); vib(8); setTimeout(actions[+b.dataset.ha][2], 120); });
+  const ib = m.querySelector('[data-hinfo]'); if (ib) ib.onclick = () => { close(); setTimeout(info, 120); };
+  addEventListener('scroll', close, { once: true, passive: true });
+}
+function hMenuClose() { const b = document.querySelector('.hmenubg'); if (!b) return; if (b._anchor) b._anchor.classList.remove('hlifted'); b.classList.remove('in'); b.classList.add('out'); setTimeout(() => b.remove(), 160); }
+const HI = { edit: SV('<path d="M4 20h4L19 9l-4-4L4 16z"/>'), stack: SV('<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M7 5h10"/>'), del: SV('<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>'), grid: SV('<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>') };
+function hWidgetMenu(slot, k, cur) {
+  const L = hLayout(), s = L[k], id = s.w[cur], w = HW[id], d = R.date, multi = s.w.length > 1;
+  hMenu(slot.querySelector('.hstack'), multi ? w.name : w.name, w.sc ? w.sc(d) : [], [
+    [multi ? 'Edit stack' : 'Create stack', multi ? HI.edit : HI.stack, () => hStackEditor(k, !multi)],
+    [multi ? 'Remove all' : 'Remove', HI.del, () => hRemoveSlot(k)],
+    ['Widgets', HI.grid, () => hHomeEditor()]], () => toast(`${HAPPS[w.app].name} · ${H_SZ[w.size]}`));
+}
+function hRowMenu(li, date) {
+  const id = li.dataset.item, it = dayInfo(date).items.find(x => x.id === id); if (!it) return; const dn = isDone(date, id);
+  hMenu(li, it.label, [[dn ? 'Mark as not done' : 'Mark as done', NI.check, () => li.querySelector('[data-nlchk]').click()], ['Open', SV('<path d="M9 6l6 6-6 6"/>'), () => li.querySelector('[data-open-item]').click()]], []);
+}
+// a toast with Undo (the One UI pill)
+function hUndoToast(msg, undo) { const old = document.querySelector('.scnundo'); if (old) old.remove(); const bar = document.createElement('div'); bar.className = 'scnundo hundo'; bar.innerHTML = `<span>${esc(msg)}</span><button>Undo</button>`; document.body.appendChild(bar);
+  const kill = () => { bar.classList.add('out'); setTimeout(() => bar.remove(), 220); }, t = setTimeout(kill, 4000); bar.querySelector('button').onclick = () => { clearTimeout(t); undo(); kill(); vib(10); }; }
+function hRemoveSlot(k) { const L = hLayout(), was = JSON.parse(JSON.stringify(L)); L.splice(k, 1); hSave(); hRerender(); hUndoToast(was[k].w.length > 1 ? 'Stack removed' : 'Widget removed', () => { HW._lay = was; hSave(); hRerender(); }); }
+function hRerender() { if (R.screen !== 'today') return; const y = scrollY; render(); scrollTo(0, y); }
+
+/* ---------- panels that grow out of what you touched (stack editor, widget picker, Today's widgets) ---------- */
+function hPanel(origin, html, bind, cls) {
+  const bg = document.createElement('div'); bg.className = 'modalbg hpanelbg ' + (cls || ''); bg.innerHTML = `<div class="hpanel">${html}</div>`; document.body.appendChild(bg); lockBody(); armBack();
+  const p = bg.firstChild, o = origin && origin.isConnected ? origin.getBoundingClientRect() : null;
+  const grow = (rev) => { if (!o || !p.animate || fsReduce()) return null; const r = p.getBoundingClientRect(), sx = o.width / r.width, sy = o.height / r.height, tx = o.left + o.width / 2 - (r.left + r.width / 2), ty = o.top + o.height / 2 - (r.top + r.height / 2);
+    const a = [{ transform: `translate(${tx}px,${ty}px) scale(${sx},${sy})`, opacity: .3, borderRadius: '26px' }, { transform: 'none', opacity: 1 }]; return p.animate(rev ? a.reverse() : a, { duration: rev ? 220 : 300, easing: 'cubic-bezier(.2,.9,.25,1)', fill: 'forwards' }); };
+  requestAnimationFrame(() => { bg.classList.add('in'); grow(false); });
+  let closed = false; const close = () => { if (closed) return; closed = true; unlockBody(); bg.classList.remove('in'); bg.classList.add('out'); const a = grow(true); setTimeout(() => bg.remove(), a ? 230 : 200); if (bg._after) bg._after(); };
+  bg.close = close; bg.onclick = e => { if (e.target === bg) history.back(); };
+  bind(p, close); return bg;
+}
+function hPreview(id, d) { const w = HW[id]; let h = ''; try { h = w.html(d) || ''; } catch (e) {} return `<div class="hprev sz${w.size}"><div class="hw ${w.cls || ''} sz${w.size}">${h || `<div class="hwl">${esc(w.name)}</div>`}</div></div>`; }
+// Edit stack: the stack's widgets side by side (− to take one out), then a + tile; 7 at most
+function hStackEditor(k, adding) {
+  const L = hLayout(), s = L[k], d = R.date, slot = app.querySelector(`.hslot[data-slot="${k}"]`);
+  const body = () => `<div class="hpt">${s.w.length > 1 ? 'Edit stack' : 'Create stack'}</div><div class="hcar">${s.w.map((id, i) => `<div class="hcard"><button class="hminus" data-hrm="${i}" aria-label="Remove ${esc(HW[id].name)}">${SV('<path d="M6 12h12"/>')}</button>${hPreview(id, d)}<div class="hcn">${esc(HW[id].name)}</div></div>`).join('')}<div class="hcard"><button class="hplus" data-hadd aria-label="Add a widget"><span>${NI.plus}</span></button><div class="hcn">Add</div></div></div><div class="hdots static">${s.w.map(() => '<i></i>').join('')}<i></i></div><button class="hdone" data-hdone>Done</button>`;
+  hPanel(slot && slot.querySelector('.hstack'), body(), (p, close) => {
+    const bind = () => {
+      const car = p.querySelector('.hcar'), ds = [...p.querySelectorAll('.hdots i')], sync = () => { const i = Math.round(car.scrollLeft / (car.firstChild.offsetWidth + 14)); ds.forEach((x, j) => x.classList.toggle('on', j === i)); };
+      car.onscroll = sync; sync();
+      p.querySelectorAll('[data-hrm]').forEach(b => b.onclick = () => { if (s.w.length === 1) { close(); return hRemoveSlot(k); } s.w.splice(+b.dataset.hrm, 1); s.c = 0; hSave(); vib(10); p.innerHTML = body(); bind(); });
+      p.querySelector('[data-hadd]').onclick = e => { if (s.w.length >= 7) { vib([20, 40, 20]); return toast('Can\'t add more than 7 stacked widgets.'); } hPicker(e.currentTarget, s.w, id => { s.w.push(id); hSave(); p.innerHTML = body(); bind(); const c = p.querySelector('.hcar'); c.scrollLeft = c.scrollWidth; }); };
+      p.querySelector('[data-hdone]').onclick = () => history.back();
+    };
+    bind(); if (adding) setTimeout(() => { const a = p.querySelector('[data-hadd]'); p.querySelector('.hcar').scrollLeft = 9999; }, 320);
+  }, 'hstackbg')._after = () => setTimeout(hRerender, 60);
+}
+// the widget picker: apps with a count, each opens into its widgets with Add
+function hPicker(origin, taken, onAdd, size) {
+  const sz = size || (taken.length ? HW[taken[0]].size : null), d = R.date;
+  const avail = Object.keys(HW).filter(id => !taken.includes(id) && (!sz || HW[id].size === sz));
+  const apps = Object.keys(HAPPS).map(a => ({ a, ids: avail.filter(id => HW[id].app === a) })).filter(x => x.ids.length);
+  const html = `<div class="hpt">Widgets${sz ? ` <small>${H_SZ[sz]}</small>` : ''}</div><div class="hplist">${apps.length ? apps.map(x => `<div class="hpa" data-hpa="${x.a}"><button class="hpar"><span class="hpi" style="--c:${HAPPS[x.a].col}">${HAPPS[x.a].ic()}</span><b>${HAPPS[x.a].name}</b><em>${x.ids.length}</em></button><div class="hpw" hidden>${x.ids.map(id => `<div class="hpwi">${hPreview(id, d)}<div class="hcn">${esc(HW[id].name)} · ${H_SZ[HW[id].size]}</div><button class="hadd" data-hpick="${id}">Add</button></div>`).join('')}</div></div>`).join('') : '<div class="hwe">Every widget of this size is already in the stack</div>'}</div>`;
+  hPanel(origin, html, (p, close) => {
+    p.querySelectorAll('.hpar').forEach(b => b.onclick = () => { const w = b.nextElementSibling, open = w.hidden; p.querySelectorAll('.hpw').forEach(x => { x.hidden = true; x.parentNode.classList.remove('open'); }); if (open) { w.hidden = false; b.parentNode.classList.add('open'); if (w.animate) w.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'ease-out' }); } vib(6); });
+    p.querySelectorAll('[data-hpick]').forEach(b => b.onclick = () => { const id = b.dataset.hpick; history.back(); setTimeout(() => { onAdd(id); if (sz && HW[id].size !== sz) toast('Widget resized to fit in the stack.'); }, 240); });
+    const first = p.querySelector('.hpar'); if (apps.length === 1 && first) first.click();
+  }, 'hpickbg');
+}
+// Today's widgets: the order of the slots (move up / down), remove, add a new widget
+function hHomeEditor() {
+  const L = hLayout(), body = () => `<div class="hpt">Today's widgets</div><div class="hed">${L.map((s, i) => `<div class="hedr"><span class="hpi" style="--c:${HAPPS[HW[s.w[0]].app].col}">${HAPPS[HW[s.w[0]].app].ic()}</span><div><b>${s.w.map(id => esc(HW[id].name)).join(' · ')}</b><small>${s.w.length > 1 ? 'Stack of ' + s.w.length : 'Widget'} · ${H_SZ[HW[s.w[0]].size]}</small></div><button data-hup="${i}" ${i ? '' : 'disabled'} aria-label="Move up">${SV('<path d="M6 15l6-6 6 6"/>')}</button><button data-hrmv="${i}" aria-label="Remove">${HI.del}</button></div>`).join('')}</div>
+    <button class="hplusrow" data-hnew>${NI.plus}Add a widget</button><button class="hlink" data-hreset>Back to the standard layout</button><button class="hdone" data-hdone>Done</button>`;
+  hPanel(document.querySelector('.hgrid'), body(), (p) => {
+    const bind = () => {
+      p.querySelectorAll('[data-hup]').forEach(b => b.onclick = () => { const i = +b.dataset.hup; [L[i - 1], L[i]] = [L[i], L[i - 1]]; hSave(); vib(6); p.innerHTML = body(); bind(); });
+      p.querySelectorAll('[data-hrmv]').forEach(b => b.onclick = () => { L.splice(+b.dataset.hrmv, 1); hSave(); vib(10); p.innerHTML = body(); bind(); });
+      p.querySelector('[data-hnew]').onclick = e => hPicker(e.currentTarget, L.flatMap(s => s.w), id => { L.push({ w: [id], c: 0 }); hSave(); p.innerHTML = body(); bind(); });
+      p.querySelector('[data-hreset]').onclick = () => { HW._lay = null; try { localStorage.removeItem('vikac.home'); } catch (x) {} L.length = 0; hLayout().forEach(x => L.push(x)); HW._lay = L; hSave(); p.innerHTML = body(); bind(); toast('Standard layout back'); };
+      p.querySelector('[data-hdone]').onclick = () => history.back();
+    }; bind();
+  }, 'hedbg')._after = () => setTimeout(hRerender, 60);
+}
+
+/* ---------- All: every action and screen, with search (the app drawer) ---------- */
+function hAllTiles() {
+  const d = R.screen === 'today' ? R.date : today(), i = dayInfo(today()), lw = typeof liveWorkout === 'function' ? liveWorkout() : null, s = S.sessions.find(x => x.date === today());
+  const T = (n, a, ic, run, kw) => ({ n, a, ic, run, kw: kw || '' });
+  return [
+    T('Scan', 'food', NI.scan, () => hScan(today()), 'barcode food product'), T('Food', 'food', IC4.fork, () => go('nutrition', { date: today() }), 'kcal macros nutrition eat'),
+    T('Quick foods', 'food', SV('<path d="M4 7h16M4 12h10M4 17h7"/>'), () => go('quickfoods', {}), 'shake favourite'), T('Screenshot', 'food', NI.shot, () => { const b = document.createElement('button'); b.dataset.shots = ''; b.hidden = true; document.body.appendChild(b); b.click(); b.remove(); }, 'mfp import scale picture'),
+    T('Weigh-in', 'body', IC4.scale, () => go('weigh', { date: today() }), 'weight scale'), T('Body', 'body', HAPPS.body.ic(), () => go('scd', { k: 'body' }), 'weight fat muscle chart trend'),
+    T(lw ? 'Continue' : 'Workout', 'train', IC4.dumb, () => { const key = (lw && lw.key) || (s && s.key) || i.workoutKey; if (key) go('workout', { date: today(), key }); else toast('No workout today'); }, 'lift session gym'),
+    T('Lifts', 'train', SV('<path d="M4 18l5-6 4 3 7-9"/>'), () => go('scd', { k: 'lifts' }), 'records pb strength'),
+    T('Muay Thai', 'mt', HAPPS.mt.ic(), () => go('mt', { date: today() }), 'boxing session band'), T('Stretch', 'body', IC4.stretch || SV('<circle cx="12" cy="5" r="2"/><path d="M12 7v7l-4 6M12 14l4 6M6 10h12"/>'), () => go('stretch', { date: today() }), 'mobility kicks'),
+    T('Plan', 'plan', HAPPS.plan.ic(), () => go('journey', {}), 'cycle calendar month'), T('Progress', 'plan', NI.progress, () => go('dash', {}), 'stats chart'),
+    T('Food stats', 'food', SV('<path d="M5 19V9M12 19V5M19 19v-7"/>'), () => go('scd', { k: 'food' }), 'average protein days'), T('Habits & goals', 'plan', IC4.tickbox || NI.check, () => go('habits', {}), 'goal habit'),
+    T('My plan', 'plan', SV('<path d="M4 6h16M4 12h10M4 18h7"/>'), () => go('myplan', {}), 'phase deficit bmr cycle workouts'), T('Note', 'plan', IC4.pen, () => noteSheet(today()), 'diary journal'),
+    T('Change day', 'plan', SV('<path d="M7 7h11l-3-3M17 17H6l3 3"/>'), () => changeDaySheet(today()), 'swap rest'), T('Settings', 'plan', ICONS.settings, () => go('profile', {}), 'backup github band language layout'),
+  ];
+}
+function hSearch(q) {
+  q = q.trim().toLowerCase(); if (!q) return []; const out = [], seen = new Set();
+  for (const k in PROGRAM.workouts) { const w = PROGRAM.workouts[k]; if (w.name.toLowerCase().includes(q)) out.push({ t: w.name, s: 'Workout · ' + w.ex.length + ' exercises', ic: IC4.dumb, run: () => { const last = S.sessions.filter(x => x.key === k).sort((a, b) => a.date < b.date ? 1 : -1)[0]; go('workout', last ? { date: last.date, key: k } : { date: today(), key: k }); } });
+    w.ex.forEach(e => { if (!seen.has(e.n) && e.n.toLowerCase().includes(q)) { seen.add(e.n); out.push({ t: e.n, s: 'Exercise · ' + w.name, ic: SV('<path d="M4 18l5-6 4 3 7-9"/>'), run: () => go('exfile', { name: e.n }) }); } }); }
+  quickFoods().forEach((f, i) => { if (f.n.toLowerCase().includes(q)) out.push({ t: f.n, s: `Quick food · ${f.k} kcal · tap to add`, ic: NI.plus, run: () => { nlQuickAdd(today(), f); } }); });
+  const pr = typeof products === 'function' ? products() : {}; Object.keys(pr).forEach(c => { const p = pr[c]; if (p && p.name && p.name.toLowerCase().includes(q)) out.push({ t: p.name, s: `Scanned · ${Math.round(scnF(p.kcal))} kcal/100 g`, ic: NI.scan, run: () => { hScan(today()); setTimeout(() => { try { scanHit(c); } catch (x) {} }, 420); } }); });
+  const SET = [['Cloud backup', 'cloud'], ['Band', 'profile'], ['Language', 'profile'], ['Layout', 'profile'], ['My profile', 'me'], ['Setup questions', 'setupq'], ['Past projects', 'past']];
+  SET.forEach(([t, s]) => { if (t.toLowerCase().includes(q)) out.push({ t, s: 'Settings', ic: ICONS.settings, run: () => go(s, {}) }); });
+  return out.slice(0, 30);
+}
+function hDrawer() {
+  if (document.querySelector('.hdrawer')) return; const tiles = hAllTiles();
+  const grid = ts => ts.map((t, i) => `<button class="happ" data-happ="${i}"><span class="hai" style="--c:${HAPPS[t.a].col}">${t.ic}</span><span>${esc(t.n)}</span></button>`).join('');
+  const bg = document.createElement('div'); bg.className = 'modalbg hdrawer';
+  bg.innerHTML = `<div class="hdw"><div class="hdh"><b>All</b></div><div class="hdgrid">${grid(tiles)}</div><div class="hdres" hidden></div></div><label class="hds"><span>${SV('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>')}</span><input type="search" placeholder="Search" enterkeyhint="search" autocomplete="off"><button class="hdx" hidden aria-label="Clear">${XIC}</button></label>`;
+  document.body.appendChild(bg); lockBody(); armBack(); requestAnimationFrame(() => bg.classList.add('in'));
+  const w = bg.querySelector('.hdw'), inp = bg.querySelector('input'), res = bg.querySelector('.hdres'), gr = bg.querySelector('.hdgrid'), sp = bg.querySelector('.hds'), cx = bg.querySelector('.hdx');
+  let closed = false; bg.close = () => { if (closed) return; closed = true; unlockBody(); inp.blur(); bg.classList.remove('in'); bg.classList.add('out'); setTimeout(() => bg.remove(), 200); };
+  const run = fn => { history.back(); setTimeout(fn, 160); };
+  gr.querySelectorAll('[data-happ]').forEach(b => b.onclick = () => { vib(8); run(tiles[+b.dataset.happ].run); });
+  inp.oninput = () => { const q = inp.value; cx.hidden = !q; if (!q.trim()) { res.hidden = true; gr.hidden = false; return; }
+    const tl = tiles.filter(t => (t.n + ' ' + t.kw).toLowerCase().includes(q.trim().toLowerCase())), rs = hSearch(q);
+    res.innerHTML = (tl.length ? `<div class="hdgrid">${tl.map(t => `<button class="happ" data-hk="${tiles.indexOf(t)}"><span class="hai" style="--c:${HAPPS[t.a].col}">${t.ic}</span><span>${esc(t.n)}</span></button>`).join('')}</div>` : '') + (rs.length ? `<div class="hdlist">${rs.map((r, i) => `<button data-hr="${i}"><span>${r.ic}</span><div><b>${esc(r.t)}</b><small>${esc(r.s)}</small></div></button>`).join('')}</div>` : '') + (!tl.length && !rs.length ? '<div class="hwe">Nothing found</div>' : '');
+    res.hidden = false; gr.hidden = true;
+    res.querySelectorAll('[data-hk]').forEach(b => b.onclick = () => run(tiles[+b.dataset.hk].run)); res.querySelectorAll('[data-hr]').forEach(b => b.onclick = () => run(rs[+b.dataset.hr].run)); };
+  cx.onclick = () => { inp.value = ''; inp.oninput(); inp.focus(); };
+  // the search pill steps aside while the grid is flung, and comes back when it rests
+  let ft = 0; w.addEventListener('scroll', () => { if (document.activeElement !== inp) sp.classList.add('away'); clearTimeout(ft); ft = setTimeout(() => sp.classList.remove('away'), 250); }, { passive: true });
+  // pull down from the top to close
+  let y0 = null; w.addEventListener('touchstart', e => { y0 = w.scrollTop <= 0 ? e.touches[0].clientY : null; }, { passive: true });
+  w.addEventListener('touchend', e => { if (y0 != null && e.changedTouches[0].clientY - y0 > 90) history.back(); y0 = null; }, { passive: true });
+  bg.addEventListener('click', e => { if (e.target === bg) history.back(); });
+}
+
+/* ---------- the floating Search pill on Today (hides while the page is flung) ---------- */
+let hPill = null, hPillT = 0;
+function hPillSync() {
+  const want = document.body.classList.contains('oui') && R.screen === 'today' && !!app.querySelector('.hgrid');
+  if (!want) { if (hPill) hPill.classList.add('gone'); return; }
+  if (!hPill) { hPill = document.createElement('button'); hPill.className = 'hpill gone'; hPill.innerHTML = `${SV('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>')}<span>Search</span>`; hPill.onclick = () => { vib(8); hDrawer(); }; document.body.appendChild(hPill); }
+  hPill.classList.toggle('gone', !!topModal());
+}
+addEventListener('scroll', () => { if (!hPill || hPill.classList.contains('gone')) return; hPill.classList.add('away'); clearTimeout(hPillT); hPillT = setTimeout(() => hPill && hPill.classList.remove('away'), 260); }, { passive: true });
+const _renderH = render; render = function () { _renderH.apply(this, arguments); setTimeout(hPillSync, 0); };
+new MutationObserver(() => { if (hPill) hPill.classList.toggle('gone', !(document.body.classList.contains('oui') && R.screen === 'today' && app.querySelector('.hgrid')) || !!document.querySelector('.modalbg:not(.out):not(.hdrawer)') || !!document.querySelector('.hdrawer')); }).observe(document.body, { childList: true });
+// the + Log sheet and the tab bar stay as they are; a swipe up on the tab bar opens All
+document.addEventListener('touchstart', e => { const n = e.target.closest && e.target.closest('.nlnav'); if (!n || !document.body.classList.contains('oui')) return; const y = e.touches[0].clientY;
+  const end = ev => { if (y - ev.changedTouches[0].clientY > 40) hDrawer(); }; n.addEventListener('touchend', end, { once: true, passive: true }); }, { passive: true });
+
+/* ---------- numbers that roll (each digit slides like an odometer) and things that drop in below ---------- */
+// a number on a widget remembers what it last showed; when it changes it rolls there, digit by digit (up when it grows,
+// down when it shrinks); the first time this session it counts up from a little below, the way YouTube's stats do
+const HROLL = {};
+function hRollAll(root) {
+  if (!root) return; root.querySelectorAll('[data-roll]').forEach(el => {
+    const k = el.dataset.roll, v = el.dataset.v, num = parseFloat(v); if (isNaN(num)) return;
+    let from = HROLL[k]; HROLL[k] = v;
+    if (from == null) { if (HROLL['_seen' + k.split(':')[0]]) return; HROLL['_seen' + k.split(':')[0]] = 1; const dec = (v.split('.')[1] || '').length; from = (num * .9).toFixed(dec); if (num < 10 && !dec) from = '0'; }
+    if (String(from) !== String(v)) hRoll(el, from, v, el.textContent);
+  });
+}
+function hRoll(el, from, to, shown) {
+  if (fsReduce()) return; const fmt = x => { const n = parseFloat(x), dec = (String(to).split('.')[1] || '').length; return dec ? n.toFixed(dec) : fmtN(Math.round(n)); };
+  const a = fmt(from), b = shown || fmt(to), up = parseFloat(to) >= parseFloat(from), L = Math.max(a.length, b.length), A = a.padStart(L, ' '), B = b.padStart(L, ' ');
+  el.classList.add('hrolling'); el.innerHTML = [...B].map((ch, i) => {
+    const o = A[i]; if (!/\d/.test(ch)) return `<span class="rs">${ch === ' ' ? '' : ch}</span>`;
+    const od = /\d/.test(o) ? +o : (up ? 0 : 9), nd = +ch, steps = []; let x = od; steps.push(x);
+    if (od !== nd) { do { x = up ? (x + 1) % 10 : (x + 9) % 10; steps.push(x); } while (x !== nd && steps.length < 12); }
+    const col = up ? steps : steps.slice().reverse(), start = up ? 0 : steps.length - 1, end = up ? steps.length - 1 : 0;
+    return `<span class="rd"><span class="rdc" style="transform:translateY(${-start}em);--e:${-end}em;--dl:${(L - i) * 45}ms">${col.map(d => `<span>${d}</span>`).join('')}</span></span>`; }).join('');
+  requestAnimationFrame(() => requestAnimationFrame(() => el.querySelectorAll('.rdc').forEach(c => c.classList.add('go'))));
+  clearTimeout(el._rt); el._rt = setTimeout(() => { el.classList.remove('hrolling'); el.textContent = b; }, 1100);
+}
+// what was just added shows under the kcal number for a few seconds, then the Eaten/Budget line comes back
+const HADD = {};
+function hAddedHtml(d) { const a = HADD[d]; if (!a || Date.now() - a.at > 4500) return ''; return `<div class="hwadd"><span>${NI.plus}</span><b>${esc(a.n)}</b><em>−${a.k} kcal</em></div>`; }
+const _nlQuickAddH = nlQuickAdd; nlQuickAdd = function (date, q, el) { if (q) { HADD[date] = { n: q.n, k: +q.k || 0, at: Date.now() }; setTimeout(() => { if (R.screen === 'today' && document.querySelector('.hwadd')) nlRefresh(); }, 4700); } return _nlQuickAddH(date, q, el); };
+
+/* ---------- v6.2: from the "2026 UI trends" clips — stats that count up, things that arrive one after another, a lit search ring ---------- */
+// Progress: the big numbers count up into place each time the period changes (the "78,557+ → 102,641+" stat), cards rise in one by one
+const _bindDashH = bindDash;
+bindDash = function () {
+  _bindDashH.apply(this, arguments); if (!document.body.classList.contains('oui') || !app.querySelector('.nlprog')) return;
+  const per = R.nlper || 'month';
+  app.querySelectorAll('.nlprog .nlbig b, .nlprog .nl3 b').forEach((b, i) => { const txt = b.textContent.trim(), m = txt.match(/^[\d,.]+/); if (!m) return; const v = m[0].replace(/,/g, ''), num = parseFloat(v); if (isNaN(num) || num === 0) return;
+    if (m[0] !== txt) return;   // "3/4" and the like stay as they are
+    const key = 'p' + i + ':' + per; if (HROLL[key] === v) return; const from = HROLL[key] != null ? HROLL[key] : (v.includes('.') ? (num * .85).toFixed((v.split('.')[1] || '').length) : String(Math.round(num * .6))); HROLL[key] = v; hRoll(b, from, v, txt); });
+  hStagger(app.querySelectorAll('.nlprog .nlcard'));
+};
+function hStagger(els, step) { if (fsReduce() || !els.length) return; els.forEach((el, i) => { if (!el.animate) return; el.animate([{ opacity: 0, transform: 'translateY(14px) scale(.985)', filter: 'blur(2px)' }, { opacity: 1, transform: 'none', filter: 'none' }], { duration: 420, delay: i * (step || 60), easing: 'cubic-bezier(.2,.9,.25,1)', fill: 'backwards' }); }); }
+// Today: on arriving (not on every tick), the widgets and the list rows come in one after another
+const _nlBindTodayS = nlBindToday;
+nlBindToday = function () { _nlBindTodayS.apply(this, arguments); const g = app.querySelector('.hgrid'); if (!g) return; const k = R.date + '|' + R.screen; if (HW._arr === k) return; HW._arr = k; hStagger([...g.children, ...app.querySelectorAll('.nllist > li')], 45); };
+// All: the search field lights up with a moving colour ring while you type in it
+document.addEventListener('focusin', e => { const l = e.target.closest && e.target.closest('.hds'); if (l) l.classList.add('lit'); });
+document.addEventListener('focusout', e => { const l = e.target.closest && e.target.closest('.hds'); if (l) l.classList.remove('lit'); });
 /* ---------- Boot ---------- */
 (async function boot() {
   i18nStart();   // Croatian: translate everything the app shows from here on
