@@ -1852,6 +1852,18 @@ body.nl{--nl-ok:#3DDC84;--nl-acc:#FE9A3C;--nl-track:rgba(255,255,255,.09);--nl-c
 .nl .navball,.nl .t4strip{display:none}
 body.nl .nlhead .hib.gear{display:none}
 body.nl .nlgear{position:relative}body.nl .nlgear>i{position:absolute;top:4px;right:calc(50% - 16px);width:8px;height:8px;border-radius:50%;background:#FE7F0C}
+
+/* v6.5 touch targets: every control answers to at least 48 × 48 px (Material 48 dp, Apple 44 pt), even when it looks smaller.
+   The visible shape stays; an invisible ring around it takes the tap. */
+.mclose{width:40px!important;height:40px!important;top:12px!important;right:12px!important}
+:where(.scnx,.hdx,.nlwk,.sck,.hmi,.xb,.wbar .back,.topbar .back,.mnav,.nlchk,.sw,.wera button){position:relative}
+:is(.mclose,.scnx,.hdx,.hwfab,.sck,.hmi,.hminus,.nlchk,.wera button)::after{content:"";position:absolute;left:50%;top:50%;width:52px;height:52px;transform:translate(-50%,-50%);border-radius:50%}
+.nlwk::after{content:"";position:absolute;inset:0 -8px}
+.sw::after{content:"";position:absolute;inset:-10px -6px}
+.mnav::after{content:"";position:absolute;inset:-8px}
+.nlfold{padding:12px 18px!important}
+:where(.rtog){position:relative}.rtog::after{content:"";position:absolute;inset:-14px -4px}
+:where(.stp button){position:relative}.stp button::after{content:"";position:absolute;inset:-4px 0}
 </style>
 <style id="oneui-lt">
 :where(body.oui.lt) .title{-webkit-text-stroke:1.5px #1c1a28;text-shadow:3px 3px 0 rgba(60,50,110,0.35)}
@@ -2767,6 +2779,64 @@ body.oui .topbar .t{font-size:26px;font-weight:700}
 body.oui .m10 button{border:0!important;border-radius:999px!important;background:var(--s2)!important;color:var(--ink)!important}
 body.oui .m10 button.on{background:var(--acc)!important;color:var(--acc-ink)!important}
 body.oui .modal .ds4h img,body.oui .modal .bart img{display:none}
+/* v6.4 the persistent Search pill: on every screen with the tab bar, above it, with a slowly turning colour ring */
+.hpill{display:flex!important;bottom:calc(96px + var(--sab));height:46px;padding:0 8px 0 16px;gap:10px;background:var(--sheet)!important;isolation:isolate;transition:opacity .2s,transform .25s cubic-bezier(.22,1,.36,1)}
+.hpill::before{content:"";position:absolute;inset:-2px;border-radius:inherit;padding:2px;background:conic-gradient(from var(--ha),#7B61FF,#2FC5F5,#4CD488,#FFB547,#FF5FA2,#7B61FF);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:hring 6s linear infinite;z-index:-1;pointer-events:none}
+.hpill span{font-size:15px;color:var(--muted);min-width:120px;text-align:left}
+.hpill .hpg{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--acc-soft);color:var(--acc)}.hpill .hpg svg{width:17px;height:17px;color:var(--acc)}
+.hpill:active{transform:translateX(-50%) scale(.97)}
+body.oui.nl .screen{padding-bottom:calc(160px + var(--sab))!important}
+body.oui .toast,body.oui .scnundo{bottom:calc(156px + var(--sab))}
+.hsearch{display:none!important}
+/* workout editor */
+.wename{width:100%;height:50px;font-size:17px;font-weight:600;padding:0 16px!important}
+.weg .wer{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px}.weg .wer+.wer{border-top:1px solid var(--line)}
+.wern{flex:none;width:22px;color:var(--muted);font-weight:700;font-size:14px}
+.werb{flex:1;min-width:0;border:0;background:none;color:var(--ink);text-align:left;padding:4px 0}.werb b{display:block;font-size:15.5px;font-weight:600}.werb span{display:block;font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wera{display:flex;gap:2px}.wera button{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--ink);display:flex;align-items:center;justify-content:center}.wera button:disabled{opacity:.2}.wera svg{width:20px;height:20px}
+.weact{display:flex;flex-direction:column;gap:6px;margin-top:16px}.weact .btn:disabled{opacity:.4}
+.wel{display:block;margin:14px 2px 6px;font-size:13px;font-weight:600;color:var(--muted)}
+.wein{width:100%;height:48px;font-size:16px}
+.wesets{display:flex;gap:6px}.wesets button{flex:1;height:44px;border:0;border-radius:999px;background:var(--s2);color:var(--ink);font-weight:700;font-size:16px}.wesets button.on{background:var(--acc);color:var(--acc-ink)}
+.wetypes{display:flex;flex-direction:column;gap:6px}.wetypes button{display:flex;flex-direction:column;align-items:flex-start;border:0;border-radius:18px;background:var(--s2);color:var(--ink);padding:10px 14px;text-align:left}.wetypes button.on{box-shadow:0 0 0 2px var(--acc);background:var(--acc-soft)}.wetypes small{color:var(--muted);font-size:12.5px}
+/* ===== v6.5 sizes: 4×1 (W) joins 4×2, 2×2, 2×1; a widget shows what fits ===== */
+.hslot.szW{grid-column:span 4;grid-row:span 1}
+.hw.szW,.hw.szP{padding:12px 16px}
+.hw.szW:not(.nP){display:flex;align-items:center;gap:14px}
+.hw:is(.szW,.szP):not(.nP)>:not(.hwl):not(.hwbig):not(.hwfab):not(.nlnext){display:none!important}
+.hw:is(.szW,.szP):not(.nP) .hwbig{margin:0}.hw:is(.szW,.szP):not(.nP) .hwbig b{font-size:30px}.hw.szP:not(.nP) .hwbig b{font-size:24px}
+.hw.szW:not(.nP) .hwl{flex:1}.hw.szP:not(.nP){display:flex;flex-direction:column;justify-content:center}
+.hw:is(.szW,.szP) .hwfab{top:50%;transform:translateY(-50%);width:38px;height:38px}
+.hw.szP .hwfab{display:none}
+.hw:is(.szW,.szP) .nlnext{padding:12px 16px!important}.hw:is(.szW,.szP) .nlnext :is(.nlm,.nlrow,.nlbtn,.nlchg){display:none!important}.hw:is(.szW,.szP) .nlnext .nlt{font-size:18px;margin-top:0}
+.hw.szS:not(.nP) :is(.hwkv,.hwrows>div:nth-child(n+3),.hwqa button:nth-child(n+3),.hwmac:nth-child(n+4)){display:none!important}
+.hw.szS .hwbig b{font-size:34px}.hw.szS .hwmac{grid-template-columns:1fr auto;gap:2px 8px}.hw.szS .hwmac i{grid-column:1/-1;order:3}.hw.szS .hwqa{grid-template-columns:1fr}
+.hw.szS .hwweek .hwd i{width:16px;height:16px}.hw.szS .nlnext :is(.nlrow .nlchg){display:none}.hw.szS .nlnext .nlt{font-size:18px;-webkit-line-clamp:2}
+.hw.nP:is(.szL,.szS){display:flex;flex-direction:column;justify-content:center;align-items:flex-start;gap:10px}
+/* ===== edit mode: jiggle, − and a resize handle ===== */
+.hxrm,.hxrs{display:none}
+body.hedit .hstack{pointer-events:none;animation:hjig .32s ease-in-out infinite alternate;animation-delay:var(--jd,0ms)}
+body.hedit .hslot:nth-child(even) .hstack{animation-direction:alternate-reverse}
+@keyframes hjig{from{transform:rotate(-.7deg)}to{transform:rotate(.7deg)}}
+body.hedit .hstack::after{opacity:1}
+body.hedit .hdots{opacity:1}
+body.hedit .hxrm{display:flex;position:absolute;left:-8px;top:-8px;z-index:5;width:28px;height:28px;border:0;border-radius:50%;background:#fff;color:#111;box-shadow:0 2px 8px rgba(0,0,0,.3);align-items:center;justify-content:center;padding:0}
+body.hedit .hxrm svg{width:16px;height:16px;stroke-width:3}
+body.hedit .hxrm::after{content:"";position:absolute;inset:-12px}
+body.hedit .hxrs{display:block;position:absolute;right:-6px;bottom:-6px;z-index:5;width:26px;height:26px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--paper) 80%,transparent),0 2px 8px rgba(0,0,0,.3);touch-action:none;cursor:nwse-resize}
+body.hedit .hxrs::after{content:"";position:absolute;inset:-14px}
+body.hedit .hxrs::before{content:"";position:absolute;inset:8px;border-right:2px solid #fff;border-bottom:2px solid #fff;border-radius:0 0 3px 0}
+.hslot.hresizing .hstack{animation:none!important;box-shadow:0 0 0 2px var(--acc);border-radius:26px}
+.hslot{transition:none}
+.hebar{position:fixed;left:50%;bottom:calc(96px + var(--sab));transform:translateX(-50%);z-index:30;display:flex;gap:8px;padding:6px;border-radius:999px;background:var(--sheet);box-shadow:var(--flshadow);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);animation:toastfade .2s ease-out}
+.hebar button{display:flex;align-items:center;gap:6px;height:44px;padding:0 18px;border:0;border-radius:999px;background:var(--s2);color:var(--ink);font-weight:600;font-size:15px}.hebar button svg{width:18px;height:18px}
+.hebar button.on{background:var(--acc);color:var(--acc-ink)}
+body.hedit .hpill{opacity:0;pointer-events:none}
+@media (prefers-reduced-motion:reduce){body.hedit .hstack{animation:none}}
+.hebar button{white-space:nowrap}
+.hw.szS .hwfab{position:absolute!important;right:12px;top:12px;bottom:auto;left:auto}
+body.oui .seg4 button.on small{color:var(--muted)!important}
+body.oui .seg4 button small{color:var(--muted)}
 
 </style>
 </head>
@@ -2775,7 +2845,7 @@ body.oui .modal .ds4h img,body.oui .modal .bart img{display:none}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '6.3.0';
+const APP_VERSION = '6.5.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -5170,7 +5240,8 @@ function sheetDrag(bg, m) {
   m.addEventListener('touchmove', e => {
     if (y0 == null) return; const t = e.touches[0], ddy = t.clientY - y0, ddx = t.clientX - x0;
     if (!on) {
-      if (Math.abs(ddy) < 7 && Math.abs(ddx) < 7) return;
+      const btn = e.target.closest && e.target.closest('button,a,[role=switch],label');   // a thumb rolls a little on a tap: a button needs a real drag
+      if (Math.abs(ddy) < (btn ? 18 : 7) && Math.abs(ddx) < (btn ? 18 : 7)) return;
       const fromHead = e.target.closest('.hdl,.dsh') || !body.contains(e.target), atTop = body.scrollTop <= 0, field = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
       if (ddy > 0 && Math.abs(ddy) > Math.abs(ddx) * 1.2 && !field && (fromHead || atTop)) { on = true; y0 = t.clientY; bg.classList.add('drag'); } else { y0 = null; return; }
     }
@@ -5276,7 +5347,7 @@ function render(anim) {
   if (!fsIn && !fsOut) animate(app.querySelector('.screen'), anim);
   app.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { if (b._held) { b._held = false; return; } if (b.dataset.nav === 'today' && restOn()) { go('workout', { date: REST.date, key: REST.key }, true, 'up'); return; } if (R.screen === b.dataset.nav && !R.stack.length && !app.querySelector('.errscr')) { if (R.screen === 'today' && R.date !== today() && dayInfo(today()).items) { const dir = today() > R.date ? 'right' : 'left'; R.date = today(); patchToday(dir); return; } window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; if (b.dataset.nav === 'today') R.date = today(); go(b.dataset.nav, {}, false, 'fade'); });
   app.querySelectorAll('[data-back]').forEach(b => b.onclick = back);
-  const binder = { setupq: bindSq, today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, scd: bindScd, exfile: bindExfile, project: bindProject, myplan: bindMyPlan, me: bindMe, habits: bindHabits, quickfoods: bindQuickFoodsScreen, goal: bindGoal, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
+  const binder = { workouts: bindWoList, woedit: bindWoEdit, setupq: bindSq, today: bindToday, cal: bindJourney, journey: bindJourney, dash: bindDash, scd: bindScd, exfile: bindExfile, project: bindProject, myplan: bindMyPlan, me: bindMe, habits: bindHabits, quickfoods: bindQuickFoodsScreen, goal: bindGoal, past: bindPast, cloud: bindCloud, profile: bindProfile, workout: bindWorkout, stretch: bindStretch, import: bindImport, batch: bindBatch }[R.screen];
   R._prevScreen = R._curScreen; R._curScreen = R.screen;
   // the scouter paints the phone's status bar green
   const tc = document.querySelector('meta[name=theme-color]'); if (tc) tc.content = R.screen === 'dash' || R.screen === 'scd' || R.screen === 'exfile' ? '#0a2e12' : '#0E0F12';
@@ -5285,7 +5356,7 @@ function render(anim) {
   if (FS_SCREENS[R.screen]) fsBindDrag();
   if (fsIn) fsSlideUp(under); else if (fsOut) fsSlideDown(over);
 }
-function screenHtml(name) { return { setupq: sqHtml, today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, scd: scdHtml, exfile: exfileHtml, project: projectHtml, myplan: myPlanHtml, me: meHtml, habits: habitsHtml, quickfoods: quickFoodsScreenHtml, goal: goalHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[name]; }
+function screenHtml(name) { return { workouts: woListHtml, woedit: woEditHtml, setupq: sqHtml, today: todayHtml, cal: journeyHtml, journey: journeyHtml, dash: dashHtml, scd: scdHtml, exfile: exfileHtml, project: projectHtml, myplan: myPlanHtml, me: meHtml, habits: habitsHtml, quickfoods: quickFoodsScreenHtml, goal: goalHtml, past: pastHtml, cloud: cloudHtml, profile: profileHtml, workout: workoutHtml, stretch: stretchHtml, import: importHtml, batch: batchHtml }[name]; }
 // A screen that throws shows this instead of freezing the app (and the tab or view that broke is reset, so the next tap works)
 function logError(e) { try { localStorage.setItem('vikac.lasterr', JSON.stringify({ at: new Date().toISOString(), v: APP_VERSION, screen: R.screen, msg: (e && e.message) || String(e), stack: ((e && e.stack) || '').slice(0, 900) })); } catch (x) {} }
 function errorScreen(e) {
@@ -6334,13 +6405,13 @@ function stepper(set, f, val, ph, step) { return `<div class="stp"><button data-
 function exNewPB(e, type, sid) { const c = entryPB(e, type), o = exPB(e.n, type, sid); return c > 0 && o && c > o.v ? c : 0; }
 // The closed card's second line: what was logged (+ verdict when finished), or the plan and last time
 function exClosedSub(s, i, date) {
-  const e = s.ex[i], def = PROGRAM.workouts[s.key].ex[i], type = def.type, sum = setsSummary(e, type), last = lastFor(e.n, date), v = s.finished ? verdictFor(e.n, e, date, s.id) : null;
+  const e = s.ex[i], def = woAligned(s.key, s).ex[i], type = def.type, sum = setsSummary(e, type), last = lastFor(e.n, date), v = s.finished ? verdictFor(e.n, e, date, s.id) : null;
   return (e.done || sum ? esc(sum || 'Done') : esc(def.s) + (last ? ' · last ' + esc(last.short) : '')) + (v && v.state !== 'none' ? ` · <span class="${v.cls}">${esc(v.text)}</span>` : '');
 }
 function workoutHtml() {
   const date = R.params.date || R.date, key = R.params.key || dayInfo(date).workoutKey;
   if (!key) return `<div class="screen">${topbar('Workout')}<div class="card">No workout today. Rest is part of the plan.</div></div>`;
-  const w = PROGRAM.workouts[key], s = getSession(date, key), doneN = s.ex.filter(e => e.done).length, lb = liftBand(date);
+  const s = getSession(date, key), w = woAligned(key, s), doneN = s.ex.filter(e => e.done).length, lb = liftBand(date);
   if (R._woOpen == null || R._woKey !== s.id) { R._woKey = s.id; R._woOpen = s.finished ? -1 : s.ex.findIndex(e => !e.done); }
   const open = R._woOpen;
   const cards = s.ex.map((e, i) => {
@@ -6366,7 +6437,7 @@ function workoutHtml() {
   <div class="botbar">${s.finished ? `<button class="btn sec" id="reopen">Reopen</button><button class="btn" data-back>Done</button>` : `<button class="btn" id="finish">Finish workout</button>`}</div>`;
 }
 function bindWorkout() {
-  const date = R.params.date || R.date, key = R.params.key || dayInfo(date).workoutKey; if (!key) return; const s = getSession(date, key), w = PROGRAM.workouts[key];
+  const date = R.params.date || R.date, key = R.params.key || dayInfo(date).workoutKey; if (!key) return; const s = getSession(date, key), w = woAligned(key, s);
   const boxes = Array.from(app.querySelectorAll('.ex'));
   const paintProgress = () => { const p = $('#prog'); if (p) p.textContent = s.ex.filter(e => e.done).length + '/' + s.ex.length; const sb = $('#segbar'); if (sb) Array.from(sb.children).forEach((b, i) => b.className = s.ex[i].done ? 'on' : i === R._woOpen ? 'cur' : ''); };
   const paintHead = i => { const box = boxes[i], e = s.ex[i], type = w.ex[i].type, npb = exNewPB(e, type, s.id);
@@ -7741,7 +7812,7 @@ function myPlanHtml() {
     <div class="sgrp pcard">${prow('First day', '', dpick('pstart', p.startDate))}${prow('Cycle length', '', `<b class="pv" data-clen>${n} days</b>`)}
       ${og ? '' : prow('Cycles', '', smallStepper('pcyc', cycles, '', 1))}${prow('Last day', '', og ? '<b class="pv">Ongoing</b>' : dpick('pend', p.endDate), 'pendrow')}</div>
     <div class="sgl">The cycle</div><div class="cyc8" id="cyc8">${cycleTiles(null, true)}</div><div id="cpend">${pendingHtml()}</div>
-    <div class="sgl">Workouts</div><div class="lib">${lib}<button class="add" data-newwo>+ New workout</button></div>
+    <div class="sgl">Workouts</div><div class="lib">${lib}<button class="add" data-newwo>See and edit workouts ›</button></div>
   </div>`;
 }
 function bindMyPlan() {
@@ -7769,7 +7840,7 @@ function bindMyPlan() {
       if (v <= p.startDate) { i.value = p.endDate; return toast('Final weigh-in must come after Day 1'); }
       p.endDate = v; planChanged(); i.previousElementSibling.textContent = dayYear(v); const c = app.querySelector('[name=pcyc]'); if (c) c.value = projCycles(); }); });
   bindCycleGrid($('#cyc8'));
-  const nw = $('[data-newwo]'); if (nw) nw.onclick = () => toast('Workout builder comes later');
+  const nw = $('[data-newwo]'); if (nw) nw.onclick = () => go('workouts', {});
 }
 // The cycle's tiles: tap one for its sheet (pick the day's training, swap it with another day, or remove it); hold one, then
 // drag it onto another to swap the two; + adds a rest day at the end. 2 to 14 days; a new length starts with the next cycle.
@@ -8463,7 +8534,7 @@ const _nav = nav;
 nav = function (on) {
   if (!NL()) return _nav(on);
   const t = (k, lab, ic, act) => `<button data-nav="${k}" class="nltab ${act ? 'on' : ''}">${ic}<span>${lab}</span></button>`;
-  return `<div class="nav nlnav">${t('today', 'Today', NI.today, on === 'today')}${t('journey', 'Plan', NI.plan, on === 'journey' || on === 'cal')}<button class="nlplus" data-nlplus aria-label="Log something">${NI.plus}</button>${t('dash', 'Progress', NI.progress, on === 'dash')}${`<button data-gear class="nltab nlgear">${ICONS.settings}${backupWarn() ? '<i></i>' : ''}<span>Settings</span></button>`}</div>`;
+  return `<div class="nav nlnav">${t('today', 'Today', NI.today, on === 'today')}${t('journey', 'Plan', NI.plan, on === 'journey' || on === 'cal')}<button class="nlplus" data-nlplus aria-label="Log something">${NI.plus}</button>${t('dash', 'Progress', NI.progress, on === 'dash')}${`<button data-gear class="nltab nlgear ${on === 'profile' ? 'on' : ''}">${ICONS.settings}${backupWarn() ? '<i></i>' : ''}<span>Settings</span></button>`}</div>`;
 };
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-nlplus]'); if (b) { e.stopPropagation(); nlLogSheet(); } }, true);
 
@@ -8664,6 +8735,9 @@ profileHtml = function () {
   let out = h.replace(/(<div class="sgl">[^<]*Language[^<]*<\/div><div class="sgrp">)/i, '<div class="sgl">Layout</div><div class="sgrp">' + sw + '</div>$1');
   if (out === h) out = h.replace('</div></div>' + nav('profile'), sw + '</div></div>' + nav('profile'));
   if (!NL()) return out;
+  // Settings is a tab like the others: big title, no back arrow, the tab bar
+  out = out.replace(/<div class="topbar">[\s\S]*?<div class="t">Settings<\/div><\/div><\/div>/, `<div class="nlhead"><div><div class="nlh1">Settings</div><div class="nlsub">${esc(P().name)} · version ${APP_VERSION}</div></div></div>`).replace('class="screen sett"', 'class="screen sett nlscr"');
+  if (!/class="nav nlnav"/.test(out)) out += nav('profile');
   return out.replace(/<div class="sgl">Project<\/div>/, '<div class="sgl">Your plan</div>').replace(/<div class="sgl">Connections<\/div>/, '<div class="sgl">Data</div>').replace(/<\/div>\s*<div class="sgl">Files<\/div><div class="sgrp">/, '');
 };
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-nlsw]'); if (!b) return; e.stopPropagation(); const on = !NL(); b.classList.toggle('on', on); vib(15); setTimeout(() => setNL(on), 200); }, true);
@@ -8686,6 +8760,9 @@ ballSvg = function (o) { return NL() ? nlDot(o) : _ballSvgNL(o); };
 orbSvg = function (o) { return NL() ? nlDot(o) : _orbSvgNL(o); };
 dragonBadgeSvg = function (o) { return NL() ? nlDot(Object.assign({}, o, { state: 'done' })) : _dragonSvgNL(o); };
 ballWords = function (d, m) { if (!NL()) return _ballWordsNL(d, m); return dayCompletion(d) === 'done' ? 'Day complete' : ''; };
+
+// the gear is a tab in the new layout: no history, the same quiet cross-fade as the other tabs
+document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-gear]'); if (!g || !NL()) return; e.stopPropagation(); if (R.screen === 'profile') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; go('profile', {}, false, 'fade'); }, true);
 /* ============ v6 4b: the setup questions, Where you are, and the same again from Settings ============
    First run (no project yet): the intro (name, Day 1), six short questions — You · Fitness level · Motivation · Direction ·
    Time · Kit and sports — then Connect (the band, nutrition from MFP), then Where you are with Start. From Settings → Setup
@@ -9890,7 +9967,8 @@ const HAPPS = {
   plan: { name: 'Plan', col: '#F59E0B', ic: () => SV('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>') },
   mt: { name: 'Muay Thai', col: '#E0567A', ic: () => SV('<path d="M7 14c0-4 2-8 6-8s5 3 5 6-2 6-6 6H9a2 2 0 0 1-2-2z"/><path d="M7 14H5"/>') },
 };
-const H_SZ = { L: '4×2', S: '2×2', P: '2×1' };
+const H_SZ = { L: '4×2', S: '2×2', W: '4×1', P: '2×1' };
+const slotSz = s => s.sz || HW[s.w[0]].size;
 const hFmt = v => v == null ? '—' : (Math.round(v * 10) / 10).toFixed(1);
 const hRel = d => { const td = today(); return d === td ? 'today' : d === addDays(td, -1) ? 'yesterday' : shortD(d); };
 
@@ -9943,7 +10021,7 @@ HW.bodyfat = { app: 'body', name: 'Body fat', size: 'S', sc: d => HW.weight.sc(d
   tap: () => go('scd', { k: 'body' }) };
 HW.days = { app: 'plan', name: 'Days to go', size: 'S', sc: () => [['Plan', HAPPS.plan.ic(), () => go('journey', {})], ['Progress', NI.progress, () => go('dash', {})]],
   html: d => { const i = dayInfo(d); if (!i.items) return ''; const tot = isOngoing() ? null : D(), f = tot ? i.idx / tot : 0, r = 30, c = 2 * Math.PI * r;
-    return `<div class="hwl">${esc(P().name)}</div><div class="hwring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="${r}" class="t"/><circle cx="36" cy="36" r="${r}" class="f" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 36 36)"/></svg><b>${i.idx}</b></div><div class="hwm">${tot ? (tot - i.idx) + ' days to go' : 'day ' + i.idx}</div>`; },
+    return `<div class="hwl">${esc(P().name)}</div><div class="hwring"><svg viewBox="0 0 72 72"><circle cx="36" cy="36" r="${r}" class="t"/><circle cx="36" cy="36" r="${r}" class="f" stroke-dasharray="${(c * f).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 36 36)"/></svg><b>${i.idx}</b></div><div class="hwm">${tot ? (tot - i.idx > 0 ? (tot - i.idx) + ' day' + (tot - i.idx > 1 ? 's' : '') + ' to go' : tot - i.idx === 0 ? 'last day' : 'past the last day') : 'day ' + i.idx}</div>`; },
   tap: () => go('journey', {}) };
 HW.weighpill = { app: 'body', name: 'Weigh-in', size: 'P', sc: d => HW.weight.sc(d),
   html: d => { const r = lastReading('weight', d), dn = isDone(d, 'weigh'); return `<span class="hpi" style="--c:${HAPPS.body.col}">${IC4.scale}</span><div><b>${dn ? 'Weighed ✓' : 'Weigh-in'}</b><small>${r ? hFmt(r.v) + ' kg · ' + hRel(r.date) : 'no weigh-in yet'}</small></div>`; },
@@ -9961,11 +10039,11 @@ const H_DEF = [{ w: ['next', 'lastsess', 'week'] }, { w: ['kcal', 'macros', 'qui
 function hLayout() { if (HW._lay) return HW._lay; let l = null; try { l = JSON.parse(localStorage.getItem('vikac.home') || 'null'); } catch (e) {}
   if (!Array.isArray(l)) l = JSON.parse(JSON.stringify(H_DEF)); l = l.map(s => ({ w: (s.w || []).filter(id => HW[id]), c: s.c || 0 })).filter(s => s.w.length); HW._lay = l; return l; }
 function hSave() { try { localStorage.setItem('vikac.home', JSON.stringify(HW._lay.map(s => ({ w: s.w, c: s.c })))); } catch (e) {} }
-function hWidgetHtml(id, d, i, cur) { const w = HW[id]; let h = ''; try { h = w.html(d) || ''; } catch (e) { h = ''; } if (!h) h = `<div class="hwl">${esc(w.name)}</div><div class="hwe">Nothing for this day</div>`;
-  return `<div class="hw ${w.cls || ''} sz${w.size}" data-hw="${id}" style="transform:translateX(${i === cur ? 0 : 'calc(100% + 16px)'});${i === cur ? '' : 'visibility:hidden'}">${h}</div>`; }
+function hWidgetHtml(id, d, i, cur, sz) { const w = HW[id]; let h = ''; try { h = w.html(d) || ''; } catch (e) { h = ''; } if (!h) h = `<div class="hwl">${esc(w.name)}</div><div class="hwe">Nothing for this day</div>`;
+  return `<div class="hw ${w.cls || ''} sz${sz || w.size} n${w.size}" data-hw="${id}" style="transform:translateX(${i === cur ? 0 : 'calc(100% + 16px)'});${i === cur ? '' : 'visibility:hidden'}">${h}</div>`; }
 function hGridHtml(d) {
-  return `<div class="hgrid">${hLayout().map((s, k) => { const sz = HW[s.w[0]].size, cur = ((s.c || 0) % s.w.length + s.w.length) % s.w.length;
-    return `<div class="hslot sz${sz}" data-slot="${k}"><div class="hstack" data-n="${s.w.length}">${s.w.map((id, i) => hWidgetHtml(id, d, i, cur)).join('')}</div>${s.w.length > 1 ? `<div class="hdots">${s.w.map((_, i) => `<i class="${i === cur ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>`; }).join('')}</div>`;
+  return `<div class="hgrid">${hLayout().map((s, k) => { const sz = slotSz(s), cur = ((s.c || 0) % s.w.length + s.w.length) % s.w.length;
+    return `<div class="hslot sz${sz}" data-slot="${k}"><div class="hstack" data-n="${s.w.length}">${s.w.map((id, i) => hWidgetHtml(id, d, i, cur, sz)).join('')}</div><button class="hxrm" data-hxrm="${k}" aria-label="Remove">${SV('<path d="M6 12h12"/>')}</button><span class="hxrs" data-hxrs="${k}" aria-label="Resize"></span>${s.w.length > 1 ? `<div class="hdots">${s.w.map((_, i) => `<i class="${i === cur ? 'on' : ''}"></i>`).join('')}</div>` : ''}</div>`; }).join('')}</div>`;
 }
 
 /* ---------- Today in the One UI look ---------- */
@@ -9974,7 +10052,7 @@ nlTodayHtml = function () {
   if (!document.body.classList.contains('oui')) return _nlTodayHtmlH();
   const date = R.date, info = dayInfo(date); if (!info.items) return _nlTodayHtmlH();
   const note = (S.days[date] || {}).note;
-  return `<div class="screen nlscr nltoday htoday">${nlHeadHtml(date, info)}${nlWeekHtml(date)}${checkinCardHtml(date)}${hGridHtml(date)}<button class="hsearch" data-hsearch><span>${SV('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>')}</span>Search foods, exercises, settings</button>${nlListHtml(date, info)}
+  return `<div class="screen nlscr nltoday htoday">${nlHeadHtml(date, info)}${nlWeekHtml(date)}${checkinCardHtml(date)}${hGridHtml(date)}${nlListHtml(date, info)}
     <button class="nlnote ${note ? 'has' : ''}" data-note><span class="ic">${IC4.pen}</span><span><b>Note</b>${note ? `<span class="usertext">${esc(note)}</span>` : '<span>How did the day go?</span>'}</span></button>
     ${date !== today() ? `<button class="nlback" data-nlgo="${today()}">Back to today</button>` : ''}</div>${nav('today')}`;
 };
@@ -10050,7 +10128,7 @@ function hWidgetMenu(slot, k, cur) {
   hMenu(slot.querySelector('.hstack'), multi ? w.name : w.name, w.sc ? w.sc(d) : [], [
     [multi ? 'Edit stack' : 'Create stack', multi ? HI.edit : HI.stack, () => hStackEditor(k, !multi)],
     [multi ? 'Remove all' : 'Remove', HI.del, () => hRemoveSlot(k)],
-    ['Widgets', HI.grid, () => hHomeEditor()]], () => toast(`${HAPPS[w.app].name} · ${H_SZ[w.size]}`));
+    ['Edit home', HI.grid, () => hEditMode(true)]], () => toast(`${HAPPS[w.app].name} · ${H_SZ[w.size]}`));
 }
 function hRowMenu(li, date) {
   const id = li.dataset.item, it = dayInfo(date).items.find(x => x.id === id); if (!it) return; const dn = isDone(date, id);
@@ -10091,13 +10169,13 @@ function hStackEditor(k, adding) {
 }
 // the widget picker: apps with a count, each opens into its widgets with Add
 function hPicker(origin, taken, onAdd, size) {
-  const sz = size || (taken.length ? HW[taken[0]].size : null), d = R.date;
+  const sz = size || null, d = R.date;
   const avail = Object.keys(HW).filter(id => !taken.includes(id) && (!sz || HW[id].size === sz));
   const apps = Object.keys(HAPPS).map(a => ({ a, ids: avail.filter(id => HW[id].app === a) })).filter(x => x.ids.length);
   const html = `<div class="hpt">Widgets${sz ? ` <small>${H_SZ[sz]}</small>` : ''}</div><div class="hplist">${apps.length ? apps.map(x => `<div class="hpa" data-hpa="${x.a}"><button class="hpar"><span class="hpi" style="--c:${HAPPS[x.a].col}">${HAPPS[x.a].ic()}</span><b>${HAPPS[x.a].name}</b><em>${x.ids.length}</em></button><div class="hpw" hidden>${x.ids.map(id => `<div class="hpwi">${hPreview(id, d)}<div class="hcn">${esc(HW[id].name)} · ${H_SZ[HW[id].size]}</div><button class="hadd" data-hpick="${id}">Add</button></div>`).join('')}</div></div>`).join('') : '<div class="hwe">Every widget of this size is already in the stack</div>'}</div>`;
   hPanel(origin, html, (p, close) => {
     p.querySelectorAll('.hpar').forEach(b => b.onclick = () => { const w = b.nextElementSibling, open = w.hidden; p.querySelectorAll('.hpw').forEach(x => { x.hidden = true; x.parentNode.classList.remove('open'); }); if (open) { w.hidden = false; b.parentNode.classList.add('open'); if (w.animate) w.animate([{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'none' }], { duration: 200, easing: 'ease-out' }); } vib(6); });
-    p.querySelectorAll('[data-hpick]').forEach(b => b.onclick = () => { const id = b.dataset.hpick; history.back(); setTimeout(() => { onAdd(id); if (sz && HW[id].size !== sz) toast('Widget resized to fit in the stack.'); }, 240); });
+    p.querySelectorAll('[data-hpick]').forEach(b => b.onclick = () => { const id = b.dataset.hpick; history.back(); setTimeout(() => { onAdd(id); if (origin && origin.closest && origin.closest('.hstackbg') && taken.length && HW[id].size !== HW[taken[0]].size) toast('Widget resized to fit in the stack.'); }, 240); });
     const first = p.querySelector('.hpar'); if (apps.length === 1 && first) first.click();
   }, 'hpickbg');
 }
@@ -10125,6 +10203,7 @@ function hAllTiles() {
     T('Quick foods', 'food', SV('<path d="M4 7h16M4 12h10M4 17h7"/>'), () => go('quickfoods', {}), 'shake favourite'), T('Screenshot', 'food', NI.shot, () => { const b = document.createElement('button'); b.dataset.shots = ''; b.hidden = true; document.body.appendChild(b); b.click(); b.remove(); }, 'mfp import scale picture'),
     T('Weigh-in', 'body', IC4.scale, () => go('weigh', { date: today() }), 'weight scale'), T('Body', 'body', HAPPS.body.ic(), () => go('scd', { k: 'body' }), 'weight fat muscle chart trend'),
     T(lw ? 'Continue' : 'Workout', 'train', IC4.dumb, () => { const key = (lw && lw.key) || (s && s.key) || i.workoutKey; if (key) go('workout', { date: today(), key }); else toast('No workout today'); }, 'lift session gym'),
+    T('Workouts', 'train', SV('<path d="M4 6h16M4 12h10M4 18h7"/><path d="M17 15l3 3-3 3"/>'), () => go('workouts', {}), 'edit workout exercises sets builder library'),
     T('Lifts', 'train', SV('<path d="M4 18l5-6 4 3 7-9"/>'), () => go('scd', { k: 'lifts' }), 'records pb strength'),
     T('Muay Thai', 'mt', HAPPS.mt.ic(), () => go('mt', { date: today() }), 'boxing session band'), T('Stretch', 'body', IC4.stretch || SV('<circle cx="12" cy="5" r="2"/><path d="M12 7v7l-4 6M12 14l4 6M6 10h12"/>'), () => go('stretch', { date: today() }), 'mobility kicks'),
     T('Plan', 'plan', HAPPS.plan.ic(), () => go('journey', {}), 'cycle calendar month'), T('Progress', 'plan', NI.progress, () => go('dash', {}), 'stats chart'),
@@ -10170,14 +10249,14 @@ function hDrawer() {
 /* ---------- the floating Search pill on Today (hides while the page is flung) ---------- */
 let hPill = null, hPillT = 0;
 function hPillSync() {
-  const want = false;   // v6.3: the search is a row on the page now (it covered the widgets as a floating pill)
+  const want = document.body.classList.contains('oui') && !!app.querySelector('.nlnav');   // v6.4: on every screen with the tab bar, always there (no hiding on scroll)
   if (!want) { if (hPill) hPill.classList.add('gone'); return; }
-  if (!hPill) { hPill = document.createElement('button'); hPill.className = 'hpill gone'; hPill.innerHTML = `${SV('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>')}<span>Search</span>`; hPill.onclick = () => { vib(8); hDrawer(); }; document.body.appendChild(hPill); }
-  hPill.classList.toggle('gone', !!topModal());
+  if (!hPill) { hPill = document.createElement('button'); hPill.className = 'hpill gone'; hPill.innerHTML = `${SV('<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>')}<span>Search</span><i class="hpg">${SV('<rect x="4" y="4" width="7" height="7" rx="2.5"/><rect x="13" y="4" width="7" height="7" rx="2.5"/><rect x="4" y="13" width="7" height="7" rx="2.5"/><rect x="13" y="13" width="7" height="7" rx="2.5"/>')}</i>`; hPill.setAttribute('aria-label', 'Search and all apps'); hPill.onclick = () => { vib(8); hDrawer(); }; document.body.appendChild(hPill); }
+  hPill.classList.toggle('gone', !!topModal() || !!document.querySelector('.hdrawer,.hmenubg,.scn'));
 }
-addEventListener('scroll', () => { if (!hPill || hPill.classList.contains('gone')) return; hPill.classList.add('away'); clearTimeout(hPillT); hPillT = setTimeout(() => hPill && hPill.classList.remove('away'), 260); }, { passive: true });
+addEventListener('scroll', () => { if (true) return; hPill.classList.add('away'); clearTimeout(hPillT); hPillT = setTimeout(() => hPill && hPill.classList.remove('away'), 260); }, { passive: true });
 const _renderH = render; render = function () { _renderH.apply(this, arguments); setTimeout(hPillSync, 0); };
-new MutationObserver(() => { if (hPill && false) hPill.classList.toggle('gone', !(document.body.classList.contains('oui') && R.screen === 'today' && app.querySelector('.hgrid')) || !!document.querySelector('.modalbg:not(.out):not(.hdrawer)') || !!document.querySelector('.hdrawer')); }).observe(document.body, { childList: true });
+new MutationObserver(() => { if (hPill) hPillSync(); if (false) hPill.classList.toggle('gone', !(document.body.classList.contains('oui') && R.screen === 'today' && app.querySelector('.hgrid')) || !!document.querySelector('.modalbg:not(.out):not(.hdrawer)') || !!document.querySelector('.hdrawer')); }).observe(document.body, { childList: true });
 // the + Log sheet and the tab bar stay as they are; a swipe up on the tab bar opens All
 document.addEventListener('touchstart', e => { const n = e.target.closest && e.target.closest('.nlnav'); if (true) return;   // v6.3: off — a tap on the tab bar could open All by accident const y = e.touches[0].clientY;
   const end = ev => { if (y - ev.changedTouches[0].clientY > 70) hDrawer(); }; n.addEventListener('touchend', end, { once: true, passive: true }); }, { passive: true });
@@ -10220,15 +10299,129 @@ bindDash = function () {
   app.querySelectorAll('.nlprog .nlbig b, .nlprog .nl3 b').forEach((b, i) => { const txt = b.textContent.trim(), m = txt.match(/^[\d,.]+/); if (!m) return; const v = m[0].replace(/,/g, ''), num = parseFloat(v); if (isNaN(num) || num === 0) return;
     if (m[0] !== txt) return;   // "3/4" and the like stay as they are
     const key = 'p' + i + ':' + per; if (HROLL[key] === v) return; const from = HROLL[key] != null ? HROLL[key] : (v.includes('.') ? (num * .85).toFixed((v.split('.')[1] || '').length) : String(Math.round(num * .6))); HROLL[key] = v; hRoll(b, from, v, txt); });
-  hStagger(app.querySelectorAll('.nlprog .nlcard'));
+  if (!HW._perSwitch) hStagger(app.querySelectorAll('.nlprog .nlcard')); HW._perSwitch = false;
 };
-function hStagger(els, step) { if (fsReduce() || !els.length) return; els.forEach((el, i) => { if (!el.animate) return; el.animate([{ opacity: 0, transform: 'translateY(8px)' }, { opacity: 1, transform: 'none' }], { duration: 380, delay: i * (step || 60), easing: 'cubic-bezier(.2,.9,.25,1)', fill: 'backwards' }); }); }
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('[data-nlper]')) HW._perSwitch = true; }, true);
+function hStagger(els, step) { if (fsReduce() || !els.length) return; els.forEach((el, i) => { if (!el.animate) return; el.animate([{ opacity: 0, transform: 'translateY(4px)' }, { opacity: 1, transform: 'none' }], { duration: 320, delay: Math.min(i * (step || 30), 180), easing: 'cubic-bezier(.2,.9,.25,1)', fill: 'backwards' }); }); }
 // Today: on arriving (not on every tick), the widgets and the list rows come in one after another
 const _nlBindTodayS = nlBindToday;
-nlBindToday = function () { _nlBindTodayS.apply(this, arguments); const g = app.querySelector('.hgrid'); if (!g) return; const k = R.date + '|' + R.screen; if (HW._arr === k) return; HW._arr = k; hStagger([...g.children, ...app.querySelectorAll('.nllist > li')], 45); };
+nlBindToday = function () { _nlBindTodayS.apply(this, arguments); const g = app.querySelector('.hgrid'); if (!g) return; if (HW._arrIn) return; HW._arrIn = true; hStagger([...g.children, ...app.querySelectorAll('.nllist > li')], 22); };
 // All: the search field lights up with a moving colour ring while you type in it
 document.addEventListener('focusin', e => { const l = e.target.closest && e.target.closest('.hds'); if (l) l.classList.add('lit'); });
 document.addEventListener('focusout', e => { const l = e.target.closest && e.target.closest('.hds'); if (l) l.classList.remove('lit'); });
+
+/* ---------- v6.5 edit mode: long-press empty space (or Edit home): the widgets jiggle; − removes, the corner handle resizes ---------- */
+const H_SIZES = ['L', 'W', 'S', 'P'];
+function hEditMode(on) {
+  const b = document.body; if (on === b.classList.contains('hedit')) return; b.classList.toggle('hedit', on); vib(on ? 18 : 10);
+  let bar = document.querySelector('.hebar'); if (bar) bar.remove();
+  if (on) { bar = document.createElement('div'); bar.className = 'hebar'; bar.innerHTML = `<button data-headd>${NI.plus}Add widget</button><button class="on" data-hedone>Done</button>`; document.body.appendChild(bar);
+    bar.querySelector('[data-hedone]').onclick = () => hEditMode(false);
+    bar.querySelector('[data-headd]').onclick = e => { const L = hLayout(); hPicker(e.currentTarget, L.flatMap(x => x.w), id => { L.push({ w: [id], c: 0 }); hSave(); hRerender(); }); };
+    app.querySelectorAll('.hslot').forEach((sl, i) => sl.style.setProperty('--jd', (-(i * 137) % 280) + 'ms'));
+    armBack(); }
+}
+// leave edit mode on Back, on a tap on empty space, on leaving Today
+addEventListener('popstate', () => { if (document.body.classList.contains('hedit') && !topModal()) hEditMode(false); }, true);
+const _renderE = render; render = function () { if (R.screen !== 'today' && document.body.classList.contains('hedit')) hEditMode(false); _renderE.apply(this, arguments); };
+document.addEventListener('click', e => { if (!document.body.classList.contains('hedit')) return; const t = e.target; if (Date.now() - (HW._lpAt || 0) < 700) { e.stopPropagation(); return; }
+  if (t.closest('.hxrm,.hxrs,.hebar,.modalbg,.hmenubg')) return; if (t.closest('.hslot')) { e.stopPropagation(); e.preventDefault(); return; } if (t.closest('.htoday') && !t.closest('button,li')) hEditMode(false); }, true);
+// long-press on empty space of Today
+(() => { let t = 0, x = 0, y = 0;
+  document.addEventListener('pointerdown', e => { if (!document.body.classList.contains('oui') || R.screen !== 'today' || document.body.classList.contains('hedit')) return; const g = e.target.closest && e.target.closest('.htoday'); if (!g || e.target.closest('.hslot,button,li,input,.nlweek,.nlnote')) return;
+    x = e.clientX; y = e.clientY; clearTimeout(t); t = setTimeout(() => { HW._lpAt = Date.now(); hEditMode(true); }, 520); }, true);
+  document.addEventListener('pointermove', e => { if (Math.abs(e.clientX - x) + Math.abs(e.clientY - y) > 10) clearTimeout(t); }, true);
+  ['pointerup', 'pointercancel'].forEach(k => document.addEventListener(k, () => clearTimeout(t), true)); })();
+// − and the resize handle (drag it: the frame snaps between 4×2, 4×1, 2×2 and 2×1; let go to keep)
+document.addEventListener('click', e => { const r = e.target.closest && e.target.closest('[data-hxrm]'); if (!r) return; e.stopPropagation(); hRemoveSlot(+r.dataset.hxrm); setTimeout(() => { if (!document.body.classList.contains('hedit')) hEditMode(true); }, 30); }, true);
+document.addEventListener('pointerdown', e => { const h = e.target.closest && e.target.closest('[data-hxrs]'); if (!h) return; e.preventDefault(); e.stopPropagation();
+  const k = +h.dataset.hxrs, sl = h.closest('.hslot'), g = sl.parentNode, r0 = sl.getBoundingClientRect(), gw = g.getBoundingClientRect().width, cell = 78 + 14, L = hLayout(), s = L[k];
+  let cur = slotSz(s); try { h.setPointerCapture(e.pointerId); } catch (x) {} sl.classList.add('hresizing');
+  const mv = ev => { const w = r0.width + ev.clientX - e.clientX, hh = r0.height + ev.clientY - e.clientY, wide = w > gw * .62, tall = hh > cell * 1.45;
+    const nz = wide ? (tall ? 'L' : 'W') : (tall ? 'S' : 'P'); if (nz !== cur) { cur = nz; H_SIZES.forEach(z => { sl.classList.toggle('sz' + z, z === nz); sl.querySelectorAll('.hw').forEach(w => w.classList.toggle('sz' + z, z === nz)); }); vib(6); } };
+  const up = () => { h.removeEventListener('pointermove', mv); h.removeEventListener('pointerup', up); h.removeEventListener('pointercancel', up); sl.classList.remove('hresizing'); s.sz = cur; hSave(); hRerender(); };
+  h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up); h.addEventListener('pointercancel', up); }, true);
+const _hRerenderE = hRerender; hRerender = function () { const on = document.body.classList.contains('hedit'); _hRerenderE(); if (on) app.querySelectorAll('.hslot').forEach((sl, i) => sl.style.setProperty('--jd', (-(i * 137) % 280) + 'ms')); };
+
+// the arrival plays when you come to Today from another tab, not when you move between days
+const _renderArr = render; render = function () { if (R.screen !== 'today') HW._arrIn = false; return _renderArr.apply(this, arguments); };
+/* ============ v6.4: the workout editor ============
+   Settings → My plan → Workouts (and All → Workouts): every workout in the plan, tap one to change it — rename, reorder,
+   add / remove exercises, sets, the prescription line, the kind (main lift, accessory with a heavy first set, 5-min max).
+   Edits are kept in S.woEdits and laid over the built-in workouts at start. A session remembers the exercises it was
+   made with (s.defs), so editing a workout never scrambles a session you already started or finished. */
+const WO_BASE = JSON.parse(JSON.stringify(PROGRAM.workouts));
+function woApply() { const e = S.woEdits || {}; for (const k in e) { if (e[k] === null) continue; PROGRAM.workouts[k] = JSON.parse(JSON.stringify(e[k])); } }
+// a session's own exercise list, matched by name (old sessions: by position, as before)
+function woAligned(key, s) {
+  const w = PROGRAM.workouts[key] || WO_BASE[key] || { name: key, ex: [] };
+  if (!s || !s.ex) return w;
+  const same = w.ex.length === s.ex.length && w.ex.every((d, i) => d.n === s.ex[i].n); if (same) return w;
+  const find = n => (s.defs || []).find(d => d.n === n) || w.ex.find(d => d.n === n) || (WO_BASE[key] || { ex: [] }).ex.find(d => d.n === n) || { n, s: '', sets: (s.ex.find(x => x.n === n) || { sets: [] }).sets.length || 3, type: exType(n) };
+  return Object.assign({}, w, { ex: s.ex.map(e => find(e.n)) });
+}
+const _getSessionW = getSession;
+getSession = function (date, key) { const s = _getSessionW(date, key); if (!s.defs) s.defs = JSON.parse(JSON.stringify(s.ex.map(e => (PROGRAM.workouts[key].ex.find(d => d.n === e.n) || { n: e.n, type: exType(e.n) })))); return s; };
+const _loadW = load; load = async function () { await _loadW(); woApply(); };
+
+const WO_TYPES = [['main', 'Main lift', 'heavy sets, PBs by weight'], ['hn', 'Accessory', 'one heavy set, then lighter'], ['max', '5-min max', 'reps in 5 minutes']];
+function woSave(k, w) { if (!S.woEdits) S.woEdits = {}; S.woEdits[k] = JSON.parse(JSON.stringify(w)); PROGRAM.workouts[k] = JSON.parse(JSON.stringify(w)); woResetFresh(k); save(); }
+// sessions not started yet (today or later) are rebuilt from the edited workout
+function woResetFresh(k) { const td = today(); S.sessions = S.sessions.filter(s => !(s.key === k && s.date >= td && !s.finished && !s.startedAt && !s.ex.some(e => e.done || e.sets.some(x => x.kg || x.reps)))); }
+function woUsedOn(k) { return (S.plan && S.plan.cycle || PROGRAM.cycle).filter(c => { const w = c.w || c.k; return w === k || (PROGRAM.workouts[k] && PROGRAM.workouts[k].group === w); }).length; }
+
+/* the list */
+function woListHtml() {
+  const by = {}; Object.keys(PROGRAM.workouts).forEach(k => { const w = PROGRAM.workouts[k], g = w.group || 'other'; (by[g] || (by[g] = [])).push(k); });
+  const NAMES = { push: 'Push', pull: 'Pull', legs: 'Legs', full: 'Full body', upper: 'Upper', lower: 'Lower', other: 'Other' };
+  const rows = Object.keys(by).map(g => `<div class="sgl">${NAMES[g] || g}</div><div class="sgrp">${by[g].map(k => { const w = PROGRAM.workouts[k], ed = S.woEdits && S.woEdits[k];
+    return `<button class="srow" data-wedit="${k}"><span class="si" style="color:${JCOL[g] || 'var(--acc)'}">${IC4.dumb}</span><span class="st"><b>${esc(w.name)}</b><span>${w.ex.length} exercises · ~${workoutMinutes(k)} min${ed ? ' · edited' : ''}</span></span><span class="chev">${IC4.chev}</span></button>`; }).join('')}</div>`).join('');
+  return `<div class="screen">${topbar('Workouts', 'Tap one to change it')}${rows}<div style="height:24px"></div></div>${nav('profile')}`;
+}
+function bindWoList() { app.querySelectorAll('[data-wedit]').forEach(b => b.onclick = () => go('woedit', { k: b.dataset.wedit })); }
+
+/* one workout */
+function woEditHtml() {
+  const k = R.params.k, w0 = PROGRAM.workouts[k]; if (!w0) return `<div class="screen">${topbar('Workout')}<div class="card">Not found</div></div>`;
+  const w = R._wdraft && R._wdraft.k === k ? R._wdraft.w : (R._wdraft = { k, w: JSON.parse(JSON.stringify(w0)) }).w;
+  const ex = w.ex.map((e, i) => `<div class="wer" data-i="${i}"><div class="wern">${i + 1}</div><button class="werb" data-wex="${i}"><b>${esc(e.n)}</b><span>${esc(e.s || '')}${e.s ? ' · ' : ''}${e.sets} set${e.sets === 1 ? '' : 's'} · ${(WO_TYPES.find(t => t[0] === e.type) || WO_TYPES[0])[1]}</span></button><div class="wera"><button data-wup="${i}" ${i ? '' : 'disabled'} aria-label="Move up">${SV('<path d="M6 15l6-6 6 6"/>')}</button><button data-wdn="${i}" ${i < w.ex.length - 1 ? '' : 'disabled'} aria-label="Move down">${SV('<path d="M6 9l6 6 6-6"/>')}</button></div></div>`).join('');
+  const changed = JSON.stringify(w) !== JSON.stringify(w0), edited = S.woEdits && S.woEdits[k];
+  return `<div class="screen woed">${topbar(esc(w.name), `${w.ex.length} exercises · ~${workoutMinutes(k)} min`)}
+    <div class="sgl">Name</div><input class="wename" data-wname value="${esc(w.name)}" maxlength="40">
+    <div class="sgl">Exercises</div><div class="sgrp weg">${ex}<button class="srow addrow" data-wadd><span class="si or">${NI.plus}</span><span class="st"><b>Add an exercise</b></span></button></div>
+    <div class="weact"><button class="btn" data-wsave ${changed ? '' : 'disabled'}>Save</button>${changed ? '<button class="btn ghost" data-wundo>Discard changes</button>' : ''}${edited && !changed ? '<button class="btn ghost" data-wreset>Back to the original</button>' : ''}</div>
+    <div class="muted" style="font-size:13px;margin:10px 4px 30px">Changes apply to sessions you haven't started yet. Started and past sessions keep what they had.</div></div>${nav('profile')}`;
+}
+function bindWoEdit() {
+  const k = R.params.k, d = R._wdraft; if (!d) return; const w = d.w, re = () => { const y = scrollY; render(); scrollTo(0, y); };
+  const nm = app.querySelector('[data-wname]'); if (nm) nm.oninput = () => { w.name = nm.value; const b = app.querySelector('[data-wsave]'); if (b) b.disabled = false; };
+  app.querySelectorAll('[data-wup]').forEach(b => b.onclick = () => { const i = +b.dataset.wup; [w.ex[i - 1], w.ex[i]] = [w.ex[i], w.ex[i - 1]]; vib(6); re(); });
+  app.querySelectorAll('[data-wdn]').forEach(b => b.onclick = () => { const i = +b.dataset.wdn; [w.ex[i + 1], w.ex[i]] = [w.ex[i], w.ex[i + 1]]; vib(6); re(); });
+  app.querySelectorAll('[data-wex]').forEach(b => b.onclick = () => woExSheet(w, +b.dataset.wex, re));
+  const ad = app.querySelector('[data-wadd]'); if (ad) ad.onclick = () => woExSheet(w, -1, re);
+  const sv = app.querySelector('[data-wsave]'); if (sv) sv.onclick = () => { if (!w.name.trim()) return toast('Give it a name'); if (!w.ex.length) return toast('Add at least one exercise'); woSave(k, w); R._wdraft = null; vib(20); toast('Workout saved'); re(); };
+  const un = app.querySelector('[data-wundo]'); if (un) un.onclick = () => { R._wdraft = null; re(); };
+  const rs = app.querySelector('[data-wreset]'); if (rs) rs.onclick = async () => { if (!await ask('Back to the original?', 'Your changes to ' + PROGRAM.workouts[k].name + ' are undone. Past sessions stay as they are.', 'Reset')) return; delete S.woEdits[k]; PROGRAM.workouts[k] = JSON.parse(JSON.stringify(WO_BASE[k])); woResetFresh(k); save(); R._wdraft = null; re(); toast('Original workout back'); };
+}
+// the exercise sheet: name (pick from every exercise in the app, or type a new one), the line, sets, kind; remove
+function woExSheet(w, i, done) {
+  const isNew = i < 0, e = isNew ? { n: '', s: '3 × 6–8 @ 2 RIR', sets: 3, type: 'main' } : Object.assign({}, w.ex[i]);
+  const all = []; Object.values(WO_BASE).concat(Object.values(PROGRAM.workouts)).forEach(x => x.ex.forEach(z => { if (!all.includes(z.n)) all.push(z.n); })); all.sort();
+  modal(`<div class="hdl"></div><div class="shd"><span class="h1">${isNew ? 'Add an exercise' : 'Exercise'}</span></div>
+    <label class="wel">Name</label><input class="wein" data-en list="wexl" value="${esc(e.n)}" placeholder="Search or type a new one" autocomplete="off"><datalist id="wexl">${all.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+    <label class="wel">How</label><input class="wein" data-es value="${esc(e.s || '')}" placeholder="3 × 5 @ 85% 1RM">
+    <label class="wel">Sets</label><div class="wesets">${[1, 2, 3, 4, 5, 6].map(n => `<button data-esn="${n}" class="${+e.sets === n ? 'on' : ''}">${n}</button>`).join('')}</div>
+    <label class="wel">Kind</label><div class="wetypes">${WO_TYPES.map(t => `<button data-et="${t[0]}" class="${e.type === t[0] ? 'on' : ''}"><b>${t[1]}</b><small>${t[2]}</small></button>`).join('')}</div>
+    <button class="btn" data-foot data-eok>${isNew ? 'Add' : 'Done'}</button>${isNew ? '' : '<button class="btn dline" data-erm>Remove from this workout</button>'}`, b => {
+    b.classList.add('sheetbg');
+    b.querySelectorAll('[data-esn]').forEach(x => x.onclick = () => { e.sets = +x.dataset.esn; b.querySelectorAll('[data-esn]').forEach(y => y.classList.toggle('on', y === x)); vib(6); });
+    b.querySelectorAll('[data-et]').forEach(x => x.onclick = () => { e.type = x.dataset.et; if (e.type === 'max') e.sets = 1; b.querySelectorAll('[data-et]').forEach(y => y.classList.toggle('on', y === x)); vib(6); });
+    b.querySelector('[data-eok]').onclick = () => { e.n = b.querySelector('[data-en]').value.trim(); e.s = b.querySelector('[data-es]').value.trim(); if (!e.n) return toast('Name the exercise');
+      if (w.ex.some((x, j) => j !== i && x.n.toLowerCase() === e.n.toLowerCase())) return toast('Already in this workout');
+      if (isNew) w.ex.push(e); else w.ex[i] = e; b.close(); setTimeout(done, 200); };
+    const rm = b.querySelector('[data-erm]'); if (rm) rm.onclick = () => { w.ex.splice(i, 1); b.close(); setTimeout(done, 200); };
+  });
+}
 /* ============ Demo build only (demo.html): 3 weeks of believable sample data ============
    Runs only in demo.html, which keeps everything under its own storage names (see the prelude in build.sh), so the real
    app's data on the same phone is never read or touched. First open (or Settings → Reset demo): a project that started 20 days
