@@ -2830,6 +2830,30 @@ body.hedit .hpill{opacity:0;pointer-events:none}
 .hw.szS .hwfab{position:absolute!important;right:12px;top:12px;bottom:auto;left:auto}
 body.oui .seg4 button.on small{color:var(--muted)!important}
 body.oui .seg4 button small{color:var(--muted)}
+/* ===== v6.6 PB labels and "new" tags in the One UI look: soft pills, no borders, no bounce ===== */
+body.oui{--pb:#B7791F;--pbbg:rgba(245,185,15,.16)}
+body.oui:not(.lt){--pb:#F5C451;--pbbg:rgba(245,196,81,.14)}
+body.oui .pbtag{border:0!important;border-radius:999px!important;background:var(--pbbg)!important;color:var(--pb)!important;font-weight:600!important;font-size:12px!important;letter-spacing:0!important;padding:3px 9px!important;text-transform:none!important}
+body.oui .pbtag svg,body.oui .pbpop svg{width:13px;height:13px}
+body.oui .pbtag svg path,body.oui .pbpop .tro path{fill:currentColor!important;stroke:none!important}
+body.oui .pbv{color:var(--pb)!important;font-weight:700}
+body.oui .pbv.bump{animation:hpbSoft .6s ease-out!important}
+@keyframes hpbSoft{0%{opacity:.4}100%{opacity:1}}
+body.oui .pbpop{border:0!important;border-radius:999px!important;background:var(--sheet)!important;color:var(--pb)!important;box-shadow:var(--flshadow)!important;font-size:13.5px!important;font-weight:700!important;letter-spacing:0!important;padding:5px 12px!important;animation:hpbFloat 1.7s cubic-bezier(.22,1,.36,1) forwards!important}
+@keyframes hpbFloat{0%{opacity:0;transform:translateY(6px)}15%{opacity:1;transform:none}80%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-4px)}}
+body.oui :is(.new4,.tnew){display:inline-block;border-radius:999px!important;background:var(--acc-soft)!important;color:var(--acc)!important;font-size:11px!important;font-weight:600!important;letter-spacing:0!important;padding:1px 7px!important;text-transform:none!important}
+/* the stats screens' rows and numbers in the One UI look */
+body.oui .hudscr .rr{border-top:1px solid var(--line)!important}
+body.oui .hudscr .rr .n{font-family:inherit!important;text-transform:none!important;letter-spacing:0!important;font-weight:600!important;font-size:15px!important;color:var(--ink)!important}
+body.oui .hudscr .rr .n small{color:var(--muted)!important}
+body.oui .hudscr .rr .v{color:var(--ink)!important;text-shadow:none!important;font-weight:700!important}
+body.oui .hudscr .rr .ch{color:var(--dim)!important}
+body.oui .hudscr .pbring{animation:none!important}
+body.oui .rtabs4{background:var(--s2)!important;border-radius:999px!important;border:0!important}
+body.oui .rtabs4 button{color:var(--muted)!important;font-weight:600!important;text-transform:none!important;letter-spacing:0!important;border-radius:999px!important}
+body.oui .rtabs4 button.on{color:var(--ink)!important}
+body.oui .rtabs4 .rind{background:var(--float)!important;box-shadow:0 2px 8px rgba(40,30,90,.12)!important;border-radius:999px!important}
+body.oui:not(.lt) .rtabs4 .rind{background:rgba(255,255,255,.16)!important}
 
 </style>
 </head>
@@ -2838,7 +2862,7 @@ body.oui .seg4 button small{color:var(--muted)}
 <script>
 /* ============ Vikač High Kikač — core (data + math) ============ */
 'use strict';
-const APP_VERSION = '6.5.0';
+const APP_VERSION = '6.8.0';
 
 /* ---------- Program ---------- */
 // type: main (kg×reps sets), hn (heavy + normal sets), max (5-min MAX: reps + load), ctrl (heavy/controlled)
@@ -8756,6 +8780,13 @@ ballWords = function (d, m) { if (!NL()) return _ballWordsNL(d, m); return dayCo
 
 // the gear is a tab in the new layout: no history, the same quiet cross-fade as the other tabs
 document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-gear]'); if (!g || !NL()) return; e.stopPropagation(); if (R.screen === 'profile') { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } R.stack = []; go('profile', {}, false, 'fade'); }, true);
+
+// v6.6: in the One UI look the "new" tags and record rows fade in quietly instead of popping
+const _scRecordsNL = scRecords;
+scRecords = function () { if (!document.body.classList.contains('oui')) return _scRecordsNL(); const p = $('#rrows'); if (!p || fsReduce()) return;
+  p.querySelectorAll('.new4').forEach((n, i) => n.animate && n.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 120 + Math.min(i, 6) * 30, easing: 'ease-out', fill: 'backwards' })); };
+
+const _recordRowsNL = recordRows; recordRows = function () { const h = _recordRowsNL.apply(this, arguments); return document.body.classList.contains('oui') ? h.replace(/<span class="new4">NEW<\/span>/g, '<span class="new4">New</span>') : h; };
 /* ============ v6 4b: the setup questions, Where you are, and the same again from Settings ============
    First run (no project yet): the intro (name, Day 1), six short questions — You · Fitness level · Motivation · Direction ·
    Time · Kit and sports — then Connect (the band, nutrition from MFP), then Where you are with Start. From Settings → Setup
@@ -10415,6 +10446,27 @@ function woExSheet(w, i, done) {
     const rm = b.querySelector('[data-erm]'); if (rm) rm.onclick = () => { w.ex.splice(i, 1); b.close(); setTimeout(done, 200); };
   });
 }
+/* ============ v6.7: hand the data to the Android (Flutter) app ============
+   flutterExport(): the whole state plus what the plan says for every day of the project (the workout, Muay Thai, the
+   list, kcal and macro targets), so the Android app can show it without re-implementing the plan rules yet.
+   Settings → Data → "Copy for the Android app" puts it on the clipboard; the Android app pastes it. */
+function flutterExport() {
+  const p = P(), out = { v: 1, at: new Date().toISOString(), S: JSON.parse(JSON.stringify(S)), workouts: PROGRAM.workouts, quick: quickFoods(), sched: {} };
+  if (p) for (let d = addDays(p.startDate, -1); d <= addDays(p.endDate, 1); d = addDays(d, 1)) {
+    const i = dayInfo(d); if (!i.items) continue; let mt = null, tg = null;
+    try { mt = macroTargets(d); } catch (e) {} try { tg = nutritionTarget(d); } catch (e) {}
+    out.sched[d] = { idx: i.idx, wk: i.workoutKey || null, mt: !!i.isMT, rest: !!i.isRest, key: i.dayKey || null,
+      items: i.items.map(it => ({ id: it.id, label: it.id === 'workout' ? (PROGRAM.workouts[it.key] || {}).name || 'Workout' : it.label, sub: (() => { try { return itemSub(d, it); } catch (e) { return ''; } })(), req: !!it.req, block: it.block || '', key: it.key || '' })),
+      kcal: tg ? Math.round(tg.kcal) : null, protein: mt ? mt.protein : null, carbs: mt ? mt.carbs : null, fat: mt ? mt.fat : null };
+  }
+  const bc = bandCfg(); if (bc && bc.url) out.band = { url: bc.url, key: bc.key };   // only to this phone's clipboard, for the Android app
+  out.project = p ? { name: p.name, start: p.startDate, end: p.endDate, days: D(), ongoing: isOngoing() } : null;
+  return out;
+}
+const _profileHtmlFx = profileHtml;
+profileHtml = function () { return _profileHtmlFx().replace(/(<div class="sgl">Data<\/div><div class="sgrp">|<div class="sgl">Connections<\/div><div class="sgrp">)/, `$1<button class="srow" data-fxcopy><span class="si">${SV('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>')}</span><span class="st"><b>Copy for the Android app</b><span>Then paste it in the app's Settings</span></span></button>`); };
+document.addEventListener('click', async e => { if (!(e.target.closest && e.target.closest('[data-fxcopy]'))) return;
+  try { await navigator.clipboard.writeText(JSON.stringify(flutterExport())); toast('Copied — open the Android app → Settings → Paste'); vib(20); } catch (x) { toast('Couldn\'t copy: ' + (x.message || x)); } });
 /* ---------- Boot ---------- */
 (async function boot() {
   i18nStart();   // Croatian: translate everything the app shows from here on
