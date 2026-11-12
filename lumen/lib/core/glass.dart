@@ -42,6 +42,7 @@ abstract final class GlassShaders {
   static ui.FragmentProgram? aurora;
   static ui.FragmentProgram? ripple;
   static ui.FragmentProgram? pblur;
+  static ui.FragmentProgram? disco;
 
   static Future<ui.FragmentProgram?> _try(String asset) async {
     try {
@@ -58,12 +59,14 @@ abstract final class GlassShaders {
         _try('shaders/aurora.frag'),
         _try('shaders/ripple.frag'),
         _try('shaders/pblur.frag'),
+        _try('shaders/disco.frag'),
       ],
     );
     _program = p[0];
     aurora = p[1];
     ripple = p[2];
     pblur = p[3];
+    disco = p[4];
   }
 
   static bool get available =>

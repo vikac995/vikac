@@ -28,6 +28,8 @@ class RoomArt extends CustomPainter {
         _shader(canvas, size, a);
       case 5:
         _details(canvas, size, a);
+      case 6:
+        _disco(canvas, size);
     }
   }
 
@@ -239,6 +241,61 @@ class RoomArt extends CustomPainter {
       x -= 2;
       tp.dispose();
     }
+  }
+
+  void _disco(Canvas canvas, Size s) {
+    final Offset c = Offset(s.width * 0.80, s.height * 0.46);
+    final double r = s.height * 0.34;
+    final math.Random rnd = math.Random(7);
+    // Light spots thrown on the wall.
+    for (int i = 0; i < 46; i++) {
+      final double a = rnd.nextDouble() * math.pi * 2;
+      final double d = r * (1.3 + rnd.nextDouble() * 2.4);
+      final Offset p = c + Offset(math.cos(a), math.sin(a)) * d;
+      final Color col = HSVColor.fromAHSV(
+        1,
+        rnd.nextDouble() * 360,
+        0.45,
+        1,
+      ).toColor();
+      canvas.drawCircle(
+        p,
+        1.2 + rnd.nextDouble() * 2.2,
+        Paint()..color = col.withValues(alpha: colors.dark ? 0.7 : 0.55),
+      );
+    }
+    canvas.drawLine(
+      Offset(c.dx, 0),
+      Offset(c.dx, c.dy - r),
+      Paint()
+        ..color = colors.inkFaint
+        ..strokeWidth = 1,
+    );
+    canvas.save();
+    canvas.clipPath(Path()..addOval(Rect.fromCircle(center: c, radius: r)));
+    canvas.drawCircle(c, r, Paint()..color = const Color(0xFF3A3648));
+    const double tile = 7;
+    for (double y = c.dy - r; y < c.dy + r; y += tile) {
+      for (double x = c.dx - r; x < c.dx + r; x += tile) {
+        final double b = rnd.nextDouble();
+        final double shade =
+            1 -
+            ((Offset(x, y) - c.translate(-r * 0.35, -r * 0.4)).distance /
+                (r * 2.2));
+        final Color col = b > 0.93
+            ? Colors.white
+            : Color.lerp(
+                const Color(0xFF4A4658),
+                const Color(0xFFE8E4F4),
+                (shade * (0.6 + 0.4 * b)).clamp(0.0, 1.0),
+              )!;
+        canvas.drawRect(
+          Rect.fromLTWH(x + 0.5, y + 0.5, tile - 1, tile - 1),
+          Paint()..color = col,
+        );
+      }
+    }
+    canvas.restore();
   }
 
   @override

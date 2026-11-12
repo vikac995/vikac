@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Build 5 (12 November 2026)
+
+Adds a bonus room: Discomorphism.
+
+**File:** `releases/lumen-build-5.apk`
+
+- **Discomorphism** (bonus card at the bottom of home). A mirror ball drawn live by a
+  shader: about 900 flat tiles, each reflecting three circling coloured spotlights and a
+  white key light, with random glints. Its light spots sweep across the walls as it
+  turns. Chrome headline with a sweeping highlight, a Party mode button tiled with tiny
+  mirrors, and a dance floor in perspective that lights up under your finger.
+- **Party mode:** the ball spins faster, colours come up, the floor lights to a 120 BPM
+  beat, and with "Feel the beat" on the phone pulses a light haptic on every beat.
+
+### What to test
+
+1. Swipe across the dance floor: tiles should light where your finger is, with a tick per
+   new tile.
+2. Party mode on, phone in your hand: does the haptic beat feel like a beat or like noise?
+3. Watch the readout with Party mode on.
+
 ## Build 4.1 (12 November 2026)
 
 **File:** `releases/lumen-build-4.1.apk`

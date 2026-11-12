@@ -10,6 +10,7 @@ import 'core/settings.dart';
 import 'core/theme.dart';
 import 'home/home_screen.dart';
 import 'rooms/details/details_room.dart';
+import 'rooms/disco/disco_room.dart';
 import 'rooms/flow/flow_room.dart';
 import 'rooms/flow/stories.dart';
 import 'rooms/glass/glass_room.dart';
@@ -70,13 +71,18 @@ class LumenApp extends StatelessWidget {
             'story' => StoryPage(story: stories[0]),
             'shaders' => const ShadersRoom(),
             'details' => const DetailsRoom(),
+            'disco' => const DiscoRoom(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {
             final LumenColors c = LumenColors.of(context);
             if (const String.fromEnvironment('TEXTSCALE').isNotEmpty) {
               child = MediaQuery(
-                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(double.parse(const String.fromEnvironment('TEXTSCALE')))),
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: TextScaler.linear(
+                    double.parse(const String.fromEnvironment('TEXTSCALE')),
+                  ),
+                ),
                 child: child!,
               );
             }

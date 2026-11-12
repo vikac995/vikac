@@ -6,6 +6,7 @@ import '../core/expand_route.dart';
 import '../core/springs.dart';
 import '../core/theme.dart';
 import '../rooms/details/details_room.dart';
+import '../rooms/disco/disco_room.dart';
 import '../rooms/flow/flow_room.dart';
 import '../rooms/glass/glass_room.dart';
 import '../rooms/shaders/shaders_room.dart';
@@ -60,6 +61,12 @@ final List<_Room> _rooms = <_Room>[
     'The small things.',
     const Color(0xFFFF7AB6),
     (_) => const DetailsRoom(),
+  ),
+  _Room(
+    'Discomorphism',
+    'The trend nobody asked for.',
+    const Color(0xFFE6E1FF),
+    (_) => const DiscoRoom(),
   ),
 ];
 
@@ -234,10 +241,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ],
             ),
+            const SizedBox(height: gap),
+            _card(6, height: 150),
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 4.1  ·  Flutter 3.50  ·  Impeller',
+                'Build 5  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),
@@ -317,7 +326,7 @@ class _RoomCardState extends State<_RoomCard>
                 Row(
                   children: <Widget>[
                     Text(
-                      '0${widget.index + 1}',
+                      widget.index == 6 ? 'BONUS' : '0${widget.index + 1}',
                       style: LumenType.label(
                         color: open ? c.accent : c.inkFaint,
                       ),
