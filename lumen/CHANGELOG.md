@@ -1,5 +1,37 @@
 # Lumen changelog
 
+## Build 7 (12 November 2026)
+
+The last three trend rooms. All twelve rooms and the bonus are now in.
+
+**File:** `releases/lumen-build-7.apk`
+
+### What is new
+
+- **Room 09, Colour.** Pick one of six pictures. The phone renders it small, groups its
+  pixels into five colour clusters (k-means, written for this app) and picks a seed: the
+  largest cluster that is also colourful. Material's colour engine then grows the seed
+  into a full scheme, and a sample screen plus every colour role glide to the new
+  colours. Four scheme styles: Calm, Vibrant, Playful, Faithful.
+- **Room 11, Data.** A line chart that morphs between Week, Month and Year (the line
+  reshapes and the scale slides rather than redrawing). Drag across it: a magnetic
+  cursor snaps to each day with a tick, and the headline number rolls to that day's
+  value. Below, bars grow in a wave; tap one to focus it.
+- **Room 12, Access.** The same small screen four times: standard, 170% text, high
+  contrast and reduced motion. "Play" triggers the same action on all four: the
+  reduced-motion one changes in place with a fade instead of bouncing. Switches show
+  what a screen reader announces (numbered, in order) and outline every touch area.
+- Fixed: progress fills were invisible on the Foil card stats and the Live pill music bar.
+
+### What to test
+
+1. **Colour:** switch pictures and styles quickly, mid-animation. Colours should glide,
+   never flash.
+2. **Data:** scrub slowly over Month: about 30 ticks across the chart. Too many?
+3. **Access:** turn on "Show what a screen reader says". If you have time, turn on
+   TalkBack in phone settings and swipe through the standard panel: it should read the
+   same list.
+
 ## Build 6 (12 November 2026)
 
 Home gets a second section, "Trends, part two", with six new rooms. Three of them are in

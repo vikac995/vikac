@@ -9,6 +9,9 @@ import 'core/glass.dart';
 import 'core/settings.dart';
 import 'core/theme.dart';
 import 'home/home_screen.dart';
+import 'rooms/access/access_room.dart';
+import 'rooms/colour/colour_room.dart';
+import 'rooms/data/data_room.dart';
 import 'rooms/details/details_room.dart';
 import 'rooms/dials/dials_room.dart';
 import 'rooms/disco/disco_room.dart';
@@ -78,6 +81,9 @@ class LumenApp extends StatelessWidget {
             'foil' => const FoilRoom(),
             'dials' => const DialsRoom(),
             'pill' => const PillRoom(),
+            'colour' => const ColourRoom(),
+            'data' => const DataRoom(),
+            'access' => const AccessRoom(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

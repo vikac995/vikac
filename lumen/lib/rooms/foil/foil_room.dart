@@ -462,6 +462,7 @@ class _CardFace extends StatelessWidget {
                         shape: const StadiumBorder(),
                       ),
                       child: FractionallySizedBox(
+                        heightFactor: 1,
                         widthFactor: v / 100,
                         child: const DecoratedBox(
                           decoration: ShapeDecoration(

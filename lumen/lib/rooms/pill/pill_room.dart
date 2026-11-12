@@ -605,6 +605,7 @@ class _PillRoomState extends State<PillRoom> with TickerProviderStateMixin {
                         shape: StadiumBorder(),
                       ),
                       child: FractionallySizedBox(
+                        heightFactor: 1,
                         widthFactor: 0.38 + (_time.value % 60) / 60 * 0.2,
                         child: const DecoratedBox(
                           decoration: ShapeDecoration(

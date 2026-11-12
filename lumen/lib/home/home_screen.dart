@@ -5,6 +5,9 @@ import 'package:material_ui/material_ui.dart';
 import '../core/expand_route.dart';
 import '../core/springs.dart';
 import '../core/theme.dart';
+import '../rooms/access/access_room.dart';
+import '../rooms/colour/colour_room.dart';
+import '../rooms/data/data_room.dart';
 import '../rooms/details/details_room.dart';
 import '../rooms/dials/dials_room.dart';
 import '../rooms/disco/disco_room.dart';
@@ -77,15 +80,30 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFFD9C3A0),
     (_) => const DialsRoom(),
   ),
-  const _Room('Colour', 'A palette from a picture.', Color(0xFF7BD389), null),
+  _Room(
+    'Colour',
+    'A palette from a picture.',
+    const Color(0xFF7BD389),
+    (_) => const ColourRoom(),
+  ),
   _Room(
     'Live pill',
     'Glanceable activities.',
     const Color(0xFF9AA4B8),
     (_) => const PillRoom(),
   ),
-  const _Room('Data', 'Numbers that move.', Color(0xFF5AA9FF), null),
-  const _Room('Access', 'Same screen, four needs.', Color(0xFFFFC857), null),
+  _Room(
+    'Data',
+    'Numbers that move.',
+    const Color(0xFF5AA9FF),
+    (_) => const DataRoom(),
+  ),
+  _Room(
+    'Access',
+    'Same screen, four needs.',
+    const Color(0xFFFFC857),
+    (_) => const AccessRoom(),
+  ),
   _Room(
     'Discomorphism',
     'The trend nobody asked for.',
@@ -318,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 6  ·  Flutter 3.50  ·  Impeller',
+                'Build 7  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),
