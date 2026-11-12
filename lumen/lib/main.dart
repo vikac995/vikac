@@ -1,0 +1,88 @@
+import 'dart:ui';
+
+import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
+
+import 'core/expand_route.dart';
+import 'core/frame_stats.dart';
+import 'core/glass.dart';
+import 'core/settings.dart';
+import 'core/theme.dart';
+import 'home/home_screen.dart';
+import 'rooms/glass/glass_room.dart';
+import 'widgets/fps_meter.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setPreferredOrientations(<DeviceOrientation>[
+    DeviceOrientation.portraitUp,
+  ]);
+
+  // Follow the system accessibility settings on first launch.
+  final AccessibilityFeatures a11y =
+      PlatformDispatcher.instance.accessibilityFeatures;
+  if (a11y.disableAnimations) {
+    settings.reduceMotion = true;
+  }
+  if (a11y.highContrast) {
+    settings.reduceTransparency = true;
+  }
+
+  // Compile the glass shader before the first frame so it never pops in.
+  await GlassShaders.load();
+  FrameStats.instance.start();
+  runApp(const LumenApp());
+}
+
+class LumenApp extends StatelessWidget {
+  const LumenApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: settings,
+      builder: (BuildContext context, Widget? _) {
+        return MaterialApp(
+          title: 'Lumen',
+          debugShowCheckedModeBanner: false,
+          theme: lumenTheme(LumenColors.day),
+          darkTheme: lumenTheme(LumenColors.night),
+          themeMode: settings.themeMode,
+          themeAnimationDuration: settings.reduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 420),
+          themeAnimationCurve: const SpringCurve(),
+          home: const String.fromEnvironment('START') == 'glass'
+              ? const GlassRoom()
+              : const HomeScreen(),
+          builder: (BuildContext context, Widget? child) {
+            final LumenColors c = LumenColors.of(context);
+            return AnnotatedRegion<SystemUiOverlayStyle>(
+              value: SystemUiOverlayStyle(
+                statusBarColor: const Color(0x00000000),
+                systemNavigationBarColor: const Color(0x00000000),
+                systemNavigationBarContrastEnforced: false,
+                statusBarIconBrightness: c.dark
+                    ? Brightness.light
+                    : Brightness.dark,
+                systemNavigationBarIconBrightness: c.dark
+                    ? Brightness.light
+                    : Brightness.dark,
+              ),
+              child: Material(
+                type: MaterialType.transparency,
+                child: Stack(
+                  children: <Widget>[
+                    child!,
+                    if (settings.showFps) const FpsMeter(),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
