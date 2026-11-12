@@ -141,7 +141,11 @@ class _DiscoRoomState extends State<DiscoRoom> with TickerProviderStateMixin {
               top: safe.top + 44,
               left: 16,
               right: 16,
-              child: const RoomHeader(number: 7, title: 'Discomorphism'),
+              child: const RoomHeader(
+                number: 13,
+                tag: 'BONUS ROOM',
+                title: 'Discomorphism',
+              ),
             ),
             Positioned(
               top: ball.dy + radius + 26,

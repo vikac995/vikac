@@ -1,7 +1,7 @@
 name: lumen
 description: "Lumen - a showcase of UI craft in Flutter."
 publish_to: 'none'
-version: 0.5.0+7
+version: 0.6.0+8
 
 environment:
   sdk: ^3.14.0
@@ -24,6 +24,7 @@ flutter:
     - shaders/ripple.frag
     - shaders/pblur.frag
     - shaders/disco.frag
+    - shaders/holo.frag
   fonts:
     - family: Bricolage
       fonts:

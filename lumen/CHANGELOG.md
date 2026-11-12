@@ -1,5 +1,41 @@
 # Lumen changelog
 
+## Build 6 (12 November 2026)
+
+Home gets a second section, "Trends, part two", with six new rooms. Three of them are in
+this build; Colour, Data and Access follow in build 7. Discomorphism moves to its own
+Bonus section at the end. Each new room opens with one or two lines on the trend it shows.
+
+**File:** `releases/lumen-build-6.apk`
+
+### What is new
+
+- **Room 07, Foil.** Collectible cards with a holographic foil drawn by a shader:
+  rainbow bands that shift with the angle, a moving glare, and per-card patterns
+  (diffraction lines, flashing stars, a mosaic). Drag on the card to tilt it in 3D. Or
+  switch on "Tilt with the phone": the app reads the gravity sensor directly (no
+  library) and the card follows the phone.
+- **Room 08, Dials.** A volume knob with 40 notches: a tick per notch, a heavier thud at
+  each end, rubber-band resistance past the ends. Flick it and it coasts, then settles
+  into the nearest notch. The shading stays put while the knurled edge turns, like a
+  real knob under a fixed light. Below it, an alarm set with 3D wheels that click.
+- **Room 10, Live pill.** A black status pill on a lock-screen mock. Start a timer,
+  music or a call: the pill grows to show it. With two activities the second one
+  splits off into its own bubble. Tap the pill to open it into controls; tap the
+  background to close. "Notify" shows a short-lived notification. A call opens by
+  itself and takes priority.
+
+### What to test
+
+1. **Foil:** drag slowly across the card. With "Tilt with the phone" on, rock the phone.
+   Is the effect convincing, too strong, or too weak?
+2. **Dials:** turn slowly and count the ticks; then flick hard. Does it feel like a real
+   knob? Is the haptic too busy?
+3. **Live pill:** start Timer and Music, then Call. Watch the bubble split off and the
+   pill reshape. Answer and decline a call.
+4. The lock-screen background in the Live pill room and the Flow pages may show a hard
+   edge in their gradient on my preview. Tell me if you see that on the phone.
+
 ## Build 5 (12 November 2026)
 
 Adds a bonus room: Discomorphism.

@@ -6,9 +6,12 @@ import '../core/expand_route.dart';
 import '../core/springs.dart';
 import '../core/theme.dart';
 import '../rooms/details/details_room.dart';
+import '../rooms/dials/dials_room.dart';
 import '../rooms/disco/disco_room.dart';
 import '../rooms/flow/flow_room.dart';
+import '../rooms/foil/foil_room.dart';
 import '../rooms/glass/glass_room.dart';
+import '../rooms/pill/pill_room.dart';
 import '../rooms/shaders/shaders_room.dart';
 import '../rooms/shapes/shape_room.dart';
 import '../rooms/springs/springs_room.dart';
@@ -62,6 +65,27 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFFFF7AB6),
     (_) => const DetailsRoom(),
   ),
+  _Room(
+    'Foil',
+    'Light that follows the tilt.',
+    const Color(0xFFB39CFF),
+    (_) => const FoilRoom(),
+  ),
+  _Room(
+    'Dials',
+    'Controls you can feel.',
+    const Color(0xFFD9C3A0),
+    (_) => const DialsRoom(),
+  ),
+  const _Room('Colour', 'A palette from a picture.', Color(0xFF7BD389), null),
+  _Room(
+    'Live pill',
+    'Glanceable activities.',
+    const Color(0xFF9AA4B8),
+    (_) => const PillRoom(),
+  ),
+  const _Room('Data', 'Numbers that move.', Color(0xFF5AA9FF), null),
+  const _Room('Access', 'Same screen, four needs.', Color(0xFFFFC857), null),
   _Room(
     'Discomorphism',
     'The trend nobody asked for.',
@@ -160,6 +184,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  Widget _section(LumenColors c, String title, String detail) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(title, style: LumenType.display(26, weight: 700, color: c.ink)),
+          const SizedBox(height: 4),
+          Text(detail, style: LumenType.text(14, color: c.inkMuted)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final LumenColors c = LumenColors.of(context);
@@ -203,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A showcase of interface craft.\nSix rooms, one idea each.',
+                    'A showcase of interface craft.\nTwelve rooms, one idea each.',
                     style: LumenType.text(
                       15.5,
                       color: c.inkMuted,
@@ -241,12 +279,46 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ],
             ),
+            const SizedBox(height: 34),
+            _section(
+              c,
+              'Trends, part two',
+              'What is shaping interfaces right now.',
+            ),
+            _card(6, height: 236),
             const SizedBox(height: gap),
-            _card(6, height: 150),
+            Row(
+              children: <Widget>[
+                Expanded(child: _card(7, height: 176)),
+                const SizedBox(width: gap),
+                Expanded(child: _card(8, height: 176)),
+              ],
+            ),
+            const SizedBox(height: gap),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(flex: 10, child: _card(9, height: 252)),
+                const SizedBox(width: gap),
+                Expanded(
+                  flex: 11,
+                  child: Column(
+                    children: <Widget>[
+                      _card(10, height: 120, showBlurb: false),
+                      const SizedBox(height: gap),
+                      _card(11, height: 120, showBlurb: false),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 34),
+            _section(c, 'Bonus', 'Please do not ship this.'),
+            _card(12, height: 150),
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 5  ·  Flutter 3.50  ·  Impeller',
+                'Build 6  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),
@@ -326,7 +398,9 @@ class _RoomCardState extends State<_RoomCard>
                 Row(
                   children: <Widget>[
                     Text(
-                      widget.index == 6 ? 'BONUS' : '0${widget.index + 1}',
+                      widget.index == 12
+                          ? 'BONUS'
+                          : (widget.index + 1).toString().padLeft(2, '0'),
                       style: LumenType.label(
                         color: open ? c.accent : c.inkFaint,
                       ),

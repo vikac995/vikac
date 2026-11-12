@@ -10,8 +10,12 @@ class RoomHeader extends StatelessWidget {
     required this.number,
     required this.title,
     this.hint,
+    this.tag,
   });
   final int number;
+
+  /// Replaces "ROOM 0n" when set.
+  final String? tag;
   final String title;
   final String? hint;
 
@@ -34,7 +38,7 @@ class RoomHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
                   Text(
-                    'ROOM 0$number',
+                    tag ?? 'ROOM ${number.toString().padLeft(2, '0')}',
                     style: LumenType.label(color: c.accent),
                   ),
                   const SizedBox(height: 2),

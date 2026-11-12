@@ -29,6 +29,18 @@ class RoomArt extends CustomPainter {
       case 5:
         _details(canvas, size, a);
       case 6:
+        _foil(canvas, size);
+      case 7:
+        _dial(canvas, size, a);
+      case 8:
+        _swatches(canvas, size, a);
+      case 9:
+        _pill(canvas, size, a);
+      case 10:
+        _chart(canvas, size, a);
+      case 11:
+        _access(canvas, size, a);
+      case 12:
         _disco(canvas, size);
     }
   }
@@ -239,6 +251,174 @@ class RoomArt extends CustomPainter {
       x -= tp.width;
       tp.paint(canvas, Offset(x, 2));
       x -= 2;
+      tp.dispose();
+    }
+  }
+
+  void _foil(Canvas canvas, Size s) {
+    final Rect card = Rect.fromCenter(
+      center: Offset(s.width * 0.74, s.height * 0.40),
+      width: s.height * 0.46,
+      height: s.height * 0.64,
+    );
+    canvas.save();
+    canvas.translate(card.center.dx, card.center.dy);
+    canvas.rotate(0.16);
+    canvas.translate(-card.center.dx, -card.center.dy);
+    final RRect rr = RRect.fromRectAndRadius(card, const Radius.circular(12));
+    canvas.drawRRect(rr, Paint()..color = const Color(0xFF2A2140));
+    canvas.save();
+    canvas.clipRRect(rr);
+    canvas.drawRect(
+      card,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[
+            const Color(0x00FFFFFF),
+            const Color(0xAAFF7AB6),
+            const Color(0xAAFFE38A),
+            const Color(0xAA7BF1C8),
+            const Color(0xAA7AA8FF),
+            const Color(0x00FFFFFF),
+          ],
+          stops: const <double>[0.15, 0.32, 0.45, 0.58, 0.72, 0.9],
+        ).createShader(card),
+    );
+    canvas.restore();
+    canvas.drawRRect(
+      rr.deflate(0.5),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = Colors.white.withValues(alpha: 0.5),
+    );
+    canvas.restore();
+  }
+
+  void _dial(Canvas canvas, Size s, double a) {
+    final Offset c = Offset(s.width * 0.68, s.height * 0.36);
+    final double r = s.height * 0.22;
+    for (int i = 0; i <= 20; i++) {
+      final double ang = (-150 + i * 15) * math.pi / 180 - math.pi / 2;
+      final Offset d = Offset(math.cos(ang), math.sin(ang));
+      canvas.drawLine(
+        c + d * (r + 6),
+        c + d * (r + (i % 5 == 0 ? 14 : 10)),
+        Paint()
+          ..color = (i <= 13 ? hue : colors.inkFaint).withValues(alpha: a)
+          ..strokeWidth = 2
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+    canvas.drawCircle(c, r, Paint()..color = colors.surfaceHigh);
+    canvas.drawCircle(
+      c,
+      r,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = colors.ink.withValues(alpha: 0.12),
+    );
+    final double pa = (-150 + 13 * 15) * math.pi / 180 - math.pi / 2;
+    canvas.drawCircle(
+      c + Offset(math.cos(pa), math.sin(pa)) * r * 0.7,
+      4,
+      Paint()..color = hue.withValues(alpha: a),
+    );
+  }
+
+  void _swatches(Canvas canvas, Size s, double a) {
+    const List<Color> cols = <Color>[
+      Color(0xFF7BD389),
+      Color(0xFF2E7D5B),
+      Color(0xFFF2E3B3),
+      Color(0xFFE88D67),
+    ];
+    for (int i = 0; i < 4; i++) {
+      canvas.drawCircle(
+        Offset(s.width * 0.42 + i * 22, s.height * 0.32),
+        20,
+        Paint()..color = cols[i].withValues(alpha: a),
+      );
+    }
+  }
+
+  void _pill(Canvas canvas, Size s, double a) {
+    final RRect p = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: Offset(s.width * 0.55, s.height * 0.22),
+        width: s.width * 0.62,
+        height: 30,
+      ),
+      const Radius.circular(15),
+    );
+    canvas.drawRRect(p, Paint()..color = Colors.black);
+    canvas.drawRRect(
+      p,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..color = colors.ink.withValues(alpha: 0.15),
+    );
+    canvas.drawCircle(
+      Offset(p.left + 16, p.center.dy),
+      7,
+      Paint()..color = const Color(0xFFFF9F0A).withValues(alpha: a),
+    );
+    for (int i = 0; i < 5; i++) {
+      final double h = 6 + 8 * (0.5 + 0.5 * math.sin(i * 1.7));
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(p.right - 40 + i * 6, p.center.dy),
+            width: 3,
+            height: h,
+          ),
+          const Radius.circular(2),
+        ),
+        Paint()..color = hue.withValues(alpha: a),
+      );
+    }
+    canvas.drawCircle(
+      Offset(p.right + 22, p.center.dy),
+      15,
+      Paint()..color = Colors.black,
+    );
+  }
+
+  void _chart(Canvas canvas, Size s, double a) {
+    final Path p = Path();
+    for (int i = 0; i <= 10; i++) {
+      final double x = s.width * 0.45 + i * (s.width * 0.5 / 10);
+      final double y = s.height * 0.45 - 26 * math.sin(i * 0.7) - i * 2.5;
+      i == 0 ? p.moveTo(x, y) : p.lineTo(x, y);
+    }
+    canvas.drawPath(
+      p,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..strokeJoin = StrokeJoin.round
+        ..color = hue.withValues(alpha: a),
+    );
+  }
+
+  void _access(Canvas canvas, Size s, double a) {
+    double x = s.width - 16;
+    for (final double size in <double>[54, 34, 20]) {
+      final TextPainter tp = TextPainter(
+        text: TextSpan(
+          text: 'Aa',
+          style: LumenType.display(
+            size,
+            weight: 700,
+            color: hue.withValues(alpha: a * (size / 54)),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      x -= tp.width;
+      tp.paint(canvas, Offset(x, 28 + 54 - size));
+      x -= 4;
       tp.dispose();
     }
   }
