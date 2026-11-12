@@ -436,15 +436,6 @@ class _PanelPainter extends CustomPainter {
     }
 
     Offset px(Offset n) => Offset(n.dx * size.width, n.dy * size.height);
-    final Offset anchor = px(room._trail.anchor);
-    final Paint ring = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5
-      ..color = c.ink.withValues(alpha: 0.22);
-    canvas.drawCircle(anchor, _ballRadius + 6, ring);
-    canvas.drawLine(anchor.translate(-5, 0), anchor.translate(5, 0), ring);
-    canvas.drawLine(anchor.translate(0, -5), anchor.translate(0, 5), ring);
-
     final Color ballColor = spring
         ? c.accent
         : (c.dark ? const Color(0xFFB8BCC8) : const Color(0xFF5B5E68));

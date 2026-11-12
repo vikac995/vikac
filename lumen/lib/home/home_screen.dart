@@ -231,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 3  ·  Flutter 3.50  ·  Impeller',
+                'Build 3.1  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),

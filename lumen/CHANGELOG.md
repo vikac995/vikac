@@ -1,5 +1,11 @@
 # Lumen changelog
 
+## Build 3.1 (12 November 2026)
+
+**File:** `releases/lumen-build-3.1.apk`
+
+- Springs room: removed the target marker (ring and cross) behind the balls. Tapping still sets where both balls go.
+
 ## Build 3 (12 November 2026)
 
 Adds Room 04 (Flow) and Room 05 (Shaders), and predictive back on every screen.
