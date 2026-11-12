@@ -9,7 +9,10 @@ import 'core/glass.dart';
 import 'core/settings.dart';
 import 'core/theme.dart';
 import 'home/home_screen.dart';
+import 'rooms/flow/flow_room.dart';
+import 'rooms/flow/stories.dart';
 import 'rooms/glass/glass_room.dart';
+import 'rooms/shaders/shaders_room.dart';
 import 'rooms/shapes/shape_room.dart';
 import 'rooms/springs/springs_room.dart';
 import 'widgets/fps_meter.dart';
@@ -59,6 +62,9 @@ class LumenApp extends StatelessWidget {
             'glass' => const GlassRoom(),
             'springs' => const SpringsRoom(),
             'shapes' => const ShapeRoom(),
+            'flow' => const FlowRoom(),
+            'story' => StoryPage(story: stories[0]),
+            'shaders' => const ShadersRoom(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

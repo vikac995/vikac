@@ -1,5 +1,51 @@
 # Lumen changelog
 
+## Build 3 (12 November 2026)
+
+Adds Room 04 (Flow) and Room 05 (Shaders), and predictive back on every screen.
+
+**File:** `releases/lumen-build-3.apk`
+
+### What is new
+
+- **Predictive back everywhere.** With gesture navigation, swiping back makes the
+  current screen shrink, round its corners, drift with your finger and reveal the
+  screen underneath. Let go early or drag back and it springs open again; finish the
+  swipe and it flies back into the card it came from. With the back button, the same
+  closing animation plays on a spring.
+- **Room 04, Flow.** Six story cards in a two-column grid. A card grows into a full page
+  (the page itself grows out of the card, not just a window into it). Back puts it
+  back into its slot. The room shows which navigation mode the phone is using.
+- **Room 05, Shaders.** Three full-screen exhibits, switched with a glass bar:
+  - **Aurora:** domain-warped noise at full resolution, six noise layers. Touch swirls
+    and pulls it.
+  - **Ripple:** tap or drag. Real text and shapes are bent and lit by up to six waves.
+  - **Blur:** a progressive blur at the top, sharp at its lower edge and fully blurred at
+    the top, computed in one pass with 56 samples per pixel.
+- Shader exhibits follow the quality setting: Auto starts at Full and steps down if
+  frames are missed.
+
+### What to test
+
+1. **Back with the button**, from every room: it should close into its card on home.
+2. **Back with gestures:** switch the phone to gesture navigation (Settings, Display,
+   Navigation bar, Swipe gestures). In every room, swipe slowly from the left or right
+   edge, hold, move up and down, then let go. Try once releasing early (should spring
+   open again) and once completing (should fly into its card).
+3. **Glass room with the back swipe:** the glass must stay aligned with its outline
+   while the page shrinks.
+4. **Flow:** open each card and go back. The card's slot should stay empty while it is
+   open, and the card should reappear exactly as the page lands.
+5. **Flow page header:** on my preview renderer, tall colour gradients show a hard
+   horizontal edge. If the landscape at the top of a story page is cut off by a straight
+   line on your phone, tell me.
+6. **Shaders:** watch the readout in each exhibit, especially Aurora while touching and
+   Blur while scrolling fast. If a "Glass lowered" notice appears, note which exhibit.
+
+### Known limits
+
+- Settings are still not remembered between launches.
+
 ## Build 2 (12 November 2026)
 
 Adds Room 02 (Springs) and Room 03 (Shape morph). Rooms 04 to 06 are still placeholders.

@@ -5,7 +5,9 @@ import 'package:material_ui/material_ui.dart';
 import '../core/expand_route.dart';
 import '../core/springs.dart';
 import '../core/theme.dart';
+import '../rooms/flow/flow_room.dart';
 import '../rooms/glass/glass_room.dart';
+import '../rooms/shaders/shaders_room.dart';
 import '../rooms/shapes/shape_room.dart';
 import '../rooms/springs/springs_room.dart';
 import '../widgets/controls.dart';
@@ -40,12 +42,17 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFF8E7CFF),
     (_) => const ShapeRoom(),
   ),
-  const _Room('Flow', 'A card becomes a screen.', Color(0xFF4FB8FF), null),
-  const _Room(
+  _Room(
+    'Flow',
+    'A card becomes a screen.',
+    const Color(0xFF4FB8FF),
+    (_) => const FlowRoom(),
+  ),
+  _Room(
     'Shaders',
     'Light that reacts to touch.',
-    Color(0xFF2ED3B7),
-    null,
+    const Color(0xFF2ED3B7),
+    (_) => const ShadersRoom(),
   ),
   const _Room('Details', 'The small things.', Color(0xFFFF7AB6), null),
 ];
@@ -224,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 2  ·  Flutter 3.50  ·  Impeller',
+                'Build 3  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),

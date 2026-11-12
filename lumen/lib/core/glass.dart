@@ -7,19 +7,63 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'expand_route.dart';
 import 'settings.dart';
 import 'theme.dart';
+
+/// The part of [box] that survives every ancestor clip, in logical screen
+/// coordinates. The engine crops a backdrop to this.
+Rect visibleScreenRect(RenderBox box, Matrix4 toScreen) {
+  Rect r = MatrixUtils.transformRect(toScreen, Offset.zero & box.size);
+  RenderObject child = box;
+  RenderObject? p = box.parent;
+  while (p != null) {
+    final Rect? clip = p.describeApproximatePaintClip(child);
+    if (clip != null) {
+      r = r.intersect(MatrixUtils.transformRect(p.getTransformTo(null), clip));
+    }
+    child = p;
+    p = p.parent;
+  }
+  return r;
+}
+
+/// The listenable that moves the screen [context] is on, if any.
+Listenable? routeMotionOf(BuildContext context) =>
+    switch (ModalRoute.of(context)) {
+      final ExpandRoute<dynamic> r => r.motion,
+      final ModalRoute<dynamic> r => r.animation,
+      null => null,
+    };
 
 /// Loads the glass shader once, before the first frame, so there is no pop.
 abstract final class GlassShaders {
   static ui.FragmentProgram? _program;
+  static ui.FragmentProgram? aurora;
+  static ui.FragmentProgram? ripple;
+  static ui.FragmentProgram? pblur;
+
+  static Future<ui.FragmentProgram?> _try(String asset) async {
+    try {
+      return await ui.FragmentProgram.fromAsset(asset);
+    } catch (_) {
+      return null;
+    }
+  }
 
   static Future<void> load() async {
-    try {
-      _program = await ui.FragmentProgram.fromAsset('shaders/glass.frag');
-    } catch (_) {
-      _program = null;
-    }
+    final List<ui.FragmentProgram?> p = await Future.wait(
+      <Future<ui.FragmentProgram?>>[
+        _try('shaders/glass.frag'),
+        _try('shaders/aurora.frag'),
+        _try('shaders/ripple.frag'),
+        _try('shaders/pblur.frag'),
+      ],
+    );
+    _program = p[0];
+    aurora = p[1];
+    ripple = p[2];
+    pblur = p[3];
   }
 
   static bool get available =>
@@ -132,7 +176,7 @@ class Glass extends StatelessWidget {
               : GlassQuality.low,
           solid: settings.reduceTransparency,
           dpr: MediaQuery.devicePixelRatioOf(context),
-          routeAnimation: ModalRoute.of(context)?.animation,
+          routeAnimation: routeMotionOf(context),
           child: child,
         );
       },
@@ -155,7 +199,7 @@ class _GlassRender extends SingleChildRenderObjectWidget {
   });
 
   final double dpr;
-  final Animation<double>? routeAnimation;
+  final Listenable? routeAnimation;
 
   final double radius;
   final GlassStyle style;
@@ -226,8 +270,8 @@ class RenderGlass extends RenderProxyBox {
 
   // While the screen this glass belongs to is still opening or closing, the
   // route's clip moves every frame, so the glass repaints every frame too.
-  Animation<double>? _routeAnimation;
-  set routeAnimation(Animation<double>? v) {
+  Listenable? _routeAnimation;
+  set routeAnimation(Listenable? v) {
     if (identical(v, _routeAnimation)) {
       return;
     }
@@ -305,24 +349,7 @@ class RenderGlass extends RenderProxyBox {
   Matrix4? _paintedTransform;
   Rect? _paintedVisible;
 
-  /// The part of this surface that survives every ancestor clip, in logical
-  /// screen coordinates. The engine crops the backdrop to this.
-  Rect _visibleBounds(Matrix4 toScreen) {
-    Rect r = MatrixUtils.transformRect(toScreen, Offset.zero & size);
-    RenderObject child = this;
-    RenderObject? p = parent;
-    while (p != null) {
-      final Rect? clip = p.describeApproximatePaintClip(child);
-      if (clip != null) {
-        r = r.intersect(
-          MatrixUtils.transformRect(p.getTransformTo(null), clip),
-        );
-      }
-      child = p;
-      p = p.parent;
-    }
-    return r;
-  }
+  Rect _visibleBounds(Matrix4 toScreen) => visibleScreenRect(this, toScreen);
 
   void _checkTransform() {
     final Matrix4? painted = _paintedTransform;
