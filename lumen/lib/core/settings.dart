@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart' show ThemeMode;
 
+import 'haptics.dart';
 import 'springs.dart';
 
 enum GlassQuality { auto, full, medium, low }
@@ -11,6 +12,7 @@ class AppSettings extends ChangeNotifier {
   bool _reduceMotion = false;
   bool _reduceTransparency = false;
   bool _showFps = true;
+  bool _haptics = true;
   GlassQuality _quality = GlassQuality.auto;
   GlassQuality _autoTier = GlassQuality.full;
 
@@ -18,6 +20,7 @@ class AppSettings extends ChangeNotifier {
   bool get reduceMotion => _reduceMotion;
   bool get reduceTransparency => _reduceTransparency;
   bool get showFps => _showFps;
+  bool get haptics => _haptics;
 
   /// What the user picked (may be [GlassQuality.auto]).
   GlassQuality get quality => _quality;
@@ -29,6 +32,10 @@ class AppSettings extends ChangeNotifier {
   set themeMode(ThemeMode v) => _set(() => _themeMode = v);
   set reduceTransparency(bool v) => _set(() => _reduceTransparency = v);
   set showFps(bool v) => _set(() => _showFps = v);
+  set haptics(bool v) => _set(() {
+    _haptics = v;
+    Haptics.enabled = v;
+  });
   set quality(GlassQuality v) => _set(() => _quality = v);
   set reduceMotion(bool v) => _set(() {
     _reduceMotion = v;

@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/physics.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/haptics.dart';
@@ -365,7 +364,7 @@ class _AlarmWheelsState extends State<_AlarmWheels> {
           physics: const FixedExtentScrollPhysics(),
           onSelectedItemChanged: (int i) {
             // One click per number, like a ratchet.
-            HapticFeedback.selectionClick();
+            Haptics.tick();
             onChanged(i % count);
           },
           childDelegate: ListWheelChildLoopingListDelegate(

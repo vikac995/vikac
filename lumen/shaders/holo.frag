@@ -42,11 +42,12 @@ void main() {
     // Starlight: scattered stars that flash at different angles.
     vec2 g = uv * vec2(18.0, 25.0);
     vec2 id = floor(g);
-    vec2 f = fract(g) - 0.5;
     float h = hash(id);
+    // Each star sits at its own spot in its cell, so no grid shows.
+    vec2 f = fract(g) - 0.5 - (vec2(hash(id + 1.3), hash(id + 4.1)) - 0.5) * 0.5;
     float flash = pow(max(0.0, sin(h * 40.0 + t.x * 6.0 + t.y * 5.0)), 10.0);
-    float star = max(0.0, 1.0 - length(f * vec2(1.0, 7.0)) * 2.2) + max(0.0, 1.0 - length(f * vec2(7.0, 1.0)) * 2.2);
-    star += smoothstep(0.18, 0.0, length(f));
+    float star = max(0.0, 1.0 - length(f * vec2(1.0, 7.0)) * 4.2) + max(0.0, 1.0 - length(f * vec2(7.0, 1.0)) * 4.2);
+    star += smoothstep(0.1, 0.0, length(f));
     extra = vec3(1.0) * star * flash * step(0.55, h) * 1.4;
     mask = 0.22;
   } else {
@@ -60,7 +61,7 @@ void main() {
   }
 
   // Glare: a soft highlight that moves against the tilt.
-  vec2 gp = vec2(0.5) - t * 0.55;
+  vec2 gp = vec2(0.5) + t * 0.38;
   float glare = exp(-dot((uv - gp) * vec2(1.0, 1.4), (uv - gp) * vec2(1.0, 1.4)) * 7.0);
 
   // Flat, the foil is a faint sheen; it comes alive as the card tilts.

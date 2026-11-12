@@ -27,8 +27,8 @@ class MainActivity : FlutterActivity() {
         // Direct access to the vibration motor, for haptics that must be felt
         // even without a finger on the screen (the disco beat).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/haptics").setMethodCallHandler { call, result ->
-            if (call.method == "beat") {
-                playBeat()
+            if (call.method == "play") {
+                play(call.arguments as? String ?: "tick")
                 result.success(null)
             } else {
                 result.notImplemented()
@@ -78,25 +78,31 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun playBeat() {
+    // tick: a notch or selection. click: something settled. thud: a beat,
+    // an end stop or a refusal.
+    private fun play(kind: String) {
         if (!vibrator.hasVibrator()) return
+        val (primitive, scale, predefined, fallbackMs) = when (kind) {
+            "thud" -> Quad(VibrationEffect.Composition.PRIMITIVE_THUD, 1.0f, VibrationEffect.EFFECT_HEAVY_CLICK, 28L)
+            "click" -> Quad(VibrationEffect.Composition.PRIMITIVE_CLICK, 0.7f, VibrationEffect.EFFECT_CLICK, 14L)
+            else -> Quad(VibrationEffect.Composition.PRIMITIVE_TICK, 1.0f, VibrationEffect.EFFECT_TICK, 8L)
+        }
         val effect: VibrationEffect = when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                vibrator.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_THUD) ->
-                VibrationEffect.startComposition()
-                    .addPrimitive(VibrationEffect.Composition.PRIMITIVE_THUD, 1.0f)
-                    .compose()
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q ->
-                VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK)
-            else -> VibrationEffect.createOneShot(28, 255)
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && vibrator.areAllPrimitivesSupported(primitive) ->
+                VibrationEffect.startComposition().addPrimitive(primitive, scale).compose()
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> VibrationEffect.createPredefined(predefined)
+            else -> VibrationEffect.createOneShot(fallbackMs, 255)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Media usage: part of the music, so silent mode does not mute it.
+            // Media usage, so the phone's silent mode and touch-feedback
+            // setting do not mute the demo. The app has its own Haptics switch.
             vibrator.vibrate(effect, VibrationAttributes.createForUsage(VibrationAttributes.USAGE_MEDIA))
         } else {
             vibrator.vibrate(effect)
         }
     }
+
+    private data class Quad(val primitive: Int, val scale: Float, val predefined: Int, val ms: Long)
 
     // Ask for the fastest display mode at the current resolution, so the app
     // runs at 120 Hz where the phone would otherwise default it to 60.

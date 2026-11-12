@@ -6,6 +6,12 @@ import '../core/expand_route.dart';
 import '../core/springs.dart';
 import '../core/theme.dart';
 import '../rooms/access/access_room.dart';
+import '../rooms/basics/contrast_room.dart';
+import '../rooms/basics/forms_room.dart';
+import '../rooms/basics/sheets_room.dart';
+import '../rooms/basics/space_room.dart';
+import '../rooms/basics/states_room.dart';
+import '../rooms/basics/type_room.dart';
 import '../rooms/colour/colour_room.dart';
 import '../rooms/data/data_room.dart';
 import '../rooms/details/details_room.dart';
@@ -109,6 +115,42 @@ final List<_Room> _rooms = <_Room>[
     'The trend nobody asked for.',
     const Color(0xFFE6E1FF),
     (_) => const DiscoRoom(),
+  ),
+  _Room(
+    'Type',
+    'Hierarchy from one ratio.',
+    const Color(0xFFF3F0EA),
+    (_) => const TypeRoom(),
+  ),
+  _Room(
+    'Space',
+    'One unit, and grouping.',
+    const Color(0xFFFF6B4A),
+    (_) => const SpaceRoom(),
+  ),
+  _Room(
+    'Contrast',
+    'Legibility is a number.',
+    const Color(0xFFFFC857),
+    (_) => const ContrastRoom(),
+  ),
+  _Room(
+    'States',
+    'Loading, empty, error.',
+    const Color(0xFF8E7CFF),
+    (_) => const StatesRoom(),
+  ),
+  _Room(
+    'Forms',
+    'Help, do not scold.',
+    const Color(0xFF2ED3B7),
+    (_) => const FormsRoom(),
+  ),
+  _Room(
+    'Sheets',
+    'Swipe, undo, drag.',
+    const Color(0xFF4FB8FF),
+    (_) => const SheetsRoom(),
   ),
 ];
 
@@ -259,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A showcase of interface craft.\nTwelve rooms, one idea each.',
+                    'A showcase of interface craft.\nEighteen rooms, one idea each.',
                     style: LumenType.text(
                       15.5,
                       color: c.inkMuted,
@@ -331,12 +373,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
             const SizedBox(height: 34),
+            _section(
+              c,
+              'Foundations',
+              'The basics every good interface gets right.',
+            ),
+            for (int r = 0; r < 3; r++) ...<Widget>[
+              if (r > 0) const SizedBox(height: gap),
+              Row(
+                children: <Widget>[
+                  Expanded(child: _card(13 + r * 2, height: 156)),
+                  const SizedBox(width: gap),
+                  Expanded(child: _card(14 + r * 2, height: 156)),
+                ],
+              ),
+            ],
+            const SizedBox(height: 34),
             _section(c, 'Bonus', 'Please do not ship this.'),
             _card(12, height: 150),
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 7.1  ·  Flutter 3.50  ·  Impeller',
+                'Build 8  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),
@@ -418,7 +476,11 @@ class _RoomCardState extends State<_RoomCard>
                     Text(
                       widget.index == 12
                           ? 'BONUS'
-                          : (widget.index + 1).toString().padLeft(2, '0'),
+                          : (widget.index > 12
+                                    ? widget.index
+                                    : widget.index + 1)
+                                .toString()
+                                .padLeft(2, '0'),
                       style: LumenType.label(
                         color: open ? c.accent : c.inkFaint,
                       ),

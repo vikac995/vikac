@@ -1,24 +1,32 @@
 import 'package:flutter/services.dart';
 
 /// Haptics are part of the animation: call these when a spring settles,
-/// not when the finger goes down.
+/// not when the finger goes down. They are played straight on the vibration
+/// motor by native code, because the system's light haptics are too faint
+/// (or silent) on some phones.
 abstract final class Haptics {
-  /// A selection landed (lens on a tab, segment chosen).
-  static void tick() => HapticFeedback.selectionClick();
-
-  /// A state change settled (toggle, panel).
-  static void settle() => HapticFeedback.lightImpact();
-
-  /// Refusal or a heavier landing.
-  static void thud() => HapticFeedback.mediumImpact();
-
   static const MethodChannel _native = MethodChannel('lumen/haptics');
 
-  /// A strong pulse played straight on the vibration motor, for rhythm. Falls
-  /// back to the system haptic where the native side is missing.
-  static void beat() {
+  /// Set from Settings.
+  static bool enabled = true;
+
+  static void _play(String kind, Future<void> Function() fallback) {
+    if (!enabled) {
+      return;
+    }
     _native
-        .invokeMethod<void>('beat')
-        .catchError((Object _) => HapticFeedback.heavyImpact());
+        .invokeMethod<void>('play', kind)
+        .catchError((Object _) => fallback());
   }
+
+  /// A notch or a selection (lens on a tab, a dial step).
+  static void tick() => _play('tick', HapticFeedback.selectionClick);
+
+  /// A state change settled (toggle, panel, screen closed).
+  static void settle() => _play('click', HapticFeedback.lightImpact);
+
+  /// A beat, an end stop or a refusal.
+  static void thud() => _play('thud', HapticFeedback.heavyImpact);
+
+  static void beat() => thud();
 }

@@ -1,5 +1,42 @@
 # Lumen changelog
 
+## Build 8 (12 November 2026)
+
+Fixes from testing, plus a new home section, "Foundations": six rooms on the basics.
+
+**File:** `releases/lumen-build-8.apk`
+
+### Fixed
+
+- **Haptics everywhere.** Every haptic (dial notches, lens tick, toggles, dance floor)
+  now drives the vibration motor from native code, like the disco beat. Three strengths:
+  tick, click, thud. They play even in silent mode; Settings has a new Haptics switch.
+- **Foil cards.** The card now tilts away from your finger, as if you pressed it down
+  there (it used to lift toward the finger). Dragging on the card no longer scrolls the
+  page. The glare sits near your finger. Starlight's stars no longer sit on a grid.
+
+### New: Foundations
+
+- **13 Type.** One article, with hierarchy on or off. Pick a scale ratio and every size
+  re-derives from it. Line-height slider.
+- **14 Space.** A contact card built from one base unit (4, 8 or 12). Switch grouping off
+  to see why distance matters. Grid overlay.
+- **15 Contrast.** Sliders for text and background with the live contrast ratio and pass
+  marks. A colour-blindness simulation shows why status needs more than colour.
+- **16 States.** A button in its six states. A screen that loads with a skeleton and
+  ends as content, empty or error.
+- **17 Forms.** Floating labels, checks as you type, errors only after you leave a field,
+  password strength, a button that shakes and shows what is missing.
+- **18 Sheets.** Rows you swipe away with Undo. A bottom sheet with three resting
+  heights you can drag or flick.
+
+### What to test
+
+1. Dials: do you feel the notches now? Too strong, too weak?
+2. Foil: does tilting feel natural now? Try "Tilt with the phone" again.
+3. Forms: type in the fields with the keyboard open. Nothing should be hidden.
+4. Sheets: flick the sheet up and down; swipe a row away and undo.
+
 ## Build 7.1 (12 November 2026)
 
 **File:** `releases/lumen-build-7.1.apk`

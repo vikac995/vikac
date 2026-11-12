@@ -10,6 +10,12 @@ import 'core/settings.dart';
 import 'core/theme.dart';
 import 'home/home_screen.dart';
 import 'rooms/access/access_room.dart';
+import 'rooms/basics/contrast_room.dart';
+import 'rooms/basics/forms_room.dart';
+import 'rooms/basics/sheets_room.dart';
+import 'rooms/basics/space_room.dart';
+import 'rooms/basics/states_room.dart';
+import 'rooms/basics/type_room.dart';
 import 'rooms/colour/colour_room.dart';
 import 'rooms/data/data_room.dart';
 import 'rooms/details/details_room.dart';
@@ -84,6 +90,12 @@ class LumenApp extends StatelessWidget {
             'colour' => const ColourRoom(),
             'data' => const DataRoom(),
             'access' => const AccessRoom(),
+            'type' => const TypeRoom(),
+            'space' => const SpaceRoom(),
+            'contrast' => const ContrastRoom(),
+            'states' => const StatesRoom(),
+            'forms' => const FormsRoom(),
+            'sheets' => const SheetsRoom(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

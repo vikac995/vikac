@@ -186,22 +186,28 @@ class _FoilRoomState extends State<FoilRoom> with TickerProviderStateMixin {
                           child: Opacity(
                             opacity: (1 - (i - p).abs() * 0.8).clamp(0.0, 1.0),
                             child: i == _index
-                                ? GestureDetector(
-                                    onPanDown: (DragDownDetails d) {
+                                ? Listener(
+                                    onPointerDown: (PointerDownEvent e) {
                                       _lift.animateTo(1, velocity: 6);
-                                      _drag(d.localPosition, card);
+                                      _drag(e.localPosition, card);
                                     },
-                                    onPanUpdate: (DragUpdateDetails d) =>
-                                        _drag(d.localPosition, card),
-                                    onPanEnd: (_) => _release(),
-                                    onPanCancel: _release,
-                                    child: _TiltCard(
-                                      spec: _cards[i],
-                                      size: card,
-                                      tx: _tx,
-                                      ty: _ty,
-                                      lift: _lift,
-                                      time: _time,
+                                    onPointerMove: (PointerMoveEvent e) =>
+                                        _drag(e.localPosition, card),
+                                    onPointerUp: (_) => _release(),
+                                    onPointerCancel: (_) => _release(),
+                                    // Claims drags in both directions, so the page
+                                    // does not scroll while the card is being tilted.
+                                    child: GestureDetector(
+                                      onVerticalDragUpdate: (_) {},
+                                      onHorizontalDragUpdate: (_) {},
+                                      child: _TiltCard(
+                                        spec: _cards[i],
+                                        size: card,
+                                        tx: _tx,
+                                        ty: _ty,
+                                        lift: _lift,
+                                        time: _time,
+                                      ),
                                     ),
                                   )
                                 : _TiltCard(
@@ -292,8 +298,8 @@ class _TiltCard extends StatelessWidget {
             l = lift?.value ?? 0;
         final Matrix4 m = Matrix4.identity()
           ..setEntry(3, 2, 0.0011)
-          ..rotateX(-y * 0.32)
-          ..rotateY(x * 0.32)
+          ..rotateX(y * 0.3)
+          ..rotateY(-x * 0.3)
           ..scaleByDouble(1 + 0.04 * l, 1 + 0.04 * l, 1, 1);
         return Padding(
           padding: const EdgeInsets.only(top: 14),

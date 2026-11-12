@@ -89,6 +89,14 @@ class SettingsPage extends StatelessWidget {
                     value: settings.reduceTransparency,
                     onChanged: (bool v) => settings.reduceTransparency = v,
                   ),
+                  Divider(height: 1, thickness: 1, color: c.hairline),
+                  _SwitchRow(
+                    title: 'Haptics',
+                    detail:
+                        'Played directly on the motor, even in silent mode.',
+                    value: settings.haptics,
+                    onChanged: (bool v) => settings.haptics = v,
+                  ),
                 ],
               ),
               _Group(

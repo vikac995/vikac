@@ -42,6 +42,8 @@ class RoomArt extends CustomPainter {
         _access(canvas, size, a);
       case 12:
         _disco(canvas, size);
+      default:
+        _basic(canvas, size, kind - 13);
     }
   }
 
@@ -420,6 +422,105 @@ class RoomArt extends CustomPainter {
       tp.paint(canvas, Offset(x, 28 + 54 - size));
       x -= 4;
       tp.dispose();
+    }
+  }
+
+  void _basic(Canvas canvas, Size s, int k) {
+    final Paint fill = Paint()..color = hue;
+    final Paint soft = Paint()..color = colors.ink.withValues(alpha: 0.14);
+    final double r = s.width - 18;
+    RRect bar(double right, double top, double w, double h) =>
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(right - w, top, w, h),
+          Radius.circular(h / 2),
+        );
+    switch (k) {
+      case 0: // type: lines of decreasing size
+        canvas.drawRRect(bar(r, 20, 74, 14), fill);
+        canvas.drawRRect(bar(r, 42, 56, 8), soft);
+        canvas.drawRRect(bar(r, 56, 74, 5), soft);
+        canvas.drawRRect(bar(r, 66, 62, 5), soft);
+      case 1: // space: blocks with a measured gap
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(r - 70, 20, 30, 30),
+            const Radius.circular(8),
+          ),
+          soft,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(r - 30, 20, 30, 30),
+            const Radius.circular(8),
+          ),
+          soft,
+        );
+        canvas.drawRect(Rect.fromLTWH(r - 40, 30, 10, 10), fill);
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(r - 70, 60, 70, 14),
+            const Radius.circular(6),
+          ),
+          soft,
+        );
+        canvas.drawRect(Rect.fromLTWH(r - 40, 50, 10, 10), fill);
+      case 2: // contrast: half and half
+        final Offset c = Offset(r - 30, 46);
+        canvas.drawCircle(
+          c,
+          28,
+          Paint()..color = colors.ink.withValues(alpha: 0.2),
+        );
+        canvas.drawArc(
+          Rect.fromCircle(center: c, radius: 28),
+          -math.pi / 2,
+          math.pi,
+          true,
+          fill,
+        );
+      case 3: // states: three dots, one active
+        for (int i = 0; i < 3; i++) {
+          canvas.drawCircle(
+            Offset(r - 62 + i * 28, 40),
+            i == 1 ? 12 : 9,
+            i == 1 ? fill : soft,
+          );
+        }
+      case 4: // forms: field with a tick
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(r - 84, 24, 84, 32),
+            const Radius.circular(10),
+          ),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2
+            ..color = hue,
+        );
+        canvas.drawRRect(bar(r - 30, 37, 44, 6), soft);
+        canvas.drawCircle(Offset(r - 14, 40), 6, fill);
+      case 5: // sheets: a sheet rising from the bottom
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(r - 64, 16, 64, 64),
+            const Radius.circular(12),
+          ),
+          soft,
+        );
+        canvas.drawRRect(
+          RRect.fromRectAndCorners(
+            Rect.fromLTWH(r - 64, 46, 64, 34),
+            topLeft: const Radius.circular(12),
+            topRight: const Radius.circular(12),
+            bottomLeft: const Radius.circular(12),
+            bottomRight: const Radius.circular(12),
+          ),
+          fill,
+        );
+        canvas.drawRRect(
+          bar(r - 22, 51, 20, 3),
+          Paint()..color = colors.surface,
+        );
     }
   }
 
