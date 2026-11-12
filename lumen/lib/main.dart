@@ -10,6 +10,8 @@ import 'core/settings.dart';
 import 'core/theme.dart';
 import 'home/home_screen.dart';
 import 'rooms/glass/glass_room.dart';
+import 'rooms/shapes/shape_room.dart';
+import 'rooms/springs/springs_room.dart';
 import 'widgets/fps_meter.dart';
 
 Future<void> main() async {
@@ -53,9 +55,12 @@ class LumenApp extends StatelessWidget {
               ? Duration.zero
               : const Duration(milliseconds: 420),
           themeAnimationCurve: const SpringCurve(),
-          home: const String.fromEnvironment('START') == 'glass'
-              ? const GlassRoom()
-              : const HomeScreen(),
+          home: switch (const String.fromEnvironment('START')) {
+            'glass' => const GlassRoom(),
+            'springs' => const SpringsRoom(),
+            'shapes' => const ShapeRoom(),
+            _ => const HomeScreen(),
+          },
           builder: (BuildContext context, Widget? child) {
             final LumenColors c = LumenColors.of(context);
             return AnnotatedRegion<SystemUiOverlayStyle>(

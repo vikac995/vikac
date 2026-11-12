@@ -1,5 +1,48 @@
 # Lumen changelog
 
+## Build 2 (12 November 2026)
+
+Adds Room 02 (Springs) and Room 03 (Shape morph). Rooms 04 to 06 are still placeholders.
+
+**File:** `releases/lumen-build-2.apk`
+
+### What is new
+
+- **Room 02, Springs.** Two balls get exactly the same input. The top one moves the
+  classic way (420 ms, ease in-out); the bottom one is a spring.
+  - Tap to move the target. Tap again before it arrives.
+  - Drag on empty space to drag the target around continuously.
+  - Grab a ball (both are caught where they are), move it, then throw it.
+  - Four spring presets: Bouncy, Natural, Snappy, Gentle. The plot under them shows
+    position over time for the curve and the chosen spring.
+  - Haptic tick when the spring ball settles. The curve ball gets none.
+- **Room 03, Shape morph.** All shapes are hand-built and morph by blending outlines.
+  - Hero shape: tap to step through eight shapes, or drag sideways to scrub; release
+    and it springs to the nearest shape, with a tick when it lands.
+  - Toggles: round when off, squircle when on, squeeze on press.
+  - Send button: becomes a circle with a morphing loader, then a green tick, then
+    returns to a pill.
+  - Three loading indicators that spin while changing shape.
+
+### What to test
+
+1. **Springs, interruption:** tap one spot, then quickly tap another before the balls
+   arrive. The top ball should visibly stop and restart; the bottom one should curve
+   smoothly into the new direction. This is the whole point of the room.
+2. **Springs, drag the target:** drag on empty space. The top ball should lag and crawl;
+   the bottom one should follow fluidly.
+3. **Springs, throw:** grab the bottom ball and flick it. It should fly in the direction
+   of the flick before coming back. The top ball ignores the flick.
+4. **Shape morph, scrub:** drag sideways slowly over the shape, then flick. Every
+   in-between frame should be a clean outline, with no kinks or flicker.
+5. **Send button:** tap it and watch the whole sequence. Does the timing feel right?
+6. **Frame rate:** the Shape room keeps animating because of the loaders, so the readout
+   shows fps there all the time. Note the numbers.
+
+### Known limits
+
+- Same as build 1: back does not follow the finger yet, settings are not remembered.
+
 ## Build 1 (12 November 2026)
 
 First build: home screen and Room 01, Glass. Rooms 02 to 06 are placeholders.

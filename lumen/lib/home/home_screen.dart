@@ -6,6 +6,8 @@ import '../core/expand_route.dart';
 import '../core/springs.dart';
 import '../core/theme.dart';
 import '../rooms/glass/glass_room.dart';
+import '../rooms/shapes/shape_room.dart';
+import '../rooms/springs/springs_room.dart';
 import '../widgets/controls.dart';
 import '../widgets/pressable.dart';
 import 'illustrations.dart';
@@ -26,12 +28,17 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFFFF6B4A),
     (_) => const GlassRoom(),
   ),
-  const _Room('Springs', 'Grab it mid-flight.', Color(0xFFFFB23E), null),
-  const _Room(
+  _Room(
+    'Springs',
+    'Grab it mid-flight.',
+    const Color(0xFFFFB23E),
+    (_) => const SpringsRoom(),
+  ),
+  _Room(
     'Shape morph',
     'Buttons that change shape.',
-    Color(0xFF8E7CFF),
-    null,
+    const Color(0xFF8E7CFF),
+    (_) => const ShapeRoom(),
   ),
   const _Room('Flow', 'A card becomes a screen.', Color(0xFF4FB8FF), null),
   const _Room(
@@ -217,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 1  ·  Flutter 3.50  ·  Impeller',
+                'Build 2  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),
