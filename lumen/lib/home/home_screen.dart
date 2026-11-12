@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import '../core/expand_route.dart';
 import '../core/springs.dart';
 import '../core/theme.dart';
+import '../rooms/details/details_room.dart';
 import '../rooms/flow/flow_room.dart';
 import '../rooms/glass/glass_room.dart';
 import '../rooms/shaders/shaders_room.dart';
@@ -54,7 +55,12 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFF2ED3B7),
     (_) => const ShadersRoom(),
   ),
-  const _Room('Details', 'The small things.', Color(0xFFFF7AB6), null),
+  _Room(
+    'Details',
+    'The small things.',
+    const Color(0xFFFF7AB6),
+    (_) => const DetailsRoom(),
+  ),
 ];
 
 class HomeScreen extends StatefulWidget {
@@ -231,7 +237,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 3.1  ·  Flutter 3.50  ·  Impeller',
+                'Build 4  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),

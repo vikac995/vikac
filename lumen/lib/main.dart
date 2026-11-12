@@ -9,6 +9,7 @@ import 'core/glass.dart';
 import 'core/settings.dart';
 import 'core/theme.dart';
 import 'home/home_screen.dart';
+import 'rooms/details/details_room.dart';
 import 'rooms/flow/flow_room.dart';
 import 'rooms/flow/stories.dart';
 import 'rooms/glass/glass_room.dart';
@@ -51,6 +52,9 @@ class LumenApp extends StatelessWidget {
         return MaterialApp(
           title: 'Lumen',
           debugShowCheckedModeBanner: false,
+          scrollBehavior: const MaterialScrollBehavior().copyWith(
+            dragDevices: PointerDeviceKind.values.toSet(),
+          ),
           theme: lumenTheme(LumenColors.day),
           darkTheme: lumenTheme(LumenColors.night),
           themeMode: settings.themeMode,
@@ -65,6 +69,7 @@ class LumenApp extends StatelessWidget {
             'flow' => const FlowRoom(),
             'story' => StoryPage(story: stories[0]),
             'shaders' => const ShadersRoom(),
+            'details' => const DetailsRoom(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

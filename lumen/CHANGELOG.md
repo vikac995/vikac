@@ -1,5 +1,38 @@
 # Lumen changelog
 
+## Build 4 (12 November 2026)
+
+Adds Room 06 (Details). All six rooms are now in.
+
+**File:** `releases/lumen-build-4.apk`
+
+### What is new
+
+- **Room 06, Details.**
+  - **Fluid type:** the headline is drawn letter by letter. Its weight thins as you
+    scroll down; scrolling fast condenses the letters and sends a wave of weight
+    through them, which wobbles out on a spring when you stop.
+  - **Pull to refresh:** a ring fills as you pull, turns into a coral shape with a tick
+    once you have pulled far enough, becomes a loader, then a check. A new message opens
+    up space for itself at the top of the inbox.
+  - **Prompt bar:** suggestions roll through the empty field. The send button turns from
+    a round grey button into a coral square when you type. Sending starts a light that
+    runs around the bar, then the answer streams in word by word, and labels (AI draft,
+    sources, check before using) fade in at the end. The four suggestions have their own
+    answers; anything you type gets an honest "demo reply" answer.
+  - **Small things:** a like button with a burst and a rolling counter; a copy button
+    that turns into a confirmation and actually copies text.
+
+### What to test
+
+1. **Pull to refresh:** pull slowly. Feel for the single tick when it arms. Pull a bit,
+   then release before the tick: nothing should happen.
+2. **Headline:** from the top of the room, flick the page up and down. Watch the
+   letters during and just after the flick.
+3. **Prompt bar with the keyboard:** tap the field and type. The bar should stay visible
+   above the keyboard. Send with the button and with the keyboard's send key.
+4. **Like:** tap repeatedly and quickly. The digits should roll, not jump.
+
 ## Build 3.1 (12 November 2026)
 
 **File:** `releases/lumen-build-3.1.apk`
