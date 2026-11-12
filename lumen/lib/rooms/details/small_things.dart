@@ -55,11 +55,15 @@ class _OdometerState extends State<Odometer> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    // Measure with the phone's text size, so each digit cell is exactly one
+    // line tall and the strip stops on a whole digit.
     final TextPainter probe = TextPainter(
       text: TextSpan(text: '0', style: widget.style),
       textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
     )..layout();
-    final double h = probe.height, w = probe.width;
+    final double h = probe.height.ceilToDouble(),
+        w = probe.width.ceilToDouble();
     probe.dispose();
     final int lead = widget.value.toString().length;
     return Row(
@@ -84,7 +88,13 @@ class _OdometerState extends State<Odometer> with TickerProviderStateMixin {
                     child: Column(
                       children: <Widget>[
                         for (int k = 0; k < 10; k++)
-                          Text('$k', style: widget.style),
+                          SizedBox(
+                            width: w,
+                            height: h,
+                            child: Center(
+                              child: Text('$k', style: widget.style),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -265,6 +275,15 @@ class _CopyButtonState extends State<CopyButton> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final LumenColors c = LumenColors.of(context);
     final Color ok = c.dark ? const Color(0xFF3DDC97) : const Color(0xFF168A57);
+    final TextStyle labelStyle = LumenType.text(16, weight: 600, height: 1.35);
+    final TextPainter tp = TextPainter(
+      text: TextSpan(text: 'Copied', style: labelStyle),
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final double lineH = tp.height.ceilToDouble(),
+        labelW = tp.width.ceilToDouble() + 2;
+    tp.dispose();
     return Semantics(
       button: true,
       label: 'Copy text',
@@ -329,12 +348,12 @@ class _CopyButtonState extends State<CopyButton> with TickerProviderStateMixin {
                   const SizedBox(width: 10),
                   ClipRect(
                     child: SizedBox(
-                      height: 22,
-                      width: 62,
+                      height: lineH,
+                      width: labelW,
                       child: Stack(
                         children: <Widget>[
                           Transform.translate(
-                            offset: Offset(0, -22 * on),
+                            offset: Offset(0, -lineH * on),
                             child: Text(
                               'Copy',
                               style: LumenType.text(
@@ -346,7 +365,7 @@ class _CopyButtonState extends State<CopyButton> with TickerProviderStateMixin {
                             ),
                           ),
                           Transform.translate(
-                            offset: Offset(0, 22 * (1 - on)),
+                            offset: Offset(0, lineH * (1 - on)),
                             child: Text(
                               'Copied',
                               style: LumenType.text(

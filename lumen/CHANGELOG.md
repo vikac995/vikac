@@ -1,5 +1,14 @@
 # Lumen changelog
 
+## Build 4.1 (12 November 2026)
+
+**File:** `releases/lumen-build-4.1.apk`
+
+- Fixed: the like counter showed misaligned digits (for example "1276") when the phone's
+  text size is larger than default. Digits are now measured at the phone's text size.
+- Same fix for the Copy/Copied label and the rolling suggestions in the prompt bar.
+- Test: tap like several times quickly; the digits should always land on a clean number.
+
 ## Build 4 (12 November 2026)
 
 Adds Room 06 (Details). All six rooms are now in.

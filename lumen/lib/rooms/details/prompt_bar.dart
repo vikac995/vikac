@@ -234,6 +234,7 @@ class _PromptBarState extends State<PromptBar> with TickerProviderStateMixin {
     final double v = _hint.value;
     final int i = v.floor();
     final double t = v - i;
+    final double lh = MediaQuery.textScalerOf(context).scale(16) * 1.4;
     Widget line(String s, double dy, double a) => Transform.translate(
       offset: Offset(0, dy),
       child: Opacity(
@@ -249,11 +250,11 @@ class _PromptBarState extends State<PromptBar> with TickerProviderStateMixin {
     return IgnorePointer(
       child: ClipRect(
         child: SizedBox(
-          height: 26,
+          height: MediaQuery.textScalerOf(context).scale(16) * 1.5,
           child: Stack(
             alignment: Alignment.centerLeft,
             children: <Widget>[
-              line(_suggestions[i % _suggestions.length], -22 * t, 1 - t * 1.6),
+              line(_suggestions[i % _suggestions.length], -lh * t, 1 - t * 1.6),
               line(
                 _suggestions[(i + 1) % _suggestions.length],
                 22 * (1 - t),

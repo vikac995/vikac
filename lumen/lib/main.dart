@@ -74,6 +74,12 @@ class LumenApp extends StatelessWidget {
           },
           builder: (BuildContext context, Widget? child) {
             final LumenColors c = LumenColors.of(context);
+            if (const String.fromEnvironment('TEXTSCALE').isNotEmpty) {
+              child = MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(double.parse(const String.fromEnvironment('TEXTSCALE')))),
+                child: child!,
+              );
+            }
             return AnnotatedRegion<SystemUiOverlayStyle>(
               value: SystemUiOverlayStyle(
                 statusBarColor: const Color(0x00000000),
