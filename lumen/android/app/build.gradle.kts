@@ -29,6 +29,13 @@ android {
         versionName = flutter.versionName
     }
 
+    // Store the engine compressed inside the APK so the download stays small.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
