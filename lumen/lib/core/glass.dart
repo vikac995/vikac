@@ -70,6 +70,52 @@ abstract final class GlassShaders {
     pblur = p[3];
     disco = p[4];
     holo = p[5];
+    await _prewarm();
+  }
+
+  /// Draws every shader once, off screen, so the GPU prepares them before
+  /// they are first needed instead of during a room's opening animation.
+  static Future<void> _prewarm() async {
+    try {
+      final ui.PictureRecorder rec = ui.PictureRecorder();
+      final Canvas canvas = Canvas(rec);
+      const Rect r = Rect.fromLTWH(0, 0, 8, 8);
+      for (final ui.FragmentProgram? p in <ui.FragmentProgram?>[
+        aurora,
+        disco,
+        holo,
+      ]) {
+        if (p != null) {
+          canvas.drawRect(r, Paint()..shader = p.fragmentShader());
+          canvas.drawRect(
+            r,
+            Paint()
+              ..shader = p.fragmentShader()
+              ..blendMode = BlendMode.screen,
+          );
+        }
+      }
+      if (ui.ImageFilter.isShaderFilterSupported) {
+        for (final ui.FragmentProgram? p in <ui.FragmentProgram?>[
+          _program,
+          pblur,
+          ripple,
+        ]) {
+          if (p != null) {
+            canvas.saveLayer(
+              r,
+              Paint()..imageFilter = ui.ImageFilter.shader(p.fragmentShader()),
+            );
+            canvas.drawRect(r, Paint()..color = const Color(0xFF808080));
+            canvas.restore();
+          }
+        }
+      }
+      final ui.Image img = await rec.endRecording().toImage(8, 8);
+      img.dispose();
+    } catch (_) {
+      // Warming up is an optimisation; a failure here changes nothing else.
+    }
   }
 
   static bool get available =>

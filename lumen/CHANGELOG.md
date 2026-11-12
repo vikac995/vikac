@@ -1,5 +1,30 @@
 # Lumen changelog
 
+## Build 7.1 (12 November 2026)
+
+**File:** `releases/lumen-build-7.1.apk`
+
+- **Feel the beat** now drives the vibration motor directly from native Android code
+  with a heavy "thud" (or the strongest effect the phone supports), and plays it as
+  media vibration so silent mode should not mute it. It previously used the lightest
+  system tick, which Samsung phones can play very faintly or skip when no finger is on
+  the screen.
+- **Smoother opening and closing:**
+  - All custom shaders are prepared off screen while the app starts, instead of on
+    their first use inside a room.
+  - Every open and close holds still for about 25 ms (three frames) before moving, so
+    the expensive first frame of a new screen happens before anything is in motion.
+    A back swipe still continues immediately.
+- **Measured, not guessed:** after each open and close, the readout shows how many
+  frames were missed during it ("Open: 0 missed frames" in green, otherwise yellow).
+
+### What to test
+
+1. Disco room, Party mode on, Feel the beat on: is the beat strong and regular now?
+   Try once with the phone in silent mode and once in vibrate or sound mode.
+2. Open and close several rooms, especially Glass, Shaders and Flow. Note the numbers
+   in the readout. A screenshot of a yellow one tells me where to look next.
+
 ## Build 7 (12 November 2026)
 
 The last three trend rooms. All twelve rooms and the bonus are now in.

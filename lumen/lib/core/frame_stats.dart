@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -24,6 +25,19 @@ class FrameStats extends ChangeNotifier {
   final ValueNotifier<GlassQuality?> lastDrop = ValueNotifier<GlassQuality?>(
     null,
   );
+
+  /// A short message shown under the readout for a few seconds.
+  final ValueNotifier<String?> transition = ValueNotifier<String?>(null);
+  Timer? _noteTimer;
+
+  void note(String message) {
+    transition.value = message;
+    _noteTimer?.cancel();
+    _noteTimer = Timer(
+      const Duration(seconds: 4),
+      () => transition.value = null,
+    );
+  }
 
   int _strikes = 0;
   int? _prevVsync;

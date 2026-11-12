@@ -11,4 +11,14 @@ abstract final class Haptics {
 
   /// Refusal or a heavier landing.
   static void thud() => HapticFeedback.mediumImpact();
+
+  static const MethodChannel _native = MethodChannel('lumen/haptics');
+
+  /// A strong pulse played straight on the vibration motor, for rhythm. Falls
+  /// back to the system haptic where the native side is missing.
+  static void beat() {
+    _native
+        .invokeMethod<void>('beat')
+        .catchError((Object _) => HapticFeedback.heavyImpact());
+  }
 }

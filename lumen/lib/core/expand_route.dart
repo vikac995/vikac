@@ -5,6 +5,7 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
+import 'frame_stats.dart';
 import 'haptics.dart';
 import 'springs.dart';
 
@@ -83,7 +84,20 @@ class ExpandRoute<T> extends PageRoute<T> {
   @override
   void install() {
     super.install();
+    int missedAtStart = 0;
     controller!.addStatusListener((AnimationStatus s) {
+      if (s == AnimationStatus.forward || s == AnimationStatus.reverse) {
+        missedAtStart = FrameStats.instance.missed;
+      }
+      if (s == AnimationStatus.completed || s == AnimationStatus.dismissed) {
+        final String what = s == AnimationStatus.completed ? 'Open' : 'Close';
+        // Frame timings arrive in batches, so wait for the last ones.
+        Future<void>.delayed(const Duration(milliseconds: 700), () {
+          FrameStats.instance.note(
+            '$what: ${FrameStats.instance.missed - missedAtStart} missed frames',
+          );
+        });
+      }
       if (s == AnimationStatus.dismissed) {
         Haptics.settle();
         onLanded?.call();
@@ -100,12 +114,18 @@ class ExpandRoute<T> extends PageRoute<T> {
 
   @override
   Simulation createSimulation({required bool forward}) {
-    return SpringSimulation(
+    final Simulation spring = SpringSimulation(
       Motion.reduced ? Motions.reduced : _spring,
       controller!.value,
       forward ? 1 : 0,
       Motion.reduced ? 0 : controller!.velocity,
     );
+    // The first frame of a transition is the expensive one (the new screen is
+    // built and drawn for the first time). Holding still for three frames
+    // lets that cost land while nothing is moving, so it cannot show as a
+    // hitch. A gesture that has already moved the screen continues at once.
+    final bool moving = controller!.isAnimating || _released != null;
+    return moving ? spring : _Delayed(spring, 0.025);
   }
 
   SpringValue get _spring2 {
@@ -351,6 +371,20 @@ class _RectClipper extends CustomClipper<RSuperellipse> {
   @override
   bool shouldReclip(_RectClipper oldClipper) =>
       oldClipper.rect != rect || oldClipper.radius != radius;
+}
+
+/// Holds [inner] at its start for [delay] seconds.
+class _Delayed extends Simulation {
+  _Delayed(this.inner, this.delay);
+  final Simulation inner;
+  final double delay;
+
+  @override
+  double x(double time) => inner.x(math.max(0, time - delay));
+  @override
+  double dx(double time) => time < delay ? 0 : inner.dx(time - delay);
+  @override
+  bool isDone(double time) => time >= delay && inner.isDone(time - delay);
 }
 
 /// A curve shaped like a critically damped spring, for the few framework

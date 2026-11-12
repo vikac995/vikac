@@ -89,7 +89,7 @@ class _DiscoRoomState extends State<DiscoRoom> with TickerProviderStateMixin {
     _beat.jumpTo(1);
     _beat.animateTo(0);
     if (_feel) {
-      Haptics.tick();
+      Haptics.beat();
     }
     final double now = _time.value;
     final double h = _rnd.nextDouble();
