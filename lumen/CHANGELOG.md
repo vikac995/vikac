@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 55 (13 November 2026)
+
+**File:** `releases/prism-build-55.apk`
+
+- **The drawer's progress ring deepens slightly toward the end.** On the first page it is your colour as chosen; by the last page it is about a fifth darker and a touch toward its deeper neighbour (amber leans to orange). The change is gradual across the pages.
+- Otherwise the same as build 54.
+
+**What to look for:** compare the ring on page 1 and on the last page. Noticeable but subtle, or too little?
+
+**Checked:** it compiles.
+**Not checked:** on a phone, or in my preview.
+
 ## Prism, build 54 (13 November 2026)
 
 **File:** `releases/prism-build-54.apk`
