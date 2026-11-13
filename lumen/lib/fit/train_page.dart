@@ -1,3 +1,4 @@
+import 'bubble.dart';
 import 'robot.dart';
 
 import 'dart:async';
@@ -37,6 +38,24 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
   late final SpringValue _next = SpringValue(this, spring: Motions.expressive);
   int _elapsed = 14 * 60 + 32;
   int _restLeft = 0, _restOf = _restTotal;
+
+  /// When the running rest ends. The countdown is worked out from this, not counted down tick
+  /// by tick, so it stays right while Prism is off screen.
+  DateTime? _restEnds;
+
+  /// Starts, changes or ends the rest, and tells the floating timer.
+  void _setRest(DateTime? ends) {
+    _restEnds = ends;
+    _restLeft = ends == null
+        ? 0
+        : (ends.difference(DateTime.now()).inMilliseconds / 1000).ceil().clamp(
+            0,
+            86400,
+          );
+    final LumenColors c = LumenColors.of(context);
+    RestBubble.instance.tell(ends, _restOf, c.accent, c.onAccent);
+  }
+
   late final Timer _clock;
 
   @override
@@ -50,9 +69,13 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           : (void Function() f) => f();
       apply(() {
         _elapsed++;
-        if (_restLeft > 0) {
-          _restLeft--;
+        if (_restEnds != null) {
+          _restLeft =
+              (_restEnds!.difference(DateTime.now()).inMilliseconds / 1000)
+                  .ceil()
+                  .clamp(0, 86400);
           if (_restLeft == 0) {
+            _restEnds = null;
             Haptics.thud();
             _rest.animateTo(0, spring: Motions.spatial);
             Diag.instance.extra = '';
@@ -86,13 +109,13 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
       Haptics.settle();
       setState(() {
         _restOf = _restTotal;
-        _restLeft = _restTotal;
+        _setRest(DateTime.now().add(const Duration(seconds: _restTotal)));
       });
       _rest.animateTo(1);
       Diag.instance.extra = '+rest';
     } else {
       all ? Haptics.thud() : Haptics.tick();
-      setState(() => _restLeft = 0);
+      setState(() => _setRest(null));
       _rest.animateTo(0, spring: Motions.spatial);
       Diag.instance.extra = '';
     }
@@ -516,14 +539,18 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                             const Spacer(),
                             _pill(c, '+15 s', () {
                               setState(() {
-                                _restLeft += 15;
                                 _restOf += 15;
+                                _setRest(
+                                  (_restEnds ?? DateTime.now()).add(
+                                    const Duration(seconds: 15),
+                                  ),
+                                );
                               });
                               Haptics.tick();
                             }),
                             const SizedBox(width: 8),
                             _pill(c, 'Skip', () {
-                              setState(() => _restLeft = 0);
+                              setState(() => _setRest(null));
                               _rest.animateTo(0, spring: Motions.spatial);
                               Diag.instance.extra = '';
                               Haptics.tick();

@@ -10,6 +10,7 @@ import '../core/theme.dart';
 import '../widgets/fps_meter.dart';
 import '../core/haptics.dart';
 import 'look.dart';
+import 'bubble.dart';
 import 'diag.dart';
 import 'journal.dart';
 import 'shell.dart';
@@ -40,6 +41,7 @@ Future<void> main() async {
   await Diag.instance.start();
   // The diary: every stretch of use, the battery, and anything that goes wrong.
   Journal.instance.start();
+  RestBubble.instance.start();
   Diag.instance.tail = Journal.instance.report;
   runApp(const PrismApp());
 }

@@ -42,6 +42,17 @@ class MainActivity : FlutterActivity() {
         return null
     }
 
+    // Prism has left the screen: if a rest is running, its countdown floats over whatever comes next.
+    override fun onStop() {
+        super.onStop()
+        RestBubble.show(applicationContext)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        RestBubble.hide(applicationContext)
+    }
+
     override fun onPause() {
         try {
             val surface = surfaceIn(window.decorView)
@@ -67,7 +78,9 @@ class MainActivity : FlutterActivity() {
     // The home button was pressed while Prism is the home screen: tell the app, so it can go back to its first page.
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
-        if (intent.hasCategory(android.content.Intent.CATEGORY_HOME)) {
+        if (intent.action == RestBubble.OPEN_TRAIN) {
+            device?.invokeMethod("train", null)
+        } else if (intent.hasCategory(android.content.Intent.CATEGORY_HOME)) {
             device?.invokeMethod("home", null)
         }
     }
@@ -186,7 +199,28 @@ class MainActivity : FlutterActivity() {
         // Which phone this is, for the test report.
         device = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/device")
         device!!.setMethodCallHandler { call, result ->
-            if (call.method == "battery") {
+            if (call.method == "rest") {
+                val a = call.arguments as? Map<*, *>
+                if (a == null) {
+                    RestBubble.endsAt = 0L
+                    RestBubble.hide(applicationContext)
+                } else {
+                    RestBubble.endsAt = (a["endsAt"] as Number).toLong()
+                    RestBubble.total = (a["total"] as Number).toInt()
+                    RestBubble.accent = (a["accent"] as Number).toInt()
+                    RestBubble.onAccent = (a["onAccent"] as Number).toInt()
+                }
+                result.success(null)
+            } else if (call.method == "overlayAllowed") {
+                result.success(android.provider.Settings.canDrawOverlays(this))
+            } else if (call.method == "askOverlay") {
+                try {
+                    startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:$packageName")))
+                } catch (e: Exception) {
+                    startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+                }
+                result.success(null)
+            } else if (call.method == "battery") {
                 // One reading of the battery: how full, how fast it is draining, whether it is charging.
                 val bm = getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
                 val sticky = registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
@@ -297,5 +331,126 @@ class MainActivity : FlutterActivity() {
         val params = window.attributes
         params.preferredDisplayModeId = best.modeId
         window.attributes = params
+    }
+}
+
+/** The rest timer as a small round countdown floating over other apps. */
+object RestBubble {
+    const val OPEN_TRAIN = "dev.lumen.OPEN_TRAIN"
+    var endsAt = 0L
+    var total = 90
+    var accent = 0xFFFFAE1A.toInt()
+    var onAccent = 0xFF1D1300.toInt()
+    private var view: Dot? = null
+
+    fun show(context: Context) {
+        if (view != null || endsAt <= System.currentTimeMillis()) return
+        if (!android.provider.Settings.canDrawOverlays(context)) return
+        try {
+            val wm = context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
+            val d = context.resources.displayMetrics
+            val size = (64 * d.density).toInt()
+            val lp = android.view.WindowManager.LayoutParams(
+                size, size,
+                android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                android.graphics.PixelFormat.TRANSLUCENT,
+            )
+            lp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
+            lp.x = d.widthPixels - size - (12 * d.density).toInt()
+            lp.y = (d.heightPixels * 0.30f).toInt()
+            val v = Dot(context, lp)
+            wm.addView(v, lp)
+            view = v
+        } catch (e: Exception) {
+            view = null
+        }
+    }
+
+    fun hide(context: Context) {
+        val v = view ?: return
+        view = null
+        try {
+            (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).removeView(v)
+        } catch (e: Exception) {
+            // Already gone.
+        }
+    }
+
+    private class Dot(context: Context, val lp: android.view.WindowManager.LayoutParams) : android.view.View(context) {
+        private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        private val arc = android.graphics.RectF()
+        private var downX = 0f; private var downY = 0f; private var startX = 0; private var startY = 0
+        private var dragged = false
+        private var buzzed = false
+
+        override fun onDraw(canvas: android.graphics.Canvas) {
+            val w = width.toFloat(); val r = w / 2f; val dp = resources.displayMetrics.density
+            val left = endsAt - System.currentTimeMillis()
+            val done = left <= 0
+            // A soft shadow, then the disc.
+            paint.style = android.graphics.Paint.Style.FILL
+            paint.color = 0x33000000
+            canvas.drawCircle(r, r + 1.5f * dp, r - 2.5f * dp, paint)
+            paint.color = if (done) accent else 0xF2121419.toInt()
+            canvas.drawCircle(r, r, r - 3 * dp, paint)
+            if (!done) {
+                // The ring: what is left of the rest.
+                val inset = 6.5f * dp
+                arc.set(inset, inset, w - inset, w - inset)
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = 3.5f * dp
+                paint.strokeCap = android.graphics.Paint.Cap.ROUND
+                paint.color = 0x26FFFFFF
+                canvas.drawArc(arc, 0f, 360f, false, paint)
+                paint.color = accent
+                canvas.drawArc(arc, -90f, 360f * (left / (total * 1000f)).coerceIn(0f, 1f), false, paint)
+            }
+            paint.style = android.graphics.Paint.Style.FILL
+            paint.color = if (done) onAccent else 0xFFFFFFFF.toInt()
+            paint.textAlign = android.graphics.Paint.Align.CENTER
+            paint.typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
+            paint.textSize = (if (done) 17f else 15f) * dp
+            val secs = ((left + 999) / 1000).coerceAtLeast(0)
+            val text = if (done) "GO" else "${secs / 60}:${(secs % 60).toString().padStart(2, '0')}"
+            canvas.drawText(text, r, r - (paint.descent() + paint.ascent()) / 2f, paint)
+            if (done && !buzzed) {
+                buzzed = true
+                performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+            }
+            // Redrawn four times a second while counting; not at all once it says GO.
+            if (!done) postInvalidateDelayed(250)
+        }
+
+        override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            val wm = context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y; dragged = false
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    val dx = e.rawX - downX; val dy = e.rawY - downY
+                    if (dragged || dx * dx + dy * dy > 144 * resources.displayMetrics.density) {
+                        dragged = true
+                        lp.x = startX + dx.toInt(); lp.y = startY + dy.toInt()
+                        try { wm.updateViewLayout(this, lp) } catch (ex: Exception) {}
+                    }
+                }
+                android.view.MotionEvent.ACTION_UP -> {
+                    if (!dragged) {
+                        // Tapped: back to the workout.
+                        val i = android.content.Intent(context, MainActivity::class.java)
+                            .setAction(OPEN_TRAIN)
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+                        try { context.startActivity(i) } catch (ex: Exception) {}
+                        hide(context)
+                    } else if (lp.y > resources.displayMetrics.heightPixels * 0.84f) {
+                        // Dropped at the bottom edge: put away until the next rest.
+                        hide(context)
+                    }
+                }
+            }
+            return true
+        }
     }
 }

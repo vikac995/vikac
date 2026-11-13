@@ -20,6 +20,7 @@ import 'home_page.dart';
 import 'lens.dart';
 import 'look.dart';
 import 'apps.dart';
+import 'bubble.dart';
 import 'drawer.dart';
 import 'progress_page.dart';
 import 'robot.dart';
@@ -187,6 +188,20 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     // Pressing the home button while Prism is the home screen: everything closes and Home shows.
     const MethodChannel('lumen/device')
         .setMethodCallHandler((MethodCall call) async {
+          if (call.method == 'train' && mounted) {
+            // The floating rest timer was tapped: straight to the workout, nothing in the way.
+            Diag.instance.event('timer bubble tapped');
+            if (_drawerOpen) {
+              _setDrawer(false);
+            }
+            if (_sheetOpen) {
+              _closeSheet();
+            }
+            _setOpen(false);
+            if (_tab != 1) {
+              _go(1);
+            }
+          }
           if (call.method == 'home' && mounted) {
             Diag.instance.event('home button');
             if (_drawerOpen) {
@@ -2039,6 +2054,17 @@ void showPrismSettings(BuildContext context) {
                               value: Diag.instance.glassMode.value,
                               onChanged: (int v) =>
                                   Diag.instance.glassMode.value = v,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      ListenableBuilder(
+                        listenable: RestBubble.instance.allowed,
+                        builder: (BuildContext context, Widget? _) =>
+                            SwitchLine(
+                              label: 'Rest timer floats over other apps',
+                              value: RestBubble.instance.allowed.value,
+                              // Android decides this, on its own screen. The switch only takes you there.
+                              onChanged: (bool _) => RestBubble.instance.ask(),
                             ),
                       ),
                       const SizedBox(height: 12),

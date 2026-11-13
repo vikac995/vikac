@@ -1,5 +1,31 @@
 # Lumen changelog
 
+## Prism, build 52 (13 November 2026)
+
+**File:** `releases/prism-build-52.apk`
+
+**The rest timer floats over other apps.**
+
+- Finish a set on Train, so the rest starts. Leave Prism for any app. A small round countdown appears over that app: the time left in the middle, a ring running down around it, in your chosen colour.
+- **Tap it** and you are back in Prism on the workout page, ready to log the next set.
+- When the rest is over it turns solid in your colour, says **GO**, and gives one buzz.
+- **Drag it** anywhere on screen. **Drop it at the bottom edge** to put it away until the next rest.
+- It disappears by itself when you return to Prism, and it never shows if no rest is running.
+
+**To switch it on (once):** round button on Home, **Rest timer floats over other apps**. That opens Android's own screen; allow "Appear on top" for Prism and come back. The switch shows on once Android has it.
+
+**Cost:** the countdown is drawn by Android itself, not by Prism's drawing engine. It redraws a 64-point circle four times a second while counting and not at all once it says GO. No background service and no permanent notification.
+
+**The rest timer itself** now works from the moment the rest ends, where it used to count down second by second. So it stays correct while Prism is off screen.
+
+**What to look for**
+- Does the countdown appear when you leave during a rest, and does a tap bring you to the workout page?
+- Does it keep counting, or freeze after a while? (If Android puts Prism to sleep in the background the number would stop. I expect it not to, but this is the main thing I cannot know from here.)
+- Skip or finish the rest inside Prism, then leave: nothing should float.
+
+**Checked:** it compiles and the app runs normally in my preview, where the timer on Train still counts down, adds 15 s and skips as before.
+**Not checked:** the floating countdown, at all. It is Android-only code that has never run: the permission screen, appearing, counting, dragging, the tap back, and GO. If the app crashes when you leave it during a rest, switch the permission off in Android's settings and tell me.
+
 ## Prism, build 51 (13 November 2026)
 
 **File:** `releases/prism-build-51.apk`
