@@ -101,7 +101,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 14';
+  static const String build = 'Prism build 15';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -117,7 +117,50 @@ class Diag {
   /// How much glass the bar uses. 0 original: always glass. 1 one at a time:
   /// only one moving piece of glass at once. 2 frosted: the bar blurs but does
   /// not bend. 3 event: the bar is solid; only the carried lens and the rest timer are glass.
-  final ValueNotifier<int> glassMode = ValueNotifier<int>(0);
+  /// 4 is automatic: Original while the phone keeps up, Event when it does not.
+  final ValueNotifier<int> glassMode = ValueNotifier<int>(4);
+
+  /// What automatic has settled on: 0 Original or 3 Event.
+  final ValueNotifier<int> autoLevel = ValueNotifier<int>(0);
+
+  /// The style actually in use.
+  int get barMode => glassMode.value == 4 ? autoLevel.value : glassMode.value;
+  int _autoDowns = 0, _winFrames = 0, _winOver = 0;
+  double _winMs = 0;
+  File get _autoFile => File('${Directory.systemTemp.path}/prism_auto_level');
+
+  /// Judged every 480 frames (four seconds of movement at 120 Hz). More than
+  /// 15 % of frames over budget on Original means this phone cannot afford the
+  /// glass bar. Going back up is tried only with clear headroom, and only once,
+  /// so it cannot flip back and forth.
+  void _autoJudge(double budget) {
+    final double over = _winOver / _winFrames, avg = _winMs / _winFrames;
+    _winFrames = 0;
+    _winOver = 0;
+    _winMs = 0;
+    if (glassMode.value != 4 || _guided || banner.value != null) {
+      return;
+    }
+    if (autoLevel.value == 0 && over > 0.15) {
+      autoLevel.value = 3;
+      _autoDowns++;
+      event('auto: stepped down to Event (${(over * 100).round()}% slow)');
+    } else if (autoLevel.value == 3 &&
+        _autoDowns < 2 &&
+        over < 0.02 &&
+        avg < budget * 0.45) {
+      autoLevel.value = 0;
+      event('auto: stepped up to Original');
+    } else {
+      return;
+    }
+    try {
+      _autoFile.writeAsStringSync('${autoLevel.value} $_autoDowns');
+    } catch (_) {
+      // No storage: it simply starts from Original next time.
+    }
+  }
+
   static const List<String> glassModes = <String>[
     'Original',
     'One at a time',
@@ -157,6 +200,13 @@ class Diag {
           _clock.elapsedMicroseconds;
     });
     _mark();
+    try {
+      final List<String> saved = _autoFile.readAsStringSync().split(' ');
+      autoLevel.value = int.parse(saved[0]);
+      _autoDowns = int.parse(saved[1]);
+    } catch (_) {
+      // First run.
+    }
     try {
       _device =
           await const MethodChannel('lumen/device')
@@ -287,6 +337,14 @@ class Diag {
       _prevPrevOver = _prevOver;
       _prevOver = over;
       m.scene.add(build, draw, over, late, gap);
+      _winFrames++;
+      _winMs += build + draw;
+      if (over) {
+        _winOver++;
+      }
+      if (_winFrames >= 480) {
+        _autoJudge(budget);
+      }
       ab?.add(build, draw, over, late, gap);
       // How long the screen keeps drawing after an action.
       if (m.action != null && vsync >= m.actionAt) {
@@ -531,7 +589,7 @@ class Diag {
         'screen ${v.physicalSize.width.round()}x${v.physicalSize.height.round()} @${v.devicePixelRatio}x, ${_refresh.round()} Hz, budget ${f(budget)} ms per frame',
       )
       ..writeln(
-        'glass shader ${GlassShaders.available ? 'ok' : 'MISSING'}  ·  ${settings.themeMode == ThemeMode.dark ? 'dark' : 'light'}',
+        'glass shader ${GlassShaders.available ? 'ok' : 'MISSING'}  ·  ${settings.themeMode == ThemeMode.dark ? 'dark' : 'light'}  ·  glass style ${glassMode.value == 4 ? 'Auto, using ${autoLevel.value == 0 ? 'Original' : 'Event'}, stepped down $_autoDowns times' : glassModes[glassMode.value]}',
       );
 
     // 1. Each setting as a whole.

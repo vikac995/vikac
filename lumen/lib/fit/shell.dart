@@ -727,6 +727,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         _lensX,
                         _lift,
                         Diag.instance.glassMode,
+                        Diag.instance.autoLevel,
                       ]),
                       builder: (BuildContext context, Widget? _) {
                         // The lens swells when lifted, stretches along its travel and thins to keep its volume.
@@ -745,7 +746,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                           Radius.circular(h / 2),
                         );
                         final bool off = settings.reduceTransparency;
-                        final int mode = Diag.instance.glassMode.value;
+                        final int mode = Diag.instance.barMode;
                         final bool lensOut = _carrying || _parked;
                         final bool moving =
                             (_lensX.value - _lensX.target).abs() > 0.5 ||
@@ -1538,7 +1539,7 @@ void showPrismSettings(BuildContext context) {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Glass style (Original is how it was)',
+                      'Glass style (Auto: Original if the phone keeps up, else Event)',
                       style: LumenType.label(color: c.inkMuted),
                     ),
                     const SizedBox(height: 8),
@@ -1546,11 +1547,12 @@ void showPrismSettings(BuildContext context) {
                       listenable: Diag.instance.glassMode,
                       builder: (BuildContext context, Widget? _) =>
                           Segmented<int>(
-                            values: const <int>[0, 1, 2, 3],
+                            values: const <int>[4, 0, 1, 2, 3],
                             labels: const <String>[
-                              'Original',
+                              'Auto',
+                              'Orig.',
                               'One',
-                              'Frosted',
+                              'Frost',
                               'Event',
                             ],
                             value: Diag.instance.glassMode.value,

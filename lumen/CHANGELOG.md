@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 15 (13 November 2026)
+
+**File:** `releases/prism-build-15.apk`
+
+- **New glass style: Auto, now the default.** The app starts on Original. While you use it, it watches its own frames in blocks of 480 (about four seconds of movement). If more than 15 % of a block is over budget, it switches the bar to Event (solid bar; lens and rest timer stay glass) and remembers that for next launch. It goes back up to Original only if there is clear headroom, and at most once, so it cannot flicker between the two.
+- The settings row is now **Auto / Orig. / One / Frost / Event**. Choosing any of the four fixed styles turns Auto off. **Orig.** is the full revert.
+- The top of the test report says which style is in use and how many times Auto stepped down.
+
+**What to expect on your S26:** nothing visible. Your phone ran Original at 6.9 % over budget, well under the 15 % line, so Auto should stay on Original. If the bar ever turns solid by itself, the report's action list will say "auto: stepped down" with the percentage; send it to me.
+
+**Not checked:** I cannot make a phone slow on demand, so the step-down has never actually fired. The 15 % line is my judgement from your numbers, not something tested on an S24. Auto does nothing during the test itself.
+
 ## Prism, build 14 (13 November 2026)
 
 **File:** `releases/prism-build-14.apk`
