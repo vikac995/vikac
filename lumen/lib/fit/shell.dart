@@ -68,6 +68,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     value: 1,
     spring: Motions.expressiveFast,
   );
+  // The jiggle of a drop that has just landed: wider then taller, dying away.
+  late final SpringValue _wob = SpringValue(
+    this,
+    spring: SpringDescription.withDampingRatio(
+      mass: 1,
+      stiffness: 520,
+      ratio: 0.3,
+    ),
+  );
   late final SpringValue _rise = SpringValue(this, spring: Motions.spatial);
   late final SpringValue _page = SpringValue(
     this,
@@ -77,8 +86,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   final List<Timer> _fuses = <Timer>[];
   static final SpringDescription _shoot = SpringDescription.withDampingRatio(
     mass: 1,
-    stiffness: 950,
-    ratio: 0.62,
+    stiffness: 620,
+    ratio: 0.52,
   );
   double _sheetWeight = 81.8, _sheetSeconds = 90;
 
@@ -314,13 +323,22 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   void _lensMoved() {
-    if (_returning && (Offset(_lx.value, _ly.value) - _home).distance < 1.5) {
-      // Landed: the blob becomes the button again, with a small bounce.
-      setState(() => _returning = false);
-      _glass.jumpTo(0);
-      _kick.jumpTo(1.12);
-      _kick.animateTo(1);
-      Haptics.settle();
+    if (_returning) {
+      // Landed when it has covered the whole way, even if a frame steps past the exact spot.
+      final Offset way = _home - _retFrom,
+          done = Offset(_lx.value, _ly.value) - _retFrom;
+      final double whole = way.distanceSquared;
+      if (whole < 4 || (done.dx * way.dx + done.dy * way.dy) / whole >= 0.985) {
+        final double speed = Offset(_lx.velocity, _ly.velocity).distance;
+        setState(() => _returning = false);
+        _lx.jumpTo(_home.dx);
+        _ly.jumpTo(_home.dy);
+        _glass.jumpTo(0);
+        // It hits and jiggles: the faster it arrived, the more.
+        _wob.jumpTo((speed / 5000).clamp(0.07, 0.2));
+        _wob.animateTo(0);
+        Haptics.settle();
+      }
     }
     // Only while held or placed. On its way home it is just a button again and must not wake the cards it passes.
     final bool live = _carrying || _parked;
@@ -363,7 +381,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   void _lensHome() {
-    final bool away = _glass.value > 0.05;
+    final bool away = _glass.value > 0.05, wasParked = _parked;
     _retFrom = Offset(_lx.value, _ly.value);
     _retColor =
         (_parked ? _pill?.widget.color : null) ??
@@ -374,8 +392,16 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _parked = false;
       _target = null;
     });
-    _lx.animateTo(_home.dx, spring: Motions.spatial);
-    _ly.animateTo(_home.dy, spring: Motions.spatial);
+    if (away && !wasParked && _morph.value < 0.3) {
+      // The glass rode above the finger and was large. The drop starts nearer the finger, and smaller.
+      _ly.jumpTo(_ly.value + 34);
+      if (_glass.value > 0.3) {
+        _glass.jumpTo(0.3);
+      }
+      _retFrom = Offset(_lx.value, _ly.value);
+    }
+    _lx.animateTo(_home.dx, spring: Motions.expressive);
+    _ly.animateTo(_home.dy, spring: Motions.expressive);
     LensBus.instance.pos.value = null;
     _glass.animateTo(0);
     _morph.animateTo(0, spring: Motions.spatial);
@@ -529,7 +555,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       for (int i = 0; i < 5; i++) {
         _fuses.add(
           Timer(
-            Duration(milliseconds: (i - 2).abs() * 14),
+            Duration(milliseconds: i * 38),
             () => _out[i].animateTo(1, spring: _shoot),
           ),
         );
@@ -897,6 +923,19 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                 },
               ),
             ),
+            // The threads: each blob stays tied to the button until it arrives.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: CustomPaint(
+                  painter: _ThreadPainter(
+                    from: bc,
+                    to: <Offset>[for (int i = 0; i < 5; i++) rest(i)],
+                    out: _out,
+                    colors: <Color>[for (int i = 0; i < 5; i++) _actions[i].$3],
+                  ),
+                ),
+              ),
+            ),
             // The blobs.
             for (int i = 0; i < 5; i++)
               ListenableBuilder(
@@ -907,13 +946,16 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     return const SizedBox.shrink();
                   }
                   final Offset b = bc + (rest(i) - bc) * p;
-                  final double st = (_out[i].velocity.abs() * 0.028).clamp(
+                  final double st = (_out[i].velocity.abs() * 0.04).clamp(
                     0.0,
-                    0.34,
+                    0.46,
                   );
                   final Offset dir = rest(i) - bc;
                   final double ang = math.atan2(dir.dy, dir.dx),
-                      s = 0.5 + 0.5 * p;
+                      s =
+                          0.14 +
+                          0.86 * math.pow(p.clamp(0.0, 1.0), 1.5) +
+                          (p > 1 ? (p - 1) * 0.35 : 0);
                   return Positioned(
                     left: b.dx - _blob / 2 - 20,
                     top: b.dy - _blob / 2,
@@ -921,7 +963,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     child: IgnorePointer(
                       ignoring: !_open,
                       child: Opacity(
-                        opacity: (p * 2.4).clamp(0.0, 1.0),
+                        opacity: (p * 12).clamp(0.0, 1.0),
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () => _run(i),
@@ -969,16 +1011,20 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                 ),
                               ),
                               const SizedBox(height: 7),
-                              Text(
-                                _actions[i].$1,
-                                maxLines: 1,
-                                softWrap: false,
-                                textScaler: TextScaler.noScaling,
-                                style: LumenType.text(
-                                  13.5,
-                                  weight: 650,
-                                  color: Colors.white,
-                                  height: 1.1,
+                              // The name appears once the blob is nearly there, not while it is a speck.
+                              Opacity(
+                                opacity: ((p - 0.6) / 0.4).clamp(0.0, 1.0),
+                                child: Text(
+                                  _actions[i].$1,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  textScaler: TextScaler.noScaling,
+                                  style: LumenType.text(
+                                    13.5,
+                                    weight: 650,
+                                    color: Colors.white,
+                                    height: 1.1,
+                                  ),
                                 ),
                               ),
                             ],
@@ -1011,10 +1057,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                       _t,
                       _kick,
                       _glass,
+                      _wob,
                     ]),
                     builder: (BuildContext context, Widget? _) =>
                         Transform.scale(
-                          scale: _kick.value,
+                          scaleX: _kick.value * (1 + _wob.value),
+                          scaleY: _kick.value * (1 - _wob.value),
                           child: _glass.value > 0.5 || _returning
                               // While the button is away, an empty ring marks where it lives.
                               ? Container(
@@ -1866,8 +1914,7 @@ class _WallpaperImageState extends State<_WallpaperImage> {
 }
 
 /// The lens going home: a drop of the button's colour. It stretches along its
-/// path, leaves a short tail, and pours into a pool that grows where the
-/// button lives. Flat colour only: no glass, no blur, no shadow.
+/// path, leaves a short tail and lands where the button lives. Flat colour only: no glass, no blur, no shadow.
 class _BlobPainter extends CustomPainter {
   const _BlobPainter({
     required this.body,
@@ -1891,8 +1938,6 @@ class _BlobPainter extends CustomPainter {
     final double p = (1 - (at - home).distance / whole).clamp(0.0, 1.0);
     final Paint paint = Paint()
       ..color = Color.lerp(start, end, Curves.easeOut.transform(p))!;
-    // The pool it is pouring into.
-    canvas.drawCircle(home, button / 2 * p * p, paint);
     // The tail: three smaller drops left behind along the path.
     final double r = body.shortestSide / 2;
     // Spaced by speed, but never so far that the drops come apart.
@@ -1921,4 +1966,49 @@ class _BlobPainter extends CustomPainter {
   @override
   bool shouldRepaint(_BlobPainter old) =>
       old.body != body || old.velocity != velocity || old.start != start;
+}
+
+/// A blob leaving the button pulls a thread of its own colour behind it.
+/// The thread thins as the blob travels and snaps when it arrives.
+class _ThreadPainter extends CustomPainter {
+  _ThreadPainter({
+    required this.from,
+    required this.to,
+    required this.out,
+    required this.colors,
+  }) : super(repaint: Listenable.merge(out));
+  final Offset from;
+  final List<Offset> to;
+  final List<SpringValue> out;
+  final List<Color> colors;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (int i = 0; i < out.length; i++) {
+      final double p = out[i].value;
+      // Only on the way out: closing, the blobs simply fall back in.
+      if (p <= 0.02 || p >= 0.97 || out[i].target < 0.5) {
+        continue;
+      }
+      final Offset at = from + (to[i] - from) * p;
+      final double thick = 1.5 + 9 * (1 - p);
+      // Thick at the button, thin at the blob.
+      final Offset n =
+          Offset(-(at - from).dy, (at - from).dx) /
+          math.max((at - from).distance, 1);
+      canvas.drawPath(
+        Path()
+          ..moveTo(from.dx + n.dx * thick, from.dy + n.dy * thick)
+          ..lineTo(at.dx + n.dx * thick * 0.35, at.dy + n.dy * thick * 0.35)
+          ..lineTo(at.dx - n.dx * thick * 0.35, at.dy - n.dy * thick * 0.35)
+          ..lineTo(from.dx - n.dx * thick, from.dy - n.dy * thick)
+          ..close(),
+        Paint()
+          ..color = colors[i].withValues(alpha: ((1 - p) * 5).clamp(0.0, 1.0)),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ThreadPainter old) => old.from != from;
 }

@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 17 (13 November 2026)
+
+**File:** `releases/prism-build-17.apk`
+
+Morphing animations, from your notes on build 16.
+
+- **The drop no longer grows at the bottom.** That was a deliberate "pool" I added; it read as the button appearing twice. Removed. The drop now simply travels the whole way.
+- **It starts nearer your finger and smaller.** The glass rides above the finger and is large; the drop used to inherit both. It now begins lower and at about three quarters of the size.
+- **It lands like a droplet.** On arrival the button jiggles: wider, taller, wider, dying away. A faster arrival jiggles more.
+- **The blob menu shoots out.** Blobs leave one after another, left to right. Each starts tiny, grows as it travels, stays tied to the button by a thread of its own colour that thins and snaps on arrival, and bounces back a little at its resting place.
+
+**What to look for**
+- Drop: is the starting point right now, or still too high? Is the jiggle the right amount, or too much or too little?
+- Blobs: does the bounce at the top read as liquid, or as a glitch? Is one-after-another too slow when you are in a hurry?
+
+**Checked:** stills in my preview: the menu opens with tiny blobs growing, and the drop starts lower and lands on the button.
+**Not checked:** any of the motion. The jiggle and the threads I have not seen at all, only compiled.
+
 ## Prism, build 16 (13 November 2026)
 
 **File:** `releases/prism-build-16.apk`
