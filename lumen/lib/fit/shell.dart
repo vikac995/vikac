@@ -259,6 +259,31 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
     // Start from a known place.
     await Robot.tap(tab(0));
+    // 0. The app drawer: flick it open, drag through two pages and back one, close it.
+    await Robot.drag(
+      <Offset>[b, b - const Offset(0, 90)],
+      legMs: 90,
+      flick: true,
+      after: 900,
+    );
+    if (_drawerOpen) {
+      final Offset mid = Offset(sc.width / 2, sc.height * 0.55);
+      await Robot.drag(
+        <Offset>[mid, mid - const Offset(0, 250)],
+        legMs: 700,
+        after: 500,
+      );
+      await Robot.drag(
+        <Offset>[mid, mid + const Offset(0, 130)],
+        legMs: 500,
+        after: 500,
+      );
+      await Robot.tap(b, after: 700);
+    }
+    if (_drawerOpen) {
+      _setDrawer(false);
+      await Robot.wait(500);
+    }
     // 1. Every screen: arrive, flick down, flick back. On Train also tick a set and untick it.
     for (final int i in <int>[1, 2, 3, 0]) {
       await Robot.tap(tab(i), after: 900);

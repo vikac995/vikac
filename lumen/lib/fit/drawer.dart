@@ -559,10 +559,10 @@ class _GridPainter extends CustomPainter {
             _ripple,
             // Barely there: the corners soften by about a third and the shape leans a few degrees,
             // then both come back. With twenty tiles doing it together, less is calmer.
-            0.36 * math.sin(math.pi * e),
+            0.3744 * math.sin(math.pi * e),
             Offset.zero,
             _tile / 2 / _squircle[0],
-            0.2 * math.sin(math.pi * e),
+            0.208 * math.sin(math.pi * e),
           );
     double ease(double x) => Curves.easeInOut.transform(x.clamp(0.0, 1.0));
     // The centre never holds two things. The old mark draws in and is gone, the tile is plain

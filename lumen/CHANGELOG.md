@@ -1,5 +1,21 @@
 # Lumen changelog
 
+## Prism, build 40 (13 November 2026)
+
+**File:** `releases/prism-build-40.apk`
+
+- **The drawer morph is 4 % stronger** than build 39, as asked: corners soften and the outline leans very slightly more.
+- **The test now measures what the background lights cost.** It runs the app twice on full glass, once with the lights off and once with them on, doing exactly the same things both times. The difference between the rows "Full glass" and "Full glass + lights" is the cost of the background.
+- **The test now includes the app drawer.** In the automatic part the app flicks the drawer open, drags forward two pages and back one, and closes it, under every setting.
+- The test now runs four settings: Full glass, Full glass + lights, Event, No glass. "One at a time" and "Frosted" were dropped from the test because your earlier reports showed they change almost nothing; both are still in settings.
+
+**How to measure the background:** round button on Home, **Run the test**, hands off for about three and a half minutes, then use it for a minute when it says "your turn". Paste the report. You do not need to switch the lights on yourself: the test does it and puts your setting back afterwards.
+
+**Just to look at it:** the same sheet has the switch **Background lights**.
+
+**Checked:** in my preview the automatic part opens the drawer, turns pages forward and back, closes it and carries on.
+**Not checked:** the full test from start to finish with the new steps, and anything on a phone. The only earlier measurement of the lights is from build 11: 4.1 ms per frame with them and 4.1 ms without, so I expect a small difference, but that was before the drawer existed.
+
 ## Prism, build 39 (13 November 2026)
 
 **File:** `releases/prism-build-39.apk`

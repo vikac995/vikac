@@ -104,7 +104,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 39';
+  static const String build = 'Prism build 40';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -395,8 +395,8 @@ class Diag {
   // ---- the guided test: use the app; the settings change by themselves
   static const List<_Step> _steps = <_Step>[
     _Step('Full glass', GlassQuality.full),
-    _Step('One at a time', GlassQuality.full, mode: 1),
-    _Step('Frosted', GlassQuality.full, mode: 2),
+    // The same again with the background lights on: the difference between these two rows is what the background costs.
+    _Step('Full glass + lights', GlassQuality.full, lights: true),
     _Step('Event', GlassQuality.full, mode: 3),
     _Step('No glass', GlassQuality.low, solid: true),
   ];
@@ -406,7 +406,7 @@ class Diag {
   );
   static int get testSeconds =>
       _steps.length * secondsPerStep +
-      (_steps.length + 1) * 36 +
+      (_steps.length + 1) * 41 +
       _idleSeconds +
       3;
 
