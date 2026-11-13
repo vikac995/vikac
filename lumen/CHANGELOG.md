@@ -1,5 +1,37 @@
 # Lumen changelog
 
+## Prism, build 22 (13 November 2026)
+
+**File:** `releases/prism-build-22.apk`
+
+**Prism can be your home screen.**
+
+- After installing, press the home button. Android asks which home app to use: choose **Prism**, then **Always**. If it does not ask: Settings, Apps, Choose default apps, Home app, Prism.
+- **To go back to Samsung's home screen at any time:** the same setting, choose One UI Home. Nothing is lost; your Samsung layout is untouched.
+- The home button now brings you to Prism's Home page and closes anything open (drawer, sheet, lens, blobs).
+- The back button no longer leaves Prism, because a home screen has nowhere further back to go. It still closes things one step at a time.
+
+**The diary.** Prism now keeps notes by itself between tests, and they survive restarts.
+
+- Each time Prism leaves the screen it writes one line: how long it was up, frames drawn, late and slow frames, battery level, and the action that cost the most.
+- **Errors in the code are caught and written down** with where they happened and how often. Until now these were lost.
+- It does nothing while Prism is off screen: no timers, no wake-ups. About two weeks of use are kept.
+
+**The battery meter.**
+
+- While Prism is on screen, it reads the battery every ten seconds: level, how fast it is draining, whether it is charging, temperature, and screen brightness.
+- Readings are sorted into "screen still" and "screen moving" (by how many frames were drawn in those ten seconds). The difference between the two is what drawing costs, which is the part Prism can change.
+- Readings on the charger are left out.
+
+**All of it is in the same report.** Copy test report (or run the test) now ends with three new sections: DIARY, BATTERY, ERRORS. No test is needed for them; just use the phone and copy the report whenever you like.
+
+**What to look for**
+- As a home screen it is bare: no wallpaper, no widgets, no notification dots, no search, and the fitness data is still made up. Tell me what you miss first.
+- After a day: copy the report and send it. The BATTERY section needs a few minutes of use off the charger before it says anything.
+
+**Checked:** in my preview the diary line is written and the three sections appear in the report.
+**Not checked:** on a phone: being chosen as the home app, the home button, and every battery reading. Samsung phones report drain in a different unit from most others; the report says which unit it assumed, so I can tell if the numbers are off by a thousand.
+
 ## Prism, build 21 (13 November 2026)
 
 **File:** `releases/prism-build-21.apk`

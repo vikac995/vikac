@@ -19,6 +19,7 @@ android {
         // Two apps are built from this project. `ORG_GRADLE_PROJECT_fit=1` selects Prism, the fitness prototype.
         applicationId = if (project.hasProperty("fit")) "dev.lumen.prism" else "dev.lumen.lumen"
         manifestPlaceholders["appLabel"] = if (project.hasProperty("fit")) "Prism" else "Lumen"
+        manifestPlaceholders["homeCategory"] = if (project.hasProperty("fit")) "android.intent.category.HOME" else "dev.lumen.category.NOT_HOME"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

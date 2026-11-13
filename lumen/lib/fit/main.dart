@@ -10,6 +10,7 @@ import '../core/theme.dart';
 import '../widgets/fps_meter.dart';
 import '../core/haptics.dart';
 import 'diag.dart';
+import 'journal.dart';
 import 'shell.dart';
 
 /// Prism: a fitness app prototype built from Lumen's parts. A second app
@@ -35,6 +36,9 @@ Future<void> main() async {
   // On Auto, glass steps down by itself if frames are being missed.
   FrameStats.instance.governorEnabled = true;
   await Diag.instance.start();
+  // The diary: every stretch of use, the battery, and anything that goes wrong.
+  Journal.instance.start();
+  Diag.instance.tail = Journal.instance.report;
   runApp(const PrismApp());
 }
 

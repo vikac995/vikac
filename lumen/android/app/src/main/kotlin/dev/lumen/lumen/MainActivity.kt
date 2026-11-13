@@ -22,6 +22,16 @@ class MainActivity : FlutterActivity() {
         requestHighestRefreshRate()
     }
 
+    private var device: MethodChannel? = null
+
+    // The home button was pressed while Prism is the home screen: tell the app, so it can go back to its first page.
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        if (intent.hasCategory(android.content.Intent.CATEGORY_HOME)) {
+            device?.invokeMethod("home", null)
+        }
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         // Direct access to the vibration motor, for haptics that must be felt
@@ -119,8 +129,22 @@ class MainActivity : FlutterActivity() {
             }
         }
         // Which phone this is, for the test report.
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/device").setMethodCallHandler { call, result ->
-            if (call.method == "power") {
+        device = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/device")
+        device!!.setMethodCallHandler { call, result ->
+            if (call.method == "battery") {
+                // One reading of the battery: how full, how fast it is draining, whether it is charging.
+                val bm = getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+                val sticky = registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+                val bright = try { android.provider.Settings.System.getInt(contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS) } catch (e: Exception) { 0 }
+                result.success(mapOf(
+                    "level" to bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY),
+                    "current" to bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CURRENT_NOW),
+                    "counter" to bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER),
+                    "plugged" to ((sticky?.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0),
+                    "temp" to (sticky?.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0),
+                    "brightness" to bright,
+                ))
+            } else if (call.method == "power") {
                 // Battery level, heat and power saving: they change how fast the phone is willing to draw.
                 val bm = getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
                 val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager

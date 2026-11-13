@@ -101,7 +101,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 21';
+  static const String build = 'Prism build 22';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -337,6 +337,11 @@ class Diag {
       _prevPrevOver = _prevOver;
       _prevOver = over;
       m.scene.add(build, draw, over, late, gap);
+      totalFrames++;
+      totalLate += late;
+      if (over) {
+        totalOver++;
+      }
       _winFrames++;
       _winMs += build + draw;
       if (over) {
@@ -432,6 +437,26 @@ class Diag {
   }
 
   /// The app driving itself: set by the shell, which knows where things are on screen.
+  /// Running totals since the app started, for the diary.
+  int totalFrames = 0, totalOver = 0, totalLate = 0;
+
+  /// More text for the end of the report, supplied by whoever has it.
+  String Function()? tail;
+
+  /// The action that has cost the most late frames so far, in a few words.
+  String worstAction() {
+    MapEntry<String, _Bucket>? worst;
+    for (final MapEntry<String, _Bucket> e in _actions.entries) {
+      if (e.value.late > 0 &&
+          (worst == null || e.value.late > worst.value.late)) {
+        worst = e;
+      }
+    }
+    return worst == null
+        ? ''
+        : '${worst.key.split(' | ').last} (${worst.value.late} late)';
+  }
+
   Future<void> Function()? autoScript;
 
   /// One extra line for the top of the report, supplied by whoever knows it.
@@ -822,6 +847,9 @@ class Diag {
       ..writeln()
       ..writeln('last actions:')
       ..writeln(_events.isEmpty ? '(none)' : _events.join('\n'));
+    if (tail != null) {
+      o.write(tail!());
+    }
     return o.toString();
   }
 

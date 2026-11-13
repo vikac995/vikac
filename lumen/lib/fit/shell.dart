@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../core/glass.dart';
@@ -180,6 +181,26 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     super.initState();
     Diag.instance.finished.addListener(_showReport);
     Diag.instance.autoScript = _robot;
+    // Pressing the home button while Prism is the home screen: everything closes and Home shows.
+    const MethodChannel('lumen/device')
+        .setMethodCallHandler((MethodCall call) async {
+          if (call.method == 'home' && mounted) {
+            Diag.instance.event('home button');
+            if (_drawerOpen) {
+              _setDrawer(false);
+            }
+            if (_sheetOpen) {
+              _closeSheet();
+            }
+            if (_parked || _carrying) {
+              _lensHome();
+            }
+            _setOpen(false);
+            if (_tab != 0) {
+              _go(0);
+            }
+          }
+        });
     Diag.instance.extraLine = () =>
         'icon engine: ${Apps.instance.summary}\napp blobs: ${BlobApps.instance.apps.map((BlobApp a) => '${a.name} ${a.installed ? a.made : 'not found'} #${a.color.toARGB32().toRadixString(16).substring(2)}').join(', ')}';
     bool appsBefore = true;
@@ -742,10 +763,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
     // The system back button undoes the last thing that opened, one step at a time,
     // and only leaves the app from Home with nothing open.
-    final bool nothingOpen =
-        !_open && !_sheetOpen && !_parked && !_carrying && !_drawerOpen;
     return PopScope(
-      canPop: nothingOpen && _tab == 0,
+      // Prism is a home screen: there is nowhere further back to go, so back never leaves it.
+      canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? _) {
         if (didPop) {
           return;
@@ -762,7 +782,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         } else if (_open) {
           Diag.instance.event('back: close blobs');
           _setOpen(false);
-        } else {
+        } else if (_tab != 0) {
           Diag.instance.event('back: to Home');
           _go(0);
         }
