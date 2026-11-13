@@ -37,14 +37,15 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   late final SpringValue _rise = SpringValue(this, spring: Motions.expressive);
   late final AnimationController _turn = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 420),
-    value: 1,
+    duration: const Duration(milliseconds: 260),
+    value: 0,
   );
   late final SpringValue _ring = SpringValue(
     this,
     spring: Motions.expressiveFast,
   );
-  int _from = 0, _page = 0, _dir = 1, _rows = 5;
+  int _page = 0, _rows = 5;
+  final int _dir = 1;
   double _pull = 0;
   static const int _cols = 4;
 
@@ -93,28 +94,93 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   int get _perPage => _rows * _cols;
   int get _pages => math.max(1, (Apps.instance.all.length / _perPage).ceil());
 
-  void _go(int by) {
-    final int to = (_page + by).clamp(0, _pages - 1);
-    if (to == _page) {
-      Haptics.thud();
+  // How far the finger must travel to change one page completely.
+  static const double _travel = 120;
+
+  /// The page being morphed toward while a finger is down or the change is finishing. Equal to [_page] at rest.
+  int _toward = 0;
+
+  /// The finger moved. The morph follows it exactly: further is more, back is less,
+  /// and past the full distance the page is taken and the next one begins.
+  void _drag(double by) {
+    _turn.stop();
+    _pull += by;
+    int dir = _pull < 0 ? 1 : -1;
+    while (_pull.abs() >= _travel &&
+        (_page + dir).clamp(0, _pages - 1) != _page) {
+      // A whole page has gone by under the finger.
+      _page += dir;
+      _pull -= _travel * (_pull < 0 ? -1 : 1);
+      Haptics.tick();
+      Diag.instance.event('drawer page');
+      dir = _pull < 0 ? 1 : -1;
+    }
+    final int next = (_page + dir).clamp(0, _pages - 1);
+    setState(() => _toward = next);
+    // At the first or last page there is nothing to morph to: the finger meets no response.
+    _turn.value = next == _page ? 0 : (_pull.abs() / _travel).clamp(0.0, 1.0);
+    _aim(lean: (next - _page) * _turn.value);
+  }
+
+  /// The finger left. Past a third of the way (or with a flick) the change completes; otherwise it goes back.
+  void _release(double speed) {
+    _pull = 0;
+    if (_toward == _page) {
+      _turn.value = 0;
+      _aim();
       return;
     }
-    setState(() {
-      _from = _page;
-      _page = to;
-      _dir = by;
-    });
-    // For my own checking, the change can be held part-way: TURN_FREEZE=0.5
-    final double freeze =
-        double.tryParse(const String.fromEnvironment('TURN_FREEZE')) ?? -1;
-    if (freeze >= 0) {
-      _turn.value = freeze;
+    final bool forward = _toward > _page;
+    final bool flick = forward ? speed < -350 : speed > 350;
+    if (_turn.value > 0.33 || flick) {
+      final int to = _toward;
+      _aim(lean: (to - _page).toDouble());
+      _turn
+          .animateTo(
+            1,
+            duration: Duration(
+              milliseconds: (220 * (1 - _turn.value)).round() + 40,
+            ),
+            curve: Curves.easeOut,
+          )
+          .whenComplete(() {
+            if (!mounted || _toward != to) {
+              return;
+            }
+            setState(() => _page = to);
+            _turn.value = 0;
+            _aim();
+            Haptics.tick();
+            Diag.instance.event('drawer page');
+          });
     } else {
-      _turn.forward(from: 0);
+      _aim();
+      _turn
+          .animateTo(
+            0,
+            duration: Duration(milliseconds: (220 * _turn.value).round() + 40),
+            curve: Curves.easeOut,
+          )
+          .whenComplete(() {
+            if (mounted) {
+              setState(() => _toward = _page);
+            }
+          });
     }
+  }
+
+  /// A finger came down while a change was still finishing: settle it at once so the new drag starts clean.
+  void _settle() {
+    if (_turn.isAnimating) {
+      _turn.stop();
+      if (_turn.value > 0.5) {
+        _page = _toward;
+      }
+    }
+    _turn.value = 0;
+    setState(() => _toward = _page);
+    _pull = 0;
     _aim();
-    Haptics.tick();
-    Diag.instance.event('drawer page');
   }
 
   String get _range {
@@ -253,28 +319,18 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                   builder: (BuildContext context, BoxConstraints box) =>
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onPanStart: (_) => _pull = 0,
-                        onPanUpdate: (DragUpdateDetails d) {
-                          // No scrolling. Up or left is forward, down or right is back, whichever way
-                          // the finger mostly goes. Every 56 of travel turns one page, so a long swipe turns several.
-                          _pull += d.delta.dy.abs() >= d.delta.dx.abs()
+                        onPanStart: (_) => _settle(),
+                        // No scrolling. Up or left is forward, down or right is back, whichever way the finger mostly goes.
+                        onPanUpdate: (DragUpdateDetails d) => _drag(
+                          d.delta.dy.abs() >= d.delta.dx.abs()
                               ? d.delta.dy
-                              : d.delta.dx;
-                          if (_pull.abs() > 56) {
-                            _go(_pull < 0 ? 1 : -1);
-                            _pull = 0;
-                          }
-                          // The ring leans the way you are pulling before the page turns.
-                          _aim(lean: (-_pull / 56).clamp(-1.0, 1.0) * 0.45);
+                              : d.delta.dx,
+                        ),
+                        onPanEnd: (DragEndDetails d) {
+                          final Offset v = d.velocity.pixelsPerSecond;
+                          _release(v.dy.abs() >= v.dx.abs() ? v.dy : v.dx);
                         },
-                        onPanEnd: (_) {
-                          _pull = 0;
-                          _aim();
-                        },
-                        onPanCancel: () {
-                          _pull = 0;
-                          _aim();
-                        },
+                        onPanCancel: () => _release(0),
                         onTapUp: (TapUpDetails d) {
                           final int col =
                               (d.localPosition.dx / (box.maxWidth / _cols))
@@ -295,8 +351,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                           size: Size(box.maxWidth, box.maxHeight),
                           painter: _GridPainter(
                             apps: Apps.instance.all,
-                            from: _from,
-                            to: _page,
+                            from: _page,
+                            to: _toward,
                             dir: _dir,
                             rows: _rows,
                             cols: _cols,
@@ -357,24 +413,6 @@ class _GridPainter extends CustomPainter {
       .radii;
   static final Map<String, TextPainter> _labels = <String, TextPainter>{};
   static final Map<String, TextPainter> _letters = <String, TextPainter>{};
-
-  /// One colour sliding into another around the colour wheel, the short way.
-  /// Mixing two colours straight across goes through grey halfway; this stays as vivid as both ends.
-  static Color _slide(Color from, Color to, double t) {
-    final HSLColor a = HSLColor.fromColor(from), b = HSLColor.fromColor(to);
-    double turn = b.hue - a.hue;
-    if (turn > 180) {
-      turn -= 360;
-    } else if (turn < -180) {
-      turn += 360;
-    }
-    return HSLColor.fromAHSL(
-      from.a + (to.a - from.a) * t,
-      (a.hue + turn * t) % 360,
-      a.saturation + (b.saturation - a.saturation) * t,
-      a.lightness + (b.lightness - a.lightness) * t,
-    ).toColor();
-  }
 
   TextPainter _label(AppTile t, double width) => _labels.putIfAbsent(
     '${t.label}|${width.round()}|${ink.toARGB32()}',
@@ -445,8 +483,6 @@ class _GridPainter extends CustomPainter {
     final double cw = size.width / cols, ch = size.height / rows;
     final int per = rows * cols;
     final double v = turn.value;
-    const double rowGap = 0.05, colGap = 0.012, span = 0.72;
-    final double last = (rows - 1) * rowGap + (cols - 1) * colGap;
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
         final int i = row * cols + col;
@@ -456,20 +492,24 @@ class _GridPainter extends CustomPainter {
         if (a == null && b == null) {
           continue;
         }
-        final double wait =
-            (dir > 0 ? row : rows - 1 - row) * rowGap + col * colGap;
-        final double t = v >= 1
-            ? 1
-            : ((v * (last + span) - wait) / span).clamp(0.0, 1.0);
-        final double e = Curves.easeInOut.transform(t);
+        // Every tile changes together, exactly as far as the finger has gone.
+        final double e = v;
         final Offset centre = Offset(
           cw * (col + 0.5),
           ch * row + 8 + _tile / 2,
         );
-        final Color colour = _slide(
+        // The colour goes straight from one to the other and dips darker on the way, never brighter.
+        final Color mixed = Color.lerp(
           a?.color ?? b!.color.withValues(alpha: 0),
           b?.color ?? a!.color.withValues(alpha: 0),
           e,
+        )!;
+        final double dark = 1 - 0.34 * math.sin(math.pi * e);
+        final Color colour = Color.from(
+          alpha: mixed.a,
+          red: mixed.r * dark,
+          green: mixed.g * dark,
+          blue: mixed.b * dark,
         );
         // Nothing disappears. The squircle's outline ripples a little while its colour slides
         // across (the same shape morph as elsewhere in Prism), and settles back to a squircle.
@@ -481,7 +521,7 @@ class _GridPainter extends CustomPainter {
         final Path shape = ShapeLib.lerpPath(
           _squircle,
           _ripple,
-          0.42 * math.sin(math.pi * e),
+          0.3 * math.sin(math.pi * e),
           centre,
           _tile / 2 / _squircle[0],
           0,

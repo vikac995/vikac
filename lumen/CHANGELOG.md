@@ -1,5 +1,28 @@
 # Lumen changelog
 
+## Prism, build 28 (13 November 2026)
+
+**File:** `releases/prism-build-28.apk`
+
+**The drawer's morph now follows your finger.** Build 26's version played by itself once triggered, flashed bright colours halfway and rippled too hard, which looked like a glitch. This replaces it.
+
+- **It moves with the drag, in real time.** Drag a little and the tiles morph a little. Drag back and they return. Stop and they hold.
+- **Let go** past a third of the way, or with a flick, and it completes. Let go earlier and it goes back.
+- **Keep dragging** and page after page goes by under your finger, about 120 of travel per page.
+- **The whole page changes together.** No row-after-row delay.
+- **Colours dip darker in the middle**, never brighter. They go straight from one app's colour to the next and are about a third darker at the halfway point.
+- **The ripple is gentler** (under a third of the full cookie shape).
+- At the first and last page a drag outward does nothing.
+- The ring follows the drag too.
+
+**What to look for**
+- Does the morph feel attached to your finger?
+- Darkness in the middle: right, too much, or too little?
+- Is 120 of travel per page comfortable, or should a page take less dragging?
+
+**Checked:** in my preview I held a drag halfway (tiles darker, gently rippled, marks mid-dissolve), dragged back (page restored exactly), completed a drag (next page), and made a short drag (reverted).
+**Not checked:** on a phone, and how it feels in motion.
+
 ## Prism, build 27 (13 November 2026)
 
 **File:** `releases/prism-build-27.apk`
