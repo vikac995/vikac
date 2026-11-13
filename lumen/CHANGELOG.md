@@ -1,5 +1,31 @@
 # Lumen changelog
 
+## Build 12 (13 November 2026)
+
+Four more examples at the end of "More patterns". Nothing was removed or changed elsewhere.
+
+**Files:** `releases/lumen-build-12.apk`, `releases/lumen-source-build-12.zip`
+
+### New
+
+- **R36 Theme lab.** One small screen restyled live: six accents, corner radius, three spacings, light or dark, and whether the background borrows a little of the accent. The line under the preview states the exact values (for example "accent #9B6BFF · corner 23 · gap 12 · dark, tinted"), so a screenshot carries the recipe.
+- **R37 Notifications.** Five ways for an app to speak up, quietest first: a badge; a bottom message with Undo whose background drains as the time runs out; a banner from the top (swipe up to dismiss, or it leaves after four seconds); a stack of three that unfolds on tap; and a polite request before the system permission dialog.
+- **R38 Calendar.** History as a month. Dots mark days with a session, today has a ring, one highlight travels between days, the month changes by swipe or arrows, and the day's summary sits underneath. Future days and future months cannot be picked (the month bumps back with a thud).
+- **R39 Workout screen.** A complete workout-in-progress screen. Progress through the session and elapsed time; last time's numbers as a hint; set rows with the kg and reps dials; one tap finishes a set; the rest timer then starts by itself as a floating pill (+15 s, Skip); when every set is done, the "Next" button lights up. Pieces are tagged R39.1 to R39.5 with "Show names" on. The session data is made up.
+
+### What to test on the phone
+
+1. R39: tick a set. The rest pill should rise from the bottom without covering a row you need. Does it feel right that it starts unasked? Tick all four: "Next" should wake up with a thud.
+2. R39: the dials inside the rows should feel the same as in R23.
+3. R38: tap days far apart and watch the highlight travel. Swipe sideways for the previous month; try to go into December.
+4. R37: "Archive this session", then Undo before the bar drains. "Show a banner", then swipe it up.
+5. R36: move the corner slider end to end and switch spacing; watch the frame-rate readout.
+
+### Not checked
+
+- Only the Linux preview (software rendering, mouse). Haptics, real frame rate and feel were not checked.
+- R36 in Lumen's light mode, and all four at a large system text size.
+
 ## Build 11 (13 November 2026)
 
 Six new examples, in a new home section called "More patterns". Nothing was removed; rooms 1 to 29 and the bonus are unchanged.

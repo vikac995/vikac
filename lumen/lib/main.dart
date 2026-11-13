@@ -43,6 +43,10 @@ import 'rooms/patterns/scan_room.dart';
 import 'rooms/patterns/widgets_room.dart';
 import 'rooms/patterns/lists_room.dart';
 import 'rooms/patterns/celebrate_room.dart';
+import 'rooms/patterns/theme_room.dart';
+import 'rooms/patterns/notify_room.dart';
+import 'rooms/patterns/calendar_room.dart';
+import 'rooms/screens/workout_screen.dart';
 import 'rooms/shaders/shaders_room.dart';
 import 'rooms/shapes/shape_room.dart';
 import 'rooms/springs/springs_room.dart';
@@ -130,6 +134,10 @@ class LumenApp extends StatelessWidget {
             'widgets' => const WidgetsRoom(),
             'lists' => const ListsRoom(),
             'celebrate' => const CelebrateRoom(),
+            'theme' => const ThemeRoom(),
+            'notify' => const NotifyRoom(),
+            'calendar' => const CalendarRoom(),
+            'workout' => const WorkoutScreen(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

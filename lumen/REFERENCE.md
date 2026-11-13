@@ -77,6 +77,10 @@ the top of those screens) and every piece is labelled in the app, so a screensho
 | R33 | Widgets | An editable grid of tiles: long-press to edit, drag a handle to resize in whole cells, remove with a badge, add from a picker; everything else springs out of the way. | `lib/rooms/patterns/widgets_room.dart` |
 | R34 | Lists | A long list: search as you type, filter chips, sticky letter headers, a letter rail with ticks to jump, and an empty result state. | `lib/rooms/patterns/lists_room.dart` |
 | R35 | Celebrate | Short reward moments that end: personal best with confetti and a rolling number, a streak filling day by day, a goal ring closing into a tick. | `lib/rooms/patterns/celebrate_room.dart` |
+| R36 | Theme lab | One small screen restyled live by accent, corner radius, spacing, light or dark and background tint; a line under it states the exact values. | `lib/rooms/patterns/theme_room.dart` |
+| R37 | Notifications | Five ways to speak up, quietest first: a badge, a bottom message with Undo and a draining timer, a banner from the top, a stack that unfolds, and a polite permission request. | `lib/rooms/patterns/notify_room.dart` |
+| R38 | Calendar | History as a month: dots on days with a session, one highlight that travels between days, month change by swipe or arrows, a day summary, and a future that cannot be picked. | `lib/rooms/patterns/calendar_room.dart` |
+| R39 | Workout screen | A complete workout-in-progress screen: progress through the session, last time as a hint, set rows with thumb dials, one tap to finish a set, a rest timer that starts itself, and a next button that wakes when all sets are done. | `lib/rooms/screens/workout_screen.dart` |
 
 ## Bonus
 

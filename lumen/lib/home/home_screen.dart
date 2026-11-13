@@ -37,6 +37,10 @@ import '../rooms/patterns/scan_room.dart';
 import '../rooms/patterns/widgets_room.dart';
 import '../rooms/patterns/lists_room.dart';
 import '../rooms/patterns/celebrate_room.dart';
+import '../rooms/patterns/theme_room.dart';
+import '../rooms/patterns/notify_room.dart';
+import '../rooms/patterns/calendar_room.dart';
+import '../rooms/screens/workout_screen.dart';
 import '../rooms/pill/pill_room.dart';
 import '../rooms/shaders/shaders_room.dart';
 import '../rooms/shapes/shape_room.dart';
@@ -271,6 +275,30 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFFF5B301),
     (_) => const CelebrateRoom(),
   ),
+  _Room(
+    'Theme lab',
+    'One screen, restyled live.',
+    const Color(0xFF9B6BFF),
+    (_) => const ThemeRoom(),
+  ),
+  _Room(
+    'Notifications',
+    'Five volumes, quietest first.',
+    const Color(0xFFE5484D),
+    (_) => const NotifyRoom(),
+  ),
+  _Room(
+    'Calendar',
+    'History as a month.',
+    const Color(0xFF3FA9F5),
+    (_) => const CalendarRoom(),
+  ),
+  _Room(
+    'Workout',
+    'A session in progress.',
+    const Color(0xFF2FA84F),
+    (_) => const WorkoutScreen(),
+  ),
 ];
 
 class HomeScreen extends StatefulWidget {
@@ -420,7 +448,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A showcase of interface craft.\nThirty-five examples to point at.\nEach has an id; pieces can show their names.',
+                    'A showcase of interface craft.\nThirty-nine examples to point at.\nEach has an id; pieces can show their names.',
                     style: LumenType.text(
                       15.5,
                       color: c.inkMuted,
@@ -497,7 +525,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               'Foundations',
               'The basics every good interface gets right.',
             ),
-            for (int r = 0; r < 3; r++) ...<Widget>[
+            for (int r = 0; r < 5; r++) ...<Widget>[
               if (r > 0) const SizedBox(height: gap),
               Row(
                 children: <Widget>[
@@ -509,7 +537,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
             const SizedBox(height: 34),
             _section(c, 'Patterns', 'Building blocks for real apps.'),
-            for (int r = 0; r < 3; r++) ...<Widget>[
+            for (int r = 0; r < 5; r++) ...<Widget>[
               if (r > 0) const SizedBox(height: gap),
               Row(
                 children: <Widget>[
@@ -540,9 +568,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             _section(
               c,
               'More patterns',
-              'Numbers, camera, tiles, long lists, rewards.',
+              'Numbers, camera, tiles, lists, rewards, themes, alerts.',
             ),
-            for (int r = 0; r < 3; r++) ...<Widget>[
+            for (int r = 0; r < 5; r++) ...<Widget>[
               if (r > 0) const SizedBox(height: gap),
               Row(
                 children: <Widget>[
@@ -558,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 11  ·  Flutter 3.50  ·  Impeller',
+                'Build 12  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),
