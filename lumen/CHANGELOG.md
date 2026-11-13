@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 29 (13 November 2026)
+
+**File:** `releases/prism-build-29.apk`
+
+**The drawer morph, simplified to exactly this:** squircle, to a soft cookie, back to squircle, while the colour goes from one app's to the next.
+
+- **The shape** in the middle is a cookie with six shallow waves: fewer and softer than the seven-wave cookie in the Shape morph room. At the halfway point the tile is fully that shape.
+- **The colour** goes straight from one to the other. No darkening, no brightening, no flash.
+- Everything else from build 28 stays: it follows your finger, reverses if you drag back, and the whole page changes together.
+
+**What to look for:** is the cookie soft enough, and is six waves right? Does the colour change look plain and calm now?
+
+**Checked:** in my preview I held a drag halfway with a five-wave version: the colours were halfway between the two apps with no brightness change, but five waves read as a pentagon. I changed it to six shallower waves and did not preview that last change.
+**Not checked:** on a phone, and in motion.
+
 ## Prism, build 28 (13 November 2026)
 
 **File:** `releases/prism-build-28.apk`

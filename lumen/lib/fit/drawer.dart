@@ -408,9 +408,11 @@ class _GridPainter extends CustomPainter {
           )
           .toDouble(),
   ]);
-  static final Float32List _ripple = ShapeLib.gallery
-      .firstWhere((MorphShape m) => m.name == 'Cookie')
-      .radii;
+  // A cookie with fewer, softer waves than the one in the Shape morph room: six shallow lobes.
+  static final Float32List _ripple = Float32List.fromList(<double>[
+    for (int i = 0; i < ShapeLib.samples; i++)
+      0.98 * (1 + 0.052 * math.cos(6 * i / ShapeLib.samples * 2 * math.pi)),
+  ]);
   static final Map<String, TextPainter> _labels = <String, TextPainter>{};
   static final Map<String, TextPainter> _letters = <String, TextPainter>{};
 
@@ -498,19 +500,12 @@ class _GridPainter extends CustomPainter {
           cw * (col + 0.5),
           ch * row + 8 + _tile / 2,
         );
-        // The colour goes straight from one to the other and dips darker on the way, never brighter.
-        final Color mixed = Color.lerp(
+        // The colour goes straight from one to the other. No change in brightness, nothing else.
+        final Color colour = Color.lerp(
           a?.color ?? b!.color.withValues(alpha: 0),
           b?.color ?? a!.color.withValues(alpha: 0),
           e,
         )!;
-        final double dark = 1 - 0.34 * math.sin(math.pi * e);
-        final Color colour = Color.from(
-          alpha: mixed.a,
-          red: mixed.r * dark,
-          green: mixed.g * dark,
-          blue: mixed.b * dark,
-        );
         // Nothing disappears. The squircle's outline ripples a little while its colour slides
         // across (the same shape morph as elsewhere in Prism), and settles back to a squircle.
         final Rect box = Rect.fromCenter(
@@ -521,7 +516,7 @@ class _GridPainter extends CustomPainter {
         final Path shape = ShapeLib.lerpPath(
           _squircle,
           _ripple,
-          0.3 * math.sin(math.pi * e),
+          math.sin(math.pi * e),
           centre,
           _tile / 2 / _squircle[0],
           0,
