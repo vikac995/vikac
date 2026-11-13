@@ -39,6 +39,7 @@ class Journal with WidgetsBindingObserver {
       _brightN = 0;
   double _stillMa = 0, _moveMa = 0, _bright = 0, _temp = 0, _capacityMah = 0;
   String _unit = '';
+  final List<String> _raw = <String>[];
   final Map<String, int> _errors = <String, int>{};
 
   void start() {
@@ -113,6 +114,12 @@ class Journal with WidgetsBindingObserver {
       _brightN++;
       // Phones disagree on the unit. Samsung reports milliamps, most others microamps.
       double now = (b['current']! as num).toDouble();
+      // The untouched figures of this session, so the unit and sign can be checked by eye.
+      if (_raw.length < 24) {
+        _raw.add(
+          '${now.round()}${Diag.instance.totalFrames - _framesAtSample < 30 ? 's' : 'm'}',
+        );
+      }
       if (now.abs() > 20000) {
         now /= 1000;
         _unit = 'reported in microamps';
@@ -342,6 +349,10 @@ class Journal with WidgetsBindingObserver {
         }
       }
       o
+        ..writeln()
+        ..writeln(
+          'raw battery readings this session, as the phone gave them (s = screen still, m = moving): ${_raw.isEmpty ? 'none' : _raw.join(' ')}',
+        )
         ..writeln()
         ..writeln('ERRORS in the code (most frequent first)');
       final List<String> errs = <String>[

@@ -175,6 +175,44 @@ class BlobApps extends ChangeNotifier {
     // where the icon's own soft edge would otherwise show up as an outline.
     final Uint8List out = Uint8List(w * h * 4);
     final int rim = (w * 0.07).round();
+    // How different from the ground does the icon get at all? Most marks are far from it
+    // (white on blue). Some are drawn tone on tone (a darker red letter on red), and for those
+    // "different" has to be judged against how little the icon varies, or the mark is missed.
+    final List<int> spread = List<int>.filled(64, 0);
+    int inner = 0;
+    for (int y = rim; y < h - rim; y += 2) {
+      for (int x = rim; x < w - rim; x += 2) {
+        final int i = at(x, y);
+        if (data.getUint8(i + 3) < 128) {
+          continue;
+        }
+        final double nx = (x - w / 2) / (w / 2), ny = (y - h / 2) / (h / 2);
+        if (nx * nx * nx * nx + ny * ny * ny * ny > 0.45) {
+          continue;
+        }
+        final int r = data.getUint8(i),
+            g = data.getUint8(i + 1),
+            b = data.getUint8(i + 2);
+        final double d = math.sqrt(
+          (r - gr) * (r - gr) + (g - gg) * (g - gg) + (b - gb) * (b - gb),
+        );
+        spread[math.min(63, d ~/ 7)]++;
+        inner++;
+      }
+    }
+    // The distance that only the most different 4 % of the icon exceeds.
+    double far = 0;
+    for (int k = 63, seen = 0; k >= 0; k--) {
+      seen += spread[k];
+      if (seen >= inner * 0.04) {
+        far = k * 7.0;
+        break;
+      }
+    }
+    final bool faint = far < 84 && far >= 21;
+    final double from0 = faint ? far * 0.4 : 45,
+        ramp = faint ? far * 0.45 : 50,
+        counts = faint ? far * 0.62 : 70;
     int opaque = 0, marked = 0, minX = w, minY = h, maxX = 0, maxY = 0;
     final Map<int, List<int>> ink = <int, List<int>>{};
     for (int y = 0; y < h; y++) {
@@ -187,13 +225,18 @@ class BlobApps extends ChangeNotifier {
         if (x < rim || y < rim || x >= w - rim || y >= h - rim) {
           continue;
         }
+        // Icons are rounded at the corners, and the rounding itself must not be mistaken for a mark.
+        final double nx = (x - w / 2) / (w / 2), ny = (y - h / 2) / (h / 2);
+        if (nx * nx * nx * nx + ny * ny * ny * ny > 0.45) {
+          continue;
+        }
         final int r = data.getUint8(i),
             g = data.getUint8(i + 1),
             b = data.getUint8(i + 2);
         final double d = math.sqrt(
           (r - gr) * (r - gr) + (g - gg) * (g - gg) + (b - gb) * (b - gb),
         );
-        final double a = ((d - 45) / 50).clamp(0.0, 1.0);
+        final double a = ((d - from0) / ramp).clamp(0.0, 1.0);
         if (a <= 0) {
           continue;
         }
@@ -203,7 +246,7 @@ class BlobApps extends ChangeNotifier {
         out[i + 1] = v;
         out[i + 2] = v;
         out[i + 3] = v;
-        if (d > 70) {
+        if (d > counts) {
           marked++;
           minX = math.min(minX, x);
           maxX = math.max(maxX, x);
@@ -409,7 +452,7 @@ class IconEngine {
         : BlobApps.tame(c);
     final Color? main = await BlobApps.mainColour(icon);
     if (outline != null) {
-      return AppLook('outline', soft(main), glyph: outline);
+      return AppLook('outline', soft(main), glyph: await _fit(outline));
     }
     final (ui.Image, Color?)? cut = await BlobApps.cutOut(icon);
     if (cut != null) {
@@ -422,11 +465,82 @@ class IconEngine {
   /// A picture cannot be redrawn, so it is brought as near to the palette as
   /// it can go while staying itself: a little less vivid, the brightest and
   /// darkest parts pulled in, and a wash of its own blob colour over it.
+  /// Trims a white mark to what is actually drawn, so a mark that its app made small
+  /// fills its tile like every other.
+  static Future<ui.Image> _fit(ui.Image glyph) async {
+    final ByteData? data = await glyph.toByteData();
+    final int w = glyph.width, h = glyph.height;
+    if (data == null) {
+      return glyph;
+    }
+    int minX = w, minY = h, maxX = -1, maxY = -1;
+    for (int y = 0; y < h; y++) {
+      for (int x = 0; x < w; x++) {
+        if (data.getUint8((y * w + x) * 4 + 3) > 40) {
+          minX = math.min(minX, x);
+          maxX = math.max(maxX, x);
+          minY = math.min(minY, y);
+          maxY = math.max(maxY, y);
+        }
+      }
+    }
+    if (maxX < 0) {
+      return glyph;
+    }
+    final int side = math.max(maxX - minX, maxY - minY) + 1 + 2 * (w ~/ 16);
+    if (side >= w * 0.92) {
+      return glyph; // Already fills its picture.
+    }
+    final int cx = (minX + maxX) ~/ 2, cy = (minY + maxY) ~/ 2;
+    final Uint8List crop = Uint8List(side * side * 4);
+    for (int y = 0; y < side; y++) {
+      final int sy = cy - side ~/ 2 + y;
+      if (sy < 0 || sy >= h) {
+        continue;
+      }
+      for (int x = 0; x < side; x++) {
+        final int sx = cx - side ~/ 2 + x;
+        if (sx < 0 || sx >= w) {
+          continue;
+        }
+        final int from = (sy * w + sx) * 4, to = (y * side + x) * 4;
+        crop[to] = data.getUint8(from);
+        crop[to + 1] = data.getUint8(from + 1);
+        crop[to + 2] = data.getUint8(from + 2);
+        crop[to + 3] = data.getUint8(from + 3);
+      }
+    }
+    return fromPixels(crop, side, side);
+  }
+
   static Future<ui.Image> _calm(ui.Image image, Color wash) async {
     final ByteData data = (await image.toByteData())!;
     final int n = image.width * image.height;
     final Uint8List out = Uint8List(n * 4);
     final double wr = wash.r * 255, wg = wash.g * 255, wb = wash.b * 255;
+    // Some icons are drawn tone on tone (a red letter on red). Calming those would leave
+    // nothing to see, so first find out how much light and dark the picture has at all.
+    double lo = 255, hi = 0, sum = 0;
+    int counted = 0;
+    for (int p = 0; p < n; p += 3) {
+      final int i = p * 4, a = data.getUint8(i + 3);
+      if (a < 200) {
+        continue;
+      }
+      final double l =
+          0.299 * data.getUint8(i) +
+          0.587 * data.getUint8(i + 1) +
+          0.114 * data.getUint8(i + 2);
+      lo = math.min(lo, l);
+      hi = math.max(hi, l);
+      sum += l;
+      counted++;
+    }
+    final double mid = counted == 0 ? 128 : sum / counted;
+    // A flat picture gets its light and dark pulled apart, up to two and a half times.
+    final double lift = hi - lo < 130
+        ? math.min(2.5, 130 / math.max(hi - lo, 1))
+        : 1;
     for (int p = 0; p < n; p++) {
       final int i = p * 4, a = data.getUint8(i + 3);
       if (a == 0) {
@@ -437,6 +551,11 @@ class IconEngine {
       double r = data.getUint8(i) * k,
           g = data.getUint8(i + 1) * k,
           b = data.getUint8(i + 2) * k;
+      if (lift > 1) {
+        r = (mid + (r - mid) * lift).clamp(0, 255);
+        g = (mid + (g - mid) * lift).clamp(0, 255);
+        b = (mid + (b - mid) * lift).clamp(0, 255);
+      }
       final double grey = 0.299 * r + 0.587 * g + 0.114 * b;
       r = grey + (r - grey) * 0.78;
       g = grey + (g - grey) * 0.78;
@@ -492,7 +611,7 @@ class Apps extends ChangeNotifier {
   /// What the last refresh did, for the test report.
   String summary = 'not run';
   Directory get _dir =>
-      Directory('${Directory.systemTemp.path}/prism_looks_v2');
+      Directory('${Directory.systemTemp.path}/prism_looks_v3');
 
   Future<void> launch(AppTile t) async {
     try {

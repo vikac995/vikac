@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Prism, build 35 (13 November 2026)
+
+**File:** `releases/prism-build-35.apk`
+
+Icon engine fixes, from your screenshot of the C to G page.
+
+- **Tone-on-tone icons (eKupi).** Its letter is a slightly different red on red. The engine looked for a mark that is very different from the ground, found none, treated the icon as a picture and then calmed it, which left almost nothing. Now "different" is judged against how much the icon varies at all, so a faint mark is found and cut out in white like any other logo.
+- **Small marks (Drive).** Some apps supply an outline that only fills the middle of its picture. Every outline is now trimmed to what is actually drawn, so all marks fill their tile alike.
+- **Stray arcs in corners (Copilot).** The rounding of an icon's own corners was being picked up as part of the mark. Corners are now left out.
+- **Flat pictures** that stay pictures get their light and dark pulled apart before calming, so they do not wash out.
+- Every app is worked out again once after this update, so the first open of the drawer takes a moment.
+- The report's battery section now also lists the raw readings exactly as the phone gave them, so I can check the unit and sign.
+- Includes build 34's drawer speed-ups.
+
+**What to look for**
+- eKupi: a white "e" on red. Drive: a triangle the size of the other marks. Copilot: no arcs in the corners.
+- Did anything that looked right before get worse? The new rule for faint marks could, in principle, pick up a soft gradient as a mark on some icon. A screenshot of any page that looks off is enough.
+
+**Checked:** in my preview, on a made-up tone-on-tone icon like eKupi's: it now cuts out as a clear white letter. The McDonald's test icon lost its corner arcs. The moj ZET and Muay Thai test icons came out as before.
+**Not checked:** on your real icons, including eKupi, Drive and Copilot themselves. I have not seen Drive's outline, so the size fix is from reasoning.
+
 ## Prism, build 34 (13 November 2026)
 
 **File:** `releases/prism-build-34.apk`
