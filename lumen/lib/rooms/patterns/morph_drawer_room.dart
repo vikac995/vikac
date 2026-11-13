@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/haptics.dart';
@@ -109,7 +110,55 @@ class MorphDrawerRoom extends StatefulWidget {
 class _MorphDrawerRoomState extends State<MorphDrawerRoom>
     with SingleTickerProviderStateMixin {
   static const int _cols = 4, _rows = 6, _per = _cols * _rows;
-  static final int _pages = (_names.length / _per).ceil();
+  // The apps really installed on this phone: name, package, icon. Empty until loaded, or off Android.
+  List<(String, String, Uint8List)> _real = <(String, String, Uint8List)>[];
+  bool _useReal = true;
+  bool get _live => _useReal && _real.isNotEmpty;
+  int get _count => _live ? _real.length : _names.length;
+  int get _pages => (_count / _per).ceil();
+  String _label(int i) => _live ? _real[i].$1 : _names[i].$1;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final List<Object?> raw =
+          await const MethodChannel('lumen/apps')
+              .invokeMethod<List<Object?>>('list') ??
+          <Object?>[];
+      final List<(String, String, Uint8List)> apps =
+          <(String, String, Uint8List)>[
+            for (final Object? o in raw)
+              if (o is Map)
+                (
+                  o['label'] as String,
+                  o['package'] as String,
+                  o['icon'] as Uint8List,
+                ),
+          ]..sort(
+            ((String, String, Uint8List) a, (String, String, Uint8List) b) =>
+                a.$1.toLowerCase().compareTo(b.$1.toLowerCase()),
+          );
+      if (mounted && apps.isNotEmpty) {
+        setState(() => _real = apps);
+      }
+    } catch (_) {
+      // Not on Android: the made-up list stays.
+    }
+  }
+
+  void _open(int i) {
+    Haptics.settle();
+    if (_live) {
+      const MethodChannel('lumen/apps')
+          .invokeMethod<bool>('launch', _real[i].$2);
+    }
+  }
+
   // Where we are in the list, in pages. 1.5 is halfway between the second and third.
   late final SpringValue _page = SpringValue(this, spring: Motions.expressive);
   double _dragFrom = 0;
@@ -155,9 +204,39 @@ class _MorphDrawerRoomState extends State<MorphDrawerRoom>
           children: <Widget>[
             const RoomHeader(number: 55, title: 'Morphing drawer'),
             const SizedBox(height: 8),
-            Text(
-              'Swipe up or down. Nothing scrolls: every icon turns into the next one where it stands.',
-              style: LumenType.text(14, color: c.inkMuted, height: 1.4),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    _real.isEmpty
+                        ? 'Swipe up or down. Nothing scrolls: every icon turns into the next one where it stands.'
+                        : 'Your ${_real.length} apps. Swipe up or down; tap one to open it.',
+                    style: LumenType.text(14, color: c.inkMuted, height: 1.4),
+                  ),
+                ),
+                if (_real.isNotEmpty)
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      setState(() => _useReal = !_useReal);
+                      _page.jumpTo(0);
+                    },
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      alignment: Alignment.center,
+                      decoration: ShapeDecoration(
+                        shape: StadiumBorder(
+                          side: BorderSide(color: c.inkFaint),
+                        ),
+                      ),
+                      child: Text(
+                        _useReal ? 'Real' : 'Made up',
+                        style: LumenType.text(13, weight: 650, color: c.ink),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 10),
             Expanded(
@@ -187,7 +266,26 @@ class _MorphDrawerRoomState extends State<MorphDrawerRoom>
                                   top: r * ch,
                                   width: cw,
                                   height: ch,
-                                  child: _cell(c, r, col, p, math.min(cw, ch)),
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      final int i =
+                                          p.round().clamp(0, _pages - 1) *
+                                              _per +
+                                          r * _cols +
+                                          col;
+                                      if (i < _count) {
+                                        _open(i);
+                                      }
+                                    },
+                                    child: _cell(
+                                      c,
+                                      r,
+                                      col,
+                                      p,
+                                      math.min(cw, ch),
+                                    ),
+                                  ),
                                 ),
                             // Where you are in the alphabet, and how far through.
                             Positioned(
@@ -237,10 +335,9 @@ class _MorphDrawerRoomState extends State<MorphDrawerRoom>
               listenable: _page,
               builder: (BuildContext context, Widget? _) {
                 final int pg = _page.value.round().clamp(0, _pages - 1);
-                final int a = pg * _per,
-                    b = math.min(_names.length, a + _per) - 1;
+                final int a = pg * _per, b = math.min(_count, a + _per) - 1;
                 return Text(
-                  '${_names[a].$1[0]} to ${_names[b].$1[0]}   ·   ${a + 1} to ${b + 1} of ${_names.length}',
+                  '${_label(a)[0].toUpperCase()} to ${_label(b)[0].toUpperCase()}   ·   ${a + 1} to ${b + 1} of $_count',
                   textAlign: TextAlign.center,
                   style: LumenType.text(13, weight: 600, color: c.inkMuted),
                 );
@@ -263,7 +360,7 @@ class _MorphDrawerRoomState extends State<MorphDrawerRoom>
       ),
     );
     final int i0 = base * _per + row * _cols + col, i1 = i0 + _per;
-    final bool has0 = i0 < _names.length, has1 = i1 < _names.length;
+    final bool has0 = i0 < _count, has1 = i1 < _count;
     if (!has0 && !has1) {
       return const SizedBox.shrink();
     }
@@ -277,48 +374,81 @@ class _MorphDrawerRoomState extends State<MorphDrawerRoom>
         children: <Widget>[
           SizedBox.square(
             dimension: s,
-            child: CustomPaint(
-              // Outline and colour blend from one app to the next; a small turn sells the change.
-              painter: _Blob(
-                ShapeLib.gallery[a % ShapeLib.gallery.length].radii,
-                ShapeLib.gallery[b % ShapeLib.gallery.length].radii,
-                t,
-                Color.lerp(
-                  _hues[a % _hues.length],
-                  _hues[b % _hues.length],
-                  t,
-                )!,
-              ),
-              child: Stack(
-                alignment: Alignment.center,
-                children: <Widget>[
-                  if (t < 0.98)
-                    Opacity(
-                      opacity: (1 - t * 1.6).clamp(0.0, 1.0),
-                      child: Transform.scale(
-                        scale: 1 - 0.5 * t,
-                        child: Icon(
-                          _names[a].$2,
-                          color: Colors.white,
-                          size: s * 0.46,
-                        ),
-                      ),
+            child: _live
+                // A real app keeps its own icon; the outline it is cut to is what morphs.
+                ? ClipPath(
+                    clipper: _Cut(
+                      ShapeLib.gallery[a % ShapeLib.gallery.length].radii,
+                      ShapeLib.gallery[b % ShapeLib.gallery.length].radii,
+                      t,
                     ),
-                  if (t > 0.02)
-                    Opacity(
-                      opacity: (t * 1.6 - 0.6).clamp(0.0, 1.0),
-                      child: Transform.scale(
-                        scale: 0.5 + 0.5 * t,
-                        child: Icon(
-                          _names[b].$2,
-                          color: Colors.white,
-                          size: s * 0.46,
-                        ),
-                      ),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: <Widget>[
+                        ColoredBox(color: c.ink.withValues(alpha: 0.1)),
+                        if (t < 0.98)
+                          Opacity(
+                            opacity: (1 - t).clamp(0.0, 1.0),
+                            child: Image.memory(
+                              _real[a].$3,
+                              gaplessPlayback: true,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        if (t > 0.02)
+                          Opacity(
+                            opacity: t.clamp(0.0, 1.0),
+                            child: Image.memory(
+                              _real[b].$3,
+                              gaplessPlayback: true,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                      ],
                     ),
-                ],
-              ),
-            ),
+                  )
+                : CustomPaint(
+                    // Outline and colour blend from one app to the next; a small turn sells the change.
+                    painter: _Blob(
+                      ShapeLib.gallery[a % ShapeLib.gallery.length].radii,
+                      ShapeLib.gallery[b % ShapeLib.gallery.length].radii,
+                      t,
+                      Color.lerp(
+                        _hues[a % _hues.length],
+                        _hues[b % _hues.length],
+                        t,
+                      )!,
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: <Widget>[
+                        if (t < 0.98)
+                          Opacity(
+                            opacity: (1 - t * 1.6).clamp(0.0, 1.0),
+                            child: Transform.scale(
+                              scale: 1 - 0.5 * t,
+                              child: Icon(
+                                _names[a].$2,
+                                color: Colors.white,
+                                size: s * 0.46,
+                              ),
+                            ),
+                          ),
+                        if (t > 0.02)
+                          Opacity(
+                            opacity: (t * 1.6 - 0.6).clamp(0.0, 1.0),
+                            child: Transform.scale(
+                              scale: 0.5 + 0.5 * t,
+                              child: Icon(
+                                _names[b].$2,
+                                color: Colors.white,
+                                size: s * 0.46,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
           ),
           const SizedBox(height: 6),
           SizedBox(
@@ -329,8 +459,9 @@ class _MorphDrawerRoomState extends State<MorphDrawerRoom>
                 Opacity(
                   opacity: (1 - t * 2).clamp(0.0, 1.0),
                   child: Text(
-                    _names[a].$1,
+                    _label(a),
                     maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     textScaler: TextScaler.noScaling,
                     style: LumenType.text(
                       12,
@@ -343,8 +474,9 @@ class _MorphDrawerRoomState extends State<MorphDrawerRoom>
                 Opacity(
                   opacity: (t * 2 - 1).clamp(0.0, 1.0),
                   child: Text(
-                    _names[b].$1,
+                    _label(b),
                     maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     textScaler: TextScaler.noScaling,
                     style: LumenType.text(
                       12,
@@ -393,4 +525,24 @@ class _Blob extends CustomPainter {
   @override
   bool shouldRepaint(_Blob old) =>
       old.t != t || old.color != color || old.a != a || old.b != b;
+}
+
+/// Cuts a child to the outline between two shapes.
+class _Cut extends CustomClipper<Path> {
+  const _Cut(this.a, this.b, this.t);
+  final Float32List a, b;
+  final double t;
+
+  @override
+  Path getClip(Size size) => ShapeLib.lerpPath(
+    a,
+    b,
+    t,
+    size.center(Offset.zero),
+    size.width / 2 * 0.92,
+    math.sin(t * math.pi) * 0.5,
+  );
+
+  @override
+  bool shouldReclip(_Cut old) => old.t != t || old.a != a || old.b != b;
 }

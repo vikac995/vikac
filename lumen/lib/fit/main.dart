@@ -75,6 +75,45 @@ class PrismApp extends StatelessWidget {
                 children: <Widget>[
                   child!,
                   if (settings.showFps) const FpsMeter(),
+                  // While a guided test runs, a small banner says which setting is being tried.
+                  ValueListenableBuilder<String?>(
+                    valueListenable: Diag.instance.banner,
+                    builder: (BuildContext context, String? text, Widget? _) =>
+                        text == null
+                        ? const SizedBox.shrink()
+                        : Positioned(
+                            top:
+                                MediaQuery.paddingOf(context).top +
+                                (settings.showFps ? 38 : 4),
+                            left: 0,
+                            right: 0,
+                            child: IgnorePointer(
+                              child: Center(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: const ShapeDecoration(
+                                    color: Color(0xF02E7BFF),
+                                    shape: StadiumBorder(),
+                                  ),
+                                  child: Text(
+                                    text,
+                                    textScaler: TextScaler.noScaling,
+                                    style: const TextStyle(
+                                      fontFamily: 'Inter',
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
                   // Tap the readout to copy the test report.
                   if (settings.showFps)
                     Positioned(

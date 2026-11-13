@@ -104,9 +104,108 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    Diag.instance.finished.addListener(_showReport);
     _lx.addListener(_lensMoved);
     _ly.addListener(_lensMoved);
     _glass.addListener(_lensMoved);
+  }
+
+  void _showReport() {
+    final String? text = Diag.instance.finished.value;
+    if (text == null || !mounted) {
+      return;
+    }
+    Diag.instance.finished.value = null;
+    Haptics.thud();
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Close',
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      pageBuilder: (BuildContext context, _, _) {
+        final LumenColors c = LumenColors.of(context);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Material(
+              type: MaterialType.transparency,
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: ShapeDecoration(
+                  color: c.surface,
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(32),
+                    side: BorderSide(color: c.hairline),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Text(
+                      'Test finished',
+                      style: LumenType.display(26, weight: 700, color: c.ink),
+                    ),
+                    Text(
+                      'Your settings are back as they were. Copy this and paste it to Claude.',
+                      style: LumenType.text(
+                        13.5,
+                        color: c.inkMuted,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Text(
+                            text,
+                            textScaler: TextScaler.noScaling,
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 10.5,
+                              height: 1.4,
+                              color: c.ink,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Pressable(
+                      onTap: () async {
+                        await Diag.instance.copy(text);
+                        Haptics.settle();
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: Container(
+                        height: 54,
+                        alignment: Alignment.center,
+                        decoration: ShapeDecoration(
+                          color: c.accent,
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Text(
+                          'Copy report',
+                          style: LumenType.text(
+                            15.5,
+                            weight: 700,
+                            color: c.onAccent,
+                            height: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _lensMoved() {
@@ -248,6 +347,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     for (final Timer t in _fuses) {
       t.cancel();
     }
+    Diag.instance.finished.removeListener(_showReport);
     LensBus.instance.pos.value = null;
     for (final SpringValue s in <SpringValue>[
       _glass,
@@ -1386,9 +1486,34 @@ void showPrismSettings(BuildContext context) {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 10),
+                    Pressable(
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        Diag.instance.startGuided();
+                        Haptics.settle();
+                      },
+                      child: Container(
+                        height: 52,
+                        alignment: Alignment.center,
+                        decoration: ShapeDecoration(
+                          color: c.ink.withValues(alpha: 0.08),
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Text(
+                          'Run the guided test (${Diag.testSeconds} s)',
+                          style: LumenType.text(
+                            15,
+                            weight: 700,
+                            color: c.ink,
+                            height: 1,
+                          ),
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     Text(
-                      'Use the app for a while, then copy and paste the report to Claude. It lists every screen with its frame times.',
+                      'Guided test: keep using the app while it tries each glass setting by itself, then shows the report. Or use the app freely and copy the report yourself.',
                       style: LumenType.text(
                         12.5,
                         color: c.inkMuted,

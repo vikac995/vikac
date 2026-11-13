@@ -34,6 +34,37 @@ class MainActivity : FlutterActivity() {
                 result.notImplemented()
             }
         }
+        // The apps installed on this phone, for the launcher experiments: names, icons, and opening one.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/apps").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "list" -> Thread {
+                    try {
+                        val pm = packageManager
+                        val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+                        val out = ArrayList<Map<String, Any>>()
+                        for (r in pm.queryIntentActivities(intent, 0)) {
+                            val d = r.loadIcon(pm)
+                            val bmp = android.graphics.Bitmap.createBitmap(144, 144, android.graphics.Bitmap.Config.ARGB_8888)
+                            val c = android.graphics.Canvas(bmp)
+                            d.setBounds(0, 0, 144, 144)
+                            d.draw(c)
+                            val bytes = java.io.ByteArrayOutputStream()
+                            bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, bytes)
+                            out.add(mapOf("label" to r.loadLabel(pm).toString(), "package" to r.activityInfo.packageName, "icon" to bytes.toByteArray()))
+                        }
+                        runOnUiThread { result.success(out) }
+                    } catch (e: Exception) {
+                        runOnUiThread { result.error("apps", e.message, null) }
+                    }
+                }.start()
+                "launch" -> {
+                    val i = packageManager.getLaunchIntentForPackage(call.arguments as String)
+                    if (i != null) startActivity(i)
+                    result.success(i != null)
+                }
+                else -> result.notImplemented()
+            }
+        }
         // Which phone this is, for the test report.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/device").setMethodCallHandler { call, result ->
             if (call.method == "info") {

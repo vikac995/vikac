@@ -1,5 +1,35 @@
 # Lumen changelog
 
+## Lumen build 22 and Prism build 8 (13 November 2026)
+
+**Files:** `releases/lumen-build-22.apk`, `releases/prism-build-8.apk`
+
+### Lumen 22: R55 Morphing drawer shows your real apps
+
+- On the phone the drawer now lists the apps actually installed, in alphabetical order, with their real icons and names. Each icon is cut to the morphing outline, so the outline still changes shape while one icon fades into the next. Tap an icon to open that app.
+- A "Real / Made up" button switches back to the 72 drawn ones.
+- Lumen asks Android which apps can be opened from a home screen. It needs no permission prompt for that; nothing leaves the phone.
+
+### Prism 8: a guided test, and a report that points at the cause
+
+- **Guided test.** Round button on Home, then "Run the guided test (70 s)". Keep using the app. Every 14 seconds it switches setting by itself: Full glass, Medium glass, Low glass, No glass, Full glass with background lights. A small blue banner says which one is running and counts down. At the end it puts your settings back and shows the report with a Copy button.
+- **The report is ordered by what to fix.**
+  1. *By setting*: frames, the share over budget, the share late, average build and draw time, worst frame.
+  2. *Where it stutters, worst first*: each line is "setting | screen > action" (for example "Full glass | home > sheet Weigh-in") with how many times it happened, frames over budget, the worst frame, and average build and draw time.
+  3. *By screen* under each setting, with frames per second and the 95th percentile.
+  4. *Slow frames*: each one with the time, how long it took, whether BUILD (working out what to show) or DRAW (painting it) was the slower half, the setting, the screen and the action it followed.
+- **The recorder costs almost nothing.** Per frame it adds a few numbers to two running totals; it makes no text and allocates nothing unless a frame was actually slow. The banner updates once a second.
+
+### What to test
+
+1. Lumen R55 with your real apps: do icons load, does tapping open the app, and is the morph still pleasant with real icons?
+2. Prism: run the guided test while doing a bit of everything (tabs, blobs, each sheet, lens over the cards, scrolling), then send the report.
+
+### Not checked
+
+- Real apps cannot be tried in the Linux preview at all: listing, icons and opening are untested.
+- The guided test was run in the preview at 2 seconds a step; the report came out right and the settings were restored.
+
 ## Lumen, build 21 (13 November 2026)
 
 Two experiments in a new home section, "Launcher ideas" (56 examples in total). Prism is unchanged (build 7).
