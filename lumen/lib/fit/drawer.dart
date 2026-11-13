@@ -44,7 +44,14 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     this,
     spring: Motions.expressiveFast,
   );
-  int _page = 0, _rows = 5;
+  int _page = 0, _rows = 5, _pressed = -1;
+
+  void _unpress() {
+    if (_pressed != -1 && mounted) {
+      setState(() => _pressed = -1);
+    }
+  }
+
   final int _dir = 1;
   double _pull = 0;
   static const int _cols = 4;
@@ -331,21 +338,10 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
               Expanded(
                 child: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints box) =>
-                      GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onPanStart: (_) => _settle(),
-                        // No scrolling. Up or left is forward, down or right is back, whichever way the finger mostly goes.
-                        onPanUpdate: (DragUpdateDetails d) => _drag(
-                          d.delta.dy.abs() >= d.delta.dx.abs()
-                              ? d.delta.dy
-                              : d.delta.dx,
-                        ),
-                        onPanEnd: (DragEndDetails d) {
-                          final Offset v = d.velocity.pixelsPerSecond;
-                          _release(v.dy.abs() >= v.dx.abs() ? v.dy : v.dx);
-                        },
-                        onPanCancel: () => _release(0),
-                        onTapUp: (TapUpDetails d) {
+                      // The tile answers the instant a finger lands, before anyone can tell whether it
+                      // is a tap or a drag. Waiting to be sure costs a tenth of a second of nothing.
+                      Listener(
+                        onPointerDown: (PointerDownEvent d) {
                           final int col =
                               (d.localPosition.dx / (box.maxWidth / _cols))
                                   .floor()
@@ -354,49 +350,84 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                               (d.localPosition.dy / (box.maxHeight / _rows))
                                   .floor()
                                   .clamp(0, _rows - 1);
-                          final int i = _page * _perPage + row * _cols + col;
-                          if (i < Apps.instance.all.length) {
-                            Haptics.settle();
-                            Diag.instance.event('drawer open app');
-                            // Where the tile is on the glass, in real pixels: the app opens out of it.
-                            final double dpr = MediaQuery.devicePixelRatioOf(
-                              context,
-                            );
-                            final Offset origin =
-                                d.globalPosition - d.localPosition;
-                            final Offset centre =
-                                origin +
-                                Offset(
-                                  box.maxWidth / _cols * (col + 0.5),
-                                  box.maxHeight / _rows * row +
-                                      8 +
-                                      _GridPainter._tile / 2,
-                                );
-                            final Rect tile = Rect.fromCenter(
-                              center: centre * dpr,
-                              width: _GridPainter._tile * dpr,
-                              height: _GridPainter._tile * dpr,
-                            );
-                            Apps.instance.launch(
-                              Apps.instance.all[i],
-                              from: tile,
-                            );
+                          final int i = row * _cols + col;
+                          if (_page * _perPage + i < Apps.instance.all.length) {
+                            setState(() => _pressed = i);
+                            Haptics.tick();
                           }
                         },
-                        // Its own layer: opening, closing and the ring never make the grid redraw.
-                        child: RepaintBoundary(
-                          child: CustomPaint(
-                            size: Size(box.maxWidth, box.maxHeight),
-                            painter: _GridPainter(
-                              apps: Apps.instance.all,
-                              from: _page,
-                              to: _toward,
-                              dir: _dir,
-                              rows: _rows,
-                              cols: _cols,
-                              turn: _turn,
-                              ink: c.ink.withValues(alpha: 0.84),
-                              accent: c.accent,
+                        onPointerUp: (_) => _unpress(),
+                        onPointerCancel: (_) => _unpress(),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onPanStart: (_) {
+                            _unpress();
+                            _settle();
+                          },
+                          // No scrolling. Up or left is forward, down or right is back, whichever way the finger mostly goes.
+                          onPanUpdate: (DragUpdateDetails d) => _drag(
+                            d.delta.dy.abs() >= d.delta.dx.abs()
+                                ? d.delta.dy
+                                : d.delta.dx,
+                          ),
+                          onPanEnd: (DragEndDetails d) {
+                            final Offset v = d.velocity.pixelsPerSecond;
+                            _release(v.dy.abs() >= v.dx.abs() ? v.dy : v.dx);
+                          },
+                          onPanCancel: () => _release(0),
+                          onTapUp: (TapUpDetails d) {
+                            final int col =
+                                (d.localPosition.dx / (box.maxWidth / _cols))
+                                    .floor()
+                                    .clamp(0, _cols - 1);
+                            final int row =
+                                (d.localPosition.dy / (box.maxHeight / _rows))
+                                    .floor()
+                                    .clamp(0, _rows - 1);
+                            final int i = _page * _perPage + row * _cols + col;
+                            if (i < Apps.instance.all.length) {
+                              Diag.instance.event('drawer open app');
+                              // Where the tile is on the glass, in real pixels: the app opens out of it.
+                              final double dpr = MediaQuery.devicePixelRatioOf(
+                                context,
+                              );
+                              final Offset origin =
+                                  d.globalPosition - d.localPosition;
+                              final Offset centre =
+                                  origin +
+                                  Offset(
+                                    box.maxWidth / _cols * (col + 0.5),
+                                    box.maxHeight / _rows * row +
+                                        8 +
+                                        _GridPainter._tile / 2,
+                                  );
+                              final Rect tile = Rect.fromCenter(
+                                center: centre * dpr,
+                                width: _GridPainter._tile * dpr,
+                                height: _GridPainter._tile * dpr,
+                              );
+                              Apps.instance.launch(
+                                Apps.instance.all[i],
+                                from: tile,
+                              );
+                            }
+                          },
+                          // Its own layer: opening, closing and the ring never make the grid redraw.
+                          child: RepaintBoundary(
+                            child: CustomPaint(
+                              size: Size(box.maxWidth, box.maxHeight),
+                              painter: _GridPainter(
+                                apps: Apps.instance.all,
+                                from: _page,
+                                to: _toward,
+                                dir: _dir,
+                                rows: _rows,
+                                cols: _cols,
+                                turn: _turn,
+                                ink: c.ink.withValues(alpha: 0.84),
+                                accent: c.accent,
+                                pressed: _pressed,
+                              ),
                             ),
                           ),
                         ),
@@ -427,11 +458,15 @@ class _GridPainter extends CustomPainter {
     required this.turn,
     required this.ink,
     required this.accent,
+    required this.pressed,
   }) : super(repaint: turn);
   final List<AppTile> apps;
   final int from, to, dir, rows, cols;
   final Animation<double> turn;
   final Color ink, accent;
+
+  /// The tile under a finger that has just landed, or -1.
+  final int pressed;
   static const double _tile = 61;
   static final Path _rest = ShapeLib.lerpPath(
     _squircle,
@@ -623,8 +658,13 @@ class _GridPainter extends CustomPainter {
               )!;
         canvas
           ..save()
-          ..translate(cw * (col + 0.5), ch * row + 8 + _tile / 2)
-          ..drawPath(outline, fill);
+          ..translate(cw * (col + 0.5), ch * row + 8 + _tile / 2);
+        if (i == pressed && e <= 0) {
+          // Pressed: it gives a little and lightens, at once.
+          canvas.scale(0.9);
+          fill.color = Color.lerp(fill.color, Colors.white, 0.14)!;
+        }
+        canvas.drawPath(outline, fill);
         // Only a picture can reach the edge of its tile, so only a picture needs trimming to it.
         if (a?.picture != null || b?.picture != null) {
           canvas.clipPath(outline);

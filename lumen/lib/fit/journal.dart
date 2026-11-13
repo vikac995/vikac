@@ -73,6 +73,8 @@ class Journal with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // Coming back from another app is an action like any other: its first frames are measured.
+      Diag.instance.event('back to Prism');
       _begin();
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {

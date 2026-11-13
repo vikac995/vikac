@@ -1,5 +1,25 @@
 # Lumen changelog
 
+## Prism, build 43 (13 November 2026)
+
+**File:** `releases/prism-build-43.apk`
+
+Making opening apps and coming back feel as immediate as it can.
+
+- **A tile answers the instant your finger lands.** It gives slightly, lightens, and you feel a tick, all on touch-down. Before, nothing happened until you lifted your finger, and Android's own "is this a tap or a drag?" wait can add up to a tenth of a second on top.
+- **Prism is allowed to come back before the other app has finished leaving.** This is the setting the system's own home screen uses for the home gesture. Without it, Android waits for the app you are leaving to finish pausing first.
+- **Prism is kept as one single task** and Android is told it does not need to rebuild Prism's state if it had to drop it. Both are standard for home screens.
+- **Coming back is now measured.** The report has a line "back to Prism" with the frames right after you return, so I can see what the return costs.
+
+**What to look for**
+- Touch a tile and hold: it should react before you lift. Start a drag from a tile: the press should let go as the drag begins.
+- Home gesture from another app: is Prism there faster than before?
+- After a few trips to other apps and back, copy the report; the "back to Prism" line is what I want.
+
+**Checked:** in my preview a pressed tile shrinks and lightens while held and returns on release.
+**Not checked:** the two Android settings. They are documented and widely used, but I cannot run Android here, so their effect on your phone is unmeasured. The opening animation from build 42 is also still unverified.
+**A limit worth knowing:** how long an app takes to appear after the tap is mostly that app's own start-up time, which Prism cannot change. What Prism controls is how fast it reacts to the tap and how fast it is back.
+
 ## Prism, build 42 (13 November 2026)
 
 **File:** `releases/prism-build-42.apk`
