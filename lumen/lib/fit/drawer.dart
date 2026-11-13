@@ -335,11 +335,23 @@ class _GridPainter extends CustomPainter {
   final int from, to, dir, rows, cols;
   final Animation<double> turn;
   final Color ink;
-  static const double _tile = 68;
+  static const double _tile = 61;
   // The squircle from Prism's shape set, and the gently lobed outline it leans toward mid-change.
-  static final Float32List _squircle = ShapeLib.gallery
-      .firstWhere((MorphShape m) => m.name == 'Squircle')
-      .radii;
+  // Softer than a standard squircle: fuller corners and less flat side, so a tile sits between
+  // the round blobs and the rectangular cards and belongs to both.
+  static final Float32List _squircle = Float32List.fromList(<double>[
+    for (int i = 0; i < ShapeLib.samples; i++)
+      math
+          .pow(
+            math.pow(math.cos(i / ShapeLib.samples * 2 * math.pi).abs(), 3.1) +
+                math.pow(
+                  math.sin(i / ShapeLib.samples * 2 * math.pi).abs(),
+                  3.1,
+                ),
+            -1 / 3.1,
+          )
+          .toDouble(),
+  ]);
   static final Float32List _ripple = ShapeLib.gallery
       .firstWhere((MorphShape m) => m.name == 'Cookie')
       .radii;
@@ -398,8 +410,8 @@ class _GridPainter extends CustomPainter {
       final ui.Image im = t.glyph!;
       final Rect at = Rect.fromCenter(
         center: box.center,
-        width: box.width * 0.62 * scale,
-        height: box.height * 0.62 * scale,
+        width: box.width * 0.6 * scale,
+        height: box.height * 0.6 * scale,
       );
       canvas.drawImageRect(
         im,

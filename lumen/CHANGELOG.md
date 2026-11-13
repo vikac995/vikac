@@ -1,5 +1,21 @@
 # Lumen changelog
 
+## Prism, build 27 (13 November 2026)
+
+**File:** `releases/prism-build-27.apk`
+
+**Drawer tiles: smaller and softer.**
+
+- Tiles are about 10 % smaller (61 instead of 68), which gives each one more air and lets the name stand out.
+- The shape is a softer squircle: fuller corners and less flat side than before. It now sits between the round blobs and the rectangular cards, so it reads as related to both.
+- The mark inside is scaled to match.
+- The page-turn morph starts from and returns to this new shape.
+
+**What to look for:** does the tile shape feel like it belongs with the blobs and cards? Too soft, too boxy, or right? Is the size right now?
+
+**Checked:** in my preview, with made-up apps: the new shape and size.
+**Not checked:** on a phone with real marks inside the smaller tile.
+
 ## Prism, build 26 (13 November 2026)
 
 **File:** `releases/prism-build-26.apk`
