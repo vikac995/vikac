@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 51 (13 November 2026)
+
+**File:** `releases/prism-build-51.apk`
+
+- **The bar is real glass again by default.** In build 49 I made the cheap "still glass" the default bar. Your recording showed the cost of that plainly: the blue water drops on Food vanish behind the bar instead of showing through it, and showing what is underneath is the point of the bar. The default is back to Auto (real glass, which blurs and bends whatever scrolls under it).
+- Still glass stays where nothing moves behind it: the cards on Home (only the background is behind them), and the bar while the drawer or a sheet covers the page.
+- "Event" in the Glass style row is still there if you ever want the cheaper bar.
+
+**Checked:** it compiles; the change is one default value.
+**Not checked:** on a phone.
+
 ## Prism, build 50 (13 November 2026)
 
 **File:** `releases/prism-build-50.apk`

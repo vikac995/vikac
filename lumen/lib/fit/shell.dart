@@ -2020,7 +2020,7 @@ void showPrismSettings(BuildContext context) {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Glass style (Event: glass that costs nothing. Orig.: real glass)',
+                        'Glass style (Auto and Orig.: real glass, shows what scrolls under it. Event: still glass, cheaper, shows only the background)',
                         style: LumenType.label(color: c.inkMuted),
                       ),
                       const SizedBox(height: 8),
