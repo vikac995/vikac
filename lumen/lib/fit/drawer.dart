@@ -461,8 +461,11 @@ class _GridPainter extends CustomPainter {
       color: ink,
       height: 1.14,
     );
+    // The initial takes the app's own tile colour, nudged a little toward the text colour so it
+    // stays readable: tile colours are chosen to sit behind white marks, not to be read as text.
+    final Color initial = Color.lerp(t.color, ink.withValues(alpha: 1), 0.28)!;
     return _labels.putIfAbsent(
-      '${t.label}|${width.round()}|${ink.toARGB32()}|${lead ? accent.toARGB32() : 0}',
+      '${t.label}|${width.round()}|${ink.toARGB32()}|${lead ? initial.toARGB32() : 0}',
       () => TextPainter(
         text: lead
             ? TextSpan(
@@ -473,7 +476,7 @@ class _GridPainter extends CustomPainter {
                     style: LumenType.text(
                       13.5,
                       weight: 800,
-                      color: accent,
+                      color: initial,
                       height: 1.14,
                     ),
                   ),

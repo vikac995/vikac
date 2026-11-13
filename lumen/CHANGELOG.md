@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 37 (13 November 2026)
+
+**File:** `releases/prism-build-37.apk`
+
+- **The initial that marks a new letter is now in the app's own tile colour**, not orange. It is nudged about a quarter of the way toward the text colour, because tile colours are chosen to sit behind white marks and some would be too dark to read as text on their own.
+
+**What to look for:** is every coloured initial readable, especially on blue and purple apps? Does it still work as an index now that the initials are different colours?
+
+**Checked:** in my preview, with made-up apps.
+**Not checked:** on a phone with your real tile colours.
+
 ## Prism, build 36 (13 November 2026)
 
 **File:** `releases/prism-build-36.apk`
