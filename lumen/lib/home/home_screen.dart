@@ -525,7 +525,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               'Foundations',
               'The basics every good interface gets right.',
             ),
-            for (int r = 0; r < 5; r++) ...<Widget>[
+            for (int r = 0; r < 3; r++) ...<Widget>[
               if (r > 0) const SizedBox(height: gap),
               Row(
                 children: <Widget>[
@@ -537,7 +537,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             ],
             const SizedBox(height: 34),
             _section(c, 'Patterns', 'Building blocks for real apps.'),
-            for (int r = 0; r < 5; r++) ...<Widget>[
+            for (int r = 0; r < 3; r++) ...<Widget>[
               if (r > 0) const SizedBox(height: gap),
               Row(
                 children: <Widget>[
@@ -586,7 +586,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 12  ·  Flutter 3.50  ·  Impeller',
+                'Build 12.1  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),

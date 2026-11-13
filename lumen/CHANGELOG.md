@@ -1,5 +1,12 @@
 # Lumen changelog
 
+## Build 12.1 (13 November 2026)
+
+**File:** `releases/lumen-build-12.1.apk`
+
+- **Fixed: cards repeating on the home screen.** Since build 11, Foundations also listed the first four Patterns cards and Patterns also listed the first four Screens cards. My mistake when adding the new section; each example is now listed once.
+- **New: quick light/dark switch on every screen.** A small sun or moon in the top right corner, level with the frame-rate readout. A tap with two fingers together anywhere on the screen does the same. The two-finger tap could not be tried in the preview (mouse only).
+
 ## Build 12 (13 November 2026)
 
 Four more examples at the end of "More patterns". Nothing was removed or changed elsewhere.

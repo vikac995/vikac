@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'core/expand_route.dart';
 import 'core/frame_stats.dart';
 import 'core/glass.dart';
+import 'core/haptics.dart';
 import 'core/settings.dart';
 import 'core/theme.dart';
 import 'home/home_screen.dart';
@@ -166,17 +167,128 @@ class LumenApp extends StatelessWidget {
               ),
               child: Material(
                 type: MaterialType.transparency,
-                child: Stack(
-                  children: <Widget>[
-                    child!,
-                    if (settings.showFps) const FpsMeter(),
-                  ],
+                child: _TwoFingerTap(
+                  onTap: _flipTheme,
+                  child: Stack(
+                    children: <Widget>[
+                      child!,
+                      if (settings.showFps) const FpsMeter(),
+                      const _ThemeQuick(),
+                    ],
+                  ),
                 ),
               ),
             );
           },
         );
       },
+    );
+  }
+}
+
+void _flipTheme() {
+  settings.themeMode = settings.themeMode == ThemeMode.dark
+      ? ThemeMode.light
+      : ThemeMode.dark;
+  Haptics.tick();
+}
+
+/// A small sun or moon in the top right corner of every screen: one tap
+/// switches between light and dark.
+class _ThemeQuick extends StatelessWidget {
+  const _ThemeQuick();
+
+  @override
+  Widget build(BuildContext context) {
+    final LumenColors c = LumenColors.of(context);
+    return Positioned(
+      top: MediaQuery.paddingOf(context).top - 2,
+      right: 2,
+      child: Semantics(
+        button: true,
+        label: c.dark ? 'Switch to light' : 'Switch to dark',
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _flipTheme,
+          child: SizedBox.square(
+            dimension: 44,
+            child: Center(
+              child: Container(
+                width: 28,
+                height: 28,
+                decoration: ShapeDecoration(
+                  color: c.dark
+                      ? const Color(0xE6101216)
+                      : const Color(0xE6FFFFFF),
+                  shape: CircleBorder(side: BorderSide(color: c.hairline)),
+                ),
+                child: Icon(
+                  c.dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                  size: 16,
+                  color: c.ink,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Calls [onTap] when two fingers tap the screen together, anywhere. It only
+/// listens, so it never takes a touch away from what is underneath.
+class _TwoFingerTap extends StatefulWidget {
+  const _TwoFingerTap({required this.onTap, required this.child});
+  final VoidCallback onTap;
+  final Widget child;
+
+  @override
+  State<_TwoFingerTap> createState() => _TwoFingerTapState();
+}
+
+class _TwoFingerTapState extends State<_TwoFingerTap> {
+  final Map<int, Offset> _down = <int, Offset>{};
+  Duration _first = Duration.zero;
+  bool _valid = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (PointerDownEvent e) {
+        if (_down.isEmpty) {
+          _first = e.timeStamp;
+          _valid = false;
+        }
+        _down[e.pointer] = e.position;
+        // Exactly two fingers, landing within a fifth of a second.
+        _valid =
+            _down.length == 2 &&
+            e.timeStamp - _first < const Duration(milliseconds: 200);
+      },
+      onPointerMove: (PointerMoveEvent e) {
+        final Offset? o = _down[e.pointer];
+        if (o != null && (e.position - o).distance > 18) {
+          _valid = false;
+        }
+      },
+      onPointerCancel: (PointerCancelEvent e) {
+        _down.remove(e.pointer);
+        _valid = false;
+      },
+      onPointerUp: (PointerUpEvent e) {
+        _down.remove(e.pointer);
+        if (_down.isEmpty &&
+            _valid &&
+            e.timeStamp - _first < const Duration(milliseconds: 450)) {
+          widget.onTap();
+        }
+        if (_down.isEmpty) {
+          _valid = false;
+        }
+      },
+      child: widget.child,
     );
   }
 }
