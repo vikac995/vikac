@@ -386,7 +386,7 @@ const Map<int, Ref> refs = <int, Ref>{
       'lib/core/glass.dart',
       'shaders/glass.frag',
     ],
-    'The centre button with two jobs. Tap: it stays a flat coloured button and splits into five solid blobs on an arc, each on its own spring (stretch in flight, slight overshoot, 14 ms stagger). Drag: it lifts off the bar as real refracting, magnifying glass riding above the thumb; things on screen swell continuously as it approaches and an explanation card appears while it is over one; on release over something with actions it stays put with its card open and usable, otherwise it springs home and becomes a flat button again.',
+    'The centre button with two jobs. Tap: it stays a flat coloured button and splits into five solid blobs on an arc, each on its own spring (stretch in flight, slight overshoot, 14 ms stagger). Drag: it lifts off the bar as real refracting, magnifying glass riding above the thumb; things on screen swell continuously as it approaches and an explanation card appears while it is over one; over something with actions the glass itself stretches into a coloured pill with the actions written in it, and on release it stays put as those buttons; otherwise it stays round and springs home on release.',
   ),
   99: Ref(
     'B01',

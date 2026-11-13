@@ -144,7 +144,7 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
   double _bottom = 0;
   bool _open = false, _carrying = false, _moved = false;
   bool _parked = false; // the lens was put down on something you can act on
-  Offset? _downAt;
+  Offset? _downAt, _tapAt;
   int _target = -1; // index into the list returned by _things(), or -1
   _Thing? _launched;
 
@@ -169,7 +169,13 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
     spring: Motions.expressiveFast,
   );
   late final SpringValue _sheet = SpringValue(this, spring: Motions.spatial);
+  // The lens's shape: 0 a round glass that only looks, 1 a pill that holds actions.
+  late final SpringValue _morph = SpringValue(this, spring: Motions.expressive);
+  _Thing? _pillThing;
+  double _pillW = 200;
+  Rect _lensRect = Rect.zero;
   late final Listenable _all = Listenable.merge(<Listenable>[
+    _morph,
     _t,
     _kick,
     _glass,
@@ -191,6 +197,7 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
       t.cancel();
     }
     for (final SpringValue s in <SpringValue>[
+      _morph,
       _t,
       _kick,
       _glass,
@@ -335,6 +342,7 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
     if (_downAt == null) {
       return;
     }
+    _tapAt = _downAt;
     _downAt = null;
     if (_moved) {
       final List<(_Thing, Rect)> things = _things();
@@ -361,6 +369,32 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
         _home();
       }
     } else if (_parked) {
+      // A tap on the pill runs the action under the finger.
+      final _Thing? th = _pillThing;
+      final Offset? at = _tapAt;
+      if (th != null && at != null && _lensRect.inflate(8).contains(at)) {
+        double x =
+            (at.dx - _lensRect.left) /
+            _lensRect.width *
+            th.actions.fold<int>(0, (int n, String a) => n + a.length + 5);
+        String pick = th.actions.last;
+        for (final String a in th.actions) {
+          x -= a.length + 5;
+          if (x <= 0) {
+            pick = a;
+            break;
+          }
+        }
+        setState(
+          () => _launched = _Thing(
+            pick,
+            'From the lens, on "${th.title}". It opens as a small window; the home screen stays behind it.',
+            th.color,
+            icon: Icons.bolt_rounded,
+          ),
+        );
+        _sheet.animateTo(1);
+      }
       _home();
     } else {
       _setOpen(!_open);
@@ -376,6 +410,7 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
     _lx.animateTo(_c.dx, spring: Motions.expressive);
     _ly.animateTo(_c.dy, spring: Motions.expressive);
     _glass.animateTo(0);
+    _morph.animateTo(0, spring: Motions.spatial);
     _retarget(-1);
     Haptics.tick();
   }
@@ -390,6 +425,23 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
         return;
       }
       setState(() => _target = i);
+      final List<(_Thing, Rect)> things = _things();
+      final _Thing? th = i >= 0 && i < things.length ? things[i].$1 : null;
+      if (th != null && th.actions.isNotEmpty) {
+        // Something can be done here: the glass stretches into a pill that holds the actions.
+        _pillThing = th;
+        _pillW = math.min(
+          _stage.width - 24,
+          th.actions.fold<double>(
+            0,
+            (double w, String a) => w + a.length * 8.8 + 40,
+          ),
+        );
+        _morph.animateTo(1);
+        Haptics.settle();
+      } else {
+        _morph.animateTo(0, spring: Motions.spatial);
+      }
       if (i >= 0) {
         _say.jumpTo(0.6);
         _say.animateTo(1);
@@ -432,11 +484,22 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
                   ui.lerpDouble(_button, _lensSize, _glass.value)! *
                   _kick.value;
               final Offset at = _carrying || g > 0.01 ? _lens : _c;
+              final double m = _morph.value;
+              final double lw = ui
+                  .lerpDouble(size, _pillW, m)!
+                  .clamp(40.0, _stage.width - 12);
+              final double lh = ui.lerpDouble(size, 60, m.clamp(0.0, 1.15))!;
               final Rect lens = Rect.fromCenter(
-                center: at,
-                width: size,
-                height: size,
+                center: Offset(
+                  at.dx.clamp(lw / 2 + 6, _stage.width - lw / 2 - 6),
+                  at.dy,
+                ),
+                width: lw,
+                height: lh,
               );
+              _lensRect = lens;
+              final double mm = m.clamp(0.0, 1.0);
+              final _Thing? pill = _pillThing;
               final List<Rect> tr = _tileRects, sr = _spotRects;
               return Stack(
                 key: _stageKey,
@@ -472,7 +535,7 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
                         const RoomHeader(number: 51, title: 'Button and lens'),
                         const SizedBox(height: 10),
                         Text(
-                          'Tap the button for your five actions. Drag it and it becomes a magnifying glass that explains what it is over. Let go on a widget and its card stays open to use.',
+                          'Tap the button for your five actions. Drag it and it becomes a magnifying glass that explains what it is over. Over a widget it stretches into a pill holding that widget\'s actions; let go and tap one.',
                           style: LumenType.text(
                             14,
                             color: c.inkMuted,
@@ -656,20 +719,66 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
                         children: <Widget>[
                           if (g > 0.02)
                             Glass(
-                              radius: size / 2,
+                              radius: lh / 2,
+                              // Clear and magnifying while it only looks; coloured and calm once it holds actions.
                               style: GlassStyle(
-                                blur: 0.8,
-                                tint: 0.05,
+                                blur: 0.8 + 11 * mm,
+                                tint: 0.05 + 0.5 * mm,
+                                tintColor: mm > 0.02 ? pill?.color : null,
                                 refraction: 19,
                                 bevel: 13,
                                 dispersion: 0.16,
-                                magnify: 1.2,
+                                magnify: 1.2 - 0.2 * mm,
                                 light: 0.95,
                                 saturation: 1.35,
                                 adapt: 0.3,
                                 shadow: 0.9,
-                                fallbackColor: c.accent,
+                                fallbackColor: pill?.color ?? c.accent,
                               ),
+                              child: pill == null || mm < 0.05
+                                  ? null
+                                  : Opacity(
+                                      opacity: ((mm - 0.35) / 0.65).clamp(
+                                        0.0,
+                                        1.0,
+                                      ),
+                                      child: Row(
+                                        children: <Widget>[
+                                          for (final (int i, String a)
+                                              in pill
+                                                  .actions
+                                                  .indexed) ...<Widget>[
+                                            if (i > 0)
+                                              Container(
+                                                width: 1,
+                                                height: 26,
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.4,
+                                                ),
+                                              ),
+                                            Expanded(
+                                              flex: a.length + 5,
+                                              child: Center(
+                                                child: Text(
+                                                  a,
+                                                  maxLines: 1,
+                                                  softWrap: false,
+                                                  overflow: TextOverflow.fade,
+                                                  textScaler:
+                                                      TextScaler.noScaling,
+                                                  style: LumenType.text(
+                                                    15,
+                                                    weight: 700,
+                                                    color: Colors.white,
+                                                    height: 1,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
                             ),
 
                           if (g < 0.98)
@@ -783,83 +892,6 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
                                           height: 1.35,
                                         ),
                                       ),
-                                      if (th.actions.isNotEmpty) ...<Widget>[
-                                        const SizedBox(height: 10),
-                                        Row(
-                                          children: <Widget>[
-                                            for (final String a in th.actions)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                  right: 8,
-                                                ),
-                                                child: Pressable(
-                                                  onTap: () {
-                                                    setState(
-                                                      () => _launched = _Thing(
-                                                        a,
-                                                        'From the lens, on "${th.title}". It opens as a small window; the home screen stays behind it.',
-                                                        th.color,
-                                                        icon:
-                                                            Icons.bolt_rounded,
-                                                      ),
-                                                    );
-                                                    _home();
-                                                    _sheet.animateTo(1);
-                                                  },
-                                                  child: AnimatedContainer(
-                                                    duration: const Duration(
-                                                      milliseconds: 160,
-                                                    ),
-                                                    height: 44,
-                                                    padding:
-                                                        const EdgeInsets.symmetric(
-                                                          horizontal: 14,
-                                                        ),
-                                                    alignment: Alignment.center,
-                                                    decoration: ShapeDecoration(
-                                                      // Outlined while you are only passing over; filled once it can be pressed.
-                                                      color: _parked
-                                                          ? th.color
-                                                          : Colors.transparent,
-                                                      shape: StadiumBorder(
-                                                        side: BorderSide(
-                                                          color: th.color,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    child: Text(
-                                                      a,
-                                                      textScaler:
-                                                          TextScaler.noScaling,
-                                                      style: LumenType.text(
-                                                        14,
-                                                        weight: 680,
-                                                        color: _parked
-                                                            ? Colors.white
-                                                            : c.ink,
-                                                        height: 1,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                        if (!_parked)
-                                          Padding(
-                                            padding: const EdgeInsets.only(
-                                              top: 8,
-                                            ),
-                                            child: Text(
-                                              'Let go here to use these',
-                                              style: LumenType.text(
-                                                12.5,
-                                                weight: 600,
-                                                color: c.inkFaint,
-                                              ),
-                                            ),
-                                          ),
-                                      ],
                                     ],
                                   ),
                                 ),
@@ -871,10 +903,10 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
                     ),
                   // The button's touch target: at its home on the bar, or on the lens where it was put down.
                   Positioned(
-                    left: (_parked ? at.dx : _c.dx) - 44,
-                    top: (_parked ? at.dy : _c.dy) - 44,
-                    width: 88,
-                    height: 88,
+                    left: _parked ? lens.left - 6 : _c.dx - 44,
+                    top: _parked ? lens.top - 14 : _c.dy - 44,
+                    width: _parked ? lens.width + 12 : 88,
+                    height: _parked ? lens.height + 28 : 88,
                     child: Semantics(
                       button: true,
                       label: 'Actions. Drag to explain what is on screen.',

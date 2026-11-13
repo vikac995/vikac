@@ -1,5 +1,32 @@
 # Lumen changelog
 
+## Build 19 (13 November 2026)
+
+**Files:** `releases/lumen-build-19.apk`, `releases/lumen-source-build-19.zip`
+
+### Changed: R51 Button and lens, the lens changes shape when there is something to do
+
+The lens now says what kind of thing it is over by its own shape, before you read anything.
+
+- **Round and clear: just looking.** Over something that only has an explanation (the four bar spots, the blobs) it is the round magnifying glass, as before.
+- **A coloured pill: something to do.** Over a widget with actions the glass stretches sideways into a pill, takes the widget's colour, stops magnifying, and the actions are written inside it: "Log weight | History". There is a second, firmer tick as it changes. Moving off the widget lets it spring back to round.
+- **Let go on a pill** and it stays where it is. It is now the buttons: tap one half to run that action. Tap anywhere else and it flows back into the round button on the bar. You can also drag it away again.
+- The card above the lens is now only the name and the sentence; the buttons that were in the card in build 18 are gone, because the lens carries them.
+
+Confirmed on the phone by the owner: the picture inside the glass is the right way up (it was upside down only in my preview).
+
+### What to test on the phone
+
+1. Drag from a bar spot (round) up onto a widget (pill) and back. Is the change of shape readable at a glance? Is the spring on the stretch right, or too lively?
+2. Let go on the pill and tap one half. Is it obvious the pill is now two buttons?
+3. Kcal left has two actions, Weigh-in has one: compare the wide and the narrow pill.
+4. Sweep quickly across all five widgets: the pill changes colour and words each time. Too busy?
+
+### Not checked
+
+- Only the Linux preview (mouse). I tried: round over a bar spot, pill over Weight, let go, tap "Log weight". Not tried: dragging the pill away after putting it down, the one-action pills, quick sweeps.
+- Haptics and frame rate. The pill is a wider piece of glass than the round lens, so if frames are missed anywhere it will be while the pill is showing.
+
 ## Build 18 (13 November 2026)
 
 **Files:** `releases/lumen-build-18.apk`, `releases/lumen-source-build-18.zip`
