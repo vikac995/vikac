@@ -215,9 +215,6 @@ class _InputsRoomState extends State<InputsRoom> {
 String _fmtNum(double v) =>
     (v * 10).round() % 10 == 0 ? v.round().toString() : v.toStringAsFixed(1);
 
-String _fmtStep(double v) =>
-    v == v.roundToDouble() ? v.round().toString() : v.toString();
-
 /// A small thumb dial. Drag sideways to change the number; the edge of a
 /// wheel turns under it. Normal speed moves in [step]s; slow down and it
 /// switches to [fineStep]s. A tap on the left or right half steps once.
