@@ -409,34 +409,6 @@ class _DragDialState extends State<DragDial> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
-                  // While held: which step size is active.
-                  if (on > 0.02)
-                    Positioned(
-                      top: -30 - 4 * l,
-                      child: Opacity(
-                        opacity: on,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 9,
-                            vertical: 4,
-                          ),
-                          decoration: ShapeDecoration(
-                            color: _fine ? c.accent : const Color(0xF21A1C22),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            '${_fine ? 'fine' : 'step'} ${_fmtStep(_fine ? widget.fineStep : widget.step)} ${widget.unit}',
-                            textScaler: TextScaler.noScaling,
-                            style: LumenType.text(
-                              11.5,
-                              weight: 700,
-                              color: _fine ? c.onAccent : Colors.white,
-                              height: 1.2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               );
             },

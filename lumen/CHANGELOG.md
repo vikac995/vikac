@@ -1,5 +1,11 @@
 # Lumen changelog
 
+## Build 10.2 (13 November 2026)
+
+**File:** `releases/lumen-build-10.2.apk`
+
+- R23 Inputs: removed the "step / fine" bubble above the dials. The steps, the haptics, the lift and the turning wheel edge are unchanged.
+
 ## Build 10.1 (13 November 2026)
 
 **File:** `releases/lumen-build-10.1.apk`
