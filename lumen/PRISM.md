@@ -23,6 +23,12 @@ Glass is only on things that float over content: the bar and its lens, the round
 the rest timer, and the quick-action sheet. Cards, lists and buttons are solid, so text never sits on a moving
 background. That is five glass surfaces at most on screen, usually two.
 
+## Testing
+
+Prism records every frame under the scene that was showing. The round button on Home opens a sheet with
+**Copy test report**; tapping the frame-rate readout does the same. Paste the result to whoever is tuning it.
+The code is `lib/fit/diag.dart`.
+
 ## Building it
 
 ```

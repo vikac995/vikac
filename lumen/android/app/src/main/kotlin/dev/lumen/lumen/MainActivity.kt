@@ -34,6 +34,14 @@ class MainActivity : FlutterActivity() {
                 result.notImplemented()
             }
         }
+        // Which phone this is, for the test report.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/device").setMethodCallHandler { call, result ->
+            if (call.method == "info") {
+                result.success("${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}), ${Build.SOC_MODEL}")
+            } else {
+                result.notImplemented()
+            }
+        }
         // Streams the direction of gravity, so cards can tilt with the phone.
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/tilt").setStreamHandler(
             object : EventChannel.StreamHandler {

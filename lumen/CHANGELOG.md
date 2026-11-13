@@ -1,5 +1,27 @@
 # Lumen changelog
 
+## Prism, build 4 (13 November 2026)
+
+**File:** `releases/prism-build-4.apk`
+
+- **Plain background by default.** The owner's recordings of build 3 showed 119 to 120 frames a second most of the time, with dips to about 101 to 116. The coloured lights are now off unless you turn on "Background lights" in the settings sheet; the background is one flat colour, the cheapest thing a phone can draw.
+- **Glass steps down by itself.** On "Auto", if frames are being missed, the glass drops from Full to Medium to Low instead of dropping frames. This existed in Lumen but was never switched on in Prism.
+- **A test report you can copy.** Prism now records every frame and files it under what was on screen: `home`, `train`, `train+rest`, `food`, `progress`, with `+blobs` or `+sheet` when those are open. Two ways to copy it:
+  - the round button on Home, then **Copy test report**; or
+  - with the frame-rate readout on, **tap the readout**.
+  The report has the phone model, Android version, chip, screen and refresh rate, the glass setting and what it is actually running at, and for each scene: frames drawn, frames that arrived late, and the time spent building and drawing them (average, 95th percentile, worst). It ends with the last sixty things you did, with times. **Start over** clears it.
+
+### How to use it
+
+1. Open the settings sheet and tap Start over.
+2. Use the app as you normally would for a minute: switch tabs, scroll, open the blobs, tick a set.
+3. Copy the report and paste it to me.
+
+### Not checked
+
+- The report was read back in the Linux preview and has the right shape. The phone model line needs the Android side, so it showed "unknown device" there; on the phone it should name the device.
+- Whether the plain background removes the remaining dips.
+
 ## Prism, build 3 (13 November 2026)
 
 **File:** `releases/prism-build-3.apk`

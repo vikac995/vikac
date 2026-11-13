@@ -13,6 +13,7 @@ import '../rooms/patterns/inputs_room.dart';
 import '../widgets/controls.dart';
 import '../widgets/panel.dart';
 import '../widgets/pressable.dart';
+import 'diag.dart';
 import 'food_page.dart';
 import 'home_page.dart';
 import 'progress_page.dart';
@@ -106,6 +107,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return;
     }
     setState(() => _tab = tab);
+    Diag.instance
+      ..page = _tabs[tab].$2.toLowerCase()
+      ..event('tab ${_tabs[tab].$2}');
     _lensX.animateTo(_centre(tab));
     _page.jumpTo(0);
     _page.animateTo(1);
@@ -117,6 +121,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return;
     }
     setState(() => _open = v);
+    Diag.instance
+      ..overlay = v ? '+blobs' : ''
+      ..event(v ? 'blobs open' : 'blobs close');
     _t.animateTo(v ? 1 : 0);
     for (final Timer t in _fuses) {
       t.cancel();
@@ -153,9 +160,17 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _sheetWeight = fit.weight;
     });
     _rise.animateTo(1);
+    Diag.instance
+      ..overlay = '+sheet'
+      ..event('sheet ${_actions[i].$1}');
   }
 
-  void _closeSheet() => _rise.animateTo(0);
+  void _closeSheet() {
+    _rise.animateTo(0);
+    Diag.instance
+      ..overlay = ''
+      ..event('sheet close');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +191,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       body: Stack(
         children: <Widget>[
           // The wallpaper: quiet, with a few soft lights for the glass to catch.
-          Positioned.fill(child: _WallpaperImage(dark: c.dark)),
+          Positioned.fill(
+            child: ValueListenableBuilder<bool>(
+              valueListenable: Diag.instance.wallpaperOn,
+              builder: (BuildContext context, bool on, Widget? _) =>
+                  on ? _WallpaperImage(dark: c.dark) : ColoredBox(color: c.bg),
+            ),
+          ),
           // The page.
           Positioned.fill(
             child: ListenableBuilder(
@@ -791,7 +812,10 @@ void showPrismSettings(BuildContext context) {
                 ),
               ),
               child: ListenableBuilder(
-                listenable: settings,
+                listenable: Listenable.merge(<Listenable>[
+                  settings,
+                  Diag.instance.wallpaperOn,
+                ]),
                 builder: (BuildContext context, Widget? _) => Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -834,6 +858,13 @@ void showPrismSettings(BuildContext context) {
                       value: settings.reduceTransparency,
                       onChanged: (bool v) => settings.reduceTransparency = v,
                     ),
+                    const SizedBox(height: 12),
+                    SwitchLine(
+                      label: 'Background lights (costs frames)',
+                      value: Diag.instance.wallpaperOn.value,
+                      onChanged: (bool v) =>
+                          Diag.instance.wallpaperOn.value = v,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Glass quality',
@@ -850,6 +881,79 @@ void showPrismSettings(BuildContext context) {
                       labels: const <String>['Auto', 'Full', 'Medium', 'Low'],
                       value: settings.quality,
                       onChanged: (GlassQuality v) => settings.quality = v,
+                    ),
+                    const SizedBox(height: 18),
+                    Text('Testing', style: LumenType.label(color: c.inkMuted)),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: <Widget>[
+                        Expanded(
+                          flex: 3,
+                          child: Pressable(
+                            onTap: () async {
+                              await Diag.instance.copy();
+                              Haptics.settle();
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            child: Container(
+                              height: 52,
+                              alignment: Alignment.center,
+                              decoration: ShapeDecoration(
+                                color: c.accent,
+                                shape: const StadiumBorder(),
+                              ),
+                              child: Text(
+                                'Copy test report',
+                                style: LumenType.text(
+                                  15,
+                                  weight: 700,
+                                  color: c.onAccent,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 2,
+                          child: Pressable(
+                            onTap: () {
+                              Diag.instance.reset();
+                              Haptics.tick();
+                            },
+                            child: Container(
+                              height: 52,
+                              alignment: Alignment.center,
+                              decoration: ShapeDecoration(
+                                shape: StadiumBorder(
+                                  side: BorderSide(color: c.inkFaint),
+                                ),
+                              ),
+                              child: Text(
+                                'Start over',
+                                style: LumenType.text(
+                                  15,
+                                  weight: 650,
+                                  color: c.ink,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Use the app for a while, then copy and paste the report to Claude. It lists every screen with its frame times.',
+                      style: LumenType.text(
+                        12.5,
+                        color: c.inkMuted,
+                        height: 1.35,
+                      ),
                     ),
                   ],
                 ),

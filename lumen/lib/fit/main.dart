@@ -8,6 +8,8 @@ import '../core/glass.dart';
 import '../core/settings.dart';
 import '../core/theme.dart';
 import '../widgets/fps_meter.dart';
+import '../core/haptics.dart';
+import 'diag.dart';
 import 'shell.dart';
 
 /// Prism: a fitness app prototype built from Lumen's parts. A second app
@@ -30,6 +32,9 @@ Future<void> main() async {
   settings.showFps = false; // on from the settings sheet
   await GlassShaders.load();
   FrameStats.instance.start();
+  // On Auto, glass steps down by itself if frames are being missed.
+  FrameStats.instance.governorEnabled = true;
+  await Diag.instance.start();
   runApp(const PrismApp());
 }
 
@@ -70,6 +75,22 @@ class PrismApp extends StatelessWidget {
                 children: <Widget>[
                   child!,
                   if (settings.showFps) const FpsMeter(),
+                  // Tap the readout to copy the test report.
+                  if (settings.showFps)
+                    Positioned(
+                      top: MediaQuery.paddingOf(context).top,
+                      left: 60,
+                      right: 60,
+                      height: 40,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () async {
+                          await Diag.instance.copy();
+                          Haptics.settle();
+                          FrameStats.instance.note('Test report copied');
+                        },
+                      ),
+                    ),
                 ],
               ),
             ),

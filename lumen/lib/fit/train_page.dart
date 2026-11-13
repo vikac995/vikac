@@ -9,6 +9,7 @@ import '../widgets/pressable.dart';
 import '../widgets/tag.dart';
 import '../core/glass.dart';
 import 'common.dart';
+import 'diag.dart';
 import '../rooms/patterns/inputs_room.dart';
 
 /// Room 39. A complete "workout in progress" screen: where you are, the
@@ -47,6 +48,7 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           if (_restLeft == 0) {
             Haptics.thud();
             _rest.animateTo(0, spring: Motions.spatial);
+            Diag.instance.extra = '';
           }
         }
       });
@@ -79,10 +81,12 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
         _restLeft = _restTotal;
       });
       _rest.animateTo(1);
+      Diag.instance.extra = '+rest';
     } else {
       all ? Haptics.thud() : Haptics.tick();
       setState(() => _restLeft = 0);
       _rest.animateTo(0, spring: Motions.spatial);
+      Diag.instance.extra = '';
     }
   }
 
@@ -487,6 +491,7 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                             _pill(c, 'Skip', () {
                               setState(() => _restLeft = 0);
                               _rest.animateTo(0, spring: Motions.spatial);
+                              Diag.instance.extra = '';
                               Haptics.tick();
                             }, strong: true),
                           ],
