@@ -41,7 +41,12 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() {
+      // Keep time always, but only redraw while this page is the one on screen:
+      // a clock nobody can see should not wake the screen once a second.
+      void Function(void Function()) apply = Diag.instance.page == 'train'
+          ? setState
+          : (void Function() f) => f();
+      apply(() {
         _elapsed++;
         if (_restLeft > 0) {
           _restLeft--;

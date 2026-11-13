@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 5 (13 November 2026)
+
+**File:** `releases/prism-build-5.apk`
+
+From the owner's test report on a Galaxy S26 (120 Hz, 8.3 ms per frame): drawing averaged 3.1 to 4.5 ms, 2 to 5 % of frames were late, each screen had a rare spike of 33 to 58 ms, and the app drew about 10,800 frames in 2 h 43 min.
+
+- **Battery: the workout clock no longer redraws a page nobody is looking at.** It redrew the whole Train page once a second on every tab. It still keeps time, but only redraws while Train is showing.
+- **Tab changes are lighter.** The page used to fade in, which makes the phone draw the whole page into a separate layer first; this is the likely source of the 33 to 58 ms spikes. It now only slides 14 px.
+- **The report says more.** Per scene: how long it was showing, frames per second, and late frames as a percentage. A new "battery" line gives frames per second overall and how much of the time the screen was completely still.
+
+### What to test
+
+1. Start over, use the app for a minute, copy the report. The worst "draw max" on tab changes should be well under 33 ms.
+2. Leave Prism open on Home for a few minutes without touching it, then copy: Home should show almost no new frames.
+
 ## Prism, build 4 (13 November 2026)
 
 **File:** `releases/prism-build-4.apk`

@@ -21,11 +21,25 @@ class _Bucket {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 4';
+  static const String build = 'Prism build 5';
 
   /// Where the person is: the page, what floats over it, and anything extra on that page.
-  String page = 'home', overlay = '', extra = '';
-  String get scene => '$page${page == 'train' ? extra : ''}$overlay';
+  String _page = 'home', _overlay = '', _extra = '';
+  String get page => _page;
+  set page(String v) => _move(() => _page = v);
+  set overlay(String v) => _move(() => _overlay = v);
+  set extra(String v) => _move(() => _extra = v);
+  String get scene => '$_page${_page == 'train' ? _extra : ''}$_overlay';
+
+  // How long each scene has been showing, so frames can be read as "per second".
+  final Map<String, int> _shownMs = <String, int>{};
+  int _since = 0;
+  void _move(void Function() change) {
+    final int now = _clock.elapsedMilliseconds;
+    _shownMs[scene] = (_shownMs[scene] ?? 0) + now - _since;
+    _since = now;
+    change();
+  }
 
   /// The soft coloured lights behind everything. Off by default: a plain background is the cheapest.
   final ValueNotifier<bool> wallpaperOn = ValueNotifier<bool>(false);
@@ -62,6 +76,8 @@ class Diag {
   void reset() {
     _buckets.clear();
     _events.clear();
+    _shownMs.clear();
+    _since = 0;
     _clock
       ..reset()
       ..start();
@@ -117,26 +133,38 @@ class Diag {
       )
       ..writeln()
       ..writeln(
-        'scene              frames  late  build avg/max   raster avg/p95/max (ms)',
+        'scene             shown  frames  per s        late   build avg/max   draw avg/p95/max (ms)',
       );
+    _move(() {}); // count the time up to this moment
     final List<MapEntry<String, _Bucket>> rows = _buckets.entries.toList()
       ..sort(
         (MapEntry<String, _Bucket> a, MapEntry<String, _Bucket> b) =>
             b.value.frames.compareTo(a.value.frames),
       );
+    int frames = 0;
     for (final MapEntry<String, _Bucket> e in rows) {
       final _Bucket b = e.value;
       if (b.frames == 0) {
         continue;
       }
+      frames += b.frames;
       final List<double> sorted = List<double>.of(b.raster)..sort();
       final double p95 = sorted[((sorted.length - 1) * 0.95).round()];
+      final double secs = (_shownMs[e.key] ?? 0) / 1000;
       String f(double x) => x.toStringAsFixed(1);
       o.writeln(
-        '${e.key.padRight(18)} ${b.frames.toString().padLeft(6)} ${b.late.toString().padLeft(5)}  '
-        '${f(b.buildSum / b.frames).padLeft(5)}/${f(b.buildMax).padRight(6)}  ${f(b.rasterSum / b.frames).padLeft(5)}/${f(p95)}/${f(b.rasterMax)}',
+        '${e.key.padRight(16)} ${'${secs.round()}s'.padLeft(6)} ${b.frames.toString().padLeft(7)} ${(secs > 0 ? f(b.frames / secs) : '-').padLeft(6)} '
+        '${'${b.late} (${f(100 * b.late / b.frames)}%)'.padLeft(11)}  ${f(b.buildSum / b.frames).padLeft(5)}/${f(b.buildMax).padRight(6)}  ${f(b.rasterSum / b.frames).padLeft(5)}/${f(p95)}/${f(b.rasterMax)}',
       );
     }
+    // The battery figure: a screen left alone should draw nothing at all.
+    final double total = _clock.elapsedMilliseconds / 1000;
+    o
+      ..writeln()
+      ..writeln(
+        'battery: $frames frames in ${total.round()}s = ${(frames / total).toStringAsFixed(2)} per second overall; '
+        'the screen was still for ${(100 * (1 - frames / (total * _refresh))).clamp(0, 100).toStringAsFixed(1)}% of the time',
+      );
     o
       ..writeln()
       ..writeln('last actions:')

@@ -202,13 +202,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           Positioned.fill(
             child: ListenableBuilder(
               listenable: _page,
-              builder: (BuildContext context, Widget? child) => Opacity(
-                opacity: _page.value.clamp(0.0, 1.0),
-                child: Transform.translate(
-                  offset: Offset(0, (1 - _page.value) * 14),
-                  child: child,
-                ),
-              ),
+              // A small slide only. Fading a whole page means drawing it twice, which is where the stutters on tab changes came from.
+              builder: (BuildContext context, Widget? child) =>
+                  Transform.translate(
+                    offset: Offset(0, (1 - _page.value) * 14),
+                    child: child,
+                  ),
               child: IndexedStack(
                 index: _tab,
                 children: <Widget>[
