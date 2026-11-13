@@ -1,5 +1,22 @@
 # Lumen changelog
 
+## Prism, build 38 (13 November 2026)
+
+**File:** `releases/prism-build-38.apk`
+
+**A much milder morph in the drawer.** The cookie with waves is gone.
+
+- As you drag, each tile's corners soften most of the way toward round, and the shape turns a quarter turn while they do. Each corner arrives exactly where the next corner was, so the tile ends as the same squircle it began as.
+- At the halfway point a tile is a soft, nearly round shape. There are no waves or points anywhere in the movement.
+- The marks and names do not turn; only the outline does. Colour, marks, names and following the finger are unchanged.
+
+**What to look for**
+- Is it calm enough with twenty tiles doing it at once?
+- Does the quarter turn read as a gentle roll, or is it barely noticeable? I can make the corners soften less so the turn shows more, or more so it shows less.
+
+**Checked:** in my preview I held a drag part-way: soft, nearly round tiles turned slightly, no waves.
+**Not checked:** on a phone, or in motion. A turn is hard to judge from a still.
+
 ## Prism, build 37 (13 November 2026)
 
 **File:** `releases/prism-build-37.apk`

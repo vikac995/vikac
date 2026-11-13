@@ -435,11 +435,14 @@ class _GridPainter extends CustomPainter {
           )
           .toDouble(),
   ]);
-  // A cookie with fewer, softer waves than the one in the Shape morph room: six shallow lobes.
-  static final Float32List _ripple = Float32List.fromList(<double>[
-    for (int i = 0; i < ShapeLib.samples; i++)
-      0.98 * (1 + 0.052 * math.cos(6 * i / ShapeLib.samples * 2 * math.pi)),
-  ]);
+  // What the squircle leans toward mid-change: a circle of about the same area. Leaning toward
+  // a circle only softens the corners, which is the mildest change of shape there is.
+  static final Float32List _ripple = Float32List.fromList(
+    List<double>.filled(
+      ShapeLib.samples,
+      _squircle.reduce((double a, double b) => a + b) / _squircle.length,
+    ),
+  );
   static final Map<String, TextPainter> _labels = <String, TextPainter>{};
   static final Map<String, TextPainter> _letters = <String, TextPainter>{};
 
@@ -554,10 +557,12 @@ class _GridPainter extends CustomPainter {
         : ShapeLib.lerpPath(
             _squircle,
             _ripple,
-            math.sin(math.pi * e),
+            // The corners soften most of the way to round and turn a quarter turn as they do, so they
+            // arrive exactly where the next corners were. It ends as the same squircle it began as.
+            0.72 * math.sin(math.pi * e),
             Offset.zero,
             _tile / 2 / _squircle[0],
-            0,
+            math.pi / 2 * Curves.easeInOut.transform(e),
           );
     double ease(double x) => Curves.easeInOut.transform(x.clamp(0.0, 1.0));
     // The centre never holds two things. The old mark draws in and is gone, the tile is plain
