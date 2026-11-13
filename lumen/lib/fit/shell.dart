@@ -310,7 +310,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   void _lensMoved() {
-    final bool live = _carrying || _parked || _glass.value > 0.05;
+    // Only while held or placed. On its way home it is just a button again and must not wake the cards it passes.
+    final bool live = _carrying || _parked;
     LensBus.instance.pos.value = live ? Offset(_lx.value, _ly.value) : null;
     if (!_carrying) {
       return;
@@ -357,6 +358,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     });
     _lx.animateTo(_home.dx, spring: Motions.expressive);
     _ly.animateTo(_home.dy, spring: Motions.expressive);
+    LensBus.instance.pos.value = null;
     _glass.animateTo(0);
     _morph.animateTo(0, spring: Motions.spatial);
     _say.animateTo(0, spring: Motions.spatialFast);

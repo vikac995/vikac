@@ -1,5 +1,15 @@
 # Lumen changelog
 
+## Prism, build 14 (13 November 2026)
+
+**File:** `releases/prism-build-14.apk`
+
+- **Fixed: the lens waking cards on its way home** (from your recording). After you let go or dismiss it, the lens flies back to the bar as a plain button. It no longer highlights or explains the cards it passes over.
+
+**What to look for:** park the lens on the workout card, tap elsewhere to dismiss it, and watch the Weight card as the lens passes: it should stay still.
+
+**Not checked:** on a phone, and not in my preview either; this is a two-line change from reading your recording.
+
 ## Prism, build 13 (13 November 2026)
 
 **File:** `releases/prism-build-13.apk`
