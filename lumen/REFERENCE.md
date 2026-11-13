@@ -97,6 +97,12 @@ the top of those screens) and every piece is labelled in the app, so a screensho
 | R48 | Swap | Swapping an exercise mid-workout: a sheet of alternatives re-ranked by the reason (equipment busy, discomfort, variety), the card turns over with sets kept and weight adjusted, then asks just today or every time, with Undo. | `lib/rooms/patterns/swap_room.dart` |
 | R49 | Edit mid-workout | Editing in place during a session: tap a set badge to cycle its type (normal, warm-up, drop, failure), add a set like the last, remove a set, and in the queue drag to reorder, skip for today, or link two exercises into a superset. | `lib/rooms/patterns/session_room.dart` |
 
+## The centre button
+
+| Id | Name | What it shows | Files |
+|---|---|---|---|
+| R50 | The button | The contextual centre button: one tap splits it into up to five glass blobs on individual springs (stretch in flight, slight overshoot, 14 ms stagger), press-slide-release picks in one movement with neighbours leaning away, a context suggestion pill nearest the thumb, a rest ring on the button itself, apps shown as icons behind tinted glass, quick actions colour-coded by category, and in-place editing with pencil, minus and an empty plus slot. Motion switch: Snappy, Balanced, Bouncy. | `lib/rooms/patterns/flude_room.dart` |
+
 ## Bonus
 
 | Id | Name | What it shows | Files |

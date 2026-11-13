@@ -370,6 +370,13 @@ const Map<int, Ref> refs = <int, Ref>{
     <String>['lib/rooms/patterns/session_room.dart'],
     'Editing in place during a session: tap a set badge to cycle its type (normal, warm-up, drop, failure), add a set like the last, remove a set, and in the queue drag to reorder, skip for today, or link two exercises into a superset.',
   ),
+  50: Ref(
+    'R50',
+    'The button',
+    'The centre button',
+    <String>['lib/rooms/patterns/flude_room.dart'],
+    'The contextual centre button: one tap splits it into up to five glass blobs on individual springs (stretch in flight, slight overshoot, 14 ms stagger), press-slide-release picks in one movement with neighbours leaning away, a context suggestion pill nearest the thumb, a rest ring on the button itself, apps shown as icons behind tinted glass, quick actions colour-coded by category, and in-place editing with pencil, minus and an empty plus slot. Motion switch: Snappy, Balanced, Bouncy.',
+  ),
   99: Ref(
     'B01',
     'Discomorphism',

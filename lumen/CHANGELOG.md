@@ -1,5 +1,47 @@
 # Lumen changelog
 
+## Build 16 (13 November 2026)
+
+One new example, in its own home section "The centre button": my suggestion for the contextual button, built from the brief and from the current `flude_menu.dart` / `glass_button.dart`. 50 examples in total. Nothing was removed.
+
+**Files:** `releases/lumen-build-16.apk`, `releases/lumen-source-build-16.zip`
+
+### New: R50 The button
+
+From the brief:
+
+- One tap and the button splits into a single row of up to five blobs. No second layer, no folders.
+- A blob can be an app, a Gym Buddy screen or a quick action. An app keeps its own icon, set behind the glass, and the glass takes a light tint of the icon's colour. A quick action is solid tinted glass in its category's colour (all Food actions are orange).
+- Two spots on each side of the button in the bottom bar.
+- Editing in place: hold the button. A pencil appears on it; every blob gets a minus and a pencil; an empty "plus" blob appears in the rightmost free slot while there are fewer than five. Tapping a blob opens "What should it do?" with Quick actions, Gym Buddy screens and Apps.
+- A quick action opens as a small window over the home screen. An app or a screen grows out of its blob.
+
+Motion (the "Springs" mechanics):
+
+- Every blob has its own spring. It leaves the button stretched along its line of flight, goes slightly past its place and settles. The middle blob leaves first; each step outward starts 14 ms later. The button recoils as it fires. Closing is faster and does not bounce.
+- Press the button, slide to a blob and let go: one movement. The blob under the thumb swells and its neighbours lean away from it, with a tick as you cross each one.
+- A **Motion** switch at the top compares three tunings: Snappy (stiffness 1500, damping 0.92), Balanced (950, 0.62) and Bouncy (520, 0.45). Tell me which one, or where between two.
+
+My additions (not in the brief; say if you want them out):
+
+- **A suggestion pill** between the button and the row: one action that fits the moment (Morning: weigh-in; Workout: finish set 3; Lunch: log lunch). It is the largest target and the nearest to the thumb. The **Situation** switch at the top changes it; "Off" shows the button exactly as briefed.
+- **A ring on the button itself** while a rest timer runs, readable without opening anything.
+- **A short label under each blob.** The brief asks for the same icon for actions of one category; with identical icons, Scan and Quick log could not be told apart, so I kept one colour per category and a distinct glyph per action.
+
+### What to test on the phone
+
+1. Tap the button a few times in each Motion setting. Which one feels right for something used all day?
+2. Press, slide to a blob, let go. Can you do it without looking? Do the ticks help?
+3. Is the suggestion pill useful or in the way? Switch Situation to compare, and to Off.
+4. Hold the button to edit. Remove one, add one with the plus, change one.
+5. Watch the frame-rate readout while opening and closing quickly, many times.
+
+### Not checked
+
+- Only the Linux preview (software rendering, mouse), which runs at about 15 frames a second: I could confirm positions, order and that everything responds, not how the springs look or feel at 120 Hz. The stretch in flight is the part I could least see.
+- The glass here is a single blurred layer cut to the shape of the blobs, not the refracting glass from room 1; that was a choice for speed. If it looks flat on the phone, say so.
+- Haptics.
+
 ## Build 15 (13 November 2026)
 
 A new home section, "During a workout", with three proposals for the hard parts of a training screen (49 examples in total). Nothing was removed.
