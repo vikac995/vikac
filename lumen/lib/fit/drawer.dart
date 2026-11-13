@@ -516,10 +516,10 @@ class _GridPainter extends CustomPainter {
     final AppTile t = apps[i];
     final bool lead = t.label.isNotEmpty && _starts(i);
     final TextStyle style = LumenType.text(
-      13.5,
-      weight: 660,
+      14.2,
+      weight: 570,
       color: ink,
-      height: 1.14,
+      height: 1.13,
     );
     // The initial takes the app's own tile colour, nudged a little toward the text colour so it
     // stays readable: tile colours are chosen to sit behind white marks, not to be read as text.
@@ -540,11 +540,12 @@ class _GridPainter extends CustomPainter {
                 children: <InlineSpan>[
                   TextSpan(
                     text: t.label.substring(0, 1),
+                    // Lighter than before but larger than the letters after it: it stands out by size and colour, not by heaviness.
                     style: LumenType.text(
-                      13.5,
-                      weight: 900,
+                      16,
+                      weight: 720,
                       color: initial,
-                      height: 1.14,
+                      height: 1.0,
                     ),
                   ),
                   TextSpan(text: t.label.substring(1)),

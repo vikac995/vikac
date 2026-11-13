@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 44 (13 November 2026)
+
+**File:** `releases/prism-build-44.apk`
+
+Lettering in the drawer.
+
+- **App names are a little larger and a little lighter** (size 14.2 from 13.5; weight 570 from 660).
+- **The coloured initial is lighter too, but larger than the letters after it** (size 16, weight 720 from 900). It now stands out by size and colour, not by heaviness.
+
+**What to look for:** do the names read more easily? Does the larger initial look deliberate, like a small drop capital, or does it sit awkwardly on the line? Do long names still fit on two lines?
+
+**Checked:** in my preview, with made-up apps.
+**Not checked:** on a phone, and with your longest real app names.
+
 ## Prism, build 43 (13 November 2026)
 
 **File:** `releases/prism-build-43.apk`
