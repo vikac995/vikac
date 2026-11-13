@@ -1,5 +1,21 @@
 # Lumen changelog
 
+## Prism, build 16 (13 November 2026)
+
+**File:** `releases/prism-build-16.apk`
+
+- **The lens comes home as a drop of colour, not as glass.** The moment you let go or dismiss it, the glass is gone. A flat blob in the colour it had (the card's colour if it was a pill, otherwise the button's orange) travels back to the bar, stretching along its path with a short tail. It shifts to the button's orange on the way, pours into a pool that grows where the button lives, the plus draws itself in, and the button lands with a small bounce.
+- No glass, blur or shadow is drawn during the return, so those frames are as cheap as the app gets.
+
+**What to look for**
+- Does the drop read as one liquid shape, or can you see separate circles in the tail?
+- Is the landing a clean hand-over to the button, or is there a visible pop in size or position?
+- Speed: too slow, too fast, or right?
+- Grab the button again while the drop is still flying: it should become the lens at once.
+
+**Checked:** in my preview the shape, colour change and landing play as described.
+**Not checked:** on a phone. My preview draws about seven frames a second, so I have seen stills of this animation, never the motion.
+
 ## Prism, build 15 (13 November 2026)
 
 **File:** `releases/prism-build-15.apk`

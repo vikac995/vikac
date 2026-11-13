@@ -99,6 +99,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   Offset? _downAt;
   Offset _home = Offset.zero;
   LensTargetState? _target, _pill;
+  // On its way home the lens is a blob of the button's colour, not glass.
+  bool _returning = false;
+  Offset _retFrom = Offset.zero;
+  Color _retColor = const Color(0xFFFF6A47);
   double _pillW = 200;
   Rect _lensRect = Rect.zero;
 
@@ -310,6 +314,14 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   void _lensMoved() {
+    if (_returning && (Offset(_lx.value, _ly.value) - _home).distance < 1.5) {
+      // Landed: the blob becomes the button again, with a small bounce.
+      setState(() => _returning = false);
+      _glass.jumpTo(0);
+      _kick.jumpTo(1.12);
+      _kick.animateTo(1);
+      Haptics.settle();
+    }
     // Only while held or placed. On its way home it is just a button again and must not wake the cards it passes.
     final bool live = _carrying || _parked;
     LensBus.instance.pos.value = live ? Offset(_lx.value, _ly.value) : null;
@@ -351,13 +363,19 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   void _lensHome() {
+    final bool away = _glass.value > 0.05;
+    _retFrom = Offset(_lx.value, _ly.value);
+    _retColor =
+        (_parked ? _pill?.widget.color : null) ??
+        LumenColors.of(context).accent;
     setState(() {
+      _returning = away;
       _carrying = false;
       _parked = false;
       _target = null;
     });
-    _lx.animateTo(_home.dx, spring: Motions.expressive);
-    _ly.animateTo(_home.dy, spring: Motions.expressive);
+    _lx.animateTo(_home.dx, spring: Motions.spatial);
+    _ly.animateTo(_home.dy, spring: Motions.spatial);
     LensBus.instance.pos.value = null;
     _glass.animateTo(0);
     _morph.animateTo(0, spring: Motions.spatial);
@@ -378,7 +396,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       // The button lifts off: from here on it is a lens.
       _moved = true;
       _setOpen(false);
-      setState(() => _carrying = true);
+      setState(() {
+        _carrying = true;
+        _returning = false;
+      });
       _lx.jumpTo(_home.dx);
       _ly.jumpTo(_home.dy);
       _glass.animateTo(1);
@@ -994,7 +1015,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     builder: (BuildContext context, Widget? _) =>
                         Transform.scale(
                           scale: _kick.value,
-                          child: _glass.value > 0.5
+                          child: _glass.value > 0.5 || _returning
                               // While the button is away, an empty ring marks where it lives.
                               ? Container(
                                   width: _button,
@@ -1050,7 +1071,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
               ]),
               builder: (BuildContext context, Widget? _) {
                 final double g = _glass.value;
-                if (g <= 0.02) {
+                if (g <= 0.02 && !_returning) {
                   return const SizedBox.shrink();
                 }
                 final double m = _morph.value, mm = m.clamp(0.0, 1.0);
@@ -1070,6 +1091,23 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   height: lh,
                 );
                 _lensRect = lens;
+                if (_returning) {
+                  return IgnorePointer(
+                    child: CustomPaint(
+                      size: Size.infinite,
+                      painter: _BlobPainter(
+                        body: lens,
+                        velocity: Offset(_lx.velocity, _ly.velocity),
+                        home: _home,
+                        from: _retFrom,
+                        start: _retColor,
+                        end: c.accent,
+                        ink: c.onAccent,
+                        button: _button,
+                      ),
+                    ),
+                  );
+                }
                 final LensTarget? pill = _pill?.widget, said = _target?.widget;
                 final bool above = lens.top > safe.top + 150;
                 return Stack(
@@ -1825,4 +1863,62 @@ class _WallpaperImageState extends State<_WallpaperImage> {
       },
     );
   }
+}
+
+/// The lens going home: a drop of the button's colour. It stretches along its
+/// path, leaves a short tail, and pours into a pool that grows where the
+/// button lives. Flat colour only: no glass, no blur, no shadow.
+class _BlobPainter extends CustomPainter {
+  const _BlobPainter({
+    required this.body,
+    required this.velocity,
+    required this.home,
+    required this.from,
+    required this.start,
+    required this.end,
+    required this.ink,
+    required this.button,
+  });
+  final Rect body;
+  final Offset velocity, home, from;
+  final Color start, end, ink;
+  final double button;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Offset at = body.center;
+    final double whole = math.max((from - home).distance, 1);
+    final double p = (1 - (at - home).distance / whole).clamp(0.0, 1.0);
+    final Paint paint = Paint()
+      ..color = Color.lerp(start, end, Curves.easeOut.transform(p))!;
+    // The pool it is pouring into.
+    canvas.drawCircle(home, button / 2 * p * p, paint);
+    // The tail: three smaller drops left behind along the path.
+    final double r = body.shortestSide / 2;
+    // Spaced by speed, but never so far that the drops come apart.
+    final double speed = velocity.distance;
+    final Offset tail = speed < 1
+        ? Offset.zero
+        : velocity / speed * math.min(speed * 0.011, r * 0.6);
+    for (int k = 1; k <= 3; k++) {
+      canvas.drawCircle(at - tail * k.toDouble(), r * (1 - 0.24 * k), paint);
+    }
+    canvas.drawRRect(RRect.fromRectAndRadius(body, Radius.circular(r)), paint);
+    // The plus draws itself in as the drop arrives.
+    final double a = ((p - 0.7) / 0.3).clamp(0.0, 1.0);
+    if (a > 0) {
+      final Paint line = Paint()
+        ..color = ink.withValues(alpha: a)
+        ..strokeWidth = 3.4
+        ..strokeCap = StrokeCap.round;
+      const double l = 9.5;
+      canvas
+        ..drawLine(at - const Offset(l, 0), at + const Offset(l, 0), line)
+        ..drawLine(at - const Offset(0, l), at + const Offset(0, l), line);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BlobPainter old) =>
+      old.body != body || old.velocity != velocity || old.start != start;
 }
