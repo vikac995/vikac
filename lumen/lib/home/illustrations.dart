@@ -72,7 +72,11 @@ class RoomArt extends CustomPainter {
               Icons.space_dashboard_rounded,
               Icons.swap_vert_rounded,
               Icons.task_alt_rounded,
-            ][(kind - 19) % 24],
+              Icons.av_timer_rounded,
+              Icons.album_rounded,
+              Icons.show_chart_rounded,
+              Icons.restaurant_rounded,
+            ][(kind - 19) % 28],
           );
         } else {
           _basic(canvas, size, kind - 13);

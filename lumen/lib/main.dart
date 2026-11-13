@@ -51,6 +51,10 @@ import 'rooms/screens/workout_screen.dart';
 import 'rooms/patterns/nav_room.dart';
 import 'rooms/patterns/reorder_room.dart';
 import 'rooms/screens/summary_screen.dart';
+import 'rooms/patterns/wheels_room.dart';
+import 'rooms/patterns/plates_room.dart';
+import 'rooms/screens/progress_screen.dart';
+import 'rooms/screens/nutrition_screen.dart';
 import 'rooms/shaders/shaders_room.dart';
 import 'rooms/shapes/shape_room.dart';
 import 'rooms/springs/springs_room.dart';
@@ -145,6 +149,10 @@ class LumenApp extends StatelessWidget {
             'nav' => const NavRoom(),
             'reorder' => const ReorderRoom(),
             'summary' => const SummaryScreen(),
+            'wheels' => const WheelsRoom(),
+            'plates' => const PlatesRoom(),
+            'progress' => const ProgressScreen(),
+            'nutrition' => const NutritionScreen(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

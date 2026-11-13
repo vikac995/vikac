@@ -84,6 +84,10 @@ the top of those screens) and every piece is labelled in the app, so a screensho
 | R40 | Navigation | Three bottom bars for the same four destinations: labels with a travelling pill, a floating bar with one main action, and a bar where only the selected tab shows its name. | `lib/rooms/patterns/nav_room.dart` |
 | R41 | Reorder | Editing a list by hand: drag a row by its handle while the others spring out of the way, swipe left to remove with a tick at the point of no return, and Undo instead of a confirmation. | `lib/rooms/patterns/reorder_room.dart` |
 | R42 | Summary screen | A complete workout-finished screen: a tick that lands first, numbers that count up once, the one special thing today, a one-tap feeling question, and Share plus Done. | `lib/rooms/screens/summary_screen.dart` |
+| R43 | Wheels | Wheel pickers for a duration, a time of day (looping) and a body weight split into kilos and tenths; each step ticks and the wheel snaps. | `lib/rooms/patterns/wheels_room.dart` |
+| R44 | Plates | A plate calculator: dial a weight and a drawn barbell loads itself with colour-coded plates, with the per-side list in words. | `lib/rooms/patterns/plates_room.dart` |
+| R45 | Progress screen | A complete progress screen: lift chips, one headline number with its change, a line chart you can run a finger along, a period switch that reshapes the line, and bests as plain rows. | `lib/rooms/screens/progress_screen.dart` |
+| R46 | Nutrition screen | A complete food day: a ring showing calories left, three macro bars, meals where one tap adds the usual item, and a row of water glasses. | `lib/rooms/screens/nutrition_screen.dart` |
 
 ## Bonus
 

@@ -1,5 +1,34 @@
 # Lumen changelog
 
+## Build 14 (13 November 2026)
+
+Four more examples at the end of "More patterns" (46 in total). Nothing was removed.
+
+**Files:** `releases/lumen-build-14.apk`, `releases/lumen-source-build-14.zip`
+
+### New
+
+- **R43 Wheels.** Wheel pickers for a rest duration, a time of day (the wheels loop round) and a body weight split into whole kilos and tenths. Each step ticks and the wheel snaps to a value.
+- **R44 Plates.** A plate calculator. Dial a weight and a drawn barbell loads itself with colour-coded plates, with "Each side: 25 + 5 + 1.25" in words underneath. Bar of 20, 15 or 10 kg.
+- **R45 Progress screen.** A complete progress screen: chips to pick the lift, one headline number with its change, a line chart you can run a finger along (the headline follows your finger, one tick per point), a Month / 3 months / Year switch that reshapes the line, and bests as plain rows. Tagged R45.1 to R45.4. Data is made up.
+- **R46 Nutrition screen.** A complete food day: a ring with calories left (turns red and says "over" past the goal), three macro bars, meals where one tap on plus adds the usual item, and eight water glasses. Tagged R46.1 to R46.4. Data is made up.
+
+### What to test on the phone
+
+1. R43: flick a wheel and let it coast. It should tick per step and settle exactly on a value. Do the ticks keep up when it spins fast, or turn into a buzz?
+2. R45: slide a finger along the chart. The big number should follow without lag. The page should not scroll sideways or fight you; vertical scrolling from the chart should still work.
+3. R45: switch lift and period; watch the line reshape and the frame-rate readout.
+4. R46: tap plus on Dinner several times until the ring goes over the goal.
+5. R44: drag the dial quickly; plates should pop on and off without flicker.
+
+### Known rough edge
+
+- Rolling numbers that start with a 1 (for example "1 160 kcal left") show a small gap after the 1, because every digit gets the same width so the number does not wobble while rolling.
+
+### Not checked
+
+- Only the Linux preview (software rendering, mouse). Haptics, real frame rate and feel were not checked. Wheel flicks in particular behave differently under a finger.
+
 ## Build 13 (13 November 2026)
 
 Three more examples at the end of "More patterns" (42 in total). Includes the 12.1 fixes. Nothing was removed.
