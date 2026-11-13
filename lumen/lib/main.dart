@@ -32,6 +32,11 @@ import 'rooms/patterns/inputs_room.dart';
 import 'rooms/patterns/launcher_room.dart';
 import 'rooms/patterns/perf_room.dart';
 import 'rooms/patterns/timer_room.dart';
+import 'rooms/screens/assistant_screen.dart';
+import 'rooms/screens/components_room.dart';
+import 'rooms/screens/dashboard_screen.dart';
+import 'rooms/screens/detail_screen.dart';
+import 'rooms/screens/onboarding_screen.dart';
 import 'rooms/shaders/shaders_room.dart';
 import 'rooms/shapes/shape_room.dart';
 import 'rooms/springs/springs_room.dart';
@@ -108,6 +113,11 @@ class LumenApp extends StatelessWidget {
             'timer' => const TimerRoom(),
             'inputs' => const InputsRoom(),
             'dodont' => const DoDontRoom(),
+            'components' => const ComponentsRoom(),
+            'dashboard' => const DashboardScreen(),
+            'detail' => const DetailScreen(),
+            'assistant' => const AssistantScreen(),
+            'onboarding' => const OnboardingScreen(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

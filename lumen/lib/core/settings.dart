@@ -13,6 +13,7 @@ class AppSettings extends ChangeNotifier {
   bool _reduceTransparency = false;
   bool _showFps = true;
   bool _haptics = true;
+  bool _showLabels = false;
   GlassQuality _quality = GlassQuality.auto;
   GlassQuality _autoTier = GlassQuality.full;
 
@@ -21,6 +22,10 @@ class AppSettings extends ChangeNotifier {
   bool get reduceTransparency => _reduceTransparency;
   bool get showFps => _showFps;
   bool get haptics => _haptics;
+
+  /// Names and ids drawn on the pieces of example screens, for screenshots.
+  bool get showLabels => _showLabels;
+  set showLabels(bool v) => _set(() => _showLabels = v);
 
   /// What the user picked (may be [GlassQuality.auto]).
   GlassQuality get quality => _quality;

@@ -26,6 +26,11 @@ import '../rooms/patterns/inputs_room.dart';
 import '../rooms/patterns/launcher_room.dart';
 import '../rooms/patterns/perf_room.dart';
 import '../rooms/patterns/timer_room.dart';
+import '../rooms/screens/assistant_screen.dart';
+import '../rooms/screens/components_room.dart';
+import '../rooms/screens/dashboard_screen.dart';
+import '../rooms/screens/detail_screen.dart';
+import '../rooms/screens/onboarding_screen.dart';
 import '../rooms/pill/pill_room.dart';
 import '../rooms/shaders/shaders_room.dart';
 import '../rooms/shapes/shape_room.dart';
@@ -194,6 +199,36 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFFE5484D),
     (_) => const DoDontRoom(),
   ),
+  _Room(
+    'Components',
+    'Every control, named on screen.',
+    const Color(0xFFFF6B4A),
+    (_) => const ComponentsRoom(),
+  ),
+  _Room(
+    'Dashboard',
+    'A complete home screen.',
+    const Color(0xFF4E6CC4),
+    (_) => const DashboardScreen(),
+  ),
+  _Room(
+    'Detail page',
+    'Hero, facts, one action.',
+    const Color(0xFFE2563A),
+    (_) => const DetailScreen(),
+  ),
+  _Room(
+    'Assistant',
+    'An AI chat done properly.',
+    const Color(0xFF8E7CFF),
+    (_) => const AssistantScreen(),
+  ),
+  _Room(
+    'Onboarding',
+    'A first run in three steps.',
+    const Color(0xFF2ED3B7),
+    (_) => const OnboardingScreen(),
+  ),
 ];
 
 class HomeScreen extends StatefulWidget {
@@ -343,7 +378,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A showcase of interface craft.\nTwenty-four examples, each with an id\nyou can point another chat to.',
+                    'A showcase of interface craft.\nTwenty-nine examples to point at.\nEach has an id; pieces can show their names.',
                     style: LumenType.text(
                       15.5,
                       color: c.inkMuted,
@@ -443,12 +478,29 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ],
             const SizedBox(height: 34),
+            _section(
+              c,
+              'Screens',
+              'Whole screens and a catalogue to point at.',
+            ),
+            _card(25, height: 150),
+            for (int r = 0; r < 2; r++) ...<Widget>[
+              const SizedBox(height: gap),
+              Row(
+                children: <Widget>[
+                  Expanded(child: _card(26 + r * 2, height: 156)),
+                  const SizedBox(width: gap),
+                  Expanded(child: _card(27 + r * 2, height: 156)),
+                ],
+              ),
+            ],
+            const SizedBox(height: 34),
             _section(c, 'Bonus', 'Please do not ship this.'),
             _card(12, height: 150),
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 9  ·  Flutter 3.50  ·  Impeller',
+                'Build 10  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),

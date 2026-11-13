@@ -54,7 +54,12 @@ class RoomArt extends CustomPainter {
               Icons.timer_outlined,
               Icons.straighten_rounded,
               Icons.rule_rounded,
-            ][(kind - 19) % 6],
+              Icons.widgets_rounded,
+              Icons.dashboard_rounded,
+              Icons.article_rounded,
+              Icons.auto_awesome_rounded,
+              Icons.swipe_rounded,
+            ][(kind - 19) % 11],
           );
         } else {
           _basic(canvas, size, kind - 13);

@@ -54,6 +54,19 @@ Shared building blocks used by most rooms: `lib/core/springs.dart` (spring token
 | R23 | Inputs | Number entry for workouts: a weight ruler with ticks and fling, steppers that repeat while held, set rows with a tick. | `lib/rooms/patterns/inputs_room.dart` |
 | R24 | Do and don't | Common mistakes next to the fix: spinner and skeleton, confirm and undo, vanishing and persistent labels, small and proper touch targets. | `lib/rooms/patterns/dodont_room.dart` |
 
+## Screens
+
+| Id | Name | What it shows | Files |
+|---|---|---|---|
+| R25 | Components | A catalogue of every control, each named on screen (C01 to C24). | `lib/rooms/screens/components_room.dart` |
+| R26 | Dashboard | A complete home screen: greeting, summary card with a ring, bento of stat tiles, week chart, floating glass toolbar. | `lib/rooms/screens/dashboard_screen.dart` |
+| R27 | Detail page | A complete detail page: hero picture with parallax, facts as chips, highlights, floating glass action bar with a split button. | `lib/rooms/screens/detail_screen.dart` |
+| R28 | Assistant | A complete AI chat: streaming, numbered citations and sources, collapsible reasoning, a generated card, suggestions, send that becomes stop. | `lib/rooms/screens/assistant_screen.dart` |
+| R29 | Onboarding | A complete first-run flow: three swipeable steps with a morphing illustration, progress dots, skip, a finish state. | `lib/rooms/screens/onboarding_screen.dart` |
+
+Pieces inside the Screens rooms carry their own ids (for example `R26.3`). Switch on "Show names" (the tag button at
+the top of those screens) and every piece is labelled in the app, so a screenshot names what it shows.
+
 ## Bonus
 
 | Id | Name | What it shows | Files |

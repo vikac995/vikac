@@ -1,5 +1,50 @@
 # Lumen changelog
 
+## Build 10 (13 November 2026)
+
+Lumen as a visual vocabulary: things to screenshot, record or point at. A catalogue of named components, four
+complete screens, labels you can switch on, and thumb dials for workout numbers.
+
+**Files:** `releases/lumen-build-10.apk`, `releases/lumen-source-build-10.zip`
+
+### Changed on request
+
+- **R23 Inputs: the set rows are now thumb dials.** Drag a number sideways. Kilos move by 0.5, and by 0.1 when the
+  thumb moves slowly; reps by 1, and by 0.5 slowly. Slow means under about 45 px a second for a tenth of a second;
+  speeding up past about 160 px a second returns to normal steps (which land on the 0.5 grid again). A bubble above
+  the dial says which step is active, a different haptic marks the switch, and the edge of a wheel turns under the
+  thumb. A tap on the left or right half steps once.
+
+### New: Screens (a new section on the home screen)
+
+- **R25 Components.** Every control with its id and name printed under it (C01 to C24): buttons, the newer button
+  group, split button, FAB menu and floating toolbar, chips, switch, checkbox, radio, segmented picker, slider,
+  stepper, search field, list row, badges, progress, tabs, toast, banner. All of them work.
+- **R26 Dashboard.** A complete home screen: greeting, summary card with a ring, stat tiles, an action tile, a
+  list section, a floating glass toolbar.
+- **R27 Detail page.** A hero picture with parallax, title block, fact chips, highlights, and a floating glass
+  action bar.
+- **R28 Assistant.** An AI chat: thinking state, an answer that streams, numbered citations, a sources list and
+  the reasoning as fold-outs, a generated card with an action, suggestions, and a send button that becomes stop.
+  Prepared answers only; it says so.
+- **R29 Onboarding.** Three swipeable steps whose illustration morphs with the swipe, progress dots, skip, and a
+  finish state.
+- **Show names.** The tag button at the top right of R26 to R29 draws a blue label on every piece (for example
+  "R26.3 Stat tile"), so a screenshot names what it shows.
+
+### What to test
+
+1. **Dials:** change a weight quickly, then slow right down. Is the switch to 0.1 at the right speed, or does it
+   trigger too easily or too late? Same for reps.
+2. **Show names:** switch it on in the Dashboard and take a screenshot. Are the labels useful, too many, too big?
+3. Scroll the Detail page: the picture should move slower than the text.
+4. Assistant: tap a suggestion; try Stop mid-answer; open "How I worked this out" and the sources.
+5. Components: press everything in "Newer button patterns".
+
+### Not checked here
+
+Feel, haptics and frame rate. The two glass bars (R26.6, R27.5) were only seen on my software renderer.
+
 ## Build 9 (13 November 2026)
 
 Lumen becomes a reference library: every example has an id, and there are six new "Patterns" rooms.
