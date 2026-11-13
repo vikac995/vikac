@@ -409,6 +409,20 @@ const Map<int, Ref> refs = <int, Ref>{
     <String>['lib/rooms/play/pack_room.dart'],
     'An original pack opening: tear the top off with a swipe (ticks as the foil gives), cards rise out, tap to turn each over, the stack edge glows in the colour of the next rarity, the best card is last, better cards get a moving band of light and confetti, and kept cards line up in a tray.',
   ),
+  55: Ref(
+    'R55',
+    'Morphing drawer',
+    'Launcher ideas',
+    <String>['lib/rooms/patterns/morph_drawer_room.dart'],
+    'An app drawer that does not scroll: the grid stays put and each icon morphs into the next one (outline, colour, glyph and name) in a row-by-row wave that follows the finger, snapping to pages with a tick per row.',
+  ),
+  56: Ref(
+    'R56',
+    'Widget stack',
+    'Launcher ideas',
+    <String>['lib/rooms/patterns/stack_room.dart'],
+    'Several widgets sharing one place: swipe up or down to turn to the next, the edges of the others show underneath, dots show position, and a smart mode turns the stack by time of day.',
+  ),
   99: Ref(
     'B01',
     'Discomorphism',

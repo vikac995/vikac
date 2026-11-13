@@ -56,6 +56,8 @@ import '../rooms/patterns/lens_room.dart';
 import '../rooms/patterns/bud_room.dart';
 import '../rooms/play/toss_room.dart';
 import '../rooms/play/pack_room.dart';
+import '../rooms/patterns/morph_drawer_room.dart';
+import '../rooms/patterns/stack_room.dart';
 import '../rooms/pill/pill_room.dart';
 import '../rooms/shaders/shaders_room.dart';
 import '../rooms/shapes/shape_room.dart';
@@ -404,6 +406,18 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFF9B5CF6),
     (_) => const PackRoom(),
   ),
+  _Room(
+    'Morphing drawer',
+    'Icons turn into the next ones.',
+    const Color(0xFF5B6CFF),
+    (_) => const MorphDrawerRoom(),
+  ),
+  _Room(
+    'Widget stack',
+    'Several widgets in one place.',
+    const Color(0xFF1F7F78),
+    (_) => const StackRoom(),
+  ),
 ];
 
 class HomeScreen extends StatefulWidget {
@@ -553,7 +567,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A showcase of interface craft.\nFifty-four examples to point at.\nEach has an id; pieces can show their names.',
+                    'A showcase of interface craft.\nFifty-six examples to point at.\nEach has an id; pieces can show their names.',
                     style: LumenType.text(
                       15.5,
                       color: c.inkMuted,
@@ -736,6 +750,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ],
             ),
             const SizedBox(height: 34),
+            _section(c, 'Launcher ideas', 'Experiments for a home screen.'),
+            Row(
+              children: <Widget>[
+                Expanded(child: _card(55, height: 176)),
+                const SizedBox(width: gap),
+                Expanded(child: _card(56, height: 176)),
+              ],
+            ),
+            const SizedBox(height: 34),
             _section(c, 'Play', 'Two small games, drawn from scratch.'),
             Row(
               children: <Widget>[
@@ -750,7 +773,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 20  ·  Flutter 3.50  ·  Impeller',
+                'Build 21  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),

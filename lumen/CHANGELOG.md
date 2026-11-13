@@ -1,5 +1,24 @@
 # Lumen changelog
 
+## Lumen, build 21 (13 November 2026)
+
+Two experiments in a new home section, "Launcher ideas" (56 examples in total). Prism is unchanged (build 7).
+
+**Files:** `releases/lumen-build-21.apk`
+
+- **R55 Morphing drawer.** An app drawer that does not scroll. The grid of 24 stays where it is; swipe up or down and each icon turns into the one a page further on. Its outline changes shape, its colour blends, the picture and the name swap. The change runs as a wave, top row first, and follows the finger; let go and it settles on the nearest page. One tick per row that turns over. 72 made-up apps in alphabetical order, with a marker on the right and "A to H · 1 to 24 of 72" underneath.
+- **R56 Widget stack.** Several widgets sharing one place. Swipe up or down on the stack to turn to the next; the edges of the others show underneath, and dots show how many there are. "Turn by itself" lets the stack turn to what fits the time of day (the four buttons stand in for the clock).
+
+### What to test
+
+1. R55: drag slowly and watch one row. Then flick. Is it delightful, or does it make an app harder to find than scrolling would? That is the real question for this idea.
+2. R55: the frame-rate readout during a drag. All 24 icons redraw every frame.
+3. R56: swipe through the four widgets; try the times of day.
+
+### Not checked
+
+- Linux preview only: one drag on each. Flicks, haptics and frame rate are untested.
+
 ## Prism, build 7 (13 November 2026)
 
 **File:** `releases/prism-build-7.apk`

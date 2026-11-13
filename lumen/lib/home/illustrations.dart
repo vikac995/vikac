@@ -84,7 +84,9 @@ class RoomArt extends CustomPainter {
               Icons.scatter_plot_rounded,
               Icons.pets_rounded,
               Icons.style_rounded,
-            ][(kind - 19) % 36],
+              Icons.apps_rounded,
+              Icons.layers_rounded,
+            ][(kind - 19) % 38],
           );
         } else {
           _basic(canvas, size, kind - 13);

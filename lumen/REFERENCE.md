@@ -112,6 +112,13 @@ the top of those screens) and every piece is labelled in the app, so a screensho
 | R53 | Treat toss | An original catching game: a drawn creature hops about and you flick treats to it; a treat that arrives while it is mid-jump counts double; five hearts and it trusts you. Flick physics, timing window, trail, praise words, confetti. | `lib/rooms/play/toss_room.dart` |
 | R54 | Card pack | An original pack opening: tear the top off with a swipe (ticks as the foil gives), cards rise out, tap to turn each over, the stack edge glows in the colour of the next rarity, the best card is last, better cards get a moving band of light and confetti, and kept cards line up in a tray. | `lib/rooms/play/pack_room.dart` |
 
+## Launcher ideas
+
+| Id | Name | What it shows | Files |
+|---|---|---|---|
+| R55 | Morphing drawer | An app drawer that does not scroll: the grid stays put and each icon morphs into the next one (outline, colour, glyph and name) in a row-by-row wave that follows the finger, snapping to pages with a tick per row. | `lib/rooms/patterns/morph_drawer_room.dart` |
+| R56 | Widget stack | Several widgets sharing one place: swipe up or down to turn to the next, the edges of the others show underneath, dots show position, and a smart mode turns the stack by time of day. | `lib/rooms/patterns/stack_room.dart` |
+
 ## Bonus
 
 | Id | Name | What it shows | Files |
