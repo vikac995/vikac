@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
@@ -12,8 +13,10 @@ import '../core/settings.dart';
 /// Running totals for one place or one action. Adding a frame is a handful
 /// of additions; nothing is allocated.
 class _Bucket {
-  int frames = 0, over = 0, late = 0, times = 0;
+  int frames = 0, over = 0, late = 0, times = 0, buildSlow = 0;
   double buildSum = 0, drawSum = 0, worst = 0;
+  double firstWorst = 0,
+      laterWorst = 0; // the first time something happens is often the slowest
   // The last 512 draw times, overwritten in a circle, for the 95th percentile.
   final Float32List recent = Float32List(512);
   int at = 0;
@@ -24,6 +27,16 @@ class _Bucket {
     drawSum += draw;
     if (build + draw > worst) {
       worst = build + draw;
+    }
+    if (times <= 1) {
+      if (build + draw > firstWorst) {
+        firstWorst = build + draw;
+      }
+    } else if (build + draw > laterWorst) {
+      laterWorst = build + draw;
+    }
+    if (overBudget && build > draw) {
+      buildSlow++;
     }
     if (overBudget) {
       over++;
@@ -62,7 +75,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 9';
+  static const String build = 'Prism build 10';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -116,6 +129,14 @@ class Diag {
   /// Notes something the person did. Frames in the next 0.7 s are charged to it.
   void event(String what) {
     final int now = _clock.elapsedMilliseconds;
+    if (_guided) {
+      for (final (String k, String _) in _kinds) {
+        if (what.startsWith(k)) {
+          _did.add(k);
+          _coverage[_cfg]?.add(k);
+        }
+      }
+    }
     _actionName = what;
     _actionUntil = now + 700;
     _actionBucket = _actions.putIfAbsent('$_cfg | $scene > $what', _Bucket.new)
@@ -205,27 +226,84 @@ class Diag {
   Timer? _timer;
   (GlassQuality, bool, bool)? _saved;
 
+  // What each step should include, so every setting is tested on the same things.
+  static const List<(String, String)> _kinds = <(String, String)>[
+    ('tab', 'switch tabs'),
+    ('blobs', 'open the blobs'),
+    ('lens', 'carry the lens'),
+    ('sheet', 'open a sheet'),
+    ('scroll', 'scroll'),
+  ];
+  final Set<String> _did = <String>{};
+  final Map<String, Set<String>> _coverage = <String, Set<String>>{};
+  bool _guided = false;
+  String _powerStart = '', _powerEnd = '';
+  int _idleFrames = -1;
+  static const int _idleSeconds = 8;
+
+  Future<String> _power() async {
+    try {
+      return await const MethodChannel('lumen/device')
+              .invokeMethod<String>('power') ??
+          '';
+    } catch (_) {
+      return '';
+    }
+  }
+
   void startGuided() {
     _timer?.cancel();
     _saved = (settings.quality, settings.reduceTransparency, wallpaperOn.value);
-    reset();
-    int tick = 0;
+    _coverage.clear();
+    _idleFrames = -1;
+    _powerEnd = '';
+    _power().then((String p) => _powerStart = p);
+    // Three seconds to put the settings sheet away and get a thumb ready.
+    int tick = -3;
+    final int active = _steps.length * secondsPerStep;
     void apply() {
-      final int i = tick ~/ secondsPerStep;
-      if (i >= _steps.length) {
+      if (tick < 0) {
+        banner.value =
+            'Guided test starts in ${-tick}\nUse the app as usual; do a bit of everything';
+        tick++;
+        return;
+      }
+      if (tick == 0) {
+        reset();
+        _guided = true;
+      }
+      if (tick >= active + _idleSeconds) {
         _endGuided();
         return;
       }
+      if (tick >= active) {
+        // Last step: nobody touches anything. A screen left alone should draw nothing.
+        if (tick == active) {
+          _restore();
+          _move(() => _cfg = 'Idle, hands off');
+        }
+        banner.value =
+            'Hands off the screen  ·  ${active + _idleSeconds - tick} s\nChecking that nothing draws while idle';
+        tick++;
+        return;
+      }
+      final int i = tick ~/ secondsPerStep;
       final _Step s = _steps[i];
       if (tick % secondsPerStep == 0) {
         _move(() => _cfg = s.name);
+        _did.clear();
+        _coverage[s.name] = <String>{};
         settings
           ..quality = s.quality
           ..reduceTransparency = s.solid;
         wallpaperOn.value = s.lights;
       }
+      final List<String> todo = <String>[
+        for (final (String k, String label) in _kinds)
+          if (!_did.contains(k)) label,
+      ];
       banner.value =
-          'Test ${i + 1} of ${_steps.length}  ·  ${s.name}  ·  ${secondsPerStep - tick % secondsPerStep} s';
+          'Test ${i + 1} of ${_steps.length}  ·  ${s.name}  ·  ${secondsPerStep - tick % secondsPerStep} s\n${todo.isEmpty ? 'All covered. Keep going.' : 'Still to do: ${todo.join(', ')}'}';
       tick++;
     }
 
@@ -233,9 +311,7 @@ class Diag {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => apply());
   }
 
-  void _endGuided() {
-    _timer?.cancel();
-    final String text = report();
+  void _restore() {
     final (GlassQuality, bool, bool)? s = _saved;
     if (s != null) {
       settings
@@ -243,9 +319,53 @@ class Diag {
         ..reduceTransparency = s.$2;
       wallpaperOn.value = s.$3;
     }
+  }
+
+  Future<void> _endGuided() async {
+    _timer?.cancel();
+    _guided = false;
+    _idleFrames = _scenes.entries
+        .where((MapEntry<String, _Bucket> e) => e.key.startsWith('Idle'))
+        .fold<int>(
+          0,
+          (int n, MapEntry<String, _Bucket> e) => n + e.value.frames,
+        );
+    _powerEnd = await _power();
+    final String text = report();
+    _restore();
     _move(() => _cfg = 'your settings');
     banner.value = null;
     finished.value = text;
+  }
+
+  // ---- remembering the last run, so the next report can say what changed
+  File get _memory => File('${Directory.systemTemp.path}/prism_last_run.txt');
+
+  Map<String, List<double>> _previous() {
+    try {
+      final Map<String, List<double>> out = <String, List<double>>{};
+      for (final String line in _memory.readAsLinesSync()) {
+        final List<String> p = line.split('|');
+        if (p.length == 4) {
+          out[p[0]] = <double>[
+            double.parse(p[1]),
+            double.parse(p[2]),
+            double.parse(p[3]),
+          ];
+        }
+      }
+      return out;
+    } catch (_) {
+      return <String, List<double>>{};
+    }
+  }
+
+  String _previousBuild() {
+    try {
+      return _memory.readAsLinesSync().first;
+    } catch (_) {
+      return '';
+    }
   }
 
   // ---- the report
@@ -298,6 +418,62 @@ class Diag {
       }
     }
 
+    // What changed since the last guided run on this phone.
+    final Map<String, List<double>> before = _previous();
+    if (before.isNotEmpty && _coverage.isNotEmpty) {
+      o
+        ..writeln()
+        ..writeln(
+          'SINCE YOUR LAST RUN (${_previousBuild()})    late now (was)     over budget now (was)   draw avg now (was)',
+        );
+      for (final MapEntry<String, _Bucket> e in perCfg.entries) {
+        final List<double>? was = before[e.key];
+        final _Bucket b = e.value;
+        if (was != null && b.frames > 0) {
+          o.writeln(
+            '${e.key.padRight(22)} ${'${pct(b.late, b.frames)} (${was[0].toStringAsFixed(1)}%)'.padLeft(24)} ${'${pct(b.over, b.frames)} (${was[1].toStringAsFixed(1)}%)'.padLeft(24)} ${'${f(b.drawSum / b.frames)} (${f(was[2])})'.padLeft(20)}',
+          );
+        }
+      }
+    }
+    if (_coverage.isNotEmpty) {
+      // Was every setting tested on the same things? If not, the comparison above is uneven.
+      o
+        ..writeln()
+        ..writeln('COVERAGE (what each setting was tested on)');
+      for (final MapEntry<String, Set<String>> e in _coverage.entries) {
+        final List<String> missing = <String>[
+          for (final (String k, String label) in _kinds)
+            if (!e.value.contains(k)) label,
+        ];
+        o.writeln(
+          '${e.key.padRight(22)} ${missing.isEmpty ? 'everything' : 'MISSING: ${missing.join(', ')}'}',
+        );
+      }
+      o
+        ..writeln()
+        ..writeln(
+          _idleFrames < 0
+              ? 'IDLE: not measured'
+              : 'IDLE: $_idleFrames frames in $_idleSeconds s with hands off. The test banner itself causes about $_idleSeconds; '
+                    '${_idleFrames > _idleSeconds * 3 ? 'MORE than that means something keeps drawing and costs battery.' : 'so nothing else is drawing.'}',
+        )
+        ..writeln('POWER: start $_powerStart  ·  end $_powerEnd');
+      // Remember this run for next time.
+      try {
+        _memory.writeAsStringSync(
+          <String>[
+            build,
+            for (final MapEntry<String, _Bucket> e in perCfg.entries)
+              if (e.value.frames > 0)
+                '${e.key}|${(100 * e.value.late / e.value.frames).toStringAsFixed(2)}|${(100 * e.value.over / e.value.frames).toStringAsFixed(2)}|${(e.value.drawSum / e.value.frames).toStringAsFixed(2)}',
+          ].join('\n'),
+        );
+      } catch (_) {
+        // No storage: the next report simply has no comparison.
+      }
+    }
+
     // 2. The places to fix, worst first.
     final List<MapEntry<String, _Bucket>> acts =
         _actions.entries
@@ -316,12 +492,18 @@ class Diag {
       ..writeln()
       ..writeln('WHERE IT STUTTERS, worst first  (setting | screen > action)')
       ..writeln(
-        '                                                    times  frames  LATE  over budget  worst  avg build/draw',
+        '"1st / later": the worst frame the first time it happened against every time after. A big first and small later means a one-off warm-up.',
+      )
+      ..writeln(
+        '"slow because of": BUILD = working out what to show (my code); DRAW = painting it (glass, shadows, size).',
+      )
+      ..writeln(
+        '                                                    times  frames  LATE  over budget  worst: 1st / later   slow because of   avg build/draw',
       );
     for (final MapEntry<String, _Bucket> e in acts.take(25)) {
       final _Bucket b = e.value;
       o.writeln(
-        '${e.key.padRight(52)} ${b.times.toString().padLeft(4)} ${b.frames.toString().padLeft(7)} ${b.late.toString().padLeft(5)} ${'${b.over} (${pct(b.over, b.frames)})'.padLeft(12)} ${f(b.worst).padLeft(6)}  ${f(b.buildSum / b.frames)}/${f(b.drawSum / b.frames)}',
+        '${e.key.padRight(52)} ${b.times.toString().padLeft(4)} ${b.frames.toString().padLeft(7)} ${b.late.toString().padLeft(5)} ${'${b.over} (${pct(b.over, b.frames)})'.padLeft(12)} ${'${f(b.firstWorst)} / ${b.times > 1 ? f(b.laterWorst) : '-'}'.padLeft(18)}   ${(b.over == 0 ? '-' : (b.buildSlow * 2 > b.over ? 'BUILD' : 'DRAW')).padRight(16)}  ${f(b.buildSum / b.frames)}/${f(b.drawSum / b.frames)}',
       );
     }
     if (acts.isEmpty) {

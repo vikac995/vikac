@@ -100,6 +100,7 @@ class PrismApp extends StatelessWidget {
                                   ),
                                   child: Text(
                                     text,
+                                    textAlign: TextAlign.center,
                                     textScaler: TextScaler.noScaling,
                                     style: const TextStyle(
                                       fontFamily: 'Inter',

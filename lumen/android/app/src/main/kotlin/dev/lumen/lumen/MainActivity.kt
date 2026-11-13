@@ -67,7 +67,13 @@ class MainActivity : FlutterActivity() {
         }
         // Which phone this is, for the test report.
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/device").setMethodCallHandler { call, result ->
-            if (call.method == "info") {
+            if (call.method == "power") {
+                // Battery level, heat and power saving: they change how fast the phone is willing to draw.
+                val bm = getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+                val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                val heat = arrayOf("cool", "light", "moderate", "severe", "critical", "emergency", "shutdown").getOrElse(pm.currentThermalStatus) { "?" }
+                result.success("battery ${bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)}%, heat $heat, power saving ${if (pm.isPowerSaveMode) "ON" else "off"}")
+            } else if (call.method == "info") {
                 result.success("${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}), ${Build.SOC_MODEL}")
             } else {
                 result.notImplemented()

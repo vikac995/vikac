@@ -1,5 +1,30 @@
 # Lumen changelog
 
+## Prism, build 10 (13 November 2026)
+
+**File:** `releases/prism-build-10.apk`
+
+The guided test and its report, improved from what the first two reports could not tell me.
+
+- **A three-second countdown** before recording starts, so the first setting is not short-changed while the settings sheet closes.
+- **A checklist in the banner.** Each setting should be tested on the same five things: switch tabs, open the blobs, carry the lens, open a sheet, scroll. The banner's second line lists what is still to do for the current setting and says "All covered" when done. Last time each setting saw different actions, so the settings were not strictly comparable.
+- **A hands-off step at the end** (8 seconds). Nothing is touched and the report says how many frames were drawn. A screen left alone should draw nothing; anything more is a battery leak.
+- **Battery level, heat and power saving**, read at the start and at the end. A hot phone or power saving slows drawing, which would otherwise look like a regression.
+- **Compared with your last run.** The phone remembers the previous guided run; the next report shows late frames, over-budget frames and average draw time per setting next to the earlier values and names the build they came from.
+- **First time against every time after.** Each line in "where it stutters" now shows the worst frame the first time the action happened and the worst on repeats. A slow first and fast repeats means a one-off warm-up, not something to redesign.
+- **Why it was slow.** Each line says BUILD (working out what to show, which is my code) or DRAW (painting: glass, shadows, size).
+- **Coverage section**: for each setting, which of the five things were missed.
+
+The test now takes about 81 seconds: 3 to get ready, 5 settings of 14, and 8 hands off.
+
+### What to test
+
+Run the guided test and follow the banner's "Still to do" line under each setting. This run stores the baseline; the one after it will show the comparison.
+
+### Not checked
+
+- Run in the Linux preview at 2 seconds a step: the countdown, checklist, hands-off step, coverage and first/later columns all appeared. Battery and heat need the phone, and showed blank there. The comparison needs two runs on the same device and was not seen.
+
 ## Prism, build 9 (13 November 2026)
 
 **File:** `releases/prism-build-9.apk`

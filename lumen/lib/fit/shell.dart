@@ -1506,7 +1506,7 @@ void showPrismSettings(BuildContext context) {
                           shape: const StadiumBorder(),
                         ),
                         child: Text(
-                          'Run the guided test (${Diag.testSeconds} s)',
+                          'Run the guided test (about ${Diag.testSeconds + 11} s)',
                           style: LumenType.text(
                             15,
                             weight: 700,
