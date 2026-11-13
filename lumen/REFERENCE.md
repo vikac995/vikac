@@ -81,6 +81,9 @@ the top of those screens) and every piece is labelled in the app, so a screensho
 | R37 | Notifications | Five ways to speak up, quietest first: a badge, a bottom message with Undo and a draining timer, a banner from the top, a stack that unfolds, and a polite permission request. | `lib/rooms/patterns/notify_room.dart` |
 | R38 | Calendar | History as a month: dots on days with a session, one highlight that travels between days, month change by swipe or arrows, a day summary, and a future that cannot be picked. | `lib/rooms/patterns/calendar_room.dart` |
 | R39 | Workout screen | A complete workout-in-progress screen: progress through the session, last time as a hint, set rows with thumb dials, one tap to finish a set, a rest timer that starts itself, and a next button that wakes when all sets are done. | `lib/rooms/screens/workout_screen.dart` |
+| R40 | Navigation | Three bottom bars for the same four destinations: labels with a travelling pill, a floating bar with one main action, and a bar where only the selected tab shows its name. | `lib/rooms/patterns/nav_room.dart` |
+| R41 | Reorder | Editing a list by hand: drag a row by its handle while the others spring out of the way, swipe left to remove with a tick at the point of no return, and Undo instead of a confirmation. | `lib/rooms/patterns/reorder_room.dart` |
+| R42 | Summary screen | A complete workout-finished screen: a tick that lands first, numbers that count up once, the one special thing today, a one-tap feeling question, and Share plus Done. | `lib/rooms/screens/summary_screen.dart` |
 
 ## Bonus
 

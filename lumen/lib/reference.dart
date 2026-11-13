@@ -300,6 +300,27 @@ const Map<int, Ref> refs = <int, Ref>{
     <String>['lib/rooms/screens/workout_screen.dart'],
     'A complete workout-in-progress screen: progress through the session, last time as a hint, set rows with thumb dials, one tap to finish a set, a rest timer that starts itself, and a next button that wakes when all sets are done.',
   ),
+  40: Ref(
+    'R40',
+    'Navigation',
+    'Patterns',
+    <String>['lib/rooms/patterns/nav_room.dart'],
+    'Three bottom bars for the same four destinations: labels with a travelling pill, a floating bar with one main action, and a bar where only the selected tab shows its name.',
+  ),
+  41: Ref(
+    'R41',
+    'Reorder',
+    'Patterns',
+    <String>['lib/rooms/patterns/reorder_room.dart'],
+    'Editing a list by hand: drag a row by its handle while the others spring out of the way, swipe left to remove with a tick at the point of no return, and Undo instead of a confirmation.',
+  ),
+  42: Ref(
+    'R42',
+    'Summary screen',
+    'Screens',
+    <String>['lib/rooms/screens/summary_screen.dart'],
+    'A complete workout-finished screen: a tick that lands first, numbers that count up once, the one special thing today, a one-tap feeling question, and Share plus Done.',
+  ),
   99: Ref(
     'B01',
     'Discomorphism',

@@ -1,5 +1,29 @@
 # Lumen changelog
 
+## Build 13 (13 November 2026)
+
+Three more examples at the end of "More patterns" (42 in total). Includes the 12.1 fixes. Nothing was removed.
+
+**Files:** `releases/lumen-build-13.apk`, `releases/lumen-source-build-13.zip`
+
+### New
+
+- **R40 Navigation.** Three bottom bars for the same four places, side by side: (A) labels with one pill that travels between tabs; (B) a floating bar with one main action in the middle; (C) a bar where only the selected tab opens its name.
+- **R41 Reorder.** Editing a list by hand. Drag a row by the handle on its right; the others spring out of the way with a tick per position. Swipe a row left to remove it: red appears underneath, a tick marks the point of no return, and an Undo row replaces any "Are you sure?" question.
+- **R42 Summary screen.** The screen after the last set: a tick that lands first, four numbers that count up once, the one special thing today (a personal best), a one-tap "How did it feel?", and Share plus Done. Tap the tick to replay the entrance. Pieces tagged R42.1 to R42.5. Data is made up.
+
+### What to test on the phone
+
+1. R41: drag a row by its handle up and down the list. Does it stay under your thumb, and do the others move aside without jumping? The page should not scroll while you drag a handle.
+2. R41: swipe a row left slowly; you should feel one tick where letting go will remove it. Then Undo.
+3. R40: tap through the tabs of A, B and C. Which selection movement do you prefer? That is the answer I need for the fitness app.
+4. R42: tap the tick to replay. Thud, then the page rises in order, then the numbers count.
+5. The sun/moon in the top right corner, and a two-finger tap anywhere, on any screen.
+
+### Not checked
+
+- Only the Linux preview (software rendering, mouse). Haptics, real frame rate, feel, and the two-finger tap were not checked.
+
 ## Build 12.1 (13 November 2026)
 
 **File:** `releases/lumen-build-12.1.apk`

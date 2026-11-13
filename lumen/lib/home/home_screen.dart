@@ -41,6 +41,9 @@ import '../rooms/patterns/theme_room.dart';
 import '../rooms/patterns/notify_room.dart';
 import '../rooms/patterns/calendar_room.dart';
 import '../rooms/screens/workout_screen.dart';
+import '../rooms/patterns/nav_room.dart';
+import '../rooms/patterns/reorder_room.dart';
+import '../rooms/screens/summary_screen.dart';
 import '../rooms/pill/pill_room.dart';
 import '../rooms/shaders/shaders_room.dart';
 import '../rooms/shapes/shape_room.dart';
@@ -299,6 +302,24 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFF2FA84F),
     (_) => const WorkoutScreen(),
   ),
+  _Room(
+    'Navigation',
+    'Three bars, same four places.',
+    const Color(0xFF4E6CC4),
+    (_) => const NavRoom(),
+  ),
+  _Room(
+    'Reorder',
+    'Drag to move, swipe to remove.',
+    const Color(0xFFFF6B4A),
+    (_) => const ReorderRoom(),
+  ),
+  _Room(
+    'Summary',
+    'After the last set.',
+    const Color(0xFFF5B301),
+    (_) => const SummaryScreen(),
+  ),
 ];
 
 class HomeScreen extends StatefulWidget {
@@ -448,7 +469,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A showcase of interface craft.\nThirty-nine examples to point at.\nEach has an id; pieces can show their names.',
+                    'A showcase of interface craft.\nForty-two examples to point at.\nEach has an id; pieces can show their names.',
                     style: LumenType.text(
                       15.5,
                       color: c.inkMuted,
@@ -580,13 +601,23 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ],
               ),
             ],
+            const SizedBox(height: gap),
+            Row(
+              children: <Widget>[
+                Expanded(child: _card(40, height: 156)),
+                const SizedBox(width: gap),
+                Expanded(child: _card(41, height: 156)),
+              ],
+            ),
+            const SizedBox(height: gap),
+            _card(42, height: 150),
             const SizedBox(height: 34),
             _section(c, 'Bonus', 'Please do not ship this.'),
             _card(12, height: 150),
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 12.1  ·  Flutter 3.50  ·  Impeller',
+                'Build 13  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),
