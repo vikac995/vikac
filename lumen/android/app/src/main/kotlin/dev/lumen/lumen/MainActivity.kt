@@ -57,6 +57,21 @@ class MainActivity : FlutterActivity() {
                         runOnUiThread { result.error("apps", e.message, null) }
                     }
                 }.start()
+                "names" -> Thread {
+                    // Every app on the home screen: its name, package and when it last changed. No pictures, so it is quick.
+                    val out = ArrayList<Map<String, Any>>()
+                    try {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+                        for (r in packageManager.queryIntentActivities(intent, 0)) {
+                            val pkg = r.activityInfo.packageName
+                            val updated = try { packageManager.getPackageInfo(pkg, 0).lastUpdateTime } catch (e: Exception) { 0L }
+                            out.add(mapOf("label" to r.loadLabel(packageManager).toString(), "package" to pkg, "updated" to updated))
+                        }
+                    } catch (e: Exception) {
+                        // Leave the list as far as it got.
+                    }
+                    runOnUiThread { result.success(out) }
+                }.start()
                 "icons" -> Thread {
                     // The icon of each named app, and its one-colour outline where the app supplies one.
                     val out = ArrayList<Map<String, Any>>()

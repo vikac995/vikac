@@ -1,5 +1,33 @@
 # Lumen changelog
 
+## Prism, build 21 (13 November 2026)
+
+**File:** `releases/prism-build-21.apk`
+
+**The app drawer.** Flick the centre button upward (a quick, short swipe up). The round button widens and rises into a panel holding all your apps.
+
+- Every app is a large squircle in its own colour, pulled into Prism's palette, with its mark in white.
+- The grid does not scroll. Swipe up or down inside it and the page turns in place: each tile stays where it is, its colour slides into the next app's colour, the old mark shrinks away and the new one grows in. Rows change one after another in the direction of your swipe. A long swipe turns several pages.
+- The top shows which letters you are on and a dot per page. Tap a tile to open the app.
+- To close: tap the button (now an X), tap outside the panel, or press back.
+
+**The icon engine.** Nothing about any app is drawn by hand or shipped with Prism. The engine runs inside the app on the icons that are on the phone:
+
+- It runs when the drawer is opened. First it asks Android only for the list of apps and when each last changed, which is quick.
+- For apps it has seen before, it reads the finished result from disk.
+- Only new or updated apps are worked out: outline, cut-out, or picture, as in build 20. The result is saved.
+- **Pictures** (icons that cannot be simplified) are now kept as pictures, filling the squircle, but calmed toward the palette: a little less vivid, extremes pulled in, and a light wash of their own colour.
+- The first line of the test report now says how many apps were found, how many of each kind, how many were worked out and how many read from disk, and how long it took.
+
+**What to look for**
+- First open: tiles show letters for a moment, then fill in with marks. How long does that take? The second open should be immediate.
+- Page turn: is it smooth, and is the row-after-row order right, or should all tiles change together?
+- Which icons look wrong? The kind (outline / cut-out / picture) matters to me: a screenshot of a bad page is the best report.
+- Flicking: does a normal lens drag ever open the drawer by mistake, or does the flick fail to register?
+
+**Checked:** in my preview, with made-up apps: the flick opens the drawer, the panel grows from the button, the grid lays out six rows of four, a swipe turns the page, the X closes it.
+**Not checked:** on a phone, and nothing with real icons in the drawer: reading 140 apps, the disk memory, calmed pictures, the speed of the first run. The page turn I have only seen as before and after, not in motion.
+
 ## Prism, build 20 (13 November 2026)
 
 **File:** `releases/prism-build-20.apk`

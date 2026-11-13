@@ -18,6 +18,7 @@ import 'food_page.dart';
 import 'home_page.dart';
 import 'lens.dart';
 import 'apps.dart';
+import 'drawer.dart';
 import 'progress_page.dart';
 import 'robot.dart';
 import 'state.dart';
@@ -87,7 +88,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return Center(
         child: ClipOval(
           child: RawImage(
-            image: a.icon,
+            image: a.picture ?? a.icon,
             width: 36,
             height: 36,
             filterQuality: FilterQuality.medium,
@@ -162,7 +163,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     spring: Motions.expressiveFast,
   );
   bool _carrying = false, _parked = false, _moved = false;
-  Offset? _downAt;
+  Offset? _downAt, _lastAt;
+  final Stopwatch _held = Stopwatch();
+  bool _drawerOpen = false;
   Offset _home = Offset.zero;
   LensTargetState? _target, _pill;
   // On its way home the lens is a blob of the button's colour, not glass.
@@ -178,7 +181,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Diag.instance.finished.addListener(_showReport);
     Diag.instance.autoScript = _robot;
     Diag.instance.extraLine = () =>
-        'app blobs: ${BlobApps.instance.apps.map((BlobApp a) => '${a.name} ${a.installed ? a.made : 'not found'} #${a.color.toARGB32().toRadixString(16).substring(2)}').join(', ')}';
+        'icon engine: ${Apps.instance.summary}\napp blobs: ${BlobApps.instance.apps.map((BlobApp a) => '${a.name} ${a.installed ? a.made : 'not found'} #${a.color.toARGB32().toRadixString(16).substring(2)}').join(', ')}';
     bool appsBefore = true;
     Diag.instance.onTest = (bool testing) {
       // The test taps the blobs; it must not open other apps.
@@ -485,6 +488,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     if (_downAt == null) {
       return;
     }
+    _lastAt = e.position;
     final Size screen = MediaQuery.sizeOf(context);
     if (!_moved) {
       if ((e.position - _downAt!).distance < 10) {
@@ -523,8 +527,22 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     if (_downAt == null) {
       return;
     }
+    final Offset travel = (_lastAt ?? _downAt!) - _downAt!;
     _downAt = null;
-    if (!_moved) {
+    if (_drawerOpen) {
+      // While the drawer is up, the button only closes it.
+      if (_moved) {
+        _lensQuiet();
+      }
+      _setDrawer(false);
+    } else if (_moved &&
+        _held.elapsedMilliseconds < 320 &&
+        travel.dy < -46 &&
+        travel.dx.abs() < -travel.dy * 0.8) {
+      // A quick flick upward: the button becomes the app drawer.
+      _lensQuiet();
+      _setDrawer(true);
+    } else if (!_moved) {
       _setOpen(!_open);
     } else if (_target != null && _target!.widget.actions.isNotEmpty) {
       // Put down on something you can act on: the pill stays and is the buttons.
@@ -536,6 +554,35 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     } else {
       _lensHome();
     }
+  }
+
+  /// Puts the lens away at once, with no flight home. Used when the drag turned out to be a flick.
+  void _lensQuiet() {
+    setState(() {
+      _carrying = false;
+      _parked = false;
+      _returning = false;
+      _target = null;
+    });
+    _lx.jumpTo(_home.dx);
+    _ly.jumpTo(_home.dy);
+    _glass.jumpTo(0);
+    _morph.jumpTo(0);
+    _say.jumpTo(0);
+    LensBus.instance.pos.value = null;
+  }
+
+  void _setDrawer(bool v) {
+    if (v == _drawerOpen) {
+      return;
+    }
+    _setOpen(false);
+    setState(() => _drawerOpen = v);
+    _t.animateTo(v ? 1 : 0);
+    Diag.instance
+      ..overlay = v ? '+drawer' : ''
+      ..event(v ? 'drawer open' : 'drawer close');
+    Haptics.settle();
   }
 
   void _pillTap(Offset at) {
@@ -695,14 +742,18 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
     // The system back button undoes the last thing that opened, one step at a time,
     // and only leaves the app from Home with nothing open.
-    final bool nothingOpen = !_open && !_sheetOpen && !_parked && !_carrying;
+    final bool nothingOpen =
+        !_open && !_sheetOpen && !_parked && !_carrying && !_drawerOpen;
     return PopScope(
       canPop: nothingOpen && _tab == 0,
       onPopInvokedWithResult: (bool didPop, Object? _) {
         if (didPop) {
           return;
         }
-        if (_sheetOpen) {
+        if (_drawerOpen) {
+          Diag.instance.event('back: close drawer');
+          _setDrawer(false);
+        } else if (_sheetOpen) {
           Diag.instance.event('back: close sheet');
           _closeSheet();
         } else if (_parked || _carrying) {
@@ -1005,6 +1056,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                 },
               ),
             ),
+            // The app drawer, which grows out of the button.
+            Positioned.fill(
+              child: AppDrawer(
+                open: _drawerOpen,
+                origin: bc,
+                button: _button,
+                onClose: () => _setDrawer(false),
+              ),
+            ),
             // The threads: each blob stays tied to the button until it arrives.
             Positioned.fill(
               child: IgnorePointer(
@@ -1124,6 +1184,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   behavior: HitTestBehavior.opaque,
                   onPointerDown: (PointerDownEvent e) {
                     _downAt = e.position;
+                    _lastAt = e.position;
+                    _held
+                      ..reset()
+                      ..start();
                     _moved = false;
                     _kick.animateTo(0.92);
                   },

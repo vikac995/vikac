@@ -22,6 +22,9 @@ class BlobApp {
 
   /// A white outline of the icon where the app supplies one, else the icon itself.
   ui.Image? glyph, icon;
+
+  /// For an icon that is a picture: the picture itself, calmed toward the palette.
+  ui.Image? picture;
 }
 
 /// The apps in the blob menu, and the rule that keeps their colours in the family.
@@ -59,28 +62,15 @@ class BlobApps extends ChangeNotifier {
         a.package = m['package']! as String;
         a.icon = await _decode(m['icon']! as Uint8List);
         final Object? mono = m['mono'];
-        final Color? main = await _mainColour(a.icon!);
-        if (mono != null) {
-          // 1. The app supplies its own outline.
-          a.glyph = await _decode(mono as Uint8List);
-          a.made = 'outline';
-          if (main != null) {
-            a.color = tame(main);
-          }
-        } else {
-          // 2. No outline: try to cut the mark out of the icon. 3. If the icon is a picture, show it as a coin.
-          final (ui.Image, Color?)? cut = await _cutOut(a.icon!);
-          if (cut != null) {
-            a.glyph = cut.$1;
-            a.made = 'cut-out';
-            a.color = tame(cut.$2 ?? main ?? const Color(0xFF808080));
-          } else {
-            a.made = 'coin';
-            if (main != null) {
-              a.color = tame(main);
-            }
-          }
-        }
+        final AppLook look = await IconEngine.look(
+          a.icon!,
+          mono == null ? null : await _decode(mono as Uint8List),
+        );
+        a
+          ..glyph = look.glyph
+          ..picture = look.picture
+          ..made = look.made
+          ..color = look.color ?? a.color;
       }
       notifyListeners();
     } catch (_) {
@@ -92,11 +82,12 @@ class BlobApps extends ChangeNotifier {
         for (int i = 0; i < files.length && i < apps.length; i++) {
           final BlobApp a = apps[apps.length - 1 - i];
           a.icon = await _decode(File(files[i]).readAsBytesSync());
-          final (ui.Image, Color?)? cut = await _cutOut(a.icon!);
-          final Color? main = await _mainColour(a.icon!);
-          a.glyph = cut?.$1;
-          a.made = cut == null ? 'coin' : 'cut-out';
-          a.color = tame(cut?.$2 ?? main ?? const Color(0xFF808080));
+          final AppLook look = await IconEngine.look(a.icon!, null);
+          a
+            ..glyph = look.glyph
+            ..picture = look.picture
+            ..made = look.made
+            ..color = look.color ?? a.color;
         }
         notifyListeners();
       }
@@ -112,7 +103,10 @@ class BlobApps extends ChangeNotifier {
     }
   }
 
-  static Future<ui.Image> _decode(Uint8List bytes) async {
+  static Future<ui.Image> _decode(Uint8List bytes) => IconEngine.decode(bytes);
+
+  // ignore: unused_element
+  static Future<ui.Image> _decodeOld(Uint8List bytes) async {
     final ui.Codec codec = await ui.instantiateImageCodec(bytes);
     return (await codec.getNextFrame()).image;
   }
@@ -124,7 +118,7 @@ class BlobApps extends ChangeNotifier {
   /// mark covers too little or too much, which means the icon is a picture.
   /// Also returns the colour the blob should take: the ground if it has
   /// colour, otherwise the mark's own colour.
-  static Future<(ui.Image, Color?)?> _cutOut(ui.Image image) async {
+  static Future<(ui.Image, Color?)?> cutOut(ui.Image image) async {
     final ByteData? data = await image.toByteData();
     final int w = image.width, h = image.height;
     if (data == null || w < 24 || h < 24) {
@@ -281,7 +275,7 @@ class BlobApps extends ChangeNotifier {
   /// The colour an icon is mostly made of. Pixels vote for their hue, the more
   /// colourful the louder; white, black and grey do not vote. Null if the icon
   /// has no real colour.
-  static Future<Color?> _mainColour(ui.Image image) async {
+  static Future<Color?> mainColour(ui.Image image) async {
     final ByteData? data = await image.toByteData();
     if (data == null) {
       return null;
@@ -353,5 +347,323 @@ class BlobApps extends ChangeNotifier {
       }
     }
     return h.withSaturation(s).withLightness((lo + hi) / 2).toColor();
+  }
+}
+
+/// How one app is shown in Prism: a colour, and a white mark or a calmed picture.
+class AppLook {
+  AppLook(this.made, this.color, {this.glyph, this.picture});
+
+  /// outline, cut-out or picture.
+  final String made;
+  final Color? color;
+  final ui.Image? glyph, picture;
+}
+
+/// Turns any app icon into something that belongs in Prism. It runs inside
+/// the app, on the icons that are on the phone: nothing is drawn by hand or
+/// shipped with the app. Each icon is tried in order:
+///   1. outline: the app's own one-colour outline, in white;
+///   2. cut-out: a mark on a plain ground, cut out and made white;
+///   3. picture: anything else, kept as a picture but calmed toward the palette.
+class IconEngine {
+  static Future<ui.Image> decode(Uint8List bytes) async {
+    final ui.Codec codec = await ui.instantiateImageCodec(bytes);
+    return (await codec.getNextFrame()).image;
+  }
+
+  static Future<AppLook> look(ui.Image icon, ui.Image? outline) async {
+    final Color? main = await BlobApps.mainColour(icon);
+    if (outline != null) {
+      return AppLook(
+        'outline',
+        main == null ? const Color(0xFF5A6373) : BlobApps.tame(main),
+        glyph: outline,
+      );
+    }
+    final (ui.Image, Color?)? cut = await BlobApps.cutOut(icon);
+    if (cut != null) {
+      return AppLook(
+        'cut-out',
+        BlobApps.tame(cut.$2 ?? main ?? const Color(0xFF808080)),
+        glyph: cut.$1,
+      );
+    }
+    final Color color = BlobApps.tame(main ?? const Color(0xFF808080));
+    return AppLook('picture', color, picture: await _calm(icon, color));
+  }
+
+  /// A picture cannot be redrawn, so it is brought as near to the palette as
+  /// it can go while staying itself: a little less vivid, the brightest and
+  /// darkest parts pulled in, and a wash of its own blob colour over it.
+  static Future<ui.Image> _calm(ui.Image image, Color wash) async {
+    final ByteData data = (await image.toByteData())!;
+    final int n = image.width * image.height;
+    final Uint8List out = Uint8List(n * 4);
+    final double wr = wash.r * 255, wg = wash.g * 255, wb = wash.b * 255;
+    for (int p = 0; p < n; p++) {
+      final int i = p * 4, a = data.getUint8(i + 3);
+      if (a == 0) {
+        continue;
+      }
+      // Stored with the alpha multiplied in: undo, change, redo.
+      final double k = 255 / a;
+      double r = data.getUint8(i) * k,
+          g = data.getUint8(i + 1) * k,
+          b = data.getUint8(i + 2) * k;
+      final double grey = 0.299 * r + 0.587 * g + 0.114 * b;
+      r = grey + (r - grey) * 0.78;
+      g = grey + (g - grey) * 0.78;
+      b = grey + (b - grey) * 0.78;
+      r = 22 + r * 0.82;
+      g = 22 + g * 0.82;
+      b = 22 + b * 0.82;
+      r += (wr - r) * 0.16;
+      g += (wg - g) * 0.16;
+      b += (wb - b) * 0.16;
+      out[i] = (r / k).round().clamp(0, a);
+      out[i + 1] = (g / k).round().clamp(0, a);
+      out[i + 2] = (b / k).round().clamp(0, a);
+      out[i + 3] = a;
+    }
+    return fromPixels(out, image.width, image.height);
+  }
+
+  static Future<ui.Image> fromPixels(Uint8List pixels, int w, int h) async {
+    final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(
+      pixels,
+    );
+    final ui.ImageDescriptor desc = ui.ImageDescriptor.raw(
+      buffer,
+      width: w,
+      height: h,
+      pixelFormat: ui.PixelFormat.rgba8888,
+    );
+    return (await (await desc.instantiateCodec()).getNextFrame()).image;
+  }
+}
+
+/// One app in the drawer.
+class AppTile {
+  AppTile(this.label, this.package, this.updated);
+  final String label, package;
+  final int updated;
+  Color color = const Color(0xFF5A6373);
+  ui.Image? glyph, picture;
+  String made = 'waiting';
+}
+
+/// Every app on the phone, each given its Prism look once and then remembered.
+/// The work happens only when an app is new or has been updated; otherwise
+/// the saved result is read back from disk.
+class Apps extends ChangeNotifier {
+  Apps._();
+  static final Apps instance = Apps._();
+  static const MethodChannel _channel = MethodChannel('lumen/apps');
+  List<AppTile> all = <AppTile>[];
+  bool _busy = false;
+
+  /// What the last refresh did, for the test report.
+  String summary = 'not run';
+  Directory get _dir =>
+      Directory('${Directory.systemTemp.path}/prism_looks_v1');
+
+  Future<void> launch(AppTile t) async {
+    try {
+      await _channel.invokeMethod<bool>('launch', t.package);
+    } catch (_) {
+      // Not on Android.
+    }
+  }
+
+  Future<void> refresh() async {
+    if (_busy) {
+      return;
+    }
+    _busy = true;
+    final Stopwatch clock = Stopwatch()..start();
+    try {
+      final List<Object?> names =
+          await _channel.invokeMethod<List<Object?>>('names') ?? <Object?>[];
+      final Map<String, AppTile> old = <String, AppTile>{
+        for (final AppTile t in all) '${t.package}|${t.updated}': t,
+      };
+      final List<AppTile> next =
+          <AppTile>[
+            for (final Map<Object?, Object?> o
+                in names.cast<Map<Object?, Object?>>())
+              old['${o['package']}|${(o['updated'] as num?)?.toInt() ?? 0}'] ??
+                  AppTile(
+                    o['label']! as String,
+                    o['package']! as String,
+                    (o['updated'] as num?)?.toInt() ?? 0,
+                  ),
+          ]..sort(
+            (AppTile a, AppTile b) =>
+                a.label.toLowerCase().compareTo(b.label.toLowerCase()),
+          );
+      all = next;
+      notifyListeners();
+      // 1. Whatever was worked out before is read back.
+      _dir.createSync(recursive: true);
+      int fromDisk = 0, made = 0;
+      final List<AppTile> todo = <AppTile>[];
+      for (final AppTile t in all.where((AppTile t) => t.made == 'waiting')) {
+        if (await _read(t)) {
+          fromDisk++;
+        } else {
+          todo.add(t);
+        }
+      }
+      notifyListeners();
+      // 2. The rest are new or updated: fetch their icons a dozen at a time and work them out.
+      for (int i = 0; i < todo.length; i += 12) {
+        final List<AppTile> batch = todo.sublist(
+          i,
+          math.min(i + 12, todo.length),
+        );
+        final List<Object?> got =
+            await _channel.invokeMethod<List<Object?>>('icons', <String>[
+              for (final AppTile t in batch) t.package,
+            ]) ??
+            <Object?>[];
+        for (final Object? o in got) {
+          final Map<Object?, Object?> m = o! as Map<Object?, Object?>;
+          final AppTile t = batch.firstWhere(
+            (AppTile t) => t.package == m['asked'],
+          );
+          final Object? mono = m['mono'];
+          final AppLook look = await IconEngine.look(
+            await IconEngine.decode(m['icon']! as Uint8List),
+            mono == null ? null : await IconEngine.decode(mono as Uint8List),
+          );
+          t
+            ..made = look.made
+            ..color = look.color ?? t.color
+            ..glyph = look.glyph
+            ..picture = look.picture;
+          await _write(t);
+          made++;
+        }
+        notifyListeners();
+      }
+      int count(String kind) => all.where((AppTile t) => t.made == kind).length;
+      summary =
+          '${all.length} apps: ${count('outline')} outline, ${count('cut-out')} cut-out, ${count('picture')} picture; '
+          '$made worked out now, $fromDisk read from disk, ${clock.elapsedMilliseconds} ms';
+    } catch (_) {
+      if (all.isEmpty) {
+        _pretend();
+      }
+    }
+    _busy = false;
+    notifyListeners();
+  }
+
+  String _file(AppTile t) => '${_dir.path}/${t.package}_${t.updated}';
+
+  Future<bool> _read(AppTile t) async {
+    try {
+      final List<String> meta = File('${_file(t)}.txt')
+          .readAsStringSync()
+          .split('|');
+      final File png = File('${_file(t)}.png');
+      final ui.Image? image = png.existsSync()
+          ? await IconEngine.decode(png.readAsBytesSync())
+          : null;
+      t
+        ..made = meta[0]
+        ..color = Color(int.parse(meta[1]));
+      if (meta[0] == 'picture') {
+        t.picture = image;
+      } else {
+        t.glyph = image;
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _write(AppTile t) async {
+    try {
+      // Older results for the same app are no longer needed.
+      for (final FileSystemEntity f in _dir.listSync()) {
+        if (f.path.startsWith('${_dir.path}/${t.package}_')) {
+          f.deleteSync();
+        }
+      }
+      final ui.Image? image = t.glyph ?? t.picture;
+      if (image != null) {
+        final ByteData? png = await image.toByteData(
+          format: ui.ImageByteFormat.png,
+        );
+        if (png != null) {
+          File('${_file(t)}.png').writeAsBytesSync(png.buffer.asUint8List());
+        }
+      }
+      File('${_file(t)}.txt')
+          .writeAsStringSync('${t.made}|${t.color.toARGB32()}');
+    } catch (_) {
+      // No storage: it is simply worked out again next time.
+    }
+  }
+
+  /// Off the phone there are no apps: made-up ones stand in, so the drawer can be looked at.
+  void _pretend() {
+    const List<String> names = <String>[
+      'Atlas',
+      'Bank',
+      'Books',
+      'Calendar',
+      'Camera',
+      'Chat',
+      'Clock',
+      'Cloud',
+      'Compass',
+      'Contacts',
+      'Drive',
+      'Files',
+      'Fitness',
+      'Gallery',
+      'Games',
+      'Health',
+      'Home',
+      'Mail',
+      'Maps',
+      'Meet',
+      'Music',
+      'News',
+      'Notes',
+      'Pay',
+      'Phone',
+      'Photos',
+      'Podcasts',
+      'Radio',
+      'Recorder',
+      'Settings',
+      'Shop',
+      'Sport',
+      'Store',
+      'Tasks',
+      'Tickets',
+      'Translate',
+      'Travel',
+      'Tube',
+      'Video',
+      'Wallet',
+      'Watch',
+      'Weather',
+      'Zoo',
+    ];
+    all = <AppTile>[
+      for (final (int i, String n) in names.indexed)
+        AppTile(n, 'pretend.$n', 0)
+          ..made = 'letter'
+          ..color = BlobApps.tame(
+            HSLColor.fromAHSL(1, (i * 47) % 360, 0.7, 0.5).toColor(),
+          ),
+    ];
+    summary = 'pretend apps';
   }
 }
