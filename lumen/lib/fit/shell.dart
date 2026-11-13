@@ -124,9 +124,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     this,
     spring: SpringDescription.withDampingRatio(
       mass: 1,
-      stiffness: 520,
-      ratio: 0.3,
+      stiffness: 1500,
+      ratio: 0.36,
     ),
+  );
+  // The way home: quick, and still moving when it gets there, so it lands with a hit.
+  static final SpringDescription _fall = SpringDescription.withDampingRatio(
+    mass: 1,
+    stiffness: 560,
+    ratio: 0.78,
   );
   late final SpringValue _rise = SpringValue(this, spring: Motions.spatial);
   late final SpringValue _page = SpringValue(
@@ -137,8 +143,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   final List<Timer> _fuses = <Timer>[];
   static final SpringDescription _shoot = SpringDescription.withDampingRatio(
     mass: 1,
-    stiffness: 620,
-    ratio: 0.52,
+    stiffness: 1150,
+    ratio: 0.6,
   );
   double _sheetWeight = 81.8, _sheetSeconds = 90;
 
@@ -399,7 +405,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         _ly.jumpTo(_home.dy);
         _glass.jumpTo(0);
         // It hits and jiggles: the faster it arrived, the more.
-        _wob.jumpTo((speed / 5000).clamp(0.07, 0.2));
+        _wob.jumpTo((speed / 3200).clamp(0.14, 0.3));
         _wob.animateTo(0);
         Haptics.settle();
       }
@@ -458,14 +464,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     });
     if (away && !wasParked && _morph.value < 0.3) {
       // The glass rode above the finger and was large. The drop starts nearer the finger, and smaller.
-      _ly.jumpTo(_ly.value + 34);
-      if (_glass.value > 0.3) {
-        _glass.jumpTo(0.3);
-      }
+      // The glass rode above the finger. The drop appears under the finger itself, at the button's size.
+      _ly.jumpTo(_ly.value + 62);
+      _glass.jumpTo(0);
       _retFrom = Offset(_lx.value, _ly.value);
     }
-    _lx.animateTo(_home.dx, spring: Motions.expressive);
-    _ly.animateTo(_home.dy, spring: Motions.expressive);
+    _lx.animateTo(_home.dx, spring: _fall);
+    _ly.animateTo(_home.dy, spring: _fall);
     LensBus.instance.pos.value = null;
     _glass.animateTo(0);
     _morph.animateTo(0, spring: Motions.spatial);
@@ -619,7 +624,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       for (int i = 0; i < _n; i++) {
         _fuses.add(
           Timer(
-            Duration(milliseconds: i * 38),
+            Duration(milliseconds: i * 18),
             () => _out[i].animateTo(1, spring: _shoot),
           ),
         );
@@ -2018,17 +2023,34 @@ class _BlobPainter extends CustomPainter {
     final double p = (1 - (at - home).distance / whole).clamp(0.0, 1.0);
     final Paint paint = Paint()
       ..color = Color.lerp(start, end, Curves.easeOut.transform(p))!;
-    // The tail: three smaller drops left behind along the path.
     final double r = body.shortestSide / 2;
-    // Spaced by speed, but never so far that the drops come apart.
     final double speed = velocity.distance;
-    final Offset tail = speed < 1
-        ? Offset.zero
-        : velocity / speed * math.min(speed * 0.011, r * 0.6);
-    for (int k = 1; k <= 3; k++) {
-      canvas.drawCircle(at - tail * k.toDouble(), r * (1 - 0.24 * k), paint);
+    if (body.width > body.height * 1.25) {
+      // Still a pill, just let go of: it rounds up as it leaves.
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(body, Radius.circular(r)),
+        paint,
+      );
+    } else {
+      // One drop, no tail. It appears small and swells in the first stretch of the way,
+      // and is pulled long by its own speed, thinner as it gets longer, as liquid is.
+      final double grow =
+          0.55 + 0.45 * Curves.easeOut.transform((p / 0.14).clamp(0.0, 1.0));
+      final double st = (speed / 3600).clamp(0.0, 0.42);
+      canvas
+        ..save()
+        ..translate(at.dx, at.dy)
+        ..rotate(speed < 1 ? 0 : velocity.direction)
+        ..drawOval(
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: 2 * r * grow * (1 + st),
+            height: 2 * r * grow * (1 - st * 0.45),
+          ),
+          paint,
+        )
+        ..restore();
     }
-    canvas.drawRRect(RRect.fromRectAndRadius(body, Radius.circular(r)), paint);
     // The plus draws itself in as the drop arrives.
     final double a = ((p - 0.7) / 0.3).clamp(0.0, 1.0);
     if (a > 0) {

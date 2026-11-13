@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 19 (13 November 2026)
+
+**File:** `releases/prism-build-19.apk`
+
+Tighter, more liquid motion, from your notes on build 18.
+
+- **The drop has no tail.** It appears small under your thumb (not above it), swells in the first stretch of the way, and travels home as one shape, pulled slightly long and thin by its own speed.
+- **The landing is shorter and hits harder.** It arrives still moving, squashes more (about twice as much as before), and settles in roughly a third of the time.
+- **The menu blobs shoot out faster**, and the gap between the leftmost and the rightmost is about half what it was (18 ms per blob instead of 38).
+
+**What to look for**
+- Does the drop appear exactly under your thumb?
+- Landing: is the squash now enough, and is it over quickly enough? If it reads as a glitch rather than a hit, say so.
+- Blobs: is the left-to-right order still just visible, or gone?
+
+**Checked:** it compiles, passes analysis, and stills in my preview of the drop in flight.
+**Not checked:** the motion. My preview cannot show it, and these are all timing changes. The numbers are my best judgement and may need another round.
+
 ## Prism, build 18 (13 November 2026)
 
 **File:** `releases/prism-build-18.apk`
