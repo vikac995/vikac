@@ -101,7 +101,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 19';
+  static const String build = 'Prism build 20';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -434,6 +434,9 @@ class Diag {
   /// The app driving itself: set by the shell, which knows where things are on screen.
   Future<void> Function()? autoScript;
 
+  /// One extra line for the top of the report, supplied by whoever knows it.
+  String Function()? extraLine;
+
   /// Called with true when a test starts and false when it ends, so the
   /// blob menu can show Prism's own actions while the robot is tapping it.
   void Function(bool testing)? onTest;
@@ -597,6 +600,10 @@ class Diag {
       ..writeln(
         'glass shader ${GlassShaders.available ? 'ok' : 'MISSING'}  ·  ${settings.themeMode == ThemeMode.dark ? 'dark' : 'light'}  ·  glass style ${glassMode.value == 4 ? 'Auto, using ${autoLevel.value == 0 ? 'Original' : 'Event'}, stepped down $_autoDowns times' : glassModes[glassMode.value]}',
       );
+
+    if (extraLine != null) {
+      o.writeln(extraLine!());
+    }
 
     // 1. Each setting as a whole.
     final Map<String, _Bucket> perCfg = <String, _Bucket>{};

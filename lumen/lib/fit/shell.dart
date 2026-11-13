@@ -177,6 +177,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     super.initState();
     Diag.instance.finished.addListener(_showReport);
     Diag.instance.autoScript = _robot;
+    Diag.instance.extraLine = () =>
+        'app blobs: ${BlobApps.instance.apps.map((BlobApp a) => '${a.name} ${a.installed ? a.made : 'not found'} #${a.color.toARGB32().toRadixString(16).substring(2)}').join(', ')}';
     bool appsBefore = true;
     Diag.instance.onTest = (bool testing) {
       // The test taps the blobs; it must not open other apps.

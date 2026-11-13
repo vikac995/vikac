@@ -1,5 +1,27 @@
 # Lumen changelog
 
+## Prism, build 20 (13 November 2026)
+
+**File:** `releases/prism-build-20.apk`
+
+A rule for every icon, so no app can look out of place on a blob. Each icon is tried in this order:
+
+1. **Outline.** If the app supplies its own one-colour outline (most big apps do), that outline is shown in white. This is what Claude, WhatsApp, Instagram and Facebook already used.
+2. **Cut-out.** If not, the app looks at the icon's edge. If the edge is one plain colour (the icon's ground), everything that differs from it is kept and turned white, and the ground is dropped. A logo on a plain square becomes a clean white mark.
+3. **Coin.** If the edge is not one colour, or the mark covers almost nothing or almost everything, the icon is a picture and cannot be simplified. The real icon is shown as a small round coin in the middle of the blob.
+
+The blob's colour follows the same order: the ground's colour if it has one, otherwise the mark's colour, otherwise the icon's main colour, and always pulled into Prism's palette as before. Icons with no colour at all become slate.
+
+- **moj ZET added as a fifth blob**, as the test case: it has no outline and a plain square icon. It is found by its name on your home screen.
+- The top of the test report now lists how each blob was made and its colour, so I can see what your phone actually did.
+
+**What to look for**
+- moj ZET: a white ZET mark on a blue that sits with the other blobs. If it shows a letter Z, the app was not found by name; tell me.
+- Do the five still read as one family?
+
+**Checked:** in my preview I fed the rule four icons cropped from your screenshot: moj ZET and Mi Fitness and McDonald's became clean white marks on matched colours; the Muay Thai picture correctly fell back to a coin. In a separate dry run on twelve icons from the screenshot, ten cut out cleanly and two (Moj Studenac, Muay Thai) fell back to coins.
+**Not checked:** on a phone. The real icon files differ from screenshot crops (true transparent corners, higher quality), which should help, but I have not seen it. Finding moj ZET by name is untested. No animation changes in this build.
+
 ## Prism, build 19 (13 November 2026)
 
 **File:** `releases/prism-build-19.apk`

@@ -69,9 +69,17 @@ class MainActivity : FlutterActivity() {
                     }
                     for (name in call.arguments as List<*>) {
                         try {
-                            val d = packageManager.getApplicationIcon(name as String)
+                            // A name starting with "label:" is looked up by what the app is called on the home screen.
+                            var pkg = name as String
+                            if (pkg.startsWith("label:")) {
+                                val want = pkg.substring(6)
+                                val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_LAUNCHER)
+                                pkg = packageManager.queryIntentActivities(intent, 0).first { it.loadLabel(packageManager).toString().equals(want, ignoreCase = true) }.activityInfo.packageName
+                            }
+                            val d = packageManager.getApplicationIcon(pkg)
                             val m = HashMap<String, Any>()
-                            m["package"] = name
+                            m["asked"] = name
+                            m["package"] = pkg
                             m["icon"] = png { c -> d.setBounds(0, 0, 96, 96); d.draw(c) }
                             if (Build.VERSION.SDK_INT >= 33 && d is android.graphics.drawable.AdaptiveIconDrawable) {
                                 val mono = d.monochrome
