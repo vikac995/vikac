@@ -59,6 +59,28 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
   bool _started = false;
   DateTime _lastSet = DateTime.now();
 
+  void _modeChanged() {
+    if (mounted) {
+      setState(() {});
+      _sync();
+    }
+  }
+
+  void _addRest() {
+    setState(() {
+      _restOf += 15;
+      _setRest((_restEnds ?? DateTime.now()).add(const Duration(seconds: 15)));
+    });
+    Haptics.tick();
+  }
+
+  void _skipRest() {
+    setState(() => _setRest(null));
+    _rest.animateTo(0, spring: Motions.spatial);
+    Diag.instance.extra = '';
+    Haptics.tick();
+  }
+
   /// Tells the floating workout what it should show.
   void _sync() {
     final int i = _current;
@@ -69,9 +91,18 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
     final LumenColors c = LumenColors.of(context);
     RestBubble.instance.tell(<String, Object>{
       'title': 'Bench press',
+      'exercise': 'Exercise 2 of 5',
       'set': i == 0 ? 'Warm-up set' : 'Set $i of ${_done.length - 1}',
-      'kg': _kg[i],
-      'reps': _reps[i].round(),
+      'current': i,
+      'sets': <Map<String, Object>>[
+        for (int k = 0; k < _done.length; k++)
+          <String, Object>{
+            'kg': _kg[k],
+            'reps': _reps[k].round(),
+            'done': _done[k],
+          },
+      ],
+      'countUp': RestBubble.instance.countUp.value,
       'endsAt': _restEnds?.millisecondsSinceEpoch ?? 0,
       'total': _restOf,
       'sinceAt': _lastSet.millisecondsSinceEpoch,
@@ -86,17 +117,29 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     // A set logged from the floating panel: take its numbers and tick it, exactly as a tap here would.
-    RestBubble.instance.onLog = (double kg, int reps) {
-      final int i = _current;
-      if (i < 0 || !mounted) {
-        return;
+    // What the floating sheet does is exactly what a touch on this page does.
+    RestBubble.instance
+      ..onToggle = (int i) {
+        if (mounted && i >= 0 && i < _done.length) {
+          _toggle(i);
+        }
       }
-      setState(() {
-        _kg[i] = kg;
-        _reps[i] = reps.toDouble();
-      });
-      _toggle(i);
-    };
+      ..onValue = (int i, double kg, int reps) {
+        if (mounted && i >= 0 && i < _done.length) {
+          setState(() {
+            _kg[i] = kg;
+            _reps[i] = reps.toDouble();
+          });
+          _started = true;
+          _sync();
+        }
+      }
+      ..onRest = (bool add) {
+        if (mounted) {
+          add ? _addRest() : _skipRest();
+        }
+      }
+      ..countUp.addListener(_modeChanged);
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       // Keep time always, but only redraw while this page is the one on screen:
       // a clock nobody can see should not wake the screen once a second.
@@ -123,7 +166,11 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
-    RestBubble.instance.onLog = null;
+    RestBubble.instance
+      ..onToggle = null
+      ..onValue = null
+      ..onRest = null
+      ..countUp.removeListener(_modeChanged);
     _clock.cancel();
     for (final SpringValue s in <SpringValue>[..._pop, _rest, _next]) {
       s.dispose();
@@ -543,9 +590,14 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                       ),
                       AnimatedFractionallySizedBox(
                         duration: const Duration(seconds: 1),
+                        // The bar empties in a countdown and fills when counting up.
                         widthFactor: _restOf == 0
                             ? 0
-                            : (_restLeft / _restOf).clamp(0.0, 1.0),
+                            : ((RestBubble.instance.countUp.value
+                                          ? _restOf - _restLeft
+                                          : _restLeft) /
+                                      _restOf)
+                                  .clamp(0.0, 1.0),
                         heightFactor: 1,
                         alignment: Alignment.centerLeft,
                         child: ColoredBox(
@@ -556,50 +608,52 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                         padding: const EdgeInsets.only(left: 24, right: 10),
                         child: Row(
                           children: <Widget>[
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(
-                                  'REST',
-                                  style: LumenType.label(color: c.inkMuted),
-                                ),
-                                Text(
-                                  _mmss(_restLeft),
-                                  textScaler: TextScaler.noScaling,
-                                  style:
-                                      LumenType.display(
-                                        28,
-                                        weight: 700,
-                                        color: c.ink,
-                                        height: 1.05,
-                                      ).copyWith(
-                                        fontFeatures: const <FontFeature>[
-                                          FontFeature.tabularFigures(),
-                                        ],
-                                      ),
-                                ),
-                              ],
+                            // A tap on the time switches between counting down and counting up.
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                RestBubble.instance.toggleMode();
+                                Haptics.settle();
+                              },
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    RestBubble.instance.countUp.value
+                                        ? 'RESTING'
+                                        : 'REST LEFT',
+                                    style: LumenType.label(color: c.inkMuted),
+                                  ),
+                                  Text(
+                                    _mmss(
+                                      RestBubble.instance.countUp.value
+                                          ? (_restOf - _restLeft).clamp(
+                                              0,
+                                              86400,
+                                            )
+                                          : _restLeft,
+                                    ),
+                                    textScaler: TextScaler.noScaling,
+                                    style:
+                                        LumenType.display(
+                                          28,
+                                          weight: 700,
+                                          color: c.ink,
+                                          height: 1.05,
+                                        ).copyWith(
+                                          fontFeatures: const <FontFeature>[
+                                            FontFeature.tabularFigures(),
+                                          ],
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
                             const Spacer(),
-                            _pill(c, '+15 s', () {
-                              setState(() {
-                                _restOf += 15;
-                                _setRest(
-                                  (_restEnds ?? DateTime.now()).add(
-                                    const Duration(seconds: 15),
-                                  ),
-                                );
-                              });
-                              Haptics.tick();
-                            }),
+                            _pill(c, '+15 s', _addRest),
                             const SizedBox(width: 8),
-                            _pill(c, 'Skip', () {
-                              setState(() => _setRest(null));
-                              _rest.animateTo(0, spring: Motions.spatial);
-                              Diag.instance.extra = '';
-                              Haptics.tick();
-                            }, strong: true),
+                            _pill(c, 'Skip', _skipRest, strong: true),
                           ],
                         ),
                       ),

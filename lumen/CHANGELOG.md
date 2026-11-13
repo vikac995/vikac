@@ -1,5 +1,47 @@
 # Lumen changelog
 
+## Prism, build 56 (14 November 2026)
+
+**File:** `releases/prism-build-56.apk`
+
+**The floating workout, redesigned around how you used it in your recordings.**
+
+What the recordings showed: the lens and the panel work on your phone. You dragged the lens to the bottom middle to close it and it sprang back. The panel opened wherever the lens was, often high on the screen. And when you went home to Prism, the lens vanished.
+
+**One thing, three sizes, on one up-and-down axis**
+
+- **Lens:** a glance. The timer.
+- **Small sheet:** tap the lens. The current set on two dials, and **Set done**.
+- **Tall sheet:** swipe the small sheet up (or tap its grabber). A large timer, every set of the exercise with its own dials and tick, **+15 s**, **Skip rest**, **Open Prism**.
+- Swipe down to go back a size: tall to small, small to lens. A touch outside the sheet also folds it to the lens.
+- The sheet opens in the size you last used.
+
+**The sheet is always at the bottom of the screen**, wherever the lens is, because that is where a thumb reaches with the phone in one hand.
+
+**Closing the lens:** pick it up and a cross appears at the bottom middle. Drag the lens near it and it is pulled on, with a click; let go and it is gone. A flick down toward the middle throws it there. It comes back when you open Prism's workout page.
+
+**It stays when you go home.** The lens now floats over Prism too, in the same spot, and over the app switcher. It is absent in one place only: Prism's own workout page, because that page is what the lens stands for. Leave that page and the lens is back where you left it.
+
+**The same dials as in Prism.** Drag sideways and the number turns under your thumb with a click per step. Slow down and weight changes to half-kilo steps, with a different click. A tap on either half of a dial nudges it one step. An up-or-down drag that starts on a dial still moves the sheet.
+
+**Count up or count down.** Tap the timer, in the sheet or on Prism's workout page, to switch. Counting down shows the rest that is left; counting up shows how long you have rested, with the ring filling. Either way it says GO and buzzes when the rest is over. The choice is remembered.
+
+**Other details**
+- "Set done" shows what it will log ("Set done · 80 kg × 8"). In the small sheet it folds away after logging; in the tall sheet it stays open.
+- The lens keeps the spot you left it in, across apps and across Prism.
+
+**What to look for**
+1. Drop the lens on the cross: does it catch and close? Does a flick down the middle do it too?
+2. Tap the lens: is the sheet in reach of your thumb? Swipe up for the tall one, down, and down again.
+3. The dials: do they feel like the ones in Prism? Can you still swipe the sheet down when your finger starts on a dial?
+4. Tap the timer to switch counting. Check Prism's workout page shows the same mode.
+5. Go home to Prism mid-workout: is the lens still there, in the same place? Does it leave on the workout page and return after?
+
+**Checked:** everything compiles, the Android code included. In my preview, Prism's own rest timer counts down, switches to counting up on a tap, and remembers it.
+**Not checked:** all of the floating part of this build. The lens and panel from build 54 are proven on your phone, but the cross, the bottom sheet, both sizes, the dials, the swipes and the lens over Prism are new Android code that has never run. Expect rough edges in layout and feel; a recording like the last ones is the fastest way for me to fix them.
+**How I arrived at this:** not from new research. It follows patterns people already know: chat heads (drag to a cross at the bottom), picture-in-picture (it is gone on the page it belongs to), bottom sheets (grow, shrink, swipe away), and keeping controls in the lower third for one-handed use.
+**Limits:** still no blur or bending of what is underneath. The workout is still the made-up bench press; moving to the next exercise from the sheet is not there yet. The tall sheet is as tall as its content (about three quarters of the screen), not a fixed full screen.
+
 ## Prism, build 55 (13 November 2026)
 
 **File:** `releases/prism-build-55.apk`

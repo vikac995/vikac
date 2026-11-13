@@ -186,48 +186,43 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Diag.instance.finished.addListener(_showReport);
     Diag.instance.autoScript = _robot;
     // Pressing the home button while Prism is the home screen: everything closes and Home shows.
-    const MethodChannel('lumen/device').setMethodCallHandler((
-      MethodCall call,
-    ) async {
-      if (call.method == 'logSet') {
-        final Map<Object?, Object?> a = call.arguments as Map<Object?, Object?>;
-        Diag.instance.event('set logged from the floating panel');
-        RestBubble.instance.onLog?.call(
-          (a['kg']! as num).toDouble(),
-          (a['reps']! as num).toInt(),
-        );
-      }
-      if (call.method == 'train' && mounted) {
-        // The floating rest timer was tapped: straight to the workout, nothing in the way.
-        Diag.instance.event('timer bubble tapped');
-        if (_drawerOpen) {
-          _setDrawer(false);
-        }
-        if (_sheetOpen) {
-          _closeSheet();
-        }
-        _setOpen(false);
-        if (_tab != 1) {
-          _go(1);
-        }
-      }
-      if (call.method == 'home' && mounted) {
-        Diag.instance.event('home button');
-        if (_drawerOpen) {
-          _setDrawer(false);
-        }
-        if (_sheetOpen) {
-          _closeSheet();
-        }
-        if (_parked || _carrying) {
-          _lensHome();
-        }
-        _setOpen(false);
-        if (_tab != 0) {
-          _go(0);
-        }
-      }
-    });
+    const MethodChannel('lumen/device')
+        .setMethodCallHandler((MethodCall call) async {
+          if (RestBubble.instance.handle(call)) {
+            Diag.instance.event('floating workout: ${call.method}');
+            return;
+          }
+          if (call.method == 'train' && mounted) {
+            // The floating rest timer was tapped: straight to the workout, nothing in the way.
+            Diag.instance.event('timer bubble tapped');
+            if (_drawerOpen) {
+              _setDrawer(false);
+            }
+            if (_sheetOpen) {
+              _closeSheet();
+            }
+            _setOpen(false);
+            if (_tab != 1) {
+              _go(1);
+            }
+          }
+          if (call.method == 'home' && mounted) {
+            Diag.instance.event('home button');
+            if (_drawerOpen) {
+              _setDrawer(false);
+            }
+            if (_sheetOpen) {
+              _closeSheet();
+            }
+            if (_parked || _carrying) {
+              _lensHome();
+            }
+            _setOpen(false);
+            if (_tab != 0) {
+              _go(0);
+            }
+          }
+        });
     Diag.instance.extraLine = () =>
         'icon engine: ${Apps.instance.summary}\napp blobs: ${BlobApps.instance.apps.map((BlobApp a) => '${a.name} ${a.installed ? a.made : 'not found'} #${a.color.toARGB32().toRadixString(16).substring(2)}').join(', ')}';
     bool appsBefore = true;
@@ -759,6 +754,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return;
     }
     setState(() => _tab = tab);
+    RestBubble.instance.page(tab == 1);
     Diag.instance
       ..page = _tabs[tab].$2.toLowerCase()
       ..event('tab ${_tabs[tab].$2}');
