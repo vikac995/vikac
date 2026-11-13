@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 59 (14 November 2026)
+
+**File:** `releases/prism-build-59.apk`
+
+Three changes to the floating sheet, from your screenshot of it over the Food page. This build also contains everything in build 58 below (pinning, the lens on every page, themed sheets, the new close).
+
+- **Much less see-through.** The sheet was about 88 % solid and the page behind it ("Snacks", "Water", the drops) showed through as clutter, because it cannot blur what is underneath. It is now about 98 % solid.
+- **"Open Prism" is named for where it goes, and hidden when you are there.** In the workout sheet it now says **Open workout**, and it is not shown at all on Prism's own workout page. In a pinned sheet (weigh-in, food) it says **Open in Prism** and is shown only outside Prism.
+- **The button at the bottom is just the numbers:** "77 kg × 7". No "Set done".
+
+**Checked:** it compiles, the Android code included.
+**Not checked:** on a phone.
+
 ## Prism, build 58 (14 November 2026)
 
 **File:** `releases/prism-build-58.apk`

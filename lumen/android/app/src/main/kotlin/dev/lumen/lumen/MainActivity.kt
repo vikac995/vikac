@@ -1370,10 +1370,11 @@ object RestBubble {
             clipToPadding = false
             card.orientation = android.widget.LinearLayout.VERTICAL
             card.setPadding(px(14f), px(4f), px(14f), px(14f))
-            // Tinted, see-through glass with a lit edge: what is underneath shows through.
+            // Nearly solid, with a lit edge. It cannot blur what is underneath, and text showing
+            // through unblurred only got in the way of reading the sheet.
             val glass = android.graphics.drawable.GradientDrawable(
                 android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
-                if (light) intArrayOf(0xF2FFFDF8.toInt(), 0xEEF3EEE4.toInt()) else intArrayOf(0xE01C1F27.toInt(), 0xEC0C0D11.toInt()),
+                if (light) intArrayOf(0xFBFFFDF8.toInt(), 0xFAF3EEE4.toInt()) else intArrayOf(0xF81C1F27.toInt(), 0xFA0E0F13.toInt()),
             )
             glass.cornerRadius = 32 * dp
             glass.setStroke(px(1.2f), if (light) 0x24000000 else 0x40FFFFFF)
@@ -1567,7 +1568,7 @@ object RestBubble {
             }
             pill(add, "+15 s", false) { channel?.invokeMethod("restAdd", null) }
             pill(skip, "Skip", false) { channel?.invokeMethod("restSkip", null) }
-            pill(open, "Open Prism", true) { openPrism(context) }
+            pill(open, "Open workout", true) { openPrism(context) }
             controls.gravity = android.view.Gravity.CENTER_VERTICAL
             val gapLp = { android.widget.LinearLayout.LayoutParams(wrap, wrap).also { it.leftMargin = px(8f) } }
             controls.addView(add, android.widget.LinearLayout.LayoutParams(wrap, wrap))
@@ -1740,7 +1741,10 @@ object RestBubble {
                     r.root.background = null
                 }
             }
-            done.text = if (current in sets.indices) "Set done  ·  " + number(sets[current].kg) + " kg × " + sets[current].reps else "Set done"
+            // Just the numbers it will log. The button itself says what it is for.
+            done.text = if (current in sets.indices) number(sets[current].kg) + " kg \u00D7 " + sets[current].reps else "\u2713"
+            // On Prism's own workout page there is nowhere for this to take you.
+            open.visibility = if (RestBubble.foreground && onTrain) android.view.View.GONE else android.view.View.VISIBLE
             done.setTextColor(onAccent)
             done.background = rounded(accent, 100 * dp)
             texts()
@@ -1767,7 +1771,9 @@ object RestBubble {
             names.addView(sub, android.widget.LinearLayout.LayoutParams(wrap, wrap).also { it.topMargin = px(3f) })
             head.addView(names, android.widget.LinearLayout.LayoutParams(0, wrap, 1f))
             val open = label(context, 13f, ink(), true)
-            open.text = "Open Prism"
+            // Only where it leads somewhere: inside Prism, the same thing is already at hand.
+            open.visibility = if (RestBubble.foreground) android.view.View.GONE else android.view.View.VISIBLE
+            open.text = "Open in Prism"
             open.setPadding(px(14f), px(10f), px(14f), px(10f))
             open.background = rounded(tint(ink(), 0x1F), 100 * dp)
             open.setOnClickListener {
