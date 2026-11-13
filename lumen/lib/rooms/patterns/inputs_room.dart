@@ -80,7 +80,7 @@ class _InputsRoomState extends State<InputsRoom> {
         ),
         const SectionLabel(
           'A workout set',
-          detail: 'Last time is already filled in. Drag a number: kilos move by 0.5, or by 0.1 when you go slowly; reps by 1, or by 0.5 slowly. A tap on its left or right side also steps it.',
+          detail: 'Last time is already filled in. Drag a number: kilos move by 1, or by 0.5 when you go slowly; reps by 1, or by 0.5 slowly. A tap on its left or right side also steps it.',
         ),
         Panel(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -144,8 +144,8 @@ class _InputsRoomState extends State<InputsRoom> {
                         Expanded(
                           child: DragDial(
                             value: _kg[i],
-                            step: 0.5,
-                            fineStep: 0.1,
+                            step: 1,
+                            fineStep: 0.5,
                             min: 0,
                             max: 400,
                             unit: 'kg',

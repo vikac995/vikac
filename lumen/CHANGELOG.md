@@ -1,5 +1,11 @@
 # Lumen changelog
 
+## Build 10.1 (13 November 2026)
+
+**File:** `releases/lumen-build-10.1.apk`
+
+- R23 Inputs: the kilo dial now moves by 1 kg at normal speed and 0.5 kg when the thumb moves slowly (was 0.5 and 0.1). Reps unchanged: 1, and 0.5 slowly. Nothing else changed.
+
 ## Build 10 (13 November 2026)
 
 Lumen as a visual vocabulary: things to screenshot, record or point at. A catalogue of named components, four
