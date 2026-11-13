@@ -13,8 +13,18 @@ import '../../widgets/room_header.dart';
 
 /// Something on the screen the lens can explain.
 class _Thing {
-  const _Thing(this.title, this.explain, this.color, {this.icon, this.value});
+  const _Thing(
+    this.title,
+    this.explain,
+    this.color, {
+    this.icon,
+    this.value,
+    this.actions = const <String>[],
+  });
   final String title, explain;
+
+  /// Things you can do from the lens's card. Empty: the lens only explains.
+  final List<String> actions;
   final Color color;
   final IconData? icon;
   final String? value;
@@ -58,30 +68,35 @@ const List<_Thing> _tiles = <_Thing>[
     'What you can still eat today. It goes down as you log food.',
     Color(0xFFB8532F),
     value: '1,160',
+    actions: <String>['Log food', 'Scan'],
   ),
   _Thing(
     'Weight',
     'Your trend over seven days, smoothed so one heavy dinner does not show as a setback.',
     Color(0xFF3B57B5),
     value: '81.8 kg',
+    actions: <String>['Log weight', 'History'],
   ),
   _Thing(
     'Weigh-in',
     'A shortcut: one tap logs today\'s weight.',
     Color(0xFF1F7F78),
     value: 'Tue',
+    actions: <String>['Log now'],
   ),
   _Thing(
     'Protein shake',
     'A saved food. One tap adds 160 kcal to today.',
     Color(0xFFB07A1E),
     value: '160 kcal',
+    actions: <String>['Add to today'],
   ),
   _Thing(
     'Today\'s list',
     'Habits and tasks for today. Cross them off, or skip them.',
     Color(0xFF6B45B0),
     value: '0 / 2',
+    actions: <String>['Add a habit'],
   ),
 ];
 const List<_Thing> _spots = <_Thing>[
@@ -128,6 +143,7 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
   Size _stage = Size.zero;
   double _bottom = 0;
   bool _open = false, _carrying = false, _moved = false;
+  bool _parked = false; // the lens was put down on something you can act on
   Offset? _downAt;
   int _target = -1; // index into the list returned by _things(), or -1
   _Thing? _launched;
@@ -294,9 +310,15 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
       }
       // The button lifts off: from here on it is a lens.
       _moved = true;
-      setState(() => _carrying = true);
-      _lx.jumpTo(_c.dx);
-      _ly.jumpTo(_c.dy);
+      final bool again = _parked; // picked up from where it was put down
+      setState(() {
+        _carrying = true;
+        _parked = false;
+      });
+      if (!again) {
+        _lx.jumpTo(_c.dx);
+        _ly.jumpTo(_c.dy);
+      }
       _glass.animateTo(1);
       _kick.animateTo(1);
       Haptics.settle();
@@ -315,16 +337,47 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
     }
     _downAt = null;
     if (_moved) {
-      // Back to the bar, and back to being a button.
-      setState(() => _carrying = false);
-      _lx.animateTo(_c.dx, spring: Motions.expressive);
-      _ly.animateTo(_c.dy, spring: Motions.expressive);
-      _glass.animateTo(0);
-      _retarget(-1);
-      Haptics.tick();
+      final List<(_Thing, Rect)> things = _things();
+      if (_target >= 0 &&
+          _target < things.length &&
+          things[_target].$1.actions.isNotEmpty) {
+        // Put down on something you can act on: the lens stays, and its card can be used.
+        setState(() {
+          _carrying = false;
+          _parked = true;
+        });
+        // Settle on the thing rather than wherever the thumb happened to stop.
+        final Rect r = things[_target].$2;
+        _lx.animateTo(
+          _lx.value.clamp(r.left + 30, r.right - 30),
+          spring: Motions.expressive,
+        );
+        _ly.animateTo(
+          _ly.value.clamp(r.top + 30, r.bottom - 30),
+          spring: Motions.expressive,
+        );
+        Haptics.settle();
+      } else {
+        _home();
+      }
+    } else if (_parked) {
+      _home();
     } else {
       _setOpen(!_open);
     }
+  }
+
+  /// Back to the bar, and back to being a button.
+  void _home() {
+    setState(() {
+      _carrying = false;
+      _parked = false;
+    });
+    _lx.animateTo(_c.dx, spring: Motions.expressive);
+    _ly.animateTo(_c.dy, spring: Motions.expressive);
+    _glass.animateTo(0);
+    _retarget(-1);
+    Haptics.tick();
   }
 
   void _retarget(int i) {
@@ -419,7 +472,7 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
                         const RoomHeader(number: 51, title: 'Button and lens'),
                         const SizedBox(height: 10),
                         Text(
-                          'Tap the button for your five actions. Drag it anywhere and it becomes a magnifying glass that explains what it is over.',
+                          'Tap the button for your five actions. Drag it and it becomes a magnifying glass that explains what it is over. Let go on a widget and its card stays open to use.',
                           style: LumenType.text(
                             14,
                             color: c.inkMuted,
@@ -634,6 +687,14 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
                       ),
                     ),
                   ),
+                  // While the lens is put down, a tap anywhere else sends it home.
+                  if (_parked)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _home,
+                      ),
+                    ),
                   // What the lens says about the thing under it.
                   if (_target >= 0 && _target < things.length)
                     Builder(
@@ -651,6 +712,7 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
                           bottom: above ? _stage.height - lens.top + 12 : null,
                           width: w,
                           child: IgnorePointer(
+                            ignoring: !_parked,
                             child: Opacity(
                               opacity: _say.value.clamp(0.0, 1.0),
                               child: Transform.scale(
@@ -721,6 +783,83 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
                                           height: 1.35,
                                         ),
                                       ),
+                                      if (th.actions.isNotEmpty) ...<Widget>[
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          children: <Widget>[
+                                            for (final String a in th.actions)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  right: 8,
+                                                ),
+                                                child: Pressable(
+                                                  onTap: () {
+                                                    setState(
+                                                      () => _launched = _Thing(
+                                                        a,
+                                                        'From the lens, on "${th.title}". It opens as a small window; the home screen stays behind it.',
+                                                        th.color,
+                                                        icon:
+                                                            Icons.bolt_rounded,
+                                                      ),
+                                                    );
+                                                    _home();
+                                                    _sheet.animateTo(1);
+                                                  },
+                                                  child: AnimatedContainer(
+                                                    duration: const Duration(
+                                                      milliseconds: 160,
+                                                    ),
+                                                    height: 44,
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 14,
+                                                        ),
+                                                    alignment: Alignment.center,
+                                                    decoration: ShapeDecoration(
+                                                      // Outlined while you are only passing over; filled once it can be pressed.
+                                                      color: _parked
+                                                          ? th.color
+                                                          : Colors.transparent,
+                                                      shape: StadiumBorder(
+                                                        side: BorderSide(
+                                                          color: th.color,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      a,
+                                                      textScaler:
+                                                          TextScaler.noScaling,
+                                                      style: LumenType.text(
+                                                        14,
+                                                        weight: 680,
+                                                        color: _parked
+                                                            ? Colors.white
+                                                            : c.ink,
+                                                        height: 1,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        if (!_parked)
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                              top: 8,
+                                            ),
+                                            child: Text(
+                                              'Let go here to use these',
+                                              style: LumenType.text(
+                                                12.5,
+                                                weight: 600,
+                                                color: c.inkFaint,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
                                     ],
                                   ),
                                 ),
@@ -730,10 +869,10 @@ class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
                         );
                       },
                     ),
-                  // The button's touch target, always at its home on the bar.
+                  // The button's touch target: at its home on the bar, or on the lens where it was put down.
                   Positioned(
-                    left: _c.dx - 44,
-                    top: _c.dy - 44,
+                    left: (_parked ? at.dx : _c.dx) - 44,
+                    top: (_parked ? at.dy : _c.dy) - 44,
                     width: 88,
                     height: 88,
                     child: Semantics(

@@ -1,5 +1,35 @@
 # Lumen changelog
 
+## Build 18 (13 November 2026)
+
+**Files:** `releases/lumen-build-18.apk`, `releases/lumen-source-build-18.zip`
+
+### Changed: R51 Button and lens, the lens can be put down
+
+The lens now has two outcomes when you let go, depending on what it is over.
+
+- **Something you can act on** (the five widgets). While you pass over it, the card shows its actions as outlined buttons and the line "Let go here to use these". Let go, and the lens stays where it is as glass, settles onto the widget, and the card stays open with the buttons filled in and pressable. Kcal left: Log food, Scan. Weight: Log weight, History. Weigh-in: Log now. Protein shake: Add to today. Today's list: Add a habit.
+- **Something that only has an explanation** (the four bar spots, the blobs), or empty space. Nothing changes: the card is information only, and letting go sends the lens home.
+
+While the lens is put down:
+
+- Tap a button on the card: the action opens as a small window and the lens goes home.
+- Tap the lens, or anywhere else: the lens goes home.
+- Drag the lens: you pick it up from where it is and carry on exploring.
+
+### What to test on the phone
+
+1. Drag onto the Weight widget and let go. Does the lens staying put feel deliberate, or like it got stuck?
+2. Are the outlined-then-filled buttons enough to tell "passing over" from "put down"?
+3. Put it down, then pick it up again from where it sits and move to another widget.
+4. Let go over a bar spot or a blob: it should go home as before.
+5. Still open from build 17: is the picture inside the glass the right way up?
+
+### Not checked
+
+- Only the Linux preview (mouse). I tried: hover, put down, press an action. I did not try picking the lens up again from where it was put down, or tapping it to send it home; those are untested.
+- Haptics, frame rate, and whether the thumb covers the card's buttons at the moment you let go.
+
 ## Build 17.1 (13 November 2026)
 
 **File:** `releases/lumen-build-17.1.apk`
