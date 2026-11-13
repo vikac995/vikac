@@ -37,6 +37,10 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     duration: const Duration(milliseconds: 380),
     value: 1,
   );
+  late final SpringValue _ring = SpringValue(
+    this,
+    spring: Motions.expressiveFast,
+  );
   int _from = 0, _page = 0, _dir = 1, _rows = 5;
   double _pull = 0;
   static const int _cols = 4;
@@ -50,8 +54,13 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   void _changed() {
     if (mounted) {
       setState(() {});
+      _aim();
     }
   }
+
+  /// Where the ring should be: the share of pages reached, plus a lean while the finger pulls.
+  void _aim({double lean = 0}) =>
+      _ring.animateTo(((_page + 1 + lean) / _pages).clamp(0.0, 1.0));
 
   @override
   void didUpdateWidget(AppDrawer old) {
@@ -63,6 +72,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       );
       if (widget.open) {
         Apps.instance.refresh();
+        _ring.jumpTo(0);
+        _aim();
       }
     }
   }
@@ -71,6 +82,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   void dispose() {
     Apps.instance.removeListener(_changed);
     _rise.dispose();
+    _ring.dispose();
     _turn.dispose();
     super.dispose();
   }
@@ -90,6 +102,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       _dir = by;
     });
     _turn.forward(from: 0);
+    _aim();
     Haptics.tick();
     Diag.instance.event('drawer page');
   }
@@ -194,19 +207,34 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                         ),
                       ),
                     ),
-                    for (int i = 0; i < _pages; i++)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 220),
-                        margin: const EdgeInsets.only(left: 5),
-                        width: i == _page ? 16 : 6,
-                        height: 6,
-                        decoration: ShapeDecoration(
-                          color: i == _page
-                              ? c.accent
-                              : c.ink.withValues(alpha: 0.22),
-                          shape: const StadiumBorder(),
+                    // How far through the apps you are: the same ring the rest of Prism uses.
+                    ListenableBuilder(
+                      listenable: _ring,
+                      builder: (BuildContext context, Widget? _) => CustomPaint(
+                        size: const Size(38, 38),
+                        painter: _RingPainter(
+                          _ring.value,
+                          c.accent,
+                          c.ink.withValues(alpha: 0.1),
+                        ),
+                        child: SizedBox(
+                          width: 38,
+                          height: 38,
+                          child: Center(
+                            child: Text(
+                              '${_page + 1}',
+                              textScaler: TextScaler.noScaling,
+                              style: LumenType.text(
+                                13,
+                                weight: 700,
+                                color: c.ink,
+                                height: 1,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -215,14 +243,27 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                   builder: (BuildContext context, BoxConstraints box) =>
                       GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onVerticalDragStart: (_) => _pull = 0,
-                        onVerticalDragUpdate: (DragUpdateDetails d) {
-                          // No scrolling: every 56 of travel turns one page, so a long swipe turns several.
-                          _pull += d.delta.dy;
+                        onPanStart: (_) => _pull = 0,
+                        onPanUpdate: (DragUpdateDetails d) {
+                          // No scrolling. Up or left is forward, down or right is back, whichever way
+                          // the finger mostly goes. Every 56 of travel turns one page, so a long swipe turns several.
+                          _pull += d.delta.dy.abs() >= d.delta.dx.abs()
+                              ? d.delta.dy
+                              : d.delta.dx;
                           if (_pull.abs() > 56) {
                             _go(_pull < 0 ? 1 : -1);
                             _pull = 0;
                           }
+                          // The ring leans the way you are pulling before the page turns.
+                          _aim(lean: (-_pull / 56).clamp(-1.0, 1.0) * 0.45);
+                        },
+                        onPanEnd: (_) {
+                          _pull = 0;
+                          _aim();
+                        },
+                        onPanCancel: () {
+                          _pull = 0;
+                          _aim();
                         },
                         onTapUp: (TapUpDetails d) {
                           final int col =
@@ -438,4 +479,37 @@ class _GridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_GridPainter old) => true;
+}
+
+/// Prism's ring: a track and a round-ended arc from the top, which fades out as it empties.
+class _RingPainter extends CustomPainter {
+  const _RingPainter(this.v, this.color, this.track);
+  final double v;
+  final Color color, track;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Rect r = (Offset.zero & size).deflate(3);
+    final Paint p = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(r, 0, math.pi * 2, false, p..color = track);
+    final double f = v.clamp(0.0, 1.0);
+    if (f > 0.0005) {
+      canvas.drawArc(
+        r,
+        -math.pi / 2,
+        math.pi * 2 * f,
+        false,
+        p
+          ..color = color.withValues(
+            alpha: color.a * (f / 0.03).clamp(0.0, 1.0),
+          ),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) => old.v != v || old.color != color;
 }

@@ -1,5 +1,29 @@
 # Lumen changelog
 
+## Prism, build 23 (13 November 2026)
+
+**File:** `releases/prism-build-23.apk`
+
+**Fewer grey tiles in the drawer.**
+
+- The engine now accepts a much smaller amount of colour as the icon's colour: half a percent of the picture is enough (it was three percent), paler colours count, and a colour spread over two neighbouring hues is treated as one. A small coloured mark on a white or black icon now gives the tile its colour.
+- Icons that truly have no colour (black, white, grey) no longer all turn slate. Each gets one of Prism's own hues, always the same one for the same app, held visibly quieter than a real brand colour so the two kinds do not get confused.
+- Every app is worked out again once after this update, so the first open of the drawer takes a moment.
+
+**A ring instead of dots.**
+
+- The row of dots at the top (which suggested swiping sideways) is replaced by a ring like the others in Prism, with the page number inside. It fills as you go through the apps: full means the last page.
+- You can now swipe up/down or left/right; both turn the page. Up or left is forward.
+- The ring leans in the direction you are pulling before the page turns, then springs to its new place.
+
+**What to look for**
+- Which tiles are still grey or the wrong colour? A screenshot is enough.
+- Do the quiet made-up colours on colourless icons (Settings, Uber, Revolut and similar) look right, or would you prefer those to stay neutral?
+- Ring: does it read as "how far through" at a glance? Is the lean while pulling pleasant or distracting?
+
+**Checked:** in my preview, with made-up apps: the ring shows and fills, and a sideways swipe turns the page.
+**Not checked:** the new colour rules on your real icons. I tuned them from reading your recording, where I counted about ten grey tiles across seven pages; I have not seen the result.
+
 ## Prism, build 22 (13 November 2026)
 
 **File:** `releases/prism-build-22.apk`

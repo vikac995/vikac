@@ -65,6 +65,7 @@ class BlobApps extends ChangeNotifier {
         final AppLook look = await IconEngine.look(
           a.icon!,
           mono == null ? null : await _decode(mono as Uint8List),
+          name: a.name,
         );
         a
           ..glyph = look.glyph
@@ -82,7 +83,11 @@ class BlobApps extends ChangeNotifier {
         for (int i = 0; i < files.length && i < apps.length; i++) {
           final BlobApp a = apps[apps.length - 1 - i];
           a.icon = await _decode(File(files[i]).readAsBytesSync());
-          final AppLook look = await IconEngine.look(a.icon!, null);
+          final AppLook look = await IconEngine.look(
+            a.icon!,
+            null,
+            name: a.name,
+          );
           a
             ..glyph = look.glyph
             ..picture = look.picture
@@ -256,7 +261,7 @@ class BlobApps extends ChangeNotifier {
       final HSLColor c = HSLColor.fromColor(
         Color.fromARGB(255, r.round(), g.round(), b.round()),
       );
-      return c.saturation >= 0.25 && c.lightness > 0.1 && c.lightness < 0.92
+      return c.saturation >= 0.16 && c.lightness > 0.1 && c.lightness < 0.92
           ? c.toColor()
           : null;
     }
@@ -296,7 +301,7 @@ class BlobApps extends ChangeNotifier {
       }
       all++;
       final HSLColor h = HSLColor.fromColor(Color.fromARGB(255, pr, pg, pb));
-      if (h.saturation < 0.25 || h.lightness < 0.12 || h.lightness > 0.92) {
+      if (h.saturation < 0.16 || h.lightness < 0.1 || h.lightness > 0.94) {
         continue;
       }
       final int k = (h.hue / 360 * bins).floor() % bins;
@@ -306,13 +311,19 @@ class BlobApps extends ChangeNotifier {
       g[k] += pg * w;
       b[k] += pb * w;
     }
+    // A colour spread over two neighbouring hues still counts as one colour.
+    double near(int k) =>
+        weight[k] +
+        0.5 * (weight[(k + 1) % bins] + weight[(k + bins - 1) % bins]);
     int best = 0;
     for (int k = 1; k < bins; k++) {
-      if (weight[k] > weight[best]) {
+      if (near(k) > near(best)) {
         best = k;
       }
     }
-    if (all == 0 || weight[best] < all * 0.03) {
+    // Even a small coloured mark on a white or black icon is the icon's colour:
+    // half a percent of the picture is enough.
+    if (all == 0 || weight[best] <= 0 || near(best) < all * 0.005) {
       return null;
     }
     return Color.fromARGB(
@@ -327,12 +338,28 @@ class BlobApps extends ChangeNotifier {
   /// what makes it recognisable. How vivid it is gets held to the same band as
   /// Prism's own blobs, and how bright it is gets set so that white on top
   /// reads equally well on every blob. Colourless icons become slate.
-  static Color tame(Color c) {
+  /// For an icon with no colour of its own (black, white or grey). Not
+  /// slate for all of them, which made the drawer look unfinished: each gets
+  /// one of Prism's own hues, always the same one for the same app, but held
+  /// quieter than a real brand colour so the difference stays honest.
+  static Color quiet(String name) {
+    const List<double> hues = <double>[262, 14, 176, 224, 36, 330, 140, 198];
+    int h = 7;
+    for (final int u in name.toLowerCase().codeUnits) {
+      h = (h * 31 + u) & 0x7fffffff;
+    }
+    return tame(
+      HSLColor.fromAHSL(1, hues[h % hues.length], 0.5, 0.5).toColor(),
+      vivid: 0.6,
+    );
+  }
+
+  static Color tame(Color c, {double vivid = 1}) {
     final HSLColor h = HSLColor.fromColor(c);
     if (h.saturation < 0.18) {
       return const Color(0xFF5A6373);
     }
-    final double s = h.saturation.clamp(0.42, 0.60);
+    final double s = h.saturation.clamp(0.42, 0.60) * vivid;
     // Yellows and greens look dull if held as dark as blues, so they get a little more light.
     final double warm = math.max(0, 1 - ((h.hue - 80).abs() / 70));
     final double want = 0.20 + 0.10 * warm;
@@ -372,24 +399,23 @@ class IconEngine {
     return (await codec.getNextFrame()).image;
   }
 
-  static Future<AppLook> look(ui.Image icon, ui.Image? outline) async {
+  static Future<AppLook> look(
+    ui.Image icon,
+    ui.Image? outline, {
+    String name = '',
+  }) async {
+    Color soft(Color? c) => c == null || HSLColor.fromColor(c).saturation < 0.16
+        ? BlobApps.quiet(name)
+        : BlobApps.tame(c);
     final Color? main = await BlobApps.mainColour(icon);
     if (outline != null) {
-      return AppLook(
-        'outline',
-        main == null ? const Color(0xFF5A6373) : BlobApps.tame(main),
-        glyph: outline,
-      );
+      return AppLook('outline', soft(main), glyph: outline);
     }
     final (ui.Image, Color?)? cut = await BlobApps.cutOut(icon);
     if (cut != null) {
-      return AppLook(
-        'cut-out',
-        BlobApps.tame(cut.$2 ?? main ?? const Color(0xFF808080)),
-        glyph: cut.$1,
-      );
+      return AppLook('cut-out', soft(cut.$2 ?? main), glyph: cut.$1);
     }
-    final Color color = BlobApps.tame(main ?? const Color(0xFF808080));
+    final Color color = soft(main);
     return AppLook('picture', color, picture: await _calm(icon, color));
   }
 
@@ -466,7 +492,7 @@ class Apps extends ChangeNotifier {
   /// What the last refresh did, for the test report.
   String summary = 'not run';
   Directory get _dir =>
-      Directory('${Directory.systemTemp.path}/prism_looks_v1');
+      Directory('${Directory.systemTemp.path}/prism_looks_v2');
 
   Future<void> launch(AppTile t) async {
     try {
@@ -536,6 +562,7 @@ class Apps extends ChangeNotifier {
           final AppLook look = await IconEngine.look(
             await IconEngine.decode(m['icon']! as Uint8List),
             mono == null ? null : await IconEngine.decode(mono as Uint8List),
+            name: t.label,
           );
           t
             ..made = look.made
