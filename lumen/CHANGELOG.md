@@ -1,5 +1,35 @@
 # Lumen changelog
 
+## Prism, build 1 (13 November 2026)
+
+A new, separate app: **Prism**, a fitness app prototype in the Lumen design. It installs next to Lumen. Lumen itself is unchanged (still build 20). See `PRISM.md`.
+
+**Files:** `releases/prism-build-1.apk`, `releases/prism-source-build-1.zip` (the whole project: Lumen and Prism share their code)
+
+- **A glass bar with a riding lens.** Four tabs (Home, Train, Food, Progress) in one piece of glass. A lens sits on the current tab and slides to the next with a stretch; a tab brightens as the lens reaches it. Slide a finger along the bar and the lens follows; let go and it settles on the nearest tab.
+- **The button in the middle** is one flat colour. A tap splits it into five blobs on springs: Workout (goes to Train), Log food, Scan, Weigh-in, Timer.
+- **Quick actions open as a glass sheet** over whatever page you are on. Log food lists three recent foods, one tap each. Weigh-in is a thumb dial and Save. Both change the numbers on Home.
+- **Home:** today's workout with its first exercises listed, calories left, weight, and today's list with done or skip.
+- **Train:** the workout-in-progress screen with thumb dials. Ticking a set brings up the rest timer as a glass pill floating above the bar.
+- **Food** and **Progress:** the day's food, and a chart you can run a finger along.
+- **Glass is used sparingly:** only on things that float (bar, lens, the round button on Home, rest timer, sheet). Content is solid.
+- The frame-rate readout is off by default; turn it on from the round button at the top of Home.
+
+### What to test on the phone
+
+1. The bar: tap between tabs and watch the lens travel. Then slide a finger along the bar.
+2. Does the glass read as glass over the wallpaper and over the cards as you scroll Home under the bar?
+3. Tap the button, pick Weigh-in, turn the dial, save. Home should show the new weight and tick "Morning weigh-in".
+4. On Train, tick a set. The rest timer should rise above the bar as glass.
+5. Turn on the frame-rate readout (round button on Home) and scroll each page.
+6. Light mode, from the same sheet.
+
+### Not checked
+
+- Only the Linux preview (mouse, software rendering). I saw all four pages, the lens on each tab, the blobs, the food sheet, and the rest timer. Not tried: sliding along the bar, the weigh-in and timer sheets, the settings sheet, light mode, done and skip on the list.
+- How the glass looks on the phone, frame rate, haptics.
+- Not in this build: the lens from R51, and any editing.
+
 ## Build 20 (13 November 2026)
 
 Three new examples (54 in total) and one fix. Nothing was removed.

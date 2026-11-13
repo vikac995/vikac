@@ -16,7 +16,9 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "dev.lumen.lumen"
+        // Two apps are built from this project. `ORG_GRADLE_PROJECT_fit=1` selects Prism, the fitness prototype.
+        applicationId = if (project.hasProperty("fit")) "dev.lumen.prism" else "dev.lumen.lumen"
+        manifestPlaceholders["appLabel"] = if (project.hasProperty("fit")) "Prism" else "Lumen"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
