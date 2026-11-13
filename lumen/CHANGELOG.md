@@ -1,5 +1,52 @@
 # Lumen changelog
 
+## Build 9 (13 November 2026)
+
+Lumen becomes a reference library: every example has an id, and there are six new "Patterns" rooms.
+
+**Files:** `releases/lumen-build-9.apk`, `releases/lumen-source-build-9.zip`
+
+### New: the reference system
+
+- Every room has a stable id (R01 to R24, B01 for the bonus), shown as a small chip next to the room number.
+  Tap the chip: it copies a line with the id, the name, what the example shows and its source files, ready to
+  paste into another chat.
+- `REFERENCE.md` in the source lists every id with its files and a short "how to reuse" note.
+- `lib/reference.dart` is the same index in code.
+
+### New: Patterns
+
+- **R19 Performance lab.** Three cases (shadows, live blur, an idle animation), each built the costly way and the
+  cheap way. A button runs a 3 second test and reports frames drawn, average build and raster time, the slowest
+  frame and missed frames, from the engine's own timings on the device.
+- **R20 Launcher.** A home screen: long-press an icon and drag, the others make room on springs; hold it over
+  another icon to make a folder; tap a folder to open it, long-press an app inside to take it out; a dock; an
+  "All apps" drawer with search.
+- **R21 Blob menu.** One button splits into three, four or five actions on an arc. Tap, or press, slide and
+  release in one movement. Labels are placed so they cannot collide.
+- **R22 Timers.** A rest timer that stores its end time, wakes once a second, and stays reachable as a pill when
+  you scroll away. Pause, resume, add or remove 15 seconds.
+- **R23 Inputs.** A weight ruler (drag or flick, a tick per half kilo, resistance at the ends), steppers that
+  repeat while held and speed up, and workout set rows with a tick.
+- **R24 Do and don't.** Four mistakes next to their fixes: spinner and skeleton, confirm and undo, vanishing and
+  persistent labels, small and proper touch targets.
+
+### What to test
+
+1. Tap an id chip in any room, then paste somewhere: is the line useful as it is?
+2. **Performance lab:** run Shadows and Blur, costly then cheap. Send me a screenshot of the results table; these
+   are the first real numbers for those effects on your phone.
+3. **Launcher:** drag an icon across the grid; make a folder; open it; take an app out; open All apps and search.
+4. **Blob menu:** press the button, slide to an action and release without lifting in between.
+5. **Timers:** start one, scroll down, tap the pill. Lock the phone for 20 seconds and come back: the time should
+   be right.
+6. **Inputs:** flick the ruler; hold a plus button.
+
+### Not checked here
+
+Feel, haptics and frame rate. The Performance lab's numbers on my machine come from a software renderer and are
+meaningless; I only checked that the test runs and reports.
+
 ## Build 8 (12 November 2026)
 
 Fixes from testing, plus a new home section, "Foundations": six rooms on the basics.

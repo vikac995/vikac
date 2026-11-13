@@ -26,6 +26,12 @@ import 'rooms/pill/pill_room.dart';
 import 'rooms/flow/flow_room.dart';
 import 'rooms/flow/stories.dart';
 import 'rooms/glass/glass_room.dart';
+import 'rooms/patterns/blob_room.dart';
+import 'rooms/patterns/dodont_room.dart';
+import 'rooms/patterns/inputs_room.dart';
+import 'rooms/patterns/launcher_room.dart';
+import 'rooms/patterns/perf_room.dart';
+import 'rooms/patterns/timer_room.dart';
 import 'rooms/shaders/shaders_room.dart';
 import 'rooms/shapes/shape_room.dart';
 import 'rooms/springs/springs_room.dart';
@@ -96,6 +102,12 @@ class LumenApp extends StatelessWidget {
             'states' => const StatesRoom(),
             'forms' => const FormsRoom(),
             'sheets' => const SheetsRoom(),
+            'perf' => const PerfRoom(),
+            'launcher' => const LauncherRoom(),
+            'blob' => const BlobRoom(),
+            'timer' => const TimerRoom(),
+            'inputs' => const InputsRoom(),
+            'dodont' => const DoDontRoom(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

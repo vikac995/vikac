@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:material_ui/material_ui.dart';
 
 import '../../core/theme.dart';
+import '../../widgets/room_header.dart';
 
 /// Content for the glass to sit over. Generated, not downloaded: bold
 /// colour, hard edges and big type make refraction easy to see.
@@ -102,7 +103,16 @@ class Feed extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('ROOM 01  ·  GLASS', style: LumenType.label(color: c.accent)),
+            Row(
+              children: <Widget>[
+                Text(
+                  'ROOM 01  ·  GLASS',
+                  style: LumenType.label(color: c.accent),
+                ),
+                const SizedBox(width: 8),
+                const RefChip(number: 1),
+              ],
+            ),
             const SizedBox(height: 10),
             Text(
               f.name,

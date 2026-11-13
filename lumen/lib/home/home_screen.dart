@@ -20,6 +20,12 @@ import '../rooms/disco/disco_room.dart';
 import '../rooms/flow/flow_room.dart';
 import '../rooms/foil/foil_room.dart';
 import '../rooms/glass/glass_room.dart';
+import '../rooms/patterns/blob_room.dart';
+import '../rooms/patterns/dodont_room.dart';
+import '../rooms/patterns/inputs_room.dart';
+import '../rooms/patterns/launcher_room.dart';
+import '../rooms/patterns/perf_room.dart';
+import '../rooms/patterns/timer_room.dart';
 import '../rooms/pill/pill_room.dart';
 import '../rooms/shaders/shaders_room.dart';
 import '../rooms/shapes/shape_room.dart';
@@ -151,6 +157,42 @@ final List<_Room> _rooms = <_Room>[
     'Swipe, undo, drag.',
     const Color(0xFF4FB8FF),
     (_) => const SheetsRoom(),
+  ),
+  _Room(
+    'Perf lab',
+    'Costly against cheap, measured.',
+    const Color(0xFF4ADE80),
+    (_) => const PerfRoom(),
+  ),
+  _Room(
+    'Launcher',
+    'Drag, folders, dock, drawer.',
+    const Color(0xFF6C63FF),
+    (_) => const LauncherRoom(),
+  ),
+  _Room(
+    'Blob menu',
+    'One button, five actions.',
+    const Color(0xFFFF6B4A),
+    (_) => const BlobRoom(),
+  ),
+  _Room(
+    'Timers',
+    'An end time and a pill.',
+    const Color(0xFFFF9F0A),
+    (_) => const TimerRoom(),
+  ),
+  _Room(
+    'Inputs',
+    'Numbers without a keyboard.',
+    const Color(0xFF2ED3B7),
+    (_) => const InputsRoom(),
+  ),
+  _Room(
+    "Do and don't",
+    'The mistake and the fix.',
+    const Color(0xFFE5484D),
+    (_) => const DoDontRoom(),
   ),
 ];
 
@@ -301,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A showcase of interface craft.\nEighteen rooms, one idea each.',
+                    'A showcase of interface craft.\nTwenty-four examples, each with an id\nyou can point another chat to.',
                     style: LumenType.text(
                       15.5,
                       color: c.inkMuted,
@@ -389,12 +431,24 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ],
             const SizedBox(height: 34),
+            _section(c, 'Patterns', 'Building blocks for real apps.'),
+            for (int r = 0; r < 3; r++) ...<Widget>[
+              if (r > 0) const SizedBox(height: gap),
+              Row(
+                children: <Widget>[
+                  Expanded(child: _card(19 + r * 2, height: 156)),
+                  const SizedBox(width: gap),
+                  Expanded(child: _card(20 + r * 2, height: 156)),
+                ],
+              ),
+            ],
+            const SizedBox(height: 34),
             _section(c, 'Bonus', 'Please do not ship this.'),
             _card(12, height: 150),
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 8  ·  Flutter 3.50  ·  Impeller',
+                'Build 9  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),

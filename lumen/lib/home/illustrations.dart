@@ -43,7 +43,22 @@ class RoomArt extends CustomPainter {
       case 12:
         _disco(canvas, size);
       default:
-        _basic(canvas, size, kind - 13);
+        if (kind >= 19) {
+          _glyph(
+            canvas,
+            size,
+            const <IconData>[
+              Icons.speed_rounded,
+              Icons.apps_rounded,
+              Icons.bubble_chart_rounded,
+              Icons.timer_outlined,
+              Icons.straighten_rounded,
+              Icons.rule_rounded,
+            ][(kind - 19) % 6],
+          );
+        } else {
+          _basic(canvas, size, kind - 13);
+        }
     }
   }
 
@@ -423,6 +438,23 @@ class RoomArt extends CustomPainter {
       x -= 4;
       tp.dispose();
     }
+  }
+
+  void _glyph(Canvas canvas, Size s, IconData icon) {
+    final TextPainter tp = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+          fontSize: 58,
+          color: hue,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(canvas, Offset(s.width - tp.width - 14, 14));
+    tp.dispose();
   }
 
   void _basic(Canvas canvas, Size s, int k) {
