@@ -52,8 +52,32 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
             0,
             86400,
           );
+    _sync();
+  }
+
+  /// A workout is on from the first set you touch until the last one is ticked.
+  bool _started = false;
+  DateTime _lastSet = DateTime.now();
+
+  /// Tells the floating workout what it should show.
+  void _sync() {
+    final int i = _current;
+    if (!_started || i < 0) {
+      RestBubble.instance.tell(null);
+      return;
+    }
     final LumenColors c = LumenColors.of(context);
-    RestBubble.instance.tell(ends, _restOf, c.accent, c.onAccent);
+    RestBubble.instance.tell(<String, Object>{
+      'title': 'Bench press',
+      'set': i == 0 ? 'Warm-up set' : 'Set $i of ${_done.length - 1}',
+      'kg': _kg[i],
+      'reps': _reps[i].round(),
+      'endsAt': _restEnds?.millisecondsSinceEpoch ?? 0,
+      'total': _restOf,
+      'sinceAt': _lastSet.millisecondsSinceEpoch,
+      'accent': c.accent.toARGB32(),
+      'onAccent': c.onAccent.toARGB32(),
+    });
   }
 
   late final Timer _clock;
@@ -61,6 +85,18 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+    // A set logged from the floating panel: take its numbers and tick it, exactly as a tap here would.
+    RestBubble.instance.onLog = (double kg, int reps) {
+      final int i = _current;
+      if (i < 0 || !mounted) {
+        return;
+      }
+      setState(() {
+        _kg[i] = kg;
+        _reps[i] = reps.toDouble();
+      });
+      _toggle(i);
+    };
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       // Keep time always, but only redraw while this page is the one on screen:
       // a clock nobody can see should not wake the screen once a second.
@@ -87,6 +123,7 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    RestBubble.instance.onLog = null;
     _clock.cancel();
     for (final SpringValue s in <SpringValue>[..._pop, _rest, _next]) {
       s.dispose();
@@ -98,6 +135,10 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
   int get _current => _done.indexOf(false);
 
   void _toggle(int i) {
+    _started = true;
+    if (!_done[i]) {
+      _lastSet = DateTime.now();
+    }
     setState(() => _done[i] = !_done[i]);
     Diag.instance.event('set tick');
     _pop[i].jumpTo(0.7);
@@ -319,8 +360,10 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                                             4,
                                             10,
                                           ),
-                                          onChanged: (double v) =>
-                                              setState(() => _kg[i] = v),
+                                          onChanged: (double v) => setState(() {
+                                            _kg[i] = v;
+                                            _sync();
+                                          }),
                                         ),
                                       ),
                                       Expanded(
@@ -337,8 +380,10 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                                             0,
                                             10,
                                           ),
-                                          onChanged: (double v) =>
-                                              setState(() => _reps[i] = v),
+                                          onChanged: (double v) => setState(() {
+                                            _reps[i] = v;
+                                            _sync();
+                                          }),
                                         ),
                                       ),
                                     ],

@@ -1,9 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-/// The rest timer as a small round countdown that floats over other apps.
-/// It appears when Prism leaves the screen while a rest is running, and a tap
-/// on it brings Prism back on the workout page. It is drawn by Android itself,
+/// The workout, floating over other apps: a small glass lens with the timer, which opens
+/// into a panel for logging the set. It appears when Prism leaves the screen during a workout. It is drawn by Android itself,
 /// not by Flutter, so it costs nothing in Prism and works over any app.
 class RestBubble with WidgetsBindingObserver {
   RestBubble._();
@@ -43,20 +42,11 @@ class RestBubble with WidgetsBindingObserver {
     }
   }
 
-  /// Tells Android when the running rest ends, or that there is none.
-  void tell(DateTime? ends, int totalSeconds, Color accent, Color onAccent) {
-    _device
-        .invokeMethod<void>(
-          'rest',
-          ends == null
-              ? null
-              : <String, Object>{
-                  'endsAt': ends.millisecondsSinceEpoch,
-                  'total': totalSeconds,
-                  'accent': accent.toARGB32(),
-                  'onAccent': onAccent.toARGB32(),
-                },
-        )
-        .catchError((Object _) {});
+  /// Called when a set is logged from the floating panel, with the weight and reps chosen there.
+  void Function(double kg, int reps)? onLog;
+
+  /// Tells Android everything the floating workout shows, or null when no workout is on.
+  void tell(Map<String, Object>? state) {
+    _device.invokeMethod<void>('rest', state).catchError((Object _) {});
   }
 }

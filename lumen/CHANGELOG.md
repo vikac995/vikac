@@ -1,5 +1,43 @@
 # Lumen changelog
 
+## Prism, build 54 (13 November 2026)
+
+**File:** `releases/prism-build-54.apk`
+
+**The workout floats over other apps.** The lens from build 53 is no longer only a rest timer: it is the workout itself, usable without leaving the app you are in.
+
+**When it shows.** From the first set you touch until the last one is ticked, whenever Prism is not on screen. When the workout is done it is gone, and nothing is left running.
+
+**The lens**
+- **Counts down during a rest:** the ring runs down, the last ten seconds take your colour, then GO with a swell and a buzz.
+- **Counts up otherwise:** the time since your last set, with a small bead going round once a minute like a second hand.
+- **Clearer glass:** more of the app underneath shows through, and light gathers at the bottom edge in your colour, as in a thick lens.
+- **Real throw physics:** it follows your finger, and when you let go it carries on with the speed you gave it and springs to the nearer side, overshooting slightly and settling. A flick sends it across the screen. Throw it off the bottom to put it away until you next open Prism.
+
+**Tap the lens: the set opens right there**, as a glass panel over the app underneath.
+- The timer, large, with what it is counting ("rest left" or "since your last set").
+- The exercise and which set.
+- **Weight** and **reps**, each with a minus and a plus (2.5 kg and 1 rep per tap), sized for one thumb.
+- **Set done:** logs the set with those numbers, starts the rest, and the panel folds back into the lens, now counting down.
+- **Open Prism** takes you to the workout page.
+- A touch anywhere outside folds the panel away.
+
+What you log from the panel is the same as logging in Prism: open Prism afterwards and the set is ticked with the numbers you chose.
+
+**Battery.** Nothing exists outside a workout. During one, the lens redraws about fifteen times a second while a rest runs down and once a second while counting up; the panel refreshes four times a second while open. With the screen off, nothing is drawn at all. There is no background service.
+
+**To switch it on (once):** round button on Home, **Workout floats over other apps**, allow "Appear on top".
+
+**What to look for**
+- The basics first: does the lens appear when you leave Prism mid-workout? Does it count?
+- Tap it: does the panel open, do the steppers work, does "Set done" start the rest and tick the set in Prism?
+- Throw it around: does the physics feel right, or too loose or too stiff?
+- Over TikTok or a chat: can you still use the app underneath everywhere except under the lens?
+
+**Checked:** it compiles, including the Android code; in my preview the workout page still ticks sets, starts the rest and changes weights as before.
+**Not checked:** anything that floats. None of the Android code has ever run: the lens, the physics, the panel, logging from it. I have not had confirmation that builds 52 or 53 worked on your phone either, so if nothing appears at all, tell me that first; it changes where I look.
+**Limits:** it cannot blur or bend the app underneath (Android offers blur only for a whole rectangular window, which would show as a blurred square around the round lens). It is tinted clear glass. The workout itself is still the made-up bench press with four sets.
+
 ## Prism, build 53 (13 November 2026)
 
 **File:** `releases/prism-build-53.apk`
