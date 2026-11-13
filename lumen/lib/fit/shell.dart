@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 
 import 'package:material_ui/material_ui.dart';
 
@@ -175,11 +176,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       body: Stack(
         children: <Widget>[
           // The wallpaper: quiet, with a few soft lights for the glass to catch.
-          Positioned.fill(
-            child: RepaintBoundary(
-              child: CustomPaint(painter: _Wallpaper(c.dark)),
-            ),
-          ),
+          Positioned.fill(child: _WallpaperImage(dark: c.dark)),
           // The page.
           Positioned.fill(
             child: ListenableBuilder(
@@ -203,6 +200,27 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   const FoodPage(),
                   const ProgressPage(),
                 ],
+              ),
+            ),
+          ),
+          // Content scrolls away under the status bar instead of colliding with the clock.
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            height: safe.top + 18,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: <Color>[
+                      c.bg.withValues(alpha: 0.92),
+                      c.bg.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -886,7 +904,7 @@ class _Wallpaper extends CustomPainter {
       }
     }
 
-    final double k = dark ? 1 : 0.7;
+    final double k = dark ? 0.6 : 0.45;
     light(
       Offset(size.width * 0.12, size.height * 0.10),
       size.width * 0.85,
@@ -915,4 +933,76 @@ class _Wallpaper extends CustomPainter {
 
   @override
   bool shouldRepaint(_Wallpaper old) => old.dark != dark;
+}
+
+/// The wallpaper, drawn once into a small picture and then shown stretched.
+/// Drawing the soft lights live cost the phone about half its frames; a
+/// picture costs almost nothing, and the stretching smooths the lights.
+class _WallpaperImage extends StatefulWidget {
+  const _WallpaperImage({required this.dark});
+  final bool dark;
+
+  @override
+  State<_WallpaperImage> createState() => _WallpaperImageState();
+}
+
+class _WallpaperImageState extends State<_WallpaperImage> {
+  ui.Image? _image;
+  Size _size = Size.zero;
+  bool? _dark;
+
+  Future<void> _render(Size size, bool dark) async {
+    _size = size;
+    _dark = dark;
+    final Size small = Size(
+      (size.width / 4).ceilToDouble(),
+      (size.height / 4).ceilToDouble(),
+    );
+    final ui.PictureRecorder rec = ui.PictureRecorder();
+    _Wallpaper(dark).paint(Canvas(rec), small);
+    final ui.Picture pic = rec.endRecording();
+    final ui.Image img = await pic.toImage(
+      small.width.toInt(),
+      small.height.toInt(),
+    );
+    pic.dispose();
+    if (!mounted) {
+      img.dispose();
+      return;
+    }
+    setState(() {
+      _image?.dispose();
+      _image = img;
+    });
+  }
+
+  @override
+  void dispose() {
+    _image?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints box) {
+        final Size size = box.biggest;
+        if (size != _size || widget.dark != _dark) {
+          _render(size, widget.dark);
+        }
+        return ColoredBox(
+          color: widget.dark
+              ? const Color(0xFF0B0D13)
+              : const Color(0xFFF2EEE7),
+          child: _image == null
+              ? const SizedBox.expand()
+              : RawImage(
+                  image: _image,
+                  fit: BoxFit.fill,
+                  filterQuality: FilterQuality.medium,
+                ),
+        );
+      },
+    );
+  }
 }

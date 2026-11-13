@@ -173,8 +173,10 @@ class HomePage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            'KCAL LEFT',
-                            style: LumenType.label(color: c.inkMuted),
+                            fit.left < 0 ? 'KCAL OVER' : 'KCAL LEFT',
+                            style: LumenType.label(
+                              color: fit.left < 0 ? red : c.inkMuted,
+                            ),
                           ),
                           const Spacer(),
                           Row(

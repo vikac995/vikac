@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 2 (13 November 2026)
+
+**File:** `releases/prism-build-2.apk`
+
+From the owner's screen recordings of build 1:
+
+- **Frame rate.** Build 1 ran at about 65 frames a second on a 120 Hz screen whenever anything moved (and about 80 with glass off), so the glass was not the main cost. The likely cause was the wallpaper: each soft light was about a hundred see-through circles, repainted every frame. It is now drawn once, at a quarter of the screen size, and shown stretched. Not measured on the phone yet.
+- **Stripes in the wallpaper** are gone (same change), and it is a little darker.
+- **The clock and the page title collided** when scrolling. A soft fade now sits under the status bar.
+- **"KCAL LEFT" read wrong past the goal.** It now says "KCAL OVER" in red.
+
 ## Prism, build 1 (13 November 2026)
 
 A new, separate app: **Prism**, a fitness app prototype in the Lumen design. It installs next to Lumen. Lumen itself is unchanged (still build 20). See `PRISM.md`.
