@@ -709,7 +709,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Haptics.tick();
   }
 
-  void _run(int i) {
+  /// A blob was tapped. What that means depends on what the blobs are showing.
+  void _blobTap(int i) {
     if (_appBlobs) {
       final BlobApp a = BlobApps.instance.apps[i];
       _setOpen(false);
@@ -721,6 +722,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       });
       return;
     }
+    _run(i);
+  }
+
+  /// One of Prism's own actions, by its place in the list. Cards on the pages call this too,
+  /// so it must never depend on what the blobs currently show.
+  void _run(int i) {
     _setOpen(false);
     Haptics.settle();
     if (i == 0) {
@@ -1128,7 +1135,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         opacity: (p * 12).clamp(0.0, 1.0),
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap: () => _run(i),
+                          onTap: () => _blobTap(i),
                           child: Column(
                             children: <Widget>[
                               Transform(

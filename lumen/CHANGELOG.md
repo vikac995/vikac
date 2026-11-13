@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 25 (13 November 2026)
+
+**File:** `releases/prism-build-25.apk`
+
+- **Fixed: the Weight card on Home opened Facebook, and the Calories card opened WhatsApp.** Those cards (and the lens buttons "Log weight" and "Log food") were wired to "the fourth blob" and "the second blob". Since build 18 the blobs hold apps, so the cards launched whatever app sat in that slot. They are now wired to Prism's own actions directly and open the Weigh-in and Log food sheets whatever the blobs show.
+- Includes build 24: bigger, bolder, two-line app names in the drawer.
+
+**What to look for:** tap the Weight card and the Calories card on Home, and use the lens on both. Each should open its sheet.
+
+**Checked:** in my preview, tapping the Weight card with app blobs switched on opens the Weigh-in sheet.
+**Not checked:** on a phone.
+
 ## Prism, build 24 (13 November 2026)
 
 **File:** `releases/prism-build-24.apk`
