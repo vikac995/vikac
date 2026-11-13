@@ -1,5 +1,35 @@
 # Lumen changelog
 
+## Prism, build 34 (13 November 2026)
+
+**File:** `releases/prism-build-34.apk`
+
+Performance work on the drawer, from your build 32 report (the first report with the drawer in it).
+
+**What the report showed**
+- Opening the drawer was the worst thing in the app: 20 % of frames slow, 26 late over seven opens, single frames of 14 to 28 ms against a budget of 8.3.
+- Closing was second: 5.4 % slow, 9 late.
+- Turning pages was acceptable: 6.1 % slow, 4 late over 49 turns.
+- All of it was drawing, not my code deciding what to show.
+
+**What I changed**
+- **Opening and closing.** The grid used to fade in and out. A fade means the whole grid is drawn to a separate surface and blended, on every frame of the animation. Now the grid is simply uncovered by the growing panel's own edge. It looks nearly the same and removes that surface entirely.
+- **The grid keeps its own finished picture.** Opening, closing and the ring no longer make it redraw.
+- **Page turns.** Because every tile changes together, one outline is now worked out per frame and reused for all twenty, where it used to be worked out twenty times. Names dim per row (five small surfaces) where they used to dim one by one (twenty).
+- **Only picture tiles are trimmed to their outline.** A white mark never reaches the edge, so it does not need it.
+
+**Two things the report exposed that were wrong**
+- **The automatic glass style stepped down to Event because of the drawer.** The drawer's slow frames were counted as evidence that the phone cannot afford the glass bar, which they are not. Frames with the drawer up are no longer counted, and the automatic style starts again from Original after this update.
+- **The battery section printed a conclusion from ten readings** ("drawing costs about -743 mA"), which is noise, not a result. It now needs twenty readings of each kind before it says anything.
+
+**What to look for**
+- Does the drawer open and close the same as before to your eye? The contents now rise with the panel and are not faded in.
+- After a few opens and page turns, copy the report. The lines to compare are "drawer open", "drawer close" and "drawer page".
+- The glass bar should be back (Auto on Original).
+
+**Checked:** in my preview the drawer looks the same at rest, mid-drag and after a page turn.
+**Not checked:** whether it is actually faster. That is exactly what your next report will say; I expect opening and closing to improve most.
+
 ## Prism, build 33 (13 November 2026)
 
 **File:** `releases/prism-build-33.apk`

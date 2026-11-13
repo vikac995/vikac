@@ -331,9 +331,9 @@ class Journal with WidgetsBindingObserver {
               'screen moving:  ${moveN == 0 ? 'no readings' : '${move.round()} mA average over $moveN readings${perHour(move)}'}',
             )
             ..writeln(
-              stillN > 3 && moveN > 3
+              stillN >= 20 && moveN >= 20
                   ? 'so drawing costs about ${(move - still).round()} mA on top of a still screen. That difference is the part Prism can change.'
-                  : 'not enough readings of both kinds yet to say what drawing costs.',
+                  : 'not enough readings yet to say what drawing costs (20 of each kind are needed; a single minute is mostly noise).',
             )
             ..writeln(
               'on screen ${secs ~/ 60} min in total; average screen brightness ${brightRows == 0 ? '?' : '${(100 * bright / brightRows / 255).round()}%'}; '

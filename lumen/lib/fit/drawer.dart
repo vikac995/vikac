@@ -252,7 +252,21 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-                child: show <= 0 ? null : Opacity(opacity: show, child: child),
+                // The contents are uncovered by the growing panel's own edge. Fading them in meant
+                // drawing the whole grid to a separate surface on every frame of opening and closing,
+                // which was the slowest thing in the drawer.
+                child: g < 0.3
+                    ? null
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          ui.lerpDouble(
+                            widget.button / 2,
+                            38,
+                            g.clamp(0.0, 1.0),
+                          )!,
+                        ),
+                        child: child,
+                      ),
               ),
             ),
           ],
@@ -347,17 +361,20 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                             Apps.instance.launch(Apps.instance.all[i]);
                           }
                         },
-                        child: CustomPaint(
-                          size: Size(box.maxWidth, box.maxHeight),
-                          painter: _GridPainter(
-                            apps: Apps.instance.all,
-                            from: _page,
-                            to: _toward,
-                            dir: _dir,
-                            rows: _rows,
-                            cols: _cols,
-                            turn: _turn,
-                            ink: c.ink.withValues(alpha: 0.84),
+                        // Its own layer: opening, closing and the ring never make the grid redraw.
+                        child: RepaintBoundary(
+                          child: CustomPaint(
+                            size: Size(box.maxWidth, box.maxHeight),
+                            painter: _GridPainter(
+                              apps: Apps.instance.all,
+                              from: _page,
+                              to: _toward,
+                              dir: _dir,
+                              rows: _rows,
+                              cols: _cols,
+                              turn: _turn,
+                              ink: c.ink.withValues(alpha: 0.84),
+                            ),
                           ),
                         ),
                       ),
@@ -392,6 +409,14 @@ class _GridPainter extends CustomPainter {
   final Animation<double> turn;
   final Color ink;
   static const double _tile = 61;
+  static final Path _rest = ShapeLib.lerpPath(
+    _squircle,
+    _squircle,
+    0,
+    Offset.zero,
+    _tile / 2 / _squircle[0],
+    0,
+  );
   // The squircle from Prism's shape set, and the gently lobed outline it leans toward mid-change.
   // Softer than a standard squircle: fuller corners and less flat side, so a tile sits between
   // the round blobs and the rectangular cards and belongs to both.
@@ -484,7 +509,30 @@ class _GridPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final double cw = size.width / cols, ch = size.height / rows;
     final int per = rows * cols;
-    final double v = turn.value;
+    // Every tile changes together, exactly as far as the finger has gone.
+    final double e = turn.value;
+    // So one outline serves all of them: worked out once per frame, then moved into place.
+    final Path outline = e <= 0
+        ? _rest
+        : ShapeLib.lerpPath(
+            _squircle,
+            _ripple,
+            math.sin(math.pi * e),
+            Offset.zero,
+            _tile / 2 / _squircle[0],
+            0,
+          );
+    double ease(double x) => Curves.easeInOut.transform(x.clamp(0.0, 1.0));
+    // The centre never holds two things. The old mark draws in and is gone, the tile is plain
+    // colour while its shape changes, and the new mark grows in at the end.
+    final double leave = ease(e / 0.4), arrive = ease((e - 0.6) / 0.4);
+    const Rect box = Rect.fromLTRB(
+      -_tile / 2,
+      -_tile / 2,
+      _tile / 2,
+      _tile / 2,
+    );
+    final Paint fill = Paint();
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
         final int i = row * cols + col;
@@ -494,82 +542,52 @@ class _GridPainter extends CustomPainter {
         if (a == null && b == null) {
           continue;
         }
-        // Every tile changes together, exactly as far as the finger has gone.
-        final double e = v;
-        final Offset centre = Offset(
-          cw * (col + 0.5),
-          ch * row + 8 + _tile / 2,
-        );
         // The colour goes straight from one to the other. No change in brightness, nothing else.
-        final Color colour = Color.lerp(
-          a?.color ?? b!.color.withValues(alpha: 0),
-          b?.color ?? a!.color.withValues(alpha: 0),
-          e,
-        )!;
-        // Nothing disappears. The squircle's outline ripples a little while its colour slides
-        // across (the same shape morph as elsewhere in Prism), and settles back to a squircle.
-        final Rect box = Rect.fromCenter(
-          center: centre,
-          width: _tile,
-          height: _tile,
-        );
-        final Path shape = ShapeLib.lerpPath(
-          _squircle,
-          _ripple,
-          math.sin(math.pi * e),
-          centre,
-          _tile / 2 / _squircle[0],
-          0,
-        );
+        fill.color = e <= 0
+            ? (a?.color ?? const Color(0x00000000))
+            : Color.lerp(
+                a?.color ?? b!.color.withValues(alpha: 0),
+                b?.color ?? a!.color.withValues(alpha: 0),
+                e,
+              )!;
         canvas
-          ..drawPath(shape, Paint()..color = colour)
           ..save()
-          ..clipPath(shape);
-        // The centre never holds two things. The old mark draws in and is gone, the tile is plain
-        // colour while its shape changes, and the new mark grows in at the end.
-        double ease(double x) => Curves.easeInOut.transform(x.clamp(0.0, 1.0));
-        final double leave = ease(e / 0.4), arrive = ease((e - 0.6) / 0.4);
+          ..translate(cw * (col + 0.5), ch * row + 8 + _tile / 2)
+          ..drawPath(outline, fill);
+        // Only a picture can reach the edge of its tile, so only a picture needs trimming to it.
+        if (a?.picture != null || b?.picture != null) {
+          canvas.clipPath(outline);
+        }
         if (a != null) {
           _mark(canvas, a, box, 1 - leave, 1 - 0.6 * leave);
         }
-        if (b != null) {
+        if (b != null && e > 0) {
           _mark(canvas, b, box, arrive, 0.4 + 0.6 * arrive);
         }
         canvas.restore();
-        // So do the names.
-        void name(AppTile? t, double alpha) {
-          if (t == null || alpha <= 0.02) {
-            return;
-          }
-          final TextPainter tp = _label(t, cw);
-          final Offset at = Offset(
-            centre.dx - tp.width / 2,
-            centre.dy + _tile / 2 + 8,
-          );
-          if (alpha >= 0.999) {
-            tp.paint(canvas, at);
-          } else {
-            canvas.saveLayer(
-              Rect.fromLTWH(
-                centre.dx - cw / 2,
-                centre.dy + _tile / 2 + 5,
-                cw,
-                38,
-              ),
-              Paint()..color = Colors.white.withValues(alpha: alpha),
-            );
-            tp.paint(canvas, at);
-            canvas.restore();
-          }
+      }
+    }
+    // The names. As mild as it can be: a name never vanishes. It dims, changes to the new
+    // name at its dimmest, and comes back up. A row of names dims as one, not name by name.
+    final double strength = 1 - 0.8 * math.sin(math.pi * e);
+    for (int row = 0; row < rows; row++) {
+      final double top = ch * row + 8 + _tile + 5;
+      final bool dim = strength < 0.999;
+      if (dim) {
+        canvas.saveLayer(
+          Rect.fromLTWH(0, top, size.width, 38),
+          Paint()..color = Colors.white.withValues(alpha: strength),
+        );
+      }
+      for (int col = 0; col < cols; col++) {
+        final int i = (e < 0.5 ? from : to) * per + row * cols + col;
+        if (i < apps.length) {
+          final TextPainter tp = _label(apps[i], cw);
+          tp.paint(canvas, Offset(cw * (col + 0.5) - tp.width / 2, top + 3));
         }
-
-        if (a?.label == b?.label) {
-          name(b, 1);
-        } else {
-          // As mild as it can be: the name never vanishes. It dims, changes to the new name at
-          // its dimmest, and comes back up.
-          name(e < 0.5 ? a : b, 1 - 0.8 * math.sin(math.pi * e));
-        }
+      }
+      if (dim) {
+        canvas.restore();
       }
     }
   }

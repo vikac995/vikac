@@ -69,7 +69,10 @@ class _Bucket {
 /// Frames are matched to marks by their own timestamps, because the engine
 /// hands frame times over in batches up to a second late.
 class _Mark {
-  _Mark(this.at, this.scene, this.label);
+  _Mark(this.at, this.scene, this.label) : drawer = label.contains('+drawer');
+
+  /// Frames with the app drawer up say nothing about whether the phone can afford the glass bar.
+  final bool drawer;
   final int at; // microseconds, on the frame clock
   final _Bucket scene;
   final String label;
@@ -101,7 +104,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 33';
+  static const String build = 'Prism build 34';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -127,7 +130,8 @@ class Diag {
   int get barMode => glassMode.value == 4 ? autoLevel.value : glassMode.value;
   int _autoDowns = 0, _winFrames = 0, _winOver = 0;
   double _winMs = 0;
-  File get _autoFile => File('${Directory.systemTemp.path}/prism_auto_level');
+  File get _autoFile =>
+      File('${Directory.systemTemp.path}/prism_auto_level_v2');
 
   /// Judged every 480 frames (four seconds of movement at 120 Hz). More than
   /// 15 % of frames over budget on Original means this phone cannot afford the
@@ -342,13 +346,15 @@ class Diag {
       if (over) {
         totalOver++;
       }
-      _winFrames++;
-      _winMs += build + draw;
-      if (over) {
-        _winOver++;
-      }
-      if (_winFrames >= 480) {
-        _autoJudge(budget);
+      if (!m.drawer) {
+        _winFrames++;
+        _winMs += build + draw;
+        if (over) {
+          _winOver++;
+        }
+        if (_winFrames >= 480) {
+          _autoJudge(budget);
+        }
       }
       ab?.add(build, draw, over, late, gap);
       // How long the screen keeps drawing after an action.
