@@ -18,6 +18,7 @@ import 'food_page.dart';
 import 'home_page.dart';
 import 'lens.dart';
 import 'progress_page.dart';
+import 'robot.dart';
 import 'state.dart';
 import 'train_page.dart';
 
@@ -105,9 +106,74 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     Diag.instance.finished.addListener(_showReport);
+    Diag.instance.autoScript = _robot;
     _lx.addListener(_lensMoved);
     _ly.addListener(_lensMoved);
     _glass.addListener(_lensMoved);
+  }
+
+  /// The automatic half of the test: one pass over everything, with real touch events.
+  Future<void> _robot() async {
+    if (!mounted) {
+      return;
+    }
+    final Size sc = MediaQuery.sizeOf(context);
+    final Offset b = _home;
+    Offset tab(int i) => Offset(14 + _centre(i), b.dy);
+    Offset blob(int i) {
+      final double a = math.pi * (0.19 + 0.62 * i / 4);
+      return b + Offset(-math.cos(a), -math.sin(a)) * _reach;
+    }
+
+    // Start from a known place.
+    await Robot.tap(tab(0));
+    // 1. Every tab, and back.
+    for (final int i in <int>[1, 2, 3, 0]) {
+      await Robot.tap(tab(i), after: 650);
+    }
+    // 2. The blobs, open and closed.
+    await Robot.tap(b, after: 600);
+    await Robot.tap(b, after: 500);
+    // 3. A sheet: blobs, Weigh-in, then dismiss by tapping above it.
+    await Robot.tap(b, after: 500);
+    await Robot.tap(blob(3), after: 900);
+    await Robot.tap(Offset(sc.width / 2, sc.height * 0.12), after: 600);
+    // 4. Scroll Home down and back.
+    await Robot.drag(<Offset>[
+      Offset(sc.width / 2, sc.height * 0.62),
+      Offset(sc.width / 2, sc.height * 0.30),
+    ], after: 500);
+    await Robot.drag(<Offset>[
+      Offset(sc.width / 2, sc.height * 0.30),
+      Offset(sc.width / 2, sc.height * 0.62),
+    ], after: 700);
+    // 5. Carry the lens over every card on Home, top to bottom, and let go on the last (which only explains).
+    final List<Rect> cards =
+        <Rect>[
+          for (final LensTargetState t in LensBus.instance.targets)
+            if (t.widget.page == 'home' && t.rect != null) t.rect!,
+        ]..sort(
+          (Rect x, Rect y) => x.top != y.top
+              ? x.top.compareTo(y.top)
+              : x.left.compareTo(y.left),
+        );
+    if (cards.isNotEmpty) {
+      // The glass rides 62 above the finger, so the finger aims that much lower.
+      await Robot.drag(
+        <Offset>[b, for (final Rect r in cards) r.center + const Offset(0, 62)],
+        legMs: 380,
+        dwell: 350,
+        after: 900,
+      );
+    }
+    // Make sure nothing is left open for the next setting.
+    if (_parked || _carrying) {
+      _lensHome();
+    }
+    if (_open) {
+      _setOpen(false);
+    }
+    await Robot.wait(400);
   }
 
   void _showReport() {
@@ -1506,7 +1572,7 @@ void showPrismSettings(BuildContext context) {
                           shape: const StadiumBorder(),
                         ),
                         child: Text(
-                          'Run the guided test (about ${Diag.testSeconds + 11} s)',
+                          'Run the test (about ${(Diag.testSeconds / 60).toStringAsFixed(1)} min)',
                           style: LumenType.text(
                             15,
                             weight: 700,
@@ -1518,7 +1584,7 @@ void showPrismSettings(BuildContext context) {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Guided test: keep using the app while it tries each glass setting by itself, then shows the report. Or use the app freely and copy the report yourself.',
+                      'The test runs in two parts under each glass setting: first the app drives itself (hands off), then you use it. One report at the end covers both.',
                       style: LumenType.text(
                         12.5,
                         color: c.inkMuted,

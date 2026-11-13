@@ -1,5 +1,24 @@
 # Lumen changelog
 
+## Prism, build 11 (13 November 2026)
+
+**File:** `releases/prism-build-11.apk`
+
+The test now runs itself first, then hands over to you. One tap, one report.
+
+- **Part 1, automatic (about a minute).** The app drives itself with the same touch events a finger sends: every tab, the blobs open and closed, the Weigh-in sheet opened and dismissed, Home scrolled down and back, and the lens carried over every card on Home. It repeats that exact script under each of the five glass settings, so every build is measured on identical actions.
+- **Eight seconds hands off**, to check nothing draws while idle.
+- **Part 2, you (14 seconds per setting).** As before, with the checklist in the banner. This is the real-finger data.
+- **One report.** Rows starting `auto` are the robot, rows starting `you` are yours. The report appears by itself at the end.
+- **Fixed: the dot left on the calorie ring** in Food when the value drops to zero (from your recording). The ring now fades out as it empties instead of leaving its rounded end behind.
+
+**How to run it:** round button on Home, **Run the test**. Put the phone down while the banner says "Hands off". When it says "your turn", use the app until the report appears, tap **Copy report**, paste it to me.
+
+**What to look for:** during part 1, the app should visibly move by itself. If it sits still or gets stuck with something open, tell me at which setting.
+
+**Checked:** in my preview the robot switched tabs, opened the blobs and the sheet, scrolled and carried the lens under all five settings, and the report had both `auto` and `you` rows.
+**Not checked:** on a real phone. Tap positions are computed from the layout, not hard-coded, but your screen is the first real one to run it. I also could not reproduce your zero-ring recording frame by frame; the fix is from reading the drawing code.
+
 ## Prism, build 10 (13 November 2026)
 
 **File:** `releases/prism-build-10.apk`

@@ -75,7 +75,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 10';
+  static const String build = 'Prism build 11';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -216,14 +216,14 @@ class Diag {
     'DIAG_STEP',
     defaultValue: 14,
   );
-  static int get testSeconds => _steps.length * secondsPerStep;
+  static int get testSeconds =>
+      _steps.length * secondsPerStep + _steps.length * 12 + _idleSeconds + 3;
 
   /// What the banner says while a test runs; null when none is running.
   final ValueNotifier<String?> banner = ValueNotifier<String?>(null);
 
   /// Becomes the finished report when a guided test ends.
   final ValueNotifier<String?> finished = ValueNotifier<String?>(null);
-  Timer? _timer;
   (GlassQuality, bool, bool)? _saved;
 
   // What each step should include, so every setting is tested on the same things.
@@ -251,64 +251,83 @@ class Diag {
     }
   }
 
-  void startGuided() {
-    _timer?.cancel();
+  /// The app driving itself: set by the shell, which knows where things are on screen.
+  Future<void> Function()? autoScript;
+  int _run = 0;
+
+  void _apply(_Step s) {
+    settings
+      ..quality = s.quality
+      ..reduceTransparency = s.solid;
+    wallpaperOn.value = s.lights;
+  }
+
+  /// One test, two halves. First the app drives itself through the same
+  /// script under every setting, so builds can be compared exactly. Then a
+  /// person uses it under every setting, which is the data that matters.
+  Future<void> startGuided() async {
+    final int run = ++_run;
+    bool live() => run == _run;
+    Future<void> second() => Future<void>.delayed(const Duration(seconds: 1));
     _saved = (settings.quality, settings.reduceTransparency, wallpaperOn.value);
     _coverage.clear();
     _idleFrames = -1;
     _powerEnd = '';
     _power().then((String p) => _powerStart = p);
-    // Three seconds to put the settings sheet away and get a thumb ready.
-    int tick = -3;
-    final int active = _steps.length * secondsPerStep;
-    void apply() {
-      if (tick < 0) {
-        banner.value =
-            'Guided test starts in ${-tick}\nUse the app as usual; do a bit of everything';
-        tick++;
-        return;
-      }
-      if (tick == 0) {
-        reset();
-        _guided = true;
-      }
-      if (tick >= active + _idleSeconds) {
-        _endGuided();
-        return;
-      }
-      if (tick >= active) {
-        // Last step: nobody touches anything. A screen left alone should draw nothing.
-        if (tick == active) {
-          _restore();
-          _move(() => _cfg = 'Idle, hands off');
-        }
-        banner.value =
-            'Hands off the screen  ·  ${active + _idleSeconds - tick} s\nChecking that nothing draws while idle';
-        tick++;
-        return;
-      }
-      final int i = tick ~/ secondsPerStep;
-      final _Step s = _steps[i];
-      if (tick % secondsPerStep == 0) {
-        _move(() => _cfg = s.name);
-        _did.clear();
-        _coverage[s.name] = <String>{};
-        settings
-          ..quality = s.quality
-          ..reduceTransparency = s.solid;
-        wallpaperOn.value = s.lights;
-      }
-      final List<String> todo = <String>[
-        for (final (String k, String label) in _kinds)
-          if (!_did.contains(k)) label,
-      ];
-      banner.value =
-          'Test ${i + 1} of ${_steps.length}  ·  ${s.name}  ·  ${secondsPerStep - tick % secondsPerStep} s\n${todo.isEmpty ? 'All covered. Keep going.' : 'Still to do: ${todo.join(', ')}'}';
-      tick++;
+    for (int n = 3; n > 0 && live(); n--) {
+      banner.value = 'Test starts in $n\nPart 1 is automatic: hands off';
+      await second();
     }
-
-    apply();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => apply());
+    reset();
+    // Part 1: the app drives itself.
+    if (autoScript != null) {
+      for (int i = 0; i < _steps.length && live(); i++) {
+        _move(() => _cfg = 'auto ${_steps[i].name}');
+        _apply(_steps[i]);
+        banner.value =
+            'Part 1 of 2  ·  automatic ${i + 1} of ${_steps.length}  ·  ${_steps[i].name}\nHands off: the app is driving itself';
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+        await autoScript!();
+      }
+    }
+    if (!live()) {
+      return;
+    }
+    // In between: nobody touches anything. A screen left alone should draw nothing.
+    _restore();
+    _move(() => _cfg = 'Idle, hands off');
+    for (int n = _idleSeconds; n > 0 && live(); n--) {
+      banner.value =
+          'Still hands off  ·  $n s\nChecking that nothing draws while idle';
+      await second();
+    }
+    _idleFrames = _scenes.entries
+        .where((MapEntry<String, _Bucket> e) => e.key.startsWith('Idle'))
+        .fold<int>(
+          0,
+          (int n, MapEntry<String, _Bucket> e) => n + e.value.frames,
+        );
+    // Part 2: a person.
+    _guided = true;
+    for (int i = 0; i < _steps.length && live(); i++) {
+      final _Step s = _steps[i];
+      _move(() => _cfg = 'you ${s.name}');
+      _did.clear();
+      _coverage[_cfg] = <String>{};
+      _apply(s);
+      for (int n = secondsPerStep; n > 0 && live(); n--) {
+        final List<String> todo = <String>[
+          for (final (String k, String label) in _kinds)
+            if (!_did.contains(k)) label,
+        ];
+        banner.value =
+            'Part 2 of 2  ·  your turn ${i + 1} of ${_steps.length}  ·  ${s.name}  ·  $n s\n${todo.isEmpty ? 'All covered. Keep using it.' : 'Still to do: ${todo.join(', ')}'}';
+        await second();
+      }
+    }
+    if (live()) {
+      await _endGuided();
+    }
   }
 
   void _restore() {
@@ -322,14 +341,7 @@ class Diag {
   }
 
   Future<void> _endGuided() async {
-    _timer?.cancel();
     _guided = false;
-    _idleFrames = _scenes.entries
-        .where((MapEntry<String, _Bucket> e) => e.key.startsWith('Idle'))
-        .fold<int>(
-          0,
-          (int n, MapEntry<String, _Bucket> e) => n + e.value.frames,
-        );
     _powerEnd = await _power();
     final String text = report();
     _restore();

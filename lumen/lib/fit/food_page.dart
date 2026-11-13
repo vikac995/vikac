@@ -406,13 +406,18 @@ class _Ring extends CustomPainter {
       ..strokeWidth = 16
       ..strokeCap = StrokeCap.round;
     canvas.drawArc(r, 0, math.pi * 2, false, p..color = track);
-    canvas.drawArc(
-      r,
-      -math.pi / 2,
-      math.pi * 2 * v.clamp(0.0, 1.0),
-      false,
-      p..color = color,
-    );
+    // A round-ended line of no length is still a dot. Near nothing, fade it
+    // out instead, so an empty ring is truly empty.
+    final double f = v.clamp(0.0, 1.0);
+    if (f > 0.0005) {
+      canvas.drawArc(
+        r,
+        -math.pi / 2,
+        math.pi * 2 * f,
+        false,
+        p..color = color.withValues(alpha: color.a * (f / 0.03).clamp(0.0, 1.0)),
+      );
+    }
   }
 
   @override

@@ -66,6 +66,10 @@ Prism records every frame under the scene that was showing. The round button on 
 **Copy test report**; tapping the frame-rate readout does the same. Paste the result to whoever is tuning it.
 The code is `lib/fit/diag.dart`.
 
+**Run the test** does it all in one go: the app first drives itself through a fixed script under each glass
+setting (`lib/fit/robot.dart` sends real touch events; the script is `_robot()` in `shell.dart`), then idles,
+then asks a person to use it under each setting. Report rows are prefixed `auto` and `you`.
+
 ## Building it
 
 ```
