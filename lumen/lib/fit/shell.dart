@@ -18,6 +18,7 @@ import 'diag.dart';
 import 'food_page.dart';
 import 'home_page.dart';
 import 'lens.dart';
+import 'look.dart';
 import 'apps.dart';
 import 'drawer.dart';
 import 'progress_page.dart';
@@ -881,10 +882,17 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           children: <Widget>[
             // The wallpaper: quiet, with a few soft lights for the glass to catch.
             Positioned.fill(
-              child: ValueListenableBuilder<bool>(
-                valueListenable: Diag.instance.wallpaperOn,
-                builder: (BuildContext context, bool on, Widget? _) => on
-                    ? _WallpaperImage(dark: c.dark)
+              child: ListenableBuilder(
+                listenable: Listenable.merge(<Listenable>[
+                  Diag.instance.wallpaperOn,
+                  Look.instance,
+                ]),
+                builder: (BuildContext context, Widget? _) =>
+                    Diag.instance.wallpaperOn.value
+                    ? _WallpaperImage(
+                        dark: c.dark,
+                        version: Look.instance.version,
+                      )
                     : ColoredBox(color: c.bg),
               ),
             ),
@@ -1843,208 +1851,264 @@ void showPrismSettings(BuildContext context) {
                   side: BorderSide(color: c.hairline),
                 ),
               ),
+              // Tall enough to hold everything on a large phone, and it scrolls on a small one.
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+              ),
               child: ListenableBuilder(
                 listenable: Listenable.merge(<Listenable>[
                   settings,
                   Diag.instance.wallpaperOn,
+                  Look.instance,
                 ]),
-                builder: (BuildContext context, Widget? _) => Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Text(
-                      'Prism',
-                      style: LumenType.display(26, weight: 700, color: c.ink),
-                    ),
-                    Text(
-                      'A fitness app prototype in the Lumen glass design. Data is made up.',
-                      style: LumenType.text(
-                        13.5,
-                        color: c.inkMuted,
-                        height: 1.35,
+                builder: (BuildContext context, Widget? _) => SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        'Prism',
+                        style: LumenType.display(26, weight: 700, color: c.ink),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    SwitchLine(
-                      label: 'Dark',
-                      value: settings.themeMode == ThemeMode.dark,
-                      onChanged: (bool v) => settings.themeMode = v
-                          ? ThemeMode.dark
-                          : ThemeMode.light,
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchLine(
-                      label: 'Frame-rate readout',
-                      value: settings.showFps,
-                      onChanged: (bool v) => settings.showFps = v,
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchLine(
-                      label: 'Haptics',
-                      value: settings.haptics,
-                      onChanged: (bool v) => settings.haptics = v,
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchLine(
-                      label: 'Reduce transparency',
-                      value: settings.reduceTransparency,
-                      onChanged: (bool v) => settings.reduceTransparency = v,
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchLine(
-                      label: 'Background lights',
-                      value: Diag.instance.wallpaperOn.value,
-                      onChanged: (bool v) =>
-                          Diag.instance.wallpaperOn.value = v,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Glass style (Auto: Original if the phone keeps up, else Event)',
-                      style: LumenType.label(color: c.inkMuted),
-                    ),
-                    const SizedBox(height: 8),
-                    ListenableBuilder(
-                      listenable: Diag.instance.glassMode,
-                      builder: (BuildContext context, Widget? _) =>
-                          Segmented<int>(
-                            values: const <int>[4, 0, 1, 2, 3],
-                            labels: const <String>[
-                              'Auto',
-                              'Orig.',
-                              'One',
-                              'Frost',
-                              'Event',
-                            ],
-                            value: Diag.instance.glassMode.value,
-                            onChanged: (int v) =>
-                                Diag.instance.glassMode.value = v,
-                          ),
-                    ),
-                    const SizedBox(height: 12),
-                    ListenableBuilder(
-                      listenable: BlobApps.instance.on,
-                      builder: (BuildContext context, Widget? _) => SwitchLine(
-                        label: 'Blobs open real apps',
-                        value: BlobApps.instance.on.value,
-                        onChanged: (bool v) => BlobApps.instance.on.value = v,
+                      Text(
+                        'A fitness app prototype in the Lumen glass design. Data is made up.',
+                        style: LumenType.text(
+                          13.5,
+                          color: c.inkMuted,
+                          height: 1.35,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Glass quality',
-                      style: LumenType.label(color: c.inkMuted),
-                    ),
-                    const SizedBox(height: 8),
-                    Segmented<GlassQuality>(
-                      values: const <GlassQuality>[
-                        GlassQuality.auto,
-                        GlassQuality.full,
-                        GlassQuality.medium,
-                        GlassQuality.low,
-                      ],
-                      labels: const <String>['Auto', 'Full', 'Medium', 'Low'],
-                      value: settings.quality,
-                      onChanged: (GlassQuality v) => settings.quality = v,
-                    ),
-                    const SizedBox(height: 18),
-                    Text('Testing', style: LumenType.label(color: c.inkMuted)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          flex: 3,
-                          child: Pressable(
-                            onTap: () async {
-                              await Diag.instance.copy();
-                              Haptics.settle();
-                              if (context.mounted) {
-                                Navigator.of(context).pop();
-                              }
-                            },
-                            child: Container(
-                              height: 52,
-                              alignment: Alignment.center,
-                              decoration: ShapeDecoration(
-                                color: c.accent,
-                                shape: const StadiumBorder(),
+                      const SizedBox(height: 16),
+                      Text('Colour', style: LumenType.label(color: c.inkMuted)),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          for (final double h in Look.hues)
+                            Pressable(
+                              onTap: () {
+                                Look.instance.choose(hue: h);
+                                Haptics.tick();
+                              },
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: ShapeDecoration(
+                                  color: Look.accentFor(h, c.dark),
+                                  shape: CircleBorder(
+                                    side: BorderSide(
+                                      color: Look.instance.hue == h
+                                          ? c.ink
+                                          : Colors.transparent,
+                                      width: 2.5,
+                                      strokeAlign:
+                                          BorderSide.strokeAlignOutside,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              child: Text(
-                                'Copy test report',
-                                style: LumenType.text(
-                                  15,
-                                  weight: 700,
-                                  color: c.onAccent,
-                                  height: 1,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Background',
+                        style: LumenType.label(color: c.inkMuted),
+                      ),
+                      const SizedBox(height: 8),
+                      Segmented<int>(
+                        values: const <int>[0, 1, 2],
+                        labels: Look.vibes,
+                        value: Look.instance.vibe,
+                        onChanged: (int v) => Look.instance.choose(vibe: v),
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchLine(
+                        label: 'Dark',
+                        value: settings.themeMode == ThemeMode.dark,
+                        onChanged: (bool v) => settings.themeMode = v
+                            ? ThemeMode.dark
+                            : ThemeMode.light,
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchLine(
+                        label: 'Frame-rate readout',
+                        value: settings.showFps,
+                        onChanged: (bool v) => settings.showFps = v,
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchLine(
+                        label: 'Haptics',
+                        value: settings.haptics,
+                        onChanged: (bool v) => settings.haptics = v,
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchLine(
+                        label: 'Reduce transparency',
+                        value: settings.reduceTransparency,
+                        onChanged: (bool v) => settings.reduceTransparency = v,
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchLine(
+                        label: 'Background lights',
+                        value: Diag.instance.wallpaperOn.value,
+                        onChanged: (bool v) =>
+                            Diag.instance.wallpaperOn.value = v,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Glass style (Auto: Original if the phone keeps up, else Event)',
+                        style: LumenType.label(color: c.inkMuted),
+                      ),
+                      const SizedBox(height: 8),
+                      ListenableBuilder(
+                        listenable: Diag.instance.glassMode,
+                        builder: (BuildContext context, Widget? _) =>
+                            Segmented<int>(
+                              values: const <int>[4, 0, 1, 2, 3],
+                              labels: const <String>[
+                                'Auto',
+                                'Orig.',
+                                'One',
+                                'Frost',
+                                'Event',
+                              ],
+                              value: Diag.instance.glassMode.value,
+                              onChanged: (int v) =>
+                                  Diag.instance.glassMode.value = v,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      ListenableBuilder(
+                        listenable: BlobApps.instance.on,
+                        builder: (BuildContext context, Widget? _) =>
+                            SwitchLine(
+                              label: 'Blobs open real apps',
+                              value: BlobApps.instance.on.value,
+                              onChanged: (bool v) =>
+                                  BlobApps.instance.on.value = v,
+                            ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Glass quality',
+                        style: LumenType.label(color: c.inkMuted),
+                      ),
+                      const SizedBox(height: 8),
+                      Segmented<GlassQuality>(
+                        values: const <GlassQuality>[
+                          GlassQuality.auto,
+                          GlassQuality.full,
+                          GlassQuality.medium,
+                          GlassQuality.low,
+                        ],
+                        labels: const <String>['Auto', 'Full', 'Medium', 'Low'],
+                        value: settings.quality,
+                        onChanged: (GlassQuality v) => settings.quality = v,
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'Testing',
+                        style: LumenType.label(color: c.inkMuted),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            flex: 3,
+                            child: Pressable(
+                              onTap: () async {
+                                await Diag.instance.copy();
+                                Haptics.settle();
+                                if (context.mounted) {
+                                  Navigator.of(context).pop();
+                                }
+                              },
+                              child: Container(
+                                height: 52,
+                                alignment: Alignment.center,
+                                decoration: ShapeDecoration(
+                                  color: c.accent,
+                                  shape: const StadiumBorder(),
+                                ),
+                                child: Text(
+                                  'Copy test report',
+                                  style: LumenType.text(
+                                    15,
+                                    weight: 700,
+                                    color: c.onAccent,
+                                    height: 1,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          flex: 2,
-                          child: Pressable(
-                            onTap: () {
-                              Diag.instance.reset();
-                              Haptics.tick();
-                            },
-                            child: Container(
-                              height: 52,
-                              alignment: Alignment.center,
-                              decoration: ShapeDecoration(
-                                shape: StadiumBorder(
-                                  side: BorderSide(color: c.inkFaint),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            flex: 2,
+                            child: Pressable(
+                              onTap: () {
+                                Diag.instance.reset();
+                                Haptics.tick();
+                              },
+                              child: Container(
+                                height: 52,
+                                alignment: Alignment.center,
+                                decoration: ShapeDecoration(
+                                  shape: StadiumBorder(
+                                    side: BorderSide(color: c.inkFaint),
+                                  ),
                                 ),
-                              ),
-                              child: Text(
-                                'Start over',
-                                style: LumenType.text(
-                                  15,
-                                  weight: 650,
-                                  color: c.ink,
-                                  height: 1,
+                                child: Text(
+                                  'Start over',
+                                  style: LumenType.text(
+                                    15,
+                                    weight: 650,
+                                    color: c.ink,
+                                    height: 1,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Pressable(
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Diag.instance.startGuided();
-                        Haptics.settle();
-                      },
-                      child: Container(
-                        height: 52,
-                        alignment: Alignment.center,
-                        decoration: ShapeDecoration(
-                          color: c.ink.withValues(alpha: 0.08),
-                          shape: const StadiumBorder(),
-                        ),
-                        child: Text(
-                          'Run the test (about ${(Diag.testSeconds / 60).toStringAsFixed(1)} min)',
-                          style: LumenType.text(
-                            15,
-                            weight: 700,
-                            color: c.ink,
-                            height: 1,
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Pressable(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Diag.instance.startGuided();
+                          Haptics.settle();
+                        },
+                        child: Container(
+                          height: 52,
+                          alignment: Alignment.center,
+                          decoration: ShapeDecoration(
+                            color: c.ink.withValues(alpha: 0.08),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Text(
+                            'Run the test (about ${(Diag.testSeconds / 60).toStringAsFixed(1)} min)',
+                            style: LumenType.text(
+                              15,
+                              weight: 700,
+                              color: c.ink,
+                              height: 1,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'The test runs in two parts under each glass setting: first the app drives itself (hands off), then you use it. One report at the end covers both.',
-                      style: LumenType.text(
-                        12.5,
-                        color: c.inkMuted,
-                        height: 1.35,
+                      const SizedBox(height: 8),
+                      Text(
+                        'The test runs in two parts under each glass setting: first the app drives itself (hands off), then you use it. One report at the end covers both.',
+                        style: LumenType.text(
+                          12.5,
+                          color: c.inkMuted,
+                          height: 1.35,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -2070,13 +2134,12 @@ class _Wallpaper extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-      Offset.zero & size,
-      Paint()..color = dark ? const Color(0xFF08090C) : const Color(0xFFFFF7EA),
-    );
-    // Each light is many faint discs laid on top of each other, smallest last, so it
+    final Look look = Look.instance;
+    final Color ground = (dark ? look.night : look.day).bg;
+    canvas.drawRect(Offset.zero & size, Paint()..color = ground);
+    // A glow: many faint discs laid on top of each other, smallest last, so it
     // falls off smoothly without relying on how a renderer handles gradients.
-    void light(Offset at, double r, Color col, double a) {
+    void glow(Offset at, double r, Color col, double a) {
       const int rings = 96;
       final Paint p = Paint()..color = col.withValues(alpha: a * 1.9 / rings);
       for (int i = 0; i < rings; i++) {
@@ -2093,48 +2156,67 @@ class _Wallpaper extends CustomPainter {
       }
     }
 
-    // A few glowing orbs, orange deepening to yellow, on near-black. They are what the glass
-    // bar and the lens have to bend and blur, and what the cards let through. Still one picture,
-    // made once, so none of it costs anything per frame.
-    void orb(Offset at, double r) {
-      // The glow around it.
-      light(at, r * 2.3, const Color(0xFFFF8A00), dark ? 0.26 : 0.20);
-      // The body: discs shrinking toward a highlight up and to the left, as on a lit sphere.
-      const int steps = 56;
-      for (int i = 0; i < steps; i++) {
-        final double t = i / (steps - 1);
-        final Color col = Color.lerp(
-          Color.lerp(
-            const Color(0xFFE85D00),
-            const Color(0xFFFF9A00),
-            (t * 2).clamp(0.0, 1.0),
-          )!,
-          const Color(0xFFFFD84A),
-          ((t - 0.5) * 2).clamp(0.0, 1.0),
-        )!;
-        canvas.drawPath(
-          Path()..addOval(
-            Rect.fromCircle(
-              center: at + Offset(-r, -r) * (0.3 * t),
-              radius: r * (1 - 0.82 * t),
-            ),
-          ),
-          Paint()..color = col,
-        );
+    // Where things go: low down, where the glass bar sits over them, and off the top corner,
+    // clear of titles and of the numbers people read.
+    final List<(Offset, double)> places = <(Offset, double)>[
+      (Offset(size.width * 0.04, size.height * 0.86), size.width * 0.40),
+      (Offset(size.width * 1.02, size.height * 0.10), size.width * 0.22),
+      (Offset(size.width * 0.70, size.height * 0.955), size.width * 0.075),
+    ];
+    final bool flow = look.vibe != 1, pattern = look.vibe != 0;
+    if (pattern) {
+      // An even field of fine dots, so the whole page has a quiet grain to it.
+      final double gap = size.width / 15;
+      final Paint dot = Paint()
+        ..color = look.mid.withValues(alpha: dark ? 0.16 : 0.22);
+      for (double y = gap / 2; y < size.height; y += gap) {
+        for (double x = gap / 2; x < size.width; x += gap) {
+          canvas.drawCircle(Offset(x, y), size.width / 420, dot);
+        }
       }
     }
-
-    // Placed where they do the most good and the least harm: low down, where the glass bar sits
-    // over them, and off the top corner, clear of titles and of the numbers people read.
-    orb(Offset(size.width * 0.04, size.height * 0.86), size.width * 0.40);
-    orb(Offset(size.width * 1.02, size.height * 0.10), size.width * 0.22);
-    orb(Offset(size.width * 0.70, size.height * 0.955), size.width * 0.075);
+    for (final (Offset at, double r) in places) {
+      glow(at, r * 2.3, look.mid, dark ? 0.26 : 0.20);
+      if (flow) {
+        // An orb: discs shrinking toward a highlight up and to the left, as on a lit sphere,
+        // shading from the deeper neighbour colour through the colour itself to the lighter one.
+        const int steps = 56;
+        for (int i = 0; i < steps; i++) {
+          final double t = i / (steps - 1);
+          final Color col = Color.lerp(
+            Color.lerp(look.deep, look.mid, (t * 2).clamp(0.0, 1.0))!,
+            look.light,
+            ((t - 0.5) * 2).clamp(0.0, 1.0),
+          )!;
+          canvas.drawPath(
+            Path()..addOval(
+              Rect.fromCircle(
+                center: at + Offset(-r, -r) * (0.3 * t),
+                radius: r * (1 - 0.82 * t),
+              ),
+            ),
+            Paint()..color = col,
+          );
+        }
+      }
+      if (pattern) {
+        // Rings spreading from the same spots: around the orbs if there are orbs, in their place if not.
+        final Paint ring = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = size.width / 260;
+        for (int k = flow ? 1 : 0; k < 6; k++) {
+          final double rr = r * (flow ? 1.0 : 0.45) + r * 0.36 * k;
+          ring.color = look.light.withValues(
+            alpha: (dark ? 0.34 : 0.42) * (1 - k / 6.5),
+          );
+          canvas.drawCircle(at, rr, ring);
+        }
+      }
+    }
     // Text sits straight on this picture on some pages, so the whole of it is held back a little.
     canvas.drawRect(
       Offset.zero & size,
-      Paint()
-        ..color = (dark ? const Color(0xFF08090C) : const Color(0xFFFFF7EA))
-            .withValues(alpha: 0.30),
+      Paint()..color = ground.withValues(alpha: flow ? 0.30 : 0.12),
     );
   }
 
@@ -2146,8 +2228,11 @@ class _Wallpaper extends CustomPainter {
 /// Drawing the soft lights live cost the phone about half its frames; a
 /// picture costs almost nothing, and the stretching smooths the lights.
 class _WallpaperImage extends StatefulWidget {
-  const _WallpaperImage({required this.dark});
+  const _WallpaperImage({required this.dark, required this.version});
   final bool dark;
+
+  /// Which look this picture is for. A new number means: draw it again, once.
+  final int version;
 
   @override
   State<_WallpaperImage> createState() => _WallpaperImageState();
@@ -2157,13 +2242,15 @@ class _WallpaperImageState extends State<_WallpaperImage> {
   ui.Image? _image;
   Size _size = Size.zero;
   bool? _dark;
+  int _version = -1;
 
   Future<void> _render(Size size, bool dark) async {
     _size = size;
     _dark = dark;
+    _version = widget.version;
     final Size small = Size(
-      (size.width / 2.5).ceilToDouble(),
-      (size.height / 2.5).ceilToDouble(),
+      (size.width / 2).ceilToDouble(),
+      (size.height / 2).ceilToDouble(),
     );
     final ui.PictureRecorder rec = ui.PictureRecorder();
     _Wallpaper(dark).paint(Canvas(rec), small);
@@ -2194,13 +2281,13 @@ class _WallpaperImageState extends State<_WallpaperImage> {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints box) {
         final Size size = box.biggest;
-        if (size != _size || widget.dark != _dark) {
+        if (size != _size ||
+            widget.dark != _dark ||
+            widget.version != _version) {
           _render(size, widget.dark);
         }
         return ColoredBox(
-          color: widget.dark
-              ? const Color(0xFF0B0D13)
-              : const Color(0xFFF2EEE7),
+          color: widget.dark ? Look.instance.night.bg : Look.instance.day.bg,
           child: _image == null
               ? const SizedBox.expand()
               : RawImage(

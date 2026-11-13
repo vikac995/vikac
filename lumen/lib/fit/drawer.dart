@@ -248,7 +248,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                   color: Color.lerp(
                     c.accent,
                     c.surface,
-                    (g * 2.2).clamp(0.0, 1.0),
+                    // It stays the panel's colour until it is nearly the button again.
+                    ((g - 0.08) / 0.2).clamp(0.0, 1.0),
                   ),
                   shape: RoundedSuperellipseBorder(
                     borderRadius: BorderRadius.circular(
@@ -259,10 +260,11 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-                // The contents are uncovered by the growing panel's own edge. Fading them in meant
-                // drawing the whole grid to a separate surface on every frame of opening and closing,
-                // which was the slowest thing in the drawer.
-                child: g < 0.3
+                // The contents grow and shrink with the panel, as one piece: the whole grid comes out
+                // of the button and goes back into it. (Before, the grid stayed full size and was cut
+                // off by the panel's edge, which looked broken half-way.) Stretching a finished picture
+                // is nearly free; it is not drawn again.
+                child: g < 0.22
                     ? null
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(
@@ -272,7 +274,14 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                             g.clamp(0.0, 1.0),
                           )!,
                         ),
-                        child: child,
+                        child: FittedBox(
+                          fit: BoxFit.fill,
+                          child: SizedBox(
+                            width: panel.width,
+                            height: panel.height,
+                            child: child,
+                          ),
+                        ),
                       ),
               ),
             ),

@@ -9,7 +9,7 @@ import '../core/settings.dart';
 import '../core/theme.dart';
 import '../widgets/fps_meter.dart';
 import '../core/haptics.dart';
-import 'common.dart';
+import 'look.dart';
 import 'diag.dart';
 import 'journal.dart';
 import 'shell.dart';
@@ -36,6 +36,7 @@ Future<void> main() async {
   FrameStats.instance.start();
   // On Auto, glass steps down by itself if frames are being missed.
   FrameStats.instance.governorEnabled = true;
+  Look.instance.load();
   await Diag.instance.start();
   // The diary: every stretch of use, the battery, and anything that goes wrong.
   Journal.instance.start();
@@ -49,15 +50,15 @@ class PrismApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: settings,
+      listenable: Listenable.merge(<Listenable>[settings, Look.instance]),
       builder: (BuildContext context, Widget? _) => MaterialApp(
         title: 'Prism',
         debugShowCheckedModeBanner: false,
         scrollBehavior: const MaterialScrollBehavior().copyWith(
           dragDevices: PointerDeviceKind.values.toSet(),
         ),
-        theme: lumenTheme(prismDay),
-        darkTheme: lumenTheme(prismNight),
+        theme: lumenTheme(Look.instance.day),
+        darkTheme: lumenTheme(Look.instance.night),
         themeMode: settings.themeMode,
         home: const Shell(),
         builder: (BuildContext context, Widget? child) {
