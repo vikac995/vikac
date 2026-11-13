@@ -134,7 +134,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       widget.origin.dy - widget.button / 2 - 16,
     );
     // As many rows as fit, so tiles are always the same generous size.
-    _rows = math.max(3, ((panel.height - 74) / 104).floor());
+    _rows = math.max(3, ((panel.height - 92) / 114).floor());
     return ListenableBuilder(
       listenable: _rise,
       builder: (BuildContext context, Widget? child) {
@@ -334,13 +334,13 @@ class _GridPainter extends CustomPainter {
     () => TextPainter(
       text: TextSpan(
         text: t.label,
-        style: LumenType.text(12.5, weight: 540, color: ink, height: 1.15),
+        style: LumenType.text(13.5, weight: 660, color: ink, height: 1.14),
       ),
       textDirection: TextDirection.ltr,
       textAlign: TextAlign.center,
-      maxLines: 1,
+      maxLines: 2,
       ellipsis: '…',
-    )..layout(maxWidth: width - 8),
+    )..layout(maxWidth: width - 6),
   );
 
   void _mark(Canvas canvas, AppTile t, Rect box, double alpha, double scale) {
@@ -458,9 +458,9 @@ class _GridPainter extends CustomPainter {
           } else if (fade > 0.02) {
             final Rect lr = Rect.fromLTWH(
               centre.dx - cw / 2,
-              centre.dy + _tile / 2 + 6,
+              centre.dy + _tile / 2 + 5,
               cw,
-              20,
+              38,
             );
             canvas.saveLayer(
               lr,

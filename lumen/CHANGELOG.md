@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 24 (13 November 2026)
+
+**File:** `releases/prism-build-24.apk`
+
+- **App names in the drawer are bigger and bolder** (13.5 instead of 12.5, and clearly heavier), because the tiles no longer look like the icons you know and the name has to do more of the finding.
+- **Long names now wrap onto a second line** instead of being cut off ("Marshall Bluetooth" and not "Marshall Bluet…").
+- Rows are slightly taller to make room. On your phone that should still be five rows.
+
+**What to look for:** can you find an app by name at a glance now? Is it five rows per page still?
+
+**Checked:** in my preview, with made-up apps: the names are larger and heavier and the rows still fit.
+**Not checked:** on a phone, and how real long names wrap.
+
 ## Prism, build 23 (13 November 2026)
 
 **File:** `releases/prism-build-23.apk`

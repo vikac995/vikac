@@ -1,7 +1,7 @@
 name: lumen
 description: "Lumen - a showcase of UI craft in Flutter."
 publish_to: 'none'
-version: 0.22.1+51
+version: 0.22.2+52
 
 environment:
   sdk: ^3.14.0
