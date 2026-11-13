@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 3 (13 November 2026)
+
+**File:** `releases/prism-build-3.apk`
+
+The made-up numbers now agree with each other:
+
+- **Workout order.** Home crossed out bench press yet said "Continue with bench press", and Train called bench press exercise 2. Now: 1) Overhead press is done, 2) Bench press is next, "1 of 5 done".
+- **Estimated best.** Progress said 80 kg for one rep while the heaviest set was 80 × 8, which is about 100 kg. Bench is now 100, squat 130 (from 110 × 6), deadlift 150 (from 130 × 5).
+- **Period switch.** Month, 3 months and Year changed today's best. Now today's best stays put and only the history behind it changes.
+- **Bests per lift.** Squat and deadlift showed bench's bests; each lift has its own now.
+- **Food in one place.** The Food page and the quick "Log food" sheet kept separate lists. Both now add to the same meals, so Home, Food and the sheet always agree. "Burned 320", which no total used, is gone.
+
 ## Prism, build 2 (13 November 2026)
 
 **File:** `releases/prism-build-2.apk`

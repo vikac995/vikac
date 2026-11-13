@@ -665,17 +665,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         ),
         const SizedBox(height: 16),
         if (i == 1) ...<Widget>[
-          for (final (String name, int kcal) in const <(String, int)>[
-            ('Chicken and rice', 610),
-            ('Protein shake', 160),
-            ('Oats and banana', 420),
-          ])
+          for (final int m in const <int>[1, 3, 0])
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Pressable(
                 scale: 0.98,
                 onTap: () {
-                  fit.eat(kcal);
+                  fit.addMeal(m, 1);
                   Haptics.settle();
                   _closeSheet();
                 },
@@ -692,7 +688,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     children: <Widget>[
                       Expanded(
                         child: Text(
-                          name,
+                          FitState.meals[m].$2,
                           style: LumenType.text(
                             15.5,
                             weight: 600,
@@ -701,7 +697,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         ),
                       ),
                       Text(
-                        '$kcal kcal',
+                        '${FitState.meals[m].$3} kcal',
                         style: LumenType.text(
                           14,
                           weight: 650,

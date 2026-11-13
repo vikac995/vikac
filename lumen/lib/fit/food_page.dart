@@ -20,15 +20,22 @@ class FoodPage extends StatefulWidget {
 }
 
 class _FoodPageState extends State<FoodPage> with TickerProviderStateMixin {
-  static const int _goal = 2400;
-  static const List<(String, IconData, String, int, int, int, int)>
-  _quick = <(String, IconData, String, int, int, int, int)>[
-    ('Breakfast', Icons.wb_twilight_rounded, 'Oats and banana', 420, 14, 72, 8),
-    ('Lunch', Icons.wb_sunny_rounded, 'Chicken and rice', 610, 48, 70, 12),
-    ('Dinner', Icons.nights_stay_rounded, 'Salmon, potatoes', 680, 42, 55, 30),
-    ('Snacks', Icons.cookie_rounded, 'Protein bar', 210, 20, 22, 7),
+  static const List<IconData> _icons = <IconData>[
+    Icons.wb_twilight_rounded,
+    Icons.wb_sunny_rounded,
+    Icons.nights_stay_rounded,
+    Icons.cookie_rounded,
   ];
-  final List<int> _count = <int>[1, 1, 0, 0];
+  // Shown as (name, icon, what, kcal, protein, carbs, fat), built from the shared day.
+  static final List<(String, IconData, String, int, int, int, int)> _quick =
+      <(String, IconData, String, int, int, int, int)>[
+        for (final (int i, (String, String, int, int, int, int) m)
+            in FitState.meals.indexed)
+          (m.$1, _icons[i], m.$2, m.$3, m.$4, m.$5, m.$6),
+      ];
+  int get _goal => fit.goal;
+  List<int> get _count => fit.count;
+
   int _water = 3;
   late final SpringValue _ring = SpringValue(
     this,
@@ -40,20 +47,27 @@ class _FoodPageState extends State<FoodPage> with TickerProviderStateMixin {
       SpringValue(this, value: 1, spring: Motions.expressiveFast),
   ];
 
-  int _sum(int field) {
-    int s = 0;
-    for (int i = 0; i < 4; i++) {
-      s +=
-          _count[i] *
-          <int>[_quick[i].$4, _quick[i].$5, _quick[i].$6, _quick[i].$7][field];
-    }
-    return s;
-  }
+  int _sum(int field) => fit.sum(field);
 
   int get _eaten => _sum(0);
 
+  // Food logged anywhere else (the quick sheet) shows up here too.
+  void _changed() {
+    if (mounted) {
+      setState(() {});
+      _ring.animateTo(_eaten / _goal);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fit.addListener(_changed);
+  }
+
   @override
   void dispose() {
+    fit.removeListener(_changed);
     _ring.dispose();
     for (final SpringValue s in _pop) {
       s.dispose();
@@ -65,8 +79,7 @@ class _FoodPageState extends State<FoodPage> with TickerProviderStateMixin {
     if (_count[i] + by < 0) {
       return;
     }
-    setState(() => _count[i] += by);
-    fit.eat(by * _quick[i].$4);
+    fit.addMeal(i, by);
     _pop[i].jumpTo(0.8);
     _pop[i].animateTo(1);
     _ring.animateTo(_eaten / _goal);
@@ -175,7 +188,6 @@ class _FoodPageState extends State<FoodPage> with TickerProviderStateMixin {
                       for (final (String l, String v) in <(String, String)>[
                         ('Goal', '$_goal'),
                         ('Eaten', '$_eaten'),
-                        ('Burned', '320'),
                       ])
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 5),

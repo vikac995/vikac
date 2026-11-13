@@ -10,6 +10,25 @@ import '../widgets/controls.dart';
 import '../widgets/tag.dart';
 import 'common.dart';
 
+// Each lift's bests. The estimated best above comes from the heaviest set: 80 × 8 is about 100 kg for one rep.
+const List<List<(String, String, String)>> _bests =
+    <List<(String, String, String)>>[
+      <(String, String, String)>[
+        ('Heaviest set', '80 kg × 8', '2 days ago'),
+        ('Most reps', '60 kg × 15', '3 weeks ago'),
+        ('Biggest session', '4,120 kg', 'October'),
+      ],
+      <(String, String, String)>[
+        ('Heaviest set', '110 kg × 6', '5 days ago'),
+        ('Most reps', '80 kg × 15', '6 weeks ago'),
+        ('Biggest session', '5,280 kg', 'October'),
+      ],
+      <(String, String, String)>[
+        ('Heaviest set', '130 kg × 5', 'last week'),
+        ('Most reps', '100 kg × 12', '4 weeks ago'),
+        ('Biggest session', '4,850 kg', 'September'),
+      ],
+    ];
 const List<String> _lifts = <String>['Bench', 'Squat', 'Deadlift'];
 const Map<String, List<String>> _labels = <String, List<String>>{
   '1M': <String>['wk 1', 'wk 2', 'wk 3', 'wk 4'],
@@ -47,12 +66,14 @@ class _ProgressPageState extends State<ProgressPage>
 
   // Made-up but steady: each lift climbs, with a small wobble, faster over a year.
   List<double> _series() {
-    final double base = <double>[72.5, 100, 125][_lift];
+    // Today's estimated best is the same whatever the period; the period only shows how far back you look.
+    final double now = <double>[100, 130, 150][_lift];
     final double gain = <String, double>{
       '1M': 2.5,
       '3M': 7.5,
       '1Y': 20,
     }[_period]!;
+    final double base = now - gain;
     final math.Random r = math.Random(
       _lift * 7 + _period.length * 31 + _period.codeUnitAt(0),
     );
@@ -295,11 +316,7 @@ class _ProgressPageState extends State<ProgressPage>
               child: Column(
                 children: <Widget>[
                   for (final (int i, (String, String, String) r)
-                      in const <(String, String, String)>[
-                        ('Heaviest set', '80 kg × 8', '2 days ago'),
-                        ('Most reps', '60 kg × 15', '3 weeks ago'),
-                        ('Biggest session', '4,120 kg', 'October'),
-                      ].indexed) ...<Widget>[
+                      in _bests[_lift].indexed) ...<Widget>[
                     if (i > 0)
                       Container(
                         height: 1,

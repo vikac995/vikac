@@ -11,10 +11,10 @@ import 'shell.dart';
 import 'state.dart';
 
 const List<String> _plan = <String>[
+  'Overhead press',
   'Bench press',
   'Incline press',
   'Cable fly',
-  'Lateral raise',
   'Triceps pushdown',
 ];
 
@@ -72,7 +72,7 @@ class HomePage extends StatelessWidget {
                       ),
                       const Spacer(),
                       Text(
-                        '2 of 5 done',
+                        '1 of 5 done',
                         style: LumenType.text(
                           13,
                           weight: 600,
