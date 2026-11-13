@@ -11,6 +11,7 @@ import 'diag.dart';
 import 'lens.dart';
 import 'shell.dart';
 import 'state.dart';
+import 'look.dart';
 
 const List<String> _plan = <String>[
   'Overhead press',
@@ -36,12 +37,19 @@ class HomePage extends StatelessWidget {
     final EdgeInsets safe = MediaQuery.paddingOf(context);
     const Color green = Color(0xFF2FA84F), red = Color(0xFFE5484D);
     return ListenableBuilder(
-      listenable: fit,
+      // Also redrawn when the background picture changes, because the cards are glass over it.
+      listenable: Listenable.merge(<Listenable>[
+        fit,
+        Look.instance.frostReady,
+        Diag.instance.wallpaperOn,
+      ]),
       builder: (BuildContext context, Widget? _) {
         final int done = fit.habits
             .where(((String, bool?) h) => h.$2 != null)
             .length;
         return ListView(
+          // Cards must be redrawn as they scroll, so their glass shows what is behind them now.
+          addRepaintBoundaries: false,
           physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
           ),

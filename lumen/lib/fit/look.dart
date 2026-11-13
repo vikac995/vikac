@@ -47,6 +47,9 @@ class Look extends ChangeNotifier {
 
   /// The background picture, blurred once, for glass that does not have to blur anything itself.
   ui.Image? frost;
+
+  /// The background picture as it is, for clear glass that magnifies.
+  ui.Image? crisp;
   Size frostScreen = Size.zero;
   final ValueNotifier<int> frostReady = ValueNotifier<int>(0);
 

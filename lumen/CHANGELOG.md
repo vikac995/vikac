@@ -1,5 +1,37 @@
 # Lumen changelog
 
+## Prism, build 49 (13 November 2026)
+
+**File:** `releases/prism-build-49.apk`
+
+**The cheap glass, improved, and used where it does the most.**
+
+What still glass is: the background is a still picture, so it is blurred once and kept. A piece of still glass shows the part of that blurred copy lying behind it. Nothing is blurred while you use the app.
+
+What is new:
+
+- **It now looks like glass, not like a blurred photo.** A band just inside the rim shows the picture slightly enlarged, as the curved edge of a pane does. Light is caught along the top. The rim is brightest at the top and fades down the sides.
+- **The cards on Home are panes of it.** Each card shows the softened colours and pattern of whatever part of the background is behind it, and that changes as the card scrolls over orbs and lines. This is the frosted look from your reference pictures.
+- **The lens around the selected tab is clear glass again.** It shows the background behind it enlarged by about a fifth, sharp, not frosted, and it travels with the tab.
+- **It is the default bar.** In my side-by-side it was nearly indistinguishable from the real glass bar, so the default glass style is now Event (still glass). **Orig.** in the same row is the real glass bar, if you prefer it.
+
+**What is different from real glass:** page content scrolling under the bar is hidden by it, not blurred through it. With Orig. it is blurred through.
+
+**Two things here could cost something, and should be measured**
+- Home's cards are now redrawn while you scroll, so that their glass shows the right part of the background. Until now Home scrolling was the cheapest thing in the app (0 % slow frames).
+- The bar draws two pictures and a ring where it drew one flat colour.
+
+Please run the test (about three minutes). The rows to compare with your build 44 report: "scroll Home" (was 0.6 to 1.9 % slow), and the Event setting as a whole (was 3.3 % slow, 0.3 % late).
+
+**What to look for**
+- Home: do the cards read as frosted glass over the background? Is the text on them still easy to read?
+- Scroll Home slowly over an orb: the colour inside a card should stay lined up with the orb behind it. If it slides or jumps, tell me.
+- The bar: does it still look like the bar you liked? Switch between Event and Orig. to compare.
+- Train, Food and Progress are not yet done this way; their rows are as before.
+
+**Checked:** in my preview: Home in amber with orbs and with arcs, cards frosted and lined up with the background, also after scrolling; the bar with its magnifying tab lens.
+**Not checked:** on a phone; the cost; light mode; other colours; and the lining-up of cards while a card is pressed or while the page slides in from another tab.
+
 ## Prism, build 48 (13 November 2026)
 
 **File:** `releases/prism-build-48.apk`

@@ -105,7 +105,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 48';
+  static const String build = 'Prism build 49';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -122,7 +122,7 @@ class Diag {
   /// only one moving piece of glass at once. 2 frosted: the bar blurs but does
   /// not bend. 3 event: the bar is solid; only the carried lens and the rest timer are glass.
   /// 4 is automatic: Original while the phone keeps up, Event when it does not.
-  final ValueNotifier<int> glassMode = ValueNotifier<int>(4);
+  final ValueNotifier<int> glassMode = ValueNotifier<int>(3);
 
   /// What automatic has settled on: 0 Original or 3 Event.
   final ValueNotifier<int> autoLevel = ValueNotifier<int>(0);

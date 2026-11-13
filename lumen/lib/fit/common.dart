@@ -1,3 +1,7 @@
+import 'still_glass.dart';
+import 'look.dart';
+import 'diag.dart';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../core/theme.dart';
@@ -70,16 +74,16 @@ class GlassDot extends StatelessWidget {
   }
 }
 
-/// The surface content sits on. Readable first, but no longer a closed lid: about a fifth of
-/// what is behind comes through, so the glowing shapes of the background tint each card.
-ShapeDecoration card(LumenColors c, {double radius = 28, Color? tint}) =>
-    ShapeDecoration(
-      color: tint ?? c.surface.withValues(alpha: c.dark ? 0.72 : 0.80),
-      shape: RoundedSuperellipseBorder(
-        borderRadius: BorderRadius.circular(radius),
-        // A slightly brighter edge than a plain hairline, so a card reads as a pane and not a hole.
-        side: BorderSide(
-          color: c.dark ? const Color(0x26FFFFFF) : const Color(0x1F000000),
-        ),
-      ),
+/// The surface content sits on: a pane of still glass. The background behind it comes
+/// through softened, under enough of the surface colour for text to read on. If there is no
+/// background (lights off), it is the plain surface.
+Decoration card(LumenColors c, {double radius = 28, Color? tint}) =>
+    PaneDecoration(
+      radius: radius,
+      tint: tint ?? c.surface.withValues(alpha: c.dark ? 0.58 : 0.66),
+      rim: Colors.white.withValues(alpha: c.dark ? 0.20 : 0.85),
+      flat: c.surface,
+      stamp: Diag.instance.wallpaperOn.value
+          ? Look.instance.frostReady.value
+          : -1,
     );

@@ -1081,10 +1081,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                               Positioned.fill(
                                 child: StillGlass(
                                   radius: _barH / 2,
-                                  tint: c.glassTint.withValues(alpha: 0.42),
+                                  tint: c.glassTint.withValues(alpha: 0.40),
                                   rim: Colors.white.withValues(
-                                    alpha: c.dark ? 0.30 : 0.9,
+                                    alpha: c.dark ? 0.34 : 0.9,
                                   ),
+                                  edge: 9,
                                   stamp: Look.instance.frostReady.value,
                                 ),
                               ),
@@ -1112,6 +1113,22 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                 quality: mode == 2 ? GlassQuality.low : null,
                               ),
                             ),
+                            if (still)
+                              // The lens around the selected tab: clear glass that enlarges what is behind it.
+                              Positioned.fromRect(
+                                rect: lens,
+                                child: StillGlass(
+                                  radius: h / 2,
+                                  sharp: true,
+                                  magnify: 1.22,
+                                  edge: 7,
+                                  tint: c.accent.withValues(alpha: 0.10),
+                                  rim: Colors.white.withValues(
+                                    alpha: c.dark ? 0.6 : 0.95,
+                                  ),
+                                  stamp: Look.instance.frostReady.value,
+                                ),
+                              ),
                             Positioned.fromRect(
                               rect: lens,
                               child: Glass(
@@ -1128,9 +1145,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                   saturation: 1.4,
                                   adapt: 0.42,
                                   shadow: 0.6,
-                                  fallbackColor: mode == 0 && !covered
-                                      ? c.accent.withValues(alpha: 0.3)
-                                      : c.ink.withValues(alpha: 0.10),
+                                  fallbackColor: still
+                                      ? const Color(0x00000000)
+                                      : (mode == 0 && !covered
+                                            ? c.accent.withValues(alpha: 0.3)
+                                            : c.ink.withValues(alpha: 0.10)),
                                 ),
                               ),
                             ),
@@ -1994,7 +2013,7 @@ void showPrismSettings(BuildContext context) {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Glass style (Auto: Original if the phone keeps up, else Event)',
+                        'Glass style (Event: glass that costs nothing. Orig.: real glass)',
                         style: LumenType.label(color: c.inkMuted),
                       ),
                       const SizedBox(height: 8),
@@ -2435,6 +2454,7 @@ class _WallpaperImageState extends State<_WallpaperImage> {
       return;
     }
     Look.instance
+      ..crisp = img
       ..frost = frost
       ..frostScreen = size
       ..frostReady.value += 1;
