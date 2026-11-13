@@ -221,6 +221,7 @@ class MainActivity : FlutterActivity() {
                     RestBubble.total = (a["total"] as Number).toInt()
                     RestBubble.sinceAt = (a["sinceAt"] as Number).toLong()
                     RestBubble.countUp = a["countUp"] as Boolean
+                    RestBubble.hapticsOn = a["haptics"] as Boolean
                     RestBubble.accent = (a["accent"] as Number).toInt()
                     RestBubble.onAccent = (a["onAccent"] as Number).toInt()
                 }
@@ -389,6 +390,9 @@ object RestBubble {
     var foreground = true
     var onTrain = false
 
+    /** Prism's own Haptics switch. The floating parts obey it too. */
+    var hapticsOn = true
+
     private var view: Dot? = null
     private var target: Target? = null
     private var sheet: SheetHost? = null
@@ -421,6 +425,7 @@ object RestBubble {
 
     /** The same three clicks Prism's own dials make. */
     fun haptic(context: Context, kind: String) {
+        if (!hapticsOn) return
         try {
             val vib: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
@@ -1222,18 +1227,19 @@ object RestBubble {
             whichLp.topMargin = px(2f)
             info.addView(which, whichLp)
 
-            fun pill(t: android.widget.TextView, text: String, action: () -> Unit) {
+            // [click] is false where Prism does the thing and gives its own click for it.
+            fun pill(t: android.widget.TextView, text: String, click: Boolean, action: () -> Unit) {
                 t.text = text
                 t.setPadding(px(14f), px(10f), px(14f), px(10f))
                 t.background = rounded(0x24FFFFFF, 100 * dp)
                 t.setOnClickListener {
-                    haptic(context, "tick")
+                    if (click) haptic(context, "tick")
                     action()
                 }
             }
-            pill(add, "+15 s") { channel?.invokeMethod("restAdd", null) }
-            pill(skip, "Skip rest") { channel?.invokeMethod("restSkip", null) }
-            pill(open, "Open Prism") { openPrism(context) }
+            pill(add, "+15 s", false) { channel?.invokeMethod("restAdd", null) }
+            pill(skip, "Skip", false) { channel?.invokeMethod("restSkip", null) }
+            pill(open, "Open Prism", true) { openPrism(context) }
             controls.gravity = android.view.Gravity.CENTER_VERTICAL
             val gapLp = { android.widget.LinearLayout.LayoutParams(wrap, wrap).also { it.leftMargin = px(8f) } }
             controls.addView(add, android.widget.LinearLayout.LayoutParams(wrap, wrap))
@@ -1252,7 +1258,7 @@ object RestBubble {
 
             done.gravity = android.view.Gravity.CENTER
             done.setOnClickListener {
-                haptic(context, "click")
+                // No click here: Prism logs the set and gives the same click it gives on its own page.
                 if (current in sets.indices) channel?.invokeMethod("toggle", current)
                 // In the small sheet, logging is the whole errand: it folds away again.
                 if (!fullMode) closeSheet(context)
@@ -1289,7 +1295,6 @@ object RestBubble {
                     }
                 }
                 tick.setOnClickListener {
-                    haptic(context, "click")
                     channel?.invokeMethod("toggle", i)
                 }
                 root.addView(n, android.widget.LinearLayout.LayoutParams(px(30f), wrap))

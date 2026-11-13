@@ -1,5 +1,14 @@
 # Prism
 
+**The product in one line: an app designed to keep you on track and get out of your way.**
+
+**The rule for everything in it: an element behaves the same, predictable, optimal way wherever
+it appears.** A dial is the same dial on the workout page and in the floating sheet: same drag,
+same steps, same clicks. The floating lens is the same lens over another app and over Prism.
+When two places do the same thing, one piece of code decides how it behaves and what it feels
+like, so they cannot drift apart. Before adding a behaviour, check whether an element already
+has it, and use that.
+
 A fitness app prototype in the Lumen design. It is a second app built from this same project, so it shares
 Lumen's glass, springs, haptics and controls. It installs next to Lumen (its id is `dev.lumen.prism`).
 All data is made up and nothing is saved.

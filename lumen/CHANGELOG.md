@@ -1,5 +1,33 @@
 # Lumen changelog
 
+## Prism, build 57 (14 November 2026)
+
+**File:** `releases/prism-build-57.apk`
+
+**A System option for the theme.** Round button on Home: the "Dark" switch is now a row, **System / Light / Dark**.
+
+- **System** follows the phone: if your phone is in dark mode, so is Prism, and it changes when the phone changes.
+- System is the default for a fresh install. Your choice is remembered with the rest of the look.
+- Every generated colour and background has a light and a dark version, so all nine colours and all backgrounds follow.
+
+**The same behaviour and the same clicks everywhere.** You set the rule that an element behaves the same, predictable way wherever it appears. I went through the floating workout against Prism's own workout page and fixed what differed:
+
+- **Logging a set, +15 s and Skip gave two clicks from the floating sheet** (one from the sheet, one from Prism doing the work). Now Prism does the thing and gives its one click, exactly as on its own page.
+- **The end of a rest buzzed twice** when the lens was on screen (the lens and Prism both). Now it is one buzz: from the lens where the lens is, from the workout page where it is not.
+- **The Haptics switch** in settings now also silences the floating lens, sheet and dials. Before, they ignored it.
+- **Reps moved in half steps on Prism's page** when you slowed down, and in whole steps in the floating sheet. Half a rep is not a thing, so both are whole steps now, and a dial only changes to fine steps where finer steps exist.
+- "Skip rest" in the sheet is now "Skip", as on the page.
+
+The rule is written at the top of `PRISM.md`, with the product line you gave: "an app designed to keep you on track and get out of your way."
+
+**What to look for**
+- Theme: set System and change your phone between light and dark mode. Prism should follow without a restart.
+- Light mode itself: I saw it properly for the first time in my preview. Tell me what looks wrong in it on your phone.
+- Floating sheet: one click per action now, the same as on the workout page. Turn Haptics off and the lens and dials should go quiet too.
+
+**Checked:** in my preview: the Theme row; System follows the machine (light there); choosing Dark switches at once and the next launch starts dark; it compiles with the Android code.
+**Not checked:** on a phone. All haptics, since my preview has no vibration. The floating parts from build 56 are still untested on your phone, and this build changes their clicks.
+
 ## Prism, build 56 (14 November 2026)
 
 **File:** `releases/prism-build-56.apk`

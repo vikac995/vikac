@@ -298,7 +298,10 @@ class _DragDialState extends State<DragDial> with TickerProviderStateMixin {
       }
       if (_speed < _slow) {
         _slowSince ??= now;
-        if (!_fine && (now - _slowSince!).inMilliseconds >= _slowHoldMs) {
+        // Only where there are finer steps to change to.
+        if (!_fine &&
+            widget.fineStep < widget.step &&
+            (now - _slowSince!).inMilliseconds >= _slowHoldMs) {
           _fine = true;
           _raw = widget.value; // fine steps start from the number on screen
           Haptics.settle(); // a different click: "fine steps now"

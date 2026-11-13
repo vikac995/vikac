@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 
 import '../core/haptics.dart';
+import '../core/settings.dart';
 import '../core/springs.dart';
 import '../core/theme.dart';
 import '../widgets/pressable.dart';
@@ -103,6 +104,7 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           },
       ],
       'countUp': RestBubble.instance.countUp.value,
+      'haptics': settings.haptics,
       'endsAt': _restEnds?.millisecondsSinceEpoch ?? 0,
       'total': _restOf,
       'sinceAt': _lastSet.millisecondsSinceEpoch,
@@ -155,7 +157,15 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                   .clamp(0, 86400);
           if (_restLeft == 0) {
             _restEnds = null;
-            Haptics.thud();
+            // One buzz when a rest ends, never two. Where the floating lens is on screen it gives
+            // it; on this page, where the lens is not, the page does.
+            final bool hereAndNow =
+                Diag.instance.page == 'train' &&
+                WidgetsBinding.instance.lifecycleState ==
+                    AppLifecycleState.resumed;
+            if (hereAndNow || !RestBubble.instance.allowed.value) {
+              Haptics.thud();
+            }
             _rest.animateTo(0, spring: Motions.spatial);
             Diag.instance.extra = '';
           }
@@ -417,7 +427,7 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                                         child: DragDial(
                                           value: _reps[i],
                                           step: 1,
-                                          fineStep: 0.5,
+                                          fineStep: 1,
                                           min: 0,
                                           max: 60,
                                           unit: 'reps',

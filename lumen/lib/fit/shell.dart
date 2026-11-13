@@ -2006,12 +2006,18 @@ void showPrismSettings(BuildContext context) {
                         ),
                       ],
                       const SizedBox(height: 16),
-                      SwitchLine(
-                        label: 'Dark',
-                        value: settings.themeMode == ThemeMode.dark,
-                        onChanged: (bool v) => settings.themeMode = v
-                            ? ThemeMode.dark
-                            : ThemeMode.light,
+                      Text('Theme', style: LumenType.label(color: c.inkMuted)),
+                      const SizedBox(height: 8),
+                      // System follows the phone: light by day and dark by night, if that is how the phone is set.
+                      Segmented<ThemeMode>(
+                        values: const <ThemeMode>[
+                          ThemeMode.system,
+                          ThemeMode.light,
+                          ThemeMode.dark,
+                        ],
+                        labels: const <String>['System', 'Light', 'Dark'],
+                        value: settings.themeMode,
+                        onChanged: (ThemeMode v) => Look.instance.theme(v),
                       ),
                       const SizedBox(height: 12),
                       SwitchLine(

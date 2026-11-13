@@ -3,6 +3,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 
+import 'package:material_ui/material_ui.dart' show ThemeMode;
+
+import '../core/settings.dart';
 import '../core/theme.dart';
 
 /// Prism's look, generated from two choices: a colour and a kind of background.
@@ -77,10 +80,21 @@ class Look extends ChangeNotifier {
       if (saved.length > 2) {
         _pattern = int.parse(saved[2]).clamp(0, patterns.length - 1);
       }
+      if (saved.length > 3) {
+        settings.themeMode =
+            ThemeMode.values[int.parse(saved[3])
+                .clamp(0, ThemeMode.values.length - 1)];
+      }
       _remake();
     } catch (_) {
       // Nothing chosen yet: amber and flow.
     }
+  }
+
+  /// Light, dark, or whatever the phone is set to. Remembered with the rest of the look.
+  void theme(ThemeMode mode) {
+    settings.themeMode = mode;
+    choose();
   }
 
   void choose({double? hue, int? vibe, int? pattern}) {
@@ -90,7 +104,9 @@ class Look extends ChangeNotifier {
     _remake();
     notifyListeners();
     try {
-      _file.writeAsStringSync('$_hue $_vibe $_pattern');
+      _file.writeAsStringSync(
+        '$_hue $_vibe $_pattern ${settings.themeMode.index}',
+      );
     } catch (_) {
       // Not saved: it is simply asked for again next time.
     }

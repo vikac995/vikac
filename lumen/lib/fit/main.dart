@@ -37,6 +37,8 @@ Future<void> main() async {
   FrameStats.instance.start();
   // On Auto, glass steps down by itself if frames are being missed.
   FrameStats.instance.governorEnabled = true;
+  // Follows the phone's own light or dark setting unless the person has chosen otherwise.
+  settings.themeMode = ThemeMode.system;
   Look.instance.load();
   await Diag.instance.start();
   // The diary: every stretch of use, the battery, and anything that goes wrong.

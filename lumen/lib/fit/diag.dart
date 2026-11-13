@@ -5,7 +5,6 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:material_ui/material_ui.dart' show ThemeMode;
 
 import '../core/glass.dart';
 import '../core/settings.dart';
@@ -105,7 +104,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 56';
+  static const String build = 'Prism build 57';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -629,7 +628,7 @@ class Diag {
         'screen ${v.physicalSize.width.round()}x${v.physicalSize.height.round()} @${v.devicePixelRatio}x, ${_refresh.round()} Hz, budget ${f(budget)} ms per frame',
       )
       ..writeln(
-        'glass shader ${GlassShaders.available ? 'ok' : 'MISSING'}  ·  ${settings.themeMode == ThemeMode.dark ? 'dark' : 'light'}  ·  glass style ${glassMode.value == 4 ? 'Auto, using ${autoLevel.value == 0 ? 'Original' : 'Event'}, stepped down $_autoDowns times' : glassModes[glassMode.value]}',
+        'glass shader ${GlassShaders.available ? 'ok' : 'MISSING'}  ·  ${settings.themeMode.name} theme  ·  glass style ${glassMode.value == 4 ? 'Auto, using ${autoLevel.value == 0 ? 'Original' : 'Event'}, stepped down $_autoDowns times' : glassModes[glassMode.value]}',
       );
 
     if (extraLine != null) {
