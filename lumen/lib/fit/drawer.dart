@@ -525,8 +525,8 @@ class _GridPainter extends CustomPainter {
           ..drawPath(shape, Paint()..color = colour)
           ..save()
           ..clipPath(shape);
-        // The centre never holds two things. The old mark draws in to a small dot, the dot
-        // holds while the shape and colour change, and the new mark grows out of it.
+        // The centre never holds two things. The old mark draws in and is gone, the tile is plain
+        // colour while its shape changes, and the new mark grows in at the end.
         double ease(double x) => Curves.easeInOut.transform(x.clamp(0.0, 1.0));
         final double leave = ease(e / 0.4), arrive = ease((e - 0.6) / 0.4);
         if (a != null) {
@@ -534,17 +534,6 @@ class _GridPainter extends CustomPainter {
         }
         if (b != null) {
           _mark(canvas, b, box, arrive, 0.4 + 0.6 * arrive);
-        }
-        final double dot = math.min(
-          ease((e - 0.14) / 0.26),
-          ease((0.86 - e) / 0.26),
-        );
-        if (dot > 0.01) {
-          canvas.drawCircle(
-            centre,
-            4.2,
-            Paint()..color = Colors.white.withValues(alpha: 0.92 * dot),
-          );
         }
         canvas.restore();
         // So do the names.

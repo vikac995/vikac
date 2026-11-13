@@ -526,8 +526,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       // the movement is clearly a carry: slow, sideways or downward, or simply held long enough.
       final int ms = _held.elapsedMilliseconds;
       final bool upward = travel.dy < 0 && travel.dx.abs() < -travel.dy * 0.8;
-      final bool slow = ms >= 70 && travel.distance / ms < 0.7;
-      if (_drawerOpen || (upward && !slow && ms < 220)) {
+      // A carry needs real evidence: a finger that has been down a while, or one that has gone
+      // a fair way sideways or down. A short quick nudge is none of these and lifts nothing.
+      final bool carry = ms >= 200 || (!upward && travel.distance > 22);
+      if (_drawerOpen || !carry) {
         return;
       }
       _liftOff();
@@ -577,7 +579,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _setDrawer(false);
     } else if (_moved &&
         !_lifted &&
-        travel.dy < -46 &&
+        travel.dy < -26 &&
         travel.dx.abs() < -travel.dy * 0.8) {
       // A quick flick upward, let go before the button ever became a lens: the app drawer.
       _setDrawer(true);
@@ -1238,7 +1240,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     _lifted = false;
                     // A finger that moved and then stopped sends no more movement, so the wait is also timed.
                     _liftTimer?.cancel();
-                    _liftTimer = Timer(const Duration(milliseconds: 220), () {
+                    _liftTimer = Timer(const Duration(milliseconds: 200), () {
                       if (_downAt != null &&
                           _moved &&
                           !_lifted &&

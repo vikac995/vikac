@@ -1,5 +1,21 @@
 # Lumen changelog
 
+## Prism, build 32 (13 November 2026)
+
+**File:** `releases/prism-build-32.apk`
+
+- **No dot in the middle of the drawer morph.** The old mark draws in and is gone, the tile is plain colour while it changes shape, and the new mark grows in at the end.
+- **Fixed: a short flick still turned the button into the lens** (from your recording: the button lifted for a moment and dropped back). My rule treated any small movement as "slow", and slow meant "carry". Now a carry needs real evidence: the finger has been down for a fifth of a second, or has gone a fair way sideways or down. A short quick nudge lifts nothing.
+- **A shorter flick opens the drawer.** It needed 46 of upward travel; now 26. A nudge shorter than that counts as a tap.
+
+**What to look for**
+- Short flicks, long flicks, lazy flicks: each should open the drawer with no glass and no drop coming home.
+- Slow drag upward: the lens should lift after a brief moment and catch up with your finger.
+- Drawer morph: is the plain-colour middle calm enough?
+
+**Checked:** it compiles and passes analysis.
+**Not checked:** I did not preview this build. Both changes are small edits to code I previewed in builds 30 and 31, but the flick timing can only be judged with a real thumb.
+
 ## Prism, build 31 (13 November 2026)
 
 **File:** `releases/prism-build-31.apk`
