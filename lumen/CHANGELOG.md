@@ -1,5 +1,22 @@
 # Lumen changelog
 
+## Prism, build 33 (13 November 2026)
+
+**File:** `releases/prism-build-33.apk`
+
+- **App names in the drawer change as mildly as possible.** A name no longer disappears and reappears. During a drag it dims, switches to the new name at its dimmest point, and comes back up. It never reaches zero.
+- **Names are a touch darker** (about 16 % toward the background), so they sit back slightly behind the tiles.
+
+**Light mode is still there:** round button on Home, the **Dark** switch at the top. Turn it off for light mode.
+
+**What to look for**
+- Is the name change quiet enough now? At the dimmest point the name is at about a fifth of its normal strength.
+- Is the darker text still easy to read at a glance?
+- Light mode: have a look at the drawer and tell me what looks wrong. I have only glanced at it.
+
+**Checked:** in my preview, in light mode: the drawer at rest, and held mid-drag (names dimmed but still visible, no overlap).
+**Not checked:** on a phone, or in motion. In light mode "a touch darker" actually makes the names slightly lighter grey, because the change is toward the background; tell me if you want it the other way there.
+
 ## Prism, build 32 (13 November 2026)
 
 **File:** `releases/prism-build-32.apk`

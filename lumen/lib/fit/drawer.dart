@@ -357,7 +357,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                             rows: _rows,
                             cols: _cols,
                             turn: _turn,
-                            ink: c.ink,
+                            ink: c.ink.withValues(alpha: 0.84),
                           ),
                         ),
                       ),
@@ -566,9 +566,9 @@ class _GridPainter extends CustomPainter {
         if (a?.label == b?.label) {
           name(b, 1);
         } else {
-          // The same timing as the marks: the old name is gone before the new one starts.
-          name(a, 1 - leave);
-          name(b, arrive);
+          // As mild as it can be: the name never vanishes. It dims, changes to the new name at
+          // its dimmest, and comes back up.
+          name(e < 0.5 ? a : b, 1 - 0.8 * math.sin(math.pi * e));
         }
       }
     }
