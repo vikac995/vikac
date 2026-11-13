@@ -1,5 +1,22 @@
 # Lumen changelog
 
+## Prism, build 18 (13 November 2026)
+
+**File:** `releases/prism-build-18.apk`
+
+- **The blob menu opens real apps:** Claude, WhatsApp, Instagram, Facebook. Tap a blob and the app launches. If one is not installed, its blob shows the first letter and tapping it gives a dull thud.
+- **Each blob takes its colour from the app's own icon, kept inside Prism's palette.** The app reads the icon, finds the colour it is mostly made of (white, black and grey do not count), keeps that hue, then holds how vivid and how bright it is to the same band as Prism's own blobs, so white on top reads equally on every one. An icon with no real colour becomes slate.
+- **The picture on the blob** is the app's own one-colour outline in white, where the app supplies one (the same outline Android uses for themed icons). Otherwise the real icon is shown small in the middle.
+- **Round button on Home, "Blobs open real apps"** switches back to Prism's fitness actions. The test switches to the fitness actions by itself while it runs, so the robot cannot open other apps, and switches back after.
+
+**What to look for**
+- Do all four blobs look like they belong together and to the rest of the app? Which, if any, looks off?
+- Is each one still recognisable as its app at a glance?
+- White outline or small real icon: tell me which apps got which, and which you prefer.
+
+**Checked:** in my preview, with stand-in colours and letters: four blobs, colours in one family, tapping does not crash.
+**Not checked:** everything that needs a phone: reading the real icons, the white outlines, the colour taken from the real icon, and launching. If a blob shows a letter although the app is installed, tell me which.
+
 ## Prism, build 17 (13 November 2026)
 
 **File:** `releases/prism-build-17.apk`

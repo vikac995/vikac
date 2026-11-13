@@ -57,6 +57,36 @@ class MainActivity : FlutterActivity() {
                         runOnUiThread { result.error("apps", e.message, null) }
                     }
                 }.start()
+                "icons" -> Thread {
+                    // The icon of each named app, and its one-colour outline where the app supplies one.
+                    val out = ArrayList<Map<String, Any>>()
+                    fun png(draw: (android.graphics.Canvas) -> Unit): ByteArray {
+                        val bmp = android.graphics.Bitmap.createBitmap(96, 96, android.graphics.Bitmap.Config.ARGB_8888)
+                        draw(android.graphics.Canvas(bmp))
+                        val bytes = java.io.ByteArrayOutputStream()
+                        bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, bytes)
+                        return bytes.toByteArray()
+                    }
+                    for (name in call.arguments as List<*>) {
+                        try {
+                            val d = packageManager.getApplicationIcon(name as String)
+                            val m = HashMap<String, Any>()
+                            m["package"] = name
+                            m["icon"] = png { c -> d.setBounds(0, 0, 96, 96); d.draw(c) }
+                            if (Build.VERSION.SDK_INT >= 33 && d is android.graphics.drawable.AdaptiveIconDrawable) {
+                                val mono = d.monochrome
+                                if (mono != null) {
+                                    // An icon layer is drawn larger than what shows: only its middle two thirds is the picture.
+                                    m["mono"] = png { c -> mono.mutate(); mono.setTint(android.graphics.Color.WHITE); mono.setBounds(-36, -36, 132, 132); mono.draw(c) }
+                                }
+                            }
+                            out.add(m)
+                        } catch (e: Exception) {
+                            // Not installed.
+                        }
+                    }
+                    runOnUiThread { result.success(out) }
+                }.start()
                 "launch" -> {
                     val i = packageManager.getLaunchIntentForPackage(call.arguments as String)
                     if (i != null) startActivity(i)

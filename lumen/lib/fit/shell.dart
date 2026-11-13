@@ -17,6 +17,7 @@ import 'diag.dart';
 import 'food_page.dart';
 import 'home_page.dart';
 import 'lens.dart';
+import 'apps.dart';
 import 'progress_page.dart';
 import 'robot.dart';
 import 'state.dart';
@@ -53,6 +54,56 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   double _barW = 0;
   bool _open = false;
   int? _sheet; // index into _actions
+
+  // What the blobs are: Prism's own actions, or real apps.
+  bool get _appBlobs => BlobApps.instance.on.value;
+  int get _n => _appBlobs ? BlobApps.instance.apps.length : 5;
+  String _blobName(int i) =>
+      _appBlobs ? BlobApps.instance.apps[i].name : _actions[i].$1;
+  Color _blobColor(int i) =>
+      _appBlobs ? BlobApps.instance.apps[i].color : _actions[i].$3;
+  void _blobsChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Widget _blobFace(int i) {
+    if (!_appBlobs) {
+      return Icon(_actions[i].$2, color: Colors.white, size: 26);
+    }
+    final BlobApp a = BlobApps.instance.apps[i];
+    if (a.glyph != null) {
+      return Center(
+        child: RawImage(
+          image: a.glyph,
+          width: 34,
+          height: 34,
+          filterQuality: FilterQuality.medium,
+        ),
+      );
+    }
+    if (a.icon != null) {
+      return Center(
+        child: ClipOval(
+          child: RawImage(
+            image: a.icon,
+            width: 36,
+            height: 36,
+            filterQuality: FilterQuality.medium,
+          ),
+        ),
+      );
+    }
+    return Center(
+      child: Text(
+        a.name.substring(0, 1),
+        textScaler: TextScaler.noScaling,
+        style: LumenType.text(24, weight: 700, color: Colors.white, height: 1),
+      ),
+    );
+  }
+
   bool _sheetOpen = false;
   late final SpringValue _lensX = SpringValue(this, spring: Motions.follow);
   late final SpringValue _lift = SpringValue(
@@ -120,6 +171,19 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     super.initState();
     Diag.instance.finished.addListener(_showReport);
     Diag.instance.autoScript = _robot;
+    bool appsBefore = true;
+    Diag.instance.onTest = (bool testing) {
+      // The test taps the blobs; it must not open other apps.
+      if (testing) {
+        appsBefore = BlobApps.instance.on.value;
+        BlobApps.instance.on.value = false;
+      } else {
+        BlobApps.instance.on.value = appsBefore;
+      }
+    };
+    BlobApps.instance.addListener(_blobsChanged);
+    BlobApps.instance.on.addListener(_blobsChanged);
+    BlobApps.instance.load();
     _lx.addListener(_lensMoved);
     _ly.addListener(_lensMoved);
     _glass.addListener(_lensMoved);
@@ -134,7 +198,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     final Offset b = _home;
     Offset tab(int i) => Offset(14 + _centre(i), b.dy);
     Offset blob(int i) {
-      final double a = math.pi * (0.19 + 0.62 * i / 4);
+      final double a = math.pi * (0.19 + 0.62 * i / (_n - 1));
       return b + Offset(-math.cos(a), -math.sin(a)) * _reach;
     }
 
@@ -552,7 +616,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     }
     _fuses.clear();
     if (v) {
-      for (int i = 0; i < 5; i++) {
+      for (int i = 0; i < _n; i++) {
         _fuses.add(
           Timer(
             Duration(milliseconds: i * 38),
@@ -571,6 +635,17 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   void _run(int i) {
+    if (_appBlobs) {
+      final BlobApp a = BlobApps.instance.apps[i];
+      _setOpen(false);
+      Diag.instance.event('open ${a.name}');
+      BlobApps.instance.launch(a).then((bool ok) {
+        if (!ok) {
+          Haptics.thud();
+        }
+      });
+      return;
+    }
     _setOpen(false);
     Haptics.settle();
     if (i == 0) {
@@ -607,7 +682,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     );
     _home = bc;
     Offset rest(int i) {
-      final double a = math.pi * (0.19 + 0.62 * i / 4);
+      final double a = math.pi * (0.19 + 0.62 * i / (_n - 1));
       return bc + Offset(-math.cos(a), -math.sin(a)) * _reach;
     }
 
@@ -929,15 +1004,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                 child: CustomPaint(
                   painter: _ThreadPainter(
                     from: bc,
-                    to: <Offset>[for (int i = 0; i < 5; i++) rest(i)],
+                    to: <Offset>[for (int i = 0; i < _n; i++) rest(i)],
                     out: _out,
-                    colors: <Color>[for (int i = 0; i < 5; i++) _actions[i].$3],
+                    colors: <Color>[for (int i = 0; i < _n; i++) _blobColor(i)],
                   ),
                 ),
               ),
             ),
             // The blobs.
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < _n; i++)
               ListenableBuilder(
                 listenable: _out[i],
                 builder: (BuildContext context, Widget? _) {
@@ -988,11 +1063,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                       end: Alignment.bottomCenter,
                                       colors: <Color>[
                                         Color.lerp(
-                                          _actions[i].$3,
+                                          _blobColor(i),
                                           Colors.white,
                                           0.14,
                                         )!,
-                                        _actions[i].$3,
+                                        _blobColor(i),
                                       ],
                                     ),
                                     shape: CircleBorder(
@@ -1003,11 +1078,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                       ),
                                     ),
                                   ),
-                                  child: Icon(
-                                    _actions[i].$2,
-                                    color: Colors.white,
-                                    size: 26,
-                                  ),
+                                  child: _blobFace(i),
                                 ),
                               ),
                               const SizedBox(height: 7),
@@ -1015,7 +1086,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                               Opacity(
                                 opacity: ((p - 0.6) / 0.4).clamp(0.0, 1.0),
                                 child: Text(
-                                  _actions[i].$1,
+                                  _blobName(i),
                                   maxLines: 1,
                                   softWrap: false,
                                   textScaler: TextScaler.noScaling,
@@ -1646,6 +1717,15 @@ void showPrismSettings(BuildContext context) {
                                 Diag.instance.glassMode.value = v,
                           ),
                     ),
+                    const SizedBox(height: 12),
+                    ListenableBuilder(
+                      listenable: BlobApps.instance.on,
+                      builder: (BuildContext context, Widget? _) => SwitchLine(
+                        label: 'Blobs open real apps',
+                        value: BlobApps.instance.on.value,
+                        onChanged: (bool v) => BlobApps.instance.on.value = v,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Glass quality',
@@ -1984,7 +2064,7 @@ class _ThreadPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    for (int i = 0; i < out.length; i++) {
+    for (int i = 0; i < to.length; i++) {
       final double p = out[i].value;
       // Only on the way out: closing, the blobs simply fall back in.
       if (p <= 0.02 || p >= 0.97 || out[i].target < 0.5) {
@@ -2010,5 +2090,8 @@ class _ThreadPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ThreadPainter old) => old.from != from;
+  bool shouldRepaint(_ThreadPainter old) =>
+      old.from != from ||
+      old.to.length != to.length ||
+      old.colors.first != colors.first;
 }

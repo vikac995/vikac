@@ -101,7 +101,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 17';
+  static const String build = 'Prism build 18';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -433,6 +433,10 @@ class Diag {
 
   /// The app driving itself: set by the shell, which knows where things are on screen.
   Future<void> Function()? autoScript;
+
+  /// Called with true when a test starts and false when it ends, so the
+  /// blob menu can show Prism's own actions while the robot is tapping it.
+  void Function(bool testing)? onTest;
   int _run = 0;
 
   void _apply(_Step s) {
@@ -456,6 +460,7 @@ class Diag {
       wallpaperOn.value,
       glassMode.value,
     );
+    onTest?.call(true);
     _coverage.clear();
     _idleFrames = -1;
     _powerEnd = '';
@@ -536,6 +541,7 @@ class Diag {
 
   Future<void> _endGuided() async {
     _guided = false;
+    onTest?.call(false);
     _powerEnd = await _power();
     final String text = report();
     _restore();
