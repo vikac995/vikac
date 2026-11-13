@@ -1,5 +1,24 @@
 # Lumen changelog
 
+## Prism, build 31 (13 November 2026)
+
+**File:** `releases/prism-build-31.apk`
+
+**A flick no longer wakes the lens.**
+
+- Before, the button turned into glass the instant it moved. During an upward flick it magnified and highlighted cards for a moment before the drawer opened.
+- Now the button waits to see what the movement is. A quick upward movement stays a plain button. It only lifts off as the lens once the movement is clearly a carry: slow, sideways or downward, or held for about a fifth of a second.
+- So a flick opens the drawer with no glass, no magnifying and no cards lighting up. That removes glass drawing from exactly the moment the drawer starts to animate.
+- A normal slow drag lifts the lens as before. A fast upward drag that you keep holding becomes the lens after about a fifth of a second.
+
+**What to look for**
+- Flick up: the drawer should open with nothing else happening on the way.
+- Lens: drag up slowly as usual. Does it still lift when you expect? If the lens now feels late to appear, tell me.
+- If you drag upward quickly and hold, the lens should catch up to your finger.
+
+**Checked:** in my preview a quick upward movement opens the drawer, and a slow drag lifts the lens.
+**Not checked:** on a phone. The line between "flick" and "carry" is a speed (about 0.7 of a point per millisecond) that I chose by reasoning; real thumbs may need it adjusted.
+
 ## Prism, build 30 (13 November 2026)
 
 **File:** `releases/prism-build-30.apk`

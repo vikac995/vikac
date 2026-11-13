@@ -166,7 +166,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   bool _carrying = false, _parked = false, _moved = false;
   Offset? _downAt, _lastAt;
   final Stopwatch _held = Stopwatch();
-  bool _drawerOpen = false;
+  bool _drawerOpen = false, _lifted = false;
+  Timer? _liftTimer;
   Offset _home = Offset.zero;
   LensTargetState? _target, _pill;
   // On its way home the lens is a blob of the button's colour, not glass.
@@ -511,25 +512,25 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     }
     _lastAt = e.position;
     final Size screen = MediaQuery.sizeOf(context);
+    final Offset travel = e.position - _downAt!;
     if (!_moved) {
-      if ((e.position - _downAt!).distance < 10) {
+      if (travel.distance < 10) {
         return;
       }
-      // The button lifts off: from here on it is a lens.
       _moved = true;
       _setOpen(false);
-      setState(() {
-        _carrying = true;
-        _returning = false;
-      });
-      _lx.jumpTo(_home.dx);
-      _ly.jumpTo(_home.dy);
-      _glass.animateTo(1);
-      _kick.animateTo(1);
-      Haptics.settle();
-      Diag.instance
-        ..overlay = '+lens'
-        ..event('lens lifted');
+    }
+    if (!_lifted) {
+      // Not a lens yet. A quick upward movement is probably a flick for the app drawer, and a
+      // flick should not light up the glass or wake the cards. The button only lifts off once
+      // the movement is clearly a carry: slow, sideways or downward, or simply held long enough.
+      final int ms = _held.elapsedMilliseconds;
+      final bool upward = travel.dy < 0 && travel.dx.abs() < -travel.dy * 0.8;
+      final bool slow = ms >= 70 && travel.distance / ms < 0.7;
+      if (_drawerOpen || (upward && !slow && ms < 220)) {
+        return;
+      }
+      _liftOff();
     }
     // The glass rides above the thumb so the thumb does not cover it.
     _lx.animateTo(
@@ -543,7 +544,25 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     );
   }
 
+  /// The button leaves the bar and becomes the lens.
+  void _liftOff() {
+    _lifted = true;
+    setState(() {
+      _carrying = true;
+      _returning = false;
+    });
+    _lx.jumpTo(_home.dx);
+    _ly.jumpTo(_home.dy);
+    _glass.animateTo(1);
+    _kick.animateTo(1);
+    Haptics.settle();
+    Diag.instance
+      ..overlay = '+lens'
+      ..event('lens lifted');
+  }
+
   void _buttonUp() {
+    _liftTimer?.cancel();
     _kick.animateTo(1);
     if (_downAt == null) {
       return;
@@ -552,18 +571,18 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     _downAt = null;
     if (_drawerOpen) {
       // While the drawer is up, the button only closes it.
-      if (_moved) {
+      if (_lifted) {
         _lensQuiet();
       }
       _setDrawer(false);
     } else if (_moved &&
-        _held.elapsedMilliseconds < 320 &&
+        !_lifted &&
         travel.dy < -46 &&
         travel.dx.abs() < -travel.dy * 0.8) {
-      // A quick flick upward: the button becomes the app drawer.
-      _lensQuiet();
+      // A quick flick upward, let go before the button ever became a lens: the app drawer.
       _setDrawer(true);
-    } else if (!_moved) {
+    } else if (!_lifted) {
+      // A tap, or a small nudge that was neither a flick nor a carry.
       _setOpen(!_open);
     } else if (_target != null && _target!.widget.actions.isNotEmpty) {
       // Put down on something you can act on: the pill stays and is the buttons.
@@ -1216,6 +1235,21 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                       ..reset()
                       ..start();
                     _moved = false;
+                    _lifted = false;
+                    // A finger that moved and then stopped sends no more movement, so the wait is also timed.
+                    _liftTimer?.cancel();
+                    _liftTimer = Timer(const Duration(milliseconds: 220), () {
+                      if (_downAt != null &&
+                          _moved &&
+                          !_lifted &&
+                          !_drawerOpen &&
+                          mounted) {
+                        _liftOff();
+                        final Offset at = _lastAt ?? _home;
+                        _lx.animateTo(at.dx);
+                        _ly.animateTo(at.dy - 62);
+                      }
+                    });
                     _kick.animateTo(0.92);
                   },
                   onPointerMove: _buttonMove,
