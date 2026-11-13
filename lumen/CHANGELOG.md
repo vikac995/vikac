@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 36 (13 November 2026)
+
+**File:** `releases/prism-build-36.apk`
+
+- **A coloured initial marks where each letter starts in the drawer.** The first app of every new letter has its first letter in the accent colour and slightly bolder. The other apps of that letter are plain. Down a page, the orange initials read as an index.
+- Nothing else moves: no extra element, no extra space.
+
+**What to look for:** can you jump to a letter by scanning for the orange initials? Is the orange strong enough against the tile colours next to it, or too strong?
+
+**Checked:** in my preview, with made-up apps: the first app of each letter has an orange initial and the rest do not.
+**Not checked:** on a phone, and with names that start with a digit or symbol.
+
 ## Prism, build 35 (13 November 2026)
 
 **File:** `releases/prism-build-35.apk`

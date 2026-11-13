@@ -374,6 +374,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                               cols: _cols,
                               turn: _turn,
                               ink: c.ink.withValues(alpha: 0.84),
+                              accent: c.accent,
                             ),
                           ),
                         ),
@@ -403,11 +404,12 @@ class _GridPainter extends CustomPainter {
     required this.cols,
     required this.turn,
     required this.ink,
+    required this.accent,
   }) : super(repaint: turn);
   final List<AppTile> apps;
   final int from, to, dir, rows, cols;
   final Animation<double> turn;
-  final Color ink;
+  final Color ink, accent;
   static const double _tile = 61;
   static final Path _rest = ShapeLib.lerpPath(
     _squircle,
@@ -441,19 +443,51 @@ class _GridPainter extends CustomPainter {
   static final Map<String, TextPainter> _labels = <String, TextPainter>{};
   static final Map<String, TextPainter> _letters = <String, TextPainter>{};
 
-  TextPainter _label(AppTile t, double width) => _labels.putIfAbsent(
-    '${t.label}|${width.round()}|${ink.toARGB32()}',
-    () => TextPainter(
-      text: TextSpan(
-        text: t.label,
-        style: LumenType.text(13.5, weight: 660, color: ink, height: 1.14),
-      ),
-      textDirection: TextDirection.ltr,
-      textAlign: TextAlign.center,
-      maxLines: 2,
-      ellipsis: '…',
-    )..layout(maxWidth: width - 6),
-  );
+  /// The first app of each letter carries its initial in the accent colour, so the
+  /// coloured initials down a page read as an index of where each letter starts.
+  bool _starts(int i) {
+    String first(int k) => apps[k].label.isEmpty
+        ? ''
+        : apps[k].label.substring(0, 1).toUpperCase();
+    return i == 0 || first(i) != first(i - 1);
+  }
+
+  TextPainter _label(int i, double width) {
+    final AppTile t = apps[i];
+    final bool lead = t.label.isNotEmpty && _starts(i);
+    final TextStyle style = LumenType.text(
+      13.5,
+      weight: 660,
+      color: ink,
+      height: 1.14,
+    );
+    return _labels.putIfAbsent(
+      '${t.label}|${width.round()}|${ink.toARGB32()}|${lead ? accent.toARGB32() : 0}',
+      () => TextPainter(
+        text: lead
+            ? TextSpan(
+                style: style,
+                children: <InlineSpan>[
+                  TextSpan(
+                    text: t.label.substring(0, 1),
+                    style: LumenType.text(
+                      13.5,
+                      weight: 800,
+                      color: accent,
+                      height: 1.14,
+                    ),
+                  ),
+                  TextSpan(text: t.label.substring(1)),
+                ],
+              )
+            : TextSpan(text: t.label, style: style),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        ellipsis: '…',
+      )..layout(maxWidth: width - 6),
+    );
+  }
 
   void _mark(Canvas canvas, AppTile t, Rect box, double alpha, double scale) {
     if (alpha <= 0) {
@@ -582,7 +616,7 @@ class _GridPainter extends CustomPainter {
       for (int col = 0; col < cols; col++) {
         final int i = (e < 0.5 ? from : to) * per + row * cols + col;
         if (i < apps.length) {
-          final TextPainter tp = _label(apps[i], cw);
+          final TextPainter tp = _label(i, cw);
           tp.paint(canvas, Offset(cw * (col + 0.5) - tp.width / 2, top + 3));
         }
       }
