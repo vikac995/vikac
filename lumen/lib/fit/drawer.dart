@@ -577,12 +577,9 @@ class _GridPainter extends CustomPainter {
         if (a?.label == b?.label) {
           name(b, 1);
         } else {
-          // Each name is mostly gone before the other is mostly there, so two names are never both readable.
-          name(a, 1 - Curves.easeInOut.transform((e / 0.62).clamp(0.0, 1.0)));
-          name(
-            b,
-            Curves.easeInOut.transform(((e - 0.38) / 0.62).clamp(0.0, 1.0)),
-          );
+          // The same timing as the marks: the old name is gone before the new one starts.
+          name(a, 1 - leave);
+          name(b, arrive);
         }
       }
     }

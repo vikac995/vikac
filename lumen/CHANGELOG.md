@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 30 (13 November 2026)
+
+**File:** `releases/prism-build-30.apk`
+
+**A quieter centre during the drawer morph.** In build 29 the old and new marks lay on top of each other for most of the drag, so every tile centre was a tangle. My proposal, now built:
+
+- **The mark morphs through one shared shape: a small dot.** As you start to drag, the old mark draws in and becomes a white dot. The dot holds while the tile changes shape and colour. Near the end, the new mark grows out of the dot.
+- So the centre never holds two things at once, and at the halfway point every tile on the page looks the same: a soft cookie with one dot.
+- **Names** follow the same timing: the old name is gone before the new one starts, so two names never overlap.
+- Shape, colour, and following the finger are unchanged from build 29.
+
+**What to look for**
+- Is the centre calm now? Does the dot read as the mark "passing through", or as a separate thing appearing?
+- The names are blank for the middle fifth of the drag. Is that fine, or do you miss them?
+
+**Checked:** in my preview I held a drag at three points: early (old mark still clear), a third of the way (mark almost gone, dot arriving), and halfway (one clean dot per tile, nothing else).
+**Not checked:** on a phone, in motion, or with real marks and picture icons. The last change (names never overlapping) went in after the preview.
+
 ## Prism, build 29 (13 November 2026)
 
 **File:** `releases/prism-build-29.apk`
