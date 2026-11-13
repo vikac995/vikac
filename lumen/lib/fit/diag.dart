@@ -84,8 +84,11 @@ class _Step {
     this.name,
     this.quality, {
     this.solid = false,
+    // ignore: unused_element_parameter
     this.lights = false,
+    this.mode = 0,
   });
+  final int mode;
   final String name;
   final GlassQuality quality;
   final bool solid, lights;
@@ -98,7 +101,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 12';
+  static const String build = 'Prism build 13';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -110,6 +113,17 @@ class Diag {
 
   /// The soft coloured lights behind everything. Off by default.
   final ValueNotifier<bool> wallpaperOn = ValueNotifier<bool>(false);
+
+  /// How much glass the bar uses. 0 original: always glass. 1 one at a time:
+  /// only one moving piece of glass at once. 2 frosted: the bar blurs but does
+  /// not bend. 3 event: the bar is solid; only the carried lens and the rest timer are glass.
+  final ValueNotifier<int> glassMode = ValueNotifier<int>(0);
+  static const List<String> glassModes = <String>[
+    'Original',
+    'One at a time',
+    'Frosted',
+    'Event',
+  ];
 
   // ---- what is being recorded
   String _cfg = 'your settings';
@@ -312,10 +326,10 @@ class Diag {
   // ---- the guided test: use the app; the settings change by themselves
   static const List<_Step> _steps = <_Step>[
     _Step('Full glass', GlassQuality.full),
-    _Step('Medium glass', GlassQuality.medium),
-    _Step('Low glass', GlassQuality.low),
+    _Step('One at a time', GlassQuality.full, mode: 1),
+    _Step('Frosted', GlassQuality.full, mode: 2),
+    _Step('Event', GlassQuality.full, mode: 3),
     _Step('No glass', GlassQuality.low, solid: true),
-    _Step('Full glass + lights', GlassQuality.full, lights: true),
   ];
   static const int secondsPerStep = int.fromEnvironment(
     'DIAG_STEP',
@@ -332,7 +346,7 @@ class Diag {
 
   /// Becomes the finished report when a guided test ends.
   final ValueNotifier<String?> finished = ValueNotifier<String?>(null);
-  (GlassQuality, bool, bool)? _saved;
+  (GlassQuality, bool, bool, int)? _saved;
 
   // What each step should include, so every setting is tested on the same things.
   static const List<(String, String)> _kinds = <(String, String)>[
@@ -368,6 +382,7 @@ class Diag {
       ..quality = s.quality
       ..reduceTransparency = s.solid;
     wallpaperOn.value = s.lights;
+    glassMode.value = s.mode;
   }
 
   /// One test, two halves. First the app drives itself through the same
@@ -377,7 +392,12 @@ class Diag {
     final int run = ++_run;
     bool live() => run == _run;
     Future<void> second() => Future<void>.delayed(const Duration(seconds: 1));
-    _saved = (settings.quality, settings.reduceTransparency, wallpaperOn.value);
+    _saved = (
+      settings.quality,
+      settings.reduceTransparency,
+      wallpaperOn.value,
+      glassMode.value,
+    );
     _coverage.clear();
     _idleFrames = -1;
     _powerEnd = '';
@@ -446,12 +466,13 @@ class Diag {
   }
 
   void _restore() {
-    final (GlassQuality, bool, bool)? s = _saved;
+    final (GlassQuality, bool, bool, int)? s = _saved;
     if (s != null) {
       settings
         ..quality = s.$1
         ..reduceTransparency = s.$2;
       wallpaperOn.value = s.$3;
+      glassMode.value = s.$4;
     }
   }
 

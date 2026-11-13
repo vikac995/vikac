@@ -1,5 +1,30 @@
 # Lumen changelog
 
+## Prism, build 13 (13 November 2026)
+
+**File:** `releases/prism-build-13.apk`
+
+Four glass styles to compare, switchable at any time. **Original is the default and is exactly how build 12 looked.**
+
+Round button on Home, **Glass style**:
+
+- **Original.** The bar and its riding lens are always glass.
+- **One (one at a time).** Only one moving piece of glass at once. While you carry the lens the bar turns solid; while the bar's small lens slides between tabs it is a plain highlight and turns back to glass when it stops.
+- **Frosted.** The bar still blurs what is behind it but no longer bends it: one drawing pass instead of two. The small lens and the carried lens are unchanged.
+- **Event.** The bar is solid always. Only the carried lens and the rest timer are glass.
+
+The test now runs: Full glass (Original), One at a time, Frosted, Event, No glass. Medium, Low and the lights were dropped from the test because your reports showed they differ by 0.2 ms or less; they are still in settings.
+
+**To revert fully:** choose Original. Nothing else changed in this build, and every earlier build is still downloadable.
+
+**What to look for**
+- One: does the bar changing as you lift the lens read as a glitch or as intentional? Does the small lens popping back to glass after a tab switch catch your eye?
+- Frosted: put Food or Progress behind the bar and scroll. Can you tell it from Original at all?
+- Event: does the app still feel like itself?
+
+**Checked:** in my preview each style renders as described, at rest and with the lens out.
+**Not checked:** on a phone, and I have no S24. Whether any style is actually faster is exactly what the test will say. Tab switches and sheets, the biggest cost in your reports, are not fixed in this build.
+
 ## Prism, build 12 (13 November 2026)
 
 **File:** `releases/prism-build-12.apk`

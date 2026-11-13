@@ -721,7 +721,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                       }
                     },
                     child: ListenableBuilder(
-                      listenable: Listenable.merge(<Listenable>[_lensX, _lift]),
+                      listenable: Listenable.merge(<Listenable>[
+                        _lensX,
+                        _lift,
+                        Diag.instance.glassMode,
+                      ]),
                       builder: (BuildContext context, Widget? _) {
                         // The lens swells when lifted, stretches along its travel and thins to keep its volume.
                         final double stretch = (_lensX.velocity.abs() / 70)
@@ -738,7 +742,20 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                           lens,
                           Radius.circular(h / 2),
                         );
-                        final bool solid = settings.reduceTransparency;
+                        final bool off = settings.reduceTransparency;
+                        final int mode = Diag.instance.glassMode.value;
+                        final bool lensOut = _carrying || _parked;
+                        final bool moving =
+                            (_lensX.value - _lensX.target).abs() > 0.5 ||
+                            _lift.value > 0.01;
+                        // The bar itself, and the small lens that rides in it.
+                        final bool barSolid =
+                            off || mode == 3 || (mode == 1 && lensOut);
+                        final bool riderSolid =
+                            off ||
+                            mode == 3 ||
+                            (mode == 1 && (moving || lensOut));
+                        final bool solid = barSolid || riderSolid;
                         return Stack(
                           clipBehavior: Clip.none,
                           children: <Widget>[
@@ -750,14 +767,20 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                   tint: 0.42,
                                   refraction: 30,
                                   bevel: 20,
-                                  fallbackColor: c.surfaceHigh,
+                                  // In the new styles the solid bar is matched to the glass one, so swapping does not flash.
+                                  fallbackColor: mode == 0
+                                      ? c.surfaceHigh
+                                      : Color.lerp(c.bg, c.surfaceHigh, 0.35),
                                 ),
                                 hole: solid ? null : shape.deflate(0.5),
+                                solid: barSolid,
+                                quality: mode == 2 ? GlassQuality.low : null,
                               ),
                             ),
                             Positioned.fromRect(
                               rect: lens,
                               child: Glass(
+                                solid: riderSolid,
                                 radius: h / 2,
                                 style: GlassStyle(
                                   blur: 2.5,
@@ -770,9 +793,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                   saturation: 1.4,
                                   adapt: 0.42,
                                   shadow: 0.6,
-                                  fallbackColor: c.accent.withValues(
-                                    alpha: 0.3,
-                                  ),
+                                  fallbackColor: mode == 0
+                                      ? c.accent.withValues(alpha: 0.3)
+                                      : c.ink.withValues(alpha: 0.10),
                                 ),
                               ),
                             ),
@@ -1510,6 +1533,28 @@ void showPrismSettings(BuildContext context) {
                       value: Diag.instance.wallpaperOn.value,
                       onChanged: (bool v) =>
                           Diag.instance.wallpaperOn.value = v,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Glass style (Original is how it was)',
+                      style: LumenType.label(color: c.inkMuted),
+                    ),
+                    const SizedBox(height: 8),
+                    ListenableBuilder(
+                      listenable: Diag.instance.glassMode,
+                      builder: (BuildContext context, Widget? _) =>
+                          Segmented<int>(
+                            values: const <int>[0, 1, 2, 3],
+                            labels: const <String>[
+                              'Original',
+                              'One',
+                              'Frosted',
+                              'Event',
+                            ],
+                            value: Diag.instance.glassMode.value,
+                            onChanged: (int v) =>
+                                Diag.instance.glassMode.value = v,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     Text(

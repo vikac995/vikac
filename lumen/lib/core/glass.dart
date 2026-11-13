@@ -202,10 +202,16 @@ class Glass extends StatelessWidget {
     this.style = const GlassStyle(),
     this.hole,
     this.child,
+    this.quality,
+    this.solid,
   });
 
   final double radius;
   final GlassStyle style;
+
+  /// Set to overrule the app-wide setting for this one piece of glass.
+  final GlassQuality? quality;
+  final bool? solid;
 
   /// A rounded hole (local coordinates) left untouched, so another piece of
   /// glass can sit in it and see the unblurred backdrop.
@@ -224,9 +230,9 @@ class Glass extends StatelessWidget {
           hole: hole,
           colors: c,
           quality: GlassShaders.available
-              ? settings.effectiveQuality
+              ? (quality ?? settings.effectiveQuality)
               : GlassQuality.low,
-          solid: settings.reduceTransparency,
+          solid: solid ?? settings.reduceTransparency,
           dpr: MediaQuery.devicePixelRatioOf(context),
           routeAnimation: routeMotionOf(context),
           child: child,
