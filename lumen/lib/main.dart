@@ -37,6 +37,12 @@ import 'rooms/screens/components_room.dart';
 import 'rooms/screens/dashboard_screen.dart';
 import 'rooms/screens/detail_screen.dart';
 import 'rooms/screens/onboarding_screen.dart';
+import 'rooms/screens/settings_screen.dart';
+import 'rooms/patterns/numpad_room.dart';
+import 'rooms/patterns/scan_room.dart';
+import 'rooms/patterns/widgets_room.dart';
+import 'rooms/patterns/lists_room.dart';
+import 'rooms/patterns/celebrate_room.dart';
 import 'rooms/shaders/shaders_room.dart';
 import 'rooms/shapes/shape_room.dart';
 import 'rooms/springs/springs_room.dart';
@@ -118,6 +124,12 @@ class LumenApp extends StatelessWidget {
             'detail' => const DetailScreen(),
             'assistant' => const AssistantScreen(),
             'onboarding' => const OnboardingScreen(),
+            'settings' => const SettingsScreen(),
+            'numpad' => const NumpadRoom(),
+            'scan' => const ScanRoom(),
+            'widgets' => const WidgetsRoom(),
+            'lists' => const ListsRoom(),
+            'celebrate' => const CelebrateRoom(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

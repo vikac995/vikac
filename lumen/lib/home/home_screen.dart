@@ -31,6 +31,12 @@ import '../rooms/screens/components_room.dart';
 import '../rooms/screens/dashboard_screen.dart';
 import '../rooms/screens/detail_screen.dart';
 import '../rooms/screens/onboarding_screen.dart';
+import '../rooms/screens/settings_screen.dart';
+import '../rooms/patterns/numpad_room.dart';
+import '../rooms/patterns/scan_room.dart';
+import '../rooms/patterns/widgets_room.dart';
+import '../rooms/patterns/lists_room.dart';
+import '../rooms/patterns/celebrate_room.dart';
 import '../rooms/pill/pill_room.dart';
 import '../rooms/shaders/shaders_room.dart';
 import '../rooms/shapes/shape_room.dart';
@@ -229,6 +235,42 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFF2ED3B7),
     (_) => const OnboardingScreen(),
   ),
+  _Room(
+    'Settings',
+    'Rows, live controls, safe erase.',
+    const Color(0xFF7C8AA5),
+    (_) => const SettingsScreen(),
+  ),
+  _Room(
+    'Number pad',
+    'Typing a number, done properly.',
+    const Color(0xFF4FB8FF),
+    (_) => const NumpadRoom(),
+  ),
+  _Room(
+    'Scan',
+    'Camera frame to result sheet.',
+    const Color(0xFF2ED3B7),
+    (_) => const ScanRoom(),
+  ),
+  _Room(
+    'Widgets',
+    'Add, resize, remove tiles.',
+    const Color(0xFF8E7CFF),
+    (_) => const WidgetsRoom(),
+  ),
+  _Room(
+    'Lists',
+    'Search, filter, jump by letter.',
+    const Color(0xFFFF6B4A),
+    (_) => const ListsRoom(),
+  ),
+  _Room(
+    'Celebrate',
+    'A reward that ends.',
+    const Color(0xFFF5B301),
+    (_) => const CelebrateRoom(),
+  ),
 ];
 
 class HomeScreen extends StatefulWidget {
@@ -378,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A showcase of interface craft.\nTwenty-nine examples to point at.\nEach has an id; pieces can show their names.',
+                    'A showcase of interface craft.\nThirty-five examples to point at.\nEach has an id; pieces can show their names.',
                     style: LumenType.text(
                       15.5,
                       color: c.inkMuted,
@@ -495,12 +537,28 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               ),
             ],
             const SizedBox(height: 34),
+            _section(
+              c,
+              'More patterns',
+              'Numbers, camera, tiles, long lists, rewards.',
+            ),
+            for (int r = 0; r < 3; r++) ...<Widget>[
+              if (r > 0) const SizedBox(height: gap),
+              Row(
+                children: <Widget>[
+                  Expanded(child: _card(30 + r * 2, height: 156)),
+                  const SizedBox(width: gap),
+                  Expanded(child: _card(31 + r * 2, height: 156)),
+                ],
+              ),
+            ],
+            const SizedBox(height: 34),
             _section(c, 'Bonus', 'Please do not ship this.'),
             _card(12, height: 150),
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 10.2  ·  Flutter 3.50  ·  Impeller',
+                'Build 11  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),

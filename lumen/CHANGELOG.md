@@ -1,5 +1,34 @@
 # Lumen changelog
 
+## Build 11 (13 November 2026)
+
+Six new examples, in a new home section called "More patterns". Nothing was removed; rooms 1 to 29 and the bonus are unchanged.
+
+**Files:** `releases/lumen-build-11.apk`, `releases/lumen-source-build-11.zip`
+
+### New
+
+- **R30 Settings screen.** A complete settings screen. Profile header; rows in small groups; controls that work inside the row (a dial for rest seconds, kg/lb, a switch); a back-up row that shows its progress in place; and a "Danger zone" where erasing needs a held press that fills the button, followed by an Undo for six seconds. The Haptics and Reduce motion switches are real and affect all of Lumen. Pieces are tagged R30.1 to R30.5 when "Show names" is on.
+- **R31 Number pad.** A keypad of our own for numbers too far to dial. Large live number, +10 / +50 / +100 chips, and a shake with a thud when a key is refused (a sixth digit, or a decimal point on calories).
+- **R32 Scan.** A scanning flow with a drawn stand-in for the camera (Lumen does not ask for camera permission). The corner frame closes on the barcode, a result sheet springs up, and a portion dial updates the calories live.
+- **R33 Widgets.** A grid of tiles. Long-press one to edit; drag its round handle to resize in whole cells; the minus removes it; "Add a widget" opens a picker. Other tiles spring out of the way.
+- **R34 Lists.** A long list: search as you type, filter chips, letter headers that stick, a letter rail on the right to jump with a thumb (one tick per letter), and an empty state when nothing matches.
+- **R35 Celebrate.** Three short rewards: a personal best (medal pop, confetti, rolling number), a weekly streak filling in, and a goal ring closing into a tick. Each lasts about a second and then stops.
+
+### What to test on the phone
+
+1. R30: hold "Hold to erase everything". Does the ticking build-up feel like a warning? Let go halfway: it should drain back. Does a quick tap do nothing?
+2. R30: while holding the erase button, the page should not scroll.
+3. R33: long-press a tile, then drag the handle. Does the size snap where you expect, with a tick each time?
+4. R34: slide a thumb down the letters. One tick per letter, and the list should keep up.
+5. R35: "Lift 5 kg more". A thud, then three light ticks, in time with the confetti. Watch the frame-rate readout during the burst.
+6. R32: watch the readout while the scan line sweeps.
+
+### Not checked
+
+- Everything was checked only in the Linux preview (software rendering, mouse). Haptics, real frame rate, and how any of this feels under a thumb were not checked.
+- R31 and R34 with a large system text size.
+
 ## Build 10.2 (13 November 2026)
 
 **File:** `releases/lumen-build-10.2.apk`

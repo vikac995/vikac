@@ -67,6 +67,17 @@ Shared building blocks used by most rooms: `lib/core/springs.dart` (spring token
 Pieces inside the Screens rooms carry their own ids (for example `R26.3`). Switch on "Show names" (the tag button at
 the top of those screens) and every piece is labelled in the app, so a screenshot names what it shows.
 
+## More patterns
+
+| Id | Name | What it shows | Files |
+|---|---|---|---|
+| R30 | Settings screen | A complete settings screen: profile header, rows in small groups, controls that work inside the row (dial, segmented, switch), progress inside a row, and a hold-to-erase button with undo. | `lib/rooms/screens/settings_screen.dart` |
+| R31 | Number pad | A custom keypad for typing a number: big live display, quick-add chips, and a shake with a thud when a key is refused. | `lib/rooms/patterns/numpad_room.dart` |
+| R32 | Scan | A camera scanning flow: corner frame that closes on a find, sweeping line, torch, and a result sheet with a portion dial and live total. | `lib/rooms/patterns/scan_room.dart` |
+| R33 | Widgets | An editable grid of tiles: long-press to edit, drag a handle to resize in whole cells, remove with a badge, add from a picker; everything else springs out of the way. | `lib/rooms/patterns/widgets_room.dart` |
+| R34 | Lists | A long list: search as you type, filter chips, sticky letter headers, a letter rail with ticks to jump, and an empty result state. | `lib/rooms/patterns/lists_room.dart` |
+| R35 | Celebrate | Short reward moments that end: personal best with confetti and a rolling number, a streak filling day by day, a goal ring closing into a tick. | `lib/rooms/patterns/celebrate_room.dart` |
+
 ## Bonus
 
 | Id | Name | What it shows | Files |
