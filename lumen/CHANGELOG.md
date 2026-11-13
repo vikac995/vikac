@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 41 (13 November 2026)
+
+**File:** `releases/prism-build-41.apk`
+
+- **Coloured initials are more noticeable.** Same hue as the app's tile, but brighter, stronger and heavier, so they stand out from the plain names next to them.
+- **The bar goes solid while the drawer or a sheet is open.** Your build 40 report showed that turning pages in the drawer was 10 to 16 % slow with the glass bar and 1 to 2 % without it. The bar sits dimmed under the drawer, and its glass was being blurred again on every frame for something nobody is looking at. It turns back to glass when the drawer or sheet closes.
+
+**What to look for**
+- Initials: noticeable enough now? Any that are hard to read?
+- When the drawer or a sheet opens, the bar changes from glass to solid at that instant. It is dimmed a moment later, but tell me if you catch the change.
+
+**Checked:** in my preview: the brighter initials, and the bar solid under the open drawer.
+**Not checked:** on a phone. Whether page turns are faster is for your next report: compare "drawer page" under Full glass with this report's 10.4 %.
+
 ## Prism, build 40 (13 November 2026)
 
 **File:** `releases/prism-build-40.apk`

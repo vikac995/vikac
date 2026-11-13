@@ -1005,10 +1005,18 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                             (_lensX.value - _lensX.target).abs() > 0.5 ||
                             _lift.value > 0.01;
                         // The bar itself, and the small lens that rides in it.
+                        // While the drawer or a sheet is up, the bar sits dimmed underneath it. Glass there
+                        // is blurred again on every frame for something nobody is looking at: measured, it
+                        // was most of the cost of turning pages in the drawer. So it goes solid meanwhile.
+                        final bool covered = _drawerOpen || _sheetOpen;
                         final bool barSolid =
-                            off || mode == 3 || (mode == 1 && lensOut);
+                            off ||
+                            covered ||
+                            mode == 3 ||
+                            (mode == 1 && lensOut);
                         final bool riderSolid =
                             off ||
+                            covered ||
                             mode == 3 ||
                             (mode == 1 && (moving || lensOut));
                         final bool solid = barSolid || riderSolid;
@@ -1024,7 +1032,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                   refraction: 30,
                                   bevel: 20,
                                   // In the new styles the solid bar is matched to the glass one, so swapping does not flash.
-                                  fallbackColor: mode == 0
+                                  fallbackColor: mode == 0 && !covered
                                       ? c.surfaceHigh
                                       : Color.lerp(c.bg, c.surfaceHigh, 0.35),
                                 ),
@@ -1049,7 +1057,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                   saturation: 1.4,
                                   adapt: 0.42,
                                   shadow: 0.6,
-                                  fallbackColor: mode == 0
+                                  fallbackColor: mode == 0 && !covered
                                       ? c.accent.withValues(alpha: 0.3)
                                       : c.ink.withValues(alpha: 0.10),
                                 ),

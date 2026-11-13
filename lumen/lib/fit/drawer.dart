@@ -466,7 +466,14 @@ class _GridPainter extends CustomPainter {
     );
     // The initial takes the app's own tile colour, nudged a little toward the text colour so it
     // stays readable: tile colours are chosen to sit behind white marks, not to be read as text.
-    final Color initial = Color.lerp(t.color, ink.withValues(alpha: 1), 0.28)!;
+    // Same hue as the tile, but brought up to a brightness and strength that reads as text and
+    // stands out from the plain names beside it.
+    final HSLColor own = HSLColor.fromColor(t.color);
+    final bool onDark = ink.computeLuminance() > 0.5;
+    final Color initial = own
+        .withSaturation((own.saturation * 1.45 + 0.12).clamp(0.0, 1.0))
+        .withLightness(onDark ? 0.69 : 0.4)
+        .toColor();
     return _labels.putIfAbsent(
       '${t.label}|${width.round()}|${ink.toARGB32()}|${lead ? initial.toARGB32() : 0}',
       () => TextPainter(
@@ -478,7 +485,7 @@ class _GridPainter extends CustomPainter {
                     text: t.label.substring(0, 1),
                     style: LumenType.text(
                       13.5,
-                      weight: 800,
+                      weight: 900,
                       color: initial,
                       height: 1.14,
                     ),
