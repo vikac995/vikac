@@ -1,5 +1,25 @@
 # Lumen changelog
 
+## Prism, build 26 (13 November 2026)
+
+**File:** `releases/prism-build-26.apk`
+
+**The drawer's page turn is now a morph, not a swap.**
+
+- Nothing shrinks, fades out or pops in. Each tile stays at full size, in place.
+- The squircle's outline ripples slightly (the same shape morph as the Shape morph room in Lumen) and settles back to a squircle.
+- The colour slides around the colour wheel to the next app's colour, the short way round, so it stays vivid the whole time and never passes through grey.
+- The mark dissolves into the next mark in place. The name does the same, timed so two names are never both readable at once.
+- The row-after-row delay is much smaller, so the page changes nearly together and reads as one calm movement.
+
+**What to look for**
+- Is the ripple the right amount? I set it to less than half of the full "cookie" shape.
+- Does the dissolve of the marks look clean, or ghostly?
+- Is it calmer than before without feeling slow? It takes about 0.4 seconds.
+
+**Checked:** in my preview I froze a page turn exactly halfway: the outlines ripple, the tiles are full size, and both marks are visible mid-dissolve. My first version went grey halfway and showed two overlapping names; after fixing both I froze it again and the colours stay vivid and only one name is readable.
+**Not checked:** on a phone, and the motion itself.
+
 ## Prism, build 25 (13 November 2026)
 
 **File:** `releases/prism-build-25.apk`

@@ -3,7 +3,10 @@ import 'dart:ui' as ui;
 
 import 'package:material_ui/material_ui.dart';
 
+import 'dart:typed_data';
+
 import '../core/haptics.dart';
+import '../core/shapes.dart';
 import '../core/springs.dart';
 import '../core/theme.dart';
 import 'apps.dart';
@@ -34,7 +37,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   late final SpringValue _rise = SpringValue(this, spring: Motions.expressive);
   late final AnimationController _turn = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 380),
+    duration: const Duration(milliseconds: 420),
     value: 1,
   );
   late final SpringValue _ring = SpringValue(
@@ -101,7 +104,14 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       _page = to;
       _dir = by;
     });
-    _turn.forward(from: 0);
+    // For my own checking, the change can be held part-way: TURN_FREEZE=0.5
+    final double freeze =
+        double.tryParse(const String.fromEnvironment('TURN_FREEZE')) ?? -1;
+    if (freeze >= 0) {
+      _turn.value = freeze;
+    } else {
+      _turn.forward(from: 0);
+    }
     _aim();
     Haptics.tick();
     Diag.instance.event('drawer page');
@@ -326,8 +336,33 @@ class _GridPainter extends CustomPainter {
   final Animation<double> turn;
   final Color ink;
   static const double _tile = 68;
+  // The squircle from Prism's shape set, and the gently lobed outline it leans toward mid-change.
+  static final Float32List _squircle = ShapeLib.gallery
+      .firstWhere((MorphShape m) => m.name == 'Squircle')
+      .radii;
+  static final Float32List _ripple = ShapeLib.gallery
+      .firstWhere((MorphShape m) => m.name == 'Cookie')
+      .radii;
   static final Map<String, TextPainter> _labels = <String, TextPainter>{};
   static final Map<String, TextPainter> _letters = <String, TextPainter>{};
+
+  /// One colour sliding into another around the colour wheel, the short way.
+  /// Mixing two colours straight across goes through grey halfway; this stays as vivid as both ends.
+  static Color _slide(Color from, Color to, double t) {
+    final HSLColor a = HSLColor.fromColor(from), b = HSLColor.fromColor(to);
+    double turn = b.hue - a.hue;
+    if (turn > 180) {
+      turn -= 360;
+    } else if (turn < -180) {
+      turn += 360;
+    }
+    return HSLColor.fromAHSL(
+      from.a + (to.a - from.a) * t,
+      (a.hue + turn * t) % 360,
+      a.saturation + (b.saturation - a.saturation) * t,
+      a.lightness + (b.lightness - a.lightness) * t,
+    ).toColor();
+  }
 
   TextPainter _label(AppTile t, double width) => _labels.putIfAbsent(
     '${t.label}|${width.round()}|${ink.toARGB32()}',
@@ -398,7 +433,7 @@ class _GridPainter extends CustomPainter {
     final double cw = size.width / cols, ch = size.height / rows;
     final int per = rows * cols;
     final double v = turn.value;
-    const double rowGap = 0.11, colGap = 0.035, span = 0.46;
+    const double rowGap = 0.05, colGap = 0.012, span = 0.72;
     final double last = (rows - 1) * rowGap + (cols - 1) * colGap;
     for (int row = 0; row < rows; row++) {
       for (int col = 0; col < cols; col++) {
@@ -419,59 +454,74 @@ class _GridPainter extends CustomPainter {
           cw * (col + 0.5),
           ch * row + 8 + _tile / 2,
         );
-        // The tile dips a little while it is between two apps.
-        final double dip = 1 - 0.1 * math.sin(math.pi * e);
-        final Rect box = Rect.fromCenter(
-          center: centre,
-          width: _tile * dip,
-          height: _tile * dip,
-        );
-        final Color colour = Color.lerp(
+        final Color colour = _slide(
           a?.color ?? b!.color.withValues(alpha: 0),
           b?.color ?? a!.color.withValues(alpha: 0),
           e,
-        )!;
-        final Path shape = RoundedSuperellipseBorder(
-          borderRadius: BorderRadius.circular(_tile * 0.31),
-        ).getOuterPath(box);
+        );
+        // Nothing disappears. The squircle's outline ripples a little while its colour slides
+        // across (the same shape morph as elsewhere in Prism), and settles back to a squircle.
+        final Rect box = Rect.fromCenter(
+          center: centre,
+          width: _tile,
+          height: _tile,
+        );
+        final Path shape = ShapeLib.lerpPath(
+          _squircle,
+          _ripple,
+          0.42 * math.sin(math.pi * e),
+          centre,
+          _tile / 2 / _squircle[0],
+          0,
+        );
         canvas
           ..drawPath(shape, Paint()..color = colour)
           ..save()
           ..clipPath(shape);
+        // The marks dissolve one into the other in place, at full size.
         if (a != null) {
-          _mark(canvas, a, box, (1 - e * 2).clamp(0.0, 1.0), 1 - 0.3 * e);
+          _mark(canvas, a, box, 1 - e, 1);
         }
         if (b != null) {
-          _mark(canvas, b, box, (e * 2 - 1).clamp(0.0, 1.0), 0.7 + 0.3 * e);
+          _mark(canvas, b, box, e, 1);
         }
         canvas.restore();
-        // The names swap at the halfway point.
-        final AppTile? named = e < 0.5 ? a : b;
-        if (named != null) {
-          final TextPainter tp = _label(named, cw);
-          final double fade = (e < 0.5 ? 1 - e * 2 : e * 2 - 1).clamp(0.0, 1.0);
-          if (fade >= 0.999) {
-            tp.paint(
-              canvas,
-              Offset(centre.dx - tp.width / 2, centre.dy + _tile / 2 + 8),
-            );
-          } else if (fade > 0.02) {
-            final Rect lr = Rect.fromLTWH(
-              centre.dx - cw / 2,
-              centre.dy + _tile / 2 + 5,
-              cw,
-              38,
-            );
+        // So do the names.
+        void name(AppTile? t, double alpha) {
+          if (t == null || alpha <= 0.02) {
+            return;
+          }
+          final TextPainter tp = _label(t, cw);
+          final Offset at = Offset(
+            centre.dx - tp.width / 2,
+            centre.dy + _tile / 2 + 8,
+          );
+          if (alpha >= 0.999) {
+            tp.paint(canvas, at);
+          } else {
             canvas.saveLayer(
-              lr,
-              Paint()..color = Colors.white.withValues(alpha: fade),
+              Rect.fromLTWH(
+                centre.dx - cw / 2,
+                centre.dy + _tile / 2 + 5,
+                cw,
+                38,
+              ),
+              Paint()..color = Colors.white.withValues(alpha: alpha),
             );
-            tp.paint(
-              canvas,
-              Offset(centre.dx - tp.width / 2, centre.dy + _tile / 2 + 8),
-            );
+            tp.paint(canvas, at);
             canvas.restore();
           }
+        }
+
+        if (a?.label == b?.label) {
+          name(b, 1);
+        } else {
+          // Each name is mostly gone before the other is mostly there, so two names are never both readable.
+          name(a, 1 - Curves.easeInOut.transform((e / 0.62).clamp(0.0, 1.0)));
+          name(
+            b,
+            Curves.easeInOut.transform(((e - 0.38) / 0.62).clamp(0.0, 1.0)),
+          );
         }
       }
     }
