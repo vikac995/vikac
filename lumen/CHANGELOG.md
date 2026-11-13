@@ -1,5 +1,37 @@
 # Lumen changelog
 
+## Prism, build 45 (13 November 2026)
+
+**File:** `releases/prism-build-45.apk`
+
+**A cleaner return from other apps.**
+
+- In your recording, as an app shrinks away on the home gesture, Prism behind it is a dark empty screen for a moment before its contents appear. The cause: Android throws away the surface an app draws on once the app is out of sight, and until the app has drawn a new frame the window shows only its plain background.
+- Now, just before Prism leaves the screen, it copies its last frame and makes that picture the window's background. On return, that picture is what shows under the shrinking app, until the first real frame takes over.
+- Cost: one copy of the screen each time you leave Prism, and about 10 MB of memory held for the picture. Nothing runs while you are away.
+- A known side effect: if you left with the drawer open and come back with the home gesture, you will briefly see the drawer (the picture) and then it closing, because the home button closes it.
+
+**Two fixes from your build 44 report**
+
+- **Closing a sheet or the drawer stuttered on full glass** (14 late frames in 3 sheet closes; it was 6). That was my change in build 41: the bar goes solid under a sheet, and I turned its glass back on at the very start of the closing animation. Turning glass on costs one slow frame, and it landed in the middle of the movement. The glass now comes back half a second later, when nothing is moving.
+- **The battery section's "screen still" figure was wrecked by single readings of several amps** at the start of a session. Readings above 3 A are now left out.
+
+**Forgiving touch areas when logging a set** (from your recording on the Train page)
+
+- The kg dial, the reps dial and the tick looked the same before, but only the drawn shape answered. Around them was dead space: 10 above and below each control, a gap between the two dials, and a margin beside the tick. In your recording several touches landed in exactly those places and did nothing.
+- Now the whole row is controls. Each dial answers across the full height of its row and up to the middle of the gap between them. The tick answers across the whole right end of the row, about 66 wide and 72 tall where it was 48 by 48.
+- Nothing looks different. Only what counts as a hit has grown.
+
+**Background:** the two lights I added in build 42 came out redder on your phone than I intended. Both are now yellower and slightly weaker.
+
+**What to look for**
+- Home gesture from an app: is Prism's content there under the shrinking app, with no empty dark moment?
+- Train page, one hand, quickly: do the dials and the tick catch your thumb now? If something still misses, tell me where your thumb was.
+- Close a sheet and the drawer on full glass: smooth? About half a second after closing, the bar changes from solid back to glass; tell me if you notice it.
+
+**Checked:** it compiles; in my preview sheets and the drawer open and close as before, the set rows look unchanged, and a tap beside the tick registers.
+**Not checked:** the return picture. It is Android-only code that has never run. If Prism misbehaves on return (wrong picture, a flash, anything stuck), tell me and go back to build 44. The app-opening animation from build 42 is also still unconfirmed: in your recording I could not tell whether apps grow from their tile or slide in.
+
 ## Prism, build 44 (13 November 2026)
 
 **File:** `releases/prism-build-44.apk`

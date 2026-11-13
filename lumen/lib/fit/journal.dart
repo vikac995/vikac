@@ -135,7 +135,10 @@ class Journal with WidgetsBindingObserver {
       final int frames = Diag.instance.totalFrames;
       final bool still = frames - _framesAtSample < 30;
       _framesAtSample = frames;
-      if (b['plugged'] == true) {
+      if (now.abs() > 3000) {
+        // Several amps is not a phone in use: it is the moment a charger was pulled or the app was
+        // launched. Counting it would swamp everything else.
+      } else if (b['plugged'] == true) {
         _plugN++; // On the charger the reading says nothing about drain.
       } else if (still) {
         _stillN++;

@@ -639,11 +639,30 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     LensBus.instance.pos.value = null;
   }
 
+  // The bar is solid under the drawer and under sheets. Turning glass back on costs one slow
+  // frame, so it waits until the closing animation is over: a slow frame while nothing moves
+  // cannot be seen, one in the middle of an animation is a stutter.
+  bool _coverHold = false;
+  Timer? _coverTimer;
+  void _cover(bool up) {
+    _coverTimer?.cancel();
+    if (up) {
+      _coverHold = true;
+    } else {
+      _coverTimer = Timer(const Duration(milliseconds: 560), () {
+        if (mounted && !_drawerOpen && !_sheetOpen) {
+          setState(() => _coverHold = false);
+        }
+      });
+    }
+  }
+
   void _setDrawer(bool v) {
     if (v == _drawerOpen) {
       return;
     }
     _setOpen(false);
+    _cover(v);
     setState(() => _drawerOpen = v);
     _t.animateTo(v ? 1 : 0);
     Diag.instance
@@ -799,6 +818,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _sheetWeight = fit.weight;
     });
     _sheetOpen = true;
+    _cover(true);
     _rise.animateTo(1);
     Diag.instance
       ..overlay = '+sheet'
@@ -806,6 +826,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   void _closeSheet() {
+    _cover(false);
     setState(() => _sheetOpen = false);
     _rise.animateTo(0);
     Diag.instance
@@ -1022,7 +1043,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         // While the drawer or a sheet is up, the bar sits dimmed underneath it. Glass there
                         // is blurred again on every frame for something nobody is looking at: measured, it
                         // was most of the cost of turning pages in the drawer. So it goes solid meanwhile.
-                        final bool covered = _drawerOpen || _sheetOpen;
+                        final bool covered =
+                            _drawerOpen || _sheetOpen || _coverHold;
                         final bool barSolid =
                             off ||
                             covered ||
@@ -2101,13 +2123,13 @@ class _Wallpaper extends CustomPainter {
     light(
       Offset(size.width * 0.42, size.height * 0.60),
       size.width * 0.7,
-      const Color(0xFFFFA630),
+      const Color(0xFFFFC23D),
       0.24 * k,
     );
     light(
       Offset(size.width * 1.05, size.height * 0.68),
       size.width * 0.6,
-      const Color(0xFFFF7A2F),
+      const Color(0xFFFFA234),
       0.22 * k,
     );
   }

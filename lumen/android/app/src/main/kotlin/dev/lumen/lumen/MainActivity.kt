@@ -24,6 +24,46 @@ class MainActivity : FlutterActivity() {
 
     private var device: MethodChannel? = null
 
+    // Coming back from another app. Android throws away the surface an app draws on once the app
+    // is out of sight, and until the app has drawn a new frame the window shows its plain
+    // background: a dark, empty screen for a moment under the app that is shrinking away.
+    // So just before leaving, the last frame is copied and made the window's background.
+    // On return that picture is what shows until the first real frame replaces it.
+    private var lastFrame: android.graphics.Bitmap? = null
+
+    private fun surfaceIn(v: android.view.View): android.view.SurfaceView? {
+        if (v is android.view.SurfaceView) return v
+        if (v is android.view.ViewGroup) {
+            for (i in 0 until v.childCount) {
+                val found = surfaceIn(v.getChildAt(i))
+                if (found != null) return found
+            }
+        }
+        return null
+    }
+
+    override fun onPause() {
+        try {
+            val surface = surfaceIn(window.decorView)
+            if (surface != null && surface.width > 0 && surface.height > 0 && surface.holder.surface.isValid) {
+                var bmp = lastFrame
+                if (bmp == null || bmp.width != surface.width || bmp.height != surface.height) {
+                    bmp = android.graphics.Bitmap.createBitmap(surface.width, surface.height, android.graphics.Bitmap.Config.ARGB_8888)
+                    lastFrame = bmp
+                }
+                val target = bmp!!
+                android.view.PixelCopy.request(surface, target, { result ->
+                    if (result == android.view.PixelCopy.SUCCESS) {
+                        window.setBackgroundDrawable(android.graphics.drawable.BitmapDrawable(resources, target))
+                    }
+                }, android.os.Handler(android.os.Looper.getMainLooper()))
+            }
+        } catch (e: Exception) {
+            // Without the picture, returning simply looks as it did before.
+        }
+        super.onPause()
+    }
+
     // The home button was pressed while Prism is the home screen: tell the app, so it can go back to its first page.
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)

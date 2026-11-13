@@ -228,10 +228,15 @@ class DragDial extends StatefulWidget {
     required this.max,
     required this.unit,
     required this.onChanged,
+    this.touchPad = EdgeInsets.zero,
   });
   final double value, step, fineStep, min, max;
   final String unit;
   final ValueChanged<double> onChanged;
+
+  /// Extra room around the dial that still counts as touching it. The dial looks the same;
+  /// a thumb that lands a little above, below or beside it is no longer a miss.
+  final EdgeInsets touchPad;
 
   @override
   State<DragDial> createState() => _DragDialState();
@@ -344,71 +349,74 @@ class _DragDialState extends State<DragDial> with TickerProviderStateMixin {
           onHorizontalDragUpdate: _update,
           onHorizontalDragEnd: (_) => _end(),
           onHorizontalDragCancel: _end,
-          child: ListenableBuilder(
-            listenable: _lift,
-            builder: (BuildContext context, Widget? _) {
-              final double l = _lift.value;
-              final double on = l.clamp(0.0, 1.0);
-              return Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: <Widget>[
-                  Transform.scale(
-                    scale: 1 + 0.06 * l,
-                    child: Container(
-                      height: 52,
-                      width: box.maxWidth,
-                      clipBehavior: Clip.antiAlias,
-                      decoration: ShapeDecoration(
-                        color: Color.lerp(
-                          c.ink.withValues(alpha: 0.07),
-                          c.accent.withValues(alpha: 0.16),
-                          on,
-                        ),
-                        shape: StadiumBorder(
-                          side: BorderSide(
-                            color: c.accent.withValues(alpha: on),
-                            width: 1.5,
+          child: Padding(
+            padding: widget.touchPad,
+            child: ListenableBuilder(
+              listenable: _lift,
+              builder: (BuildContext context, Widget? _) {
+                final double l = _lift.value;
+                final double on = l.clamp(0.0, 1.0);
+                return Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: <Widget>[
+                    Transform.scale(
+                      scale: 1 + 0.06 * l,
+                      child: Container(
+                        height: 52,
+                        width: box.maxWidth - widget.touchPad.horizontal,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: ShapeDecoration(
+                          color: Color.lerp(
+                            c.ink.withValues(alpha: 0.07),
+                            c.accent.withValues(alpha: 0.16),
+                            on,
                           ),
-                        ),
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: <Widget>[
-                          // The edge of the wheel, turning with the thumb.
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 5,
-                            height: 9,
-                            child: CustomPaint(
-                              painter: _WheelEdge(
-                                _wheel,
-                                _fine,
-                                Color.lerp(c.inkFaint, c.accent, on)!,
-                              ),
+                          shape: StadiumBorder(
+                            side: BorderSide(
+                              color: c.accent.withValues(alpha: on),
+                              width: 1.5,
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 9),
-                            child: Text(
-                              _fmtNum(widget.value),
-                              textScaler: TextScaler.noScaling,
-                              style: LumenType.text(
-                                19,
-                                weight: 700,
-                                color: c.ink,
-                                height: 1.1,
+                        ),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: <Widget>[
+                            // The edge of the wheel, turning with the thumb.
+                            Positioned(
+                              left: 0,
+                              right: 0,
+                              bottom: 5,
+                              height: 9,
+                              child: CustomPaint(
+                                painter: _WheelEdge(
+                                  _wheel,
+                                  _fine,
+                                  Color.lerp(c.inkFaint, c.accent, on)!,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 9),
+                              child: Text(
+                                _fmtNum(widget.value),
+                                textScaler: TextScaler.noScaling,
+                                style: LumenType.text(
+                                  19,
+                                  weight: 700,
+                                  color: c.ink,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
+                  ],
+                );
+              },
+            ),
           ),
         ),
       ),

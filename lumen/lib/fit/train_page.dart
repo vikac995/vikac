@@ -244,7 +244,9 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.fromLTRB(14, 10, 10, 10),
+                        // No padding above, below or to the right: that room belongs to the controls now,
+                        // so a thumb landing anywhere in the row hits something.
+                        padding: const EdgeInsets.only(left: 14),
                         decoration: ShapeDecoration(
                           color: _done[i]
                               ? green.withValues(alpha: 0.1)
@@ -288,11 +290,16 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                                           min: 0,
                                           max: 400,
                                           unit: 'kg',
+                                          touchPad: const EdgeInsets.fromLTRB(
+                                            0,
+                                            10,
+                                            4,
+                                            10,
+                                          ),
                                           onChanged: (double v) =>
                                               setState(() => _kg[i] = v),
                                         ),
                                       ),
-                                      const SizedBox(width: 8),
                                       Expanded(
                                         child: DragDial(
                                           value: _reps[i],
@@ -301,6 +308,12 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                                           min: 0,
                                           max: 60,
                                           unit: 'reps',
+                                          touchPad: const EdgeInsets.fromLTRB(
+                                            4,
+                                            10,
+                                            0,
+                                            10,
+                                          ),
                                           onChanged: (double v) =>
                                               setState(() => _reps[i] = v),
                                         ),
@@ -310,7 +323,6 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
                             Semantics(
                               button: true,
                               label: _done[i] ? 'Set done' : 'Finish set',
@@ -318,35 +330,48 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                                 key: i == 1 ? Robot.key('tick') : null,
                                 behavior: HitTestBehavior.opaque,
                                 onTap: () => _toggle(i),
-                                child: ListenableBuilder(
-                                  listenable: _pop[i],
-                                  builder:
-                                      (BuildContext context, Widget? child) =>
-                                          Transform.scale(
-                                            scale: _pop[i].value,
-                                            child: child,
+                                // The tick looks the same size, but the whole right end of the row is its button.
+                                child: Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    8,
+                                    12,
+                                    10,
+                                    12,
+                                  ),
+                                  child: ListenableBuilder(
+                                    listenable: _pop[i],
+                                    builder:
+                                        (BuildContext context, Widget? child) =>
+                                            Transform.scale(
+                                              scale: _pop[i].value,
+                                              child: child,
+                                            ),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 160,
+                                      ),
+                                      width: 48,
+                                      height: 48,
+                                      decoration: ShapeDecoration(
+                                        color: _done[i]
+                                            ? green
+                                            : Colors.transparent,
+                                        shape: CircleBorder(
+                                          side: BorderSide(
+                                            color: _done[i]
+                                                ? green
+                                                : c.inkFaint,
+                                            width: 2,
                                           ),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 160),
-                                    width: 48,
-                                    height: 48,
-                                    decoration: ShapeDecoration(
-                                      color: _done[i]
-                                          ? green
-                                          : Colors.transparent,
-                                      shape: CircleBorder(
-                                        side: BorderSide(
-                                          color: _done[i] ? green : c.inkFaint,
-                                          width: 2,
                                         ),
                                       ),
-                                    ),
-                                    child: Icon(
-                                      Icons.check_rounded,
-                                      size: 24,
-                                      color: _done[i]
-                                          ? Colors.white
-                                          : c.inkFaint,
+                                      child: Icon(
+                                        Icons.check_rounded,
+                                        size: 24,
+                                        color: _done[i]
+                                            ? Colors.white
+                                            : c.inkFaint,
+                                      ),
                                     ),
                                   ),
                                 ),
