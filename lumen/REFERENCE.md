@@ -117,7 +117,7 @@ the top of those screens) and every piece is labelled in the app, so a screensho
 | Id | Name | What it shows | Files |
 |---|---|---|---|
 | R55 | Morphing drawer | An app drawer that does not scroll: the grid stays put and each icon morphs into the next one (outline, colour, glyph and name) in a row-by-row wave that follows the finger, snapping to pages with a tick per row. | `lib/rooms/patterns/morph_drawer_room.dart` |
-| R56 | Widget stack | Several widgets sharing one place: swipe up or down to turn to the next, the edges of the others show underneath, dots show position, and a smart mode turns the stack by time of day. | `lib/rooms/patterns/stack_room.dart` |
+| R56 | Widget stack | Two stacks of widgets, one turning up and down and one sideways, with the next widgets peeking out and dots for position. Holding a stack unfolds it into an editor: drag handles to reorder, minus to remove, chips to add, a switch for turning by itself, Done. | `lib/rooms/patterns/stack_room.dart` |
 
 ## Bonus
 

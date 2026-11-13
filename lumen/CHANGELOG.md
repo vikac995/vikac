@@ -1,5 +1,31 @@
 # Lumen changelog
 
+## Lumen build 23 (13 November 2026)
+
+**File:** `releases/lumen-build-23.apk`
+
+### R56 Widget stacks: a second stack, and editing
+
+- **Two stacks.** The first turns up and down as before. A new one below it turns left and right, with the next widgets peeking out on the right and the dots underneath.
+- **Hold a stack to edit it.** It unfolds in place into a list, one row per widget in order:
+  - drag a row's handle to reorder (the first row is the widget on top);
+  - the minus removes a widget;
+  - "Add" chips put in any widget that is not in the stack yet;
+  - a switch for "Turn by itself through the day";
+  - Done folds it back into a stack.
+- A stack with nothing in it shows "Empty stack. Tap to add widgets."
+- The four time-of-day buttons from build 21 are gone; the switch now lives in the editor.
+
+### What to test
+
+1. Swipe each stack. Is sideways or up-and-down the more natural way to turn a stack on a page that itself scrolls up and down?
+2. Hold a stack, reorder, remove one, add one, Done. The stack should show the new order.
+3. Remove everything from a stack.
+
+### Not checked
+
+- Linux preview only: one sideways swipe, and opening the editor. Reordering, removing, adding and the empty stack were not tried.
+
 ## Lumen build 22 and Prism build 8 (13 November 2026)
 
 **Files:** `releases/lumen-build-22.apk`, `releases/prism-build-8.apk`

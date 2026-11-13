@@ -421,7 +421,7 @@ const Map<int, Ref> refs = <int, Ref>{
     'Widget stack',
     'Launcher ideas',
     <String>['lib/rooms/patterns/stack_room.dart'],
-    'Several widgets sharing one place: swipe up or down to turn to the next, the edges of the others show underneath, dots show position, and a smart mode turns the stack by time of day.',
+    'Two stacks of widgets, one turning up and down and one sideways, with the next widgets peeking out and dots for position. Holding a stack unfolds it into an editor: drag handles to reorder, minus to remove, chips to add, a switch for turning by itself, Done.',
   ),
   99: Ref(
     'B01',

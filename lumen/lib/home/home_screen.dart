@@ -413,8 +413,8 @@ final List<_Room> _rooms = <_Room>[
     (_) => const MorphDrawerRoom(),
   ),
   _Room(
-    'Widget stack',
-    'Several widgets in one place.',
+    'Widget stacks',
+    'Turn them, hold to edit.',
     const Color(0xFF1F7F78),
     (_) => const StackRoom(),
   ),
@@ -773,7 +773,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 22  ·  Flutter 3.50  ·  Impeller',
+                'Build 23  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),
