@@ -23,6 +23,43 @@ Glass is only on things that float over content: the bar and its lens, the round
 the rest timer, and the quick-action sheet. Cards, lists and buttons are solid, so text never sits on a moving
 background. That is five glass surfaces at most on screen, usually two.
 
+## The kit: every element Prism is allowed to use
+
+Keeping the list short keeps the app light, consistent and predictable. If a screen needs something
+that is not here, the first question is whether one of these can do the job.
+
+| # | Element | What it is for | Glass? |
+|---|---|---|---|
+| 1 | Card | Any block of content | No, solid |
+| 2 | Main button (filled pill) | The one thing to do on a screen | No |
+| 3 | Quiet button (outlined pill or text) | Everything else you can tap | No |
+| 4 | Thumb dial | A number you nudge (kg, reps, seconds) | No |
+| 5 | Ruler | A number you set from scratch (body weight) | No |
+| 6 | Switch and segmented choice | On or off; one of a few | No |
+| 7 | Tick circle | Done, skipped, not yet | No |
+| 8 | Sheet | A quick action over the page | No, solid |
+| 9 | Bar with riding lens | Moving between the four pages | Yes |
+| 10 | The button, its blobs, and the carried lens | Acting from anywhere; explaining | Lens only |
+| 11 | Floating pill (rest timer) | Something running in the background | Yes |
+| 12 | Round glass button | One per page at most, top right | Yes |
+
+Glass is on four things, all small and all floating. Nothing else may be glass.
+
+## The back button
+
+Back undoes the most recent thing that opened, one step per press:
+
+| If this is showing | Back does this |
+|---|---|
+| A sheet (Log food, Weigh-in, Timer, Scan) | Closes the sheet |
+| The settings sheet | Closes it |
+| The lens, carried or put down | Sends it home to the bar |
+| The blobs | Closes them |
+| Train, Food or Progress, nothing open | Goes to Home |
+| Home, nothing open | Leaves the app |
+
+Every new element must say where it sits in this table before it is built.
+
 ## Testing
 
 Prism records every frame under the scene that was showing. The round button on Home opens a sheet with

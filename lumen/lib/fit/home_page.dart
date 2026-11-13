@@ -7,6 +7,7 @@ import '../core/theme.dart';
 import '../rooms/details/small_things.dart';
 import '../widgets/pressable.dart';
 import 'common.dart';
+import 'diag.dart';
 import 'lens.dart';
 import 'shell.dart';
 import 'state.dart';
@@ -330,6 +331,7 @@ class HomePage extends StatelessWidget {
                             child: GestureDetector(
                               behavior: HitTestBehavior.opaque,
                               onTap: () {
+                                Diag.instance.event('habit');
                                 fit.mark(i, h.$2 == true ? null : true);
                                 Haptics.settle();
                               },
@@ -396,6 +398,7 @@ class HomePage extends StatelessWidget {
                             GestureDetector(
                               behavior: HitTestBehavior.opaque,
                               onTap: () {
+                                Diag.instance.event('habit');
                                 fit.mark(i, false);
                                 Haptics.tick();
                               },

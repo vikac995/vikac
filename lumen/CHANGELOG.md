@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Prism, build 7 (13 November 2026)
+
+**File:** `releases/prism-build-7.apk`
+
+- **Weigh-in uses the big ruler** from Lumen R23, with the large number above it, in place of the small dial.
+- **Sheets are solid, not glass.** The owner reported that opening the weigh-in sheet is costly. It blurred and bent a third of the screen. Glass is now only on the bar, its lens, the carried lens, the rest timer and the round button.
+- **The back button is handled.** It closes whatever opened last (sheet, then lens, then blobs), then goes to Home, and only leaves the app from Home with nothing open. The rules are a table in `PRISM.md`.
+- **The report says which action causes stutters.** Two new parts:
+  - *Actions, worst first*: every action (each tab, blobs, each sheet, lens lifted, lens on a card, scroll, set tick, food add, habit, back) with how many times it happened, how many frames followed it, how many of those ran over budget, the worst single frame and the average.
+  - *Slow frames*: each frame that took more than one and a half refreshes, with the time, how long it took split into build and draw, what was on screen, and the action it followed.
+- **`PRISM.md` now lists the kit**: the twelve elements Prism may use and which four are glass.
+
+### What to test
+
+1. Start over, then do each thing a few times: switch tabs, open and close the blobs, open each sheet, carry the lens over the cards, scroll, press back in each state. Copy the report.
+2. Back button: with a sheet open, with the blobs open, with the lens put down, on Train, on Home.
+
+### Not checked
+
+- Linux preview only: the weigh-in sheet with the ruler, and the new report sections (they filled in correctly). The back button cannot be pressed in the preview, so its behaviour is untested.
+
 ## Prism, build 6 (13 November 2026)
 
 **File:** `releases/prism-build-6.apk`

@@ -7,6 +7,7 @@ import '../core/springs.dart';
 import '../core/theme.dart';
 import '../widgets/tag.dart';
 import 'common.dart';
+import 'diag.dart';
 import 'state.dart';
 import '../rooms/details/small_things.dart';
 
@@ -80,6 +81,7 @@ class _FoodPageState extends State<FoodPage> with TickerProviderStateMixin {
       return;
     }
     fit.addMeal(i, by);
+    Diag.instance.event('food add');
     _pop[i].jumpTo(0.8);
     _pop[i].animateTo(1);
     _ring.animateTo(_eaten / _goal);

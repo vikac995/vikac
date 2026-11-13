@@ -74,6 +74,7 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
 
   void _toggle(int i) {
     setState(() => _done[i] = !_done[i]);
+    Diag.instance.event('set tick');
     _pop[i].jumpTo(0.7);
     _pop[i].animateTo(1);
     final bool all = !_done.contains(false);

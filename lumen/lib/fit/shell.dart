@@ -52,6 +52,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   double _barW = 0;
   bool _open = false;
   int? _sheet; // index into _actions
+  bool _sheetOpen = false;
   late final SpringValue _lensX = SpringValue(this, spring: Motions.follow);
   late final SpringValue _lift = SpringValue(
     this,
@@ -328,6 +329,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _sheet = i;
       _sheetWeight = fit.weight;
     });
+    _sheetOpen = true;
     _rise.animateTo(1);
     Diag.instance
       ..overlay = '+sheet'
@@ -335,6 +337,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   void _closeSheet() {
+    setState(() => _sheetOpen = false);
     _rise.animateTo(0);
     Diag.instance
       ..overlay = ''
@@ -356,639 +359,692 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return bc + Offset(-math.cos(a), -math.sin(a)) * _reach;
     }
 
-    return Scaffold(
-      backgroundColor: c.bg,
-      body: Stack(
-        children: <Widget>[
-          // The wallpaper: quiet, with a few soft lights for the glass to catch.
-          Positioned.fill(
-            child: ValueListenableBuilder<bool>(
-              valueListenable: Diag.instance.wallpaperOn,
-              builder: (BuildContext context, bool on, Widget? _) =>
-                  on ? _WallpaperImage(dark: c.dark) : ColoredBox(color: c.bg),
-            ),
-          ),
-          // The page.
-          Positioned.fill(
-            child: ListenableBuilder(
-              listenable: _page,
-              // A small slide only. Fading a whole page means drawing it twice, which is where the stutters on tab changes came from.
-              builder: (BuildContext context, Widget? child) =>
-                  Transform.translate(
-                    offset: Offset(0, (1 - _page.value) * 14),
-                    child: child,
-                  ),
-              child: IndexedStack(
-                index: _tab,
-                children: <Widget>[
-                  HomePage(
-                    onStart: () => _go(1),
-                    onFood: () => _run(1),
-                    onWeigh: () => _run(3),
-                  ),
-                  const TrainPage(),
-                  const FoodPage(),
-                  const ProgressPage(),
-                ],
+    // The system back button undoes the last thing that opened, one step at a time,
+    // and only leaves the app from Home with nothing open.
+    final bool nothingOpen = !_open && !_sheetOpen && !_parked && !_carrying;
+    return PopScope(
+      canPop: nothingOpen && _tab == 0,
+      onPopInvokedWithResult: (bool didPop, Object? _) {
+        if (didPop) {
+          return;
+        }
+        if (_sheetOpen) {
+          Diag.instance.event('back: close sheet');
+          _closeSheet();
+        } else if (_parked || _carrying) {
+          Diag.instance.event('back: lens home');
+          _lensHome();
+        } else if (_open) {
+          Diag.instance.event('back: close blobs');
+          _setOpen(false);
+        } else {
+          Diag.instance.event('back: to Home');
+          _go(0);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: c.bg,
+        body: Stack(
+          children: <Widget>[
+            // The wallpaper: quiet, with a few soft lights for the glass to catch.
+            Positioned.fill(
+              child: ValueListenableBuilder<bool>(
+                valueListenable: Diag.instance.wallpaperOn,
+                builder: (BuildContext context, bool on, Widget? _) => on
+                    ? _WallpaperImage(dark: c.dark)
+                    : ColoredBox(color: c.bg),
               ),
             ),
-          ),
-          // Content scrolls away under the status bar instead of colliding with the clock.
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            height: safe.top + 18,
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: <Color>[
-                      c.bg.withValues(alpha: 0.92),
-                      c.bg.withValues(alpha: 0),
+            // The page.
+            Positioned.fill(
+              child: ListenableBuilder(
+                listenable: _page,
+                // A small slide only. Fading a whole page means drawing it twice, which is where the stutters on tab changes came from.
+                builder: (BuildContext context, Widget? child) =>
+                    Transform.translate(
+                      offset: Offset(0, (1 - _page.value) * 14),
+                      child: child,
+                    ),
+                child: NotificationListener<ScrollStartNotification>(
+                  onNotification: (ScrollStartNotification n) {
+                    if (n.dragDetails != null) {
+                      Diag.instance.event('scroll ${_tabs[_tab].$2}');
+                    }
+                    return false;
+                  },
+                  child: IndexedStack(
+                    index: _tab,
+                    children: <Widget>[
+                      HomePage(
+                        onStart: () => _go(1),
+                        onFood: () => _run(1),
+                        onWeigh: () => _run(3),
+                      ),
+                      const TrainPage(),
+                      const FoodPage(),
+                      const ProgressPage(),
                     ],
                   ),
                 ),
               ),
             ),
-          ),
-          // Dim behind the blobs.
-          ListenableBuilder(
-            listenable: _t,
-            builder: (BuildContext context, Widget? _) => IgnorePointer(
-              ignoring: !_open,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _setOpen(false),
-                child: ColoredBox(
-                  color: Colors.black.withValues(
-                    alpha: 0.46 * _t.value.clamp(0.0, 1.0),
+            // Content scrolls away under the status bar instead of colliding with the clock.
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              height: safe.top + 18,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: <Color>[
+                        c.bg.withValues(alpha: 0.92),
+                        c.bg.withValues(alpha: 0),
+                      ],
+                    ),
                   ),
-                  child: const SizedBox.expand(),
                 ),
               ),
             ),
-          ),
-          // The bar.
-          Positioned(
-            left: 14,
-            right: 14,
-            bottom: safe.bottom + 14,
-            height: _barH,
-            child: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints box) {
-                if (_barW != box.maxWidth) {
-                  _barW = box.maxWidth;
-                  scheduleMicrotask(() => _lensX.jumpTo(_centre(_tab)));
-                }
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapUp: (TapUpDetails d) {
-                    final int s = (d.localPosition.dx / _slot).floor().clamp(
-                      0,
-                      4,
-                    );
-                    if (s != 2) {
-                      _lift.animateTo(0, velocity: 7);
-                      _go(s < 2 ? s : s - 1);
-                    }
-                  },
-                  // Slide along the bar and the lens comes with you.
-                  onHorizontalDragStart: (_) => _lift.animateTo(1),
-                  onHorizontalDragUpdate: (DragUpdateDetails d) =>
-                      _lensX.animateTo(
-                        d.localPosition.dx.clamp(_slot / 2, _barW - _slot / 2),
-                      ),
-                  onHorizontalDragEnd: (_) {
-                    _lift.animateTo(0);
-                    int best = 0;
-                    for (int i = 1; i < 4; i++) {
-                      if ((_centre(i) - _lensX.target).abs() <
-                          (_centre(best) - _lensX.target).abs()) {
-                        best = i;
-                      }
-                    }
-                    if (best == _tab) {
-                      _lensX.animateTo(_centre(best));
-                    } else {
-                      _go(best);
-                    }
-                  },
-                  child: ListenableBuilder(
-                    listenable: Listenable.merge(<Listenable>[_lensX, _lift]),
-                    builder: (BuildContext context, Widget? _) {
-                      // The lens swells when lifted, stretches along its travel and thins to keep its volume.
-                      final double stretch = (_lensX.velocity.abs() / 70).clamp(
-                        0.0,
-                        26.0,
-                      );
-                      final double grow = 1 + 0.14 * _lift.value;
-                      final double w = (_slot - 8) * grow + stretch,
-                          h = (_barH - 12) * grow * (1 - stretch / 220);
-                      final Rect lens = Rect.fromCenter(
-                        center: Offset(_lensX.value, _barH / 2),
-                        width: w,
-                        height: h,
-                      );
-                      final RRect shape = RRect.fromRectAndRadius(
-                        lens,
-                        Radius.circular(h / 2),
-                      );
-                      final bool solid = settings.reduceTransparency;
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        children: <Widget>[
-                          Positioned.fill(
-                            child: Glass(
-                              radius: _barH / 2,
-                              style: GlassStyle(
-                                blur: 18,
-                                tint: 0.42,
-                                refraction: 30,
-                                bevel: 20,
-                                fallbackColor: c.surfaceHigh,
-                              ),
-                              hole: solid ? null : shape.deflate(0.5),
-                            ),
-                          ),
-                          Positioned.fromRect(
-                            rect: lens,
-                            child: Glass(
-                              radius: h / 2,
-                              style: GlassStyle(
-                                blur: 2.5,
-                                tint: 0.16,
-                                refraction: 22,
-                                bevel: 13,
-                                dispersion: 0.2,
-                                magnify: 1.12,
-                                light: 0.9,
-                                saturation: 1.4,
-                                adapt: 0.42,
-                                shadow: 0.6,
-                                fallbackColor: c.accent.withValues(alpha: 0.3),
-                              ),
-                            ),
-                          ),
-                          Row(
-                            children: <Widget>[
-                              for (int s = 0; s < 5; s++)
-                                Expanded(
-                                  child: s == 2
-                                      ? const SizedBox.shrink()
-                                      : Builder(
-                                          builder: (BuildContext context) {
-                                            final int i = s < 2 ? s : s - 1;
-                                            // Brightness follows the lens, not the tap, so it reads as the lens lighting the tab.
-                                            final double on =
-                                                (1 -
-                                                        ((_centre(i) -
-                                                                    _lensX
-                                                                        .value)
-                                                                .abs() /
-                                                            _slot))
-                                                    .clamp(0.0, 1.0);
-                                            return Semantics(
-                                              button: true,
-                                              selected: i == _tab,
-                                              label: _tabs[i].$2,
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: <Widget>[
-                                                  Transform.scale(
-                                                    scale: 1 + 0.12 * on,
-                                                    child: Icon(
-                                                      _tabs[i].$1,
-                                                      size: 23,
-                                                      color: Color.lerp(
-                                                        c.glassInk.withValues(
-                                                          alpha: 0.6,
-                                                        ),
-                                                        c.glassInk,
-                                                        on,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(height: 3),
-                                                  Text(
-                                                    _tabs[i].$2,
-                                                    textScaler:
-                                                        TextScaler.noScaling,
-                                                    style: LumenType.text(
-                                                      10.5,
-                                                      weight: 560 + 140 * on,
-                                                      color: Color.lerp(
-                                                        c.glassInk.withValues(
-                                                          alpha: 0.6,
-                                                        ),
-                                                        c.glassInk,
-                                                        on,
-                                                      ),
-                                                      height: 1.1,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-          // The blobs.
-          for (int i = 0; i < 5; i++)
+            // Dim behind the blobs.
             ListenableBuilder(
-              listenable: _out[i],
-              builder: (BuildContext context, Widget? _) {
-                final double p = _out[i].value;
-                if (p <= 0.001) {
-                  return const SizedBox.shrink();
-                }
-                final Offset b = bc + (rest(i) - bc) * p;
-                final double st = (_out[i].velocity.abs() * 0.028).clamp(
-                  0.0,
-                  0.34,
-                );
-                final Offset dir = rest(i) - bc;
-                final double ang = math.atan2(dir.dy, dir.dx),
-                    s = 0.5 + 0.5 * p;
-                return Positioned(
-                  left: b.dx - _blob / 2 - 20,
-                  top: b.dy - _blob / 2,
-                  width: _blob + 40,
-                  child: IgnorePointer(
-                    ignoring: !_open,
-                    child: Opacity(
-                      opacity: (p * 2.4).clamp(0.0, 1.0),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => _run(i),
-                        child: Column(
+              listenable: _t,
+              builder: (BuildContext context, Widget? _) => IgnorePointer(
+                ignoring: !_open,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _setOpen(false),
+                  child: ColoredBox(
+                    color: Colors.black.withValues(
+                      alpha: 0.46 * _t.value.clamp(0.0, 1.0),
+                    ),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+            ),
+            // The bar.
+            Positioned(
+              left: 14,
+              right: 14,
+              bottom: safe.bottom + 14,
+              height: _barH,
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints box) {
+                  if (_barW != box.maxWidth) {
+                    _barW = box.maxWidth;
+                    scheduleMicrotask(() => _lensX.jumpTo(_centre(_tab)));
+                  }
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapUp: (TapUpDetails d) {
+                      final int s = (d.localPosition.dx / _slot).floor().clamp(
+                        0,
+                        4,
+                      );
+                      if (s != 2) {
+                        _lift.animateTo(0, velocity: 7);
+                        _go(s < 2 ? s : s - 1);
+                      }
+                    },
+                    // Slide along the bar and the lens comes with you.
+                    onHorizontalDragStart: (_) => _lift.animateTo(1),
+                    onHorizontalDragUpdate: (DragUpdateDetails d) =>
+                        _lensX.animateTo(
+                          d.localPosition.dx.clamp(
+                            _slot / 2,
+                            _barW - _slot / 2,
+                          ),
+                        ),
+                    onHorizontalDragEnd: (_) {
+                      _lift.animateTo(0);
+                      int best = 0;
+                      for (int i = 1; i < 4; i++) {
+                        if ((_centre(i) - _lensX.target).abs() <
+                            (_centre(best) - _lensX.target).abs()) {
+                          best = i;
+                        }
+                      }
+                      if (best == _tab) {
+                        _lensX.animateTo(_centre(best));
+                      } else {
+                        _go(best);
+                      }
+                    },
+                    child: ListenableBuilder(
+                      listenable: Listenable.merge(<Listenable>[_lensX, _lift]),
+                      builder: (BuildContext context, Widget? _) {
+                        // The lens swells when lifted, stretches along its travel and thins to keep its volume.
+                        final double stretch = (_lensX.velocity.abs() / 70)
+                            .clamp(0.0, 26.0);
+                        final double grow = 1 + 0.14 * _lift.value;
+                        final double w = (_slot - 8) * grow + stretch,
+                            h = (_barH - 12) * grow * (1 - stretch / 220);
+                        final Rect lens = Rect.fromCenter(
+                          center: Offset(_lensX.value, _barH / 2),
+                          width: w,
+                          height: h,
+                        );
+                        final RRect shape = RRect.fromRectAndRadius(
+                          lens,
+                          Radius.circular(h / 2),
+                        );
+                        final bool solid = settings.reduceTransparency;
+                        return Stack(
+                          clipBehavior: Clip.none,
                           children: <Widget>[
-                            Transform(
-                              alignment: Alignment.center,
-                              transform: Matrix4.rotationZ(ang)
-                                ..scaleByDouble(
-                                  s * (1 + st),
-                                  s * (1 - st * 0.5),
-                                  1,
-                                  1,
-                                )
-                                ..rotateZ(-ang),
-                              child: Container(
-                                width: _blob,
-                                height: _blob,
-                                decoration: ShapeDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: <Color>[
-                                      Color.lerp(
-                                        _actions[i].$3,
-                                        Colors.white,
-                                        0.14,
-                                      )!,
-                                      _actions[i].$3,
-                                    ],
+                            Positioned.fill(
+                              child: Glass(
+                                radius: _barH / 2,
+                                style: GlassStyle(
+                                  blur: 18,
+                                  tint: 0.42,
+                                  refraction: 30,
+                                  bevel: 20,
+                                  fallbackColor: c.surfaceHigh,
+                                ),
+                                hole: solid ? null : shape.deflate(0.5),
+                              ),
+                            ),
+                            Positioned.fromRect(
+                              rect: lens,
+                              child: Glass(
+                                radius: h / 2,
+                                style: GlassStyle(
+                                  blur: 2.5,
+                                  tint: 0.16,
+                                  refraction: 22,
+                                  bevel: 13,
+                                  dispersion: 0.2,
+                                  magnify: 1.12,
+                                  light: 0.9,
+                                  saturation: 1.4,
+                                  adapt: 0.42,
+                                  shadow: 0.6,
+                                  fallbackColor: c.accent.withValues(
+                                    alpha: 0.3,
                                   ),
-                                  shape: CircleBorder(
-                                    side: BorderSide(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.2,
+                                ),
+                              ),
+                            ),
+                            Row(
+                              children: <Widget>[
+                                for (int s = 0; s < 5; s++)
+                                  Expanded(
+                                    child: s == 2
+                                        ? const SizedBox.shrink()
+                                        : Builder(
+                                            builder: (BuildContext context) {
+                                              final int i = s < 2 ? s : s - 1;
+                                              // Brightness follows the lens, not the tap, so it reads as the lens lighting the tab.
+                                              final double on =
+                                                  (1 -
+                                                          ((_centre(i) -
+                                                                      _lensX
+                                                                          .value)
+                                                                  .abs() /
+                                                              _slot))
+                                                      .clamp(0.0, 1.0);
+                                              return Semantics(
+                                                button: true,
+                                                selected: i == _tab,
+                                                label: _tabs[i].$2,
+                                                child: Column(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: <Widget>[
+                                                    Transform.scale(
+                                                      scale: 1 + 0.12 * on,
+                                                      child: Icon(
+                                                        _tabs[i].$1,
+                                                        size: 23,
+                                                        color: Color.lerp(
+                                                          c.glassInk.withValues(
+                                                            alpha: 0.6,
+                                                          ),
+                                                          c.glassInk,
+                                                          on,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 3),
+                                                    Text(
+                                                      _tabs[i].$2,
+                                                      textScaler:
+                                                          TextScaler.noScaling,
+                                                      style: LumenType.text(
+                                                        10.5,
+                                                        weight: 560 + 140 * on,
+                                                        color: Color.lerp(
+                                                          c.glassInk.withValues(
+                                                            alpha: 0.6,
+                                                          ),
+                                                          c.glassInk,
+                                                          on,
+                                                        ),
+                                                        height: 1.1,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+            // The blobs.
+            for (int i = 0; i < 5; i++)
+              ListenableBuilder(
+                listenable: _out[i],
+                builder: (BuildContext context, Widget? _) {
+                  final double p = _out[i].value;
+                  if (p <= 0.001) {
+                    return const SizedBox.shrink();
+                  }
+                  final Offset b = bc + (rest(i) - bc) * p;
+                  final double st = (_out[i].velocity.abs() * 0.028).clamp(
+                    0.0,
+                    0.34,
+                  );
+                  final Offset dir = rest(i) - bc;
+                  final double ang = math.atan2(dir.dy, dir.dx),
+                      s = 0.5 + 0.5 * p;
+                  return Positioned(
+                    left: b.dx - _blob / 2 - 20,
+                    top: b.dy - _blob / 2,
+                    width: _blob + 40,
+                    child: IgnorePointer(
+                      ignoring: !_open,
+                      child: Opacity(
+                        opacity: (p * 2.4).clamp(0.0, 1.0),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _run(i),
+                          child: Column(
+                            children: <Widget>[
+                              Transform(
+                                alignment: Alignment.center,
+                                transform: Matrix4.rotationZ(ang)
+                                  ..scaleByDouble(
+                                    s * (1 + st),
+                                    s * (1 - st * 0.5),
+                                    1,
+                                    1,
+                                  )
+                                  ..rotateZ(-ang),
+                                child: Container(
+                                  width: _blob,
+                                  height: _blob,
+                                  decoration: ShapeDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: <Color>[
+                                        Color.lerp(
+                                          _actions[i].$3,
+                                          Colors.white,
+                                          0.14,
+                                        )!,
+                                        _actions[i].$3,
+                                      ],
+                                    ),
+                                    shape: CircleBorder(
+                                      side: BorderSide(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.2,
+                                        ),
                                       ),
                                     ),
                                   ),
+                                  child: Icon(
+                                    _actions[i].$2,
+                                    color: Colors.white,
+                                    size: 26,
+                                  ),
                                 ),
-                                child: Icon(
-                                  _actions[i].$2,
+                              ),
+                              const SizedBox(height: 7),
+                              Text(
+                                _actions[i].$1,
+                                maxLines: 1,
+                                softWrap: false,
+                                textScaler: TextScaler.noScaling,
+                                style: LumenType.text(
+                                  13.5,
+                                  weight: 650,
                                   color: Colors.white,
-                                  size: 26,
+                                  height: 1.1,
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 7),
-                            Text(
-                              _actions[i].$1,
-                              maxLines: 1,
-                              softWrap: false,
-                              textScaler: TextScaler.noScaling,
-                              style: LumenType.text(
-                                13.5,
-                                weight: 650,
-                                color: Colors.white,
-                                height: 1.1,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-          // The button: one flat colour, in the middle of the bar.
-          Positioned(
-            left: bc.dx - _button / 2,
-            top: bc.dy - _button / 2,
-            child: Semantics(
-              button: true,
-              label: 'Actions',
-              child: Listener(
-                behavior: HitTestBehavior.opaque,
-                onPointerDown: (PointerDownEvent e) {
-                  _downAt = e.position;
-                  _moved = false;
-                  _kick.animateTo(0.92);
+                  );
                 },
-                onPointerMove: _buttonMove,
-                onPointerCancel: (_) => _buttonUp(),
-                onPointerUp: (_) => _buttonUp(),
-                child: ListenableBuilder(
-                  listenable: Listenable.merge(<Listenable>[_t, _kick, _glass]),
-                  builder: (BuildContext context, Widget? _) => Transform.scale(
-                    scale: _kick.value,
-                    child: _glass.value > 0.5
-                        // While the button is away, an empty ring marks where it lives.
-                        ? Container(
-                            width: _button,
-                            height: _button,
-                            decoration: ShapeDecoration(
-                              shape: CircleBorder(
-                                side: BorderSide(
-                                  color: c.glassInk.withValues(alpha: 0.35),
-                                  width: 1.5,
+              ),
+            // The button: one flat colour, in the middle of the bar.
+            Positioned(
+              left: bc.dx - _button / 2,
+              top: bc.dy - _button / 2,
+              child: Semantics(
+                button: true,
+                label: 'Actions',
+                child: Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: (PointerDownEvent e) {
+                    _downAt = e.position;
+                    _moved = false;
+                    _kick.animateTo(0.92);
+                  },
+                  onPointerMove: _buttonMove,
+                  onPointerCancel: (_) => _buttonUp(),
+                  onPointerUp: (_) => _buttonUp(),
+                  child: ListenableBuilder(
+                    listenable: Listenable.merge(<Listenable>[
+                      _t,
+                      _kick,
+                      _glass,
+                    ]),
+                    builder: (BuildContext context, Widget? _) =>
+                        Transform.scale(
+                          scale: _kick.value,
+                          child: _glass.value > 0.5
+                              // While the button is away, an empty ring marks where it lives.
+                              ? Container(
+                                  width: _button,
+                                  height: _button,
+                                  decoration: ShapeDecoration(
+                                    shape: CircleBorder(
+                                      side: BorderSide(
+                                        color: c.glassInk.withValues(
+                                          alpha: 0.35,
+                                        ),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  width: _button,
+                                  height: _button,
+                                  decoration: ShapeDecoration(
+                                    color: c.accent,
+                                    shape: const CircleBorder(),
+                                    shadows: const <BoxShadow>[
+                                      BoxShadow(
+                                        color: Color(0x55000000),
+                                        blurRadius: 14,
+                                        offset: Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Transform.rotate(
+                                    angle:
+                                        _t.value.clamp(0.0, 1.2) * math.pi / 4,
+                                    child: Icon(
+                                      Icons.add_rounded,
+                                      color: c.onAccent,
+                                      size: 34,
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                          )
-                        : Container(
-                            width: _button,
-                            height: _button,
-                            decoration: ShapeDecoration(
-                              color: c.accent,
-                              shape: const CircleBorder(),
-                              shadows: const <BoxShadow>[
-                                BoxShadow(
-                                  color: Color(0x55000000),
-                                  blurRadius: 14,
-                                  offset: Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Transform.rotate(
-                              angle: _t.value.clamp(0.0, 1.2) * math.pi / 4,
-                              child: Icon(
-                                Icons.add_rounded,
-                                color: c.onAccent,
-                                size: 34,
-                              ),
-                            ),
-                          ),
+                        ),
                   ),
                 ),
               ),
             ),
-          ),
-          // The lens, its explanation, and (once put down) its buttons.
-          ListenableBuilder(
-            listenable: Listenable.merge(<Listenable>[
-              _glass,
-              _lx,
-              _ly,
-              _morph,
-              _say,
-            ]),
-            builder: (BuildContext context, Widget? _) {
-              final double g = _glass.value;
-              if (g <= 0.02) {
-                return const SizedBox.shrink();
-              }
-              final double m = _morph.value, mm = m.clamp(0.0, 1.0);
-              final double size = _button + (_lensSize - _button) * g;
-              final double lw = (size + (_pillW - size) * m).clamp(
-                    40.0,
-                    screen.width - 12,
+            // The lens, its explanation, and (once put down) its buttons.
+            ListenableBuilder(
+              listenable: Listenable.merge(<Listenable>[
+                _glass,
+                _lx,
+                _ly,
+                _morph,
+                _say,
+              ]),
+              builder: (BuildContext context, Widget? _) {
+                final double g = _glass.value;
+                if (g <= 0.02) {
+                  return const SizedBox.shrink();
+                }
+                final double m = _morph.value, mm = m.clamp(0.0, 1.0);
+                final double size = _button + (_lensSize - _button) * g;
+                final double lw = (size + (_pillW - size) * m).clamp(
+                      40.0,
+                      screen.width - 12,
+                    ),
+                    lh = size + (60 - size) * m.clamp(0.0, 1.15);
+                final Offset at = Offset(_lx.value, _ly.value);
+                final Rect lens = Rect.fromCenter(
+                  center: Offset(
+                    at.dx.clamp(lw / 2 + 6, screen.width - lw / 2 - 6),
+                    at.dy,
                   ),
-                  lh = size + (60 - size) * m.clamp(0.0, 1.15);
-              final Offset at = Offset(_lx.value, _ly.value);
-              final Rect lens = Rect.fromCenter(
-                center: Offset(
-                  at.dx.clamp(lw / 2 + 6, screen.width - lw / 2 - 6),
-                  at.dy,
-                ),
-                width: lw,
-                height: lh,
-              );
-              _lensRect = lens;
-              final LensTarget? pill = _pill?.widget, said = _target?.widget;
-              final bool above = lens.top > safe.top + 150;
-              return Stack(
-                children: <Widget>[
-                  if (_parked)
-                    Positioned.fill(
+                  width: lw,
+                  height: lh,
+                );
+                _lensRect = lens;
+                final LensTarget? pill = _pill?.widget, said = _target?.widget;
+                final bool above = lens.top > safe.top + 150;
+                return Stack(
+                  children: <Widget>[
+                    if (_parked)
+                      Positioned.fill(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: _lensHome,
+                        ),
+                      ),
+                    Positioned.fromRect(
+                      rect: lens,
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: _lensHome,
-                      ),
-                    ),
-                  Positioned.fromRect(
-                    rect: lens,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTapUp: _parked
-                          ? (TapUpDetails d) => _pillTap(d.globalPosition)
-                          : null,
-                      child: Glass(
-                        radius: lh / 2,
-                        // Clear and magnifying while it only looks; coloured and calm once it holds actions.
-                        style: GlassStyle(
-                          blur: 0.8 + 11 * mm,
-                          tint: 0.05 + 0.5 * mm,
-                          tintColor: mm > 0.02 ? pill?.color : null,
-                          refraction: 19,
-                          bevel: 13,
-                          dispersion: 0.16,
-                          magnify: 1.2 - 0.2 * mm,
-                          light: 0.95,
-                          saturation: 1.35,
-                          adapt: 0.3,
-                          shadow: 0.9,
-                          fallbackColor: pill?.color ?? c.accent,
-                        ),
-                        child: pill == null || mm < 0.05
-                            ? null
-                            : Opacity(
-                                opacity: ((mm - 0.35) / 0.65).clamp(0.0, 1.0),
-                                child: Row(
-                                  children: <Widget>[
-                                    for (final (int i, (String, VoidCallback) a)
-                                        in pill.actions.indexed) ...<Widget>[
-                                      if (i > 0)
-                                        Container(
-                                          width: 1,
-                                          height: 26,
-                                          color: Colors.white.withValues(
-                                            alpha: 0.4,
+                        onTapUp: _parked
+                            ? (TapUpDetails d) => _pillTap(d.globalPosition)
+                            : null,
+                        child: Glass(
+                          radius: lh / 2,
+                          // Clear and magnifying while it only looks; coloured and calm once it holds actions.
+                          style: GlassStyle(
+                            blur: 0.8 + 11 * mm,
+                            tint: 0.05 + 0.5 * mm,
+                            tintColor: mm > 0.02 ? pill?.color : null,
+                            refraction: 19,
+                            bevel: 13,
+                            dispersion: 0.16,
+                            magnify: 1.2 - 0.2 * mm,
+                            light: 0.95,
+                            saturation: 1.35,
+                            adapt: 0.3,
+                            shadow: 0.9,
+                            fallbackColor: pill?.color ?? c.accent,
+                          ),
+                          child: pill == null || mm < 0.05
+                              ? null
+                              : Opacity(
+                                  opacity: ((mm - 0.35) / 0.65).clamp(0.0, 1.0),
+                                  child: Row(
+                                    children: <Widget>[
+                                      for (final (
+                                            int i,
+                                            (String, VoidCallback) a,
+                                          )
+                                          in pill.actions.indexed) ...<Widget>[
+                                        if (i > 0)
+                                          Container(
+                                            width: 1,
+                                            height: 26,
+                                            color: Colors.white.withValues(
+                                              alpha: 0.4,
+                                            ),
                                           ),
-                                        ),
-                                      Expanded(
-                                        flex: a.$1.length + 5,
-                                        child: Center(
-                                          child: Text(
-                                            a.$1,
-                                            maxLines: 1,
-                                            softWrap: false,
-                                            overflow: TextOverflow.fade,
-                                            textScaler: TextScaler.noScaling,
-                                            style: LumenType.text(
-                                              15,
-                                              weight: 700,
-                                              color: Colors.white,
-                                              height: 1,
+                                        Expanded(
+                                          flex: a.$1.length + 5,
+                                          child: Center(
+                                            child: Text(
+                                              a.$1,
+                                              maxLines: 1,
+                                              softWrap: false,
+                                              overflow: TextOverflow.fade,
+                                              textScaler: TextScaler.noScaling,
+                                              style: LumenType.text(
+                                                15,
+                                                weight: 700,
+                                                color: Colors.white,
+                                                height: 1,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ],
-                                  ],
+                                  ),
                                 ),
-                              ),
+                        ),
                       ),
                     ),
-                  ),
-                  if (said != null)
-                    Positioned(
-                      left: (at.dx - 134).clamp(12.0, screen.width - 280),
-                      top: above ? null : lens.bottom + 96,
-                      bottom: above ? screen.height - lens.top + 12 : null,
-                      width: 268,
-                      child: IgnorePointer(
-                        child: Opacity(
-                          opacity: _say.value.clamp(0.0, 1.0),
-                          child: Transform.scale(
-                            scale: 0.86 + 0.14 * _say.value,
-                            alignment: above
-                                ? Alignment.bottomCenter
-                                : Alignment.topCenter,
-                            child: Container(
-                              padding: const EdgeInsets.fromLTRB(
-                                14,
-                                12,
-                                14,
-                                13,
-                              ),
-                              decoration: ShapeDecoration(
-                                color: c.dark
-                                    ? const Color(0xF21B1E26)
-                                    : const Color(0xF2FFFFFF),
-                                shape: RoundedSuperellipseBorder(
-                                  borderRadius: BorderRadius.circular(22),
-                                  side: BorderSide(
-                                    color: said.color.withValues(alpha: 0.7),
-                                    width: 1.5,
-                                  ),
+                    if (said != null)
+                      Positioned(
+                        left: (at.dx - 134).clamp(12.0, screen.width - 280),
+                        top: above ? null : lens.bottom + 96,
+                        bottom: above ? screen.height - lens.top + 12 : null,
+                        width: 268,
+                        child: IgnorePointer(
+                          child: Opacity(
+                            opacity: _say.value.clamp(0.0, 1.0),
+                            child: Transform.scale(
+                              scale: 0.86 + 0.14 * _say.value,
+                              alignment: above
+                                  ? Alignment.bottomCenter
+                                  : Alignment.topCenter,
+                              child: Container(
+                                padding: const EdgeInsets.fromLTRB(
+                                  14,
+                                  12,
+                                  14,
+                                  13,
                                 ),
-                                shadows: <BoxShadow>[
-                                  BoxShadow(
-                                    color: c.shadow,
-                                    blurRadius: 22,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    said.title,
-                                    style: LumenType.text(
-                                      15.5,
-                                      weight: 700,
-                                      color: c.ink,
+                                decoration: ShapeDecoration(
+                                  color: c.dark
+                                      ? const Color(0xF21B1E26)
+                                      : const Color(0xF2FFFFFF),
+                                  shape: RoundedSuperellipseBorder(
+                                    borderRadius: BorderRadius.circular(22),
+                                    side: BorderSide(
+                                      color: said.color.withValues(alpha: 0.7),
+                                      width: 1.5,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    said.explain,
-                                    style: LumenType.text(
-                                      14,
-                                      color: c.inkMuted,
-                                      height: 1.35,
+                                  shadows: <BoxShadow>[
+                                    BoxShadow(
+                                      color: c.shadow,
+                                      blurRadius: 22,
+                                      offset: const Offset(0, 8),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: <Widget>[
+                                    Text(
+                                      said.title,
+                                      style: LumenType.text(
+                                        15.5,
+                                        weight: 700,
+                                        color: c.ink,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      said.explain,
+                                      style: LumenType.text(
+                                        14,
+                                        color: c.inkMuted,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                ],
-              );
-            },
-          ),
-          // A quick action: a glass sheet over the page. You never leave where you were.
-          ListenableBuilder(
-            listenable: _rise,
-            builder: (BuildContext context, Widget? _) {
-              final double t = _rise.value;
-              final int? i = _sheet;
-              if (t <= 0.001 || i == null) {
-                return const SizedBox.shrink();
-              }
-              return Stack(
-                children: <Widget>[
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTap: _closeSheet,
-                      child: ColoredBox(
-                        color: Colors.black.withValues(
-                          alpha: 0.4 * t.clamp(0.0, 1.0),
+                  ],
+                );
+              },
+            ),
+            // A quick action: a glass sheet over the page. You never leave where you were.
+            ListenableBuilder(
+              listenable: _rise,
+              builder: (BuildContext context, Widget? _) {
+                final double t = _rise.value;
+                final int? i = _sheet;
+                if (t <= 0.001 || i == null) {
+                  return const SizedBox.shrink();
+                }
+                return Stack(
+                  children: <Widget>[
+                    Positioned.fill(
+                      child: GestureDetector(
+                        onTap: _closeSheet,
+                        child: ColoredBox(
+                          color: Colors.black.withValues(
+                            alpha: 0.4 * t.clamp(0.0, 1.0),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    left: 10,
-                    right: 10,
-                    bottom: safe.bottom + 10 - (1 - t) * 420,
-                    child: Glass(
-                      radius: 36,
-                      // The heavier, more opaque glass: there is text to read on it.
-                      style: GlassStyle(
-                        blur: 26,
-                        tint: 0.72,
-                        refraction: 22,
-                        bevel: 18,
-                        fallbackColor: c.surface,
-                      ),
-                      child: Material(
-                        type: MaterialType.transparency,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                          child: _sheetBody(c, i),
+                    Positioned(
+                      left: 10,
+                      right: 10,
+                      bottom: safe.bottom + 10 - (1 - t) * 420,
+                      // Solid, not glass: blurring this much of the screen was the costliest thing in the app to open.
+                      child: DecoratedBox(
+                        decoration: ShapeDecoration(
+                          color: c.surface,
+                          shape: RoundedSuperellipseBorder(
+                            borderRadius: BorderRadius.circular(36),
+                            side: BorderSide(color: c.hairline),
+                          ),
+                          shadows: <BoxShadow>[
+                            BoxShadow(
+                              color: c.shadow,
+                              blurRadius: 30,
+                              offset: const Offset(0, -6),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          type: MaterialType.transparency,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                            child: _sheetBody(c, i),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1024,7 +1080,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             width: 38,
             height: 4,
             decoration: ShapeDecoration(
-              color: c.glassInk.withValues(alpha: 0.35),
+              color: c.ink.withValues(alpha: 0.35),
               shape: const StadiumBorder(),
             ),
           ),
@@ -1044,7 +1100,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             const SizedBox(width: 12),
             Text(
               title,
-              style: LumenType.display(26, weight: 700, color: c.glassInk),
+              style: LumenType.display(26, weight: 700, color: c.ink),
             ),
           ],
         ),
@@ -1064,7 +1120,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   height: 56,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: ShapeDecoration(
-                    color: c.glassInk.withValues(alpha: 0.08),
+                    color: c.ink.withValues(alpha: 0.08),
                     shape: RoundedSuperellipseBorder(
                       borderRadius: BorderRadius.circular(18),
                     ),
@@ -1077,7 +1133,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                           style: LumenType.text(
                             15.5,
                             weight: 600,
-                            color: c.glassInk,
+                            color: c.ink,
                           ),
                         ),
                       ),
@@ -1086,7 +1142,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         style: LumenType.text(
                           14,
                           weight: 650,
-                          color: c.glassInk.withValues(alpha: 0.7),
+                          color: c.ink.withValues(alpha: 0.7),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1098,16 +1154,36 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             ),
           Text(
             'Your three most recent. One tap logs it.',
-            style: LumenType.text(13, color: c.glassInk.withValues(alpha: 0.6)),
+            style: LumenType.text(13, color: c.ink.withValues(alpha: 0.6)),
           ),
         ] else if (i == 3) ...<Widget>[
-          DragDial(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              Text(
+                _sheetWeight.toStringAsFixed(1),
+                textScaler: TextScaler.noScaling,
+                style: LumenType.display(
+                  54,
+                  weight: 700,
+                  color: c.ink,
+                  height: 1,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 7, left: 6),
+                child: Text('kg', style: LumenType.text(17, color: c.inkMuted)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // The big ruler from Lumen R23: drag it or flick it.
+          Ruler(
             value: _sheetWeight,
-            step: 0.5,
-            fineStep: 0.1,
             min: 30,
             max: 250,
-            unit: 'kg',
+            step: 0.1,
             onChanged: (double v) => setState(() => _sheetWeight = v),
           ),
           const SizedBox(height: 14),
@@ -1133,7 +1209,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             'The camera would open here, in this sheet, and close itself once it reads a barcode.',
             style: LumenType.text(
               14.5,
-              color: c.glassInk.withValues(alpha: 0.75),
+              color: c.ink.withValues(alpha: 0.75),
               height: 1.4,
             ),
           ),

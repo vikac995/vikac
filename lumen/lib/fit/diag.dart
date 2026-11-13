@@ -21,7 +21,7 @@ class _Bucket {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 6';
+  static const String build = 'Prism build 7';
 
   /// Where the person is: the page, what floats over it, and anything extra on that page.
   String _page = 'home', _overlay = '', _extra = '';
@@ -63,8 +63,19 @@ class Diag {
     }
   }
 
+  // Frames drawn in the moments after an action are charged to that action.
+  final Map<String, _Bucket> _actions = <String, _Bucket>{};
+  final Map<String, int> _times = <String, int>{};
+  final List<String> _slow = <String>[];
+  String? _action;
+  int _actionUntil = 0;
+
   /// Notes something the person did, with the time it happened.
   void event(String what) {
+    // "tab Train" and "tab Food" are the same kind of action; so are two scrolls.
+    _action = what;
+    _actionUntil = _clock.elapsedMilliseconds + 700;
+    _times[what] = (_times[what] ?? 0) + 1;
     _events.add(
       '${(_clock.elapsedMilliseconds / 1000).toStringAsFixed(1)}s $what',
     );
@@ -77,6 +88,9 @@ class Diag {
     _buckets.clear();
     _events.clear();
     _shownMs.clear();
+    _actions.clear();
+    _times.clear();
+    _slow.clear();
     _since = 0;
     _clock
       ..reset()
@@ -96,6 +110,31 @@ class Diag {
       _prevVsync = vsync;
       final double build = t.buildDuration.inMicroseconds / 1000,
           raster = t.rasterDuration.inMicroseconds / 1000;
+      final String? act = _clock.elapsedMilliseconds <= _actionUntil
+          ? _action
+          : null;
+      if (act != null) {
+        final _Bucket a = _actions.putIfAbsent(act, _Bucket.new);
+        a.frames++;
+        a.buildSum += build;
+        a.rasterSum += raster;
+        if (build + raster > a.rasterMax) {
+          a.rasterMax =
+              build + raster; // for actions this holds the worst whole frame
+        }
+        if (build + raster > interval / 1000) {
+          a.late++; // frames that took longer than one refresh to make
+        }
+      }
+      // Every frame that blew the budget is written down with what was happening.
+      if (build + raster > interval / 1000 * 1.5) {
+        _slow.add(
+          '${(_clock.elapsedMilliseconds / 1000).toStringAsFixed(1)}s  ${(build + raster).toStringAsFixed(1)} ms (build ${build.toStringAsFixed(1)}, draw ${raster.toStringAsFixed(1)})  $scene  ${act == null ? '' : 'after "$act"'}',
+        );
+        if (_slow.length > 40) {
+          _slow.removeAt(0);
+        }
+      }
       b.frames++;
       b.buildSum += build;
       b.rasterSum += raster;
@@ -165,6 +204,28 @@ class Diag {
         'battery: $frames frames in ${total.round()}s = ${(frames / total).toStringAsFixed(2)} per second overall; '
         'the screen was still for ${(100 * (1 - frames / (total * _refresh))).clamp(0, 100).toStringAsFixed(1)}% of the time',
       );
+    // Which actions cost the most: the answer to "what makes it stutter".
+    o
+      ..writeln()
+      ..writeln(
+        'actions, worst first   times  frames  over budget  worst frame  avg frame (ms)',
+      );
+    final List<MapEntry<String, _Bucket>> acts = _actions.entries.toList()
+      ..sort(
+        (MapEntry<String, _Bucket> a, MapEntry<String, _Bucket> b) =>
+            b.value.rasterMax.compareTo(a.value.rasterMax),
+      );
+    for (final MapEntry<String, _Bucket> e in acts) {
+      final _Bucket a = e.value;
+      o.writeln(
+        '${e.key.padRight(22)} ${(_times[e.key] ?? 0).toString().padLeft(5)} ${a.frames.toString().padLeft(7)} ${'${a.late} (${(100 * a.late / a.frames).toStringAsFixed(0)}%)'.padLeft(12)} '
+        '${a.rasterMax.toStringAsFixed(1).padLeft(11)}  ${((a.buildSum + a.rasterSum) / a.frames).toStringAsFixed(1).padLeft(8)}',
+      );
+    }
+    o
+      ..writeln()
+      ..writeln('slow frames (over 1.5x budget), newest last:')
+      ..writeln(_slow.isEmpty ? '(none)' : _slow.join('\n'));
     o
       ..writeln()
       ..writeln('last actions:')
