@@ -24,6 +24,7 @@ import 'drawer.dart';
 import 'progress_page.dart';
 import 'robot.dart';
 import 'state.dart';
+import 'still_glass.dart';
 import 'train_page.dart';
 
 const List<(IconData, String)> _tabs = <(IconData, String)>[
@@ -1024,6 +1025,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         _lift,
                         Diag.instance.glassMode,
                         Diag.instance.autoLevel,
+                        Look.instance.frostReady,
+                        Diag.instance.wallpaperOn,
                       ]),
                       builder: (BuildContext context, Widget? _) {
                         // The lens swells when lifted, stretches along its travel and thins to keep its volume.
@@ -1064,9 +1067,27 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                             mode == 3 ||
                             (mode == 1 && (moving || lensOut));
                         final bool solid = barSolid || riderSolid;
+                        // Whenever the bar is not real glass, it is still glass: the blurred copy of the
+                        // background shows through it, so it keeps its colour and never goes flat.
+                        final bool still =
+                            barSolid &&
+                            !off &&
+                            Diag.instance.wallpaperOn.value &&
+                            Look.instance.frost != null;
                         return Stack(
                           clipBehavior: Clip.none,
                           children: <Widget>[
+                            if (still)
+                              Positioned.fill(
+                                child: StillGlass(
+                                  radius: _barH / 2,
+                                  tint: c.glassTint.withValues(alpha: 0.42),
+                                  rim: Colors.white.withValues(
+                                    alpha: c.dark ? 0.30 : 0.9,
+                                  ),
+                                  stamp: Look.instance.frostReady.value,
+                                ),
+                              ),
                             Positioned.fill(
                               child: Glass(
                                 radius: _barH / 2,
@@ -1076,9 +1097,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                   refraction: 30,
                                   bevel: 20,
                                   // In the new styles the solid bar is matched to the glass one, so swapping does not flash.
-                                  fallbackColor: mode == 0 && !covered
-                                      ? c.surfaceHigh
-                                      : Color.lerp(c.bg, c.surfaceHigh, 0.35),
+                                  fallbackColor: still
+                                      ? const Color(0x00000000)
+                                      : (mode == 0 && !covered
+                                            ? c.surfaceHigh
+                                            : Color.lerp(
+                                                c.bg,
+                                                c.surfaceHigh,
+                                                0.35,
+                                              )),
                                 ),
                                 hole: solid ? null : shape.deflate(0.5),
                                 solid: barSolid,
@@ -1922,6 +1949,16 @@ void showPrismSettings(BuildContext context) {
                         value: Look.instance.vibe,
                         onChanged: (int v) => Look.instance.choose(vibe: v),
                       ),
+                      if (Look.instance.vibe != 0) ...<Widget>[
+                        const SizedBox(height: 10),
+                        Segmented<int>(
+                          values: const <int>[0, 1, 2, 3],
+                          labels: Look.patterns,
+                          value: Look.instance.pattern,
+                          onChanged: (int v) =>
+                              Look.instance.choose(pattern: v),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       SwitchLine(
                         label: 'Dark',
@@ -2164,20 +2201,144 @@ class _Wallpaper extends CustomPainter {
       (Offset(size.width * 0.70, size.height * 0.955), size.width * 0.075),
     ];
     final bool flow = look.vibe != 1, pattern = look.vibe != 0;
-    if (pattern) {
-      // An even field of fine dots, so the whole page has a quiet grain to it.
-      final double gap = size.width / 15;
-      final Paint dot = Paint()
-        ..color = look.mid.withValues(alpha: dark ? 0.16 : 0.22);
-      for (double y = gap / 2; y < size.height; y += gap) {
-        for (double x = gap / 2; x < size.width; x += gap) {
-          canvas.drawCircle(Offset(x, y), size.width / 420, dot);
+    final double w = size.width, h = size.height;
+    final double strong = dark ? 1.0 : 1.25;
+    Paint line(Color col, double a, double width) => Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeWidth = width
+      ..color = col.withValues(alpha: (a * strong).clamp(0.0, 1.0));
+    Paint fill(Color col, double a) =>
+        Paint()..color = col.withValues(alpha: (a * strong).clamp(0.0, 1.0));
+
+    // The glows come first: they are the light every pattern is drawn in.
+    for (final (Offset at, double r) in places) {
+      glow(at, r * 2.3, look.mid, dark ? 0.26 : 0.20);
+    }
+    if (pattern && look.pattern == 1) {
+      // Contours: lines like the height lines on a map, or wind on sand. Each follows the one
+      // before it but drifts a little, and they swell where the light is.
+      const int lines = 30;
+      for (int i = 0; i < lines; i++) {
+        final double t = i / (lines - 1);
+        final double y0 = h * (-0.04 + 1.08 * t);
+        final Path p = Path();
+        for (int k = 0; k <= 48; k++) {
+          final double x = w * k / 48, u = k / 48;
+          // Taller waves low on the left, where the large light is; calmer toward the top right.
+          final double swell = 0.35 + 1.25 * t * (1 - u * 0.55);
+          final double y =
+              y0 +
+              h * 0.020 * swell * math.sin(u * 2 * math.pi * 1.15 + i * 0.36) +
+              h * 0.008 * swell * math.sin(u * 2 * math.pi * 2.9 - i * 0.23);
+          if (k == 0) {
+            p.moveTo(x, y);
+          } else {
+            p.lineTo(x, y);
+          }
+        }
+        canvas.drawPath(
+          p,
+          line(
+            Color.lerp(look.light, look.deep, t)!,
+            0.10 + 0.20 * t,
+            w / 420 * (0.8 + t),
+          ),
+        );
+      }
+    } else if (pattern && look.pattern == 2) {
+      // Arcs: a few large, plain shapes, each a part of a circle, overlapping like cut paper.
+      // Big quiet areas first, then the thin rings that tie them together.
+      canvas
+        ..drawCircle(Offset(0, h), w * 0.80, fill(look.mid, 0.15))
+        ..drawCircle(Offset(w, h * 0.40), w * 0.30, fill(look.deep, 0.24))
+        ..drawCircle(Offset(w, 0), w * 0.36, fill(look.light, 0.10))
+        ..drawCircle(
+          Offset(w * 0.24, h * 0.215),
+          w * 0.062,
+          fill(look.light, 0.26),
+        )
+        ..drawArc(
+          Rect.fromCircle(center: Offset(0, h), radius: w * 1.00),
+          -math.pi / 2,
+          math.pi / 2,
+          false,
+          line(look.light, 0.20, w * 0.050),
+        )
+        ..drawArc(
+          Rect.fromCircle(center: Offset(0, h), radius: w * 1.17),
+          -math.pi / 2,
+          math.pi / 2,
+          false,
+          line(look.light, 0.30, w * 0.006),
+        )
+        ..drawArc(
+          Rect.fromCircle(center: Offset(w, h * 0.40), radius: w * 0.41),
+          math.pi / 2,
+          math.pi,
+          false,
+          line(look.light, 0.20, w * 0.028),
+        )
+        ..drawArc(
+          Rect.fromCircle(center: Offset(w, h * 0.40), radius: w * 0.50),
+          math.pi / 2,
+          math.pi,
+          false,
+          line(look.mid, 0.30, w * 0.005),
+        )
+        ..drawCircle(
+          Offset(w * 0.24, h * 0.215),
+          w * 0.105,
+          line(look.light, 0.30, w * 0.005),
+        )
+        ..drawArc(
+          Rect.fromCircle(center: Offset(w, 0), radius: w * 0.47),
+          math.pi / 2,
+          math.pi / 2,
+          false,
+          line(look.mid, 0.26, w * 0.005),
+        );
+    } else if (pattern && look.pattern == 3) {
+      // Weave: two sets of fine straight lines at slightly different slants. Where they cross
+      // they make slow bands of their own, like silk held to the light. Nothing is drawn to
+      // make the bands; they come from the crossing.
+      final double gap = w / 34;
+      final Paint a = line(look.light, 0.13, w / 520),
+          b = line(look.mid, 0.13, w / 520);
+      for (double d = -h; d < w + h; d += gap) {
+        canvas.drawLine(Offset(d, 0), Offset(d + h * 0.92, h), a);
+      }
+      for (double d = -h; d < w + h; d += gap * 1.045) {
+        canvas.drawLine(Offset(d, 0), Offset(d + h * 0.80, h), b);
+      }
+    } else if (pattern) {
+      // Ripples: rings spreading from where the lights are, each a little further from the last
+      // and a little fainter, as on water. A fine grain of dots lies under them.
+      final Paint dot = fill(look.mid, 0.15);
+      final double gap = w / 15;
+      for (double y = gap / 2; y < h; y += gap) {
+        for (double x = gap / 2; x < w; x += gap) {
+          canvas.drawCircle(Offset(x, y), w / 440, dot);
+        }
+      }
+      for (final (Offset at, double r) in places) {
+        double rr = r * (flow ? 1.08 : 0.34);
+        for (int k = 0; k < 9; k++) {
+          canvas.drawCircle(
+            at,
+            rr,
+            line(
+              look.light,
+              0.36 * math.pow(1 - k / 9.5, 1.4),
+              w / 300 * (1.5 - k / 9),
+            ),
+          );
+          rr += r * 0.17 * math.pow(1.2, k);
         }
       }
     }
-    for (final (Offset at, double r) in places) {
-      glow(at, r * 2.3, look.mid, dark ? 0.26 : 0.20);
-      if (flow) {
+    if (flow) {
+      for (final (Offset at, double r) in places) {
         // An orb: discs shrinking toward a highlight up and to the left, as on a lit sphere,
         // shading from the deeper neighbour colour through the colour itself to the lighter one.
         const int steps = 56;
@@ -2197,19 +2358,6 @@ class _Wallpaper extends CustomPainter {
             ),
             Paint()..color = col,
           );
-        }
-      }
-      if (pattern) {
-        // Rings spreading from the same spots: around the orbs if there are orbs, in their place if not.
-        final Paint ring = Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = size.width / 260;
-        for (int k = flow ? 1 : 0; k < 6; k++) {
-          final double rr = r * (flow ? 1.0 : 0.45) + r * 0.36 * k;
-          ring.color = look.light.withValues(
-            alpha: (dark ? 0.34 : 0.42) * (1 - k / 6.5),
-          );
-          canvas.drawCircle(at, rr, ring);
         }
       }
     }
@@ -2249,8 +2397,8 @@ class _WallpaperImageState extends State<_WallpaperImage> {
     _dark = dark;
     _version = widget.version;
     final Size small = Size(
-      (size.width / 2).ceilToDouble(),
-      (size.height / 2).ceilToDouble(),
+      (size.width / (Look.instance.vibe == 0 ? 2 : 1.4)).ceilToDouble(),
+      (size.height / (Look.instance.vibe == 0 ? 2 : 1.4)).ceilToDouble(),
     );
     final ui.PictureRecorder rec = ui.PictureRecorder();
     _Wallpaper(dark).paint(Canvas(rec), small);
@@ -2260,10 +2408,36 @@ class _WallpaperImageState extends State<_WallpaperImage> {
       small.height.toInt(),
     );
     pic.dispose();
+    // The same picture, blurred once. Every piece of still glass shows a part of this.
+    final ui.PictureRecorder rec2 = ui.PictureRecorder();
+    // The same softness as the real glass bar (18 on the screen), scaled to this smaller picture,
+    // so still glass and real glass look alike.
+    final double sigma = 18 * small.width / size.width;
+    Canvas(rec2).drawImage(
+      img,
+      Offset.zero,
+      Paint()
+        ..imageFilter = ui.ImageFilter.blur(
+          sigmaX: sigma,
+          sigmaY: sigma,
+          tileMode: TileMode.clamp,
+        ),
+    );
+    final ui.Picture pic2 = rec2.endRecording();
+    final ui.Image frost = await pic2.toImage(
+      small.width.toInt(),
+      small.height.toInt(),
+    );
+    pic2.dispose();
     if (!mounted) {
       img.dispose();
+      frost.dispose();
       return;
     }
+    Look.instance
+      ..frost = frost
+      ..frostScreen = size
+      ..frostReady.value += 1;
     setState(() {
       _image?.dispose();
       _image = img;

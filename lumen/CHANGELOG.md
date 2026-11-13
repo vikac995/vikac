@@ -1,5 +1,37 @@
 # Lumen changelog
 
+## Prism, build 48 (13 November 2026)
+
+**File:** `releases/prism-build-48.apk`
+
+**Four patterns, drawn with care.** Round button on Home: choose Background "Pattern" or "Both" and a second row appears.
+
+- **Ripples:** rings spreading from where the lights are, each a little further from the last and a little fainter, as on water, over a fine grain of dots.
+- **Contours:** thirty lines like the height lines on a map or wind on sand. Each follows the one before but drifts, and they swell low on the left where the large light is.
+- **Arcs:** a few large plain shapes, each part of a circle, overlapping like cut paper, tied together by thin rings.
+- **Weave:** two sets of fine straight lines at slightly different slants. Where they cross they make slow bands of their own, like silk held to the light. Nothing is drawn to make the bands; they come from the crossing.
+
+Each takes its colours from your chosen hue, and "Both" lays the orbs on top. All of it is still one picture made once. Patterns are made at a higher sharpness than orbs alone, because fine lines need it.
+
+**Patterns on the cards.** Cards now let a little more of the background through (about 28 %, was 21 %) and have a slightly brighter edge, so the pattern carries across them and each reads as a pane.
+
+**The bar: unchanged, as you asked.** The translucent glass bar stays exactly as it is.
+
+**Glass that costs nothing, for the moments the bar used to go flat.** Your tests showed real glass on the bar costs about 0.9 ms a frame. The low-cost answer to "the colours reflecting beautifully":
+
+- The background is a still picture, so it is blurred once and the blurred copy is kept.
+- A piece of "still glass" shows the part of that copy that lies behind it, with the same tint and softness as the real bar and a lit rim.
+- It is used wherever the bar was a flat solid colour before: under the drawer, under sheets, and in the Event style. In those moments the bar now keeps its colour.
+- The one difference from real glass: page content scrolling under it is hidden, not blurred through it. And the small lens around the selected tab is a plain highlight, not a magnifier.
+
+**What to look for**
+- The four patterns in a few colours, with and without orbs. Which do you like, which not? Are any too faint (Contours was the quietest in my preview) or too loud?
+- Open the drawer: the bar underneath should now keep its colour instead of going dark grey.
+- Glass style "Event": compare the bar with "Orig.". In my preview they were nearly indistinguishable. If they are on your phone too, Event could become the default and the cost of the bar disappears.
+
+**Checked:** in my preview: Ripples and Arcs in amber, Contours in blue, Weave in violet, on the Home page in dark mode; the real bar and the still-glass bar side by side over the same background.
+**Not checked:** on a phone; light mode; patterns on the other pages; whether Event with still glass is as cheap as Event was before (it should be: one picture drawn, nothing blurred), which the test will show.
+
 ## Prism, build 47 (13 November 2026)
 
 **File:** `releases/prism-build-47.apk`

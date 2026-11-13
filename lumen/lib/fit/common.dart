@@ -74,9 +74,12 @@ class GlassDot extends StatelessWidget {
 /// what is behind comes through, so the glowing shapes of the background tint each card.
 ShapeDecoration card(LumenColors c, {double radius = 28, Color? tint}) =>
     ShapeDecoration(
-      color: tint ?? c.surface.withValues(alpha: c.dark ? 0.79 : 0.85),
+      color: tint ?? c.surface.withValues(alpha: c.dark ? 0.72 : 0.80),
       shape: RoundedSuperellipseBorder(
         borderRadius: BorderRadius.circular(radius),
-        side: BorderSide(color: c.hairline),
+        // A slightly brighter edge than a plain hairline, so a card reads as a pane and not a hole.
+        side: BorderSide(
+          color: c.dark ? const Color(0x26FFFFFF) : const Color(0x1F000000),
+        ),
       ),
     );

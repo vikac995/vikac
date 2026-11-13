@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/widgets.dart';
 
@@ -33,7 +34,21 @@ class Look extends ChangeNotifier {
   static const List<String> vibes = <String>['Flow', 'Pattern', 'Both'];
 
   double _hue = 38;
-  int _vibe = 0;
+  int _vibe = 0, _pattern = 0;
+
+  /// The kinds of pattern.
+  static const List<String> patterns = <String>[
+    'Ripples',
+    'Contours',
+    'Arcs',
+    'Weave',
+  ];
+  int get pattern => _pattern;
+
+  /// The background picture, blurred once, for glass that does not have to blur anything itself.
+  ui.Image? frost;
+  Size frostScreen = Size.zero;
+  final ValueNotifier<int> frostReady = ValueNotifier<int>(0);
 
   /// Goes up each time the look changes, so the background picture knows to redraw itself once.
   int version = 0;
@@ -56,19 +71,23 @@ class Look extends ChangeNotifier {
       final List<String> saved = _file.readAsStringSync().split(' ');
       _hue = double.parse(saved[0]);
       _vibe = int.parse(saved[1]).clamp(0, vibes.length - 1);
+      if (saved.length > 2) {
+        _pattern = int.parse(saved[2]).clamp(0, patterns.length - 1);
+      }
       _remake();
     } catch (_) {
       // Nothing chosen yet: amber and flow.
     }
   }
 
-  void choose({double? hue, int? vibe}) {
+  void choose({double? hue, int? vibe, int? pattern}) {
+    _pattern = pattern ?? _pattern;
     _hue = hue ?? _hue;
     _vibe = vibe ?? _vibe;
     _remake();
     notifyListeners();
     try {
-      _file.writeAsStringSync('$_hue $_vibe');
+      _file.writeAsStringSync('$_hue $_vibe $_pattern');
     } catch (_) {
       // Not saved: it is simply asked for again next time.
     }
