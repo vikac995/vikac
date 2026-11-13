@@ -1,5 +1,31 @@
 # Lumen changelog
 
+## Prism, build 53 (13 November 2026)
+
+**File:** `releases/prism-build-53.apk`
+
+**The floating rest timer, as a small glass lens.** (The timer itself arrived in build 52; this is its look.)
+
+- **See-through glass.** The disc is tinted and translucent, so the app underneath shows through it, darker toward the lower right and lighter where the light enters at the top left, with a breath of your chosen colour in it.
+- **A rim lit from above** and a soft highlight lying across the top half, like the lens in Prism.
+- **The countdown is a ring** in your colour with a bright bead at its head. It moves smoothly, not in one-second steps.
+- **The time** sits in the middle in steady digits. In the last ten seconds it takes your colour, as a nudge.
+- **When the rest is over** the lens fills with your colour, says GO, swells once and buzzes.
+- **It arrives with a small bounce**, gives when pressed, and after a drag it settles against the nearer side of the screen, out of the way. Dropping it at the bottom edge still puts it away.
+- A little larger than before, so it is easy to hit between sets.
+
+**What it cannot do:** blur or magnify the app underneath. Android does not let one app see another app's screen, so this is tinted clear glass, not frosted or bending glass.
+
+**Cost:** it now redraws about fifteen times a second while counting (it was four), so the ring moves smoothly. It is a small circle drawn by Android; I expect the cost to be negligible, but it is not measured. It still draws nothing once it says GO.
+
+**What to look for**
+- Does it read as glass over a bright app (a white chat) and over a dark one? Is the time always legible?
+- Is the size right, and does settling against the side feel natural?
+- Everything from build 52 still applies: does it appear, count, and bring you back on a tap?
+
+**Checked:** it compiles.
+**Not checked:** all of it. This is Android-only drawing code that has never run, and I have not seen a single frame of it. If it looks wrong, a screenshot tells me everything.
+
 ## Prism, build 52 (13 November 2026)
 
 **File:** `releases/prism-build-52.apk`

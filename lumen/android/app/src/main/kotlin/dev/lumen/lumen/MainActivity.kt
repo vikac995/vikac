@@ -349,7 +349,7 @@ object RestBubble {
         try {
             val wm = context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
             val d = context.resources.displayMetrics
-            val size = (64 * d.density).toInt()
+            val size = (84 * d.density).toInt()
             val lp = android.view.WindowManager.LayoutParams(
                 size, size,
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -357,7 +357,7 @@ object RestBubble {
                 android.graphics.PixelFormat.TRANSLUCENT,
             )
             lp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
-            lp.x = d.widthPixels - size - (12 * d.density).toInt()
+            lp.x = d.widthPixels - size - (8 * d.density).toInt()
             lp.y = (d.heightPixels * 0.30f).toInt()
             val v = Dot(context, lp)
             wm.addView(v, lp)
@@ -377,76 +377,173 @@ object RestBubble {
         }
     }
 
+    /**
+     * Drawn as a small glass lens: a see-through tinted disc (the app underneath shows through
+     * it), a rim lit from above, a soft highlight across the top, and the countdown as a ring in
+     * the chosen colour with a bright bead at its head.
+     */
     private class Dot(context: Context, val lp: android.view.WindowManager.LayoutParams) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val arc = android.graphics.RectF()
+        private val clip = android.graphics.Path()
+        private var body: android.graphics.Shader? = null
+        private var bodyDone: android.graphics.Shader? = null
+        private var rim: android.graphics.Shader? = null
+        private var shine: android.graphics.Shader? = null
+        private var shadow: android.graphics.Shader? = null
         private var downX = 0f; private var downY = 0f; private var startX = 0; private var startY = 0
         private var dragged = false
         private var buzzed = false
+        private val dp = resources.displayMetrics.density
+
+        private fun shade(color: Int, value: Float, alpha: Int): Int {
+            val hsv = FloatArray(3)
+            android.graphics.Color.colorToHSV(color, hsv)
+            hsv[2] = (hsv[2] * value).coerceIn(0f, 1f)
+            return android.graphics.Color.HSVToColor(alpha, hsv)
+        }
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            // It arrives with a small bounce, like the button it comes from.
+            scaleX = 0.5f; scaleY = 0.5f; alpha = 0f
+            animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(320).setInterpolator(android.view.animation.OvershootInterpolator(2.2f)).start()
+        }
+
+        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+            val r = w / 2f
+            val disc = r - 5 * dp
+            // The glass: nearly clear where the light enters at the top left, deeper toward the lower right,
+            // with a breath of the chosen colour in it.
+            body = android.graphics.RadialGradient(
+                r - disc * 0.35f, r - disc * 0.45f, disc * 1.7f,
+                intArrayOf(shade(accent, 0.34f, 0xB0), shade(accent, 0.16f, 0xD2), 0xE60A0B0E.toInt()),
+                floatArrayOf(0f, 0.55f, 1f), android.graphics.Shader.TileMode.CLAMP,
+            )
+            // When the rest is over the lens fills with the colour itself, lit the same way.
+            bodyDone = android.graphics.RadialGradient(
+                r - disc * 0.35f, r - disc * 0.45f, disc * 1.7f,
+                intArrayOf(shade(accent, 1.18f, 0xFF), accent, shade(accent, 0.72f, 0xFF)),
+                floatArrayOf(0f, 0.5f, 1f), android.graphics.Shader.TileMode.CLAMP,
+            )
+            rim = android.graphics.LinearGradient(0f, r - disc, 0f, r + disc, 0xA6FFFFFF.toInt(), 0x14FFFFFF, android.graphics.Shader.TileMode.CLAMP)
+            shine = android.graphics.LinearGradient(0f, r - disc, 0f, r - disc * 0.1f, 0x30FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP)
+            shadow = android.graphics.RadialGradient(r, r + 2 * dp, r, intArrayOf(0x55000000, 0x55000000, 0x00000000), floatArrayOf(0f, 0.78f, 1f), android.graphics.Shader.TileMode.CLAMP)
+            clip.reset()
+            clip.addCircle(r, r, disc, android.graphics.Path.Direction.CW)
+        }
 
         override fun onDraw(canvas: android.graphics.Canvas) {
-            val w = width.toFloat(); val r = w / 2f; val dp = resources.displayMetrics.density
+            val w = width.toFloat(); val r = w / 2f
+            val disc = r - 5 * dp
             val left = endsAt - System.currentTimeMillis()
             val done = left <= 0
-            // A soft shadow, then the disc.
+            // The shadow it casts on the app below.
             paint.style = android.graphics.Paint.Style.FILL
-            paint.color = 0x33000000
-            canvas.drawCircle(r, r + 1.5f * dp, r - 2.5f * dp, paint)
-            paint.color = if (done) accent else 0xF2121419.toInt()
-            canvas.drawCircle(r, r, r - 3 * dp, paint)
+            paint.shader = shadow
+            canvas.drawCircle(r, r + 2 * dp, r, paint)
+            // The glass.
+            paint.shader = if (done) bodyDone else body
+            canvas.drawCircle(r, r, disc, paint)
+            // Light lying across the top half.
+            canvas.save()
+            canvas.clipPath(clip)
+            paint.shader = shine
+            canvas.drawOval(r - disc * 1.25f, r - disc * 1.05f, r + disc * 1.25f, r - disc * 0.05f, paint)
+            canvas.restore()
+            paint.shader = null
             if (!done) {
-                // The ring: what is left of the rest.
-                val inset = 6.5f * dp
+                // The ring: what is left of the rest, with a bright bead where it ends.
+                val inset = 5 * dp + 6.5f * dp
                 arc.set(inset, inset, w - inset, w - inset)
                 paint.style = android.graphics.Paint.Style.STROKE
-                paint.strokeWidth = 3.5f * dp
+                paint.strokeWidth = 3.6f * dp
                 paint.strokeCap = android.graphics.Paint.Cap.ROUND
-                paint.color = 0x26FFFFFF
+                paint.color = 0x24FFFFFF
                 canvas.drawArc(arc, 0f, 360f, false, paint)
+                val part = (left / (total * 1000f)).coerceIn(0f, 1f)
                 paint.color = accent
-                canvas.drawArc(arc, -90f, 360f * (left / (total * 1000f)).coerceIn(0f, 1f), false, paint)
+                canvas.drawArc(arc, -90f, 360f * part, false, paint)
+                val a = Math.toRadians((-90f + 360f * part).toDouble())
+                val bx = r + (arc.width() / 2f) * Math.cos(a).toFloat(); val by = r + (arc.height() / 2f) * Math.sin(a).toFloat()
+                paint.style = android.graphics.Paint.Style.FILL
+                paint.color = shade(accent, 1.3f, 0x55)
+                canvas.drawCircle(bx, by, 5.2f * dp, paint)
+                paint.color = 0xFFFFFFFF.toInt()
+                canvas.drawCircle(bx, by, 2.1f * dp, paint)
             }
+            // The rim, lit from above.
+            paint.style = android.graphics.Paint.Style.STROKE
+            paint.strokeWidth = 1.3f * dp
+            paint.shader = rim
+            canvas.drawCircle(r, r, disc - 0.65f * dp, paint)
+            paint.shader = null
+            // The time. In the last ten seconds it takes the colour, as a nudge.
             paint.style = android.graphics.Paint.Style.FILL
-            paint.color = if (done) onAccent else 0xFFFFFFFF.toInt()
-            paint.textAlign = android.graphics.Paint.Align.CENTER
-            paint.typeface = android.graphics.Typeface.create(android.graphics.Typeface.DEFAULT, android.graphics.Typeface.BOLD)
-            paint.textSize = (if (done) 17f else 15f) * dp
             val secs = ((left + 999) / 1000).coerceAtLeast(0)
+            paint.color = if (done) onAccent else if (secs <= 10) shade(accent, 1.25f, 0xFF) else 0xFFFFFFFF.toInt()
+            paint.textAlign = android.graphics.Paint.Align.CENTER
+            paint.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+            paint.fontFeatureSettings = "tnum"
+            paint.letterSpacing = if (done) 0.06f else -0.01f
+            paint.textSize = (if (done) 19f else 17.5f) * dp
             val text = if (done) "GO" else "${secs / 60}:${(secs % 60).toString().padStart(2, '0')}"
             canvas.drawText(text, r, r - (paint.descent() + paint.ascent()) / 2f, paint)
             if (done && !buzzed) {
                 buzzed = true
                 performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
+                // One small swell to say it is time.
+                animate().scaleX(1.14f).scaleY(1.14f).setDuration(160).withEndAction {
+                    animate().scaleX(1f).scaleY(1f).setDuration(420).setInterpolator(android.view.animation.OvershootInterpolator(3f)).start()
+                }.start()
             }
-            // Redrawn four times a second while counting; not at all once it says GO.
-            if (!done) postInvalidateDelayed(250)
+            // The ring moves smoothly: redrawn about fifteen times a second while counting, not at all once it says GO.
+            if (!done) postInvalidateDelayed(66)
+        }
+
+        private fun move(wm: android.view.WindowManager) {
+            try { wm.updateViewLayout(this, lp) } catch (ex: Exception) {}
         }
 
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
             val wm = context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
+            val screen = resources.displayMetrics
             when (e.actionMasked) {
                 android.view.MotionEvent.ACTION_DOWN -> {
                     downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y; dragged = false
+                    animate().scaleX(0.9f).scaleY(0.9f).setDuration(90).start()
                 }
                 android.view.MotionEvent.ACTION_MOVE -> {
                     val dx = e.rawX - downX; val dy = e.rawY - downY
-                    if (dragged || dx * dx + dy * dy > 144 * resources.displayMetrics.density) {
+                    val slop = 10 * dp
+                    if (dragged || dx * dx + dy * dy > slop * slop) {
                         dragged = true
                         lp.x = startX + dx.toInt(); lp.y = startY + dy.toInt()
-                        try { wm.updateViewLayout(this, lp) } catch (ex: Exception) {}
+                        move(wm)
                     }
                 }
-                android.view.MotionEvent.ACTION_UP -> {
-                    if (!dragged) {
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    animate().scaleX(1f).scaleY(1f).setDuration(220).setInterpolator(android.view.animation.OvershootInterpolator(2.5f)).start()
+                    if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !dragged) {
                         // Tapped: back to the workout.
                         val i = android.content.Intent(context, MainActivity::class.java)
                             .setAction(OPEN_TRAIN)
                             .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
                         try { context.startActivity(i) } catch (ex: Exception) {}
                         hide(context)
-                    } else if (lp.y > resources.displayMetrics.heightPixels * 0.84f) {
+                    } else if (lp.y > screen.heightPixels * 0.84f) {
                         // Dropped at the bottom edge: put away until the next rest.
                         hide(context)
+                    } else {
+                        // Let go anywhere else: it settles against the nearer side, out of the way.
+                        val margin = (8 * dp).toInt()
+                        val target = if (lp.x + width / 2 < screen.widthPixels / 2) margin else screen.widthPixels - width - margin
+                        lp.y = lp.y.coerceIn((40 * dp).toInt(), screen.heightPixels - height - (40 * dp).toInt())
+                        val slide = android.animation.ValueAnimator.ofInt(lp.x, target)
+                        slide.duration = 260
+                        slide.interpolator = android.view.animation.OvershootInterpolator(1.4f)
+                        slide.addUpdateListener { lp.x = it.animatedValue as Int; move(wm) }
+                        slide.start()
                     }
                 }
             }
