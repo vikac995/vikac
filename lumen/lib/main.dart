@@ -60,6 +60,9 @@ import 'rooms/patterns/swap_room.dart';
 import 'rooms/patterns/session_room.dart';
 import 'rooms/patterns/flude_room.dart';
 import 'rooms/patterns/lens_room.dart';
+import 'rooms/patterns/bud_room.dart';
+import 'rooms/play/toss_room.dart';
+import 'rooms/play/pack_room.dart';
 import 'rooms/shaders/shaders_room.dart';
 import 'rooms/shapes/shape_room.dart';
 import 'rooms/springs/springs_room.dart';
@@ -163,6 +166,9 @@ class LumenApp extends StatelessWidget {
             'session' => const SessionRoom(),
             'flude' => const FludeRoom(),
             'lens' => const LensRoom(),
+            'bud' => const BudRoom(),
+            'toss' => const TossRoom(),
+            'pack' => const PackRoom(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

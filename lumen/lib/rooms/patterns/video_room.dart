@@ -42,7 +42,14 @@ class _VideoRoomState extends State<VideoRoom>
     if (_playing && !_scrubbing) {
       _t.value = (_t.value + dt / _loop * (_slow ? 0.5 : 1)) % 1;
     }
-  })..start();
+  });
+
+  @override
+  void initState() {
+    super.initState();
+    // A late field is only created when first used, so the clock is started here.
+    _ticker.start();
+  }
 
   @override
   void dispose() {

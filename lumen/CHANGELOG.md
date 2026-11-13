@@ -1,5 +1,41 @@
 # Lumen changelog
 
+## Build 20 (13 November 2026)
+
+Three new examples (54 in total) and one fix. Nothing was removed.
+
+**Files:** `releases/lumen-build-20.apk`, `releases/lumen-source-build-20.zip`
+
+### Fixed
+
+- **R47 Demo video: the loop never played.** The clock that drives it was created but never started, so the figure stood still and the cue never changed. My mistake, present since build 15; it now runs.
+
+### New: R52 Lens with blobs (in "The centre button")
+
+A variation on R51, kept separate so both can be compared. Drag the button onto a widget and rest there for 0.3 s: that widget's actions bud out of the glass as blobs on springs, the same kind the button makes. The glass then holds still and the point above your thumb picks: slide onto a blob (it swells, with a tick) and let go to run it. Pull well away and the blobs fold back and the glass follows you again. Over things with no actions it only explains, as in R51.
+
+### New: a "Play" section with two small games, drawn from scratch
+
+Both use a creature I drew in code (a round body, eyes that look around, a mouth, a tuft). No images, no borrowed characters.
+
+- **R53 Treat toss.** A catching game where nothing is captured. A shy creature hops about; you flick a treat upward so it arrives where the creature is. It counts one heart; land it while the creature is mid-jump, mouth open, and it counts two ("Perfect!"). Five hearts and it trusts you: it comes close, smiles, confetti. "Find another" brings the next of four.
+- **R54 Card pack.** Swipe across the top of a foil pack to tear it (it ticks as the foil gives). The cards rise out and the pack falls away. Tap a card to turn it over, tap again to keep it; kept cards line up at the bottom. The rim of the stack glows in the colour of the rarity that is coming, the best card is always last, better cards get a moving band of light, and Epic or Legendary gets confetti. Five cards a pack, always at least one Rare.
+
+### What to test on the phone
+
+1. R53: is the flick strength natural? I tuned it by arithmetic, not by hand: a medium upward flick should land at the creature's height. Tell me if treats fall short or sail over.
+2. R53: can you time a throw for the jump? Is "two hearts for mid-jump" readable without the instructions?
+3. R54: does tearing feel like tearing? Does the glow before a good card build anticipation or spoil the surprise?
+4. R52 against R51: which way of getting to a widget's actions do you prefer?
+5. R47: the figure should now be moving.
+
+### Not checked
+
+- Only the Linux preview (mouse, software rendering). I saw: the creature hopping and opening its mouth; the pack tearing, cards rising, a card turning over; R52's blobs appearing, one being picked and run.
+- **I could not make a throw register with the mouse**, so in R53 the flight, the catch, the hearts and the win are untested. This is the least verified thing in the build.
+- Not tried: keeping all five cards and "Open another"; the confetti; R52's fold-back when pulling away.
+- Haptics and frame rate throughout. Both games redraw every frame while open.
+
 ## Build 19 (13 November 2026)
 
 **Files:** `releases/lumen-build-19.apk`, `releases/lumen-source-build-19.zip`

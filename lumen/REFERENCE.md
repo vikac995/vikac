@@ -103,6 +103,14 @@ the top of those screens) and every piece is labelled in the app, so a screensho
 |---|---|---|---|
 | R50 | The button | The contextual centre button: one tap splits it into up to five glass blobs on individual springs (stretch in flight, slight overshoot, 14 ms stagger), press-slide-release picks in one movement with neighbours leaning away, a context suggestion pill nearest the thumb, a rest ring on the button itself, apps shown as icons behind tinted glass, quick actions colour-coded by category, and in-place editing with pencil, minus and an empty plus slot. Motion switch: Snappy, Balanced, Bouncy. | `lib/rooms/patterns/flude_room.dart` |
 | R51 | Button and lens | The centre button with two jobs. Tap: it stays a flat coloured button and splits into five solid blobs on an arc, each on its own spring (stretch in flight, slight overshoot, 14 ms stagger). Drag: it lifts off the bar as real refracting, magnifying glass riding above the thumb; things on screen swell continuously as it approaches and an explanation card appears while it is over one; over something with actions the glass itself stretches into a coloured pill with the actions written in it, and on release it stays put as those buttons; otherwise it stays round and springs home on release. | `lib/rooms/patterns/lens_room.dart`<br>`lib/core/glass.dart` |
+| R52 | Lens with blobs | A variation on R51: when the carried lens rests on a widget for 300 ms, the actions of that widget bud out of the glass as blobs on springs; the lens holds still while the thumb slides onto one, and letting go runs it. Pulling well away folds them back. | `lib/rooms/patterns/bud_room.dart` |
+
+## Play
+
+| Id | Name | What it shows | Files |
+|---|---|---|---|
+| R53 | Treat toss | An original catching game: a drawn creature hops about and you flick treats to it; a treat that arrives while it is mid-jump counts double; five hearts and it trusts you. Flick physics, timing window, trail, praise words, confetti. | `lib/rooms/play/toss_room.dart` |
+| R54 | Card pack | An original pack opening: tear the top off with a swipe (ticks as the foil gives), cards rise out, tap to turn each over, the stack edge glows in the colour of the next rarity, the best card is last, better cards get a moving band of light and confetti, and kept cards line up in a tray. | `lib/rooms/play/pack_room.dart` |
 
 ## Bonus
 
