@@ -123,7 +123,7 @@ class LensRoom extends StatefulWidget {
 }
 
 class _LensRoomState extends State<LensRoom> with TickerProviderStateMixin {
-  static const double _button = 68, _blob = 62, _reach = 186, _lensSize = 96;
+  static const double _button = 68, _blob = 62, _reach = 186, _lensSize = 107.5;
   final GlobalKey _stageKey = GlobalKey();
   Size _stage = Size.zero;
   double _bottom = 0;

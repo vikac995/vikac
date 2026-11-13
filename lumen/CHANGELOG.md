@@ -1,5 +1,11 @@
 # Lumen changelog
 
+## Build 17.1 (13 November 2026)
+
+**File:** `releases/lumen-build-17.1.apk`
+
+- R51 Button and lens: the magnifying glass is 12 % larger (96 to 107.5 across). Nothing else changed; the distance at which things react and the height it rides above the thumb are the same.
+
 ## Build 17 (13 November 2026)
 
 One new example at the top of "The centre button": R51, the button revised. R50 (the version built from the brief) is kept below it. 51 examples in total.
