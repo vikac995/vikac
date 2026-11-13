@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 39 (13 November 2026)
+
+**File:** `releases/prism-build-39.apk`
+
+- **An even smaller change of shape in the drawer morph.** The corners now soften by about a third (it was nearly three quarters) and the outline leans about eleven degrees and comes back (it was a full quarter turn). At the halfway point a tile is still clearly a squircle, just a slightly softer one, slightly tilted.
+
+**What to look for:** is this calm enough? If it is now too little to notice, tell me and I will find the point between this and build 38.
+
+**Checked:** in my preview I held a drag halfway and looked at the still.
+**Not checked:** on a phone, or in motion.
+
 ## Prism, build 38 (13 November 2026)
 
 **File:** `releases/prism-build-38.apk`

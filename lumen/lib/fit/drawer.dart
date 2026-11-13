@@ -557,12 +557,12 @@ class _GridPainter extends CustomPainter {
         : ShapeLib.lerpPath(
             _squircle,
             _ripple,
-            // The corners soften most of the way to round and turn a quarter turn as they do, so they
-            // arrive exactly where the next corners were. It ends as the same squircle it began as.
-            0.72 * math.sin(math.pi * e),
+            // Barely there: the corners soften by about a third and the shape leans a few degrees,
+            // then both come back. With twenty tiles doing it together, less is calmer.
+            0.36 * math.sin(math.pi * e),
             Offset.zero,
             _tile / 2 / _squircle[0],
-            math.pi / 2 * Curves.easeInOut.transform(e),
+            0.2 * math.sin(math.pi * e),
           );
     double ease(double x) => Curves.easeInOut.transform(x.clamp(0.0, 1.0));
     // The centre never holds two things. The old mark draws in and is gone, the tile is plain
