@@ -89,6 +89,14 @@ the top of those screens) and every piece is labelled in the app, so a screensho
 | R45 | Progress screen | A complete progress screen: lift chips, one headline number with its change, a line chart you can run a finger along, a period switch that reshapes the line, and bests as plain rows. | `lib/rooms/screens/progress_screen.dart` |
 | R46 | Nutrition screen | A complete food day: a ring showing calories left, three macro bars, meals where one tap adds the usual item, and a row of water glasses. | `lib/rooms/screens/nutrition_screen.dart` |
 
+## During a workout
+
+| Id | Name | What it shows | Files |
+|---|---|---|---|
+| R47 | Demo video | A demo clip inside a workout in three sizes: a small loop beside the exercise name, grown in place with cues, speed and scrubbing while the sets stay visible, and a floating bubble that parks in any corner; finishing a set shrinks it automatically. The clip is a drawn loop. | `lib/rooms/patterns/video_room.dart` |
+| R48 | Swap | Swapping an exercise mid-workout: a sheet of alternatives re-ranked by the reason (equipment busy, discomfort, variety), the card turns over with sets kept and weight adjusted, then asks just today or every time, with Undo. | `lib/rooms/patterns/swap_room.dart` |
+| R49 | Edit mid-workout | Editing in place during a session: tap a set badge to cycle its type (normal, warm-up, drop, failure), add a set like the last, remove a set, and in the queue drag to reorder, skip for today, or link two exercises into a superset. | `lib/rooms/patterns/session_room.dart` |
+
 ## Bonus
 
 | Id | Name | What it shows | Files |

@@ -55,6 +55,9 @@ import 'rooms/patterns/wheels_room.dart';
 import 'rooms/patterns/plates_room.dart';
 import 'rooms/screens/progress_screen.dart';
 import 'rooms/screens/nutrition_screen.dart';
+import 'rooms/patterns/video_room.dart';
+import 'rooms/patterns/swap_room.dart';
+import 'rooms/patterns/session_room.dart';
 import 'rooms/shaders/shaders_room.dart';
 import 'rooms/shapes/shape_room.dart';
 import 'rooms/springs/springs_room.dart';
@@ -153,6 +156,9 @@ class LumenApp extends StatelessWidget {
             'plates' => const PlatesRoom(),
             'progress' => const ProgressScreen(),
             'nutrition' => const NutritionScreen(),
+            'video' => const VideoRoom(),
+            'swap' => const SwapRoom(),
+            'session' => const SessionRoom(),
             _ => const HomeScreen(),
           },
           builder: (BuildContext context, Widget? child) {

@@ -1,5 +1,29 @@
 # Lumen changelog
 
+## Build 15 (13 November 2026)
+
+A new home section, "During a workout", with three proposals for the hard parts of a training screen (49 examples in total). Nothing was removed.
+
+**Files:** `releases/lumen-build-15.apk`, `releases/lumen-source-build-15.zip`
+
+### New
+
+- **R47 Demo video.** A demo clip that never takes over the screen. It has three sizes: a small loop beside the exercise name; grown in place (tap it) with a coaching cue, 1× / 0.5× speed, a scrub bar and tap-to-pause, while the sets stay visible underneath; and a floating bubble you can drag to any corner. Ticking a set while it is large shrinks it to the bubble by itself. The clip is a drawn figure, not a real video: Lumen ships no footage.
+- **R48 Swap.** "Swap" on the exercise opens a sheet of four alternatives. Three reasons at the top (Equipment busy, Discomfort, Variety) re-rank the list and change the one-line reason under each; the top one is marked Best fit. Picking one turns the card over with your three sets kept and the weight adjusted. Only then does it ask "Just today" or "Every time", with Undo.
+- **R49 Edit mid-workout.** No edit mode. Tap a set's badge to step through normal, warm-up (W), drop set (D) and to failure (F); "Add a set like the last"; a minus removes one. In "Up next": drag a handle to reorder, the arrow skips an exercise for today (and brings it back), and the chain between two rows links them into a superset, drawn as a bracket round both. Reordering clears supersets.
+
+### What to test on the phone
+
+1. R47: tap the loop, then tick set 1. Does the video stepping aside by itself feel helpful or presumptuous? Drag the bubble and throw it toward a corner.
+2. R47: slide along the bar at the bottom of the large video to step through the movement.
+3. R48: open Swap and switch between the three reasons; the order should change. Pick one and watch the card turn. Is asking "today or every time" afterwards the right moment?
+4. R49: tap the set badges; tap a chain; drag a handle (the page should not scroll while dragging).
+
+### Not checked
+
+- Only the Linux preview (software rendering, mouse). Haptics, real frame rate and feel were not checked, in particular throwing the video bubble and the card turning over.
+- A real video would add loading, buffering and battery cost that a drawn loop does not have.
+
 ## Build 14 (13 November 2026)
 
 Four more examples at the end of "More patterns" (46 in total). Nothing was removed.

@@ -349,6 +349,27 @@ const Map<int, Ref> refs = <int, Ref>{
     <String>['lib/rooms/screens/nutrition_screen.dart'],
     'A complete food day: a ring showing calories left, three macro bars, meals where one tap adds the usual item, and a row of water glasses.',
   ),
+  47: Ref(
+    'R47',
+    'Demo video',
+    'During a workout',
+    <String>['lib/rooms/patterns/video_room.dart'],
+    'A demo clip inside a workout in three sizes: a small loop beside the exercise name, grown in place with cues, speed and scrubbing while the sets stay visible, and a floating bubble that parks in any corner; finishing a set shrinks it automatically. The clip is a drawn loop.',
+  ),
+  48: Ref(
+    'R48',
+    'Swap',
+    'During a workout',
+    <String>['lib/rooms/patterns/swap_room.dart'],
+    'Swapping an exercise mid-workout: a sheet of alternatives re-ranked by the reason (equipment busy, discomfort, variety), the card turns over with sets kept and weight adjusted, then asks just today or every time, with Undo.',
+  ),
+  49: Ref(
+    'R49',
+    'Edit mid-workout',
+    'During a workout',
+    <String>['lib/rooms/patterns/session_room.dart'],
+    'Editing in place during a session: tap a set badge to cycle its type (normal, warm-up, drop, failure), add a set like the last, remove a set, and in the queue drag to reorder, skip for today, or link two exercises into a superset.',
+  ),
   99: Ref(
     'B01',
     'Discomorphism',
