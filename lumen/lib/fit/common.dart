@@ -1,6 +1,5 @@
 import 'package:material_ui/material_ui.dart';
 
-import '../core/glass.dart';
 import '../core/theme.dart';
 import '../widgets/pressable.dart';
 
@@ -45,7 +44,7 @@ class PageTitle extends StatelessWidget {
   }
 }
 
-/// A round glass button: the small floating control used at the top of pages.
+/// A round button: the small control at the top of a page.
 class GlassDot extends StatelessWidget {
   const GlassDot({super.key, required this.icon, this.onTap});
   final IconData icon;
@@ -58,16 +57,13 @@ class GlassDot extends StatelessWidget {
       onTap: onTap,
       child: SizedBox.square(
         dimension: 50,
-        child: Glass(
-          radius: 25,
-          style: GlassStyle(
-            blur: 14,
-            tint: 0.34,
-            refraction: 18,
-            bevel: 14,
-            fallbackColor: c.surfaceHigh,
+        // Solid. As glass it scrolled with the page, so its backdrop changed every frame; Home was the slowest screen for it.
+        child: DecoratedBox(
+          decoration: ShapeDecoration(
+            color: c.surfaceHigh,
+            shape: CircleBorder(side: BorderSide(color: c.hairline)),
           ),
-          child: Icon(icon, size: 22, color: c.glassInk),
+          child: Icon(icon, size: 22, color: c.ink),
         ),
       ),
     );

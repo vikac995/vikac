@@ -220,7 +220,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     if (t == _target) {
       return;
     }
-    setState(() => _target = t);
+    // No setState: that rebuilt the whole app each time the lens crossed onto a card.
+    // The lens layer repaints by itself because the springs below start moving.
+    _target = t;
     if (t != null && t.widget.actions.isNotEmpty) {
       // Something can be done here: the glass stretches into a pill holding the actions.
       _pill = t;
@@ -505,25 +507,28 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                       offset: Offset(0, (1 - _page.value) * 14),
                       child: child,
                     ),
-                child: NotificationListener<ScrollStartNotification>(
-                  onNotification: (ScrollStartNotification n) {
-                    if (n.dragDetails != null) {
-                      Diag.instance.event('scroll ${_tabs[_tab].$2}');
-                    }
-                    return false;
-                  },
-                  child: IndexedStack(
-                    index: _tab,
-                    children: <Widget>[
-                      HomePage(
-                        onStart: () => _go(1),
-                        onFood: () => _run(1),
-                        onWeigh: () => _run(3),
-                      ),
-                      const TrainPage(),
-                      const FoodPage(),
-                      const ProgressPage(),
-                    ],
+                // Its own layer, so sliding a page in moves a finished picture and repaints nothing.
+                child: RepaintBoundary(
+                  child: NotificationListener<ScrollStartNotification>(
+                    onNotification: (ScrollStartNotification n) {
+                      if (n.dragDetails != null) {
+                        Diag.instance.event('scroll ${_tabs[_tab].$2}');
+                      }
+                      return false;
+                    },
+                    child: IndexedStack(
+                      index: _tab,
+                      children: <Widget>[
+                        HomePage(
+                          onStart: () => _go(1),
+                          onFood: () => _run(1),
+                          onWeigh: () => _run(3),
+                        ),
+                        const TrainPage(),
+                        const FoodPage(),
+                        const ProgressPage(),
+                      ],
+                    ),
                   ),
                 ),
               ),

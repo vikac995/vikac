@@ -1,5 +1,24 @@
 # Lumen changelog
 
+## Prism, build 9 (13 November 2026)
+
+**File:** `releases/prism-build-9.apk`
+
+From the owner's guided-test report (Galaxy S26, 120 Hz). Frames that reached the screen late: Full glass 1.9 %, Medium 1.1 %, Low 0.9 %, No glass 0.5 %. The lens over Home's cards and tab changes led the list.
+
+- **The lens no longer rebuilds the whole app when it crosses onto a card.** Each crossing redid every page, the bar and the blobs; that is the "BUILD 8 to 10 ms" in the slow frames. Now only the lens layer changes.
+- **Pages are their own layer.** Sliding a page in on a tab change moves a finished picture; before, the page was repainted on every frame of the slide.
+- **The round button on Home is solid.** As glass it scrolled with the page, so its backdrop changed every frame and Home ran three pieces of glass where other pages ran two. Home was the slowest screen (18.9 % of frames over budget on Full).
+- **The report ranks by late frames**, the ones a person can see, and says so at the top. "Over budget" stays as a second column.
+
+### What to test
+
+Run the guided test again the same way. Compare with build 8: the "lens on ..." lines and the "tab ..." lines should have fewer late frames, and Home on Full glass should be closer to the other pages.
+
+### Not checked
+
+- Nothing here was measured; these are three causes read from the report. The next report is the check.
+
 ## Lumen build 23 (13 November 2026)
 
 **File:** `releases/lumen-build-23.apk`

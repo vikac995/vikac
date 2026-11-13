@@ -62,7 +62,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 8';
+  static const String build = 'Prism build 9';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -287,7 +287,7 @@ class Diag {
     o
       ..writeln()
       ..writeln(
-        'BY SETTING              frames  over budget   late   build avg  draw avg  worst (ms)',
+        'LATE is what a person can see: a frame that reached the screen after its turn.\n"Over budget" frames took longer than one refresh to make, but usually still arrive on time.\n\nBY SETTING              frames  over budget   late   build avg  draw avg  worst (ms)',
       );
     for (final MapEntry<String, _Bucket> e in perCfg.entries) {
       final _Bucket b = e.value;
@@ -304,6 +304,11 @@ class Diag {
             .where((MapEntry<String, _Bucket> e) => e.value.frames > 0)
             .toList()
           ..sort((MapEntry<String, _Bucket> a, MapEntry<String, _Bucket> b) {
+            // Late frames are the ones a person sees, so they rank first.
+            final int l = b.value.late.compareTo(a.value.late);
+            if (l != 0) {
+              return l;
+            }
             final int c = b.value.over.compareTo(a.value.over);
             return c != 0 ? c : b.value.worst.compareTo(a.value.worst);
           });
@@ -311,12 +316,12 @@ class Diag {
       ..writeln()
       ..writeln('WHERE IT STUTTERS, worst first  (setting | screen > action)')
       ..writeln(
-        '                                                    times  frames  over budget  worst  avg build/draw',
+        '                                                    times  frames  LATE  over budget  worst  avg build/draw',
       );
     for (final MapEntry<String, _Bucket> e in acts.take(25)) {
       final _Bucket b = e.value;
       o.writeln(
-        '${e.key.padRight(52)} ${b.times.toString().padLeft(4)} ${b.frames.toString().padLeft(7)} ${'${b.over} (${pct(b.over, b.frames)})'.padLeft(12)} ${f(b.worst).padLeft(6)}  ${f(b.buildSum / b.frames)}/${f(b.drawSum / b.frames)}',
+        '${e.key.padRight(52)} ${b.times.toString().padLeft(4)} ${b.frames.toString().padLeft(7)} ${b.late.toString().padLeft(5)} ${'${b.over} (${pct(b.over, b.frames)})'.padLeft(12)} ${f(b.worst).padLeft(6)}  ${f(b.buildSum / b.frames)}/${f(b.drawSum / b.frames)}',
       );
     }
     if (acts.isEmpty) {

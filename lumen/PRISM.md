@@ -41,9 +41,9 @@ that is not here, the first question is whether one of these can do the job.
 | 9 | Bar with riding lens | Moving between the four pages | Yes |
 | 10 | The button, its blobs, and the carried lens | Acting from anywhere; explaining | Lens only |
 | 11 | Floating pill (rest timer) | Something running in the background | Yes |
-| 12 | Round glass button | One per page at most, top right | Yes |
+| 12 | Round button | One per page at most, top right | No, solid |
 
-Glass is on four things, all small and all floating. Nothing else may be glass.
+Glass is on three things (bar with its lens, the carried lens, the rest timer), all small and all floating. Nothing else may be glass.
 
 ## The back button
 
