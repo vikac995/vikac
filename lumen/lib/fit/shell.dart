@@ -16,6 +16,7 @@ import '../widgets/pressable.dart';
 import 'diag.dart';
 import 'food_page.dart';
 import 'home_page.dart';
+import 'lens.dart';
 import 'progress_page.dart';
 import 'state.dart';
 import 'train_page.dart';
@@ -79,12 +80,180 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   );
   double _sheetWeight = 81.8, _sheetSeconds = 90;
 
+  // The lens: the button, carried. See Lumen R51.
+  static const double _lensSize = 107.5;
+  late final SpringValue _glass = SpringValue(
+    this,
+    spring: Motions.expressiveFast,
+  );
+  late final SpringValue _lx = SpringValue(this, spring: Motions.follow);
+  late final SpringValue _ly = SpringValue(this, spring: Motions.follow);
+  late final SpringValue _morph = SpringValue(this, spring: Motions.expressive);
+  late final SpringValue _say = SpringValue(
+    this,
+    spring: Motions.expressiveFast,
+  );
+  bool _carrying = false, _parked = false, _moved = false;
+  Offset? _downAt;
+  Offset _home = Offset.zero;
+  LensTargetState? _target, _pill;
+  double _pillW = 200;
+  Rect _lensRect = Rect.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _lx.addListener(_lensMoved);
+    _ly.addListener(_lensMoved);
+    _glass.addListener(_lensMoved);
+  }
+
+  void _lensMoved() {
+    final bool live = _carrying || _parked || _glass.value > 0.05;
+    LensBus.instance.pos.value = live ? Offset(_lx.value, _ly.value) : null;
+    if (!_carrying) {
+      return;
+    }
+    final LensTargetState? t = LensBus.instance.over(
+      _tabs[_tab].$2.toLowerCase(),
+    );
+    if (t == _target) {
+      return;
+    }
+    setState(() => _target = t);
+    if (t != null && t.widget.actions.isNotEmpty) {
+      // Something can be done here: the glass stretches into a pill holding the actions.
+      _pill = t;
+      _pillW = math.min(
+        MediaQuery.sizeOf(context).width - 24,
+        t.widget.actions.fold<double>(
+          0,
+          (double w, (String, VoidCallback) a) => w + a.$1.length * 8.8 + 44,
+        ),
+      );
+      _morph.animateTo(1);
+      Haptics.settle();
+    } else {
+      _morph.animateTo(0, spring: Motions.spatial);
+    }
+    if (t != null) {
+      _say.jumpTo(0.6);
+      _say.animateTo(1);
+      Haptics.tick();
+      Diag.instance.event('lens on ${t.widget.title}');
+    } else {
+      _say.animateTo(0, spring: Motions.spatialFast);
+    }
+  }
+
+  void _lensHome() {
+    setState(() {
+      _carrying = false;
+      _parked = false;
+      _target = null;
+    });
+    _lx.animateTo(_home.dx, spring: Motions.expressive);
+    _ly.animateTo(_home.dy, spring: Motions.expressive);
+    _glass.animateTo(0);
+    _morph.animateTo(0, spring: Motions.spatial);
+    _say.animateTo(0, spring: Motions.spatialFast);
+    Diag.instance.overlay = '';
+    Haptics.tick();
+  }
+
+  void _buttonMove(PointerMoveEvent e) {
+    if (_downAt == null) {
+      return;
+    }
+    final Size screen = MediaQuery.sizeOf(context);
+    if (!_moved) {
+      if ((e.position - _downAt!).distance < 10) {
+        return;
+      }
+      // The button lifts off: from here on it is a lens.
+      _moved = true;
+      _setOpen(false);
+      setState(() => _carrying = true);
+      _lx.jumpTo(_home.dx);
+      _ly.jumpTo(_home.dy);
+      _glass.animateTo(1);
+      _kick.animateTo(1);
+      Haptics.settle();
+      Diag.instance
+        ..overlay = '+lens'
+        ..event('lens lifted');
+    }
+    // The glass rides above the thumb so the thumb does not cover it.
+    _lx.animateTo(
+      e.position.dx.clamp(_lensSize / 2, screen.width - _lensSize / 2),
+    );
+    _ly.animateTo(
+      (e.position.dy - 62).clamp(
+        _lensSize / 2 + 30,
+        screen.height - _lensSize / 2,
+      ),
+    );
+  }
+
+  void _buttonUp() {
+    _kick.animateTo(1);
+    if (_downAt == null) {
+      return;
+    }
+    _downAt = null;
+    if (!_moved) {
+      _setOpen(!_open);
+    } else if (_target != null && _target!.widget.actions.isNotEmpty) {
+      // Put down on something you can act on: the pill stays and is the buttons.
+      setState(() {
+        _carrying = false;
+        _parked = true;
+      });
+      Haptics.settle();
+    } else {
+      _lensHome();
+    }
+  }
+
+  void _pillTap(Offset at) {
+    final LensTargetState? t = _pill;
+    if (t == null) {
+      _lensHome();
+      return;
+    }
+    final List<(String, VoidCallback)> acts = t.widget.actions;
+    double x =
+        (at.dx - _lensRect.left) /
+        _lensRect.width *
+        acts.fold<int>(
+          0,
+          (int n, (String, VoidCallback) a) => n + a.$1.length + 5,
+        );
+    (String, VoidCallback) pick = acts.last;
+    for (final (String, VoidCallback) a in acts) {
+      x -= a.$1.length + 5;
+      if (x <= 0) {
+        pick = a;
+        break;
+      }
+    }
+    Diag.instance.event('lens action ${pick.$1}');
+    _lensHome();
+    pick.$2();
+  }
+
   @override
   void dispose() {
     for (final Timer t in _fuses) {
       t.cancel();
     }
+    LensBus.instance.pos.value = null;
     for (final SpringValue s in <SpringValue>[
+      _glass,
+      _lx,
+      _ly,
+      _morph,
+      _say,
       _lensX,
       _lift,
       _t,
@@ -181,6 +350,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       screen.width / 2,
       screen.height - safe.bottom - 14 - _barH / 2,
     );
+    _home = bc;
     Offset rest(int i) {
       final double a = math.pi * (0.19 + 0.62 * i / 4);
       return bc + Offset(-math.cos(a), -math.sin(a)) * _reach;
@@ -537,43 +707,238 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
               label: 'Actions',
               child: Listener(
                 behavior: HitTestBehavior.opaque,
-                onPointerDown: (_) => _kick.animateTo(0.92),
-                onPointerCancel: (_) => _kick.animateTo(1),
-                onPointerUp: (_) {
-                  _kick.animateTo(1);
-                  _setOpen(!_open);
+                onPointerDown: (PointerDownEvent e) {
+                  _downAt = e.position;
+                  _moved = false;
+                  _kick.animateTo(0.92);
                 },
+                onPointerMove: _buttonMove,
+                onPointerCancel: (_) => _buttonUp(),
+                onPointerUp: (_) => _buttonUp(),
                 child: ListenableBuilder(
-                  listenable: Listenable.merge(<Listenable>[_t, _kick]),
+                  listenable: Listenable.merge(<Listenable>[_t, _kick, _glass]),
                   builder: (BuildContext context, Widget? _) => Transform.scale(
                     scale: _kick.value,
-                    child: Container(
-                      width: _button,
-                      height: _button,
-                      decoration: ShapeDecoration(
-                        color: c.accent,
-                        shape: const CircleBorder(),
-                        shadows: const <BoxShadow>[
-                          BoxShadow(
-                            color: Color(0x55000000),
-                            blurRadius: 14,
-                            offset: Offset(0, 6),
+                    child: _glass.value > 0.5
+                        // While the button is away, an empty ring marks where it lives.
+                        ? Container(
+                            width: _button,
+                            height: _button,
+                            decoration: ShapeDecoration(
+                              shape: CircleBorder(
+                                side: BorderSide(
+                                  color: c.glassInk.withValues(alpha: 0.35),
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            width: _button,
+                            height: _button,
+                            decoration: ShapeDecoration(
+                              color: c.accent,
+                              shape: const CircleBorder(),
+                              shadows: const <BoxShadow>[
+                                BoxShadow(
+                                  color: Color(0x55000000),
+                                  blurRadius: 14,
+                                  offset: Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Transform.rotate(
+                              angle: _t.value.clamp(0.0, 1.2) * math.pi / 4,
+                              child: Icon(
+                                Icons.add_rounded,
+                                color: c.onAccent,
+                                size: 34,
+                              ),
+                            ),
                           ),
-                        ],
-                      ),
-                      child: Transform.rotate(
-                        angle: _t.value.clamp(0.0, 1.2) * math.pi / 4,
-                        child: Icon(
-                          Icons.add_rounded,
-                          color: c.onAccent,
-                          size: 34,
-                        ),
-                      ),
-                    ),
                   ),
                 ),
               ),
             ),
+          ),
+          // The lens, its explanation, and (once put down) its buttons.
+          ListenableBuilder(
+            listenable: Listenable.merge(<Listenable>[
+              _glass,
+              _lx,
+              _ly,
+              _morph,
+              _say,
+            ]),
+            builder: (BuildContext context, Widget? _) {
+              final double g = _glass.value;
+              if (g <= 0.02) {
+                return const SizedBox.shrink();
+              }
+              final double m = _morph.value, mm = m.clamp(0.0, 1.0);
+              final double size = _button + (_lensSize - _button) * g;
+              final double lw = (size + (_pillW - size) * m).clamp(
+                    40.0,
+                    screen.width - 12,
+                  ),
+                  lh = size + (60 - size) * m.clamp(0.0, 1.15);
+              final Offset at = Offset(_lx.value, _ly.value);
+              final Rect lens = Rect.fromCenter(
+                center: Offset(
+                  at.dx.clamp(lw / 2 + 6, screen.width - lw / 2 - 6),
+                  at.dy,
+                ),
+                width: lw,
+                height: lh,
+              );
+              _lensRect = lens;
+              final LensTarget? pill = _pill?.widget, said = _target?.widget;
+              final bool above = lens.top > safe.top + 150;
+              return Stack(
+                children: <Widget>[
+                  if (_parked)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: _lensHome,
+                      ),
+                    ),
+                  Positioned.fromRect(
+                    rect: lens,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapUp: _parked
+                          ? (TapUpDetails d) => _pillTap(d.globalPosition)
+                          : null,
+                      child: Glass(
+                        radius: lh / 2,
+                        // Clear and magnifying while it only looks; coloured and calm once it holds actions.
+                        style: GlassStyle(
+                          blur: 0.8 + 11 * mm,
+                          tint: 0.05 + 0.5 * mm,
+                          tintColor: mm > 0.02 ? pill?.color : null,
+                          refraction: 19,
+                          bevel: 13,
+                          dispersion: 0.16,
+                          magnify: 1.2 - 0.2 * mm,
+                          light: 0.95,
+                          saturation: 1.35,
+                          adapt: 0.3,
+                          shadow: 0.9,
+                          fallbackColor: pill?.color ?? c.accent,
+                        ),
+                        child: pill == null || mm < 0.05
+                            ? null
+                            : Opacity(
+                                opacity: ((mm - 0.35) / 0.65).clamp(0.0, 1.0),
+                                child: Row(
+                                  children: <Widget>[
+                                    for (final (int i, (String, VoidCallback) a)
+                                        in pill.actions.indexed) ...<Widget>[
+                                      if (i > 0)
+                                        Container(
+                                          width: 1,
+                                          height: 26,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.4,
+                                          ),
+                                        ),
+                                      Expanded(
+                                        flex: a.$1.length + 5,
+                                        child: Center(
+                                          child: Text(
+                                            a.$1,
+                                            maxLines: 1,
+                                            softWrap: false,
+                                            overflow: TextOverflow.fade,
+                                            textScaler: TextScaler.noScaling,
+                                            style: LumenType.text(
+                                              15,
+                                              weight: 700,
+                                              color: Colors.white,
+                                              height: 1,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                  if (said != null)
+                    Positioned(
+                      left: (at.dx - 134).clamp(12.0, screen.width - 280),
+                      top: above ? null : lens.bottom + 96,
+                      bottom: above ? screen.height - lens.top + 12 : null,
+                      width: 268,
+                      child: IgnorePointer(
+                        child: Opacity(
+                          opacity: _say.value.clamp(0.0, 1.0),
+                          child: Transform.scale(
+                            scale: 0.86 + 0.14 * _say.value,
+                            alignment: above
+                                ? Alignment.bottomCenter
+                                : Alignment.topCenter,
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(
+                                14,
+                                12,
+                                14,
+                                13,
+                              ),
+                              decoration: ShapeDecoration(
+                                color: c.dark
+                                    ? const Color(0xF21B1E26)
+                                    : const Color(0xF2FFFFFF),
+                                shape: RoundedSuperellipseBorder(
+                                  borderRadius: BorderRadius.circular(22),
+                                  side: BorderSide(
+                                    color: said.color.withValues(alpha: 0.7),
+                                    width: 1.5,
+                                  ),
+                                ),
+                                shadows: <BoxShadow>[
+                                  BoxShadow(
+                                    color: c.shadow,
+                                    blurRadius: 22,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(
+                                    said.title,
+                                    style: LumenType.text(
+                                      15.5,
+                                      weight: 700,
+                                      color: c.ink,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    said.explain,
+                                    style: LumenType.text(
+                                      14,
+                                      color: c.inkMuted,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           ),
           // A quick action: a glass sheet over the page. You never leave where you were.
           ListenableBuilder(

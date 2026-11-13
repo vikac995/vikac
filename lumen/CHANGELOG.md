@@ -1,5 +1,27 @@
 # Lumen changelog
 
+## Prism, build 6 (13 November 2026)
+
+**File:** `releases/prism-build-6.apk`
+
+- **The lens is in Prism.** Drag the button and it lifts off the bar as the magnifying glass from Lumen R51. Home's four cards swell as it approaches and a card names and explains each one.
+- **Over something you can act on, the glass becomes a pill with real actions.** Today's workout: Continue (goes to Train). Calories: Log food (opens the food sheet). Weight: Log weight (opens the weigh-in sheet). Let go and the pill stays; tap it to do the thing. Today's list only explains, so the glass stays round there and goes home when you let go.
+- A tap on the button still opens the five blobs.
+- The test report now has a `+lens` scene and logs which card the lens was on and which action was used.
+
+Any page can offer itself to the lens by wrapping a piece in `LensTarget` (`lib/fit/lens.dart`): a title, one sentence, a colour, and optionally actions. Only Home does so far.
+
+### What to test
+
+1. Drag the button over each Home card. Does each explain itself and, where it should, turn into a pill?
+2. Let go on Weight and tap "Log weight"; save a weight.
+3. Copy a test report after using the lens for a while: the `home+lens` row shows what the glass costs while it is carried.
+
+### Not checked
+
+- Only the Linux preview: the lens over Weight, the pill, and tapping it to open the weigh-in sheet. The other three cards, and letting go over empty space, were not tried.
+- Frame rate with the lens carried. It is the largest piece of refracting glass in the app.
+
 ## Prism, build 5 (13 November 2026)
 
 **File:** `releases/prism-build-5.apk`

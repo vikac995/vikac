@@ -21,7 +21,7 @@ class _Bucket {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 5';
+  static const String build = 'Prism build 6';
 
   /// Where the person is: the page, what floats over it, and anything extra on that page.
   String _page = 'home', _overlay = '', _extra = '';

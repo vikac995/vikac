@@ -39,6 +39,6 @@ Without `ORG_GRADLE_PROJECT_fit` and `-t`, the same project builds Lumen. The co
 
 ## Not in this first build
 
-- The lens from R51 (drag the button to explain and act on things). The button only opens the blobs.
+- The lens works on Home only; Train, Food and Progress do not offer themselves to it yet.
 - Editing the blobs, the bar, or the home screen.
 - The food sheet and the Food page keep separate lists; both change the calories on Home.

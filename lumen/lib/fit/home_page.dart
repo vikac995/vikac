@@ -7,6 +7,7 @@ import '../core/theme.dart';
 import '../rooms/details/small_things.dart';
 import '../widgets/pressable.dart';
 import 'common.dart';
+import 'lens.dart';
 import 'shell.dart';
 import 'state.dart';
 
@@ -58,208 +59,231 @@ class HomePage extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             // Today's workout, with enough on it that you rarely need to open it to remember.
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: card(c, radius: 34),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        "TODAY'S WORKOUT",
-                        style: LumenType.label(color: c.accent),
-                      ),
-                      const Spacer(),
-                      Text(
-                        '1 of 5 done',
-                        style: LumenType.text(
-                          13,
-                          weight: 600,
-                          color: c.inkMuted,
+            LensTarget(
+              page: 'home',
+              title: "Today's workout",
+              explain:
+                  'Push day: five exercises, about 52 minutes. One is done.',
+              color: const Color(0xFF865AC9),
+              actions: <(String, VoidCallback)>[('Continue', onStart)],
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: card(c, radius: 34),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          "TODAY'S WORKOUT",
+                          style: LumenType.label(color: c.accent),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Expanded(
-                        child: Column(
+                        const Spacer(),
+                        Text(
+                          '1 of 5 done',
+                          style: LumenType.text(
+                            13,
+                            weight: 600,
+                            color: c.inkMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Text(
+                                'Push day',
+                                style: LumenType.display(
+                                  36,
+                                  weight: 720,
+                                  color: c.ink,
+                                  height: 1.05,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                '5 exercises',
+                                style: LumenType.text(14.5, color: c.inkMuted),
+                              ),
+                              Text(
+                                'about 52 min',
+                                style: LumenType.text(14.5, color: c.inkMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
-                            Text(
-                              'Push day',
-                              style: LumenType.display(
-                                36,
-                                weight: 720,
-                                color: c.ink,
-                                height: 1.05,
+                            for (int i = 0; i < 4; i++)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 3),
+                                child: Text(
+                                  i == 3 ? '…' : '${i + 1})  ${_plan[i]}',
+                                  style:
+                                      LumenType.text(
+                                        13.5,
+                                        weight: 560,
+                                        color: i < 1 ? c.inkFaint : c.ink,
+                                      ).copyWith(
+                                        decoration: i < 1
+                                            ? TextDecoration.lineThrough
+                                            : null,
+                                      ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '5 exercises',
-                              style: LumenType.text(14.5, color: c.inkMuted),
-                            ),
-                            Text(
-                              'about 52 min',
-                              style: LumenType.text(14.5, color: c.inkMuted),
-                            ),
                           ],
                         ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          for (int i = 0; i < 4; i++)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 3),
-                              child: Text(
-                                i == 3 ? '…' : '${i + 1})  ${_plan[i]}',
-                                style:
-                                    LumenType.text(
-                                      13.5,
-                                      weight: 560,
-                                      color: i < 1 ? c.inkFaint : c.ink,
-                                    ).copyWith(
-                                      decoration: i < 1
-                                          ? TextDecoration.lineThrough
-                                          : null,
-                                    ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Pressable(
-                    onTap: onStart,
-                    child: Container(
-                      height: 56,
-                      alignment: Alignment.center,
-                      decoration: ShapeDecoration(
-                        color: c.accent,
-                        shape: const StadiumBorder(),
-                      ),
-                      child: Text(
-                        'Continue with bench press',
-                        style: LumenType.text(
-                          16,
-                          weight: 700,
-                          color: c.onAccent,
-                          height: 1,
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Pressable(
+                      onTap: onStart,
+                      child: Container(
+                        height: 56,
+                        alignment: Alignment.center,
+                        decoration: ShapeDecoration(
+                          color: c.accent,
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Text(
+                          'Continue with bench press',
+                          style: LumenType.text(
+                            16,
+                            weight: 700,
+                            color: c.onAccent,
+                            height: 1,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 12),
             Row(
               children: <Widget>[
                 Expanded(
-                  child: Pressable(
-                    scale: 0.97,
-                    onTap: onFood,
-                    child: Container(
-                      height: 168,
-                      padding: const EdgeInsets.all(16),
-                      decoration: card(c),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            fit.left < 0 ? 'KCAL OVER' : 'KCAL LEFT',
-                            style: LumenType.label(
-                              color: fit.left < 0 ? red : c.inkMuted,
+                  child: LensTarget(
+                    page: 'home',
+                    title: 'Calories',
+                    explain: 'What you can still eat today. It goes down as you log food.',
+                    color: const Color(0xFFB8532F),
+                    actions: <(String, VoidCallback)>[('Log food', onFood)],
+                    child: Pressable(
+                      scale: 0.97,
+                      onTap: onFood,
+                      child: Container(
+                        height: 168,
+                        padding: const EdgeInsets.all(16),
+                        decoration: card(c),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              fit.left < 0 ? 'KCAL OVER' : 'KCAL LEFT',
+                              style: LumenType.label(
+                                color: fit.left < 0 ? red : c.inkMuted,
+                              ),
                             ),
-                          ),
-                          const Spacer(),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: <Widget>[
-                              Expanded(
-                                child: Odometer(
-                                  value: fit.left.abs(),
-                                  digits: 4,
-                                  style: LumenType.display(
-                                    34,
-                                    weight: 720,
-                                    color: fit.left < 0 ? red : c.ink,
-                                    height: 1.1,
+                            const Spacer(),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: <Widget>[
+                                Expanded(
+                                  child: Odometer(
+                                    value: fit.left.abs(),
+                                    digits: 4,
+                                    style: LumenType.display(
+                                      34,
+                                      weight: 720,
+                                      color: fit.left < 0 ? red : c.ink,
+                                      height: 1.1,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              SizedBox.square(
-                                dimension: 46,
-                                child: CustomPaint(
-                                  painter: _Ring(
-                                    (fit.eaten / fit.goal).clamp(0.0, 1.0),
-                                    fit.left < 0 ? red : c.accent,
-                                    c.ink.withValues(alpha: 0.1),
+                                SizedBox.square(
+                                  dimension: 46,
+                                  child: CustomPaint(
+                                    painter: _Ring(
+                                      (fit.eaten / fit.goal).clamp(0.0, 1.0),
+                                      fit.left < 0 ? red : c.accent,
+                                      c.ink.withValues(alpha: 0.1),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${fit.eaten} of ${fit.goal} eaten',
-                            style: LumenType.text(13, color: c.inkMuted),
-                          ),
-                        ],
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${fit.eaten} of ${fit.goal} eaten',
+                              style: LumenType.text(13, color: c.inkMuted),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Pressable(
-                    scale: 0.97,
-                    onTap: onWeigh,
-                    child: Container(
-                      height: 168,
-                      padding: const EdgeInsets.all(16),
-                      decoration: card(c),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          Text(
-                            'WEIGHT',
-                            style: LumenType.label(color: c.inkMuted),
-                          ),
-                          const Expanded(
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8),
-                              child: CustomPaint(
-                                size: Size.infinite,
-                                painter: _Spark(),
+                  child: LensTarget(
+                    page: 'home',
+                    title: 'Weight',
+                    explain:
+                        'Your latest weigh-in and the trend over the week.',
+                    color: const Color(0xFF3B57B5),
+                    actions: <(String, VoidCallback)>[('Log weight', onWeigh)],
+                    child: Pressable(
+                      scale: 0.97,
+                      onTap: onWeigh,
+                      child: Container(
+                        height: 168,
+                        padding: const EdgeInsets.all(16),
+                        decoration: card(c),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              'WEIGHT',
+                              style: LumenType.label(color: c.inkMuted),
+                            ),
+                            const Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8),
+                                child: CustomPaint(
+                                  size: Size.infinite,
+                                  painter: _Spark(),
+                                ),
                               ),
                             ),
-                          ),
-                          Text(
-                            '${fit.weight.toStringAsFixed(1)} kg',
-                            style: LumenType.display(
-                              28,
-                              weight: 720,
-                              color: c.ink,
-                              height: 1.1,
+                            Text(
+                              '${fit.weight.toStringAsFixed(1)} kg',
+                              style: LumenType.display(
+                                28,
+                                weight: 720,
+                                color: c.ink,
+                                height: 1.1,
+                              ),
                             ),
-                          ),
-                          Text(
-                            fit.weighedToday
-                                ? 'Logged today'
-                                : 'Down 0.3 this week',
-                            style: LumenType.text(
-                              13,
-                              color: fit.weighedToday ? green : c.inkMuted,
+                            Text(
+                              fit.weighedToday
+                                  ? 'Logged today'
+                                  : 'Down 0.3 this week',
+                              style: LumenType.text(
+                                13,
+                                color: fit.weighedToday ? green : c.inkMuted,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -267,125 +291,133 @@ class HomePage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.fromLTRB(18, 16, 8, 8),
-              decoration: card(c),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    children: <Widget>[
-                      Text(
-                        "TODAY'S LIST",
-                        style: LumenType.label(color: c.inkMuted),
-                      ),
-                      const Spacer(),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 10),
-                        child: Text(
-                          '$done / ${fit.habits.length}',
-                          style: LumenType.text(
-                            13,
-                            weight: 650,
-                            color: c.inkMuted,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  for (final (int i, (String, bool?) h) in fit.habits.indexed)
+            LensTarget(
+              page: 'home',
+              title: "Today's list",
+              explain: 'Habits and tasks for today. Tap one to cross it off, or skip it.',
+              color: const Color(0xFF6B45B0),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(18, 16, 8, 8),
+                decoration: card(c),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
                     Row(
                       children: <Widget>[
-                        Expanded(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              fit.mark(i, h.$2 == true ? null : true);
-                              Haptics.settle();
-                            },
-                            child: SizedBox(
-                              height: 52,
-                              child: Row(
-                                children: <Widget>[
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 160),
-                                    width: 26,
-                                    height: 26,
-                                    decoration: ShapeDecoration(
-                                      color: h.$2 == null
-                                          ? Colors.transparent
-                                          : (h.$2! ? green : red),
-                                      shape: CircleBorder(
-                                        side: BorderSide(
-                                          color: h.$2 == null
-                                              ? c.inkFaint
-                                              : (h.$2! ? green : red),
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    child: h.$2 == null
-                                        ? null
-                                        : Icon(
-                                            h.$2!
-                                                ? Icons.check_rounded
-                                                : Icons.close_rounded,
-                                            size: 16,
-                                            color: Colors.white,
-                                          ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      h.$1,
-                                      style:
-                                          LumenType.text(
-                                            15.5,
-                                            weight: 560,
-                                            color: h.$2 == null
-                                                ? c.ink
-                                                : c.inkMuted,
-                                          ).copyWith(
-                                            decoration: h.$2 == null
-                                                ? null
-                                                : TextDecoration.lineThrough,
-                                            decorationColor: h.$2 == true
-                                                ? green
-                                                : red,
-                                          ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                        Text(
+                          "TODAY'S LIST",
+                          style: LumenType.label(color: c.inkMuted),
+                        ),
+                        const Spacer(),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: Text(
+                            '$done / ${fit.habits.length}',
+                            style: LumenType.text(
+                              13,
+                              weight: 650,
+                              color: c.inkMuted,
                             ),
                           ),
                         ),
-                        if (h.$2 == null)
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              fit.mark(i, false);
-                              Haptics.tick();
-                            },
-                            child: SizedBox(
-                              width: 64,
-                              height: 52,
-                              child: Center(
-                                child: Text(
-                                  'Skip',
-                                  style: LumenType.text(
-                                    13.5,
-                                    weight: 650,
-                                    color: c.inkMuted,
-                                  ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    for (final (int i, (String, bool?) h) in fit.habits.indexed)
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                fit.mark(i, h.$2 == true ? null : true);
+                                Haptics.settle();
+                              },
+                              child: SizedBox(
+                                height: 52,
+                                child: Row(
+                                  children: <Widget>[
+                                    AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 160,
+                                      ),
+                                      width: 26,
+                                      height: 26,
+                                      decoration: ShapeDecoration(
+                                        color: h.$2 == null
+                                            ? Colors.transparent
+                                            : (h.$2! ? green : red),
+                                        shape: CircleBorder(
+                                          side: BorderSide(
+                                            color: h.$2 == null
+                                                ? c.inkFaint
+                                                : (h.$2! ? green : red),
+                                            width: 2,
+                                          ),
+                                        ),
+                                      ),
+                                      child: h.$2 == null
+                                          ? null
+                                          : Icon(
+                                              h.$2!
+                                                  ? Icons.check_rounded
+                                                  : Icons.close_rounded,
+                                              size: 16,
+                                              color: Colors.white,
+                                            ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        h.$1,
+                                        style:
+                                            LumenType.text(
+                                              15.5,
+                                              weight: 560,
+                                              color: h.$2 == null
+                                                  ? c.ink
+                                                  : c.inkMuted,
+                                            ).copyWith(
+                                              decoration: h.$2 == null
+                                                  ? null
+                                                  : TextDecoration.lineThrough,
+                                              decorationColor: h.$2 == true
+                                                  ? green
+                                                  : red,
+                                            ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
                           ),
-                      ],
-                    ),
-                ],
+                          if (h.$2 == null)
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                fit.mark(i, false);
+                                Haptics.tick();
+                              },
+                              child: SizedBox(
+                                width: 64,
+                                height: 52,
+                                child: Center(
+                                  child: Text(
+                                    'Skip',
+                                    style: LumenType.text(
+                                      13.5,
+                                      weight: 650,
+                                      color: c.inkMuted,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                  ],
+                ),
               ),
             ),
           ],
