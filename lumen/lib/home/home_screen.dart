@@ -52,6 +52,7 @@ import '../rooms/patterns/video_room.dart';
 import '../rooms/patterns/swap_room.dart';
 import '../rooms/patterns/session_room.dart';
 import '../rooms/patterns/flude_room.dart';
+import '../rooms/patterns/lens_room.dart';
 import '../rooms/pill/pill_room.dart';
 import '../rooms/shaders/shaders_room.dart';
 import '../rooms/shapes/shape_room.dart';
@@ -376,6 +377,12 @@ final List<_Room> _rooms = <_Room>[
     const Color(0xFFFF6B4A),
     (_) => const FludeRoom(),
   ),
+  _Room(
+    'Button and lens',
+    'Tap for five blobs. Drag it and it becomes a glass that explains.',
+    const Color(0xFF3FA9F5),
+    (_) => const LensRoom(),
+  ),
 ];
 
 class HomeScreen extends StatefulWidget {
@@ -525,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'A showcase of interface craft.\nFifty examples to point at.\nEach has an id; pieces can show their names.',
+                    'A showcase of interface craft.\nFifty-one examples to point at.\nEach has an id; pieces can show their names.',
                     style: LumenType.text(
                       15.5,
                       color: c.inkMuted,
@@ -698,14 +705,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               'The centre button',
               'The contextual button in the middle of the bar.',
             ),
-            _card(50, height: 190),
+            _card(51, height: 190),
+            const SizedBox(height: gap),
+            _card(50, height: 150),
             const SizedBox(height: 34),
             _section(c, 'Bonus', 'Please do not ship this.'),
             _card(12, height: 150),
             const SizedBox(height: 28),
             Center(
               child: Text(
-                'Build 16  ·  Flutter 3.50  ·  Impeller',
+                'Build 17  ·  Flutter 3.50  ·  Impeller',
                 style: LumenType.text(12, color: c.inkFaint),
               ),
             ),

@@ -80,7 +80,8 @@ class RoomArt extends CustomPainter {
               Icons.swap_horiz_rounded,
               Icons.edit_note_rounded,
               Icons.bubble_chart_rounded,
-            ][(kind - 19) % 32],
+              Icons.search_rounded,
+            ][(kind - 19) % 33],
           );
         } else {
           _basic(canvas, size, kind - 13);

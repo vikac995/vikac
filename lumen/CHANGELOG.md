@@ -1,5 +1,34 @@
 # Lumen changelog
 
+## Build 17 (13 November 2026)
+
+One new example at the top of "The centre button": R51, the button revised. R50 (the version built from the brief) is kept below it. 51 examples in total.
+
+**Files:** `releases/lumen-build-17.apk`, `releases/lumen-source-build-17.zip`
+
+### New: R51 Button and lens
+
+One button, two jobs.
+
+- **Tap.** The button stays one flat colour. It splits into five solid coloured blobs on an arc, the design from R21, now with the spring mechanics: each blob has its own spring, stretches along its flight, goes slightly past its place and settles; the middle one leaves first and each step outward starts 14 ms later; the button recoils. Closing is quick and does not bounce. Tap a blob to run it.
+- **Drag.** After 10 px of movement the button lifts off the bar and becomes glass: the same refracting, magnifying glass as room 1. It rides 62 px above the thumb so the thumb does not hide it, and leaves an empty ring on the bar where it lives.
+- **It explains as it goes.** Everything on screen reacts to how close the glass is, continuously: a widget starts to swell and lift from 64 px away and is fully raised when the glass is on it. Once the glass is properly over something, a card appears beside it with its name and one sentence about what it does, with a tick. Move on and the card changes; nothing waits for you to let go. It works on the five widgets, the four bar spots, and the blobs when they are open (tap first, then drag).
+- **Let go** and the glass springs home and is a flat button again.
+
+### What to test on the phone
+
+1. Tap: do the blobs feel right now? This is the "Balanced" spring from R50 (stiffness 950, damping 0.62).
+2. Drag the button slowly toward the Weight widget and watch it swell before you arrive. Is 64 px the right distance, or should things react sooner or later?
+3. Sweep across several widgets quickly. Do the cards keep up, and is one tick per thing right or too much?
+4. Tap to open the blobs, then drag the button over a blob.
+5. **Look inside the glass.** In my preview the picture inside it is upside down. I believe that comes from the graphics mode my preview uses, which your phone does not, but I cannot confirm it. If the magnified picture is upside down on the phone, tell me; it is a one-line fix.
+6. The frame-rate readout while dragging.
+
+### Not checked
+
+- Only the Linux preview (software rendering, mouse, about 15 frames a second). Not checked: how the glass looks on the phone, whether the magnified picture is the right way up, frame rate while dragging, haptics, and whether a thumb covers the explanation card near the top of the screen.
+- R51 has no editing; R50 shows that.
+
 ## Build 16 (13 November 2026)
 
 One new example, in its own home section "The centre button": my suggestion for the contextual button, built from the brief and from the current `flude_menu.dart` / `glass_button.dart`. 50 examples in total. Nothing was removed.
