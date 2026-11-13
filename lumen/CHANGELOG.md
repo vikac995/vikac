@@ -1,5 +1,15 @@
 # Lumen changelog
 
+## Prism, build 50 (13 November 2026)
+
+**File:** `releases/prism-build-50.apk`
+
+- **Fixed: the ring around the chosen colour was cut off** at the left edge of the settings sheet. The row of colours now has room at both ends.
+- Otherwise the same as build 49.
+
+**Checked:** in my preview the ring around the first colour is whole.
+**Not checked:** on a phone.
+
 ## Prism, build 49 (13 November 2026)
 
 **File:** `releases/prism-build-49.apk`

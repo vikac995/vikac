@@ -1927,34 +1927,41 @@ void showPrismSettings(BuildContext context) {
                       const SizedBox(height: 16),
                       Text('Colour', style: LumenType.label(color: c.inkMuted)),
                       const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          for (final double h in Look.hues)
-                            Pressable(
-                              onTap: () {
-                                Look.instance.choose(hue: h);
-                                Haptics.tick();
-                              },
-                              child: Container(
-                                width: 32,
-                                height: 32,
-                                decoration: ShapeDecoration(
-                                  color: Look.accentFor(h, c.dark),
-                                  shape: CircleBorder(
-                                    side: BorderSide(
-                                      color: Look.instance.hue == h
-                                          ? c.ink
-                                          : Colors.transparent,
-                                      width: 2.5,
-                                      strokeAlign:
-                                          BorderSide.strokeAlignOutside,
+                      // Room at both ends for the ring around the chosen colour, which sits outside its circle.
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 3,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: <Widget>[
+                            for (final double h in Look.hues)
+                              Pressable(
+                                onTap: () {
+                                  Look.instance.choose(hue: h);
+                                  Haptics.tick();
+                                },
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: ShapeDecoration(
+                                    color: Look.accentFor(h, c.dark),
+                                    shape: CircleBorder(
+                                      side: BorderSide(
+                                        color: Look.instance.hue == h
+                                            ? c.ink
+                                            : Colors.transparent,
+                                        width: 2.5,
+                                        strokeAlign:
+                                            BorderSide.strokeAlignOutside,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 14),
                       Text(
