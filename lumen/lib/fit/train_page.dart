@@ -1,3 +1,5 @@
+import 'robot.dart';
+
 import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
@@ -313,6 +315,7 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                               button: true,
                               label: _done[i] ? 'Set done' : 'Finish set',
                               child: GestureDetector(
+                                key: i == 1 ? Robot.key('tick') : null,
                                 behavior: HitTestBehavior.opaque,
                                 onTap: () => _toggle(i),
                                 child: ListenableBuilder(

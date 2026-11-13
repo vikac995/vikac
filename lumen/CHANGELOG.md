@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 12 (13 November 2026)
+
+**File:** `releases/prism-build-12.apk`
+
+The test made more trustworthy, after comparing the robot's half with yours in the build 11 report.
+
+- **The robot's finger now moves once per screen refresh** and ends scrolls with a flick, so lists coast as they do under a real finger. Before, it moved on its own timer, which left refreshes with nothing to draw and made scrolling look worse than it is.
+- **"Late" is stricter.** A missed refresh counts only if a slow frame came just before it. Missed refreshes with no slow frame are no longer counted as stutter.
+- **Each frame is charged to the right action.** Frame times reach the app in batches up to a second late; they are now matched to actions by their own timestamps instead of by arrival time.
+- **A warm-up pass that is not recorded**, so one-off first-time costs no longer land on Full glass just because it runs first.
+- **The robot covers more:** all four screens (arrive, flick down, flick back), ticking a set on Train, tabs a second time quickly, blobs twice, Weigh-in twice and Log food, the lens over every Home card twice.
+- **New in the report:** a grid with one row per action and one column per setting, for the robot and for you, including how long the screen kept drawing after each action (battery).
+
+**How to run it:** same as before. Round button on Home, **Run the test**. It now takes about 5 minutes: roughly 3.5 hands off, then 70 seconds of you.
+
+**Checked:** in my preview the robot did every step under every setting and the grid filled in.
+**Not checked:** on a phone. In particular the "kept drawing" times and the new late rule only mean something at real frame rates; my preview draws a frame in about 140 ms.
+
 ## Prism, build 11 (13 November 2026)
 
 **File:** `releases/prism-build-11.apk`

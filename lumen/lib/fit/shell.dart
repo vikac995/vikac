@@ -125,29 +125,60 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return b + Offset(-math.cos(a), -math.sin(a)) * _reach;
     }
 
+    final Offset mid = Offset(sc.width / 2, sc.height * 0.12);
+    Future<void> scroll() async {
+      await Robot.drag(
+        <Offset>[
+          Offset(sc.width / 2, sc.height * 0.62),
+          Offset(sc.width / 2, sc.height * 0.34),
+        ],
+        legMs: 180,
+        flick: true,
+        after: 850,
+      );
+      await Robot.drag(
+        <Offset>[
+          Offset(sc.width / 2, sc.height * 0.34),
+          Offset(sc.width / 2, sc.height * 0.62),
+        ],
+        legMs: 180,
+        flick: true,
+        after: 850,
+      );
+    }
+
     // Start from a known place.
     await Robot.tap(tab(0));
-    // 1. Every tab, and back.
+    // 1. Every screen: arrive, flick down, flick back. On Train also tick a set and untick it.
     for (final int i in <int>[1, 2, 3, 0]) {
-      await Robot.tap(tab(i), after: 650);
+      await Robot.tap(tab(i), after: 900);
+      await scroll();
+      final Offset? tick = i == 1 ? Robot.spot('tick') : null;
+      if (tick != null) {
+        await Robot.tap(tick, after: 900);
+        await Robot.tap(tick, after: 700);
+      }
     }
-    // 2. The blobs, open and closed.
-    await Robot.tap(b, after: 600);
-    await Robot.tap(b, after: 500);
-    // 3. A sheet: blobs, Weigh-in, then dismiss by tapping above it.
-    await Robot.tap(b, after: 500);
-    await Robot.tap(blob(3), after: 900);
-    await Robot.tap(Offset(sc.width / 2, sc.height * 0.12), after: 600);
-    // 4. Scroll Home down and back.
-    await Robot.drag(<Offset>[
-      Offset(sc.width / 2, sc.height * 0.62),
-      Offset(sc.width / 2, sc.height * 0.30),
-    ], after: 500);
-    await Robot.drag(<Offset>[
-      Offset(sc.width / 2, sc.height * 0.30),
-      Offset(sc.width / 2, sc.height * 0.62),
-    ], after: 700);
-    // 5. Carry the lens over every card on Home, top to bottom, and let go on the last (which only explains).
+    // 2. Tabs again, quickly, as someone hunting for something does.
+    for (final int i in <int>[2, 1, 3, 0]) {
+      await Robot.tap(tab(i), after: 500);
+    }
+    // 3. The blobs, open and closed, twice.
+    for (int n = 0; n < 2; n++) {
+      await Robot.tap(b, after: 700);
+      await Robot.tap(b, after: 600);
+    }
+    // 4. Sheets: Weigh-in twice, then the fourth blob's neighbour, each dismissed by tapping above.
+    for (final int i in <int>[3, 3, 1]) {
+      await Robot.tap(b, after: 500);
+      await Robot.tap(blob(i), after: 900);
+      if (_sheetOpen) {
+        await Robot.tap(mid, after: 700);
+      } else if (_open) {
+        await Robot.tap(b, after: 500);
+      }
+    }
+    // 5. Carry the lens over every card on Home, top to bottom, twice.
     final List<Rect> cards =
         <Rect>[
           for (final LensTargetState t in LensBus.instance.targets)
@@ -157,7 +188,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
               ? x.top.compareTo(y.top)
               : x.left.compareTo(y.left),
         );
-    if (cards.isNotEmpty) {
+    for (int n = 0; n < 2 && cards.isNotEmpty; n++) {
       // The glass rides 62 above the finger, so the finger aims that much lower.
       await Robot.drag(
         <Offset>[b, for (final Rect r in cards) r.center + const Offset(0, 62)],
@@ -165,6 +196,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         dwell: 350,
         after: 900,
       );
+      if (_parked || _carrying) {
+        _lensHome();
+        await Robot.wait(600);
+      }
     }
     // Make sure nothing is left open for the next setting.
     if (_parked || _carrying) {

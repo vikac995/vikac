@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/gestures.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 /// A finger that is not there. It sends the app the same touch events a
@@ -34,12 +35,15 @@ class Robot {
   }
 
   /// Touch at the first point, travel through the others, let go at the last.
+  /// The finger moves once per screen refresh, as a real one is reported.
   /// [legMs] is how long each stretch takes; [dwell] is a pause at each point.
+  /// With [flick] the finger is still moving when it lets go, so a list coasts.
   static Future<void> drag(
     List<Offset> path, {
     int legMs = 320,
     int dwell = 0,
     int after = 500,
+    bool flick = false,
   }) async {
     final int id = _next++;
     Offset at = path.first;
@@ -52,10 +56,16 @@ class Robot {
     await wait(60);
     for (int i = 1; i < path.length; i++) {
       final Offset from = path[i - 1], to = path[i];
-      final int steps = (legMs / 8).round();
-      for (int k = 1; k <= steps; k++) {
-        // Ease in and out, as a hand does.
-        final double t = Curves.easeInOut.transform(k / steps);
+      final int t0 = _clock.elapsedMilliseconds;
+      while (true) {
+        await SchedulerBinding.instance.endOfFrame;
+        final double x = ((_clock.elapsedMilliseconds - t0) / legMs).clamp(
+          0.0,
+          1.0,
+        );
+        final double t = flick
+            ? Curves.easeIn.transform(x)
+            : Curves.easeInOut.transform(x);
         final Offset p = Offset.lerp(from, to, t)!;
         _send(
           PointerMoveEvent(
@@ -66,7 +76,9 @@ class Robot {
           ),
         );
         at = p;
-        await wait(8);
+        if (x >= 1) {
+          break;
+        }
       }
       if (dwell > 0) {
         await wait(dwell);
@@ -77,5 +89,15 @@ class Robot {
       PointerRemovedEvent(pointer: id, position: at, timeStamp: _clock.elapsed),
     );
     await wait(after);
+  }
+
+  /// Things the robot needs to find that are not at a fixed place.
+  static final Map<String, GlobalKey> _spots = <String, GlobalKey>{};
+  static GlobalKey key(String name) => _spots.putIfAbsent(name, GlobalKey.new);
+  static Offset? spot(String name) {
+    final RenderObject? r = _spots[name]?.currentContext?.findRenderObject();
+    return r is RenderBox && r.attached
+        ? r.localToGlobal(r.size.center(Offset.zero))
+        : null;
   }
 }

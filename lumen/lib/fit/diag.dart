@@ -13,7 +13,10 @@ import '../core/settings.dart';
 /// Running totals for one place or one action. Adding a frame is a handful
 /// of additions; nothing is allocated.
 class _Bucket {
-  int frames = 0, over = 0, late = 0, times = 0, buildSlow = 0;
+  int frames = 0, over = 0, late = 0, gaps = 0, times = 0, buildSlow = 0;
+  // How long the screen kept drawing after the action: what it costs the battery.
+  double settleSum = 0, settleMax = 0;
+  int settleN = 0;
   double buildSum = 0, drawSum = 0, worst = 0;
   double firstWorst = 0,
       laterWorst = 0; // the first time something happens is often the slowest
@@ -21,7 +24,13 @@ class _Bucket {
   final Float32List recent = Float32List(512);
   int at = 0;
 
-  void add(double build, double draw, bool overBudget, int lateFrames) {
+  void add(
+    double build,
+    double draw,
+    bool overBudget,
+    int lateFrames,
+    int gapFrames,
+  ) {
     frames++;
     buildSum += build;
     drawSum += draw;
@@ -42,6 +51,7 @@ class _Bucket {
       over++;
     }
     late += lateFrames;
+    gaps += gapFrames;
     recent[at++ & 511] = draw;
   }
 
@@ -53,6 +63,19 @@ class _Bucket {
     final List<double> s = recent.sublist(0, n).toList()..sort();
     return s[((n - 1) * 0.95).round()];
   }
+}
+
+/// A moment something changed: a new screen, a new setting or an action.
+/// Frames are matched to marks by their own timestamps, because the engine
+/// hands frame times over in batches up to a second late.
+class _Mark {
+  _Mark(this.at, this.scene, this.label);
+  final int at; // microseconds, on the frame clock
+  final _Bucket scene;
+  final String label;
+  _Bucket? action;
+  String actionName = '';
+  int actionAt = 0;
 }
 
 /// One step of the guided test: a name and the settings it runs with.
@@ -75,7 +98,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 11';
+  static const String build = 'Prism build 12';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -97,16 +120,29 @@ class Diag {
   final List<String> _slow = <String>[];
   final List<String> _events = <String>[];
   final Stopwatch _clock = Stopwatch()..start();
-  _Bucket? _sceneBucket,
-      _actionBucket; // looked up once, then reused every frame
-  String _actionName = '';
-  int _actionUntil = 0, _since = 0;
+  final List<_Mark> _marks = <_Mark>[];
+  int _since = 0;
+  int _off = 0; // frame clock minus my clock, in microseconds
+  bool _prevOver = false, _prevPrevOver = false;
+  // The action whose settling is being timed.
+  _Bucket? _trk;
+  int _trkAt = 0, _trkLast = 0;
+  bool _trkDone = true;
+  static const int _window =
+      700000; // an action owns the frames of the next 0.7 s
   int? _prevVsync;
   String _device = 'unknown device';
   double _refresh = 60;
 
   Future<void> start() async {
     SchedulerBinding.instance.addTimingsCallback(_onTimings);
+    // Ties my clock to the clock frames are stamped with. One subtraction a frame.
+    SchedulerBinding.instance.addPersistentFrameCallback((Duration _) {
+      _off =
+          SchedulerBinding.instance.currentSystemFrameTimeStamp.inMicroseconds -
+          _clock.elapsedMicroseconds;
+    });
+    _mark();
     try {
       _device =
           await const MethodChannel('lumen/device')
@@ -123,7 +159,40 @@ class Diag {
     _shownMs[k] = (_shownMs[k] ?? 0) + now - _since;
     _since = now;
     change();
-    _sceneBucket = null;
+    _mark();
+  }
+
+  int get _nowOnFrameClock => _clock.elapsedMicroseconds + _off;
+
+  /// Starts a new stretch of frames. An action still running carries over.
+  _Mark _mark() {
+    final _Mark m = _Mark(
+      _nowOnFrameClock,
+      _scenes.putIfAbsent('$_cfg | $scene', _Bucket.new),
+      '[$_cfg]  $scene',
+    );
+    if (_marks.isNotEmpty) {
+      m
+        ..action = _marks.last.action
+        ..actionName = _marks.last.actionName
+        ..actionAt = _marks.last.actionAt;
+    }
+    _marks.add(m);
+    return m;
+  }
+
+  void _endSettle() {
+    final _Bucket? b = _trk;
+    if (b != null && _trkLast > _trkAt) {
+      final double ms = (_trkLast - _trkAt) / 1000;
+      b
+        ..settleSum += ms
+        ..settleN += 1;
+      if (ms > b.settleMax) {
+        b.settleMax = ms;
+      }
+    }
+    _trk = null;
   }
 
   /// Notes something the person did. Frames in the next 0.7 s are charged to it.
@@ -137,10 +206,11 @@ class Diag {
         }
       }
     }
-    _actionName = what;
-    _actionUntil = now + 700;
-    _actionBucket = _actions.putIfAbsent('$_cfg | $scene > $what', _Bucket.new)
-      ..times += 1;
+    _mark()
+      ..action = (_actions.putIfAbsent('$_cfg | $scene > $what', _Bucket.new)
+        ..times += 1)
+      ..actionName = what
+      ..actionAt = _nowOnFrameClock;
     _events.add('${(now / 1000).toStringAsFixed(1)}s $what');
     if (_events.length > 60) {
       _events.removeAt(0);
@@ -153,13 +223,10 @@ class Diag {
     _shownMs.clear();
     _slow.clear();
     _events.clear();
-    _sceneBucket = null;
-    _actionBucket = null;
-    _actionUntil = 0;
-    _since = 0;
-    _clock
-      ..reset()
-      ..start();
+    _trk = null;
+    _since = _clock.elapsedMilliseconds;
+    _marks.clear();
+    _mark();
   }
 
   void _onTimings(List<FrameTiming> timings) {
@@ -168,39 +235,77 @@ class Diag {
       _refresh = views.first.display.refreshRate;
     }
     final double budget = 1000 / _refresh, interval = 1e6 / _refresh;
-    final _Bucket sb = _sceneBucket ??= _scenes.putIfAbsent(
-      '$_cfg | $scene',
-      _Bucket.new,
-    );
-    final int now = _clock.elapsedMilliseconds;
-    final _Bucket? ab = now <= _actionUntil ? _actionBucket : null;
+    if (_marks.isEmpty) {
+      _mark();
+    }
+    int mi = 0;
     for (final FrameTiming t in timings) {
       final int vsync = t.timestampInMicroseconds(FramePhase.vsyncStart);
+      while (mi + 1 < _marks.length && _marks[mi + 1].at <= vsync) {
+        mi++;
+      }
+      final _Mark m = _marks[mi];
+      final _Bucket? ab =
+          m.action != null &&
+              vsync >= m.actionAt &&
+              vsync - m.actionAt <= _window
+          ? m.action
+          : null;
       final int? prev = _prevVsync;
       _prevVsync = vsync;
       final double build = t.buildDuration.inMicroseconds / 1000,
           draw = t.rasterDuration.inMicroseconds / 1000;
-      int late = 0;
+      final bool over = build + draw > budget;
+      // A missing refresh is only a stutter if a slow frame caused it.
+      // Otherwise there was simply nothing new to draw.
+      int late = 0, gap = 0;
       if (prev != null) {
-        final int gap = vsync - prev;
-        if (gap > interval * 1.5 && gap < interval * 6) {
-          late = ((gap / interval).round() - 1).clamp(1, 5);
+        final int d = vsync - prev;
+        if (d > interval * 1.5 && d < interval * 6) {
+          final int n = ((d / interval).round() - 1).clamp(1, 5);
+          if (_prevOver || _prevPrevOver) {
+            late = n;
+          } else {
+            gap = n;
+          }
         }
       }
-      final bool over = build + draw > budget;
-      sb.add(build, draw, over, late);
-      ab?.add(build, draw, over, late);
+      _prevPrevOver = _prevOver;
+      _prevOver = over;
+      m.scene.add(build, draw, over, late, gap);
+      ab?.add(build, draw, over, late, gap);
+      // How long the screen keeps drawing after an action.
+      if (m.action != null && vsync >= m.actionAt) {
+        if (m.actionAt != _trkAt || _trk != m.action) {
+          _endSettle();
+          _trk = m.action;
+          _trkAt = m.actionAt;
+          _trkLast = m.actionAt;
+          _trkDone = false;
+        }
+        if (!_trkDone) {
+          final double slack = _trkLast == _trkAt ? 150000 : interval * 4;
+          if (vsync - _trkLast <= slack && vsync - _trkAt < 3000000) {
+            _trkLast = vsync;
+          } else {
+            _trkDone = true;
+          }
+        }
+      }
       // Only a frame that was really slow costs any text.
       if (build + draw > budget * 1.5) {
         _slow.add(
-          '${(now / 1000).toStringAsFixed(1)}s  ${(build + draw).toStringAsFixed(1)} ms '
+          '${((vsync - _off) / 1e6).toStringAsFixed(1)}s  ${(build + draw).toStringAsFixed(1)} ms '
           '(${build > draw ? 'BUILD ${build.toStringAsFixed(1)}, draw ${draw.toStringAsFixed(1)}' : 'build ${build.toStringAsFixed(1)}, DRAW ${draw.toStringAsFixed(1)}'})  '
-          '[$_cfg]  $scene${ab == null ? '' : '  after "$_actionName"'}',
+          '${m.label}${ab == null ? '' : '  after "${m.actionName}"'}',
         );
         if (_slow.length > 50) {
           _slow.removeAt(0);
         }
       }
+    }
+    if (mi > 0) {
+      _marks.removeRange(0, mi);
     }
   }
 
@@ -217,7 +322,10 @@ class Diag {
     defaultValue: 14,
   );
   static int get testSeconds =>
-      _steps.length * secondsPerStep + _steps.length * 12 + _idleSeconds + 3;
+      _steps.length * secondsPerStep +
+      (_steps.length + 1) * 36 +
+      _idleSeconds +
+      3;
 
   /// What the banner says while a test runs; null when none is running.
   final ValueNotifier<String?> banner = ValueNotifier<String?>(null);
@@ -278,8 +386,15 @@ class Diag {
       banner.value = 'Test starts in $n\nPart 1 is automatic: hands off';
       await second();
     }
+    // Part 1: the app drives itself. One pass first that is not recorded,
+    // so one-off warm-up costs do not land on whichever setting runs first.
+    if (autoScript != null) {
+      _apply(_steps.first);
+      banner.value =
+          'Part 1 of 2  ·  warming up\nHands off: the app is driving itself';
+      await autoScript!();
+    }
     reset();
-    // Part 1: the app drives itself.
     if (autoScript != null) {
       for (int i = 0; i < _steps.length && live(); i++) {
         _move(() => _cfg = 'auto ${_steps[i].name}');
@@ -419,7 +534,7 @@ class Diag {
     o
       ..writeln()
       ..writeln(
-        'LATE is what a person can see: a frame that reached the screen after its turn.\n"Over budget" frames took longer than one refresh to make, but usually still arrive on time.\n\nBY SETTING              frames  over budget   late   build avg  draw avg  worst (ms)',
+        'LATE is what a person can see: a refresh that was missed because the frame before it was slow.\n"Over budget" frames took longer than one refresh to make, but usually still arrive on time.\n\nBY SETTING              frames  over budget   late   build avg  draw avg  worst (ms)',
       );
     for (final MapEntry<String, _Bucket> e in perCfg.entries) {
       final _Bucket b = e.value;
@@ -483,6 +598,62 @@ class Diag {
         );
       } catch (_) {
         // No storage: the next report simply has no comparison.
+      }
+    }
+
+    _endSettle();
+    // 1b. The same actions side by side: one row per action, one column per setting.
+    String kind(String a) => a.startsWith('tab ')
+        ? 'tab switch'
+        : a.startsWith('lens on ')
+        ? 'lens over a card'
+        : a == 'sheet close' || !a.startsWith('sheet ')
+        ? a
+        : 'sheet open';
+    for (final String who in <String>['auto', 'you']) {
+      final Map<String, Map<String, _Bucket>> grid =
+          <String, Map<String, _Bucket>>{};
+      for (final MapEntry<String, _Bucket> e in _actions.entries) {
+        final String cfg = e.key.split(' | ').first;
+        if (!cfg.startsWith('$who ')) {
+          continue;
+        }
+        final _Bucket b = e.value;
+        final _Bucket t = grid
+            .putIfAbsent(
+              kind(e.key.split(' > ').last),
+              () => <String, _Bucket>{},
+            )
+            .putIfAbsent(cfg.substring(who.length + 1), _Bucket.new);
+        t
+          ..frames += b.frames
+          ..over += b.over
+          ..late += b.late
+          ..times += b.times
+          ..settleSum += b.settleSum
+          ..settleN += b.settleN;
+        if (b.worst > t.worst) {
+          t.worst = b.worst;
+        }
+      }
+      if (grid.isEmpty) {
+        continue;
+      }
+      o
+        ..writeln()
+        ..writeln(
+          '${who == 'auto' ? 'ROBOT' : 'YOU'}, ACTION BY SETTING   each cell: times done / late frames / slow % / worst ms / ms it kept drawing',
+        )
+        ..writeln(
+          '${''.padRight(18)}${_steps.map((_Step s) => s.name.padRight(27)).join()}',
+        );
+      for (final String a in grid.keys.toList()..sort()) {
+        o.writeln(
+          '${a.padRight(18)}${_steps.map((_Step s) {
+            final _Bucket? b = grid[a]![s.name];
+            return (b == null || b.frames == 0 ? '-' : '${b.times}x ${b.late} ${pct(b.over, b.frames)} ${f(b.worst)} ${b.settleN == 0 ? '-' : (b.settleSum / b.settleN).round()}').padRight(27);
+          }).join()}',
+        );
       }
     }
 

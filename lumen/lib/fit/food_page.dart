@@ -415,7 +415,10 @@ class _Ring extends CustomPainter {
         -math.pi / 2,
         math.pi * 2 * f,
         false,
-        p..color = color.withValues(alpha: color.a * (f / 0.03).clamp(0.0, 1.0)),
+        p
+          ..color = color.withValues(
+            alpha: color.a * (f / 0.03).clamp(0.0, 1.0),
+          ),
       );
     }
   }
