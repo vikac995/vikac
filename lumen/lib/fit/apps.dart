@@ -99,10 +99,24 @@ class BlobApps extends ChangeNotifier {
     }
   }
 
-  Future<bool> launch(BlobApp a) async {
+  static Object launchArgs(String package, Rect? from) => from == null
+      ? package
+      : <String, Object>{
+          'package': package,
+          'x': from.left.round(),
+          'y': from.top.round(),
+          'w': from.width.round(),
+          'h': from.height.round(),
+        };
+
+  Future<bool> launch(BlobApp a, {Rect? from}) async {
     try {
       return a.installed &&
-          (await _channel.invokeMethod<bool>('launch', a.package) ?? false);
+          (await _channel.invokeMethod<bool>(
+                'launch',
+                launchArgs(a.package, from),
+              ) ??
+              false);
     } catch (_) {
       return false;
     }
@@ -613,9 +627,13 @@ class Apps extends ChangeNotifier {
   Directory get _dir =>
       Directory('${Directory.systemTemp.path}/prism_looks_v3');
 
-  Future<void> launch(AppTile t) async {
+  /// Opens an app. [from] is where on screen it was tapped, in real pixels, so the app can open out of that spot.
+  Future<void> launch(AppTile t, {Rect? from}) async {
     try {
-      await _channel.invokeMethod<bool>('launch', t.package);
+      await _channel.invokeMethod<bool>(
+        'launch',
+        BlobApps.launchArgs(t.package, from),
+      );
     } catch (_) {
       // Not on Android.
     }

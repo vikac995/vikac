@@ -761,11 +761,25 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       final BlobApp a = BlobApps.instance.apps[i];
       _setOpen(false);
       Diag.instance.event('open ${a.name}');
-      BlobApps.instance.launch(a).then((bool ok) {
-        if (!ok) {
-          Haptics.thud();
-        }
-      });
+      // The app opens out of the blob that was tapped.
+      final double dpr = MediaQuery.devicePixelRatioOf(context);
+      final double angle = math.pi * (0.19 + 0.62 * i / (_n - 1));
+      final Offset at =
+          _home + Offset(-math.cos(angle), -math.sin(angle)) * _reach;
+      BlobApps.instance
+          .launch(
+            a,
+            from: Rect.fromCenter(
+              center: at * dpr,
+              width: _blob * dpr,
+              height: _blob * dpr,
+            ),
+          )
+          .then((bool ok) {
+            if (!ok) {
+              Haptics.thud();
+            }
+          });
       return;
     }
     _run(i);
@@ -1856,7 +1870,7 @@ void showPrismSettings(BuildContext context) {
                     ),
                     const SizedBox(height: 12),
                     SwitchLine(
-                      label: 'Background lights (costs frames)',
+                      label: 'Background lights',
                       value: Diag.instance.wallpaperOn.value,
                       onChanged: (bool v) =>
                           Diag.instance.wallpaperOn.value = v,
@@ -2080,6 +2094,20 @@ class _Wallpaper extends CustomPainter {
       Offset(size.width * 0.9, size.height * 0.98),
       size.width * 0.75,
       const Color(0xFFF5B301),
+      0.22 * k,
+    );
+    // Warmth: an amber glow low in the middle and an orange one off the right edge, so the
+    // page is not only cool colours. They are part of the same one-off picture, so they cost nothing more.
+    light(
+      Offset(size.width * 0.42, size.height * 0.60),
+      size.width * 0.7,
+      const Color(0xFFFFA630),
+      0.24 * k,
+    );
+    light(
+      Offset(size.width * 1.05, size.height * 0.68),
+      size.width * 0.6,
+      const Color(0xFFFF7A2F),
       0.22 * k,
     );
   }

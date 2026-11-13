@@ -121,8 +121,23 @@ class MainActivity : FlutterActivity() {
                     runOnUiThread { result.success(out) }
                 }.start()
                 "launch" -> {
-                    val i = packageManager.getLaunchIntentForPackage(call.arguments as String)
-                    if (i != null) startActivity(i)
+                    // Either just a package name, or a package with the place on screen it was opened from.
+                    val a = call.arguments
+                    val pkg = if (a is Map<*, *>) a["package"] as String else a as String
+                    val i = packageManager.getLaunchIntentForPackage(pkg)
+                    if (i != null) {
+                        // What a home screen is expected to send: bring the app's existing task forward as it was left.
+                        i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                        var opts: Bundle? = null
+                        if (a is Map<*, *> && a["w"] != null) {
+                            val x = (a["x"] as Number).toInt(); val y = (a["y"] as Number).toInt()
+                            val w = (a["w"] as Number).toInt(); val h = (a["h"] as Number).toInt()
+                            // The app opens out of the thing that was tapped, and Android is told where that was.
+                            i.sourceBounds = android.graphics.Rect(x, y, x + w, y + h)
+                            opts = android.app.ActivityOptions.makeClipRevealAnimation(window.decorView, x, y, w, h).toBundle()
+                        }
+                        startActivity(i, opts)
+                    }
                     result.success(i != null)
                 }
                 else -> result.notImplemented()

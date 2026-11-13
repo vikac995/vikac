@@ -86,6 +86,7 @@ class _Step {
   const _Step(
     this.name,
     this.quality, {
+    // ignore: unused_element_parameter
     this.solid = false,
     // ignore: unused_element_parameter
     this.lights = false,
@@ -104,7 +105,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 41';
+  static const String build = 'Prism build 42';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -114,8 +115,8 @@ class Diag {
   set extra(String v) => _move(() => _extra = v);
   String get scene => '$_page${_page == 'train' ? _extra : ''}$_overlay';
 
-  /// The soft coloured lights behind everything. Off by default.
-  final ValueNotifier<bool> wallpaperOn = ValueNotifier<bool>(false);
+  /// The soft coloured lights behind everything. On by default: measured, they cost nothing.
+  final ValueNotifier<bool> wallpaperOn = ValueNotifier<bool>(true);
 
   /// How much glass the bar uses. 0 original: always glass. 1 one at a time:
   /// only one moving piece of glass at once. 2 frosted: the bar blurs but does
@@ -394,11 +395,10 @@ class Diag {
 
   // ---- the guided test: use the app; the settings change by themselves
   static const List<_Step> _steps = <_Step>[
-    _Step('Full glass', GlassQuality.full),
-    // The same again with the background lights on: the difference between these two rows is what the background costs.
-    _Step('Full glass + lights', GlassQuality.full, lights: true),
-    _Step('Event', GlassQuality.full, mode: 3),
-    _Step('No glass', GlassQuality.low, solid: true),
+    // Only the one thing that was measured to matter: the bar as glass, and the bar solid.
+    // Everything else, the background lights included, is the same in both.
+    _Step('Full glass', GlassQuality.full, lights: true),
+    _Step('Event', GlassQuality.full, mode: 3, lights: true),
   ];
   static const int secondsPerStep = int.fromEnvironment(
     'DIAG_STEP',

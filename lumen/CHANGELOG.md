@@ -1,5 +1,31 @@
 # Lumen changelog
 
+## Prism, build 42 (13 November 2026)
+
+**File:** `releases/prism-build-42.apk`
+
+**Background**
+- **The background lights are on by default.** Your build 40 report measured them at no cost (4.1 ms per frame with and without).
+- **Two warm lights added:** an amber glow low in the middle and an orange one off the right edge. They are part of the same picture that is made once and then only shown, so they add nothing per frame.
+
+**Opening other apps**
+- **An app now opens out of the thing you tapped.** From the drawer it grows out of its tile; from the blob menu, out of its blob. Before, it slid in from the side, which is Android's generic transition and says nothing about where the app came from.
+- **Android is told where the tap was** (the tile's place on screen). This is what home screens are expected to send, and some apps and the system use it for their own opening animation.
+- **The app comes back as you left it.** Launches now use the same instruction a home screen uses: bring the app's existing task forward, do not start it again.
+- Unchanged, and already the standard behaviour: the home button returns to Prism's Home page with everything closed; the back button from an app returns to where you were, drawer still open on the same page; Prism draws nothing and runs no timers while another app is in front.
+
+**The test**
+- It now compares only the thing that was measured to matter: **the bar as glass** against **the bar solid**. Everything else, background lights included, is the same in both. It takes about three minutes.
+
+**What to look for**
+- Background: is the warmth right, or too much? Does anything on the pages get harder to read over it?
+- Open an app from the drawer and from a blob: does it grow from the right place?
+- Come back with the back gesture, then with the home gesture. Is Prism there instantly both times?
+
+**Checked:** it compiles; the background shows in my preview.
+**Not checked:** the opening animation, at all. My preview has no Android, so this is written from the documented way of doing it and has never run. If apps stop opening, or open from the wrong place, tell me and go back to build 41 meanwhile. The colours of the lights also look different in my preview than on your phone, so I cannot judge the warmth.
+**What I cannot do:** the animation when an app closes back into its icon. Android reserves that for the system's own home screen; other home apps get a plain fade.
+
 ## Prism, build 41 (13 November 2026)
 
 **File:** `releases/prism-build-41.apk`

@@ -358,7 +358,29 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                           if (i < Apps.instance.all.length) {
                             Haptics.settle();
                             Diag.instance.event('drawer open app');
-                            Apps.instance.launch(Apps.instance.all[i]);
+                            // Where the tile is on the glass, in real pixels: the app opens out of it.
+                            final double dpr = MediaQuery.devicePixelRatioOf(
+                              context,
+                            );
+                            final Offset origin =
+                                d.globalPosition - d.localPosition;
+                            final Offset centre =
+                                origin +
+                                Offset(
+                                  box.maxWidth / _cols * (col + 0.5),
+                                  box.maxHeight / _rows * row +
+                                      8 +
+                                      _GridPainter._tile / 2,
+                                );
+                            final Rect tile = Rect.fromCenter(
+                              center: centre * dpr,
+                              width: _GridPainter._tile * dpr,
+                              height: _GridPainter._tile * dpr,
+                            );
+                            Apps.instance.launch(
+                              Apps.instance.all[i],
+                              from: tile,
+                            );
                           }
                         },
                         // Its own layer: opening, closing and the ring never make the grid redraw.
