@@ -52,6 +52,7 @@ class MainActivity : FlutterActivity() {
     override fun onStart() {
         super.onStart()
         RestBubble.foreground = true
+        RestBubble.awayInApp = false
         RestBubble.refresh(applicationContext)
     }
 
@@ -82,6 +83,8 @@ class MainActivity : FlutterActivity() {
         super.onNewIntent(intent)
         if (intent.action == RestBubble.OPEN_TRAIN) {
             device?.invokeMethod("train", null)
+        } else if (intent.action == RestBubble.OPEN_ACTION) {
+            device?.invokeMethod("action", intent.getIntExtra("index", 0))
         } else if (intent.hasCategory(android.content.Intent.CATEGORY_HOME)) {
             device?.invokeMethod("home", null)
         }
@@ -227,6 +230,36 @@ class MainActivity : FlutterActivity() {
                 }
                 RestBubble.refresh(applicationContext)
                 result.success(null)
+            } else if (call.method == "pin") {
+                // What is pinned from the blob menu to float over the phone, or nothing.
+                val a = call.arguments as? Map<*, *>
+                if (a == null) {
+                    RestBubble.pin = null
+                } else {
+                    val bytes = a["icon"] as? ByteArray
+                    val bmp = if (bytes != null) android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) else null
+                    RestBubble.pin = RestBubble.Pin(
+                        a["key"] as String, a["kind"] as String, (a["index"] as Number).toInt(), a["package"] as String,
+                        a["name"] as String, (a["color"] as Number).toInt(), bmp, a["picture"] as Boolean,
+                    )
+                }
+                RestBubble.refresh(applicationContext)
+                result.success(null)
+            } else if (call.method == "pinData") {
+                // The numbers the pinned sheets show.
+                val a = call.arguments as Map<*, *>
+                RestBubble.light = a["light"] as Boolean
+                RestBubble.hapticsOn = a["haptics"] as Boolean
+                RestBubble.accent = (a["accent"] as Number).toInt()
+                RestBubble.onAccent = (a["onAccent"] as Number).toInt()
+                RestBubble.weight = (a["weight"] as Number).toDouble()
+                RestBubble.kcalLeft = (a["left"] as Number).toInt()
+                RestBubble.meals = (a["meals"] as List<*>).map {
+                    val m = it as Map<*, *>
+                    RestBubble.Meal((m["i"] as Number).toInt(), m["name"] as String, m["what"] as String, (m["kcal"] as Number).toInt())
+                }
+                RestBubble.refresh(applicationContext)
+                result.success(null)
             } else if (call.method == "page") {
                 // Whether Prism's own workout page is the one showing.
                 RestBubble.page(applicationContext, call.arguments as Boolean)
@@ -358,8 +391,8 @@ class MainActivity : FlutterActivity() {
  * The workout, floating over the whole phone.
  *
  * While a workout is on, a small glass lens floats over whatever is on screen: other apps,
- * the app switcher, and Prism itself. (Only on Prism's own workout page is it absent,
- * because that page is the thing the lens stands for.) It has three sizes on one axis:
+ * the app switcher, and every page of Prism. It is in the same place everywhere and behaves
+ * the same everywhere. It has three sizes on one axis:
  *
  *   lens    a glance: the timer. Drag it anywhere; drop it on the cross at the bottom to close it.
  *   compact a bottom sheet in the thumb's reach: the current set on two dials, and "Set done".
@@ -393,13 +426,34 @@ object RestBubble {
     /** Prism's own Haptics switch. The floating parts obey it too. */
     var hapticsOn = true
 
+    /** Something from Prism's blob menu, pinned to float over the phone. */
+    class Pin(val key: String, val kind: String, val index: Int, val pkg: String, val name: String, val color: Int, val icon: android.graphics.Bitmap?, val picture: Boolean)
+
+    class Meal(val index: Int, val name: String, val what: String, val kcal: Int)
+
+    const val OPEN_ACTION = "dev.lumen.OPEN_ACTION"
+    var pin: Pin? = null
+    var weight = 80.0
+    var kcalLeft = 0
+    var meals: List<Meal> = emptyList()
+
+    /** After the lens has opened an app it keeps out of the way until Prism is next on screen. */
+    var awayInApp = false
+
     private var view: Dot? = null
     private var target: Target? = null
-    private var sheet: SheetHost? = null
+    private var sheet: Sheet? = null
     private var dismissed = false
     private var fullMode = false
     private var lensX = -1
     private var lensY = -1
+
+    /** Prism's theme. The sheets follow it. The lens is always dark glass, so it reads over any app. */
+    var light = false
+
+    private fun ink(): Int = if (light) 0xFF17150F.toInt() else WHITE
+
+    private fun muted(): Int = if (light) 0xFF5E5A50.toInt() else GREY
 
     private const val WHITE = 0xFFFFFFFF.toInt()
     private const val GREY = 0xFFA9ACB6.toInt()
@@ -461,9 +515,55 @@ object RestBubble {
         }
     }
 
+    /**
+     * Which lens is due. There is one place for a lens: a workout has it while it is on (1);
+     * otherwise a pinned thing has it (2); otherwise there is none (0).
+     */
+    private fun mode(): Int = when {
+        active -> if (!dismissed) 1 else 0
+        pin != null && !awayInApp -> 2
+        else -> 0
+    }
+
+    /** The colour the lens is tinted with. */
+    private fun lensColor(): Int = if (active) accent else (pin?.color ?: accent)
+
+    /** A pinned thing's lens was tapped: it does what the thing is. */
+    private fun tapPinned(context: Context) {
+        val p = pin ?: return
+        if (p.kind == "app") {
+            val i = context.packageManager.getLaunchIntentForPackage(p.pkg)
+            if (i != null) {
+                i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                try { context.startActivity(i) } catch (e: Exception) {}
+                // Out of the way while that app is in front; back when Prism is next on screen.
+                awayInApp = true
+                refresh(context)
+            } else {
+                haptic(context, "thud")
+            }
+        } else if (p.index == 1 || p.index == 3) {
+            // Logging food and weighing in are done right here, over whatever is open.
+            openSheet(context)
+        } else {
+            // No floating version of this one yet: it opens in Prism.
+            openAction(context, p.index)
+        }
+    }
+
+    /** Opens Prism at one of its own actions. */
+    private fun openAction(context: Context, index: Int) {
+        closeSheet(context)
+        val i = android.content.Intent(context, MainActivity::class.java)
+            .setAction(OPEN_ACTION)
+            .putExtra("index", index)
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+        try { context.startActivity(i) } catch (ex: Exception) {}
+    }
+
     /** Something changed: decide whether the lens should be there, and bring what is shown up to date. */
     fun refresh(context: Context) {
-        val want = active && !dismissed && !(foreground && onTrain) && android.provider.Settings.canDrawOverlays(context)
+        val want = mode() != 0 && android.provider.Settings.canDrawOverlays(context)
         if (!want) {
             remove(context)
             return
@@ -473,7 +573,7 @@ object RestBubble {
         view?.invalidate()
     }
 
-    /** Prism's workout page came on screen or left it. Going to it also brings a closed lens back. */
+    /** Prism's workout page came on screen or left it. Going to it brings back a lens that was closed. */
     fun page(context: Context, train: Boolean) {
         onTrain = train
         if (train) dismissed = false
@@ -559,7 +659,8 @@ object RestBubble {
         try {
             val d = context.resources.displayMetrics
             val dp = d.density
-            val host = SheetHost(context)
+            val p = pin
+            val host: Sheet = if (active || p == null) WorkoutSheet(context) else ActionSheet(context, p.index)
             val lp = android.view.WindowManager.LayoutParams(
                 minOf(d.widthPixels - (16 * dp).toInt(), (440 * dp).toInt()), android.view.WindowManager.LayoutParams.WRAP_CONTENT,
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -617,10 +718,17 @@ object RestBubble {
         return Reading(clock(since), -1f, false, false, false, "SINCE LAST SET")
     }
 
-    /** The cross at the bottom of the screen that the lens is dropped on to close it. */
+    /**
+     * The cross at the bottom of the screen that a lens is dropped on to close it. When the
+     * lens falls in, the cross takes its colour, swallows, jiggles the way the centre button
+     * does when the drop lands on it, sends out one ring, and sinks out of sight.
+     */
     private class Target(context: Context) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val dp = resources.displayMetrics.density
+        private val mix = android.animation.ArgbEvaluator()
+        private var gulp = -1f
+        private var taken = 0
         var held = false
             set(v) {
                 if (field != v) {
@@ -631,33 +739,79 @@ object RestBubble {
                 }
             }
 
+        fun swallow(color: Int, done: () -> Unit) {
+            taken = color
+            animate().cancel()
+            val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
+            a.duration = 900
+            a.interpolator = android.view.animation.LinearInterpolator()
+            a.addUpdateListener {
+                val t = it.animatedValue as Float
+                gulp = t
+                // It was swollen to hold the lens; it eases back to its own size as it swallows.
+                val base = 1.28f - 0.28f * Math.min(1f, t / 0.45f)
+                // Wider, taller, wider, dying away: a drop that has just landed.
+                val w = 0.24f * Math.exp(-5.5 * t).toFloat() * Math.cos(2 * Math.PI * 3.4 * t).toFloat()
+                scaleX = base * (1 + w)
+                scaleY = base * (1 - w)
+                // Then it sinks.
+                val s = ((t - 0.6f) / 0.4f).coerceIn(0f, 1f)
+                translationY = s * s * 150 * dp
+                alpha = 1f - s
+                invalidate()
+            }
+            a.addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    done()
+                }
+            })
+            a.start()
+        }
+
         override fun onDraw(canvas: android.graphics.Canvas) {
             val c = width / 2f
             val r = 40 * dp
+            val dark = if (held) 0xE6181A20.toInt() else 0xCC101216.toInt()
+            // While swallowing, the colour of what fell in shows through and then fades.
+            val colour = if (gulp >= 0f) (Math.max(0f, 1f - gulp / 0.5f)) else 0f
+            if (gulp >= 0f && gulp < 0.55f) {
+                // One ring, going out.
+                val k = gulp / 0.55f
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = 2.4f * dp * (1 - k)
+                paint.color = tint(taken, ((1 - k) * 170).toInt().coerceIn(0, 255))
+                canvas.drawCircle(c, c, r * (1f + 0.75f * k), paint)
+            }
             paint.style = android.graphics.Paint.Style.FILL
-            paint.color = if (held) 0xE6181A20.toInt() else 0xCC101216.toInt()
+            paint.color = if (colour > 0f) mix.evaluate(colour, dark, tint(taken, 0xF0)) as Int else dark
             canvas.drawCircle(c, c, r, paint)
             paint.style = android.graphics.Paint.Style.STROKE
             paint.strokeWidth = (if (held) 2.2f else 1.4f) * dp
-            paint.color = if (held) accent else 0x66FFFFFF
+            paint.color = if (held || gulp >= 0f) accent else 0x66FFFFFF
             canvas.drawCircle(c, c, r - paint.strokeWidth / 2, paint)
-            paint.strokeWidth = 2.6f * dp
-            paint.strokeCap = android.graphics.Paint.Cap.ROUND
-            paint.color = WHITE
-            val a = 9 * dp
-            canvas.drawLine(c - a, c - a, c + a, c + a, paint)
-            canvas.drawLine(c - a, c + a, c + a, c - a, paint)
+            // The cross closes as it swallows.
+            val a = 9 * dp * (if (gulp >= 0f) Math.max(0f, 1f - gulp / 0.25f) else 1f)
+            if (a > 0.5f) {
+                paint.strokeWidth = 2.6f * dp
+                paint.strokeCap = android.graphics.Paint.Cap.ROUND
+                paint.color = WHITE
+                canvas.drawLine(c - a, c - a, c + a, c + a, paint)
+                canvas.drawLine(c - a, c + a, c + a, c - a, paint)
+            }
         }
     }
 
     /**
      * The lens: a see-through tinted disc (what is underneath shows through it), a rim lit from
-     * above, a soft highlight across the top, and the timer.
+     * above and a soft highlight across the top. During a workout it carries the timer. For a
+     * pinned thing it carries that thing's picture and its colour, and nothing in it moves.
      */
     private class Dot(context: Context, val lp: android.view.WindowManager.LayoutParams) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val arc = android.graphics.RectF()
+        private val dst = android.graphics.RectF()
         private val clip = android.graphics.Path()
+        private val round = android.graphics.Path()
         private var body: android.graphics.Shader? = null
         private var bodyDone: android.graphics.Shader? = null
         private var rim: android.graphics.Shader? = null
@@ -665,6 +819,7 @@ object RestBubble {
         private var glow: android.graphics.Shader? = null
         private var shadow: android.graphics.Shader? = null
         private var shadersFor = 0
+        private var shadersPinned = false
         private var downX = 0f; private var downY = 0f; private var startX = 0; private var startY = 0
         private var dragged = false
         private var snapped = false
@@ -685,46 +840,55 @@ object RestBubble {
         }
 
         private fun shaders() {
+            val c = lensColor()
+            val pinned = !active
             val r = width / 2f
             val disc = r - 5 * dp
+            // A workout's lens is nearly clear, with a breath of the colour. A pinned thing's lens is
+            // filled with its own colour, like the blob it came from, but still lets the app show through.
             body = android.graphics.RadialGradient(
                 r - disc * 0.35f, r - disc * 0.45f, disc * 1.7f,
-                intArrayOf(shade(accent, 0.36f, 0x78), shade(accent, 0.18f, 0xB4), 0xD60A0B0E.toInt()),
+                if (pinned) intArrayOf(shade(c, 1.06f, 0xD2), shade(c, 0.82f, 0xDC), shade(c, 0.5f, 0xEA))
+                else intArrayOf(shade(c, 0.36f, 0x78), shade(c, 0.18f, 0xB4), 0xD60A0B0E.toInt()),
                 floatArrayOf(0f, 0.55f, 1f), android.graphics.Shader.TileMode.CLAMP,
             )
             bodyDone = android.graphics.RadialGradient(
                 r - disc * 0.35f, r - disc * 0.45f, disc * 1.7f,
-                intArrayOf(shade(accent, 1.18f, 0xFF), accent, shade(accent, 0.72f, 0xFF)),
+                intArrayOf(shade(c, 1.18f, 0xFF), c, shade(c, 0.72f, 0xFF)),
                 floatArrayOf(0f, 0.5f, 1f), android.graphics.Shader.TileMode.CLAMP,
             )
             rim = android.graphics.LinearGradient(0f, r - disc, 0f, r + disc, 0xB8FFFFFF.toInt(), 0x14FFFFFF, android.graphics.Shader.TileMode.CLAMP)
             shine = android.graphics.LinearGradient(0f, r - disc, 0f, r - disc * 0.1f, 0x34FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP)
             glow = android.graphics.RadialGradient(
                 r, r + disc * 0.95f, disc * 0.9f,
-                intArrayOf(shade(accent, 1.2f, 0x50), shade(accent, 1.0f, 0x00)), floatArrayOf(0f, 1f), android.graphics.Shader.TileMode.CLAMP,
+                intArrayOf(shade(c, 1.2f, 0x50), shade(c, 1.0f, 0x00)), floatArrayOf(0f, 1f), android.graphics.Shader.TileMode.CLAMP,
             )
             shadow = android.graphics.RadialGradient(r, r + 2 * dp, r, intArrayOf(0x55000000, 0x55000000, 0x00000000), floatArrayOf(0f, 0.78f, 1f), android.graphics.Shader.TileMode.CLAMP)
             clip.reset()
             clip.addCircle(r, r, disc, android.graphics.Path.Direction.CW)
-            shadersFor = accent
+            shadersFor = c
+            shadersPinned = pinned
         }
 
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) = shaders()
 
         override fun onDraw(canvas: android.graphics.Canvas) {
-            if (shadersFor != accent) shaders()
+            if (shadersFor != lensColor() || shadersPinned != !active) shaders()
+            val colour = lensColor()
             val w = width.toFloat(); val r = w / 2f
             val disc = r - 5 * dp
             val now = System.currentTimeMillis()
-            val t = reading(now)
+            // A workout shows its timer. A pinned thing shows its picture, and has no timer to read.
+            val t = if (active) reading(now) else null
+            val go = t != null && t.go
             paint.style = android.graphics.Paint.Style.FILL
             paint.shader = shadow
             canvas.drawCircle(r, r + 2 * dp, r, paint)
-            paint.shader = if (t.go) bodyDone else body
+            paint.shader = if (go) bodyDone else body
             canvas.drawCircle(r, r, disc, paint)
             canvas.save()
             canvas.clipPath(clip)
-            if (!t.go) {
+            if (!go) {
                 paint.shader = glow
                 canvas.drawCircle(r, r + disc * 0.95f, disc * 0.9f, paint)
             }
@@ -734,23 +898,23 @@ object RestBubble {
             paint.shader = null
             val inset = 5 * dp + 6.5f * dp
             arc.set(inset, inset, w - inset, w - inset)
-            if (t.resting) {
+            if (t != null && t.resting) {
                 // The ring: the rest running down, or filling up, with a bright bead at its head.
                 paint.style = android.graphics.Paint.Style.STROKE
                 paint.strokeWidth = 3.6f * dp
                 paint.strokeCap = android.graphics.Paint.Cap.ROUND
                 paint.color = 0x24FFFFFF
                 canvas.drawArc(arc, 0f, 360f, false, paint)
-                paint.color = accent
+                paint.color = colour
                 canvas.drawArc(arc, -90f, 360f * t.part, false, paint)
                 val a = Math.toRadians((-90f + 360f * t.part).toDouble())
                 val bx = r + (arc.width() / 2f) * Math.cos(a).toFloat(); val by = r + (arc.height() / 2f) * Math.sin(a).toFloat()
                 paint.style = android.graphics.Paint.Style.FILL
-                paint.color = shade(accent, 1.3f, 0x55)
+                paint.color = shade(colour, 1.3f, 0x55)
                 canvas.drawCircle(bx, by, 5.2f * dp, paint)
                 paint.color = WHITE
                 canvas.drawCircle(bx, by, 2.1f * dp, paint)
-            } else if (!t.go) {
+            } else if (t != null && !go) {
                 // No rest running: a quiet ring with one bead going round once a minute, like a second hand.
                 paint.style = android.graphics.Paint.Style.STROKE
                 paint.strokeWidth = 2.2f * dp
@@ -758,7 +922,7 @@ object RestBubble {
                 canvas.drawArc(arc, 0f, 360f, false, paint)
                 val a = Math.toRadians((-90.0 + 360.0 * (((now - sinceAt) % 60000L) / 60000.0)))
                 paint.style = android.graphics.Paint.Style.FILL
-                paint.color = accent
+                paint.color = colour
                 canvas.drawCircle(r + (arc.width() / 2f) * Math.cos(a).toFloat(), r + (arc.height() / 2f) * Math.sin(a).toFloat(), 2.6f * dp, paint)
             }
             paint.style = android.graphics.Paint.Style.STROKE
@@ -767,14 +931,41 @@ object RestBubble {
             canvas.drawCircle(r, r, disc - 0.65f * dp, paint)
             paint.shader = null
             paint.style = android.graphics.Paint.Style.FILL
-            paint.color = if (t.go) onAccent else if (t.urgent) shade(accent, 1.25f, 0xFF) else WHITE
+            if (t == null) {
+                // The pinned thing's picture: its white mark, or its own icon cut round.
+                val p = pin
+                val bmp = p?.icon
+                paint.color = WHITE
+                if (p != null && bmp != null) {
+                    val half = (if (p.picture) 23f else 19f) * dp
+                    dst.set(r - half, r - half, r + half, r + half)
+                    paint.isFilterBitmap = true
+                    if (p.picture) {
+                        round.reset()
+                        round.addCircle(r, r, half, android.graphics.Path.Direction.CW)
+                        canvas.save()
+                        canvas.clipPath(round)
+                        canvas.drawBitmap(bmp, null, dst, paint)
+                        canvas.restore()
+                    } else {
+                        canvas.drawBitmap(bmp, null, dst, paint)
+                    }
+                } else if (p != null && p.name.isNotEmpty()) {
+                    paint.textAlign = android.graphics.Paint.Align.CENTER
+                    paint.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+                    paint.textSize = 26 * dp
+                    canvas.drawText(p.name.substring(0, 1).uppercase(), r, r - (paint.descent() + paint.ascent()) / 2f, paint)
+                }
+                return // Nothing in it moves, so it is drawn once and left alone.
+            }
+            paint.color = if (go) onAccent else if (t.urgent) shade(colour, 1.25f, 0xFF) else WHITE
             paint.textAlign = android.graphics.Paint.Align.CENTER
             paint.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
             paint.fontFeatureSettings = "tnum"
-            paint.letterSpacing = if (t.go) 0.06f else -0.01f
-            paint.textSize = (if (t.go) 19f else 17.5f) * dp
+            paint.letterSpacing = if (go) 0.06f else -0.01f
+            paint.textSize = (if (go) 19f else 17.5f) * dp
             canvas.drawText(t.text, r, r - (paint.descent() + paint.ascent()) / 2f, paint)
-            if (t.go && buzzedFor != endsAt) {
+            if (go && buzzedFor != endsAt) {
                 buzzedFor = endsAt
                 haptic(context, "thud")
                 animate().scaleX(1.14f).scaleY(1.14f).setDuration(160).withEndAction {
@@ -782,7 +973,7 @@ object RestBubble {
                 }.start()
             }
             // Smooth while a rest is running; otherwise once a second is enough.
-            postInvalidateDelayed(if (t.resting) 66 else if (t.go) 250 else 1000)
+            postInvalidateDelayed(if (t.resting) 66 else if (go) 250 else 1000)
         }
 
         private fun place() {
@@ -816,17 +1007,29 @@ object RestBubble {
             }
         }
 
-        /** Dropped on the cross: it shrinks into it and is gone until the workout page is opened again. */
+        /**
+         * Dropped on the cross. The lens falls into it and the cross swallows it. A workout's lens
+         * then stays away until the workout page is opened; a pinned thing is unpinned.
+         */
         private fun close() {
-            haptic(context, "click")
+            haptic(context, "thud")
             val c = context
-            target?.animate()?.alpha(0f)?.setDuration(220)?.start()
-            animate().scaleX(0.2f).scaleY(0.2f).alpha(0f).setDuration(170).withEndAction {
-                dismissed = true
+            val wasWorkout = active
+            val colour = lensColor()
+            animate().scaleX(0f).scaleY(0f).setDuration(210).setInterpolator(android.view.animation.AccelerateInterpolator(1.6f)).start()
+            val finish: () -> Unit = {
+                if (wasWorkout) {
+                    dismissed = true
+                } else {
+                    pin = null
+                    channel?.invokeMethod("unpinned", null)
+                }
                 // It comes back at its usual place, not on the cross.
                 lensX = -1; lensY = -1
                 refresh(c)
-            }.start()
+            }
+            val t = target
+            if (t != null) t.swallow(colour, finish) else finish()
         }
 
         private fun throwIt(velX: Float, velY: Float) {
@@ -841,6 +1044,7 @@ object RestBubble {
             leaving = snapped || atCross
             if (leaving) {
                 tx = crossX() - width / 2f; ty = crossY() - height / 2f
+                target?.held = true
             } else {
                 tx = if (coastX + width / 2f < screen.widthPixels / 2f) margin else screen.widthPixels - width - margin
                 ty = coastY.coerceIn(48 * dp, screen.heightPixels - height - 48 * dp)
@@ -894,9 +1098,9 @@ object RestBubble {
                 android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
                     animate().scaleX(1f).scaleY(1f).setDuration(220).setInterpolator(android.view.animation.OvershootInterpolator(2.5f)).start()
                     if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !dragged) {
-                        // Tapped: the set opens, at the bottom of the screen.
                         haptic(context, "tick")
-                        openSheet(context)
+                        // Tapped. A workout opens its sheet; a pinned thing does what it is.
+                        if (active) openSheet(context) else tapPinned(context)
                     } else {
                         var velX = 0f; var velY = 0f
                         val t = tracker
@@ -940,7 +1144,7 @@ object RestBubble {
                 paint.style = android.graphics.Paint.Style.STROKE
                 paint.strokeWidth = stroke
                 paint.strokeCap = android.graphics.Paint.Cap.ROUND
-                paint.color = 0x22FFFFFF
+                paint.color = tint(ink(), 0x22)
                 canvas.drawArc(arc, 0f, 360f, false, paint)
                 paint.color = accent
                 if (t.resting) {
@@ -952,7 +1156,7 @@ object RestBubble {
                 }
             }
             paint.style = android.graphics.Paint.Style.FILL
-            paint.color = if (t.go) onAccent else if (t.urgent) shade(accent, 1.25f, 0xFF) else WHITE
+            paint.color = if (t.go) onAccent else if (t.urgent) shade(accent, 1.25f, 0xFF) else ink()
             paint.textAlign = android.graphics.Paint.Align.CENTER
             paint.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
             paint.fontFeatureSettings = "tnum"
@@ -1000,7 +1204,7 @@ object RestBubble {
             box.set(1 * dp, 1 * dp, w - 1 * dp, h - 1 * dp)
             paint.shader = null
             paint.style = android.graphics.Paint.Style.FILL
-            paint.color = if (dragging) tint(accent, 0x2E) else 0x14FFFFFF
+            paint.color = if (dragging) tint(accent, 0x2E) else tint(ink(), 0x14)
             canvas.drawRoundRect(box, h / 2, h / 2, paint)
             if (dragging) {
                 paint.style = android.graphics.Paint.Style.STROKE
@@ -1016,7 +1220,7 @@ object RestBubble {
             paint.style = android.graphics.Paint.Style.STROKE
             paint.strokeCap = android.graphics.Paint.Cap.ROUND
             paint.strokeWidth = (if (fineNow) 1.1f else 1.6f) * dp
-            val base = if (dragging) accent else GREY
+            val base = if (dragging) accent else muted()
             var k = -8
             while (k <= 8) {
                 val a = k * gap + turn
@@ -1040,11 +1244,11 @@ object RestBubble {
             val wu = paint.measureText(unit)
             val x0 = cx - (wn + 4 * dp + wu) / 2
             paint.textSize = 20 * dp
-            paint.color = WHITE
+            paint.color = ink()
             canvas.drawText(num, x0, baseline, paint)
             paint.textSize = 12 * dp
             paint.typeface = android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.NORMAL)
-            paint.color = GREY
+            paint.color = muted()
             canvas.drawText(unit, x0 + wn + 4 * dp, baseline, paint)
         }
 
@@ -1124,7 +1328,7 @@ object RestBubble {
             val r = 21 * dp
             paint.style = if (done) android.graphics.Paint.Style.FILL else android.graphics.Paint.Style.STROKE
             paint.strokeWidth = 2 * dp
-            paint.color = if (done) GREEN else 0x66FFFFFF
+            paint.color = if (done) GREEN else tint(ink(), 0x66)
             canvas.drawCircle(c, cy, r - 1 * dp, paint)
             check.reset()
             check.moveTo(c - 8 * dp, cy + 0.5f * dp)
@@ -1134,48 +1338,30 @@ object RestBubble {
             paint.strokeWidth = 2.6f * dp
             paint.strokeCap = android.graphics.Paint.Cap.ROUND
             paint.strokeJoin = android.graphics.Paint.Join.ROUND
-            paint.color = if (done) WHITE else 0x66FFFFFF
+            paint.color = if (done) 0xFFFFFFFF.toInt() else tint(ink(), 0x66)
             canvas.drawPath(check, paint)
         }
     }
 
     private class Row(val root: android.widget.LinearLayout, val name: android.widget.TextView, val kg: Dial, val reps: Dial, val tick: Tick)
 
-    /** The sheet: compact or full, at the bottom of the screen. */
-    private class SheetHost(context: Context) : android.widget.FrameLayout(context) {
-        private val dp = resources.displayMetrics.density
-        private fun px(v: Float) = (v * dp).toInt()
-        private val wrap = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
-        private val fill = android.widget.LinearLayout.LayoutParams.MATCH_PARENT
-
-        private val card = android.widget.LinearLayout(context)
-        private val grab = android.view.View(context)
-        private val header = android.widget.LinearLayout(context)
-        private val clock = Clock(context)
-        private val info = android.widget.LinearLayout(context)
-        private val what = label(context, 11.5f, GREY, true)
-        private val name = label(context, 18f, WHITE, true)
-        private val which = label(context, 12.5f, GREY, false)
-        private val controls = android.widget.LinearLayout(context)
-        private val add = label(context, 13f, WHITE, true)
-        private val skip = label(context, 13f, WHITE, true)
-        private val open = label(context, 13f, WHITE, true)
-        private val rows = android.widget.LinearLayout(context)
-        private val rowViews = ArrayList<Row>()
-        private val done = label(context, 16.5f, onAccent, true)
-
-        private var downX = 0f; private var downY = 0f
+    /**
+     * A sheet at the bottom of the screen. Every floating sheet is one of these, so they all
+     * arrive, lean, settle and leave the same way: a glass card with a grabber, which follows a
+     * downward pull, folds away on a touch outside, and tells its owner when it has been pulled
+     * down or up.
+     */
+    private abstract class Sheet(context: Context) : android.widget.FrameLayout(context) {
+        protected val dp = resources.displayMetrics.density
+        protected fun px(v: Float) = (v * dp).toInt()
+        protected val wrap = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        protected val fill = android.widget.LinearLayout.LayoutParams.MATCH_PARENT
+        protected val card = android.widget.LinearLayout(context)
+        private var downX = 0f
+        private var downY = 0f
         private var pulling = false
         private var tracker: android.view.VelocityTracker? = null
         private var closing = false
-
-        private val ticker = object : Runnable {
-            override fun run() {
-                if (sheet !== this@SheetHost) return
-                texts()
-                postDelayed(this, 250)
-            }
-        }
 
         init {
             // Room above the card, so it can lean a little past its place when pulled up.
@@ -1187,24 +1373,166 @@ object RestBubble {
             // Tinted, see-through glass with a lit edge: what is underneath shows through.
             val glass = android.graphics.drawable.GradientDrawable(
                 android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
-                intArrayOf(0xE01C1F27.toInt(), 0xEC0C0D11.toInt()),
+                if (light) intArrayOf(0xF2FFFDF8.toInt(), 0xEEF3EEE4.toInt()) else intArrayOf(0xE01C1F27.toInt(), 0xEC0C0D11.toInt()),
             )
             glass.cornerRadius = 32 * dp
-            glass.setStroke(px(1.2f), 0x40FFFFFF)
+            glass.setStroke(px(1.2f), if (light) 0x24000000 else 0x40FFFFFF)
             card.background = glass
             addView(card, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
-
-            // The grabber: swipe it, or tap it, to change size.
-            grab.background = rounded(0x55FFFFFF, 100 * dp)
+            // The grabber: pull it, or tap it.
+            val grab = android.view.View(context)
+            grab.background = rounded(tint(ink(), 0x55), 100 * dp)
             val grabBox = android.widget.FrameLayout(context)
             grabBox.addView(grab, LayoutParams(px(42f), px(5f), android.view.Gravity.CENTER))
-            grabBox.setOnClickListener {
-                haptic(context, "tick")
-                fullMode = !fullMode
-                applyMode(true)
-            }
+            grabBox.setOnClickListener { tappedGrabber() }
             card.addView(grabBox, android.widget.LinearLayout.LayoutParams(fill, px(26f)))
+        }
 
+        /** Pulled or flicked down. */
+        abstract fun pulledDown()
+
+        /** Pulled or flicked up. False if there is nothing taller for it to become. */
+        open fun pulledUp(): Boolean = false
+
+        open fun tappedGrabber() {}
+
+        /** Brings what is shown up to date. */
+        open fun sync() {}
+
+        /** It rises from the bottom edge. */
+        open fun arrive() {
+            card.translationY = 260 * dp
+            card.alpha = 0f
+            card.animate().translationY(0f).alpha(1f).setDuration(320).setInterpolator(android.view.animation.OvershootInterpolator(0.9f)).start()
+        }
+
+        /** It sinks away again. */
+        fun leave(then: () -> Unit) {
+            if (closing) return
+            closing = true
+            card.animate().translationY(card.height + 40 * dp).alpha(0f).setDuration(190)
+                .setInterpolator(android.view.animation.AccelerateInterpolator(1.4f)).withEndAction { then() }.start()
+        }
+
+        /** The small movement a sheet makes when it changes size. */
+        protected fun shift(grew: Boolean) {
+            card.alpha = 0.65f
+            card.translationY = if (grew) 30 * dp else -14 * dp
+            card.animate().alpha(1f).translationY(0f).setDuration(260).setInterpolator(android.view.animation.OvershootInterpolator(1.3f)).start()
+        }
+
+        private fun settle() {
+            card.animate().translationY(0f).setDuration(240).setInterpolator(android.view.animation.OvershootInterpolator(1.6f)).start()
+        }
+
+        override fun dispatchTouchEvent(e: android.view.MotionEvent): Boolean {
+            // A touch anywhere outside folds it away; the touch still reaches what is underneath.
+            if (e.actionMasked == android.view.MotionEvent.ACTION_OUTSIDE) {
+                closeSheet(context)
+                return true
+            }
+            return super.dispatchTouchEvent(e)
+        }
+
+        private fun watch(e: android.view.MotionEvent) {
+            val copy = android.view.MotionEvent.obtain(e)
+            copy.setLocation(e.rawX, e.rawY)
+            tracker?.addMovement(copy)
+            copy.recycle()
+        }
+
+        private fun startsPull(e: android.view.MotionEvent): Boolean {
+            val dx = e.rawX - downX
+            val dy = e.rawY - downY
+            return Math.abs(dy) > 10 * dp && Math.abs(dy) > Math.abs(dx) * 1.3f
+        }
+
+        // An up-or-down drag that starts anywhere on the sheet, even on a dial, moves the sheet.
+        override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean {
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    downX = e.rawX; downY = e.rawY; pulling = false
+                    tracker?.recycle()
+                    tracker = android.view.VelocityTracker.obtain()
+                    watch(e)
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    watch(e)
+                    if (!pulling && startsPull(e)) {
+                        pulling = true
+                        return true
+                    }
+                }
+            }
+            return false
+        }
+
+        override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    watch(e)
+                    if (!pulling && startsPull(e)) pulling = true
+                    if (pulling) {
+                        val dy = e.rawY - downY
+                        // Down, it follows the finger. Up, it only leans.
+                        card.translationY = if (dy > 0) dy else -Math.min(16 * dp, -dy * 0.16f)
+                    }
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    watch(e)
+                    var vy = 0f
+                    val t = tracker
+                    if (t != null) {
+                        t.computeCurrentVelocity(1000)
+                        vy = t.yVelocity
+                    }
+                    tracker?.recycle()
+                    tracker = null
+                    if (pulling) {
+                        val dy = e.rawY - downY
+                        when {
+                            dy > 70 * dp || vy > 1100 -> {
+                                haptic(context, "tick")
+                                pulledDown()
+                            }
+                            dy < -36 * dp || vy < -1100 -> {
+                                if (pulledUp()) haptic(context, "tick") else settle()
+                            }
+                            else -> settle()
+                        }
+                    }
+                    pulling = false
+                }
+            }
+            return true
+        }
+    }
+
+    /** The workout's sheet, in two sizes: the current set, or the whole exercise with a large timer. */
+    private class WorkoutSheet(context: Context) : Sheet(context) {
+        private val header = android.widget.LinearLayout(context)
+        private val clock = Clock(context)
+        private val info = android.widget.LinearLayout(context)
+        private val what = label(context, 11.5f, muted(), true)
+        private val name = label(context, 18f, ink(), true)
+        private val which = label(context, 12.5f, muted(), false)
+        private val controls = android.widget.LinearLayout(context)
+        private val add = label(context, 13f, ink(), true)
+        private val skip = label(context, 13f, ink(), true)
+        private val open = label(context, 13f, ink(), true)
+        private val rows = android.widget.LinearLayout(context)
+        private val rowViews = ArrayList<Row>()
+        private val done = label(context, 16.5f, onAccent, true)
+
+        private val ticker = object : Runnable {
+            override fun run() {
+                if (sheet !== this@WorkoutSheet) return
+                texts()
+                postDelayed(this, 250)
+            }
+        }
+
+        init {
             // The timer. A tap on it switches between counting down and counting up.
             val switchMode = android.view.View.OnClickListener {
                 haptic(context, "click")
@@ -1231,7 +1559,7 @@ object RestBubble {
             fun pill(t: android.widget.TextView, text: String, click: Boolean, action: () -> Unit) {
                 t.text = text
                 t.setPadding(px(14f), px(10f), px(14f), px(10f))
-                t.background = rounded(0x24FFFFFF, 100 * dp)
+                t.background = rounded(tint(ink(), 0x1F), 100 * dp)
                 t.setOnClickListener {
                     if (click) haptic(context, "tick")
                     action()
@@ -1260,15 +1588,45 @@ object RestBubble {
             done.setOnClickListener {
                 // No click here: Prism logs the set and gives the same click it gives on its own page.
                 if (current in sets.indices) channel?.invokeMethod("toggle", current)
-                // In the small sheet, logging is the whole errand: it folds away again.
-                if (!fullMode) closeSheet(context)
+                // Logging is the errand: the sheet folds away, in either size, and the lens shows the rest.
+                closeSheet(context)
             }
             val doneLp = android.widget.LinearLayout.LayoutParams(fill, px(56f))
             doneLp.topMargin = px(10f)
             card.addView(done, doneLp)
 
-            applyMode(false)
-            sync()
+            applyMode()
+        }
+
+        override fun arrive() {
+            super.arrive()
+            postDelayed(ticker, 250)
+        }
+
+        // Down: the tall sheet becomes the small one; the small one becomes the lens.
+        override fun pulledDown() {
+            if (fullMode) {
+                fullMode = false
+                applyMode()
+                shift(false)
+            } else {
+                closeSheet(context)
+            }
+        }
+
+        override fun pulledUp(): Boolean {
+            if (fullMode) return false
+            fullMode = true
+            applyMode()
+            shift(true)
+            return true
+        }
+
+        override fun tappedGrabber() {
+            haptic(context, "tick")
+            fullMode = !fullMode
+            applyMode()
+            shift(fullMode)
         }
 
         private fun buildRows() {
@@ -1277,7 +1635,7 @@ object RestBubble {
             for (i in sets.indices) {
                 val root = android.widget.LinearLayout(context)
                 root.gravity = android.view.Gravity.CENTER_VERTICAL
-                val n = label(context, 15f, WHITE, true)
+                val n = label(context, 15f, ink(), true)
                 n.gravity = android.view.Gravity.CENTER
                 val kg = Dial(context, "kg", 1.0, 0.5, 0.0, 400.0)
                 val reps = Dial(context, "reps", 1.0, 1.0, 0.0, 60.0)
@@ -1313,7 +1671,7 @@ object RestBubble {
         }
 
         /** Lays the same parts out for the small sheet or the tall one. */
-        private fun applyMode(animated: Boolean) {
+        private fun applyMode() {
             val full = fullMode
             header.orientation = if (full) android.widget.LinearLayout.VERTICAL else android.widget.LinearLayout.HORIZONTAL
             header.gravity = if (full) android.view.Gravity.CENTER_HORIZONTAL else android.view.Gravity.CENTER_VERTICAL
@@ -1332,11 +1690,6 @@ object RestBubble {
             if (full) ctlLp.topMargin = px(12f)
             controls.layoutParams = ctlLp
             sync()
-            if (animated) {
-                card.alpha = 0.65f
-                card.translationY = if (full) 30 * dp else -14 * dp
-                card.animate().alpha(1f).translationY(0f).setDuration(260).setInterpolator(android.view.animation.OvershootInterpolator(1.3f)).start()
-            }
         }
 
         private fun texts() {
@@ -1344,10 +1697,10 @@ object RestBubble {
             // The tall sheet has room to say what a tap does; the small one shows a pair of arrows.
             what.text = when {
                 !t.resting -> t.what
-                fullMode -> t.what + (if (countUp) "  \u00B7  TAP TO COUNT DOWN" else "  \u00B7  TAP TO COUNT UP")
-                else -> t.what + "  \u21C4"
+                fullMode -> t.what + (if (countUp) "  ·  TAP TO COUNT DOWN" else "  ·  TAP TO COUNT UP")
+                else -> t.what + "  ⇄"
             }
-            what.setTextColor(if (t.resting) accent else GREY)
+            what.setTextColor(if (t.resting) accent else muted())
             val show = if (fullMode && t.resting) android.view.View.VISIBLE else android.view.View.GONE
             if (add.visibility != show) {
                 add.visibility = show
@@ -1355,8 +1708,7 @@ object RestBubble {
             }
         }
 
-        /** Brings everything shown up to date with the workout. */
-        fun sync() {
+        override fun sync() {
             if (rowViews.size != sets.size) buildRows()
             val full = fullMode
             name.text = title
@@ -1372,7 +1724,7 @@ object RestBubble {
                 r.kg.alpha = if (s.done) 0.5f else 1f
                 r.reps.alpha = if (s.done) 0.5f else 1f
                 r.name.text = if (i == 0) "W" else i.toString()
-                r.name.setTextColor(if (i == 0) GREY else WHITE)
+                r.name.setTextColor(if (i == 0) muted() else ink())
                 r.root.visibility = if (full || i == current) android.view.View.VISIBLE else android.view.View.GONE
                 r.name.visibility = if (full) android.view.View.VISIBLE else android.view.View.GONE
                 r.tick.visibility = if (full) android.view.View.VISIBLE else android.view.View.GONE
@@ -1380,8 +1732,8 @@ object RestBubble {
                     r.root.setPadding(px(6f), px(6f), px(4f), px(6f))
                     r.root.background = when {
                         s.done -> rounded(tint(GREEN, 0x1F), 24 * dp)
-                        i == current -> rounded(0x14FFFFFF, 24 * dp, tint(accent, 0x99), px(1.5f))
-                        else -> rounded(0x0AFFFFFF, 24 * dp)
+                        i == current -> rounded(tint(ink(), 0x12), 24 * dp, tint(accent, 0x99), px(1.5f))
+                        else -> rounded(tint(ink(), 0x0A), 24 * dp)
                     }
                 } else {
                     r.root.setPadding(0, 0, 0, 0)
@@ -1394,118 +1746,101 @@ object RestBubble {
             texts()
             clock.invalidate()
         }
+    }
 
-        /** It rises from the bottom edge. */
-        fun arrive() {
-            card.translationY = 260 * dp
-            card.alpha = 0f
-            card.animate().translationY(0f).alpha(1f).setDuration(320).setInterpolator(android.view.animation.OvershootInterpolator(0.9f)).start()
-            postDelayed(ticker, 250)
-        }
+    /**
+     * The sheet of a pinned action: the thing itself, done in place, over whatever app is open.
+     * Nothing in it runs until it is opened, and nothing is left running when it closes.
+     */
+    private class ActionSheet(context: Context, val index: Int) : Sheet(context) {
+        private val title = label(context, 19f, ink(), true)
+        private val sub = label(context, 12.5f, muted(), false)
+        private val save = label(context, 16.5f, onAccent, true)
+        private var dial: Dial? = null
 
-        /** It sinks away again. */
-        fun leave(then: () -> Unit) {
-            if (closing) return
-            closing = true
-            card.animate().translationY(card.height + 40 * dp).alpha(0f).setDuration(190)
-                .setInterpolator(android.view.animation.AccelerateInterpolator(1.4f)).withEndAction { then() }.start()
-        }
-
-        private fun settle() {
-            card.animate().translationY(0f).setDuration(240).setInterpolator(android.view.animation.OvershootInterpolator(1.6f)).start()
-        }
-
-        override fun dispatchTouchEvent(e: android.view.MotionEvent): Boolean {
-            // A touch anywhere outside folds it away; the touch still reaches the app underneath.
-            if (e.actionMasked == android.view.MotionEvent.ACTION_OUTSIDE) {
-                closeSheet(context)
-                return true
+        init {
+            val head = android.widget.LinearLayout(context)
+            head.gravity = android.view.Gravity.CENTER_VERTICAL
+            val names = android.widget.LinearLayout(context)
+            names.orientation = android.widget.LinearLayout.VERTICAL
+            names.addView(title)
+            names.addView(sub, android.widget.LinearLayout.LayoutParams(wrap, wrap).also { it.topMargin = px(3f) })
+            head.addView(names, android.widget.LinearLayout.LayoutParams(0, wrap, 1f))
+            val open = label(context, 13f, ink(), true)
+            open.text = "Open Prism"
+            open.setPadding(px(14f), px(10f), px(14f), px(10f))
+            open.background = rounded(tint(ink(), 0x1F), 100 * dp)
+            open.setOnClickListener {
+                haptic(context, "tick")
+                openAction(context, index)
             }
-            return super.dispatchTouchEvent(e)
-        }
+            head.addView(open)
+            card.addView(head, android.widget.LinearLayout.LayoutParams(fill, wrap))
 
-        private fun watch(e: android.view.MotionEvent) {
-            val copy = android.view.MotionEvent.obtain(e)
-            copy.setLocation(e.rawX, e.rawY)
-            tracker?.addMovement(copy)
-            copy.recycle()
-        }
-
-        private fun startsPull(e: android.view.MotionEvent): Boolean {
-            val dx = e.rawX - downX; val dy = e.rawY - downY
-            return Math.abs(dy) > 10 * dp && Math.abs(dy) > Math.abs(dx) * 1.3f
-        }
-
-        // An up-or-down drag that starts anywhere on the sheet, even on a dial, moves the sheet.
-        override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean {
-            when (e.actionMasked) {
-                android.view.MotionEvent.ACTION_DOWN -> {
-                    downX = e.rawX; downY = e.rawY; pulling = false
-                    tracker?.recycle()
-                    tracker = android.view.VelocityTracker.obtain()
-                    watch(e)
+            if (index == 3) {
+                // Weigh-in: one wide dial in tenths of a kilo, and a button that says what it will save.
+                title.text = "Weigh-in"
+                val d = Dial(context, "kg", 0.1, 0.1, 20.0, 300.0)
+                d.value = Math.round(weight * 10) / 10.0
+                d.onChange = { v -> save.text = "Save " + number(v) + " kg" }
+                dial = d
+                card.addView(d, android.widget.LinearLayout.LayoutParams(fill, px(72f)).also { it.topMargin = px(14f) })
+                save.gravity = android.view.Gravity.CENTER
+                save.background = rounded(accent, 100 * dp)
+                save.setOnClickListener {
+                    // Prism saves it and gives the click.
+                    channel?.invokeMethod("weigh", d.value)
+                    closeSheet(context)
                 }
-                android.view.MotionEvent.ACTION_MOVE -> {
-                    watch(e)
-                    if (!pulling && startsPull(e)) {
-                        pulling = true
-                        return true
+                card.addView(save, android.widget.LinearLayout.LayoutParams(fill, px(56f)).also { it.topMargin = px(12f) })
+            } else {
+                // Log food: the usual meals, one tap each.
+                title.text = "Log food"
+                for (m in meals) {
+                    val row = android.widget.LinearLayout(context)
+                    row.gravity = android.view.Gravity.CENTER_VERTICAL
+                    row.background = rounded(tint(ink(), 0x10), 22 * dp)
+                    row.setPadding(px(16f), px(9f), px(8f), px(9f))
+                    val col = android.widget.LinearLayout(context)
+                    col.orientation = android.widget.LinearLayout.VERTICAL
+                    val n = label(context, 15.5f, ink(), true)
+                    n.text = m.name
+                    val w = label(context, 12.5f, muted(), false)
+                    w.text = m.what
+                    col.addView(n)
+                    col.addView(w, android.widget.LinearLayout.LayoutParams(wrap, wrap).also { it.topMargin = px(2f) })
+                    row.addView(col, android.widget.LinearLayout.LayoutParams(0, wrap, 1f))
+                    val k = label(context, 14f, ink(), true)
+                    k.text = m.kcal.toString() + " kcal"
+                    row.addView(k, android.widget.LinearLayout.LayoutParams(wrap, wrap).also { it.rightMargin = px(10f) })
+                    val plus = label(context, 22f, onAccent, true)
+                    plus.text = "+"
+                    plus.gravity = android.view.Gravity.CENTER
+                    plus.background = rounded(accent, 100 * dp)
+                    plus.setOnClickListener {
+                        // Prism adds it and gives the click.
+                        channel?.invokeMethod("food", m.index)
                     }
-                }
-            }
-            return false
-        }
-
-        override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
-            when (e.actionMasked) {
-                android.view.MotionEvent.ACTION_MOVE -> {
-                    watch(e)
-                    if (!pulling && startsPull(e)) pulling = true
-                    if (pulling) {
-                        val dy = e.rawY - downY
-                        // Down, it follows the finger. Up, it only leans: there is nowhere for it to go but taller.
-                        card.translationY = if (dy > 0) dy else -Math.min(16 * dp, -dy * 0.16f)
-                    }
-                }
-                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
-                    watch(e)
-                    var vy = 0f
-                    val t = tracker
-                    if (t != null) {
-                        t.computeCurrentVelocity(1000)
-                        vy = t.yVelocity
-                    }
-                    tracker?.recycle()
-                    tracker = null
-                    if (pulling) {
-                        val dy = e.rawY - downY
-                        when {
-                            dy > 70 * dp || vy > 1100 -> {
-                                // Down: the tall sheet becomes the small one; the small one becomes the lens.
-                                haptic(context, "tick")
-                                if (fullMode) {
-                                    fullMode = false
-                                    applyMode(true)
-                                } else {
-                                    closeSheet(context)
-                                }
-                            }
-                            dy < -36 * dp || vy < -1100 -> {
-                                if (!fullMode) {
-                                    haptic(context, "tick")
-                                    fullMode = true
-                                    applyMode(true)
-                                } else {
-                                    settle()
-                                }
-                            }
-                            else -> settle()
-                        }
-                    }
-                    pulling = false
+                    row.addView(plus, android.widget.LinearLayout.LayoutParams(px(46f), px(46f)))
+                    card.addView(row, android.widget.LinearLayout.LayoutParams(fill, wrap).also { it.topMargin = px(8f) })
                 }
             }
-            return true
+            sync()
+        }
+
+        override fun pulledDown() {
+            closeSheet(context)
+        }
+
+        override fun sync() {
+            val d = dial
+            if (d != null) {
+                sub.text = "Now " + number(weight) + " kg"
+                save.setTextColor(onAccent)
+                save.text = "Save " + number(d.value) + " kg"
+            } else {
+                sub.text = if (kcalLeft >= 0) kcalLeft.toString() + " kcal left today" else (-kcalLeft).toString() + " kcal over today"
+            }
         }
     }
 }

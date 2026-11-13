@@ -17,12 +17,24 @@ class RestBubble with WidgetsBindingObserver {
   void start() {
     WidgetsBinding.instance.addObserver(this);
     try {
+      final String pin = _pinFile.readAsStringSync().trim();
+      pinned.value = pin.isEmpty ? null : pin;
+    } catch (_) {
+      // Nothing pinned.
+    }
+    try {
       countUp.value = _modeFile.readAsStringSync().trim() == 'up';
     } catch (_) {
       // Never chosen: a countdown.
     }
     refresh();
   }
+
+  /// Called when the phone changes between light and dark, for a theme that follows it.
+  VoidCallback? onTheme;
+
+  @override
+  void didChangePlatformBrightness() => onTheme?.call();
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -71,6 +83,42 @@ class RestBubble with WidgetsBindingObserver {
     }
   }
 
+  /// What is pinned from the blob menu to float over the phone: 'action:3', 'app:com.whatsapp', or null.
+  final ValueNotifier<String?> pinned = ValueNotifier<String?>(null);
+
+  File get _pinFile {
+    final Directory files = Directory(
+      '${Directory.systemTemp.parent.path}/files',
+    );
+    return File(
+      '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_pin',
+    );
+  }
+
+  void setPin(String? key) {
+    pinned.value = key;
+    try {
+      _pinFile.writeAsStringSync(key ?? '');
+    } catch (_) {
+      // Not saved: nothing is pinned next time.
+    }
+  }
+
+  /// Tells Android what is pinned (its name, colour and picture), or null for nothing.
+  void tellPin(Map<String, Object>? pin) {
+    _device.invokeMethod<void>('pin', pin).catchError((Object _) {});
+  }
+
+  /// Tells Android the numbers the pinned sheets show.
+  void tellData(Map<String, Object> data) {
+    _device.invokeMethod<void>('pinData', data).catchError((Object _) {});
+  }
+
+  /// What a pinned sheet asks for. Set by the shell.
+  void Function(double kg)? onWeigh;
+  void Function(int meal)? onFood;
+  void Function(int action)? onAction;
+
   /// What the floating sheet asks for. Set by the workout page.
   void Function(int set)? onToggle;
   void Function(int set, double kg, int reps)? onValue;
@@ -94,6 +142,14 @@ class RestBubble with WidgetsBindingObserver {
         onRest?.call(false);
       case 'timerMode':
         toggleMode();
+      case 'unpinned':
+        setPin(null);
+      case 'weigh':
+        onWeigh?.call((call.arguments as num).toDouble());
+      case 'food':
+        onFood?.call((call.arguments as num).toInt());
+      case 'action':
+        onAction?.call((call.arguments as num).toInt());
       default:
         return false;
     }

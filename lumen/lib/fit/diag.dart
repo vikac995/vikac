@@ -104,7 +104,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 57';
+  static const String build = 'Prism build 58';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';

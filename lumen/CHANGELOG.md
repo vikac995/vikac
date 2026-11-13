@@ -1,5 +1,46 @@
 # Lumen changelog
 
+## Prism, build 58 (14 November 2026)
+
+**File:** `releases/prism-build-58.apk`
+
+**Fixes from your last recording (the floating workout behaving unpredictably)**
+
+- **The lens no longer disappears on the workout page.** That was my decision in build 56 and it was wrong: it made the lens come and go as you changed tabs. It is now on every page of Prism and over every app, in the same place.
+- **"Set done" always folds the sheet away.** Before, it folded the small sheet but left the tall one open. One rule now: logging a set closes the sheet and the lens shows the rest.
+- **The sheets follow Prism's theme.** Your Prism was in light mode and the floating sheet was dark. Sheets are now light in light mode and dark in dark mode, with your colour. The lens itself stays dark glass, so it reads over any app.
+
+**New: pin something from the blob menu so it floats over the phone**
+
+- **Long-press a blob** (centre button, then hold one of the icons). It gets a bright ring: that one is pinned. Long-press it again to let it go. The first time, Prism takes you to Android's "Appear on top" screen if that is not yet allowed.
+- **The pinned thing becomes a lens** in its own colour with its own picture, floating over Prism and over other apps, with the same dragging, throwing and closing as the workout lens. Nothing in it moves or runs while it is just floating.
+- **Tap it and it does what it is:**
+  - **Weigh-in:** a sheet opens in place, over whatever app you are in, with one wide dial in tenths of a kilo and "Save". Same sheet behaviour as the workout: pull down or touch outside to close.
+  - **Log food:** a sheet opens in place with the usual meals, one tap each.
+  - **An app** (when the blobs show apps): it opens that app and the lens gets out of the way. It is back the next time Prism is on screen.
+  - **Workout, Scan, Timer:** these open in Prism for now (see below).
+- **One lens at a time.** During a workout the workout has the lens; the pinned one returns when the workout is done.
+- **To unpin:** drop the lens on the cross, or long-press the blob again.
+
+**A better way to close a lens.** Drop it on the cross and it falls in. The cross takes the lens's colour, swallows, jiggles wider-taller-wider the way the centre button does when the drop lands on it, sends out one ring, and sinks off the bottom of the screen, with one thud. A flick down the middle does the same.
+
+**All sheets are now one piece of code,** so the workout sheet and the pinned sheets arrive, lean, settle and leave identically.
+
+**What is not possible, and what is not built yet**
+- **Running Instagram (or any other app) inside a floating window is not possible** for a normal app. Android only lets the system itself do that, which is how Samsung's own pop-up view works. So an app pin is a shortcut, as you suggested for the fallback.
+- **An app pin comes back when you return to Prism,** not when you go straight from that app to another one. Prism cannot see which app is in front without a further permission ("usage access") and regular checking, which costs battery. Say if you want that trade.
+- **Scan does not float yet.** Scanning in Prism is still a placeholder, so there is nothing real to float. A floating scanner is possible, but it is its own piece of work: the camera permission, a notification that Android requires while a camera runs over other apps, a barcode reader, and somewhere to look the code up. I would build it as the next step if you want it.
+
+**What to look for**
+1. The lens during a workout: same place on every Prism page, the workout page included.
+2. Long-press a blob: ring, and a lens in that blob's colour when you leave Prism (and inside Prism).
+3. Pin Weigh-in, open another app, tap the lens: the dial sheet should open over that app. Save, and check the weight in Prism.
+4. Drop a lens on the cross and watch the close. Is it satisfying? Too long, too short?
+5. In light mode, is the sheet light now?
+
+**Checked:** it all compiles, the Android code included. In my preview, long-pressing a blob gives it the ring and the pin is remembered.
+**Not checked:** everything Android-side in this build: the pinned lens and its picture, the pinned sheets, the swallow animation, light sheets, the lens on the workout page. The parts from builds 56 and 57 that your recording showed working (lens, small sheet, dials, physics) have been restructured, so they could have picked up new faults. A recording is the fastest way for me to see them.
+
 ## Prism, build 57 (14 November 2026)
 
 **File:** `releases/prism-build-57.apk`

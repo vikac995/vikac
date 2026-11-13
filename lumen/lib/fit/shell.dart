@@ -70,7 +70,134 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   void _blobsChanged() {
     if (mounted) {
       setState(() {});
+      // The apps' pictures have arrived or the menu changed: the pinned lens may need its picture.
+      _sendPin();
     }
+  }
+
+  void _pinChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  /// The name a blob is pinned under.
+  String _pinKey(int i) =>
+      _appBlobs ? 'app:${BlobApps.instance.apps[i].package}' : 'action:$i';
+
+  /// A long press on a blob pins it: it then floats over the whole phone as a lens.
+  /// A long press on the pinned one lets it go again.
+  void _blobHold(int i) {
+    final String key = _pinKey(i);
+    final bool was = RestBubble.instance.pinned.value == key;
+    RestBubble.instance.setPin(was ? null : key);
+    Haptics.thud();
+    Diag.instance.event(was ? 'blob unpinned' : 'blob pinned');
+    _sendPin();
+    if (!was && !RestBubble.instance.allowed.value) {
+      // It cannot float until Android allows it; take the person to where that is granted.
+      RestBubble.instance.ask();
+    }
+  }
+
+  void _sendPinData() {
+    // The colours as they are now, not as the last drawn frame had them: this also runs at the
+    // moment the theme or the look changes, before anything has been redrawn.
+    final bool dark = switch (settings.themeMode) {
+      ThemeMode.dark => true,
+      ThemeMode.light => false,
+      _ =>
+        WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+            Brightness.dark,
+    };
+    final LumenColors now = dark ? Look.instance.night : Look.instance.day;
+    RestBubble.instance.tellData(<String, Object>{
+      'light': !dark,
+      'haptics': settings.haptics,
+      'accent': now.accent.toARGB32(),
+      'onAccent': now.onAccent.toARGB32(),
+      'weight': fit.weight,
+      'left': fit.left,
+      'meals': <Map<String, Object>>[
+        for (final int m in const <int>[1, 3, 0])
+          <String, Object>{
+            'i': m,
+            'name': FitState.meals[m].$1,
+            'what': FitState.meals[m].$2,
+            'kcal': FitState.meals[m].$3,
+          },
+      ],
+    });
+  }
+
+  /// One of Prism's own icons as a white picture, for the lens to show.
+  static Future<Uint8List?> _iconPng(IconData icon) async {
+    final ui.PictureRecorder rec = ui.PictureRecorder();
+    final TextPainter tp = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+          fontSize: 104,
+          color: Colors.white,
+          height: 1,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    tp.paint(Canvas(rec), Offset((120 - tp.width) / 2, (120 - tp.height) / 2));
+    final ui.Image image = await rec.endRecording().toImage(120, 120);
+    return (await image.toByteData(format: ui.ImageByteFormat.png))?.buffer
+        .asUint8List();
+  }
+
+  /// Tells Android what is pinned, with its name, colour and picture.
+  Future<void> _sendPin() async {
+    final String? key = RestBubble.instance.pinned.value;
+    if (key == null) {
+      RestBubble.instance.tellPin(null);
+      return;
+    }
+    final String what = key.substring(key.indexOf(':') + 1);
+    String name = '', package = '';
+    Color color = const Color(0xFF5A6373);
+    int index = 0;
+    Uint8List? icon;
+    bool picture = false;
+    if (key.startsWith('action:')) {
+      index = int.tryParse(what) ?? 0;
+      name = _actions[index].$1;
+      color = _actions[index].$3;
+      icon = await _iconPng(_actions[index].$2);
+    } else {
+      package = what;
+      final Iterable<BlobApp> found = BlobApps.instance.apps.where(
+        (BlobApp a) => a.package == what,
+      );
+      if (found.isEmpty) {
+        return; // Its app has not been found yet; this runs again when it has.
+      }
+      final BlobApp a = found.first;
+      name = a.name;
+      color = a.color;
+      final ui.Image? image = a.glyph ?? a.picture ?? a.icon;
+      picture = a.glyph == null;
+      if (image != null) {
+        icon = (await image.toByteData(format: ui.ImageByteFormat.png))?.buffer
+            .asUint8List();
+      }
+    }
+    RestBubble.instance.tellPin(<String, Object>{
+      'key': key,
+      'kind': key.startsWith('action:') ? 'action' : 'app',
+      'index': index,
+      'package': package,
+      'name': name,
+      'color': color.toARGB32(),
+      'picture': picture,
+      'icon': ?icon,
+    });
   }
 
   Widget _blobFace(int i) {
@@ -185,6 +312,35 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     super.initState();
     Diag.instance.finished.addListener(_showReport);
     Diag.instance.autoScript = _robot;
+    // The pinned thing: what its sheets ask of Prism, and keeping Android told.
+    RestBubble.instance
+      ..onWeigh = (double kg) {
+        fit.weigh((kg * 10).round() / 10);
+        Haptics.settle();
+      }
+      ..onFood = (int meal) {
+        fit.addMeal(meal, 1);
+        Haptics.settle();
+      }
+      ..onAction = (int action) {
+        if (!mounted) {
+          return;
+        }
+        if (_drawerOpen) {
+          _setDrawer(false);
+        }
+        _run(action);
+      }
+      ..pinned.addListener(_pinChanged);
+    fit.addListener(_sendPinData);
+    // The sheets follow Prism's colours, so Android is told whenever those change.
+    Look.instance.addListener(_sendPinData);
+    settings.addListener(_sendPinData);
+    RestBubble.instance.onTheme = _sendPinData;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sendPinData();
+      _sendPin();
+    });
     // Pressing the home button while Prism is the home screen: everything closes and Home shows.
     const MethodChannel('lumen/device')
         .setMethodCallHandler((MethodCall call) async {
@@ -1300,6 +1456,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () => _blobTap(i),
+                          onLongPress: () => _blobHold(i),
                           child: Column(
                             children: <Widget>[
                               Transform(
@@ -1330,9 +1487,22 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                     ),
                                     shape: CircleBorder(
                                       side: BorderSide(
+                                        // The pinned blob wears a bright ring: this is the one that floats.
                                         color: Colors.white.withValues(
-                                          alpha: 0.2,
+                                          alpha:
+                                              RestBubble
+                                                      .instance
+                                                      .pinned
+                                                      .value ==
+                                                  _pinKey(i)
+                                              ? 0.95
+                                              : 0.2,
                                         ),
+                                        width:
+                                            RestBubble.instance.pinned.value ==
+                                                _pinKey(i)
+                                            ? 2.5
+                                            : 1,
                                       ),
                                     ),
                                   ),

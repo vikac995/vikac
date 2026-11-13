@@ -157,13 +157,9 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                   .clamp(0, 86400);
           if (_restLeft == 0) {
             _restEnds = null;
-            // One buzz when a rest ends, never two. Where the floating lens is on screen it gives
-            // it; on this page, where the lens is not, the page does.
-            final bool hereAndNow =
-                Diag.instance.page == 'train' &&
-                WidgetsBinding.instance.lifecycleState ==
-                    AppLifecycleState.resumed;
-            if (hereAndNow || !RestBubble.instance.allowed.value) {
+            // One buzz when a rest ends, never two. The floating lens gives it wherever it is on
+            // screen, which is everywhere; this page gives it only if the lens is not allowed to float.
+            if (!RestBubble.instance.allowed.value) {
               Haptics.thud();
             }
             _rest.animateTo(0, spring: Motions.spatial);
