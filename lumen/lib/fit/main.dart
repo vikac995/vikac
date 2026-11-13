@@ -9,6 +9,7 @@ import '../core/settings.dart';
 import '../core/theme.dart';
 import '../widgets/fps_meter.dart';
 import '../core/haptics.dart';
+import 'common.dart';
 import 'diag.dart';
 import 'journal.dart';
 import 'shell.dart';
@@ -55,8 +56,8 @@ class PrismApp extends StatelessWidget {
         scrollBehavior: const MaterialScrollBehavior().copyWith(
           dragDevices: PointerDeviceKind.values.toSet(),
         ),
-        theme: lumenTheme(LumenColors.day),
-        darkTheme: lumenTheme(LumenColors.night),
+        theme: lumenTheme(prismDay),
+        darkTheme: lumenTheme(prismNight),
         themeMode: settings.themeMode,
         home: const Shell(),
         builder: (BuildContext context, Widget? child) {

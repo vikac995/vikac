@@ -1,5 +1,28 @@
 # Lumen changelog
 
+## Prism, build 46 (13 November 2026)
+
+**File:** `releases/prism-build-46.apk`
+
+**A new look, after your reference pictures: amber, glowing orbs, and glass that has something to show.**
+
+- **The accent is amber** (between orange and yellow), where it was coral. Coral was close to another product's colour; amber is Prism's own. Text and icons on amber are near-black, because white on amber is hard to read.
+- **The background is three glowing orbs on near-black**, orange deepening to yellow like lit spheres: a large one low on the left, one off the top right corner, a small one low on the right. They replace the faint coloured washes.
+- **They are placed for the glass.** The large orb sits behind the bar, so the bar and the small lens that rides in it bend and blur real colour. The carried lens magnifies them when it passes over. The corner orb stays clear of titles and of the numbers you read.
+- **Cards let about a fifth of the background through**, so each card is tinted by whatever glows behind it.
+- **It is still one picture, made once.** No orb is drawn per frame, so this should cost what the old background cost: nothing measurable. The picture is a little sharper than before (made at 40 % of the screen, was 25 %).
+- Light mode has its own version: the same orbs on warm off-white, with a slightly deeper amber.
+
+**What to look for**
+- Does it have the feeling of your references?
+- Readability: on Train, Food and Progress some text sits directly on an orb. In my preview it was all readable, with the grey labels on Progress ("Most reps", "Biggest session") the weakest. Tell me what you cannot read comfortably.
+- The centre button and "Continue" are now amber with dark text. Right, or too yellow?
+- Light mode: I changed it but only looked at dark.
+
+**Checked:** in my preview: all four pages in dark mode and the glass bar over the orbs.
+**Not checked:** on a phone; light mode; the drawer and the sheets over the new background; and the cost, which I expect to be unchanged but have not measured. Run the test if you want that confirmed: the "Full glass" row should still be about 4.0 ms per frame.
+**Honest limit:** the cards are see-through, not frosted. In your references the glass panels blur what is behind them. Blurring behind every card would bring back the cost we just removed from the bar, several times over. There is a cheap way to get true frosted cards from a still background, and I can build it next if you like this direction.
+
 ## Prism, build 45 (13 November 2026)
 
 **File:** `releases/prism-build-45.apk`

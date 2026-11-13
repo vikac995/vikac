@@ -2072,7 +2072,7 @@ class _Wallpaper extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(
       Offset.zero & size,
-      Paint()..color = dark ? const Color(0xFF0B0D13) : const Color(0xFFF2EEE7),
+      Paint()..color = dark ? const Color(0xFF08090C) : const Color(0xFFFFF7EA),
     );
     // Each light is many faint discs laid on top of each other, smallest last, so it
     // falls off smoothly without relying on how a renderer handles gradients.
@@ -2093,44 +2093,48 @@ class _Wallpaper extends CustomPainter {
       }
     }
 
-    final double k = dark ? 0.6 : 0.45;
-    light(
-      Offset(size.width * 0.12, size.height * 0.10),
-      size.width * 0.85,
-      const Color(0xFFFF6B4A),
-      0.30 * k,
-    );
-    light(
-      Offset(size.width * 1.0, size.height * 0.34),
-      size.width * 0.8,
-      const Color(0xFF7C5CFF),
-      0.26 * k,
-    );
-    light(
-      Offset(size.width * 0.05, size.height * 0.72),
-      size.width * 0.8,
-      const Color(0xFF1FB7A6),
-      0.22 * k,
-    );
-    light(
-      Offset(size.width * 0.9, size.height * 0.98),
-      size.width * 0.75,
-      const Color(0xFFF5B301),
-      0.22 * k,
-    );
-    // Warmth: an amber glow low in the middle and an orange one off the right edge, so the
-    // page is not only cool colours. They are part of the same one-off picture, so they cost nothing more.
-    light(
-      Offset(size.width * 0.42, size.height * 0.60),
-      size.width * 0.7,
-      const Color(0xFFFFC23D),
-      0.24 * k,
-    );
-    light(
-      Offset(size.width * 1.05, size.height * 0.68),
-      size.width * 0.6,
-      const Color(0xFFFFA234),
-      0.22 * k,
+    // A few glowing orbs, orange deepening to yellow, on near-black. They are what the glass
+    // bar and the lens have to bend and blur, and what the cards let through. Still one picture,
+    // made once, so none of it costs anything per frame.
+    void orb(Offset at, double r) {
+      // The glow around it.
+      light(at, r * 2.3, const Color(0xFFFF8A00), dark ? 0.26 : 0.20);
+      // The body: discs shrinking toward a highlight up and to the left, as on a lit sphere.
+      const int steps = 56;
+      for (int i = 0; i < steps; i++) {
+        final double t = i / (steps - 1);
+        final Color col = Color.lerp(
+          Color.lerp(
+            const Color(0xFFE85D00),
+            const Color(0xFFFF9A00),
+            (t * 2).clamp(0.0, 1.0),
+          )!,
+          const Color(0xFFFFD84A),
+          ((t - 0.5) * 2).clamp(0.0, 1.0),
+        )!;
+        canvas.drawPath(
+          Path()..addOval(
+            Rect.fromCircle(
+              center: at + Offset(-r, -r) * (0.3 * t),
+              radius: r * (1 - 0.82 * t),
+            ),
+          ),
+          Paint()..color = col,
+        );
+      }
+    }
+
+    // Placed where they do the most good and the least harm: low down, where the glass bar sits
+    // over them, and off the top corner, clear of titles and of the numbers people read.
+    orb(Offset(size.width * 0.04, size.height * 0.86), size.width * 0.40);
+    orb(Offset(size.width * 1.02, size.height * 0.10), size.width * 0.22);
+    orb(Offset(size.width * 0.70, size.height * 0.955), size.width * 0.075);
+    // Text sits straight on this picture on some pages, so the whole of it is held back a little.
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..color = (dark ? const Color(0xFF08090C) : const Color(0xFFFFF7EA))
+            .withValues(alpha: 0.30),
     );
   }
 
@@ -2158,8 +2162,8 @@ class _WallpaperImageState extends State<_WallpaperImage> {
     _size = size;
     _dark = dark;
     final Size small = Size(
-      (size.width / 4).ceilToDouble(),
-      (size.height / 4).ceilToDouble(),
+      (size.width / 2.5).ceilToDouble(),
+      (size.height / 2.5).ceilToDouble(),
     );
     final ui.PictureRecorder rec = ui.PictureRecorder();
     _Wallpaper(dark).paint(Canvas(rec), small);

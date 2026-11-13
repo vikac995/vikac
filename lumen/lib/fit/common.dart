@@ -70,11 +70,46 @@ class GlassDot extends StatelessWidget {
   }
 }
 
-/// The surface content sits on: solid enough to read on, and never glass.
+/// Prism's own colours. The accent is amber, between orange and yellow: warm, and its own.
+/// (Lumen's coral was close to another product's colour.) Text on the accent is near-black,
+/// because white on amber is hard to read.
+const LumenColors prismNight = LumenColors(
+  dark: true,
+  bg: Color(0xFF08090C),
+  surface: Color(0xFF13151B),
+  surfaceHigh: Color(0xFF1C1F27),
+  ink: Color(0xFFF5F1E8),
+  inkMuted: Color(0xFFABADB6),
+  inkFaint: Color(0xFF6A6D78),
+  accent: Color(0xFFFFAE1A),
+  onAccent: Color(0xFF1D1300),
+  hairline: Color(0x1AFFFFFF),
+  glassTint: Color(0xFF0E1015),
+  glassInk: Color(0xFFFFFFFF),
+  shadow: Color(0x66000000),
+);
+const LumenColors prismDay = LumenColors(
+  dark: false,
+  bg: Color(0xFFFFF7EA),
+  surface: Color(0xFFFFFDF8),
+  surfaceHigh: Color(0xFFFFFFFF),
+  ink: Color(0xFF17150F),
+  inkMuted: Color(0xFF5E5A50),
+  inkFaint: Color(0xFF9E998C),
+  accent: Color(0xFFF59300),
+  onAccent: Color(0xFF1D1300),
+  hairline: Color(0x14000000),
+  glassTint: Color(0xFFFFFAF0),
+  glassInk: Color(0xFF17150F),
+  shadow: Color(0x2E2A1A0A),
+);
+
+/// The surface content sits on. Readable first, but no longer a closed lid: about a fifth of
+/// what is behind comes through, so the glowing shapes of the background tint each card.
 ShapeDecoration card(LumenColors c, {double radius = 28, Color? tint}) =>
     ShapeDecoration(
       color:
-          tint ?? (c.dark ? const Color(0xE6151820) : const Color(0xF2FFFFFF)),
+          tint ?? (c.dark ? const Color(0xC9131519) : const Color(0xD9FFFDF8)),
       shape: RoundedSuperellipseBorder(
         borderRadius: BorderRadius.circular(radius),
         side: BorderSide(color: c.hairline),
