@@ -783,6 +783,46 @@ class Apps extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// How close together the app list sits: 0 to 3, for 3, 4, 5 or 6 apps across. Rows follow
+  /// from the screen's height. 4 across is where it starts.
+  int density = 1;
+  static const List<int> columns = <int>[3, 4, 5, 6];
+  int get cols => columns[density];
+  File get _densityFile => File('${_iconsFile.parent.path}/prism_apps_density');
+
+  /// Changes it at once, for the list to follow the finger. [save] writes it down, once, at the end.
+  void setDensity(int v, {bool save = false}) {
+    v = v.clamp(0, columns.length - 1);
+    if (v != density) {
+      density = v;
+      notifyListeners();
+    }
+    if (save) {
+      try {
+        _densityFile.writeAsStringSync('$density');
+      } catch (_) {
+        // Not saved: 4 across next time.
+      }
+    }
+  }
+
+  /// How many times the cog on the button has shown itself off. It does so the first three
+  /// times the blobs are changed, and after that comes in quietly.
+  int cogShown = 0;
+  File get _cogFile => File('${_iconsFile.parent.path}/prism_cog_shown');
+  bool takeCogHint() {
+    if (cogShown >= 3) {
+      return false;
+    }
+    cogShown++;
+    try {
+      _cogFile.writeAsStringSync('$cogShown');
+    } catch (_) {
+      // Not saved: it shows itself off once more next time.
+    }
+    return true;
+  }
+
   /// The apps' own icons are held while either of the two wants them.
   bool get _wantOwn => !prismIcons || !blobPrismIcons;
 
@@ -813,6 +853,17 @@ class Apps extends ChangeNotifier {
       scrolling = _scrollFile.readAsStringSync().trim() == '1';
     } catch (_) {
       // Never changed: pages.
+    }
+    try {
+      cogShown = int.tryParse(_cogFile.readAsStringSync().trim()) ?? 0;
+    } catch (_) {
+      // Never shown.
+    }
+    try {
+      density = (int.tryParse(_densityFile.readAsStringSync().trim()) ?? 1)
+          .clamp(0, columns.length - 1);
+    } catch (_) {
+      // Never changed: 4 across.
     }
   }
 

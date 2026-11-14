@@ -179,8 +179,22 @@ class _ShellState extends State<Shell>
     spring: Motions.spatialFast,
   );
 
+  // The cog showing itself off, once: a turn that settles and one glint round the button's rim.
+  // It runs for well under a second and then nothing moves. Only the first few times.
+  late final AnimationController _cogHint = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+    value: 1,
+  );
+
   /// The cog is the button's sign only while the blobs are out and being changed.
-  void _signSync() => _cog.animateTo(_editing && _open ? 1 : 0);
+  void _signSync() {
+    final bool want = _editing && _open;
+    if (want && _cog.target != 1 && Apps.instance.takeCogHint()) {
+      _cogHint.forward(from: 0);
+    }
+    _cog.animateTo(want ? 1 : 0);
+  }
 
   void _removeBlob(int i) {
     Haptics.thud();
@@ -4625,6 +4639,7 @@ class _ShellState extends State<Shell>
 
   @override
   void dispose() {
+    _cogHint.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _freeLater?.cancel();
     for (final Timer t in _fuses) {
@@ -5789,6 +5804,7 @@ class _ShellState extends State<Shell>
                           _glass,
                           _wob,
                           _cog,
+                          _cogHint,
                         ]),
                         builder: (BuildContext context, Widget? _) =>
                             Transform.scale(
@@ -5842,6 +5858,9 @@ class _ShellState extends State<Shell>
                                                 blobs: _fanBlobs,
                                                 open: _t.value,
                                                 cog: _cog.value,
+                                                hint: _cogHint.value,
+                                                rim: _button / 2 - 2,
+                                                glint: c.accent,
                                               ),
                                             ),
                                           ],
@@ -7574,9 +7593,17 @@ class _ButtonSign extends CustomPainter {
     required this.blobs,
     required this.open,
     required this.cog,
+    this.hint = 1,
+    this.rim = 0,
+    this.glint = Colors.white,
   });
   final List<(double, Color)> blobs;
   final double open, cog;
+
+  /// The cog showing itself off: 0 just begun, 1 over (and nothing more is drawn for it).
+  /// [rim] is the radius of the button's edge, where the glint runs; [glint] its colour.
+  final double hint, rim;
+  final Color glint;
 
   static final TextPainter _gear = TextPainter(
     text: TextSpan(
@@ -7628,10 +7655,44 @@ class _ButtonSign extends CustomPainter {
           Paint()..color = Colors.white.withValues(alpha: c),
         )
         ..translate(mid.dx, mid.dy)
-        ..rotate((1 - c) * -math.pi / 2)
+        // Showing itself off, it comes round a further quarter turn and settles a little past.
+        ..rotate(
+          (1 - c) * -math.pi / 2 -
+              (1 - Curves.easeOutBack.transform(hint.clamp(0.0, 1.0))) *
+                  math.pi /
+                  2,
+        )
         ..scale((0.55 + 0.45 * c) * u);
       _gear.paint(canvas, Offset(-_gear.width / 2, -_gear.height / 2));
       canvas.restore();
+    }
+    if (hint < 0.999 && rim > 0 && c > 0.001) {
+      // One glint goes once round the button's edge, from the top: bright in the middle of
+      // its run, gone at both ends.
+      final double h = Curves.easeInOut.transform(hint.clamp(0.0, 1.0));
+      final double seen = math.sin(math.pi * hint.clamp(0.0, 1.0)) * c;
+      final Rect ring = Rect.fromCircle(center: mid, radius: rim);
+      final double head = -math.pi / 2 + 2 * math.pi * h;
+      const double tail = 1.25;
+      canvas.drawArc(
+        ring,
+        head - tail,
+        tail,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round
+          ..strokeWidth = 2.6
+          ..shader = SweepGradient(
+            startAngle: 0,
+            endAngle: tail,
+            colors: <Color>[
+              glint.withValues(alpha: 0),
+              Color.lerp(glint, Colors.white, 0.6)!.withValues(alpha: seen),
+            ],
+            transform: GradientRotation(head - tail),
+          ).createShader(ring),
+      );
     }
   }
 
@@ -7639,6 +7700,7 @@ class _ButtonSign extends CustomPainter {
   bool shouldRepaint(_ButtonSign old) =>
       old.open != open ||
       old.cog != cog ||
+      old.hint != hint ||
       _FanMark(old.blobs).shouldRepaint(_FanMark(blobs));
 }
 

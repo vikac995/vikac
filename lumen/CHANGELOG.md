@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 122 (15 November 2026)
+
+**File:** `releases/prism-build-122.apk`
+
+Needs Play Protect paused to install. Can be installed over build 121.
+
+- **Density, in the app list's settings (the cog).** A slider with four stops: 3, 4, 5 or 6 apps across. 4 is where it starts. Rows follow from the height of the screen; tiles and names get smaller as more fit (names shrink less than tiles, to stay readable). It works the same in pages and in the scrolling list. While the slider is held, the panel and its shade fade nearly away (0.16 s) so the list behind is seen changing, with a tick at each stop; let go and the panel comes back. The choice is saved when you let go.
+- **The app list closing, from your recording.** Part way down, the icons were dropped and a bare grey slab went on shrinking into the button. Now the icons stay in the panel all the way, and the whole panel dissolves into the button over the last stretch.
+- **The cog on the button shows itself off, the first three times you change the blobs.** It comes round a further quarter turn and settles, and one glint runs once round the button's edge. 0.7 s, then nothing moves. From the fourth time on it comes in as before.
+- A floating blob in its own app (build 121): the sign is shown exactly when a tap opens the blobs. Both use one check, so they cannot disagree.
+
+**Checked:** it compiles; in my preview: the list at 3, 5 and 6 across, the slider in the panel, the panel see-through while the slider is held; the automatic test in the preview, 56 of 60, the usual 4 misses.
+**Not checked:** on a phone. The cog's turn and glint I did not see run (it is over in 0.7 s; my preview takes still pictures). The closing I did not see in motion either. At 6 across with long app names on a narrow phone, names may be cut short: look for that.
+
 ## Prism, build 121 (14 November 2026)
 
 **File:** `releases/prism-build-121.apk`

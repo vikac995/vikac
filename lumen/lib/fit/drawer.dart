@@ -164,7 +164,13 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
 
   final int _dir = 1;
   double _pull = 0;
-  static const int _cols = 4;
+
+  /// How many apps across, from the density chosen in the app list's settings.
+  int get _cols => Apps.instance.cols;
+
+  /// How large a tile is against the usual (4 across), and how tall a row is.
+  double get _k => const <double>[1.12, 1, 0.86, 0.74][Apps.instance.density];
+  double get _pitch => const <double>[132, 114, 99, 87][Apps.instance.density];
 
   @override
   void initState() {
@@ -295,14 +301,14 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                       d.localPosition +
                       Offset(
                         w / _cols * (col + 0.5),
-                        8 + _GridPainter._tile / 2,
+                        (8 + _GridPainter._tile / 2) * _k,
                       );
                   _open(
                     r * _cols + col,
                     Rect.fromCenter(
                       center: centre * dpr,
-                      width: _GridPainter._tile * dpr,
-                      height: _GridPainter._tile * dpr,
+                      width: _GridPainter._tile * _k * dpr,
+                      height: _GridPainter._tile * _k * dpr,
                     ),
                   );
                 },
@@ -316,6 +322,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                       dir: 0,
                       rows: 1,
                       cols: _cols,
+                      k: _k,
                       turn: kAlwaysDismissedAnimation,
                       ink: c.ink.withValues(alpha: 0.84),
                       accent: c.accent,
@@ -475,97 +482,149 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   /// The app list's own settings, behind the cog on its first page.
   void _showIconChoice() {
     Haptics.tick();
+    // While the density is being dragged, the panel and its shade step aside so the list can be seen.
+    final ValueNotifier<bool> clear = ValueNotifier<bool>(false);
     showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Close',
-      barrierColor: Colors.black.withValues(alpha: 0.4),
+      // The shade is drawn here, below, so that it can clear with the panel.
+      barrierColor: const Color(0x00000000),
       transitionDuration: panelTime,
       transitionBuilder: panelNoFade,
-      pageBuilder: (BuildContext context, _, _) {
+      pageBuilder: (BuildContext context, Animation<double> a, _) {
         final LumenColors c = LumenColors.of(context);
-        return PanelRise(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              10,
-              0,
-              10,
-              MediaQuery.paddingOf(context).bottom + 10,
-            ),
-            child: Material(
-              type: MaterialType.transparency,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: ShapeDecoration(
-                  color: c.surface,
-                  shape: RoundedSuperellipseBorder(
-                    borderRadius: BorderRadius.circular(36),
-                    side: BorderSide(color: c.hairline),
+        return ValueListenableBuilder<bool>(
+          valueListenable: clear,
+          builder: (BuildContext context, bool see, Widget? panel) => Stack(
+            children: <Widget>[
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(context).pop(),
+                  child: FadeTransition(
+                    opacity: a,
+                    child: AnimatedOpacity(
+                      opacity: see ? 0 : 1,
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOutCubic,
+                      child: const ColoredBox(color: Color(0x66000000)),
+                    ),
                   ),
                 ),
-                child: ListenableBuilder(
-                  listenable: Apps.instance,
-                  builder: (BuildContext context, Widget? _) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              'Apps',
-                              style: LumenType.display(
-                                22,
-                                weight: 700,
-                                color: c.ink,
+              ),
+              Positioned.fill(
+                child: AnimatedOpacity(
+                  // Not all the way: the slider itself stays faintly there, under the finger.
+                  opacity: see ? 0.14 : 1,
+                  duration: const Duration(milliseconds: 160),
+                  curve: Curves.easeOutCubic,
+                  child: panel,
+                ),
+              ),
+            ],
+          ),
+          child: PanelRise(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                10,
+                0,
+                10,
+                MediaQuery.paddingOf(context).bottom + 10,
+              ),
+              child: Material(
+                type: MaterialType.transparency,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: ShapeDecoration(
+                    color: c.surface,
+                    shape: RoundedSuperellipseBorder(
+                      borderRadius: BorderRadius.circular(36),
+                      side: BorderSide(color: c.hairline),
+                    ),
+                  ),
+                  child: ListenableBuilder(
+                    listenable: Apps.instance,
+                    builder: (BuildContext context, Widget? _) => Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                'Apps',
+                                style: LumenType.display(
+                                  22,
+                                  weight: 700,
+                                  color: c.ink,
+                                ),
                               ),
                             ),
-                          ),
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              Haptics.tick();
-                              Navigator.of(context).pop();
-                            },
-                            child: Container(
-                              width: 44,
-                              height: 44,
-                              decoration: ShapeDecoration(
-                                color: c.ink.withValues(alpha: 0.1),
-                                shape: const CircleBorder(),
-                              ),
-                              child: Icon(
-                                Icons.close_rounded,
-                                size: 24,
-                                color: c.ink,
+                            GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                Haptics.tick();
+                                Navigator.of(context).pop();
+                              },
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: ShapeDecoration(
+                                  color: c.ink.withValues(alpha: 0.1),
+                                  shape: const CircleBorder(),
+                                ),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  size: 24,
+                                  color: c.ink,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      SwitchLine(
-                        key: Robot.key('prismIcons'),
-                        label: 'Prism icons',
-                        value: Apps.instance.prismIcons,
-                        onChanged: (bool v) {
-                          Haptics.tick();
-                          Apps.instance.setPrismIcons(v);
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchLine(
-                        key: Robot.key('appsScrolling'),
-                        label: 'Scrolling list',
-                        value: Apps.instance.scrolling,
-                        onChanged: (bool v) {
-                          Haptics.tick();
-                          Apps.instance.setScrolling(v);
-                          // The ring now measures the other way of moving through the list.
-                          _aim();
-                        },
-                      ),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        SwitchLine(
+                          key: Robot.key('prismIcons'),
+                          label: 'Prism icons',
+                          value: Apps.instance.prismIcons,
+                          onChanged: (bool v) {
+                            Haptics.tick();
+                            Apps.instance.setPrismIcons(v);
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        SwitchLine(
+                          key: Robot.key('appsScrolling'),
+                          label: 'Scrolling list',
+                          value: Apps.instance.scrolling,
+                          onChanged: (bool v) {
+                            Haptics.tick();
+                            Apps.instance.setScrolling(v);
+                            // The ring now measures the other way of moving through the list.
+                            _aim();
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Density',
+                          style: LumenType.text(15, weight: 560, color: c.ink),
+                        ),
+                        const SizedBox(height: 4),
+                        _DensitySlider(
+                          key: Robot.key('appsDensity'),
+                          value: Apps.instance.density,
+                          stops: Apps.columns.length,
+                          onHold: (bool held) => clear.value = held,
+                          onChanged: (int v) {
+                            Apps.instance.setDensity(v);
+                            _aim();
+                          },
+                          onDone: (int v) =>
+                              Apps.instance.setDensity(v, save: true),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -573,7 +632,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
           ),
         );
       },
-    );
+    ).then((_) => clear.dispose());
   }
 
   @override
@@ -712,7 +771,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     // As many rows as fit, so tiles are always the same generous size.
     _rows = math.max(
       3,
-      ((panel.height - 92 - (widget.pick == null ? 0 : 80)) / 114).floor(),
+      ((panel.height - 92 - (widget.pick == null ? 0 : 80)) / _pitch).floor(),
     );
     // Fewer rows fit while Prism's own actions are offered above the apps.
     _page = _page.clamp(0, _pages - 1);
@@ -738,47 +797,59 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
             ),
             Positioned.fromRect(
               rect: r,
-              child: DecoratedBox(
-                decoration: ShapeDecoration(
-                  // The button's colour drains away as it becomes the panel.
-                  color: Color.lerp(
-                    widget.tone,
-                    c.surface,
-                    // It stays the panel's colour until it is nearly the button again.
-                    ((g - 0.08) / 0.2).clamp(0.0, 1.0),
-                  ),
-                  shape: RoundedSuperellipseBorder(
-                    borderRadius: BorderRadius.circular(
-                      ui.lerpDouble(widget.button / 2, 38, g.clamp(0.0, 1.0))!,
+              // Near the button the whole panel, icons and all, dissolves into it. (Before, the
+              // icons were dropped part way and a bare slab went on shrinking: that read as a stutter.)
+              // Above that it is fully there and this costs nothing.
+              child: Opacity(
+                opacity: ((g - 0.05) / 0.25).clamp(0.0, 1.0),
+                child: DecoratedBox(
+                  decoration: ShapeDecoration(
+                    // The button's colour drains away as it becomes the panel.
+                    color: Color.lerp(
+                      widget.tone,
+                      c.surface,
+                      // It stays the panel's colour until it is nearly the button again.
+                      ((g - 0.08) / 0.2).clamp(0.0, 1.0),
                     ),
-                    side: BorderSide(
-                      color: c.hairline.withValues(alpha: c.hairline.a * show),
-                    ),
-                  ),
-                ),
-                // The contents grow and shrink with the panel, as one piece: the whole grid comes out
-                // of the button and goes back into it. (Before, the grid stayed full size and was cut
-                // off by the panel's edge, which looked broken half-way.) Stretching a finished picture
-                // is nearly free; it is not drawn again.
-                child: g < 0.22
-                    ? null
-                    : ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          ui.lerpDouble(
-                            widget.button / 2,
-                            38,
-                            g.clamp(0.0, 1.0),
-                          )!,
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.fill,
-                          child: SizedBox(
-                            width: panel.width,
-                            height: panel.height,
-                            child: child,
-                          ),
+                    shape: RoundedSuperellipseBorder(
+                      borderRadius: BorderRadius.circular(
+                        ui.lerpDouble(
+                          widget.button / 2,
+                          38,
+                          g.clamp(0.0, 1.0),
+                        )!,
+                      ),
+                      side: BorderSide(
+                        color: c.hairline.withValues(
+                          alpha: c.hairline.a * show,
                         ),
                       ),
+                    ),
+                  ),
+                  // The contents grow and shrink with the panel, as one piece: the whole grid comes out
+                  // of the button and goes back into it. (Before, the grid stayed full size and was cut
+                  // off by the panel's edge, which looked broken half-way.) Stretching a finished picture
+                  // is nearly free; it is not drawn again.
+                  child: g < 0.05
+                      ? null
+                      : ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                            ui.lerpDouble(
+                              widget.button / 2,
+                              38,
+                              g.clamp(0.0, 1.0),
+                            )!,
+                          ),
+                          child: FittedBox(
+                            fit: BoxFit.fill,
+                            child: SizedBox(
+                              width: panel.width,
+                              height: panel.height,
+                              child: child,
+                            ),
+                          ),
+                        ),
+                ),
               ),
             ),
           ],
@@ -1036,13 +1107,12 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                     Offset(
                                       box.maxWidth / _cols * (col + 0.5),
                                       box.maxHeight / _rows * row +
-                                          8 +
-                                          _GridPainter._tile / 2,
+                                          (8 + _GridPainter._tile / 2) * _k,
                                     );
                                 final Rect tile = Rect.fromCenter(
                                   center: centre * dpr,
-                                  width: _GridPainter._tile * dpr,
-                                  height: _GridPainter._tile * dpr,
+                                  width: _GridPainter._tile * _k * dpr,
+                                  height: _GridPainter._tile * _k * dpr,
                                 );
                                 Apps.instance.launch(
                                   Apps.instance.all[i],
@@ -1061,6 +1131,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                   dir: _dir,
                                   rows: _rows,
                                   cols: _cols,
+                                  k: _k,
                                   turn: _turn,
                                   ink: c.ink.withValues(alpha: 0.84),
                                   accent: c.accent,
@@ -1095,6 +1166,7 @@ class _GridPainter extends CustomPainter {
     required this.dir,
     required this.rows,
     required this.cols,
+    this.k = 1,
     required this.turn,
     required this.ink,
     required this.accent,
@@ -1118,6 +1190,9 @@ class _GridPainter extends CustomPainter {
   final Map<String, int> counts;
   final List<AppTile> apps;
   final int from, to, dir, rows, cols;
+
+  /// The tiles' size against the usual one: smaller when more fit across.
+  final double k;
   final Animation<double> turn;
   final Color ink, accent;
 
@@ -1168,11 +1243,13 @@ class _GridPainter extends CustomPainter {
     return i == 0 || first(i) != first(i - 1);
   }
 
-  TextPainter _label(int i, double width) {
+  TextPainter _label(int i, double width, double k) {
+    // Names shrink less than the tiles do, so they stay readable when the list is dense.
+    final double f = 0.5 + 0.5 * k;
     final AppTile t = apps[i];
     final bool lead = t.label.isNotEmpty && _starts(i);
     final TextStyle style = LumenType.text(
-      14.2,
+      14.2 * f,
       weight: 570,
       color: ink,
       height: 1.13,
@@ -1188,7 +1265,7 @@ class _GridPainter extends CustomPainter {
         .withLightness(onDark ? 0.69 : 0.4)
         .toColor();
     return _labels.putIfAbsent(
-      '${t.label}|${width.round()}|${ink.toARGB32()}|${lead ? initial.toARGB32() : 0}',
+      '${t.label}|${width.round()}|${f.toStringAsFixed(2)}|${ink.toARGB32()}|${lead ? initial.toARGB32() : 0}',
       () => TextPainter(
         text: lead
             ? TextSpan(
@@ -1198,7 +1275,7 @@ class _GridPainter extends CustomPainter {
                     text: t.label.substring(0, 1),
                     // Lighter than before but larger than the letters after it: it stands out by size and colour, not by heaviness.
                     style: LumenType.text(
-                      16,
+                      16 * f,
                       weight: 720,
                       color: initial,
                       height: 1.0,
@@ -1376,7 +1453,8 @@ class _GridPainter extends CustomPainter {
               )!;
         canvas
           ..save()
-          ..translate(cw * (col + 0.5), ch * row + 8 + _tile / 2);
+          ..translate(cw * (col + 0.5), ch * row + (8 + _tile / 2) * k)
+          ..scale(k);
         if (ia == bounceAt && bounce != null) {
           // Found from the letters at the side: it jumps, once.
           canvas.scale(bounce!.value);
@@ -1407,7 +1485,8 @@ class _GridPainter extends CustomPainter {
         // The numbers go with the marks: the old one out with the old mark, the new one in with the new.
         canvas
           ..save()
-          ..translate(cw * (col + 0.5), ch * row + 8 + _tile / 2);
+          ..translate(cw * (col + 0.5), ch * row + (8 + _tile / 2) * k)
+          ..scale(k);
         if (a != null) {
           _badge(canvas, a, 1 - leave);
         }
@@ -1421,7 +1500,7 @@ class _GridPainter extends CustomPainter {
     // name at its dimmest, and comes back up. A row of names dims as one, not name by name.
     final double strength = 1 - 0.8 * math.sin(math.pi * e);
     for (int row = 0; row < rows; row++) {
-      final double top = ch * row + 8 + _tile + 5;
+      final double top = ch * row + (8 + _tile + 5) * k;
       final bool dim = strength < 0.999;
       if (dim) {
         canvas.saveLayer(
@@ -1432,7 +1511,7 @@ class _GridPainter extends CustomPainter {
       for (int col = 0; col < cols; col++) {
         final int i = (e < 0.5 ? from : to) * per + row * cols + col;
         if (i < apps.length) {
-          final TextPainter tp = _label(i, cw);
+          final TextPainter tp = _label(i, cw, k);
           tp.paint(canvas, Offset(cw * (col + 0.5) - tp.width / 2, top + 3));
         }
       }
@@ -1484,4 +1563,147 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RingPainter old) => old.v != v || old.color != color;
+}
+
+/// The app list's density: a track with a stop for each choice, and a thumb that goes from stop to
+/// stop with the finger, with a tick at each. While it is held, [onHold] says so.
+class _DensitySlider extends StatefulWidget {
+  const _DensitySlider({
+    super.key,
+    required this.value,
+    required this.stops,
+    required this.onChanged,
+    required this.onHold,
+    required this.onDone,
+  });
+  final int value, stops;
+  final ValueChanged<int> onChanged, onDone;
+  final ValueChanged<bool> onHold;
+
+  @override
+  State<_DensitySlider> createState() => _DensitySliderState();
+}
+
+class _DensitySliderState extends State<_DensitySlider>
+    with TickerProviderStateMixin {
+  late final SpringValue _pos = SpringValue(
+    this,
+    value: widget.value.toDouble(),
+    spring: Motions.spatialFast,
+  );
+  late final SpringValue _grab = SpringValue(this, spring: Motions.spatialFast);
+  late int _at = widget.value;
+  double _width = 1;
+  static const double _thumb = 26;
+
+  int _stopAt(double dx) =>
+      ((dx - _thumb / 2) / (_width - _thumb) * (widget.stops - 1))
+          .round()
+          .clamp(0, widget.stops - 1);
+
+  void _to(double dx) {
+    final int v = _stopAt(dx);
+    if (v != _at) {
+      _at = v;
+      Haptics.tick();
+      widget.onChanged(v);
+    }
+    _pos.animateTo(v.toDouble());
+  }
+
+  void _hold(bool on) {
+    _grab.animateTo(on ? 1 : 0);
+    widget.onHold(on);
+    if (!on) {
+      widget.onDone(_at);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pos.dispose();
+    _grab.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final LumenColors c = LumenColors.of(context);
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints box) {
+        _width = box.maxWidth;
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragDown: (DragDownDetails d) {
+            _hold(true);
+            _to(d.localPosition.dx);
+          },
+          onHorizontalDragUpdate: (DragUpdateDetails d) =>
+              _to(d.localPosition.dx),
+          onHorizontalDragEnd: (_) => _hold(false),
+          onHorizontalDragCancel: () => _hold(false),
+          child: SizedBox(
+            height: 48,
+            child: ListenableBuilder(
+              listenable: Listenable.merge(<Listenable>[_pos, _grab]),
+              builder: (BuildContext context, Widget? _) {
+                final double span = _width - _thumb;
+                final double x =
+                    _thumb / 2 + span * _pos.value / (widget.stops - 1);
+                final double size = _thumb + 6 * _grab.value;
+                return Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.centerLeft,
+                  children: <Widget>[
+                    Positioned(
+                      left: _thumb / 2,
+                      right: _thumb / 2,
+                      child: Container(
+                        height: 6,
+                        decoration: ShapeDecoration(
+                          color: c.ink.withValues(alpha: 0.18),
+                          shape: const StadiumBorder(),
+                        ),
+                      ),
+                    ),
+                    // A small dot at each stop, so it is clear there are only a few.
+                    for (int i = 0; i < widget.stops; i++)
+                      Positioned(
+                        left: _thumb / 2 + span * i / (widget.stops - 1) - 3,
+                        child: Container(
+                          width: 6,
+                          height: 6,
+                          decoration: ShapeDecoration(
+                            color: c.ink.withValues(alpha: 0.4),
+                            shape: const CircleBorder(),
+                          ),
+                        ),
+                      ),
+                    Positioned(
+                      left: x - size / 2,
+                      child: Container(
+                        width: size,
+                        height: size,
+                        decoration: const ShapeDecoration(
+                          color: Colors.white,
+                          shape: CircleBorder(),
+                          shadows: <BoxShadow>[
+                            BoxShadow(
+                              color: Color(0x40000000),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
