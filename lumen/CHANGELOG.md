@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 61 (14 November 2026)
+
+**File:** `releases/prism-build-61.apk`
+
+- **"Set done" is back on the button**, with the numbers: "Set done · 77 kg × 7". (Build 59 had cut it to the numbers alone.)
+- **The pull bar is wider:** about 62 across, where build 60's arrow was 36 and the old grey bar was 42. It is in your colour, with a slight bend at the middle: toward the top on the small sheet, toward the bottom on the tall one.
+- Otherwise the same as build 60.
+
+**Checked:** it compiles, the Android code included.
+**Not checked:** on a phone.
+
 ## Prism, build 60 (14 November 2026)
 
 **File:** `releases/prism-build-60.apk`

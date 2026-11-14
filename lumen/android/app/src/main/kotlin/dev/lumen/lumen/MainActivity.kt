@@ -1452,8 +1452,9 @@ object RestBubble {
         override fun onDraw(canvas: android.graphics.Canvas) {
             val cx = width / 2f
             val cy = height / 2f
-            val w = 18 * dp
-            val h = 3.8f * dp * (if (up) -1 else 1)
+            // Wide, with a slight bend at the middle: toward the top when the sheet can be pulled up.
+            val w = 31 * dp
+            val h = 3.4f * dp * (if (up) -1 else 1)
             path.reset()
             path.moveTo(cx - w, cy - h)
             path.lineTo(cx, cy + h)
@@ -1508,7 +1509,7 @@ object RestBubble {
             addView(card, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
             // The grabber: pull it, or tap it. An arrow in the colour, pointing the way the sheet can go.
             val grabBox = android.widget.FrameLayout(context)
-            grabBox.addView(grab, LayoutParams(px(64f), px(24f), android.view.Gravity.CENTER))
+            grabBox.addView(grab, LayoutParams(px(88f), px(24f), android.view.Gravity.CENTER))
             grabBox.setOnClickListener { tappedGrabber() }
             card.addView(grabBox, android.widget.LinearLayout.LayoutParams(fill, px(30f)))
         }
@@ -1883,8 +1884,8 @@ object RestBubble {
                     r.root.background = null
                 }
             }
-            // Just the numbers it will log. The button itself says what it is for.
-            done.text = if (current in sets.indices) number(sets[current].kg) + " kg \u00D7 " + sets[current].reps else "\u2713"
+            // What it does, and exactly what it will log.
+            done.text = if (current in sets.indices) "Set done  \u00B7  " + number(sets[current].kg) + " kg \u00D7 " + sets[current].reps else "Set done"
             // On Prism's own workout page there is nowhere for this to take you.
             open.visibility = if (RestBubble.foreground && onTrain) android.view.View.GONE else android.view.View.VISIBLE
             done.setTextColor(onAccent)
