@@ -311,6 +311,16 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
             } else if (call.method == "overlayAllowed") {
                 result.success(android.provider.Settings.canDrawOverlays(this))
+            } else if (call.method == "shade") {
+                // Pulls the notifications down, as a swipe from the top of the screen does.
+                // Android has no public call for it; this is the one home screens have always used.
+                result.success(try {
+                    val bar = getSystemService("statusbar")
+                    Class.forName("android.app.StatusBarManager").getMethod("expandNotificationsPanel").invoke(bar)
+                    true
+                } catch (e: Throwable) {
+                    false
+                })
             } else if (call.method == "notesAllowed") {
                 result.success(RestBubble.notesAllowed(this))
             } else if (call.method == "askNotes") {

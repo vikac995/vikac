@@ -34,6 +34,75 @@ class Robot {
     await wait(after);
   }
 
+  /// Two fingers side by side around [at], moved together by [by], and let go.
+  static Future<void> swipe2(
+    Offset at,
+    Offset by, {
+    int ms = 240,
+    int after = 700,
+  }) async {
+    final List<int> ids = <int>[_next++, _next++];
+    final List<Offset> from = <Offset>[
+      at - const Offset(45, 0),
+      at + const Offset(45, 0),
+    ];
+    for (int k = 0; k < 2; k++) {
+      _send(
+        PointerAddedEvent(
+          pointer: ids[k],
+          position: from[k],
+          timeStamp: _clock.elapsed,
+        ),
+      );
+      _send(
+        PointerDownEvent(
+          pointer: ids[k],
+          position: from[k],
+          timeStamp: _clock.elapsed,
+        ),
+      );
+    }
+    await wait(40);
+    final int t0 = _clock.elapsedMilliseconds;
+    Offset last = Offset.zero;
+    while (true) {
+      await SchedulerBinding.instance.endOfFrame;
+      final double x = ((_clock.elapsedMilliseconds - t0) / ms).clamp(0.0, 1.0);
+      final Offset now = by * x;
+      for (int k = 0; k < 2; k++) {
+        _send(
+          PointerMoveEvent(
+            pointer: ids[k],
+            position: from[k] + now,
+            delta: now - last,
+            timeStamp: _clock.elapsed,
+          ),
+        );
+      }
+      last = now;
+      if (x >= 1) {
+        break;
+      }
+    }
+    for (int k = 0; k < 2; k++) {
+      _send(
+        PointerUpEvent(
+          pointer: ids[k],
+          position: from[k] + by,
+          timeStamp: _clock.elapsed,
+        ),
+      );
+      _send(
+        PointerRemovedEvent(
+          pointer: ids[k],
+          position: from[k] + by,
+          timeStamp: _clock.elapsed,
+        ),
+      );
+    }
+    await wait(after);
+  }
+
   /// Touch at [at], stay there for [ms] without moving, and let go.
   static Future<void> hold(Offset at, {int ms = 700, int after = 450}) async {
     final int id = _next++;

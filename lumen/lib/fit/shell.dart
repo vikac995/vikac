@@ -17,6 +17,7 @@ import '../widgets/panel.dart';
 import '../widgets/pressable.dart';
 import 'diag.dart';
 import 'food_page.dart';
+import 'gestures.dart';
 import 'home_page.dart';
 import 'lens.dart';
 import 'long_test.dart';
@@ -91,6 +92,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     _reseat();
   }
 
+  /// Whether place [i] holds something of the phone's own: its notifications.
+  bool _isPhone(int i) => _pinKey(i).startsWith('phone:');
+
   /// Whether place [i] holds an app, rather than one of Prism's own actions or pages.
   bool _isApp(int i) => _pinKey(i).startsWith('app:');
 
@@ -137,12 +141,16 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   String _blobName(int i) => _isEmpty(i)
       ? ''
+      : _isPhone(i)
+      ? 'Notifications'
       : _isApp(i)
       ? (_blobApp(i)?.name ?? _tile(i)?.label ?? '')
       : (_isScreen(i) ? _tabs[_screenAt(i)].$2 : _actions[_actionAt(i)].$1);
   // A page of Prism's is in Prism's own colour, whatever that is at the moment.
   Color _blobColor(int i) => _isEmpty(i)
       ? const Color(0x00000000)
+      : _isPhone(i)
+      ? const Color(0xFF5A6373)
       : _isApp(i)
       ? (_blobApp(i)?.color ?? _tile(i)?.color ?? const Color(0xFF5A6373))
       : (_isScreen(i)
@@ -195,9 +203,99 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     _setDrawer(true);
   }
 
+  // The two-finger swipes. One recogniser for the whole of Prism, made once.
+  late final Map<Type, GestureRecognizerFactory>
+  _twoFingers = <Type, GestureRecognizerFactory>{
+    TwoFingerSwipe: GestureRecognizerFactoryWithHandlers<TwoFingerSwipe>(
+      () => TwoFingerSwipe(
+        onSwipe: _twoFinger,
+        // Only where a swipe means something: on a page with nothing open, or while
+        // the blobs are being changed, where it chooses which swipe to set up.
+        wanted: () =>
+            mounted &&
+            !_drawerOpen &&
+            !_sheetOpen &&
+            !_carrying &&
+            !_parked &&
+            _dragI == null &&
+            (!_open || _editing),
+      ),
+      (TwoFingerSwipe _) {},
+    ),
+  };
+
+  /// Two fingers went [way]: 0 down, 1 up, 2 left, 3 right.
+  void _twoFinger(int way) {
+    if (_open && _editing) {
+      _pickGesture(way);
+    } else if (!_open) {
+      _useGesture(way);
+    }
+  }
+
+  /// While the blobs are being changed, a swipe was made or its place tapped: the drawer comes
+  /// up to choose what that swipe does.
+  void _pickGesture(int g) {
+    Haptics.tick();
+    Diag.instance.event('gesture ${GestureSlots.names[g]}: change');
+    setState(() => _editSlot = 100 + g);
+    _setDrawer(true);
+  }
+
+  /// Does what the swipe [g] has been given. One that has been given nothing does nothing.
+  void _useGesture(int g) {
+    final int i = 100 + g;
+    if (_isEmpty(i)) {
+      return;
+    }
+    Diag.instance.event('gesture ${GestureSlots.names[g]}: ${_blobName(i)}');
+    if (_isPhone(i)) {
+      Haptics.settle();
+      GestureSlots.shade().then((bool ok) {
+        if (!ok) {
+          Haptics.thud();
+        }
+      });
+    } else if (_isScreen(i)) {
+      Haptics.settle();
+      _go(_screenAt(i));
+    } else if (_isApp(i)) {
+      final BlobApp? a = _blobApp(i);
+      final AppTile? t = _tile(i);
+      final Size screen = MediaQuery.sizeOf(context);
+      final double dpr = MediaQuery.devicePixelRatioOf(context);
+      // The app opens out of the middle of the screen.
+      final Rect from = Rect.fromCenter(
+        center: screen.center(Offset.zero) * dpr,
+        width: _blob * dpr,
+        height: _blob * dpr,
+      );
+      Haptics.settle();
+      if (a != null) {
+        BlobApps.instance.launch(a, from: from).then((bool ok) {
+          if (!ok) {
+            Haptics.thud();
+          }
+        });
+      } else if (t != null) {
+        Apps.instance.launch(t, from: from);
+      } else {
+        Haptics.thud();
+      }
+    } else {
+      _run(_actionAt(i));
+    }
+  }
+
   /// Something was chosen in the drawer for the place being changed.
   void _picked(String key) {
     final int? i = _editSlot;
+    if (i != null && i >= 100) {
+      GestureSlots.instance.put(i - 100, key);
+      Diag.instance.event('gesture ${GestureSlots.names[i - 100]} set');
+      _setDrawer(false);
+      return;
+    }
     if (i != null) {
       // An empty place given something comes down from the middle to join the others.
       _joinI = _isEmpty(i) ? i : null;
@@ -650,9 +748,14 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   double _seatAngle(double seat) => math.pi * (0.5 + seat * _step);
 
   /// The name a blob is pinned under.
-  String _pinKey(int i) =>
-      BlobSlots.instance.at(i) ??
-      (_appBlobs ? 'app:${BlobApps.instance.apps[i].package}' : 'action:$i');
+  // (Places from 100 on are not blobs: they are what the two-finger swipes do, kept the same
+  // way, so that everything that draws, names or changes a blob works for them as it is.)
+  String _pinKey(int i) => i >= 100
+      ? GestureSlots.instance.keys[i - 100]
+      : BlobSlots.instance.at(i) ??
+            (_appBlobs
+                ? 'app:${BlobApps.instance.apps[i].package}'
+                : 'action:$i');
 
   void _sendPinData() {
     // The colours as they are now, not as the last drawn frame had them: this also runs at the
@@ -1174,6 +1277,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     if (_isEmpty(i)) {
       return const SizedBox.shrink();
     }
+    if (_isPhone(i)) {
+      return const Icon(
+        Icons.notifications_rounded,
+        color: Colors.white,
+        size: 26,
+      );
+    }
     if (_isScreen(i)) {
       return Icon(_tabs[_screenAt(i)].$1, color: _onAccent(), size: 26);
     }
@@ -1524,6 +1634,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     BlobSlots.instance
       ..load()
       ..addListener(_blobsChanged);
+    GestureSlots.instance.load();
     _reseat(jump: true);
     _far.jumpTo(BlobSlots.instance.names ? _reach : _reachBare);
     for (int i = 0; i < _n; i++) {
@@ -2056,6 +2167,102 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         }
         if (_editing) {
           await Robot.tap(beside, after: 500);
+        }
+        // The two-finger swipes.
+        final List<String> swipes = <String>[...GestureSlots.instance.keys];
+        final bool wasOut = _open;
+        if (!_open) {
+          await Robot.tap(_home, after: 800);
+        }
+        await Robot.hold(seat(2), after: 600);
+        final Offset? side = Robot.spot('gesture2');
+        t.check(
+          'swipes: their places are shown while the blobs are being changed',
+          side != null,
+        );
+        if (side != null) {
+          await Robot.tap(side, after: 1300);
+          t.check(
+            'swipes: a tap on a place asks what that swipe should do',
+            _drawerOpen && _editSlot == 102,
+          );
+          final Offset? pick = Robot.spot('choice0');
+          if (pick != null) {
+            await Robot.tap(pick, after: 1600);
+          }
+          t.check(
+            'swipes: what was chosen is what it does',
+            GestureSlots.instance.keys[2] == 'phone:shade',
+            GestureSlots.instance.keys[2],
+          );
+          if (_drawerOpen) {
+            _setDrawer(false);
+            await Robot.wait(700);
+          }
+          final Offset? off = Robot.spot('gestureOff2');
+          if (off != null) {
+            await Robot.tap(off, after: 600);
+          }
+          t.check(
+            'swipes: the minus leaves that swipe doing nothing',
+            GestureSlots.instance.keys[2] == 'empty:',
+            GestureSlots.instance.keys[2],
+          );
+        }
+        if (_open && _editing) {
+          await Robot.swipe2(
+            Offset(sc.width / 2, sc.height * 0.5),
+            const Offset(0, -150),
+            after: 1300,
+          );
+          t.check(
+            'swipes: made while the blobs are being changed, the swipe asks what it should do',
+            _drawerOpen && _editSlot == 101,
+            '$_editSlot',
+          );
+          if (_drawerOpen) {
+            _setDrawer(false);
+            await Robot.wait(700);
+          }
+        }
+        if (_editing) {
+          await Robot.tap(beside, after: 500);
+        }
+        if (_open) {
+          await Robot.tap(_home, after: 800);
+        }
+        GestureSlots.instance.put(1, 'action:2');
+        await t.scene('two fingers up', () async {
+          await Robot.swipe2(
+            Offset(sc.width / 2, sc.height * 0.5),
+            const Offset(0, -150),
+            after: 1100,
+          );
+        });
+        t.check(
+          'swipes: two fingers up, with nothing open, does what it was given',
+          _sheetOpen && _sheet == 2,
+          _sheetOpen ? 'sheet $_sheet' : 'no sheet',
+        );
+        if (_sheetOpen) {
+          _closeSheet();
+          await Robot.wait(800);
+        }
+        final int tabWas = _tab;
+        await Robot.swipe2(
+          Offset(sc.width / 2, sc.height * 0.5),
+          const Offset(150, 0),
+          after: 800,
+        );
+        t.check(
+          'swipes: one that was given nothing does nothing',
+          !_sheetOpen && !_drawerOpen && !_open && _tab == tabWas,
+        );
+        for (int g = 0; g < 4; g++) {
+          GestureSlots.instance.put(g, swipes[g]);
+        }
+        if (wasOut && !_open) {
+          await Robot.tap(_home, after: 800);
         }
         if (lensOf.pinned.value != null) {
           lensOf.setPin(null);
@@ -3701,698 +3908,1086 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       },
       child: Scaffold(
         backgroundColor: c.bg,
-        body: Stack(
-          children: <Widget>[
-            // The wallpaper: quiet, with a few soft lights for the glass to catch.
-            Positioned.fill(
-              child: ListenableBuilder(
-                listenable: Listenable.merge(<Listenable>[
-                  Diag.instance.wallpaperOn,
-                  Look.instance,
-                ]),
-                builder: (BuildContext context, Widget? _) =>
-                    Diag.instance.wallpaperOn.value
-                    ? _WallpaperImage(
-                        dark: c.dark,
-                        version: Look.instance.version,
-                      )
-                    : ColoredBox(color: c.bg),
-              ),
-            ),
-            // The page.
-            Positioned.fill(
-              child: ListenableBuilder(
-                listenable: _page,
-                // A small slide only. Fading a whole page means drawing it twice, which is where the stutters on tab changes came from.
-                builder: (BuildContext context, Widget? child) =>
-                    Transform.translate(
-                      offset: Offset(0, (1 - _page.value) * 14),
-                      child: child,
-                    ),
-                // Its own layer, so sliding a page in moves a finished picture and repaints nothing.
-                child: RepaintBoundary(
-                  child: NotificationListener<ScrollStartNotification>(
-                    onNotification: (ScrollStartNotification n) {
-                      if (n.dragDetails != null) {
-                        Diag.instance.event('scroll ${_tabs[_tab].$2}');
-                      }
-                      return false;
-                    },
-                    child: IndexedStack(
-                      index: _tab,
-                      children: <Widget>[
-                        HomePage(
-                          onStart: () => _go(1),
-                          onFood: () => _run(1),
-                          onWeigh: () => _run(3),
-                        ),
-                        const TrainPage(),
-                        const FoodPage(),
-                        const ProgressPage(),
-                      ],
-                    ),
-                  ),
+        // (Two fingers moved together are the person's own shortcuts, anywhere in Prism.)
+        body: RawGestureDetector(
+          behavior: HitTestBehavior.translucent,
+          gestures: _twoFingers,
+          child: Stack(
+            children: <Widget>[
+              // The wallpaper: quiet, with a few soft lights for the glass to catch.
+              Positioned.fill(
+                child: ListenableBuilder(
+                  listenable: Listenable.merge(<Listenable>[
+                    Diag.instance.wallpaperOn,
+                    Look.instance,
+                  ]),
+                  builder: (BuildContext context, Widget? _) =>
+                      Diag.instance.wallpaperOn.value
+                      ? _WallpaperImage(
+                          dark: c.dark,
+                          version: Look.instance.version,
+                        )
+                      : ColoredBox(color: c.bg),
                 ),
               ),
-            ),
-            // Content scrolls away under the status bar instead of colliding with the clock.
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              height: safe.top + 18,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: <Color>[
-                        c.bg.withValues(alpha: 0.92),
-                        c.bg.withValues(alpha: 0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // The bar.
-            Positioned(
-              left: 14,
-              right: 14,
-              bottom: safe.bottom + 14,
-              height: _barH,
-              // While the blobs are out, the bar is not for changing pages: a tap anywhere on it
-              // falls through to the dim behind it, which closes the blobs.
-              child: IgnorePointer(
-                ignoring: _open,
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints box) {
-                    if (_barW != box.maxWidth) {
-                      _barW = box.maxWidth;
-                      scheduleMicrotask(() => _lensX.jumpTo(_centre(_tab)));
-                    }
-                    return GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTapUp: (TapUpDetails d) {
-                        final int s = (d.localPosition.dx / _slot)
-                            .floor()
-                            .clamp(0, 4);
-                        if (s != 2) {
-                          _lift.animateTo(0, velocity: 7);
-                          _go(s < 2 ? s : s - 1);
+              // The page.
+              Positioned.fill(
+                child: ListenableBuilder(
+                  listenable: _page,
+                  // A small slide only. Fading a whole page means drawing it twice, which is where the stutters on tab changes came from.
+                  builder: (BuildContext context, Widget? child) =>
+                      Transform.translate(
+                        offset: Offset(0, (1 - _page.value) * 14),
+                        child: child,
+                      ),
+                  // Its own layer, so sliding a page in moves a finished picture and repaints nothing.
+                  child: RepaintBoundary(
+                    child: NotificationListener<ScrollStartNotification>(
+                      onNotification: (ScrollStartNotification n) {
+                        if (n.dragDetails != null) {
+                          Diag.instance.event('scroll ${_tabs[_tab].$2}');
                         }
+                        return false;
                       },
-                      // Slide along the bar and the lens comes with you.
-                      onHorizontalDragStart: (_) => _lift.animateTo(1),
-                      onHorizontalDragUpdate: (DragUpdateDetails d) =>
-                          _lensX.animateTo(
-                            d.localPosition.dx.clamp(
-                              _slot / 2,
-                              _barW - _slot / 2,
-                            ),
+                      child: IndexedStack(
+                        index: _tab,
+                        children: <Widget>[
+                          HomePage(
+                            onStart: () => _go(1),
+                            onFood: () => _run(1),
+                            onWeigh: () => _run(3),
                           ),
-                      onHorizontalDragEnd: (_) {
-                        _lift.animateTo(0);
-                        int best = 0;
-                        for (int i = 1; i < 4; i++) {
-                          if ((_centre(i) - _lensX.target).abs() <
-                              (_centre(best) - _lensX.target).abs()) {
-                            best = i;
-                          }
-                        }
-                        if (best == _tab) {
-                          _lensX.animateTo(_centre(best));
-                        } else {
-                          _go(best);
-                        }
-                      },
-                      child: ListenableBuilder(
-                        listenable: Listenable.merge(<Listenable>[
-                          _lensX,
-                          _lift,
-                          Diag.instance.glassMode,
-                          Diag.instance.autoLevel,
-                          Look.instance.frostReady,
-                          Diag.instance.wallpaperOn,
-                        ]),
-                        builder: (BuildContext context, Widget? _) {
-                          // The lens swells when lifted, stretches along its travel and thins to keep its volume.
-                          final double stretch = (_lensX.velocity.abs() / 70)
-                              .clamp(0.0, 26.0);
-                          final double grow = 1 + 0.14 * _lift.value;
-                          final double w = (_slot - 8) * grow + stretch,
-                              h = (_barH - 12) * grow * (1 - stretch / 220);
-                          final Rect lens = Rect.fromCenter(
-                            center: Offset(_lensX.value, _barH / 2),
-                            width: w,
-                            height: h,
-                          );
-                          final RRect shape = RRect.fromRectAndRadius(
-                            lens,
-                            Radius.circular(h / 2),
-                          );
-                          final bool off = settings.reduceTransparency;
-                          final int mode = Diag.instance.barMode;
-                          final bool lensOut = _carrying || _parked;
-                          final bool moving =
-                              (_lensX.value - _lensX.target).abs() > 0.5 ||
-                              _lift.value > 0.01;
-                          // The bar itself, and the small lens that rides in it.
-                          // While a sheet is up the bar sits dimmed underneath it, and glass there is
-                          // blurred again on every frame for something nobody is looking at. So it
-                          // goes solid meanwhile. Under the app drawer it does not: there the bar is
-                          // in plain sight, and must be the same bar it is under the blobs.
-                          final bool covered = _sheetOpen || _coverHold;
-                          final bool barSolid =
-                              off ||
-                              covered ||
-                              mode == 3 ||
-                              (mode == 1 && lensOut);
-                          final bool riderSolid =
-                              off ||
-                              covered ||
-                              mode == 3 ||
-                              (mode == 1 && (moving || lensOut));
-                          final bool solid = barSolid || riderSolid;
-                          // Whenever the bar is not real glass, it is clear glass: a tint over
-                          // whatever is behind it, with the rim and the light of glass. What scrolls
-                          // under it shows through, and it costs nothing to draw.
-                          final bool still = barSolid && !off;
-                          return Stack(
-                            clipBehavior: Clip.none,
-                            children: <Widget>[
-                              if (still)
-                                Positioned.fill(
-                                  child: StillGlass(
-                                    radius: _barH / 2,
-                                    // Dark enough that the labels read over anything, clear
-                                    // enough that what passes underneath is seen passing.
-                                    tint: c.glassTint.withValues(alpha: 0.6),
-                                    rim: Colors.white.withValues(
-                                      alpha: c.dark ? 0.34 : 0.9,
-                                    ),
-                                    clear: true,
-                                    stamp: Look.instance.frostReady.value,
-                                  ),
-                                ),
-                              Positioned.fill(
-                                child: Glass(
-                                  radius: _barH / 2,
-                                  // Clear glass: softened just enough that words scrolling under it do
-                                  // not fight the labels, and no more, so that the lights behind the
-                                  // bar keep their shape as they pass under it.
-                                  style: GlassStyle(
-                                    blur: 4,
-                                    tint: 0.27,
-                                    refraction: 16,
-                                    bevel: 12,
-                                    // In the new styles the solid bar is matched to the glass one, so swapping does not flash.
-                                    fallbackColor: still
-                                        ? const Color(0x00000000)
-                                        : (mode == 0 && !covered
-                                              ? c.surfaceHigh
-                                              : Color.lerp(
-                                                  c.bg,
-                                                  c.surfaceHigh,
-                                                  0.35,
-                                                )),
-                                  ),
-                                  hole: solid ? null : shape.deflate(0.5),
-                                  solid: barSolid,
-                                  quality: mode == 2 ? GlassQuality.low : null,
-                                ),
-                              ),
-                              if (still)
-                                // The lens around the selected tab: clear glass that enlarges what is behind it.
-                                Positioned.fromRect(
-                                  rect: lens,
-                                  child: StillGlass(
-                                    radius: h / 2,
-                                    clear: true,
-                                    tint: c.accent.withValues(alpha: 0.26),
-                                    rim: Colors.white.withValues(
-                                      alpha: c.dark ? 0.6 : 0.95,
-                                    ),
-                                    stamp: Look.instance.frostReady.value,
-                                  ),
-                                ),
-                              Positioned.fromRect(
-                                rect: lens,
-                                child: Glass(
-                                  solid: riderSolid,
-                                  radius: h / 2,
-                                  style: GlassStyle(
-                                    blur: 2.5,
-                                    tint: 0.16,
-                                    refraction: 22,
-                                    bevel: 13,
-                                    dispersion: 0.2,
-                                    magnify: 1.12,
-                                    light: 0.9,
-                                    saturation: 1.4,
-                                    adapt: 0.42,
-                                    shadow: 0.6,
-                                    fallbackColor: still
-                                        ? const Color(0x00000000)
-                                        : (mode == 0 && !covered
-                                              ? c.accent.withValues(alpha: 0.3)
-                                              : c.ink.withValues(alpha: 0.10)),
-                                  ),
-                                ),
-                              ),
-                              Row(
-                                children: <Widget>[
-                                  for (int s = 0; s < 5; s++)
-                                    Expanded(
-                                      child: s == 2
-                                          ? const SizedBox.shrink()
-                                          : Builder(
-                                              builder: (BuildContext context) {
-                                                final int i = s < 2 ? s : s - 1;
-                                                // Brightness follows the lens, not the tap, so it reads as the lens lighting the tab.
-                                                final double on =
-                                                    (1 -
-                                                            ((_centre(i) -
-                                                                        _lensX
-                                                                            .value)
-                                                                    .abs() /
-                                                                _slot))
-                                                        .clamp(0.0, 1.0);
-                                                return Semantics(
-                                                  button: true,
-                                                  selected: i == _tab,
-                                                  label: _tabs[i].$2,
-                                                  child: Column(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: <Widget>[
-                                                      Transform.scale(
-                                                        scale: 1 + 0.12 * on,
-                                                        child: Icon(
-                                                          _tabs[i].$1,
-                                                          size: 23,
-                                                          color: Color.lerp(
-                                                            c.glassInk
-                                                                .withValues(
-                                                                  alpha: 0.6,
-                                                                ),
-                                                            c.glassInk,
-                                                            on,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 3),
-                                                      Text(
-                                                        _tabs[i].$2,
-                                                        textScaler: TextScaler
-                                                            .noScaling,
-                                                        style: LumenType.text(
-                                                          10.5,
-                                                          weight:
-                                                              560 + 140 * on,
-                                                          color: Color.lerp(
-                                                            c.glassInk
-                                                                .withValues(
-                                                                  alpha: 0.6,
-                                                                ),
-                                                            c.glassInk,
-                                                            on,
-                                                          ),
-                                                          height: 1.1,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          );
-                        },
+                          const TrainPage(),
+                          const FoodPage(),
+                          const ProgressPage(),
+                        ],
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            // One dim for the blobs and for the drawer, over the page and over the bar alike. The
-            // bar looks the same under both, so going from one to the other changes nothing on it.
-            ListenableBuilder(
-              listenable: _t,
-              builder: (BuildContext context, Widget? _) => IgnorePointer(
-                ignoring: !_open,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  // A tap beside the blobs closes them. While they are being changed it ends
-                  // the changing first, and they stay out.
-                  onTap: () => _editing ? _setEditing(false) : _setOpen(false),
-                  child: ColoredBox(
-                    color: Colors.black.withValues(
-                      alpha: 0.5 * _t.value.clamp(0.0, 1.0),
                     ),
-                    child: const SizedBox.expand(),
                   ),
                 ),
               ),
-            ),
-            // The app drawer, which grows out of the button.
-            Positioned.fill(
-              child: AppDrawer(
-                open: _drawerOpen,
-                origin: bc,
-                button: _button,
-                tone: lensTone(c.accent),
-                onClose: () => _setDrawer(false),
-                // Up to choose what takes a blob's place: it says so, offers Prism's own
-                // actions as well as the apps, and a tap chooses.
-                pick: _editSlot == null ? null : _blobName(_editSlot!),
-                choices: <(String, String, IconData, Color)>[
-                  for (int k = 0; k < _actions.length; k++)
-                    (
-                      'action:$k',
-                      _actions[k].$1,
-                      _actions[k].$2,
-                      _actions[k].$3,
-                    ),
-                  for (int k = 0; k < _tabs.length; k++)
-                    ('screen:$k', _tabs[k].$2, _tabs[k].$1, c.accent),
-                ],
-                onPick: _picked,
-              ),
-            ),
-            // The threads: each blob stays tied to the button until it arrives.
-            Positioned.fill(
-              child: IgnorePointer(
-                child: CustomPaint(
-                  painter: _ThreadPainter(
-                    from: bc,
-                    to: <Offset>[for (int i = 0; i < _n; i++) rest(i)],
-                    out: _out,
-                    colors: <Color>[for (int i = 0; i < _n; i++) _blobColor(i)],
-                  ),
-                ),
-              ),
-            ),
-            // The blobs.
-            for (int i = 0; i < _n; i++)
-              ListenableBuilder(
-                listenable: Listenable.merge(<Listenable>[
-                  _out[i],
-                  _seat[i],
-                  _dragAt,
-                  _dragBack,
-                  _far,
-                  _gone[i],
-                ]),
-                builder: (BuildContext context, Widget? _) {
-                  final double p = _out[i].value;
-                  final bool empty = _isEmpty(i);
-                  final double gone = _gone[i].value.clamp(0.0, 1.0);
-                  if (_shotI == i) {
-                    return const SizedBox.shrink();
-                  }
-                  if (empty && gone > 0.995) {
-                    // An empty place, out in the middle. It is there only while the blobs are
-                    // being changed: an outline with the edit mark, and a tap gives it something.
-                    if (!_editing || !_open) {
-                      return const SizedBox.shrink();
-                    }
-                    final Offset m = mid(i);
-                    return Positioned(
-                      left: m.dx - _blob / 2 - 6,
-                      top: m.dy - _blob / 2 - 6,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => _pickFor(i),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: Stack(
-                            clipBehavior: Clip.none,
-                            children: <Widget>[
-                              _blobDisc(i),
-                              const Positioned(
-                                right: -4,
-                                top: -4,
-                                child: _EditMark(icon: Icons.edit_rounded),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                  if (p <= 0.001) {
-                    return const SizedBox.shrink();
-                  }
-                  // Picked up, it is where the finger has it. Let go away from the button, it
-                  // goes back to its place.
-                  final bool held = _dragI == i;
-                  final Offset among = held
-                      ? _dragAt.value
-                      : (_backI == i
-                            ? rest(i) + (_dropAt - rest(i)) * _dragBack.value
-                            : bc + (rest(i) - bc) * p);
-                  // On its way out to the middle as an empty place, or back from there with
-                  // something in it.
-                  final Offset b = gone > 0.001
-                      ? Offset.lerp(among, mid(i), gone)!
-                      : among;
-                  final double st = (_out[i].velocity.abs() * 0.04).clamp(
-                    0.0,
-                    0.46,
-                  );
-                  final Offset dir = rest(i) - bc;
-                  final double ang = math.atan2(dir.dy, dir.dx),
-                      s =
-                          0.14 +
-                          0.86 * math.pow(p.clamp(0.0, 1.0), 1.5) +
-                          (p > 1 ? (p - 1) * 0.35 : 0);
-                  // Handed back by the lens, it starts the size it was in there.
-                  final double back = _backI == i
-                      ? 1 + (_backScale - 1) * _dragBack.value.clamp(0.0, 1.0)
-                      : 1.0;
-                  return Positioned(
-                    left: b.dx - _blob / 2 - 20,
-                    // (Eight above the blob as well, so the marks on its corners can be tapped.)
-                    top: b.dy - _blob / 2 - 8,
-                    width: _blob + 40,
-                    child: IgnorePointer(
-                      ignoring: !_open,
-                      child: Opacity(
-                        opacity: (p * 12).clamp(0.0, 1.0),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          // A tap uses it. Picked up and put down somewhere, it floats
-                          // there; on the button, or flicked at it, the button shoots it out
-                          // to the side. Held, all the blobs can be changed: each wears an
-                          // edit mark, and a tap on one then changes that one.
-                          // While the blobs are being changed, a tap on the red minus
-                          // takes this one away and a tap anywhere else on it changes it.
-                          // (The minus hangs over the blob's corner; where the tap landed
-                          // is worked out here so that every part of it answers.)
-                          onTapUp: (TapUpDetails d) {
-                            if (!_editing) {
-                              _blobTap(i);
-                              return;
-                            }
-                            final Offset from =
-                                d.localPosition -
-                                const Offset((_blob + 40) / 2, 8 + _blob / 2);
-                            if (!empty &&
-                                (from - const Offset(-21, -21)).distance < 21) {
-                              _removeBlob(i);
-                            } else {
-                              _pickFor(i);
-                            }
-                          },
-                          // Held: the blobs can be changed. Held and then moved without
-                          // letting go, it comes along, as on any drag.
-                          onLongPressStart: (LongPressStartDetails d) {
-                            _holdFrom = d.globalPosition;
-                            _setEditing(true);
-                          },
-                          onLongPressMoveUpdate:
-                              (LongPressMoveUpdateDetails d) {
-                                if (_dragI != i) {
-                                  if ((d.globalPosition - _holdFrom).distance <
-                                      10) {
-                                    return;
-                                  }
-                                  grab(i, d.globalPosition);
-                                }
-                                _blobDrag(i, d.globalPosition - _dragGrab, bc);
-                              },
-                          onLongPressEnd: (LongPressEndDetails d) =>
-                              _blobDrop(i, bc, d.velocity.pixelsPerSecond),
-                          // Dragged. While the blobs are being changed that only puts them
-                          // in another order.
-                          onPanStart: (DragStartDetails d) =>
-                              grab(i, d.globalPosition),
-                          onPanUpdate: (DragUpdateDetails d) =>
-                              _blobDrag(i, d.globalPosition - _dragGrab, bc),
-                          onPanEnd: (DragEndDetails d) =>
-                              _blobDrop(i, bc, d.velocity.pixelsPerSecond),
-                          onPanCancel: () => _blobDrop(i, bc, Offset.zero),
-                          child: Column(
-                            children: <Widget>[
-                              const SizedBox(height: 8),
-                              Transform(
-                                alignment: Alignment.center,
-                                transform: Matrix4.rotationZ(ang)
-                                  ..scaleByDouble(
-                                    s * back * (1 + st) * (held ? 1.08 : 1),
-                                    s *
-                                        back *
-                                        (1 - st * 0.5) *
-                                        (held ? 1.08 : 1),
-                                    1,
-                                    1,
-                                  )
-                                  ..rotateZ(-ang),
-                                // While the blobs are being changed each one wears its marks:
-                                // the pencil on the right, to change it, and the red minus
-                                // on the left, to take it away.
-                                child: _editing
-                                    ? Stack(
-                                        clipBehavior: Clip.none,
-                                        children: <Widget>[
-                                          _blobDisc(i),
-                                          const Positioned(
-                                            right: -4,
-                                            top: -4,
-                                            child: _EditMark(
-                                              icon: Icons.edit_rounded,
-                                            ),
-                                          ),
-                                          if (!empty)
-                                            const Positioned(
-                                              left: -4,
-                                              top: -4,
-                                              child: _EditMark(
-                                                icon: Icons.remove_rounded,
-                                                color: Color(0xFFE5484D),
-                                                ink: Colors.white,
-                                              ),
-                                            ),
-                                        ],
-                                      )
-                                    : (_blobNotes(i) > 0 && p > 0.9
-                                          // An app with notifications wears their number.
-                                          ? Stack(
-                                              clipBehavior: Clip.none,
-                                              children: <Widget>[
-                                                _blobDisc(i),
-                                                Positioned(
-                                                  right: -4,
-                                                  top: -4,
-                                                  child: _noteBadge(i),
-                                                ),
-                                              ],
-                                            )
-                                          : _blobDisc(i)),
-                              ),
-                              const SizedBox(height: 7),
-                              // The name appears once the blob is nearly there, not while it is a speck.
-                              Opacity(
-                                opacity: held
-                                    ? 0
-                                    : ((p - 0.6) / 0.4).clamp(0.0, 1.0) *
-                                          (1 - gone) *
-                                          ((_far.value - _reachBare) /
-                                                  (_reach - _reachBare))
-                                              .clamp(0.0, 1.0),
-                                child: Text(
-                                  _blobName(i),
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  textScaler: TextScaler.noScaling,
-                                  style: LumenType.text(
-                                    13.5,
-                                    weight: 650,
-                                    color: Colors.white,
-                                    height: 1.1,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            // While the blobs are being changed: the switch for their names, above them. (The
-            // marks on the blobs say the rest.)
-            if (_editing && _open)
+              // Content scrolls away under the status bar instead of colliding with the clock.
               Positioned(
                 left: 0,
                 right: 0,
-                bottom: screen.height - (bc.dy - _reach - _blob / 2 - 22),
-                child: ListenableBuilder(
-                  listenable: _t,
-                  builder: (BuildContext context, Widget? _) => Opacity(
-                    opacity: _t.value.clamp(0.0, 1.0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        // Names under the blobs, on or off. White, like the marks on the
-                        // blobs: the things that can be tapped while changing.
-                        GestureDetector(
-                          key: Robot.key('names'),
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () => _setNames(!BlobSlots.instance.names),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                top: 0,
+                height: safe.top + 18,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: <Color>[
+                          c.bg.withValues(alpha: 0.92),
+                          c.bg.withValues(alpha: 0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              // The bar.
+              Positioned(
+                left: 14,
+                right: 14,
+                bottom: safe.bottom + 14,
+                height: _barH,
+                // While the blobs are out, the bar is not for changing pages: a tap anywhere on it
+                // falls through to the dim behind it, which closes the blobs.
+                child: IgnorePointer(
+                  ignoring: _open,
+                  child: LayoutBuilder(
+                    builder: (BuildContext context, BoxConstraints box) {
+                      if (_barW != box.maxWidth) {
+                        _barW = box.maxWidth;
+                        scheduleMicrotask(() => _lensX.jumpTo(_centre(_tab)));
+                      }
+                      return GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTapUp: (TapUpDetails d) {
+                          final int s = (d.localPosition.dx / _slot)
+                              .floor()
+                              .clamp(0, 4);
+                          if (s != 2) {
+                            _lift.animateTo(0, velocity: 7);
+                            _go(s < 2 ? s : s - 1);
+                          }
+                        },
+                        // Slide along the bar and the lens comes with you.
+                        onHorizontalDragStart: (_) => _lift.animateTo(1),
+                        onHorizontalDragUpdate: (DragUpdateDetails d) =>
+                            _lensX.animateTo(
+                              d.localPosition.dx.clamp(
+                                _slot / 2,
+                                _barW - _slot / 2,
+                              ),
                             ),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 8,
-                              ),
-                              decoration: const ShapeDecoration(
-                                color: Colors.white,
-                                shape: StadiumBorder(),
-                                shadows: <BoxShadow>[
-                                  BoxShadow(
-                                    color: Color(0x55000000),
-                                    blurRadius: 6,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Icon(
-                                    BlobSlots.instance.names
-                                        ? Icons.label_off_rounded
-                                        : Icons.label_rounded,
-                                    size: 16,
-                                    color: const Color(0xFF15171C),
-                                  ),
-                                  const SizedBox(width: 7),
-                                  Text(
-                                    BlobSlots.instance.names
-                                        ? 'Hide labels'
-                                        : 'Show labels',
-                                    textScaler: TextScaler.noScaling,
-                                    style: LumenType.text(
-                                      14,
-                                      weight: 650,
-                                      color: const Color(0xFF15171C),
-                                      height: 1.2,
+                        onHorizontalDragEnd: (_) {
+                          _lift.animateTo(0);
+                          int best = 0;
+                          for (int i = 1; i < 4; i++) {
+                            if ((_centre(i) - _lensX.target).abs() <
+                                (_centre(best) - _lensX.target).abs()) {
+                              best = i;
+                            }
+                          }
+                          if (best == _tab) {
+                            _lensX.animateTo(_centre(best));
+                          } else {
+                            _go(best);
+                          }
+                        },
+                        child: ListenableBuilder(
+                          listenable: Listenable.merge(<Listenable>[
+                            _lensX,
+                            _lift,
+                            Diag.instance.glassMode,
+                            Diag.instance.autoLevel,
+                            Look.instance.frostReady,
+                            Diag.instance.wallpaperOn,
+                          ]),
+                          builder: (BuildContext context, Widget? _) {
+                            // The lens swells when lifted, stretches along its travel and thins to keep its volume.
+                            final double stretch = (_lensX.velocity.abs() / 70)
+                                .clamp(0.0, 26.0);
+                            final double grow = 1 + 0.14 * _lift.value;
+                            final double w = (_slot - 8) * grow + stretch,
+                                h = (_barH - 12) * grow * (1 - stretch / 220);
+                            final Rect lens = Rect.fromCenter(
+                              center: Offset(_lensX.value, _barH / 2),
+                              width: w,
+                              height: h,
+                            );
+                            final RRect shape = RRect.fromRectAndRadius(
+                              lens,
+                              Radius.circular(h / 2),
+                            );
+                            final bool off = settings.reduceTransparency;
+                            final int mode = Diag.instance.barMode;
+                            final bool lensOut = _carrying || _parked;
+                            final bool moving =
+                                (_lensX.value - _lensX.target).abs() > 0.5 ||
+                                _lift.value > 0.01;
+                            // The bar itself, and the small lens that rides in it.
+                            // While a sheet is up the bar sits dimmed underneath it, and glass there is
+                            // blurred again on every frame for something nobody is looking at. So it
+                            // goes solid meanwhile. Under the app drawer it does not: there the bar is
+                            // in plain sight, and must be the same bar it is under the blobs.
+                            final bool covered = _sheetOpen || _coverHold;
+                            final bool barSolid =
+                                off ||
+                                covered ||
+                                mode == 3 ||
+                                (mode == 1 && lensOut);
+                            final bool riderSolid =
+                                off ||
+                                covered ||
+                                mode == 3 ||
+                                (mode == 1 && (moving || lensOut));
+                            final bool solid = barSolid || riderSolid;
+                            // Whenever the bar is not real glass, it is clear glass: a tint over
+                            // whatever is behind it, with the rim and the light of glass. What scrolls
+                            // under it shows through, and it costs nothing to draw.
+                            final bool still = barSolid && !off;
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: <Widget>[
+                                if (still)
+                                  Positioned.fill(
+                                    child: StillGlass(
+                                      radius: _barH / 2,
+                                      // Dark enough that the labels read over anything, clear
+                                      // enough that what passes underneath is seen passing.
+                                      tint: c.glassTint.withValues(alpha: 0.6),
+                                      rim: Colors.white.withValues(
+                                        alpha: c.dark ? 0.34 : 0.9,
+                                      ),
+                                      clear: true,
+                                      stamp: Look.instance.frostReady.value,
                                     ),
                                   ),
-                                ],
+                                Positioned.fill(
+                                  child: Glass(
+                                    radius: _barH / 2,
+                                    // Clear glass: softened just enough that words scrolling under it do
+                                    // not fight the labels, and no more, so that the lights behind the
+                                    // bar keep their shape as they pass under it.
+                                    style: GlassStyle(
+                                      blur: 4,
+                                      tint: 0.27,
+                                      refraction: 16,
+                                      bevel: 12,
+                                      // In the new styles the solid bar is matched to the glass one, so swapping does not flash.
+                                      fallbackColor: still
+                                          ? const Color(0x00000000)
+                                          : (mode == 0 && !covered
+                                                ? c.surfaceHigh
+                                                : Color.lerp(
+                                                    c.bg,
+                                                    c.surfaceHigh,
+                                                    0.35,
+                                                  )),
+                                    ),
+                                    hole: solid ? null : shape.deflate(0.5),
+                                    solid: barSolid,
+                                    quality: mode == 2
+                                        ? GlassQuality.low
+                                        : null,
+                                  ),
+                                ),
+                                if (still)
+                                  // The lens around the selected tab: clear glass that enlarges what is behind it.
+                                  Positioned.fromRect(
+                                    rect: lens,
+                                    child: StillGlass(
+                                      radius: h / 2,
+                                      clear: true,
+                                      tint: c.accent.withValues(alpha: 0.26),
+                                      rim: Colors.white.withValues(
+                                        alpha: c.dark ? 0.6 : 0.95,
+                                      ),
+                                      stamp: Look.instance.frostReady.value,
+                                    ),
+                                  ),
+                                Positioned.fromRect(
+                                  rect: lens,
+                                  child: Glass(
+                                    solid: riderSolid,
+                                    radius: h / 2,
+                                    style: GlassStyle(
+                                      blur: 2.5,
+                                      tint: 0.16,
+                                      refraction: 22,
+                                      bevel: 13,
+                                      dispersion: 0.2,
+                                      magnify: 1.12,
+                                      light: 0.9,
+                                      saturation: 1.4,
+                                      adapt: 0.42,
+                                      shadow: 0.6,
+                                      fallbackColor: still
+                                          ? const Color(0x00000000)
+                                          : (mode == 0 && !covered
+                                                ? c.accent.withValues(
+                                                    alpha: 0.3,
+                                                  )
+                                                : c.ink.withValues(
+                                                    alpha: 0.10,
+                                                  )),
+                                    ),
+                                  ),
+                                ),
+                                Row(
+                                  children: <Widget>[
+                                    for (int s = 0; s < 5; s++)
+                                      Expanded(
+                                        child: s == 2
+                                            ? const SizedBox.shrink()
+                                            : Builder(
+                                                builder: (BuildContext context) {
+                                                  final int i = s < 2
+                                                      ? s
+                                                      : s - 1;
+                                                  // Brightness follows the lens, not the tap, so it reads as the lens lighting the tab.
+                                                  final double on =
+                                                      (1 -
+                                                              ((_centre(i) -
+                                                                          _lensX
+                                                                              .value)
+                                                                      .abs() /
+                                                                  _slot))
+                                                          .clamp(0.0, 1.0);
+                                                  return Semantics(
+                                                    button: true,
+                                                    selected: i == _tab,
+                                                    label: _tabs[i].$2,
+                                                    child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .center,
+                                                      children: <Widget>[
+                                                        Transform.scale(
+                                                          scale: 1 + 0.12 * on,
+                                                          child: Icon(
+                                                            _tabs[i].$1,
+                                                            size: 23,
+                                                            color: Color.lerp(
+                                                              c.glassInk
+                                                                  .withValues(
+                                                                    alpha: 0.6,
+                                                                  ),
+                                                              c.glassInk,
+                                                              on,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 3,
+                                                        ),
+                                                        Text(
+                                                          _tabs[i].$2,
+                                                          textScaler: TextScaler
+                                                              .noScaling,
+                                                          style: LumenType.text(
+                                                            10.5,
+                                                            weight:
+                                                                560 + 140 * on,
+                                                            color: Color.lerp(
+                                                              c.glassInk
+                                                                  .withValues(
+                                                                    alpha: 0.6,
+                                                                  ),
+                                                              c.glassInk,
+                                                              on,
+                                                            ),
+                                                            height: 1.1,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              // One dim for the blobs and for the drawer, over the page and over the bar alike. The
+              // bar looks the same under both, so going from one to the other changes nothing on it.
+              ListenableBuilder(
+                listenable: _t,
+                builder: (BuildContext context, Widget? _) => IgnorePointer(
+                  ignoring: !_open,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    // A tap beside the blobs closes them. While they are being changed it ends
+                    // the changing first, and they stay out.
+                    onTap: () =>
+                        _editing ? _setEditing(false) : _setOpen(false),
+                    child: ColoredBox(
+                      color: Colors.black.withValues(
+                        alpha: 0.5 * _t.value.clamp(0.0, 1.0),
+                      ),
+                      child: const SizedBox.expand(),
+                    ),
+                  ),
+                ),
+              ),
+              // The app drawer, which grows out of the button.
+              Positioned.fill(
+                child: AppDrawer(
+                  open: _drawerOpen,
+                  origin: bc,
+                  button: _button,
+                  tone: lensTone(c.accent),
+                  onClose: () => _setDrawer(false),
+                  // Up to choose what takes a blob's place: it says so, offers Prism's own
+                  // actions as well as the apps, and a tap chooses.
+                  pick: _editSlot == null ? null : _blobName(_editSlot!),
+                  pickTitle: _editSlot != null && _editSlot! >= 100
+                      ? (
+                          'Swipe ${GestureSlots.names[_editSlot! - 100]}',
+                          'with two fingers',
+                        )
+                      : null,
+                  choices: <(String, String, IconData, Color)>[
+                    // A swipe can also pull the phone's notifications down.
+                    if (_editSlot != null && _editSlot! >= 100)
+                      (
+                        'phone:shade',
+                        'Notifications',
+                        Icons.notifications_rounded,
+                        const Color(0xFF5A6373),
+                      ),
+                    for (int k = 0; k < _actions.length; k++)
+                      (
+                        'action:$k',
+                        _actions[k].$1,
+                        _actions[k].$2,
+                        _actions[k].$3,
+                      ),
+                    for (int k = 0; k < _tabs.length; k++)
+                      ('screen:$k', _tabs[k].$2, _tabs[k].$1, c.accent),
+                  ],
+                  onPick: _picked,
+                ),
+              ),
+              // The threads: each blob stays tied to the button until it arrives.
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _ThreadPainter(
+                      from: bc,
+                      to: <Offset>[for (int i = 0; i < _n; i++) rest(i)],
+                      out: _out,
+                      colors: <Color>[
+                        for (int i = 0; i < _n; i++) _blobColor(i),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // The blobs.
+              for (int i = 0; i < _n; i++)
+                ListenableBuilder(
+                  listenable: Listenable.merge(<Listenable>[
+                    _out[i],
+                    _seat[i],
+                    _dragAt,
+                    _dragBack,
+                    _far,
+                    _gone[i],
+                  ]),
+                  builder: (BuildContext context, Widget? _) {
+                    final double p = _out[i].value;
+                    final bool empty = _isEmpty(i);
+                    final double gone = _gone[i].value.clamp(0.0, 1.0);
+                    if (_shotI == i) {
+                      return const SizedBox.shrink();
+                    }
+                    if (empty && gone > 0.995) {
+                      // An empty place, out in the middle. It is there only while the blobs are
+                      // being changed: an outline with the edit mark, and a tap gives it something.
+                      if (!_editing || !_open) {
+                        return const SizedBox.shrink();
+                      }
+                      final Offset m = mid(i);
+                      return Positioned(
+                        left: m.dx - _blob / 2 - 6,
+                        top: m.dy - _blob / 2 - 6,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _pickFor(i),
+                          child: Padding(
+                            padding: const EdgeInsets.all(6),
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: <Widget>[
+                                _blobDisc(i),
+                                const Positioned(
+                                  right: -4,
+                                  top: -4,
+                                  child: _EditMark(icon: Icons.edit_rounded),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    if (p <= 0.001) {
+                      return const SizedBox.shrink();
+                    }
+                    // Picked up, it is where the finger has it. Let go away from the button, it
+                    // goes back to its place.
+                    final bool held = _dragI == i;
+                    final Offset among = held
+                        ? _dragAt.value
+                        : (_backI == i
+                              ? rest(i) + (_dropAt - rest(i)) * _dragBack.value
+                              : bc + (rest(i) - bc) * p);
+                    // On its way out to the middle as an empty place, or back from there with
+                    // something in it.
+                    final Offset b = gone > 0.001
+                        ? Offset.lerp(among, mid(i), gone)!
+                        : among;
+                    final double st = (_out[i].velocity.abs() * 0.04).clamp(
+                      0.0,
+                      0.46,
+                    );
+                    final Offset dir = rest(i) - bc;
+                    final double ang = math.atan2(dir.dy, dir.dx),
+                        s =
+                            0.14 +
+                            0.86 * math.pow(p.clamp(0.0, 1.0), 1.5) +
+                            (p > 1 ? (p - 1) * 0.35 : 0);
+                    // Handed back by the lens, it starts the size it was in there.
+                    final double back = _backI == i
+                        ? 1 + (_backScale - 1) * _dragBack.value.clamp(0.0, 1.0)
+                        : 1.0;
+                    return Positioned(
+                      left: b.dx - _blob / 2 - 20,
+                      // (Eight above the blob as well, so the marks on its corners can be tapped.)
+                      top: b.dy - _blob / 2 - 8,
+                      width: _blob + 40,
+                      child: IgnorePointer(
+                        ignoring: !_open,
+                        child: Opacity(
+                          opacity: (p * 12).clamp(0.0, 1.0),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            // A tap uses it. Picked up and put down somewhere, it floats
+                            // there; on the button, or flicked at it, the button shoots it out
+                            // to the side. Held, all the blobs can be changed: each wears an
+                            // edit mark, and a tap on one then changes that one.
+                            // While the blobs are being changed, a tap on the red minus
+                            // takes this one away and a tap anywhere else on it changes it.
+                            // (The minus hangs over the blob's corner; where the tap landed
+                            // is worked out here so that every part of it answers.)
+                            onTapUp: (TapUpDetails d) {
+                              if (!_editing) {
+                                _blobTap(i);
+                                return;
+                              }
+                              final Offset from =
+                                  d.localPosition -
+                                  const Offset((_blob + 40) / 2, 8 + _blob / 2);
+                              if (!empty &&
+                                  (from - const Offset(-21, -21)).distance <
+                                      21) {
+                                _removeBlob(i);
+                              } else {
+                                _pickFor(i);
+                              }
+                            },
+                            // Held: the blobs can be changed. Held and then moved without
+                            // letting go, it comes along, as on any drag.
+                            onLongPressStart: (LongPressStartDetails d) {
+                              _holdFrom = d.globalPosition;
+                              _setEditing(true);
+                            },
+                            onLongPressMoveUpdate:
+                                (LongPressMoveUpdateDetails d) {
+                                  if (_dragI != i) {
+                                    if ((d.globalPosition - _holdFrom)
+                                            .distance <
+                                        10) {
+                                      return;
+                                    }
+                                    grab(i, d.globalPosition);
+                                  }
+                                  _blobDrag(
+                                    i,
+                                    d.globalPosition - _dragGrab,
+                                    bc,
+                                  );
+                                },
+                            onLongPressEnd: (LongPressEndDetails d) =>
+                                _blobDrop(i, bc, d.velocity.pixelsPerSecond),
+                            // Dragged. While the blobs are being changed that only puts them
+                            // in another order.
+                            onPanStart: (DragStartDetails d) =>
+                                grab(i, d.globalPosition),
+                            onPanUpdate: (DragUpdateDetails d) =>
+                                _blobDrag(i, d.globalPosition - _dragGrab, bc),
+                            onPanEnd: (DragEndDetails d) =>
+                                _blobDrop(i, bc, d.velocity.pixelsPerSecond),
+                            onPanCancel: () => _blobDrop(i, bc, Offset.zero),
+                            child: Column(
+                              children: <Widget>[
+                                const SizedBox(height: 8),
+                                Transform(
+                                  alignment: Alignment.center,
+                                  transform: Matrix4.rotationZ(ang)
+                                    ..scaleByDouble(
+                                      s * back * (1 + st) * (held ? 1.08 : 1),
+                                      s *
+                                          back *
+                                          (1 - st * 0.5) *
+                                          (held ? 1.08 : 1),
+                                      1,
+                                      1,
+                                    )
+                                    ..rotateZ(-ang),
+                                  // While the blobs are being changed each one wears its marks:
+                                  // the pencil on the right, to change it, and the red minus
+                                  // on the left, to take it away.
+                                  child: _editing
+                                      ? Stack(
+                                          clipBehavior: Clip.none,
+                                          children: <Widget>[
+                                            _blobDisc(i),
+                                            const Positioned(
+                                              right: -4,
+                                              top: -4,
+                                              child: _EditMark(
+                                                icon: Icons.edit_rounded,
+                                              ),
+                                            ),
+                                            if (!empty)
+                                              const Positioned(
+                                                left: -4,
+                                                top: -4,
+                                                child: _EditMark(
+                                                  icon: Icons.remove_rounded,
+                                                  color: Color(0xFFE5484D),
+                                                  ink: Colors.white,
+                                                ),
+                                              ),
+                                          ],
+                                        )
+                                      : (_blobNotes(i) > 0 && p > 0.9
+                                            // An app with notifications wears their number.
+                                            ? Stack(
+                                                clipBehavior: Clip.none,
+                                                children: <Widget>[
+                                                  _blobDisc(i),
+                                                  Positioned(
+                                                    right: -4,
+                                                    top: -4,
+                                                    child: _noteBadge(i),
+                                                  ),
+                                                ],
+                                              )
+                                            : _blobDisc(i)),
+                                ),
+                                const SizedBox(height: 7),
+                                // The name appears once the blob is nearly there, not while it is a speck.
+                                Opacity(
+                                  opacity: held
+                                      ? 0
+                                      : ((p - 0.6) / 0.4).clamp(0.0, 1.0) *
+                                            (1 - gone) *
+                                            ((_far.value - _reachBare) /
+                                                    (_reach - _reachBare))
+                                                .clamp(0.0, 1.0),
+                                  child: Text(
+                                    _blobName(i),
+                                    maxLines: 1,
+                                    softWrap: false,
+                                    textScaler: TextScaler.noScaling,
+                                    style: LumenType.text(
+                                      13.5,
+                                      weight: 650,
+                                      color: Colors.white,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              // While the blobs are being changed: the switch for their names, above them. (The
+              // marks on the blobs say the rest.)
+              if (_editing && _open)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: screen.height - (bc.dy - _reach - _blob / 2 - 22),
+                  child: ListenableBuilder(
+                    listenable: _t,
+                    builder: (BuildContext context, Widget? _) => Opacity(
+                      opacity: _t.value.clamp(0.0, 1.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          // Names under the blobs, on or off. White, like the marks on the
+                          // blobs: the things that can be tapped while changing.
+                          GestureDetector(
+                            key: Robot.key('names'),
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => _setNames(!BlobSlots.instance.names),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
                               ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: const ShapeDecoration(
+                                  color: Colors.white,
+                                  shape: StadiumBorder(),
+                                  shadows: <BoxShadow>[
+                                    BoxShadow(
+                                      color: Color(0x55000000),
+                                      blurRadius: 6,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    Icon(
+                                      BlobSlots.instance.names
+                                          ? Icons.label_off_rounded
+                                          : Icons.label_rounded,
+                                      size: 16,
+                                      color: const Color(0xFF15171C),
+                                    ),
+                                    const SizedBox(width: 7),
+                                    Text(
+                                      BlobSlots.instance.names
+                                          ? 'Hide labels'
+                                          : 'Show labels',
+                                      textScaler: TextScaler.noScaling,
+                                      style: LumenType.text(
+                                        14,
+                                        weight: 650,
+                                        color: const Color(0xFF15171C),
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              // A blob dropped on the button: taken in under it, then shot out to the side on a
+              // thread, to become the floating lens.
+              if (_shotI != null)
+                ListenableBuilder(
+                  listenable: Listenable.merge(<Listenable>[_gulp, _shot]),
+                  builder: (BuildContext context, Widget? _) {
+                    final int i = _shotI!;
+                    final double g = _gulp.value.clamp(0.0, 1.0),
+                        out = _shot.value;
+                    final bool away = _shot.target > 0.5;
+                    final Offset at = away
+                        ? bc + (_shotTo - bc) * out
+                        : _shotFrom + (bc - _shotFrom) * g;
+                    final double size = away
+                        ? ui.lerpDouble(
+                            0.5,
+                            _shotScale,
+                            math.pow(out.clamp(0.0, 1.0), 0.7).toDouble(),
+                          )!
+                        : ui.lerpDouble(1.08, 0.5, g)!;
+                    // Stretched along its flight while it is fast.
+                    final double st = away
+                        ? (_shot.velocity.abs() * 0.06).clamp(0.0, 0.5)
+                        : 0;
+                    final Offset dir = _shotTo - bc;
+                    final double ang = math.atan2(dir.dy, dir.dx);
+                    return Stack(
+                      children: <Widget>[
+                        if (away)
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: CustomPaint(
+                                painter: _ThreadPainter(
+                                  from: bc,
+                                  to: <Offset>[_shotTo],
+                                  out: <SpringValue>[_shot],
+                                  colors: <Color>[_blobColor(i)],
+                                ),
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          left: at.dx - _blob / 2,
+                          top: at.dy - _blob / 2,
+                          child: IgnorePointer(
+                            child: Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.rotationZ(ang)
+                                ..scaleByDouble(
+                                  size * (1 + st),
+                                  size * (1 - st * 0.5),
+                                  1,
+                                  1,
+                                )
+                                ..rotateZ(-ang),
+                              child: _blobDisc(i),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              // The button: one flat colour, in the middle of the bar.
+              Positioned(
+                left: bc.dx - _button / 2,
+                top: bc.dy - _button / 2,
+                child: Semantics(
+                  button: true,
+                  label: 'Actions',
+                  child: Listener(
+                    behavior: HitTestBehavior.opaque,
+                    onPointerDown: (PointerDownEvent e) {
+                      _downAt = e.position;
+                      _lastAt = e.position;
+                      _held
+                        ..reset()
+                        ..start();
+                      _moved = false;
+                      _lifted = false;
+                      // Held still while the blobs are out: the same as holding a blob.
+                      _heldEdit = false;
+                      _holdTimer?.cancel();
+                      if (_open && !_editing && !_drawerOpen) {
+                        _holdTimer = Timer(
+                          const Duration(milliseconds: 450),
+                          () {
+                            if (_downAt != null &&
+                                !_moved &&
+                                _open &&
+                                !_editing &&
+                                mounted) {
+                              _heldEdit = true;
+                              _setEditing(true);
+                            }
+                          },
+                        );
+                      }
+                      // A finger that moved and then stopped sends no more movement, so the wait is also timed.
+                      _liftTimer?.cancel();
+                      _liftTimer = Timer(const Duration(milliseconds: 140), () {
+                        if (_downAt != null &&
+                            _moved &&
+                            !_lifted &&
+                            !_drawerOpen &&
+                            mounted) {
+                          _liftOff();
+                          final Offset at = _lastAt ?? _home;
+                          _lx.animateTo(at.dx);
+                          _ly.animateTo(at.dy - 62);
+                        }
+                      });
+                      _kick.animateTo(0.92);
+                    },
+                    onPointerMove: _buttonMove,
+                    onPointerCancel: (_) => _buttonUp(),
+                    onPointerUp: (_) => _buttonUp(),
+                    child: ListenableBuilder(
+                      listenable: Listenable.merge(<Listenable>[
+                        _t,
+                        _kick,
+                        _glass,
+                        _wob,
+                      ]),
+                      builder: (BuildContext context, Widget? _) =>
+                          Transform.scale(
+                            scaleX: _kick.value * (1 + _wob.value),
+                            scaleY: _kick.value * (1 - _wob.value),
+                            child: _glass.value > 0.5 || _returning
+                                // While the button is away, an empty ring marks where it lives.
+                                ? Container(
+                                    width: _button,
+                                    height: _button,
+                                    decoration: ShapeDecoration(
+                                      shape: CircleBorder(
+                                        side: BorderSide(
+                                          color: c.glassInk.withValues(
+                                            alpha: 0.35,
+                                          ),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                // The button is the home of the floating lens, and looks like it:
+                                // dark glass with a breath of Prism's colour, a lit rim, and a
+                                // glow at its foot. The buttons that simply do something are the
+                                // bright ones; this one opens things out, and is not one of them.
+                                : Container(
+                                    width: _button,
+                                    height: _button,
+                                    decoration: const ShapeDecoration(
+                                      shape: CircleBorder(),
+                                      shadows: <BoxShadow>[
+                                        BoxShadow(
+                                          color: Color(0x66000000),
+                                          blurRadius: 14,
+                                          offset: Offset(0, 6),
+                                        ),
+                                      ],
+                                    ),
+                                    child: CustomPaint(
+                                      painter: _LensDisc(c.accent),
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        alignment: Alignment.center,
+                                        children: <Widget>[
+                                          Transform.rotate(
+                                            angle:
+                                                _t.value.clamp(0.0, 1.2) *
+                                                math.pi /
+                                                4,
+                                            child: const Icon(
+                                              Icons.add_rounded,
+                                              color: Colors.white,
+                                              size: 34,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                    ),
+                  ),
+                ),
+              ),
+              // While the blobs are being changed: the two-finger swipes, across the top. Each has
+              // its place, drawn as a blob is: what it does, or an empty ring. Making the swipe,
+              // or a tap on its place, asks what it should do; the red minus takes that away.
+              if (_editing && _open)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: safe.top + 44,
+                  child: ListenableBuilder(
+                    listenable: GestureSlots.instance,
+                    // (On a dark patch of its own: the page shows through the dimming, and these
+                    // must be readable over whatever is there.)
+                    builder: (BuildContext context, Widget? _) => Center(
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(10, 12, 10, 10),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: <Widget>[
+                            Text(
+                              'Swipe with two fingers to set what it does',
+                              textScaler: TextScaler.noScaling,
+                              style: LumenType.text(
+                                14,
+                                weight: 600,
+                                color: Colors.white.withValues(alpha: 0.82),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                for (int g = 0; g < 4; g++)
+                                  SizedBox(
+                                    width: 82,
+                                    child: Column(
+                                      children: <Widget>[
+                                        GestureDetector(
+                                          key: Robot.key('gesture$g'),
+                                          behavior: HitTestBehavior.opaque,
+                                          onTap: () => _pickGesture(g),
+                                          child: SizedBox(
+                                            width: 76,
+                                            height: 64,
+                                            child: Stack(
+                                              children: <Widget>[
+                                                Positioned(
+                                                  left: 12,
+                                                  top: 10,
+                                                  width: 52,
+                                                  height: 52,
+                                                  child: FittedBox(
+                                                    child: _blobDisc(100 + g),
+                                                  ),
+                                                ),
+                                                const Positioned(
+                                                  right: 2,
+                                                  top: 0,
+                                                  child: _EditMark(
+                                                    icon: Icons.edit_rounded,
+                                                    size: 24,
+                                                  ),
+                                                ),
+                                                if (!_isEmpty(100 + g))
+                                                  Positioned(
+                                                    left: 2,
+                                                    top: 0,
+                                                    child: GestureDetector(
+                                                      key: Robot.key(
+                                                        'gestureOff$g',
+                                                      ),
+                                                      behavior: HitTestBehavior
+                                                          .opaque,
+                                                      onTap: () {
+                                                        Haptics.thud();
+                                                        Diag.instance.event(
+                                                          'gesture ${GestureSlots.names[g]} cleared',
+                                                        );
+                                                        GestureSlots.instance
+                                                            .put(g, 'empty:');
+                                                      },
+                                                      child: const _EditMark(
+                                                        icon: Icons
+                                                            .remove_rounded,
+                                                        color: Color(
+                                                          0xFFE5484D,
+                                                        ),
+                                                        ink: Colors.white,
+                                                        size: 24,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 3),
+                                        // Two arrows: two fingers, and which way.
+                                        Icon(
+                                          const <IconData>[
+                                            Icons
+                                                .keyboard_double_arrow_down_rounded,
+                                            Icons
+                                                .keyboard_double_arrow_up_rounded,
+                                            Icons
+                                                .keyboard_double_arrow_left_rounded,
+                                            Icons
+                                                .keyboard_double_arrow_right_rounded,
+                                          ][g],
+                                          size: 22,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.82,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              // While the blobs are being changed: the cog, for the floating elements. It wears
+              // the white mark the blobs wear, larger, and stands clear of the button: a tap on
+              // the X is a tap on the X, a tap on the cog is a tap on the cog, and neither can
+              // be taken for the other. (It answers on a round patch a little larger than itself.)
+              if (_editing && _open)
+                Positioned(
+                  left: bc.dx + _cogAt.dx - 22,
+                  top: bc.dy + _cogAt.dy - 22,
+                  width: 44,
+                  height: 44,
+                  child: Semantics(
+                    button: true,
+                    label: 'Floating elements',
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: <Widget>[
+                        const IgnorePointer(
+                          child: _EditMark(
+                            icon: Icons.settings_rounded,
+                            size: 34,
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: ClipOval(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _showFloating,
                             ),
                           ),
                         ),
@@ -4400,490 +4995,287 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     ),
                   ),
                 ),
-              ),
-            // A blob dropped on the button: taken in under it, then shot out to the side on a
-            // thread, to become the floating lens.
-            if (_shotI != null)
+              // The lens, its explanation, and (once put down) its buttons.
               ListenableBuilder(
-                listenable: Listenable.merge(<Listenable>[_gulp, _shot]),
+                listenable: Listenable.merge(<Listenable>[
+                  _glass,
+                  _lx,
+                  _ly,
+                  _morph,
+                  _say,
+                ]),
                 builder: (BuildContext context, Widget? _) {
-                  final int i = _shotI!;
-                  final double g = _gulp.value.clamp(0.0, 1.0),
-                      out = _shot.value;
-                  final bool away = _shot.target > 0.5;
-                  final Offset at = away
-                      ? bc + (_shotTo - bc) * out
-                      : _shotFrom + (bc - _shotFrom) * g;
-                  final double size = away
-                      ? ui.lerpDouble(
-                          0.5,
-                          _shotScale,
-                          math.pow(out.clamp(0.0, 1.0), 0.7).toDouble(),
-                        )!
-                      : ui.lerpDouble(1.08, 0.5, g)!;
-                  // Stretched along its flight while it is fast.
-                  final double st = away
-                      ? (_shot.velocity.abs() * 0.06).clamp(0.0, 0.5)
-                      : 0;
-                  final Offset dir = _shotTo - bc;
-                  final double ang = math.atan2(dir.dy, dir.dx);
+                  final double g = _glass.value;
+                  if (g <= 0.02 && !_returning) {
+                    return const SizedBox.shrink();
+                  }
+                  final double m = _morph.value, mm = m.clamp(0.0, 1.0);
+                  final double size = _button + (_lensSize - _button) * g;
+                  final double lw = (size + (_pillW - size) * m).clamp(
+                        40.0,
+                        screen.width - 12,
+                      ),
+                      lh = size + (60 - size) * m.clamp(0.0, 1.15);
+                  final Offset at = Offset(_lx.value, _ly.value);
+                  final Rect lens = Rect.fromCenter(
+                    center: Offset(
+                      at.dx.clamp(lw / 2 + 6, screen.width - lw / 2 - 6),
+                      at.dy,
+                    ),
+                    width: lw,
+                    height: lh,
+                  );
+                  _lensRect = lens;
+                  if (_returning) {
+                    return IgnorePointer(
+                      child: CustomPaint(
+                        size: Size.infinite,
+                        painter: _BlobPainter(
+                          body: lens,
+                          velocity: Offset(_lx.velocity, _ly.velocity),
+                          home: _home,
+                          from: _retFrom,
+                          start: _retColor,
+                          end: lensTone(c.accent),
+                          ink: Colors.white,
+                          button: _button,
+                        ),
+                      ),
+                    );
+                  }
+                  final LensTarget? pill = _pill?.widget,
+                      said = _target?.widget;
+                  final bool above = lens.top > safe.top + 150;
                   return Stack(
                     children: <Widget>[
-                      if (away)
+                      if (_parked)
                         Positioned.fill(
-                          child: IgnorePointer(
-                            child: CustomPaint(
-                              painter: _ThreadPainter(
-                                from: bc,
-                                to: <Offset>[_shotTo],
-                                out: <SpringValue>[_shot],
-                                colors: <Color>[_blobColor(i)],
-                              ),
-                            ),
+                          key: const ValueKey<String>('lens away'),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _lensHome,
                           ),
                         ),
-                      Positioned(
-                        left: at.dx - _blob / 2,
-                        top: at.dy - _blob / 2,
-                        child: IgnorePointer(
-                          child: Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.rotationZ(ang)
-                              ..scaleByDouble(
-                                size * (1 + st),
-                                size * (1 - st * 0.5),
-                                1,
-                                1,
-                              )
-                              ..rotateZ(-ang),
-                            child: _blobDisc(i),
+                      Positioned.fromRect(
+                        // Keyed: the layer under it comes and goes, and a drag that began on
+                        // the pill must not be dropped when it does.
+                        key: const ValueKey<String>('lens body'),
+                        rect: lens,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapUp: _parked
+                              ? (TapUpDetails d) => _pillTap(d.globalPosition)
+                              : null,
+                          // Put down, it can be dragged off again: it is picked up and
+                          // carried from there, as it is from the button.
+                          onPanStart: (_) => _pillGrab(),
+                          onPanUpdate: (DragUpdateDetails d) =>
+                              _pillCarry(d.globalPosition),
+                          onPanEnd: (_) => _pillDrop(),
+                          onPanCancel: _pillDrop,
+                          child: Glass(
+                            radius: lh / 2,
+                            // Clear and magnifying while it only looks; coloured and calm once it holds actions.
+                            style: GlassStyle(
+                              blur: 0.8 + 11 * mm,
+                              tint: 0.05 + 0.5 * mm,
+                              tintColor: mm > 0.02 ? pill?.color : null,
+                              refraction: 19,
+                              bevel: 13,
+                              dispersion: 0.16,
+                              magnify: 1.2 - 0.2 * mm,
+                              light: 0.95,
+                              saturation: 1.35,
+                              adapt: 0.3,
+                              shadow: 0.9,
+                              fallbackColor: pill?.color ?? c.accent,
+                            ),
+                            child: pill == null || mm < 0.05
+                                ? null
+                                : Opacity(
+                                    opacity: ((mm - 0.35) / 0.65).clamp(
+                                      0.0,
+                                      1.0,
+                                    ),
+                                    child: Row(
+                                      children: <Widget>[
+                                        for (final (
+                                              int i,
+                                              (String, VoidCallback) a,
+                                            )
+                                            in pill
+                                                .actions
+                                                .indexed) ...<Widget>[
+                                          if (i > 0)
+                                            Container(
+                                              width: 1,
+                                              height: 26,
+                                              color: Colors.white.withValues(
+                                                alpha: 0.4,
+                                              ),
+                                            ),
+                                          Expanded(
+                                            flex: a.$1.length + 5,
+                                            child: Center(
+                                              child: Text(
+                                                a.$1,
+                                                maxLines: 1,
+                                                softWrap: false,
+                                                overflow: TextOverflow.fade,
+                                                textScaler:
+                                                    TextScaler.noScaling,
+                                                style: LumenType.text(
+                                                  15,
+                                                  weight: 700,
+                                                  color: Colors.white,
+                                                  height: 1,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
                           ),
                         ),
                       ),
-                    ],
-                  );
-                },
-              ),
-            // The button: one flat colour, in the middle of the bar.
-            Positioned(
-              left: bc.dx - _button / 2,
-              top: bc.dy - _button / 2,
-              child: Semantics(
-                button: true,
-                label: 'Actions',
-                child: Listener(
-                  behavior: HitTestBehavior.opaque,
-                  onPointerDown: (PointerDownEvent e) {
-                    _downAt = e.position;
-                    _lastAt = e.position;
-                    _held
-                      ..reset()
-                      ..start();
-                    _moved = false;
-                    _lifted = false;
-                    // Held still while the blobs are out: the same as holding a blob.
-                    _heldEdit = false;
-                    _holdTimer?.cancel();
-                    if (_open && !_editing && !_drawerOpen) {
-                      _holdTimer = Timer(const Duration(milliseconds: 450), () {
-                        if (_downAt != null &&
-                            !_moved &&
-                            _open &&
-                            !_editing &&
-                            mounted) {
-                          _heldEdit = true;
-                          _setEditing(true);
-                        }
-                      });
-                    }
-                    // A finger that moved and then stopped sends no more movement, so the wait is also timed.
-                    _liftTimer?.cancel();
-                    _liftTimer = Timer(const Duration(milliseconds: 140), () {
-                      if (_downAt != null &&
-                          _moved &&
-                          !_lifted &&
-                          !_drawerOpen &&
-                          mounted) {
-                        _liftOff();
-                        final Offset at = _lastAt ?? _home;
-                        _lx.animateTo(at.dx);
-                        _ly.animateTo(at.dy - 62);
-                      }
-                    });
-                    _kick.animateTo(0.92);
-                  },
-                  onPointerMove: _buttonMove,
-                  onPointerCancel: (_) => _buttonUp(),
-                  onPointerUp: (_) => _buttonUp(),
-                  child: ListenableBuilder(
-                    listenable: Listenable.merge(<Listenable>[
-                      _t,
-                      _kick,
-                      _glass,
-                      _wob,
-                    ]),
-                    builder: (BuildContext context, Widget? _) =>
-                        Transform.scale(
-                          scaleX: _kick.value * (1 + _wob.value),
-                          scaleY: _kick.value * (1 - _wob.value),
-                          child: _glass.value > 0.5 || _returning
-                              // While the button is away, an empty ring marks where it lives.
-                              ? Container(
-                                  width: _button,
-                                  height: _button,
+                      if (said != null)
+                        Positioned(
+                          left: (at.dx - 134).clamp(12.0, screen.width - 280),
+                          top: above ? null : lens.bottom + 96,
+                          bottom: above ? screen.height - lens.top + 12 : null,
+                          width: 268,
+                          child: IgnorePointer(
+                            child: Opacity(
+                              opacity: _say.value.clamp(0.0, 1.0),
+                              child: Transform.scale(
+                                scale: 0.86 + 0.14 * _say.value,
+                                alignment: above
+                                    ? Alignment.bottomCenter
+                                    : Alignment.topCenter,
+                                child: Container(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    14,
+                                    12,
+                                    14,
+                                    13,
+                                  ),
                                   decoration: ShapeDecoration(
-                                    shape: CircleBorder(
+                                    color: c.dark
+                                        ? const Color(0xF21B1E26)
+                                        : const Color(0xF2FFFFFF),
+                                    shape: RoundedSuperellipseBorder(
+                                      borderRadius: BorderRadius.circular(22),
                                       side: BorderSide(
-                                        color: c.glassInk.withValues(
-                                          alpha: 0.35,
+                                        color: said.color.withValues(
+                                          alpha: 0.7,
                                         ),
                                         width: 1.5,
                                       ),
                                     ),
-                                  ),
-                                )
-                              // The button is the home of the floating lens, and looks like it:
-                              // dark glass with a breath of Prism's colour, a lit rim, and a
-                              // glow at its foot. The buttons that simply do something are the
-                              // bright ones; this one opens things out, and is not one of them.
-                              : Container(
-                                  width: _button,
-                                  height: _button,
-                                  decoration: const ShapeDecoration(
-                                    shape: CircleBorder(),
                                     shadows: <BoxShadow>[
                                       BoxShadow(
-                                        color: Color(0x66000000),
-                                        blurRadius: 14,
-                                        offset: Offset(0, 6),
+                                        color: c.shadow,
+                                        blurRadius: 22,
+                                        offset: const Offset(0, 8),
                                       ),
                                     ],
                                   ),
-                                  child: CustomPaint(
-                                    painter: _LensDisc(c.accent),
-                                    child: Stack(
-                                      clipBehavior: Clip.none,
-                                      alignment: Alignment.center,
-                                      children: <Widget>[
-                                        Transform.rotate(
-                                          angle:
-                                              _t.value.clamp(0.0, 1.2) *
-                                              math.pi /
-                                              4,
-                                          child: const Icon(
-                                            Icons.add_rounded,
-                                            color: Colors.white,
-                                            size: 34,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                        ),
-                  ),
-                ),
-              ),
-            ),
-            // While the blobs are being changed: the cog, for the floating elements. It wears
-            // the white mark the blobs wear, larger, and stands clear of the button: a tap on
-            // the X is a tap on the X, a tap on the cog is a tap on the cog, and neither can
-            // be taken for the other. (It answers on a round patch a little larger than itself.)
-            if (_editing && _open)
-              Positioned(
-                left: bc.dx + _cogAt.dx - 22,
-                top: bc.dy + _cogAt.dy - 22,
-                width: 44,
-                height: 44,
-                child: Semantics(
-                  button: true,
-                  label: 'Floating elements',
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: <Widget>[
-                      const IgnorePointer(
-                        child: _EditMark(
-                          icon: Icons.settings_rounded,
-                          size: 34,
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: ClipOval(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _showFloating,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            // The lens, its explanation, and (once put down) its buttons.
-            ListenableBuilder(
-              listenable: Listenable.merge(<Listenable>[
-                _glass,
-                _lx,
-                _ly,
-                _morph,
-                _say,
-              ]),
-              builder: (BuildContext context, Widget? _) {
-                final double g = _glass.value;
-                if (g <= 0.02 && !_returning) {
-                  return const SizedBox.shrink();
-                }
-                final double m = _morph.value, mm = m.clamp(0.0, 1.0);
-                final double size = _button + (_lensSize - _button) * g;
-                final double lw = (size + (_pillW - size) * m).clamp(
-                      40.0,
-                      screen.width - 12,
-                    ),
-                    lh = size + (60 - size) * m.clamp(0.0, 1.15);
-                final Offset at = Offset(_lx.value, _ly.value);
-                final Rect lens = Rect.fromCenter(
-                  center: Offset(
-                    at.dx.clamp(lw / 2 + 6, screen.width - lw / 2 - 6),
-                    at.dy,
-                  ),
-                  width: lw,
-                  height: lh,
-                );
-                _lensRect = lens;
-                if (_returning) {
-                  return IgnorePointer(
-                    child: CustomPaint(
-                      size: Size.infinite,
-                      painter: _BlobPainter(
-                        body: lens,
-                        velocity: Offset(_lx.velocity, _ly.velocity),
-                        home: _home,
-                        from: _retFrom,
-                        start: _retColor,
-                        end: lensTone(c.accent),
-                        ink: Colors.white,
-                        button: _button,
-                      ),
-                    ),
-                  );
-                }
-                final LensTarget? pill = _pill?.widget, said = _target?.widget;
-                final bool above = lens.top > safe.top + 150;
-                return Stack(
-                  children: <Widget>[
-                    if (_parked)
-                      Positioned.fill(
-                        key: const ValueKey<String>('lens away'),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: _lensHome,
-                        ),
-                      ),
-                    Positioned.fromRect(
-                      // Keyed: the layer under it comes and goes, and a drag that began on
-                      // the pill must not be dropped when it does.
-                      key: const ValueKey<String>('lens body'),
-                      rect: lens,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTapUp: _parked
-                            ? (TapUpDetails d) => _pillTap(d.globalPosition)
-                            : null,
-                        // Put down, it can be dragged off again: it is picked up and
-                        // carried from there, as it is from the button.
-                        onPanStart: (_) => _pillGrab(),
-                        onPanUpdate: (DragUpdateDetails d) =>
-                            _pillCarry(d.globalPosition),
-                        onPanEnd: (_) => _pillDrop(),
-                        onPanCancel: _pillDrop,
-                        child: Glass(
-                          radius: lh / 2,
-                          // Clear and magnifying while it only looks; coloured and calm once it holds actions.
-                          style: GlassStyle(
-                            blur: 0.8 + 11 * mm,
-                            tint: 0.05 + 0.5 * mm,
-                            tintColor: mm > 0.02 ? pill?.color : null,
-                            refraction: 19,
-                            bevel: 13,
-                            dispersion: 0.16,
-                            magnify: 1.2 - 0.2 * mm,
-                            light: 0.95,
-                            saturation: 1.35,
-                            adapt: 0.3,
-                            shadow: 0.9,
-                            fallbackColor: pill?.color ?? c.accent,
-                          ),
-                          child: pill == null || mm < 0.05
-                              ? null
-                              : Opacity(
-                                  opacity: ((mm - 0.35) / 0.65).clamp(0.0, 1.0),
-                                  child: Row(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: <Widget>[
-                                      for (final (
-                                            int i,
-                                            (String, VoidCallback) a,
-                                          )
-                                          in pill.actions.indexed) ...<Widget>[
-                                        if (i > 0)
-                                          Container(
-                                            width: 1,
-                                            height: 26,
-                                            color: Colors.white.withValues(
-                                              alpha: 0.4,
-                                            ),
-                                          ),
-                                        Expanded(
-                                          flex: a.$1.length + 5,
-                                          child: Center(
-                                            child: Text(
-                                              a.$1,
-                                              maxLines: 1,
-                                              softWrap: false,
-                                              overflow: TextOverflow.fade,
-                                              textScaler: TextScaler.noScaling,
-                                              style: LumenType.text(
-                                                15,
-                                                weight: 700,
-                                                color: Colors.white,
-                                                height: 1,
-                                              ),
-                                            ),
-                                          ),
+                                      Text(
+                                        said.title,
+                                        style: LumenType.text(
+                                          15.5,
+                                          weight: 700,
+                                          color: c.ink,
                                         ),
-                                      ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        said.explain,
+                                        style: LumenType.text(
+                                          14,
+                                          color: c.inkMuted,
+                                          height: 1.35,
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                ),
-                        ),
-                      ),
-                    ),
-                    if (said != null)
-                      Positioned(
-                        left: (at.dx - 134).clamp(12.0, screen.width - 280),
-                        top: above ? null : lens.bottom + 96,
-                        bottom: above ? screen.height - lens.top + 12 : null,
-                        width: 268,
-                        child: IgnorePointer(
-                          child: Opacity(
-                            opacity: _say.value.clamp(0.0, 1.0),
-                            child: Transform.scale(
-                              scale: 0.86 + 0.14 * _say.value,
-                              alignment: above
-                                  ? Alignment.bottomCenter
-                                  : Alignment.topCenter,
-                              child: Container(
-                                padding: const EdgeInsets.fromLTRB(
-                                  14,
-                                  12,
-                                  14,
-                                  13,
-                                ),
-                                decoration: ShapeDecoration(
-                                  color: c.dark
-                                      ? const Color(0xF21B1E26)
-                                      : const Color(0xF2FFFFFF),
-                                  shape: RoundedSuperellipseBorder(
-                                    borderRadius: BorderRadius.circular(22),
-                                    side: BorderSide(
-                                      color: said.color.withValues(alpha: 0.7),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  shadows: <BoxShadow>[
-                                    BoxShadow(
-                                      color: c.shadow,
-                                      blurRadius: 22,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: <Widget>[
-                                    Text(
-                                      said.title,
-                                      style: LumenType.text(
-                                        15.5,
-                                        weight: 700,
-                                        color: c.ink,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      said.explain,
-                                      style: LumenType.text(
-                                        14,
-                                        color: c.inkMuted,
-                                        height: 1.35,
-                                      ),
-                                    ),
-                                  ],
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                );
-              },
-            ),
-            // A quick action: a glass sheet over the page. You never leave where you were.
-            ListenableBuilder(
-              listenable: _rise,
-              builder: (BuildContext context, Widget? _) {
-                final double t = _rise.value;
-                final int? i = _sheet;
-                if (t <= 0.001 || i == null) {
-                  return const SizedBox.shrink();
-                }
-                return Stack(
-                  children: <Widget>[
-                    Positioned.fill(
-                      child: GestureDetector(
-                        onTap: _closeSheet,
-                        child: ColoredBox(
-                          color: Colors.black.withValues(
-                            alpha: 0.4 * t.clamp(0.0, 1.0),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 10,
-                      right: 10,
-                      bottom: safe.bottom + 10 - (1 - t) * 420,
-                      // Solid, not glass: blurring this much of the screen was the costliest thing in the app to open.
-                      child: DecoratedBox(
-                        decoration: ShapeDecoration(
-                          color: c.surface,
-                          shape: RoundedSuperellipseBorder(
-                            borderRadius: BorderRadius.circular(36),
-                            side: BorderSide(color: c.hairline),
-                          ),
-                          shadows: <BoxShadow>[
-                            BoxShadow(
-                              color: c.shadow,
-                              blurRadius: 30,
-                              offset: const Offset(0, -6),
+                    ],
+                  );
+                },
+              ),
+              // A quick action: a glass sheet over the page. You never leave where you were.
+              ListenableBuilder(
+                listenable: _rise,
+                builder: (BuildContext context, Widget? _) {
+                  final double t = _rise.value;
+                  final int? i = _sheet;
+                  if (t <= 0.001 || i == null) {
+                    return const SizedBox.shrink();
+                  }
+                  return Stack(
+                    children: <Widget>[
+                      Positioned.fill(
+                        child: GestureDetector(
+                          onTap: _closeSheet,
+                          child: ColoredBox(
+                            color: Colors.black.withValues(
+                              alpha: 0.4 * t.clamp(0.0, 1.0),
                             ),
-                          ],
-                        ),
-                        child: Material(
-                          type: MaterialType.transparency,
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                            child: _sheetBody(c, i),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ],
+                      Positioned(
+                        left: 10,
+                        right: 10,
+                        bottom: safe.bottom + 10 - (1 - t) * 420,
+                        // Solid, not glass: blurring this much of the screen was the costliest thing in the app to open.
+                        child: DecoratedBox(
+                          decoration: ShapeDecoration(
+                            color: c.surface,
+                            shape: RoundedSuperellipseBorder(
+                              borderRadius: BorderRadius.circular(36),
+                              side: BorderSide(color: c.hairline),
+                            ),
+                            shadows: <BoxShadow>[
+                              BoxShadow(
+                                color: c.shadow,
+                                blurRadius: 30,
+                                offset: const Offset(0, -6),
+                              ),
+                            ],
+                          ),
+                          child: Material(
+                            type: MaterialType.transparency,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                12,
+                                20,
+                                20,
+                              ),
+                              child: _sheetBody(c, i),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

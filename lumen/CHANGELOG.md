@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 84 (14 November 2026)
+
+**File:** `releases/prism-build-84.apk`
+
+Needs Play Protect paused to install. One new permission, granted without asking: "expand status bar", for pulling the notifications down.
+
+**Two-finger swipes.** Anywhere in Prism with nothing open, two fingers moved together do what that swipe has been given.
+
+- **As Prism starts:** down pulls the notifications down; up opens the scanner; left and right do nothing.
+- **Set up where the blobs are changed.** Hold a blob or the X: across the top are the four swipes, each drawn as a blob is, showing what it does or an empty ring, with two arrows under it for which way. Make the swipe there, or tap its place, and the same list as for a blob comes up, titled with the swipe, with "Notifications" added at the front. The red minus leaves a swipe doing nothing.
+- **A swipe can be** the notifications, any of Prism's actions, any of its pages, or any app.
+- **One finger is untouched.** With one finger down the swipes take no part at all. When a second finger comes down, the first is taken away from whatever it was doing, so nothing scrolls or is pressed under a swipe.
+- **Not while** the blobs are out (unless they are being changed), the app list or a sheet is up, the magnifying glass is out, or a blob is in the hand.
+- Kept in a file of its own; costs nothing while nothing is touched.
+
+**Checked:** in my preview, by the robot with two pretend fingers: a tap on a swipe's place asked what it should do; what was chosen was kept; the minus cleared it; a swipe made while changing asked what it should do; two fingers up with nothing open opened the scanner; a swipe given nothing did nothing. All the earlier checks were still right (48 of 51; the three wrong are power figures that cannot be measured there).
+**Not checked:** on a phone, any of it. **The notifications in particular:** Android has no public way to pull them down; this uses the one home screens have long used, and I do not know that Samsung's Android 16 still allows it. If it does not, the swipe gives a dull buzz and nothing else. Starting a swipe at the very top or bottom edge of the screen is Android's, not Prism's.
+
 ## Prism, build 83 (14 November 2026)
 
 **File:** `releases/prism-build-83.apk`

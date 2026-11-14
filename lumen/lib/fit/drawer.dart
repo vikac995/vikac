@@ -26,6 +26,7 @@ class AppDrawer extends StatefulWidget {
     required this.tone,
     required this.onClose,
     this.pick,
+    this.pickTitle,
     this.choices = const <(String, String, IconData, Color)>[],
     this.onPick,
   });
@@ -42,6 +43,9 @@ class AppDrawer extends StatefulWidget {
   /// what each is kept as, its name, its mark and its colour), and a tap on anything calls
   /// [onPick] with 'action:2', 'screen:1' or 'app:com.whatsapp' and opens nothing.
   final String? pick;
+
+  /// The two parts of the title while choosing, when it is not a blob being replaced.
+  final (String, String)? pickTitle;
   final List<(String, String, IconData, Color)> choices;
   final void Function(String key)? onPick;
 
@@ -333,7 +337,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                     Text(
                       widget.pick == null
                           ? 'Apps'
-                          : (widget.pick!.isEmpty ? 'Add' : 'Replace'),
+                          : (widget.pickTitle?.$1 ??
+                                (widget.pick!.isEmpty ? 'Add' : 'Replace')),
                       style: LumenType.display(26, color: c.ink),
                     ),
                     const SizedBox(width: 12),
@@ -341,7 +346,10 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                       child: Text(
                         widget.pick == null
                             ? _range
-                            : (widget.pick!.isEmpty ? 'a blob' : widget.pick!),
+                            : (widget.pickTitle?.$2 ??
+                                  (widget.pick!.isEmpty
+                                      ? 'a blob'
+                                      : widget.pick!)),
                         maxLines: 1,
                         overflow: TextOverflow.fade,
                         softWrap: false,
