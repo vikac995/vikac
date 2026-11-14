@@ -233,6 +233,7 @@ class MainActivity : FlutterActivity() {
                     RestBubble.accent = (a["accent"] as Number).toInt()
                     RestBubble.onAccent = (a["onAccent"] as Number).toInt()
                 }
+                RestBubble.planBuzz(applicationContext)
                 RestBubble.refresh(applicationContext)
                 result.success(null)
             } else if (call.method == "pin") {
@@ -769,9 +770,27 @@ object RestBubble {
         }
     }
 
+    // The pictures of the blobs, by what each blob is. Prism sends them again whenever anything
+    // about the blobs changes; a picture that is the same as last time is kept, not decoded again.
+    private val icons = HashMap<String, Pair<Int, android.graphics.Bitmap>>()
+
     fun blobOf(a: Map<*, *>): Pin {
         val bytes = a["icon"] as? ByteArray
-        val bmp = if (bytes != null) android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) else null
+        var bmp: android.graphics.Bitmap? = null
+        if (bytes != null) {
+            val key = a["key"] as String
+            val mark = java.util.Arrays.hashCode(bytes)
+            val had = icons[key]
+            if (had != null && had.first == mark) {
+                bmp = had.second
+            } else {
+                bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                if (bmp != null) {
+                    if (icons.size > 48) icons.clear()
+                    icons[key] = Pair(mark, bmp)
+                }
+            }
+        }
         return Pin(
             a["key"] as String, a["kind"] as String, (a["index"] as Number).toInt(), a["package"] as String,
             a["name"] as String, (a["color"] as Number).toInt(), bmp, a["picture"] as Boolean,
@@ -788,7 +807,7 @@ object RestBubble {
         if (count <= 0) return
         val text = if (count > 99) "99+" else count.toString()
         val p = badgePaint
-        p.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+        p.typeface = boldFace
         p.textSize = 11.5f * dp * scale
         p.textAlign = android.graphics.Paint.Align.CENTER
         val r = 10.5f * dp * scale
@@ -941,22 +960,39 @@ object RestBubble {
      * middle. It is the same blob wherever it is drawn: in the menu, and inside the lens.
      * [kept] gives it the bright ring of the one that is in the lens.
      */
+    // A blob's colour, lighter at the top. There is one of these for each colour, made the first
+    // time that colour is drawn, for a blob one pixel across; each time a blob is drawn it is set
+    // to that blob's place and size. So nothing is made while drawing, however many blobs move.
+    private val blobShades = android.util.SparseArray<android.graphics.LinearGradient>()
+    private val blobMatrix = android.graphics.Matrix()
+    private val boldFace: android.graphics.Typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+
+    private fun blobShade(color: Int, cx: Float, cy: Float, radius: Float): android.graphics.Shader {
+        var g = blobShades.get(color)
+        if (g == null) {
+            g = android.graphics.LinearGradient(0f, -1f, 0f, 1f, mix(color, WHITE, 0.14f), color, android.graphics.Shader.TileMode.CLAMP)
+            blobShades.put(color, g)
+        }
+        blobMatrix.setScale(radius, radius)
+        blobMatrix.postTranslate(cx, cy)
+        g.setLocalMatrix(blobMatrix)
+        return g
+    }
+
     private fun paintBlob(
         canvas: android.graphics.Canvas, b: Pin, cx: Float, cy: Float, radius: Float, dp: Float,
-        kept: Boolean, face: Boolean = true, alpha: Int = 255,
+        face: Boolean = true, alpha: Int = 255,
     ) {
         val p = blobPaint
         val scale = radius / (31 * dp)
         p.style = android.graphics.Paint.Style.FILL
-        p.shader = android.graphics.LinearGradient(
-            cx, cy - radius, cx, cy + radius, mix(b.color, WHITE, 0.14f), b.color, android.graphics.Shader.TileMode.CLAMP,
-        )
+        p.shader = blobShade(b.color, cx, cy, radius)
         p.alpha = alpha
         canvas.drawCircle(cx, cy, radius, p)
         p.shader = null
         p.style = android.graphics.Paint.Style.STROKE
-        p.strokeWidth = (if (kept) 2.5f else 1f) * dp * Math.max(scale, 0.6f)
-        p.color = tint(WHITE, ((if (kept) 0.95f else 0.2f) * alpha).toInt())
+        p.strokeWidth = dp * Math.max(scale, 0.6f)
+        p.color = tint(WHITE, (0.2f * alpha).toInt())
         canvas.drawCircle(cx, cy, radius - p.strokeWidth / 2f, p)
         p.style = android.graphics.Paint.Style.FILL
         if (!face) return
@@ -978,7 +1014,7 @@ object RestBubble {
             }
         } else if (b.name.isNotEmpty()) {
             p.textAlign = android.graphics.Paint.Align.CENTER
-            p.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+            p.typeface = boldFace
             p.textSize = 24 * dp * scale
             canvas.drawText(b.name.substring(0, 1).uppercase(), cx, cy - (p.descent() + p.ascent()) / 2f, p)
         }
@@ -1079,6 +1115,30 @@ object RestBubble {
     }
 
     private val watcher = android.os.Handler(android.os.Looper.getMainLooper())
+
+    // The buzz when a rest ends. It is planned when the rest is, for the moment it ends, and
+    // given then whether or not a lens is on the screen. (It used to be given by the lens as it
+    // drew itself: a lens closed on the cross, or switched off for where the person is, gave none.)
+    private var buzzedFor = 0L
+    private var buzz: Runnable? = null
+
+    fun planBuzz(context: Context) {
+        buzz?.let { watcher.removeCallbacks(it) }
+        buzz = null
+        if (!active || timerOff || pausedAt > 0 || endsAt <= 0) return
+        val left = endsAt - System.currentTimeMillis()
+        if (left <= 0) return
+        val rest = endsAt
+        val app = context.applicationContext
+        val give = Runnable {
+            if (active && !timerOff && pausedAt == 0L && endsAt == rest && buzzedFor != rest) {
+                buzzedFor = rest
+                haptic(app, "thud")
+            }
+        }
+        buzz = give
+        watcher.postDelayed(give, left)
+    }
 
     /** A pinned thing's lens was tapped: it does what the thing is. */
     private fun tapPinned(context: Context) {
@@ -1250,10 +1310,10 @@ object RestBubble {
             val lp = android.view.WindowManager.LayoutParams(
                 minOf(d.widthPixels - (16 * dp).toInt(), (440 * dp).toInt()), android.view.WindowManager.LayoutParams.WRAP_CONTENT,
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                // The third flag asks Android to treat the sheet as something a keyboard belongs above,
-                // so that a keyboard is not covered by it.
-                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
-                    android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
+                // The sheet takes the focus while it is open, so that the back button is the sheet's
+                // (it folds the sheet away) and does nothing to the app underneath. A touch outside
+                // it still goes to that app, and still folds the sheet away.
+                android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or android.view.WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
                 android.graphics.PixelFormat.TRANSLUCENT,
             )
             // Always at the bottom, wherever the lens is: that is where a thumb reaches.
@@ -1419,9 +1479,20 @@ object RestBubble {
             isFocusableInTouchMode = true
             requestFocus()
             if (Build.VERSION.SDK_INT >= 33) {
-                val callback = android.window.OnBackInvokedCallback { close() }
+                val callback = android.window.OnBackInvokedCallback { backPressed() }
                 back = callback
                 findOnBackInvokedDispatcher()?.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback)
+            }
+        }
+
+        /** Back first ends the changing, then closes the blobs. */
+        private fun backPressed() {
+            if (editing) {
+                editing = false
+                haptic(context, "tick")
+                invalidate()
+            } else {
+                close()
             }
         }
 
@@ -1437,10 +1508,7 @@ object RestBubble {
 
         override fun dispatchKeyEvent(e: android.view.KeyEvent): Boolean {
             if (e.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
-                if (e.action == android.view.KeyEvent.ACTION_UP) {
-                    // Back first ends the changing, then closes the blobs.
-                    if (editing) { editing = false; haptic(context, "tick"); invalidate() } else close()
-                }
+                if (e.action == android.view.KeyEvent.ACTION_UP) backPressed()
                 return true
             }
             return super.dispatchKeyEvent(e)
@@ -1708,7 +1776,6 @@ object RestBubble {
                     canvas.restore()
                 }
             }
-            val inLens = pin?.key
             for (i in 0 until n) {
                 val p = out[i]
                 if (p <= 0.02f && i != flying) continue
@@ -1744,7 +1811,7 @@ object RestBubble {
                 canvas.rotate(turn)
                 canvas.scale(size * (1 + stretch), size * (1 - stretch * 0.5f))
                 canvas.rotate(-turn)
-                paintBlob(canvas, items[i], 0f, 0f, 31 * dp, dp, items[i].key == inLens && i != flying, true, (alpha * 255).toInt())
+                paintBlob(canvas, items[i], 0f, 0f, 31 * dp, dp, true, (alpha * 255).toInt())
                 if (editing) {
                     // The edit mark: a small white disc with a pencil, at the blob's upper right.
                     val mx = 22 * dp
@@ -2091,6 +2158,28 @@ object RestBubble {
         return Reading(clock(since), -1f, false, false, false, if (paused) "PAUSED" else "SINCE LAST SET", paused)
     }
 
+    /**
+     * How long, in thousandths of a second, until the timer next needs drawing. While a rest
+     * runs that is when the ring's head has moved about a pixel ([ring] is how far round the
+     * ring is, in pixels) or the number changes, whichever comes first: on a 90 second rest in
+     * the lens at its usual size that is about six times a second, where it used to be drawn
+     * fifteen times a second whether anything had moved or not. Between sets it is the next
+     * whole second, so the number changes on time and nothing is drawn in between.
+     */
+    private fun beat(wall: Long, t: Reading, ring: Float): Long {
+        if (t.go) return 250L
+        val now = timerNow(wall)
+        if (t.resting) {
+            val left = (endsAt - now).coerceAtLeast(0L)
+            val gone = (total * 1000L - left).coerceAtLeast(0L)
+            val toNumber = if (countUp) 1000L - gone % 1000L else left % 1000L
+            val aPixel = if (ring > 1f && total > 0) (total * 1000f / ring).toLong() else 1000L
+            return Math.min(toNumber + 4L, aPixel).coerceIn(66L, 1000L)
+        }
+        val since = (now - sinceAt).coerceAtLeast(0L)
+        return (1000L - since % 1000L + 4L).coerceIn(66L, 1000L)
+    }
+
     /** Two short bars: the timer is paused. */
     private fun pauseMark(canvas: android.graphics.Canvas, paint: android.graphics.Paint, cx: Float, cy: Float, h: Float, color: Int) {
         paint.style = android.graphics.Paint.Style.FILL
@@ -2102,8 +2191,8 @@ object RestBubble {
 
     /**
      * The cross at the bottom of the screen that a lens is dropped on to close it. When the
-     * lens falls in, the cross takes its colour, swallows, jiggles the way the centre button
-     * does when the drop lands on it, sends out one ring, and sinks out of sight.
+     * lens falls in, the cross takes its colour for a moment, gives once, and sinks out of sight.
+     * Its window counts for nothing except while a lens is being carried.
      */
     private class Target(context: Context) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
@@ -2231,7 +2320,8 @@ object RestBubble {
         private var downX = 0f; private var downY = 0f; private var startX = 0; private var startY = 0
         private var dragged = false
         private var snapped = false
-        private var buzzedFor = 0L
+        // The rest whose end the lens has swelled for.
+        private var swelledFor = 0L
         private val dp = resources.displayMetrics.density
         private var tracker: android.view.VelocityTracker? = null
         // The springs that carry it to rest after a throw.
@@ -2477,7 +2567,10 @@ object RestBubble {
         }
 
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-            shaders()
+            // (The lens's colours are made when it is first drawn, and again only if its colour
+            // changes. They do not depend on the size of its window, which changes whenever the
+            // lens travels by itself.)
+            if (body == null) shaders()
             // All of it is the lens's to touch, even where it lies over the phone's own
             // swipe-in-from-the-edge zone: a touch there is for the lens and is not a "back".
             if (Build.VERSION.SDK_INT >= 29) systemGestureExclusionRects = listOf(android.graphics.Rect(0, 0, w, h))
@@ -2503,7 +2596,7 @@ object RestBubble {
                 paintLens(canvas, k, false)
                 canvas.restoreToCount(layer)
                 val full = Math.min(31 * dp, size / 2f) / k
-                paintBlob(canvas, arriving, mid, mid, full + (22.5f * dp - full) * come, dp, false)
+                paintBlob(canvas, arriving, mid, mid, full + (22.5f * dp - full) * come, dp)
             } else {
                 paintLens(canvas, k)
             }
@@ -2574,7 +2667,7 @@ object RestBubble {
                 // The container: what was put in it sits inside as the blob it is, with the glass around it.
                 val inside = pin
                 if (inside != null && !hideInner && inner) {
-                    paintBlob(canvas, inside, r + lagX / k, r + lagY / k, 22.5f * dp, dp, false)
+                    paintBlob(canvas, inside, r + lagX / k, r + lagY / k, 22.5f * dp, dp)
                     paintBadge(canvas, inside, r + disc * 0.66f, r - disc * 0.66f, dp, 0.9f)
                 }
                 return
@@ -2625,7 +2718,7 @@ object RestBubble {
                 paint.style = android.graphics.Paint.Style.FILL
                 paint.color = 0xF2101216.toInt()
                 canvas.drawCircle(bx, by, 9.6f * dp, paint)
-                paintBlob(canvas, under, bx, by, 8f * dp, dp, false, face = false)
+                paintBlob(canvas, under, bx, by, 8f * dp, dp, face = false)
             }
             if (k > 1.45f && !go) {
                 // Made large enough, it has room to say more: what the time is, above it, and
@@ -2640,16 +2733,16 @@ object RestBubble {
                 paint.color = tint(WHITE, (show * 0xB8).toInt())
                 canvas.drawText(setLabel, r, r + 18.5f * dp, paint)
             }
-            if (go && buzzedFor != endsAt) {
-                buzzedFor = endsAt
-                haptic(context, "thud")
+            // The rest is over: the lens swells once. (The buzz is given on its own, lens or no lens.)
+            if (go && swelledFor != endsAt) {
+                swelledFor = endsAt
                 animate().scaleX(1.12f).scaleY(1.12f).setDuration(180).setInterpolator(EASE).withEndAction {
                     animate().scaleX(1f).scaleY(1f).setDuration(380).setInterpolator(EASE).start()
                 }.start()
             }
-            // Smooth while a rest is running; otherwise once a second is enough. Paused or switched
-            // off, nothing in it moves, so it is drawn once and left alone.
-            if (!t.paused && !t.off) postInvalidateDelayed(if (t.resting) 66 else if (go) 250 else 1000)
+            // Drawn again when the ring or the number has changed enough to see. Paused or
+            // switched off, nothing in it moves, so it is drawn once and left alone.
+            if (!t.paused && !t.off) postInvalidateDelayed(beat(now, t, (Math.PI * arc.width() * k).toFloat()))
         }
 
         /**
@@ -3458,7 +3551,7 @@ object RestBubble {
             if (t.paused) {
                 pauseMark(canvas, paint, r, r + w * 0.24f, w * 0.1f, accent)
             } else {
-                postInvalidateDelayed(if (t.resting) 50 else 500)
+                postInvalidateDelayed(beat(now, t, (Math.PI * arc.width()).toFloat()))
             }
         }
     }
@@ -3851,15 +3944,37 @@ object RestBubble {
         /** Where the top of the glass is, or is on its way to, measured from the top of this sheet's window. */
         fun glassTop(): Int = body.top + body.height - card.height
 
+        // The back button folds the sheet away. Android 13 and later hand it over through a
+        // callback; before that it arrives as a key.
+        private var back: Any? = null
+
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()
             viewTreeObserver.addOnPreDrawListener(beforeDraw)
+            if (Build.VERSION.SDK_INT >= 33) {
+                val callback = android.window.OnBackInvokedCallback { if (!closing) closeSheet(context) }
+                back = callback
+                findOnBackInvokedDispatcher()?.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback)
+            }
         }
 
         override fun onDetachedFromWindow() {
+            if (Build.VERSION.SDK_INT >= 33) {
+                val callback = back as? android.window.OnBackInvokedCallback
+                if (callback != null) findOnBackInvokedDispatcher()?.unregisterOnBackInvokedCallback(callback)
+                back = null
+            }
             viewTreeObserver.removeOnPreDrawListener(beforeDraw)
             stopMorph(false)
             super.onDetachedFromWindow()
+        }
+
+        override fun dispatchKeyEvent(e: android.view.KeyEvent): Boolean {
+            if (e.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                if (e.action == android.view.KeyEvent.ACTION_UP && !closing) closeSheet(context)
+                return true
+            }
+            return super.dispatchKeyEvent(e)
         }
 
         /** It comes up a short way into its place. */
@@ -4118,6 +4233,9 @@ object RestBubble {
             stopArmed = false
             stopLook()
         }
+
+        // Whether the line that explains the timer has been seen. Once it has, it is not asked again.
+        private var hintSeen = false
 
         private val ticker = object : Runnable {
             override fun run() {
@@ -4415,12 +4533,18 @@ object RestBubble {
             val t = reading(System.currentTimeMillis())
             val shown = android.view.View.VISIBLE
             val away = android.view.View.GONE
-            what.text = t.what
+            // This runs four times a second while the sheet is open. A text is set only when it
+            // is a different text: setting the same one again would still lay it out and draw it.
+            if (what.text.toString() != t.what) what.text = t.what
             what.setTextColor(if (t.resting || t.paused) accent else muted())
-            turnMode.text = if (countUp) "Count down" else "Count up"
-            val seen = try {
-                context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getBoolean("timer_hint_seen", false)
-            } catch (e: Exception) { true }
+            val turn = if (countUp) "Count down" else "Count up"
+            if (turnMode.text.toString() != turn) turnMode.text = turn
+            if (!hintSeen) {
+                hintSeen = try {
+                    context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getBoolean("timer_hint_seen", false)
+                } catch (e: Exception) { true }
+            }
+            val seen = hintSeen
             val wantHint = if (fullMode && !seen) shown else away
             // The row under the timer shows what a running rest needs, or, for a few seconds
             // after the timer has been held, what else the timer can do.

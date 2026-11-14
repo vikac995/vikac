@@ -22,6 +22,7 @@ class AppDrawer extends StatefulWidget {
     required this.open,
     required this.origin,
     required this.button,
+    required this.tone,
     required this.onClose,
     this.pick,
     this.choices = const <(String, String, IconData, Color)>[],
@@ -30,6 +31,9 @@ class AppDrawer extends StatefulWidget {
   final bool open;
   final Offset origin;
   final double button;
+
+  /// The colour of the button the drawer grows out of.
+  final Color tone;
   final VoidCallback onClose;
 
   /// When the drawer is up to choose what takes a blob's place: that blob's name. The drawer
@@ -71,13 +75,21 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     Apps.instance.addListener(_changed);
-    Notes.instance.counts.addListener(_changed);
+    Notes.instance.counts.addListener(_countsChanged);
   }
 
   void _changed() {
     if (mounted) {
       setState(() {});
       _aim();
+    }
+  }
+
+  /// A notification came or went. The numbers are on the tiles, which are only there while the
+  /// drawer is open: closed, there is nothing to draw again, and nothing is.
+  void _countsChanged() {
+    if (mounted && widget.open) {
+      setState(() {});
     }
   }
 
@@ -104,7 +116,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   @override
   void dispose() {
     Apps.instance.removeListener(_changed);
-    Notes.instance.counts.removeListener(_changed);
+    Notes.instance.counts.removeListener(_countsChanged);
     _rise.dispose();
     _ring.dispose();
     _turn.dispose();
@@ -262,7 +274,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                 decoration: ShapeDecoration(
                   // The button's colour drains away as it becomes the panel.
                   color: Color.lerp(
-                    c.accent,
+                    widget.tone,
                     c.surface,
                     // It stays the panel's colour until it is nearly the button again.
                     ((g - 0.08) / 0.2).clamp(0.0, 1.0),

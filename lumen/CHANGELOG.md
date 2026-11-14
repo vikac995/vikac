@@ -1,5 +1,43 @@
 # Lumen changelog
 
+## Prism, build 77 (14 November 2026)
+
+**File:** `releases/prism-build-77.apk`
+
+Needs Play Protect paused to install. A review of the code written for the floating lens, the blobs and the counts, against Android's and Flutter's own guidance on drawing, timers and overlay windows, plus two things asked for meanwhile.
+
+**Less work for the same picture**
+
+- **The floating timer is drawn when it has changed enough to see.** During a rest it was drawn 15 times a second whether or not anything had moved. The ring's head moves about a pixel in a sixth of a second on a 90 second rest, so that is when it is drawn now, and whenever the number changes: about 6 times a second on that rest, fewer on a longer one, never more than before. Between sets it is drawn on the second, so the number changes on time.
+- **Nothing is made while the blobs are being drawn.** Every blob had a new colour gradient made for it on every frame, in the lens and in its menu: with five blobs moving that is six hundred a second, which is the kind of thing that makes an animation hitch. There is now one gradient for each colour, made once.
+- **A blob's picture is made into a file once.** Each time the blobs were sent to Android (one put down, one put back, their order, their names) all of their pictures were made into files again by Prism and read back in again by Android. That happened at the very moment a blob is put down. Each picture is now made once and kept on both sides.
+- **The open sheet sets a text only when it is a different text.** It was setting the same texts four times a second, each of which lays the text out and draws it again.
+- **The lens's colours are not remade when its window changes size**, which since build 72 happens at the start and end of every throw.
+- **The app list is not drawn again for a notification while it is closed.**
+
+**A buzz that could go missing**
+
+- **The buzz when a rest ends no longer depends on the lens.** It was given by the lens as it drew itself. With the lens closed on the cross, or switched off for where you are in "Floating elements", there was no buzz at all. It is now planned when the rest starts, for the moment it ends, lens or no lens.
+
+**Taken out**
+
+- The ring a blob wore in the lens's menu while it was also in the lens. That blob has not been in the menu since build 68, so the ring could never show.
+- Comments that described things since taken out.
+- Already taken out on the way here: the lens stepping aside for its own app and the listening that brought it back (72), the bar being swapped for a stand-in under the app list (71), the app list's own dim (70), the line of text over the blobs (73).
+
+**Asked for meanwhile**
+
+- **The + button is dark glass, like the timer.** The bright buttons are the ones that simply do something; this one opens things out, and now looks like the lens it is the home of: nearly black with a breath of Prism's colour, a lit rim, and a glow at its foot. The app list grows out of it in that tone, and the magnifying glass returns to it in that tone.
+- **Back folds the floating sheet away.** The sheet (the timer and sets, weigh-in, log food) now takes the back button while it is open, so back closes it and does nothing to the app or to Prism underneath. The cost: while the sheet is open, a keyboard that was up in the app underneath goes down. In the lens's own menu, back now ends the changing first, as in Prism.
+
+**Checked:** it compiles, with one compiler warning in the whole Android file (a harmless one). Nothing is declared and never used on either side; every message sent between Prism and Android has someone to receive it. In my preview: processor use with nothing touched is still none on Home, with the blobs out, while changing them, with the app list open and on the Train page; the + button in both a dark and a light theme, as + and as X, and under the app list.
+**Not checked:** on a phone. In particular: how often the floating timer is now drawn, the buzz at the end of a rest with no lens showing, and back on the floating sheet.
+
+**Left in on purpose, and worth a decision:**
+- The older lens (the one that takes on the look of what is pinned), behind the switch "The lens is a container (new)". Everything since build 64 was built for the container; the older one has none of it and is the largest piece of code that is no longer exercised. Build 63 is kept as a zip in `backups/`.
+- The test tools: the battery and frame journal, the on-screen figures, the automatic test. They cost a reading every ten seconds while Prism is on screen.
+- The picture of Prism taken each time it is left, shown for an instant when you come back so that the screen does not flash.
+
 ## Prism, build 76 (14 November 2026)
 
 **File:** `releases/prism-build-76.apk`

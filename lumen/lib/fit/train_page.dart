@@ -2,6 +2,7 @@ import 'bubble.dart';
 import 'robot.dart';
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:material_ui/material_ui.dart';
 
@@ -157,9 +158,9 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                 .clamp(0, 86400);
         if (_restLeft == 0) {
           _restEnds = null;
-          // One buzz when a rest ends, never two. The floating lens gives it wherever it is on
-          // screen, which is everywhere; this page gives it only if the lens is not allowed to float.
-          if (!RestBubble.instance.allowed.value) {
+          // One buzz when a rest ends, never two. On a phone Android gives it, at the moment
+          // the rest ends, whether or not anything is floating; anywhere else this page does.
+          if (!Platform.isAndroid) {
             Haptics.thud();
           }
           _rest.animateTo(0, spring: Motions.spatial);

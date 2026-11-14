@@ -679,10 +679,40 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   /// One of Prism's own icons as a white picture, for the lens to show.
+  // The pictures sent to Android, kept once they have been made. The blobs are sent again
+  // whenever anything about them changes (one is put down, one comes back, their order), and
+  // making a picture into a file takes real work: it is done once for each picture, not each time.
+  static final Map<int, Uint8List> _markPngs = <int, Uint8List>{};
+  static final Map<ui.Image, Uint8List> _imagePngs = <ui.Image, Uint8List>{};
+
+  /// A picture as the file Android reads, made the first time it is asked for.
+  static Future<Uint8List?> _pngOf(ui.Image image) async {
+    final Uint8List? had = _imagePngs[image];
+    if (had != null) {
+      return had;
+    }
+    final Uint8List? made = (await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    ))?.buffer.asUint8List();
+    if (made != null) {
+      // (Apps get new pictures when they are updated; the old ones are not kept for ever.)
+      if (_imagePngs.length > 60) {
+        _imagePngs.clear();
+      }
+      _imagePngs[image] = made;
+    }
+    return made;
+  }
+
   static Future<Uint8List?> _iconPng(
     IconData icon, {
     Color color = Colors.white,
   }) async {
+    final int which = Object.hash(icon.codePoint, icon.fontFamily, color);
+    final Uint8List? had = _markPngs[which];
+    if (had != null) {
+      return had;
+    }
     final ui.PictureRecorder rec = ui.PictureRecorder();
     final TextPainter tp = TextPainter(
       text: TextSpan(
@@ -699,8 +729,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     )..layout();
     tp.paint(Canvas(rec), Offset((120 - tp.width) / 2, (120 - tp.height) / 2));
     final ui.Image image = await rec.endRecording().toImage(120, 120);
-    return (await image.toByteData(format: ui.ImageByteFormat.png))?.buffer
-        .asUint8List();
+    final Uint8List? made = (await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    ))?.buffer.asUint8List();
+    // The picture was only needed to make the file.
+    image.dispose();
+    if (made != null) {
+      _markPngs[which] = made;
+    }
+    return made;
   }
 
   /// Tells Android what is pinned, with its name, colour and picture.
@@ -783,8 +820,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         picture = t.glyph == null;
       }
       if (image != null) {
-        icon = (await image.toByteData(format: ui.ImageByteFormat.png))?.buffer
-            .asUint8List();
+        icon = await _pngOf(image);
       }
     }
     return <String, Object>{
@@ -1348,8 +1384,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       MethodCall call,
     ) async {
       if (call.method == 'editSlot' && mounted) {
-        // A blob was held in the floating lens's own menu: Prism has come to the front to
-        // choose what takes its place.
+        // A blob was tapped in the floating lens's own menu while its blobs were being
+        // changed: Prism has come to the front to choose what takes its place.
         if (_sheetOpen) {
           _closeSheet();
         }
@@ -2570,6 +2606,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                 open: _drawerOpen,
                 origin: bc,
                 button: _button,
+                tone: lensTone(c.accent),
                 onClose: () => _setDrawer(false),
                 // Up to choose what takes a blob's place: it says so, offers Prism's own
                 // actions as well as the apps, and a tap chooses.
@@ -3054,63 +3091,52 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                     ),
                                   ),
                                 )
+                              // The button is the home of the floating lens, and looks like it:
+                              // dark glass with a breath of Prism's colour, a lit rim, and a
+                              // glow at its foot. The buttons that simply do something are the
+                              // bright ones; this one opens things out, and is not one of them.
                               : Container(
                                   width: _button,
                                   height: _button,
-                                  decoration: ShapeDecoration(
-                                    color: c.accent,
-                                    shape: const CircleBorder(),
-                                    shadows: const <BoxShadow>[
+                                  decoration: const ShapeDecoration(
+                                    shape: CircleBorder(),
+                                    shadows: <BoxShadow>[
                                       BoxShadow(
-                                        color: Color(0x55000000),
+                                        color: Color(0x66000000),
                                         blurRadius: 14,
                                         offset: Offset(0, 6),
                                       ),
                                     ],
                                   ),
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    alignment: Alignment.center,
-                                    children: <Widget>[
-                                      Transform.rotate(
-                                        angle:
-                                            _t.value.clamp(0.0, 1.2) *
-                                            math.pi /
-                                            4,
-                                        child: Icon(
-                                          Icons.add_rounded,
-                                          color: c.onAccent,
-                                          size: 34,
-                                        ),
-                                      ),
-                                      // While the blobs are being changed: the same white mark
-                                      // they wear, with a cog. A tap is then for the floating elements.
-                                      if (_editing && _open)
-                                        Positioned(
-                                          right: -3,
-                                          top: -3,
-                                          child: Container(
-                                            width: 25,
-                                            height: 25,
-                                            decoration: const ShapeDecoration(
-                                              color: Colors.white,
-                                              shape: CircleBorder(),
-                                              shadows: <BoxShadow>[
-                                                BoxShadow(
-                                                  color: Color(0x55000000),
-                                                  blurRadius: 6,
-                                                  offset: Offset(0, 2),
-                                                ),
-                                              ],
-                                            ),
-                                            child: const Icon(
-                                              Icons.settings_rounded,
-                                              size: 15,
-                                              color: Color(0xFF15171C),
-                                            ),
+                                  child: CustomPaint(
+                                    painter: _LensDisc(c.accent),
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      alignment: Alignment.center,
+                                      children: <Widget>[
+                                        Transform.rotate(
+                                          angle:
+                                              _t.value.clamp(0.0, 1.2) *
+                                              math.pi /
+                                              4,
+                                          child: const Icon(
+                                            Icons.add_rounded,
+                                            color: Colors.white,
+                                            size: 34,
                                           ),
                                         ),
-                                    ],
+                                        // While the blobs are being changed: the same white mark
+                                        // they wear, with a cog. A tap is then for the floating elements.
+                                        if (_editing && _open)
+                                          const Positioned(
+                                            right: -3,
+                                            top: -3,
+                                            child: _EditMark(
+                                              icon: Icons.settings_rounded,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                         ),
@@ -3159,8 +3185,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         home: _home,
                         from: _retFrom,
                         start: _retColor,
-                        end: c.accent,
-                        ink: c.onAccent,
+                        end: lensTone(c.accent),
+                        ink: Colors.white,
                         button: _button,
                       ),
                     ),
@@ -4370,4 +4396,100 @@ class _EditMark extends StatelessWidget {
     ),
     child: Icon(icon, size: icon == Icons.remove_rounded ? 18 : 14, color: ink),
   );
+}
+
+/// The tone of the floating lens, and of the button it lives in: nearly black, with a breath
+/// of [accent] in it.
+Color lensTone(Color accent) {
+  final HSVColor h = HSVColor.fromColor(accent);
+  return Color.alphaBlend(
+    h
+        .withValue((h.value * 0.2).clamp(0.0, 1.0))
+        .toColor()
+        .withValues(alpha: 0.72),
+    const Color(0xFF0B0C10),
+  );
+}
+
+/// The button, painted as the floating lens is: dark glass lit from the upper left, a glow of
+/// Prism's colour at its foot, light across the top, and a rim that is bright above and faint
+/// below. It is painted once and again only if the colour changes.
+class _LensDisc extends CustomPainter {
+  const _LensDisc(this.accent);
+  final Color accent;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Offset mid = size.center(Offset.zero);
+    final double r = size.shortestSide / 2;
+    final Rect box = Rect.fromCircle(center: mid, radius: r);
+    final HSVColor h = HSVColor.fromColor(accent);
+    Color tone(double value, double alpha) => Color.alphaBlend(
+      h
+          .withValue((h.value * value).clamp(0.0, 1.0))
+          .toColor()
+          .withValues(alpha: alpha),
+      const Color(0xFF0B0C10),
+    );
+    canvas
+      ..save()
+      ..clipPath(Path()..addOval(box))
+      ..drawRect(
+        box,
+        Paint()
+          ..shader = RadialGradient(
+            center: const Alignment(-0.35, -0.45),
+            radius: 0.85,
+            colors: <Color>[
+              tone(0.42, 0.6),
+              tone(0.2, 0.72),
+              const Color(0xFF0A0B0E),
+            ],
+            stops: const <double>[0, 0.55, 1],
+          ).createShader(box),
+      )
+      // The glow at its foot.
+      ..drawRect(
+        box,
+        Paint()
+          ..shader = RadialGradient(
+            center: const Alignment(0, 0.95),
+            radius: 0.48,
+            colors: <Color>[
+              h
+                  .withValue((h.value * 1.2).clamp(0.0, 1.0))
+                  .toColor()
+                  .withValues(alpha: 0.42),
+              accent.withValues(alpha: 0),
+            ],
+          ).createShader(box),
+      )
+      // Light across the top.
+      ..drawRect(
+        Rect.fromLTRB(box.left, box.top, box.right, mid.dy),
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[Color(0x30FFFFFF), Color(0x00FFFFFF)],
+          ).createShader(Rect.fromLTRB(box.left, box.top, box.right, mid.dy)),
+      )
+      ..restore()
+      // The rim.
+      ..drawCircle(
+        mid,
+        r - 0.7,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4
+          ..shader = const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: <Color>[Color(0xB8FFFFFF), Color(0x1AFFFFFF)],
+          ).createShader(box),
+      );
+  }
+
+  @override
+  bool shouldRepaint(_LensDisc old) => old.accent != accent;
 }
