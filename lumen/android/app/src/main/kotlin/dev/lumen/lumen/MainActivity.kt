@@ -46,18 +46,20 @@ class MainActivity : FlutterActivity() {
     override fun onStop() {
         super.onStop()
         RestBubble.closeMenu()
-        RestBubble.foreground = false
-        RestBubble.refresh(applicationContext)
+        for (b in Floaters) {
+            b.foreground = false
+            b.refresh(applicationContext)
+        }
     }
 
     override fun onStart() {
         super.onStart()
-        RestBubble.foreground = true
+        for (b in Floaters) b.foreground = true
         // Prism itself is in front: no other app is.
-        RestBubble.frontApp = ""
+        for (b in Floaters) b.frontApp = ""
         // A blob that only came along with an app gives way to whatever was floating before.
         RestBubble.homeAgain()
-        RestBubble.refresh(applicationContext)
+        for (b in Floaters) b.refresh(applicationContext)
     }
 
     override fun onPause() {
@@ -87,9 +89,9 @@ class MainActivity : FlutterActivity() {
     // The home button was pressed while Prism is the home screen: tell the app, so it can go back to its first page.
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
-        if (intent.action == RestBubble.OPEN_TRAIN) {
+        if (intent.action == Floater.OPEN_TRAIN) {
             device?.invokeMethod("train", null)
-        } else if (intent.action == RestBubble.OPEN_ACTION) {
+        } else if (intent.action == Floater.OPEN_ACTION) {
             device?.invokeMethod("action", intent.getIntExtra("index", 0))
         } else if (intent.hasCategory(android.content.Intent.CATEGORY_HOME)) {
             device?.invokeMethod("home", null)
@@ -202,7 +204,7 @@ class MainActivity : FlutterActivity() {
                         }
                         startActivity(i, opts)
                         // Prism has just opened this app: it is the one in front.
-                        RestBubble.frontApp = pkg
+                        for (b in Floaters) b.frontApp = pkg
                         // Prism is told, so that the app's blob can go along if that is switched on.
                         if (RestBubble.follow) RestBubble.channel?.invokeMethod("launched", pkg)
                     }
@@ -213,36 +215,39 @@ class MainActivity : FlutterActivity() {
         }
         // Which phone this is, for the test report.
         device = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/device")
-        RestBubble.channel = device
+        for (b in Floaters) b.channel = device
         device!!.setMethodCallHandler { call, result ->
             if (call.method == "rest") {
                 // Everything the floating workout needs to know, or nothing if no workout is on.
                 val a = call.arguments as? Map<*, *>
+                // (Both are told: the timer shows it, and the blob's menu opens the workout's sheet from it.)
+                for (b in Floaters) {
                 if (a == null) {
-                    RestBubble.active = false
+                    b.active = false
                 } else {
-                    RestBubble.active = true
-                    RestBubble.title = a["title"] as String
-                    RestBubble.exercise = a["exercise"] as String
-                    RestBubble.setLabel = a["set"] as String
-                    RestBubble.current = (a["current"] as Number).toInt()
-                    RestBubble.sets = (a["sets"] as List<*>).map {
+                    b.active = true
+                    b.title = a["title"] as String
+                    b.exercise = a["exercise"] as String
+                    b.setLabel = a["set"] as String
+                    b.current = (a["current"] as Number).toInt()
+                    b.sets = (a["sets"] as List<*>).map {
                         val m = it as Map<*, *>
-                        RestBubble.SetRow((m["kg"] as Number).toDouble(), (m["reps"] as Number).toInt(), m["done"] as Boolean)
+                        Floater.SetRow((m["kg"] as Number).toDouble(), (m["reps"] as Number).toInt(), m["done"] as Boolean)
                     }
-                    RestBubble.endsAt = (a["endsAt"] as Number).toLong()
-                    RestBubble.total = (a["total"] as Number).toInt()
-                    RestBubble.sinceAt = (a["sinceAt"] as Number).toLong()
-                    RestBubble.countUp = a["countUp"] as Boolean
-                    RestBubble.pausedAt = (a["pausedAt"] as? Number)?.toLong() ?: 0L
-                    RestBubble.timerOff = (a["off"] as? Boolean) ?: false
-                    RestBubble.short = (a["short"] as? String) ?: ""
-                    RestBubble.hapticsOn = a["haptics"] as Boolean
-                    RestBubble.accent = (a["accent"] as Number).toInt()
-                    RestBubble.onAccent = (a["onAccent"] as Number).toInt()
+                    b.endsAt = (a["endsAt"] as Number).toLong()
+                    b.total = (a["total"] as Number).toInt()
+                    b.sinceAt = (a["sinceAt"] as Number).toLong()
+                    b.countUp = a["countUp"] as Boolean
+                    b.pausedAt = (a["pausedAt"] as? Number)?.toLong() ?: 0L
+                    b.timerOff = (a["off"] as? Boolean) ?: false
+                    b.short = (a["short"] as? String) ?: ""
+                    b.hapticsOn = a["haptics"] as Boolean
+                    b.accent = (a["accent"] as Number).toInt()
+                    b.onAccent = (a["onAccent"] as Number).toInt()
                 }
-                RestBubble.planBuzz(applicationContext)
-                RestBubble.refresh(applicationContext)
+                b.planBuzz(applicationContext)
+                b.refresh(applicationContext)
+                }
                 result.success(null)
             } else if (call.method == "pin") {
                 // What is pinned from the blob menu to float over the phone, or nothing.
@@ -279,17 +284,20 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "floating") {
                 // Where the floating elements may be seen: over Prism itself, and over other apps.
                 val where = call.arguments as? List<*>
-                RestBubble.floatIn = (where?.getOrNull(0) as? Boolean) ?: true
-                RestBubble.floatOut = (where?.getOrNull(1) as? Boolean) ?: true
                 RestBubble.follow = (where?.getOrNull(2) as? Boolean) ?: false
                 if (!RestBubble.follow) RestBubble.homeAgain()
-                RestBubble.refresh(applicationContext)
+                for (b in Floaters) {
+                    b.floatIn = (where?.getOrNull(0) as? Boolean) ?: true
+                    b.floatOut = (where?.getOrNull(1) as? Boolean) ?: true
+                    b.refresh(applicationContext)
+                }
                 result.success(null)
             } else if (call.method == "fan") {
                 // Where Prism's own blobs sit while they are out, or nothing when they are not.
-                RestBubble.fan = (call.arguments as? List<*>)?.map { (it as Number).toFloat() }
+                val fan = (call.arguments as? List<*>)?.map { (it as Number).toFloat() }
+                for (b in Floaters) b.fan = fan
                 // (With floating elements switched off in Prism, they are seen there only while the blobs are out.)
-                if (!RestBubble.floatIn) RestBubble.refresh(applicationContext)
+                if (!RestBubble.floatIn) for (b in Floaters) b.refresh(applicationContext)
                 result.success(null)
             } else if (call.method == "blobs") {
                 // What the blobs in the menu are, in order, so the floating lens can open the same menu.
@@ -299,26 +307,28 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "pinData") {
                 // The numbers the pinned sheets show.
                 val a = call.arguments as Map<*, *>
-                RestBubble.light = a["light"] as Boolean
-                RestBubble.container = (a["container"] as? Boolean) ?: false
-                RestBubble.hapticsOn = a["haptics"] as Boolean
-                RestBubble.accent = (a["accent"] as Number).toInt()
-                RestBubble.onAccent = (a["onAccent"] as Number).toInt()
-                RestBubble.weight = (a["weight"] as Number).toDouble()
-                RestBubble.kcalLeft = (a["left"] as Number).toInt()
-                RestBubble.meals = (a["meals"] as List<*>).map {
+                for (b in Floaters) {
+                b.light = a["light"] as Boolean
+                b.container = (a["container"] as? Boolean) ?: false
+                b.hapticsOn = a["haptics"] as Boolean
+                b.accent = (a["accent"] as Number).toInt()
+                b.onAccent = (a["onAccent"] as Number).toInt()
+                b.weight = (a["weight"] as Number).toDouble()
+                b.kcalLeft = (a["left"] as Number).toInt()
+                b.meals = (a["meals"] as List<*>).map {
                     val m = it as Map<*, *>
-                    RestBubble.Meal((m["i"] as Number).toInt(), m["name"] as String, m["what"] as String, (m["kcal"] as Number).toInt())
+                    Floater.Meal((m["i"] as Number).toInt(), m["name"] as String, m["what"] as String, (m["kcal"] as Number).toInt())
                 }
-                RestBubble.refresh(applicationContext)
+                b.refresh(applicationContext)
+                }
                 result.success(null)
             } else if (call.method == "tab") {
                 // Which of Prism's own pages is the one showing.
-                RestBubble.tab = (call.arguments as Number).toInt()
+                for (b in Floaters) b.tab = (call.arguments as Number).toInt()
                 result.success(null)
             } else if (call.method == "page") {
                 // Whether Prism's own workout page is the one showing.
-                RestBubble.page(applicationContext, call.arguments as Boolean)
+                for (b in Floaters) b.page(applicationContext, call.arguments as Boolean)
                 result.success(null)
             } else if (call.method == "overlayAllowed") {
                 result.success(android.provider.Settings.canDrawOverlays(this))
@@ -352,7 +362,13 @@ class MainActivity : FlutterActivity() {
                 // The long test: Prism's robot asks for one thing at a time, and is told how it went.
                 val asked = call.arguments as? Map<*, *> ?: emptyMap<Any, Any>()
                 var answered = false
-                RestBubble.test(this, asked) { told ->
+                // (What is asked of the timer goes to the timer; everything else to the blob.)
+                val whom = if (asked["timer"] == true) TimerBubble else RestBubble
+                // Beginning, ending and keeping quiet are for both of them.
+                if (asked["op"] == "begin" || asked["op"] == "end" || asked["op"] == "quiet") {
+                    (if (whom === RestBubble) TimerBubble else RestBubble).test(this, asked) { }
+                }
+                whom.test(this, asked) { told ->
                     if (!answered) {
                         answered = true
                         try { result.success(told) } catch (e: Exception) {}
@@ -524,7 +540,7 @@ class Notes : android.service.notification.NotificationListenerService() {
         reason: Int,
     ) {
         // Removed because it was tapped: its app is the one the person has just gone to.
-        if (reason == REASON_CLICK && sbn != null) RestBubble.frontApp = sbn.packageName
+        if (reason == REASON_CLICK && sbn != null) for (b in Floaters) b.frontApp = sbn.packageName
         soon()
     }
 
@@ -557,7 +573,31 @@ class Notes : android.service.notification.NotificationListenerService() {
     }
 }
 
-object RestBubble {
+/** The blob that floats, with its menu. */
+val RestBubble = Floater(false)
+
+/** The timer that floats. A thing of its own beside the blob: both can be on the screen. */
+val TimerBubble = Floater(true)
+
+val Floaters = arrayOf(RestBubble, TimerBubble)
+
+/**
+ * One floating thing and everything that belongs to it: its window, the cross it is dropped
+ * on, its sheet, its handle when tucked away. There are two, made from this same code, so
+ * they behave alike in every way: the blob ([timer] false) and the timer ([timer] true).
+ * Each is told the same things by Prism; what differs is only what it shows.
+ */
+class Floater(val timer: Boolean) {
+    companion object {
+        const val OPEN_TRAIN = "dev.lumen.OPEN_TRAIN"
+        const val OPEN_ACTION = "dev.lumen.OPEN_ACTION"
+        private const val WHITE = 0xFFFFFFFF.toInt()
+        private const val GREY = 0xFFA9ACB6.toInt()
+        private const val GREEN = 0xFF2FA84F.toInt()
+        private const val SHEET_AUTO = -1
+        private const val SHEET_WORKOUT = -2
+    }
+
     /** How many notifications each app has, by package. Empty until the person allows Prism to be told. */
     var notes: Map<String, Int> = emptyMap()
         private set
@@ -575,7 +615,6 @@ object RestBubble {
         return listed.split(":").any { android.content.ComponentName.unflattenFromString(it)?.packageName == context.packageName }
     }
 
-    const val OPEN_TRAIN = "dev.lumen.OPEN_TRAIN"
 
     class SetRow(var kg: Double, var reps: Int, var done: Boolean)
 
@@ -621,7 +660,6 @@ object RestBubble {
 
     class Meal(val index: Int, val name: String, val what: String, val kcal: Int)
 
-    const val OPEN_ACTION = "dev.lumen.OPEN_ACTION"
     var pin: Pin? = null
 
     /**
@@ -836,7 +874,7 @@ object RestBubble {
     fun lensSizeNow(context: Context): Int {
         if (lensSize > 0) return lensSize
         val dp = context.resources.displayMetrics.density
-        val saved = try { context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getFloat("size", 84f) } catch (e: Exception) { 84f }
+        val saved = try { context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getFloat(if (timer) "timerSize" else "size", 84f) } catch (e: Exception) { 84f }
         return (saved * dp).toInt()
     }
 
@@ -982,9 +1020,6 @@ object RestBubble {
 
     private fun muted(): Int = if (light) 0xFF5E5A50.toInt() else GREY
 
-    private const val WHITE = 0xFFFFFFFF.toInt()
-    private const val GREY = 0xFFA9ACB6.toInt()
-    private const val GREEN = 0xFF2FA84F.toInt()
 
     private fun wm(context: Context) = context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager
 
@@ -1051,9 +1086,10 @@ object RestBubble {
      * underneath, so closing the workout's timer shows what is underneath. As the lens was
      * before, a workout that is on keeps the lens to itself even after its timer is closed.
      */
+    // What it is showing: 1 the timer, 2 a blob, 0 nothing. The timer shows only the timer,
+    // the blob only a blob; neither ever turns into the other.
     private fun mode(): Int = when {
-        active && !dismissed -> 1
-        active && !container -> 0
+        timer -> if (active && !dismissed) 1 else 0
         pin != null -> 2
         else -> 0
     }
@@ -1622,7 +1658,8 @@ object RestBubble {
     fun planBuzz(context: Context) {
         buzz?.let { watcher.removeCallbacks(it) }
         buzz = null
-        if (!active || timerOff || pausedAt > 0 || endsAt <= 0) return
+        // (Only the timer gives the buzz: the blob is told of the rest too, and must not give a second.)
+        if (!timer || !active || timerOff || pausedAt > 0 || endsAt <= 0) return
         val left = endsAt - System.currentTimeMillis()
         if (left <= 0) return
         val rest = endsAt
@@ -1749,7 +1786,7 @@ object RestBubble {
             val most = Math.max(least, minOf(d.widthPixels, d.heightPixels) - (16 * dp).toInt())
             if (lensSize == 0) {
                 // The size it was last given, kept from one day to the next.
-                val saved = try { context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getFloat("size", 84f) } catch (e: Exception) { 84f }
+                val saved = try { context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getFloat(if (timer) "timerSize" else "size", 84f) } catch (e: Exception) { 84f }
                 lensSize = (saved * dp).toInt()
             }
             lensSize = lensSize.coerceIn(least, most)
@@ -1766,10 +1803,21 @@ object RestBubble {
             // Where it was last left, so it is in the same spot everywhere.
             if (!placed) tucked = false
             lp.x = if (placed) lensX else d.widthPixels - size - (8 * dp).toInt()
-            lp.y = if (placed) lensY else (d.heightPixels * 0.30f).toInt()
+            // (The timer starts lower than the blob, so the two are never one on top of the other.)
+            lp.y = if (placed) lensY else (d.heightPixels * (if (timer) 0.50f else 0.30f)).toInt()
             val v = Dot(context, lp)
             wm(context).addView(v, lp)
             view = v
+            // It arrives with a short bounce: a little small, then just past its size and back.
+            // It can be touched from the first moment; the bounce is only how it is drawn.
+            // (Not one that is being put down from Prism: that one must be exactly where and as
+            // large as the blob it takes over from.)
+            if (!unseen) {
+                v.scaleX = 0.8f
+                v.scaleY = 0.8f
+                v.animate().scaleX(1f).scaleY(1f).setDuration(190)
+                    .setInterpolator(android.view.animation.OvershootInterpolator(1.7f)).start()
+            }
             // A blob that came along with an app starts tucked at the side.
             if (tuckWhenShown) v.post { if (tuckWhenShown) { tuckWhenShown = false; v.tuckNow() } }
             listenForFront(context)
@@ -1822,8 +1870,6 @@ object RestBubble {
     }
 
     // Which sheet to open: the one that goes with what the lens shows, the workout's, or (0 and up) an action's.
-    private const val SHEET_AUTO = -1
-    private const val SHEET_WORKOUT = -2
 
     private fun openSheet(context: Context, what: Int = SHEET_AUTO) {
         if (sheet != null) return
@@ -1934,7 +1980,7 @@ object RestBubble {
      * held still is to be changed for something else, which is done in Prism.
      * A tap anywhere else, or the back button, closes the menu.
      */
-    private class Menu(context: Context, val ox: Float, val oy: Float, val lensR: Float) : android.view.View(context) {
+    private inner class Menu(context: Context, val ox: Float, val oy: Float, val lensR: Float) : android.view.View(context) {
         private val dp = resources.displayMetrics.density
         private var items = blobs
         private val n = items.size
@@ -2594,7 +2640,7 @@ object RestBubble {
      * fingers can resize the lens wherever the second one lands. It is there only for as long as
      * the lens is being touched, and it shows nothing.
      */
-    private class Reach(context: Context) : android.view.View(context) {
+    private inner class Reach(context: Context) : android.view.View(context) {
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
             view?.reach(e)
             return true
@@ -2606,7 +2652,7 @@ object RestBubble {
      * that shows and wider than the phone's own swipe-in-from-the-edge zone. It shows nothing. A
      * touch on it is a touch on the lens. It is there only while the lens is tucked.
      */
-    private class Grip(context: Context) : android.view.View(context) {
+    private inner class Grip(context: Context) : android.view.View(context) {
         override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
             // A touch here is for the lens and is not a "back".
             if (Build.VERSION.SDK_INT >= 29) systemGestureExclusionRects = listOf(android.graphics.Rect(0, 0, w, h))
@@ -2748,7 +2794,7 @@ object RestBubble {
      * lens falls in, the cross takes its colour for a moment, gives once, and sinks out of sight.
      * Its window counts for nothing except while a lens is being carried.
      */
-    private class Target(context: Context) : android.view.View(context) {
+    private inner class Target(context: Context) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val dp = resources.displayMetrics.density
         private val mix = android.animation.ArgbEvaluator()
@@ -2857,7 +2903,7 @@ object RestBubble {
      * inside as its blob, smaller, with the glass around it; held, it opens the blob menu. As it
      * was before, it takes the pinned thing's colour and shows its picture.
      */
-    private class Dot(context: Context, val lp: android.view.WindowManager.LayoutParams) : android.view.View(context) {
+    private inner class Dot(context: Context, val lp: android.view.WindowManager.LayoutParams) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val arc = android.graphics.RectF()
         private val dst = android.graphics.RectF()
@@ -3573,7 +3619,7 @@ object RestBubble {
             place()
             lensSize = size
             try {
-                context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).edit().putFloat("size", size / dp).apply()
+                context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).edit().putFloat(if (timer) "timerSize" else "size", size / dp).apply()
             } catch (ex: Exception) {}
         }
 
@@ -3660,7 +3706,7 @@ object RestBubble {
         /** Whether the middle of the lens is among Prism's own blobs, which are out, with something in it to put back. */
         private fun amongBlobs(): Boolean {
             val f = fan ?: return false
-            if (f.size < 4 || !RestBubble.foreground || pin == null || snapped) return false
+            if (f.size < 4 || !this@Floater.foreground || pin == null || snapped) return false
             val vx = lp.x + lp.width / 2f - f[0]
             val vy = lp.y + lp.height / 2f - f[1]
             val d = Math.hypot(vx.toDouble(), vy.toDouble()).toFloat()
@@ -3671,7 +3717,7 @@ object RestBubble {
         /** While the lens is carried near Prism's blobs, Prism is told where it is, so they can make room for it. */
         private fun overBlobs() {
             val f = fan
-            if (f == null || f.size < 4 || !RestBubble.foreground || pin == null) return
+            if (f == null || f.size < 4 || !this@Floater.foreground || pin == null) return
             val cx = lp.x + lp.width / 2f
             val cy = lp.y + lp.height / 2f
             val near = !snapped && Math.hypot((cx - f[0]).toDouble(), (cy - f[1]).toDouble()) < f[3] + 60 * dp
@@ -4060,7 +4106,7 @@ object RestBubble {
     }
 
     /** The timer in the sheet: a ring with the time in it. */
-    private class Clock(context: Context) : android.view.View(context) {
+    private inner class Clock(context: Context) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val arc = android.graphics.RectF()
         private val dp = resources.displayMetrics.density
@@ -4130,7 +4176,7 @@ object RestBubble {
      * turns under the thumb with a click for every step; slow down and it changes to fine
      * steps with a different click; a tap on either half nudges it one step.
      */
-    private class Dial(context: Context, val unit: String, val step: Double, val fine: Double, val min: Double, val max: Double) : android.view.View(context) {
+    private inner class Dial(context: Context, val unit: String, val step: Double, val fine: Double, val min: Double, val max: Double) : android.view.View(context) {
         var value = 0.0
             set(v) {
                 if (field != v) {
@@ -4270,7 +4316,7 @@ object RestBubble {
     }
 
     /** The round tick at the end of a set's row. */
-    private class Tick(context: Context) : android.view.View(context) {
+    private inner class Tick(context: Context) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val check = android.graphics.Path()
         private val dp = resources.displayMetrics.density
@@ -4303,7 +4349,7 @@ object RestBubble {
     }
 
     /** The grabber at the top of a sheet: a shallow arrow in the colour, pointing the way the sheet can go. */
-    private class Grab(context: Context) : android.view.View(context) {
+    private inner class Grab(context: Context) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val path = android.graphics.Path()
         private val dp = resources.displayMetrics.density
@@ -4358,7 +4404,7 @@ object RestBubble {
      * bar the workout page draws for its exercises. Done is green, the one in hand is in the
      * colour, the rest are faint. The warm-up is the short one at the start.
      */
-    private class Pips(context: Context) : android.view.View(context) {
+    private inner class Pips(context: Context) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val dp = resources.displayMetrics.density
 
@@ -4391,7 +4437,7 @@ object RestBubble {
      * downward pull, folds away on a touch outside, and tells its owner when it has been pulled
      * down or up.
      */
-    private abstract class Sheet(context: Context) : android.widget.FrameLayout(context) {
+    private abstract inner class Sheet(context: Context) : android.widget.FrameLayout(context) {
         protected val dp = resources.displayMetrics.density
         protected fun px(v: Float) = (v * dp).toInt()
         protected val wrap = android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
@@ -4775,7 +4821,7 @@ object RestBubble {
     }
 
     /** The workout's sheet, in two sizes: the current set, or the whole exercise with a large timer. */
-    private class WorkoutSheet(context: Context) : Sheet(context) {
+    private inner class WorkoutSheet(context: Context) : Sheet(context) {
         private val header = android.widget.LinearLayout(context)
         private val clock = Clock(context)
         private val info = android.widget.LinearLayout(context)
@@ -5125,7 +5171,7 @@ object RestBubble {
             val rest = if (fullMode && !options && t.resting && !t.paused) shown else away
             val more = if (fullMode && options && !t.off) shown else away
             // On Prism's own workout page there is nowhere for "Open workout" to take you.
-            val wantOpen = if (options || (RestBubble.foreground && onTrain)) away else shown
+            val wantOpen = if (options || (this@Floater.foreground && onTrain)) away else shown
             if (add.visibility != rest || turnMode.visibility != more || open.visibility != wantOpen || hint.visibility != wantHint) {
                 val fresh = ArrayList<android.view.View>()
                 if (rest == shown && add.visibility != shown) { fresh.add(add); fresh.add(skip) }
@@ -5201,7 +5247,7 @@ object RestBubble {
      * The sheet of a pinned action: the thing itself, done in place, over whatever app is open.
      * Nothing in it runs until it is opened, and nothing is left running when it closes.
      */
-    private class ActionSheet(context: Context, val index: Int) : Sheet(context) {
+    private inner class ActionSheet(context: Context, val index: Int) : Sheet(context) {
         private val title = label(context, 19f, ink(), true)
         private val sub = label(context, 12.5f, muted(), false)
         private val save = label(context, 16.5f, onAccent, true)
@@ -5217,7 +5263,7 @@ object RestBubble {
             head.addView(names, android.widget.LinearLayout.LayoutParams(0, wrap, 1f))
             val open = label(context, 13f, ink(), true)
             // Only where it leads somewhere: inside Prism, the same thing is already at hand.
-            open.visibility = if (RestBubble.foreground) android.view.View.GONE else android.view.View.VISIBLE
+            open.visibility = if (this@Floater.foreground) android.view.View.GONE else android.view.View.VISIBLE
             open.text = "Open in Prism"
             open.setPadding(px(14f), px(10f), px(14f), px(10f))
             open.background = rounded(tint(ink(), 0x1F), 100 * dp)

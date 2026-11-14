@@ -51,13 +51,21 @@ class TestRun {
 
   /// Asks Android's side of the test for one thing. It never throws: with no answer, the
   /// answer says so.
+  ///
+  /// There are two floating things, the blob and the timer. What is asked goes to the blob
+  /// unless [timer] is set, and then to the timer.
+  bool timer = false;
+
   Future<Map<String, Object?>> lens(
     Map<String, Object?> ask, {
     int extraMs = 0,
   }) async {
     try {
       final Map<Object?, Object?>? told = await _device
-          .invokeMethod<Map<Object?, Object?>>('lensTest', ask)
+          .invokeMethod<Map<Object?, Object?>>(
+            'lensTest',
+            timer ? <String, Object?>{...ask, 'timer': true} : ask,
+          )
           .timeout(Duration(milliseconds: 20000 + extraMs));
       return <String, Object?>{
         for (final MapEntry<Object?, Object?> e

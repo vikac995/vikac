@@ -1,5 +1,25 @@
 # Lumen changelog
 
+## Prism, build 95 (14 November 2026)
+
+**File:** `releases/prism-build-95.apk`
+
+Needs Play Protect paused to install.
+
+**The timer is a floating thing of its own.** There are now two: the blob, and the timer. Both can be on the screen at once.
+
+- **The blob is only ever a blob.** A workout starting no longer takes it over, and a rest ending no longer hands it back.
+- **The timer is only ever the timer.** It appears when a rest or a workout is on and goes when it is over. A tap opens its sheet. It has no menu.
+- **They are the same code, used twice,** so they behave alike in every way: dragged, thrown, resting at a side, pushed into a side, pulled out, resized, dropped on the cross, and every buzz. Each has its own place, its own size and its own cross.
+- **The timer starts lower down the side than the blob,** so they are not on top of one another. Nothing yet keeps them apart if you put one on the other yourself.
+- Dropped on the cross, the timer is closed for that workout only; the rest goes on, and its buzz still comes. Going to the workout page brings it back.
+- The blob's own menu still opens the workout's sheet from "Workout".
+- **Either one arrives with a short bounce:** a little small, just past its size, and back, in under a fifth of a second. It can be touched from the first moment. A blob being put down from Prism does not bounce: it has to be exactly where the blob was.
+- **The tests** ask the timer what they used to ask the one lens while a rest was running.
+
+**Checked:** it compiles. In my preview, the Prism half of the long test.
+**Not checked:** on a phone, any of it. This is the largest change to Android's side so far and none of it has run. It was done by making the whole floating part twice over, not by rewriting it, which is why I think it is likelier to work than not; but expect faults, and tell me what you see.
+
 ## Prism, build 94 (14 November 2026)
 
 **File:** `releases/prism-build-94.apk`

@@ -3077,6 +3077,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
           // ---------------------------------------------------------------- the workout's timer
           say('8 of 9, the floating timer');
+          // (From here what is asked of Android's side is asked of the timer, not the blob.)
+          t.timer = true;
           await Robot.tap(tab(1), after: 900);
           await Robot.tap(tab(0), after: 900);
           final void Function(int)? rest = lensOf.testRest;
@@ -3184,6 +3186,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           lensOf.setPin(null);
           _sendPin();
         }
+        t.timer = false;
         lensOf.setFloating(inPrism: true, overApps: true);
         BlobSlots.instance.putAll(five);
         if (!BlobSlots.instance.names) {
@@ -3245,6 +3248,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         await t.phase('Settings in front, a blob floating', still, away: true);
         final void Function(int)? rest = lensOf.testRest;
         if (rest != null) {
+          // The timer was dropped on the cross earlier: a visit to the workout page brings it back.
+          _go(1);
+          await Robot.wait(800);
+          _go(0);
+          await Robot.wait(800);
+          t.timer = true;
           rest(still + 120);
           await Robot.wait(1500);
           await t.phase('rest running in the floating timer, in Prism', still);
@@ -3272,6 +3281,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             await t.lens(<String, Object?>{'op': 'sheet', 'what': 'back'});
           }
           lensOf.onStop?.call();
+          t.timer = false;
         }
       }
       final Map<String, Object?> last = await t.lens(<String, Object?>{
