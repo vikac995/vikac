@@ -19,6 +19,7 @@ import 'diag.dart';
 import 'food_page.dart';
 import 'home_page.dart';
 import 'lens.dart';
+import 'long_test.dart';
 import 'look.dart';
 import 'apps.dart';
 import 'bubble.dart';
@@ -354,12 +355,14 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 16),
                       SwitchLine(
+                        key: Robot.key('floatIn'),
                         label: 'In Prism',
                         value: b.floatIn.value,
                         onChanged: (bool v) => _setFloating(inPrism: v),
                       ),
                       const SizedBox(height: 12),
                       SwitchLine(
+                        key: Robot.key('floatOut'),
                         label: 'Over other apps',
                         value: b.floatOut.value,
                         onChanged: (bool v) => _setFloating(overApps: v),
@@ -1311,8 +1314,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   final Stopwatch _held = Stopwatch();
   bool _drawerOpen = false, _lifted = false;
   Timer? _liftTimer;
-  // When, counted from the finger coming down, the button became the lens.
-  int _liftedAt = 0;
+  // When, counted from the finger coming down, the button became the lens, and when the
+  // finger first moved.
+  int _liftedAt = 0, _movedAt = 0;
   // Holding the button while the blobs are out: they can all be changed, as when a blob is held.
   Timer? _holdTimer;
   bool _heldEdit = false;
@@ -1330,6 +1334,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     super.initState();
     Diag.instance.finished.addListener(_showReport);
     Diag.instance.autoScript = _robot;
+    Diag.instance.longTest = _longTest;
     // The pinned thing: what its sheets ask of Prism, and keeping Android told.
     RestBubble.instance
       ..onWeigh = (double kg) {
@@ -1359,7 +1364,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         _run(action);
       }
       ..onPinned = (String? key) {
-        // Put in the floating lens from its own menu: Prism keeps it, and its blob wears the ring.
+        // Put in the floating lens from its own menu: Prism keeps it, and it leaves the menu.
         RestBubble.instance.setPin(key);
         _sendPin();
       }
@@ -1373,6 +1378,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Look.instance.addListener(_sendPinData);
     settings.addListener(_sendPinData);
     RestBubble.instance.onTheme = _sendPinData;
+    // (On a computer the long test can be started by itself, to see that it runs.)
+    if (Platform.environment['PRISM_LONG_TEST'] != null) {
+      Future<void>.delayed(const Duration(seconds: 9), _longTest);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       RestBubble.instance.tellFloating();
       _sendPinData();
@@ -1617,6 +1626,946 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     await Robot.wait(400);
   }
 
+  bool _testing = false;
+
+  /// The long test. Prism drives all of itself with a finger that is not there, and asks
+  /// Android to do the same to the floating lens. After each step it checks that things are
+  /// as they should be; while things move it keeps how every frame was made; and at the end
+  /// it sits still in one state after another and writes down what that costs. Nothing is
+  /// left changed: the blobs, their names and what floats are put back as they were.
+  Future<void> _longTest() async {
+    if (_testing || !mounted) {
+      return;
+    }
+    _testing = true;
+    final TestRun t = TestRun();
+    final Size sc = MediaQuery.sizeOf(context);
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    final double top = MediaQuery.paddingOf(context).top;
+    final RestBubble lensOf = RestBubble.instance;
+    void say(String what) =>
+        Diag.instance.banner.value = 'Long test: $what. Hands off, please.';
+    Offset tab(int i) => Offset(14 + _centre(i), _home.dy);
+    Offset seat(int i) {
+      final double a = _seatAngle(_seat[i].value);
+      return _home + Offset(-math.cos(a), -math.sin(a)) * _far.value;
+    }
+
+    Offset spare(int i) =>
+        Offset(sc.width / 2 + (i - 2) * 74.0, sc.height * 0.42);
+    // A place on the page that is beside everything the test opens.
+    final Offset beside = Offset(sc.width / 2, top + 150);
+    List<double> px(Offset o) => <double>[o.dx * dpr, o.dy * dpr];
+    int shown() => _others(-1).length;
+    const List<String> five = <String>[
+      'action:0',
+      'action:1',
+      'action:2',
+      'action:3',
+      'action:4',
+    ];
+    Future<void> calm() async {
+      if (_parked || _carrying) {
+        _lensHome();
+      }
+      if (_drawerOpen) {
+        _setDrawer(false);
+      }
+      if (_sheetOpen) {
+        _closeSheet();
+      }
+      if (_editing) {
+        _setEditing(false);
+      }
+      if (_open) {
+        _setOpen(false);
+      }
+      await Robot.wait(700);
+    }
+
+    // As things are now, to be put back at the end.
+    final List<String?> keysWere = <String?>[...BlobSlots.instance.keys];
+    final bool namesWere = BlobSlots.instance.names;
+    final String? pinWas = lensOf.pinned.value;
+    final bool inWas = lensOf.floatIn.value, outWas = lensOf.floatOut.value;
+    String build = Diag.build;
+    try {
+      say('getting ready');
+      await calm();
+      lensOf.onStop?.call();
+      lensOf.setPin(null);
+      _sendPin();
+      lensOf.setFloating(inPrism: true, overApps: true);
+      BlobSlots.instance.putAll(five);
+      if (!BlobSlots.instance.names) {
+        _setNames(true);
+      }
+      if (_tab != 0) {
+        _go(0);
+      }
+      await Robot.wait(900);
+      Map<String, Object?> s = await t.lens(<String, Object?>{'op': 'begin'});
+      final bool floats = s['allowed'] == true;
+      final double w = (s['w'] as num?)?.toDouble() ?? sc.width * dpr,
+          h = (s['h'] as num?)?.toDouble() ?? sc.height * dpr,
+          dp = (s['dp'] as num?)?.toDouble() ?? dpr;
+      if (!floats) {
+        t.note(
+          'Prism is not allowed over other apps, so nothing about the floating lens was tested. Allow it in Prism\'s settings and run the test again.',
+        );
+      }
+      Future<Map<String, Object?>> where() =>
+          t.lens(<String, Object?>{'op': 'state'});
+      bool atSide(Map<String, Object?> m) {
+        final double x = (m['x'] as num?)?.toDouble() ?? -9999,
+            size = (m['size'] as num?)?.toDouble() ?? 0;
+        return (x - 8 * dp).abs() < 4 || (x - (w - size - 8 * dp)).abs() < 4;
+      }
+
+      bool own(Map<String, Object?> m) =>
+          m['roaming'] == false && m['window'] == m['size'];
+      Future<Map<String, Object?>> press(
+        String name,
+        List<Offset> path, {
+        int legMs = 300,
+        int holdMs = 60,
+        int endMs = 0,
+        bool flick = false,
+        int settleMs = 1600,
+        bool fromLens = true,
+      }) async {
+        final Map<String, Object?> m = await t.lens(<String, Object?>{
+          'op': 'press',
+          'path': <List<double>>[for (final Offset o in path) px(o)],
+          'fromLens': fromLens,
+          'legMs': legMs,
+          'holdMs': holdMs,
+          'endMs': endMs,
+          'flick': flick,
+          'settleMs': settleMs,
+        }, extraMs: holdMs + legMs * path.length + endMs + settleMs);
+        t.lensRun(name, m);
+        return m;
+      }
+
+      // ---------------------------------------------------------------- pages
+      say('1 of 9, the pages');
+      await t.scene('switching tabs', () async {
+        for (final int i in <int>[1, 2, 3, 0, 2, 1, 3, 0]) {
+          await Robot.tap(tab(i), after: 700);
+        }
+      });
+      t.check('tabs: ends on Home', _tab == 0, 'tab $_tab');
+      await t.scene('scrolling every page', () async {
+        for (final int i in <int>[1, 2, 3, 0]) {
+          await Robot.tap(tab(i), after: 800);
+          await Robot.drag(
+            <Offset>[
+              Offset(sc.width / 2, sc.height * 0.62),
+              Offset(sc.width / 2, sc.height * 0.34),
+            ],
+            legMs: 180,
+            flick: true,
+            after: 850,
+          );
+          await Robot.drag(
+            <Offset>[
+              Offset(sc.width / 2, sc.height * 0.34),
+              Offset(sc.width / 2, sc.height * 0.62),
+            ],
+            legMs: 180,
+            flick: true,
+            after: 850,
+          );
+        }
+      });
+
+      // ---------------------------------------------------------------- blobs
+      say('2 of 9, the blobs');
+      await t.scene('blobs opening and closing', () async {
+        for (int n = 0; n < 6; n++) {
+          await Robot.tap(_home, after: 650);
+        }
+      });
+      t.check('blobs: closed after opening and closing three times', !_open);
+      await Robot.tap(_home, after: 800);
+      t.check('blobs: a tap on the button opens them', _open && shown() == 5);
+      await t.scene('holding a blob', () async {
+        await Robot.hold(seat(2), after: 500);
+      });
+      t.check('changing: holding a blob starts it', _editing && _open);
+      await Robot.tap(_home, after: 500);
+      t.check(
+        'changing: a tap on the X ends it and leaves the blobs out',
+        !_editing && _open,
+      );
+      await Robot.hold(_home, ms: 650, after: 500);
+      t.check('changing: holding the X starts it', _editing && _open);
+      await Robot.tap(beside, after: 500);
+      t.check(
+        'changing: a tap beside the blobs ends it first',
+        !_editing && _open,
+      );
+      await Robot.hold(seat(2), after: 500);
+      final Offset? names = Robot.spot('names');
+      t.check('names: the switch is there while changing', names != null);
+      if (names != null) {
+        await t.scene('names off, blobs move in', () async {
+          await Robot.tap(names, after: 900);
+        });
+        t.check(
+          'names: off, and the blobs are nearer the button',
+          !BlobSlots.instance.names && (_far.value - _reachBare).abs() < 1,
+          'at ${_far.value.round()}',
+        );
+        await t.scene('names on, blobs move out', () async {
+          await Robot.tap(Robot.spot('names') ?? names, after: 900);
+        });
+        t.check(
+          'names: on again, and the blobs are back out',
+          BlobSlots.instance.names && (_far.value - _reach).abs() < 1,
+          'at ${_far.value.round()}',
+        );
+      }
+      // Taking a blob away and giving the place something again.
+      await t.scene('taking a blob away', () async {
+        await Robot.tap(seat(2) + const Offset(-21.5, -21.5), after: 900);
+      });
+      t.check('minus: the third place is empty', _isEmpty(2));
+      t.check('minus: four blobs are left', shown() == 4, '${shown()}');
+      await t.scene('an empty place opens the list', () async {
+        await Robot.tap(spare(2), after: 1300);
+      });
+      t.check(
+        'empty place: a tap opens "Add a blob"',
+        _drawerOpen && _editSlot == 2,
+      );
+      Offset? first = Robot.spot('choice0');
+      t.check('picker: the first choice can be found', first != null);
+      if (first != null) {
+        await t.scene('choosing, and the new blob joins', () async {
+          await Robot.tap(first!, after: 1700);
+        });
+      }
+      t.check('add: the third place holds something again', !_isEmpty(2));
+      t.check(
+        'add: back at the blobs, still being changed',
+        _open && _editing && !_drawerOpen,
+      );
+      if (_drawerOpen) {
+        _setDrawer(false);
+        await Robot.wait(700);
+      }
+      // The pencil.
+      await Robot.tap(seat(1), after: 1300);
+      t.check(
+        'pencil: a tap on a blob opens "Replace"',
+        _drawerOpen && _editSlot == 1,
+      );
+      first = Robot.spot('choice0');
+      if (first != null) {
+        await Robot.tap(first, after: 1600);
+      }
+      t.check(
+        'replace: the second place is what was chosen',
+        _pinKey(1) == 'action:0',
+        _pinKey(1),
+      );
+      if (_drawerOpen) {
+        _setDrawer(false);
+        await Robot.wait(700);
+      }
+      // The cog.
+      await Robot.tap(_home + const Offset(22.5, -22.5), after: 900);
+      final Offset? inPrism = Robot.spot('floatIn');
+      t.check('cog: a tap on it opens "Floating elements"', inPrism != null);
+      if (inPrism != null) {
+        await Robot.tap(inPrism, after: 500);
+        t.check('floating: "In Prism" switches off', !lensOf.floatIn.value);
+        await Robot.tap(inPrism, after: 500);
+        t.check('floating: and on again', lensOf.floatIn.value);
+        await Robot.tap(Offset(sc.width / 2, top + 60), after: 800);
+        t.check(
+          'floating: a tap outside closes the panel',
+          Robot.spot('floatIn') == null,
+        );
+      }
+      if (_editing) {
+        await Robot.tap(beside, after: 500);
+      }
+      BlobSlots.instance.putAll(five);
+      await Robot.wait(500);
+      // Putting them in another order.
+      if (!_open) {
+        await Robot.tap(_home, after: 800);
+      }
+      await t.scene('dragging the first blob to the far end', () async {
+        // (A pause at each seat, the last included: it is put down, not thrown.)
+        await Robot.drag(
+          <Offset>[seat(0), seat(1), seat(2), seat(3), seat(4)],
+          legMs: 220,
+          dwell: 160,
+          after: 900,
+        );
+      });
+      t.check(
+        'order: the first blob is now the last',
+        _pinKey(4) == 'action:0',
+        <String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(' '),
+      );
+      await Robot.drag(
+        <Offset>[seat(4), seat(3), seat(2), seat(1), seat(0)],
+        legMs: 220,
+        dwell: 160,
+        after: 900,
+      );
+      t.check(
+        'order: and back where it was',
+        _pinKey(0) == 'action:0' && _pinKey(4) == 'action:4',
+        <String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(' '),
+      );
+      t.check(
+        'order: moving a blob along the row did not make it float',
+        lensOf.pinned.value == null,
+        '${lensOf.pinned.value}',
+      );
+      if (lensOf.pinned.value != null) {
+        lensOf.setPin(null);
+        _sendPin();
+      }
+      BlobSlots.instance.putAll(five);
+      await calm();
+
+      // ---------------------------------------------------------------- app list
+      say('3 of 9, the app list');
+      await t.scene('app list opening', () async {
+        await Robot.drag(
+          <Offset>[_home, _home - const Offset(0, 90)],
+          legMs: 90,
+          flick: true,
+          after: 1000,
+        );
+      });
+      t.check('app list: a flick up from the button opens it', _drawerOpen);
+      if (_drawerOpen) {
+        final Offset mid = Offset(sc.width / 2, sc.height * 0.55);
+        await t.scene('app list turning pages', () async {
+          await Robot.drag(
+            <Offset>[mid, mid - const Offset(0, 250)],
+            legMs: 700,
+            after: 600,
+          );
+          await Robot.drag(
+            <Offset>[mid, mid + const Offset(0, 130)],
+            legMs: 500,
+            after: 600,
+          );
+        });
+        await t.scene('app list closing', () async {
+          await Robot.tap(_home, after: 800);
+        });
+      }
+      t.check('app list: the button closes it', !_drawerOpen);
+      await calm();
+
+      // ---------------------------------------------------------------- magnifying glass
+      say('4 of 9, the magnifying glass');
+      final List<Rect> cards =
+          <Rect>[
+            for (final LensTargetState c in LensBus.instance.targets)
+              if (c.widget.page == 'home' && c.rect != null) c.rect!,
+          ]..sort(
+            (Rect x, Rect y) => x.top != y.top
+                ? x.top.compareTo(y.top)
+                : x.left.compareTo(y.left),
+          );
+      t.check(
+        'glass: there are cards on Home to carry it over',
+        cards.isNotEmpty,
+      );
+      if (cards.isNotEmpty) {
+        bool lifted = false;
+        void seen() => lifted = lifted || _carrying;
+        _glass.addListener(seen);
+        await t.scene('carrying the glass over every card', () async {
+          await Robot.drag(
+            <Offset>[
+              _home,
+              for (final Rect r in cards) r.center + const Offset(0, 62),
+            ],
+            legMs: 380,
+            dwell: 300,
+            after: 900,
+          );
+        });
+        _glass.removeListener(seen);
+        t.check('glass: dragging from the button brings it out', lifted);
+      }
+      await calm();
+      // A flick must still be the app list, however the glass has been tuned.
+      await Robot.drag(
+        <Offset>[_home, _home - const Offset(0, 110)],
+        legMs: 160,
+        flick: true,
+        after: 900,
+      );
+      t.check(
+        'glass: a slower flick up is still the app list',
+        _drawerOpen && !_carrying,
+      );
+      await calm();
+
+      // ---------------------------------------------------------------- sheets
+      say('5 of 9, the sheets');
+      for (final int i in <int>[3, 1]) {
+        await Robot.tap(_home, after: 700);
+        final String name = _blobName(i);
+        await t.scene('sheet from "$name"', () async {
+          await Robot.tap(seat(i), after: 1100);
+        });
+        t.check('sheet: "$name" opens one', _sheetOpen);
+        if (_sheetOpen) {
+          await Robot.tap(Offset(sc.width / 2, top + 40), after: 900);
+        }
+        t.check('sheet: a tap above "$name" closes it', !_sheetOpen);
+        await calm();
+      }
+
+      // ---------------------------------------------------------------- workout page
+      say('6 of 9, the workout page');
+      await Robot.tap(tab(1), after: 900);
+      final Offset? tick = Robot.spot('tick');
+      t.check('workout: a set can be found to tick', tick != null);
+      if (tick != null) {
+        await t.scene('ticking a set and unticking it', () async {
+          await Robot.tap(tick, after: 1200);
+          await Robot.tap(tick, after: 900);
+        });
+      }
+      lensOf.onStop?.call();
+      await Robot.tap(tab(0), after: 900);
+
+      // ---------------------------------------------------------------- the floating lens
+      if (floats) {
+        say('7 of 9, the floating lens');
+        await Robot.tap(_home, after: 800);
+        await t.scene(
+          'putting a blob down in the middle of the screen',
+          () async {
+            await Robot.drag(
+              <Offset>[seat(1), Offset(sc.width * 0.5, sc.height * 0.36)],
+              legMs: 500,
+              after: 1700,
+            );
+          },
+        );
+        t.check(
+          'put down: that blob is the one floating',
+          lensOf.pinned.value == 'action:1',
+          '${lensOf.pinned.value}',
+        );
+        t.check(
+          'put down: the menu closed, with four left in it',
+          !_open && shown() == 4,
+        );
+        s = await where();
+        t.check('put down: there is a lens', s['lens'] == true);
+        t.check(
+          'put down: it came to rest at a side',
+          atSide(s),
+          'x ${s['x']}',
+        );
+        t.check(
+          'put down: its window is its own size again',
+          own(s),
+          'window ${s['window']}, lens ${s['size']}',
+        );
+        final double size = ((s['size'] as num?)?.toDouble() ?? 84 * dp) / dpr;
+
+        s = await press(
+          'lens carried round the screen',
+          <Offset>[
+            Offset(sc.width * 0.3, sc.height * 0.3),
+            Offset(sc.width * 0.7, sc.height * 0.5),
+            Offset(sc.width * 0.4, sc.height * 0.6),
+          ],
+          legMs: 500,
+          endMs: 200,
+        );
+        t.check(
+          'carried: let go in the open, it goes to the nearer side',
+          atSide(s) && own(s),
+          'x ${s['x']}',
+        );
+        for (int n = 0; n < 2; n++) {
+          s = await press(
+            'lens thrown to the left',
+            <Offset>[
+              Offset(sc.width * 0.55, sc.height * 0.4),
+              Offset(sc.width * 0.2, sc.height * 0.38),
+            ],
+            legMs: 150,
+            flick: true,
+          );
+          t.check(
+            'thrown left: rests at the left side',
+            ((s['x'] as num?)?.toDouble() ?? 9999) < w / 2 &&
+                atSide(s) &&
+                own(s),
+            'x ${s['x']}',
+          );
+          s = await press(
+            'lens thrown to the right',
+            <Offset>[
+              Offset(sc.width * 0.45, sc.height * 0.5),
+              Offset(sc.width * 0.8, sc.height * 0.52),
+            ],
+            legMs: 150,
+            flick: true,
+          );
+          t.check(
+            'thrown right: rests at the right side',
+            ((s['x'] as num?)?.toDouble() ?? -9999) > w / 2 &&
+                atSide(s) &&
+                own(s),
+            'x ${s['x']}',
+          );
+        }
+        s = await press(
+          'lens let go a little past the edge',
+          <Offset>[Offset(sc.width - size * 0.36, sc.height * 0.45)],
+          legMs: 450,
+          endMs: 250,
+        );
+        t.check(
+          'a little past the edge: it comes back to the side',
+          s['tucked'] != true && atSide(s) && own(s),
+          'x ${s['x']}',
+        );
+        s = await press(
+          'lens pushed into the side',
+          <Offset>[Offset(sc.width + 6, sc.height * 0.45)],
+          legMs: 450,
+          endMs: 250,
+        );
+        t.check('pushed in: it is tucked away', s['tucked'] == true);
+        final double tuckedY =
+            (((s['y'] as num?)?.toDouble() ?? 0) + size * dpr / 2) / dpr;
+        s = await press(
+          'tucked lens tapped',
+          <Offset>[Offset(sc.width - 6, tuckedY)],
+          fromLens: false,
+          holdMs: 40,
+        );
+        t.check(
+          'tucked: a tap brings it back out',
+          s['tucked'] != true && atSide(s),
+          'x ${s['x']}',
+        );
+
+        // Its own menu.
+        s = await press(
+          'lens held: its menu opens',
+          <Offset>[],
+          holdMs: 950,
+          settleMs: 800,
+        );
+        t.check(
+          'lens menu: holding the lens opens it, with the other four',
+          s['menu'] == true && s['menuCount'] == 4,
+          'count ${s['menuCount']}',
+        );
+        if (s['menu'] == true) {
+          Map<String, Object?> m = await t.lens(<String, Object?>{
+            'op': 'menu',
+            'what': 'hold',
+            'i': 0,
+          });
+          t.check(
+            'lens menu: holding a blob starts the changing',
+            m['menuEditing'] == true,
+          );
+          m = await t.lens(<String, Object?>{'op': 'menu', 'what': 'back'});
+          t.check(
+            'lens menu: back ends the changing and leaves it open',
+            m['menu'] == true && m['menuEditing'] == false,
+          );
+          // A new order, from the lens's menu.
+          final Map<String, Object?> a = await t.lens(<String, Object?>{
+            'op': 'menu',
+            'what': 'key',
+            'i': 0,
+          });
+          final Map<String, Object?> z = await t.lens(<String, Object?>{
+            'op': 'menu',
+            'what': 'key',
+            'i': 3,
+          });
+          m = await t.lens(<String, Object?>{
+            'op': 'menu',
+            'what': 'drag',
+            'i': 0,
+            'to': <List<Object?>>[
+              <Object?>[z['spotX'], z['spotY']],
+            ],
+            'legMs': 600,
+          });
+          t.lensRun('lens menu: a blob dragged to the far end', m);
+          await Robot.wait(600);
+          final List<String> order = <String>[
+            for (int i = 0; i < _n; i++)
+              if (!_floating(i)) _pinKey(i),
+          ];
+          t.check(
+            'lens menu: dragging a blob along the row changes the order, and Prism keeps it',
+            order.isNotEmpty && order.last == a['key'],
+            order.join(' '),
+          );
+          // Out of the row, into the lens.
+          final Map<String, Object?> b = await t.lens(<String, Object?>{
+            'op': 'menu',
+            'what': 'key',
+            'i': 0,
+          });
+          m = await t.lens(<String, Object?>{
+            'op': 'menu',
+            'what': 'drag',
+            'i': 0,
+            'to': <List<Object?>>[
+              <Object?>[20 * dp, b['spotY']],
+            ],
+            'legMs': 500,
+            'settleMs': 1200,
+          });
+          t.lensRun('lens menu: a blob dragged clear of the row', m);
+          await Robot.wait(500);
+          t.check(
+            'lens menu: a blob dragged clear of the row goes into the lens',
+            lensOf.pinned.value == b['key'],
+            '${lensOf.pinned.value} for ${b['key']}',
+          );
+          s = await where();
+          if (s['menu'] == true) {
+            m = await t.lens(<String, Object?>{'op': 'menu', 'what': 'back'});
+            t.check('lens menu: back closes it', m['menu'] == false);
+          }
+        }
+        BlobSlots.instance.putAll(five);
+        await Robot.wait(500);
+
+        // Back among Prism's blobs.
+        final String? floating = lensOf.pinned.value;
+        await Robot.tap(_home, after: 900);
+        s = await press(
+          'lens dragged back among the blobs',
+          <Offset>[Offset(_home.dx, _home.dy - _far.value)],
+          legMs: 650,
+          endMs: 300,
+          settleMs: 1300,
+        );
+        await Robot.wait(800);
+        t.check(
+          'put back: nothing is floating any more',
+          lensOf.pinned.value == null,
+          'was $floating, is ${lensOf.pinned.value}',
+        );
+        t.check('put back: five blobs in the menu', shown() == 5, '${shown()}');
+        s = await where();
+        t.check('put back: the lens is gone', s['lens'] != true);
+        await calm();
+
+        // Shot from the button.
+        await Robot.tap(_home, after: 800);
+        await t.scene(
+          'a blob dropped on the button is shot to the side',
+          () async {
+            await Robot.drag(
+              <Offset>[seat(0), _home],
+              legMs: 450,
+              dwell: 200,
+              after: 1900,
+            );
+          },
+        );
+        t.check(
+          'shot: the blob is floating',
+          lensOf.pinned.value == 'action:0',
+          '${lensOf.pinned.value}',
+        );
+        s = await where();
+        t.check(
+          'shot: the lens is at a side',
+          s['lens'] == true && atSide(s),
+          'x ${s['x']}',
+        );
+
+        // Carried past the edge of the screen: it stops at the side.
+        await Robot.tap(_home, after: 800);
+        await t.scene('a blob carried past the edge of the screen', () async {
+          await Robot.drag(
+            <Offset>[seat(2), Offset(sc.width + 30, sc.height * 0.3)],
+            legMs: 500,
+            dwell: 250,
+            after: 1700,
+          );
+        });
+        t.check(
+          'edge: that blob replaced the one that was floating',
+          lensOf.pinned.value == 'action:2' && shown() == 4,
+          '${lensOf.pinned.value}, ${shown()} in the menu',
+        );
+        s = await where();
+        final double sz = (s['size'] as num?)?.toDouble() ?? 0;
+        t.check(
+          'edge: the lens is at the right side, where the blob stopped',
+          s['lens'] == true &&
+              (((s['x'] as num?)?.toDouble() ?? 0) - (w - sz - 8 * dp)).abs() <
+                  4,
+          'x ${s['x']}, side ${(w - sz - 8 * dp).round()}',
+        );
+        t.check(
+          'edge: at the height it was put down',
+          ((((s['y'] as num?)?.toDouble() ?? 0) + sz / 2) / dpr -
+                      sc.height * 0.3)
+                  .abs() <
+              6,
+          'middle at ${((((s['y'] as num?)?.toDouble() ?? 0) + sz / 2) / dpr).round()}, put down at ${(sc.height * 0.3).round()}',
+        );
+
+        // Where they may be seen.
+        _setFloating(inPrism: false);
+        await Robot.wait(700);
+        s = await where();
+        t.check(
+          'floating off in Prism: the lens is gone while the blobs are in',
+          s['lens'] != true,
+        );
+        await Robot.tap(_home, after: 1000);
+        s = await where();
+        t.check(
+          'floating off in Prism: it is back while the blobs are out',
+          s['lens'] == true,
+        );
+        await Robot.tap(_home, after: 900);
+        _setFloating(inPrism: true);
+        await Robot.wait(700);
+        s = await where();
+        t.check('floating on in Prism: the lens is back', s['lens'] == true);
+
+        // The cross.
+        final Offset cross = Offset(sc.width / 2, (h - 104 * dp) / dpr);
+        s = await press(
+          'lens dropped on the cross',
+          <Offset>[cross],
+          legMs: 650,
+          endMs: 300,
+          settleMs: 1500,
+        );
+        await Robot.wait(700);
+        s = await where();
+        t.check(
+          'cross: the lens is gone and nothing is floating',
+          s['lens'] != true && lensOf.pinned.value == null,
+          '${lensOf.pinned.value}',
+        );
+        t.check(
+          'cross: five blobs in the menu again',
+          shown() == 5,
+          '${shown()}',
+        );
+
+        // ---------------------------------------------------------------- the workout's timer
+        say('8 of 9, the floating timer');
+        await Robot.tap(tab(1), after: 900);
+        await Robot.tap(tab(0), after: 900);
+        final void Function(int)? rest = lensOf.testRest;
+        t.check('timer: the test can start a rest', rest != null);
+        if (rest != null) {
+          rest(90);
+          await Robot.wait(1800);
+          s = await where();
+          t.check(
+            'timer: with a rest running it floats',
+            s['lens'] == true && s['mode'] == 1,
+            'mode ${s['mode']}',
+          );
+          final double d0 = (s['draws'] as num?)?.toDouble() ?? 0;
+          final int t0 = t.clock.elapsedMilliseconds;
+          await Robot.wait(8000);
+          s = await where();
+          final double rate =
+              (((s['draws'] as num?)?.toDouble() ?? 0) - d0) /
+              ((t.clock.elapsedMilliseconds - t0) / 1000);
+          t.check(
+            'timer: on a 90 second rest it is drawn 3 to 9 times a second',
+            rate >= 3 && rate <= 9,
+            '${rate.toStringAsFixed(1)} a second',
+          );
+          s = await press(
+            'timer tapped: its sheet opens',
+            <Offset>[],
+            holdMs: 40,
+            settleMs: 1300,
+          );
+          t.check('timer: a tap opens its sheet', s['sheet'] == true);
+          if (s['sheet'] == true) {
+            Map<String, Object?> m = await t.lens(<String, Object?>{
+              'op': 'sheet',
+              'what': 'texts',
+            });
+            t.note(
+              'the timer\'s sheet showed: ${(m['texts'] as List<Object?>? ?? <Object?>[]).join(' | ')}',
+            );
+            m = await t.lens(<String, Object?>{'op': 'sheet', 'what': 'back'});
+            t.check('sheet: back folds it away', m['sheet'] != true);
+            s = await press(
+              'timer tapped again',
+              <Offset>[],
+              holdMs: 40,
+              settleMs: 1300,
+            );
+            if (s['sheet'] == true) {
+              m = await t.lens(<String, Object?>{
+                'op': 'sheet',
+                'what': 'outside',
+              });
+              t.check(
+                'sheet: a touch outside folds it away',
+                m['sheet'] != true,
+              );
+            }
+          }
+          // With the timer closed on the cross there is no lens; the buzz must still come.
+          s = await press(
+            'timer dropped on the cross',
+            <Offset>[cross],
+            legMs: 650,
+            endMs: 300,
+            settleMs: 1500,
+          );
+          await Robot.wait(700);
+          s = await where();
+          t.check(
+            'timer: dropped on the cross, it is closed',
+            s['lens'] != true,
+          );
+          rest(5);
+          await Robot.wait(6800);
+          s = await where();
+          final double off =
+              ((s['buzzAt'] as num?)?.toDouble() ?? 0) -
+              ((s['endsAt'] as num?)?.toDouble() ?? 0);
+          t.check(
+            'buzz: given when the rest ends, with no lens on the screen',
+            off.abs() < 500,
+            'off by ${off.round()} ms',
+          );
+          lensOf.onStop?.call();
+          await Robot.wait(600);
+        }
+      }
+
+      // ---------------------------------------------------------------- power
+      say(
+        '9 of 9, sitting still to measure power. About ${floats ? 11 : 3} minutes',
+      );
+      await calm();
+      if (_tab != 0) {
+        _go(0);
+        await Robot.wait(900);
+      }
+      await t.phase('Home, nothing open', 60);
+      await Robot.tap(_home, after: 1500);
+      await t.phase('blobs out', 45);
+      await calm();
+      await Robot.drag(
+        <Offset>[_home, _home - const Offset(0, 90)],
+        legMs: 90,
+        flick: true,
+        after: 1500,
+      );
+      await t.phase('app list open', 45);
+      await calm();
+      if (floats) {
+        await t.phase('Settings in front, nothing floating', 60, away: true);
+        await Robot.tap(_home, after: 800);
+        await Robot.drag(
+          <Offset>[seat(1), Offset(sc.width + 30, sc.height * 0.3)],
+          legMs: 500,
+          dwell: 250,
+          after: 1700,
+        );
+        await t.phase('a blob floating, in Prism', 60);
+        await t.phase('Settings in front, a blob floating', 60, away: true);
+        final void Function(int)? rest = lensOf.testRest;
+        if (rest != null) {
+          rest(240);
+          await Robot.wait(1500);
+          await t.phase('rest running in the floating timer, in Prism', 60);
+          rest(240);
+          await t.phase(
+            'Settings in front, rest running in the floating timer',
+            60,
+            away: true,
+          );
+          rest(2);
+          await Robot.wait(6500);
+          await t.phase(
+            'Settings in front, timer between sets',
+            60,
+            away: true,
+          );
+          final Map<String, Object?> m = await press(
+            'timer tapped for the power reading',
+            <Offset>[],
+            holdMs: 40,
+            settleMs: 1300,
+          );
+          if (m['sheet'] == true) {
+            await t.phase('the timer\'s sheet open, in Prism', 45);
+            await t.lens(<String, Object?>{'op': 'sheet', 'what': 'back'});
+          }
+          lensOf.onStop?.call();
+        }
+      }
+      final Map<String, Object?> last = await t.lens(<String, Object?>{
+        'op': 'end',
+      });
+      build =
+          '${Diag.build}  ·  long test  ·  ${DateTime.now().toString().substring(0, 16)}\nscreen ${w.round()}x${h.round()} at ${dp}x  ·  allowed over other apps: ${floats ? 'yes' : 'NO'}  ·  ${last['blobs']} blobs known to Android';
+    } catch (e, where) {
+      t.check('the test ran to the end', false, '$e\n$where');
+    } finally {
+      // Everything as it was.
+      await calm();
+      lensOf.onStop?.call();
+      for (int i = 0; i < keysWere.length; i++) {
+        BlobSlots.instance.keys[i] = keysWere[i];
+      }
+      BlobSlots.instance.put(0, keysWere[0]);
+      if (BlobSlots.instance.names != namesWere) {
+        _setNames(namesWere);
+      }
+      lensOf.setFloating(inPrism: inWas, overApps: outWas);
+      lensOf.setPin(pinWas);
+      _sendPin();
+      if (_tab != 0) {
+        _go(0);
+      }
+      await t.lens(<String, Object?>{'op': 'end'});
+      t.close();
+      Diag.instance.banner.value = null;
+      _testing = false;
+      final String text = t.report(build.split('\n'));
+      if (Platform.environment['PRISM_LONG_TEST'] != null) {
+        // ignore: avoid_print
+        print(text);
+      }
+      TestRun.keep(text);
+      Diag.instance.finished.value = text;
+    }
+  }
+
   void _showReport() {
     final String? text = Diag.instance.finished.value;
     if (text == null || !mounted) {
@@ -1814,6 +2763,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         return;
       }
       _moved = true;
+      _movedAt = _held.elapsedMilliseconds;
       _holdTimer?.cancel();
       _setOpen(false);
     }
@@ -1827,11 +2777,14 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       // a fair way sideways or down. A short quick nudge is none of these and lifts nothing.
       // Going upward, it is a carry as soon as it is plainly not a flick: it has gone a little
       // way and is taking its time over it. A flick covers the same ground several times faster.
-      final double pace = travel.distance / math.max(ms, 1);
+      // (How fast it is going is counted from when it began to move, not from when the
+      // finger came down: a finger that rests a moment and then flicks is still flicking.)
+      final int moving = ms - _movedAt;
+      final double pace = travel.distance / math.max(moving, 1);
       final bool carry =
           ms >= 140 ||
           (!upward && travel.distance > 22) ||
-          (upward && travel.distance > 24 && pace < 0.6);
+          (upward && travel.distance > 24 && moving >= 24 && pace < 0.6);
       if (_drawerOpen || !carry) {
         return;
       }
@@ -1875,6 +2828,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return;
     }
     final Offset travel = (_lastAt ?? _downAt!) - _downAt!;
+    // Whether the finger came down on the cog, which sits on the button's upper right.
+    final bool onCog =
+        (_downAt! - (_home + const Offset(22.5, -22.5))).distance < 24;
     _downAt = null;
     if (_heldEdit) {
       // The hold has done its work: letting go does nothing more.
@@ -1894,8 +2850,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       // A quick flick upward, let go before the button ever became a lens: the app drawer.
       _setDrawer(true);
     } else if (_lifted &&
-        _held.elapsedMilliseconds - _liftedAt < 140 &&
-        _held.elapsedMilliseconds < 320 &&
+        _held.elapsedMilliseconds - _liftedAt < 180 &&
+        _held.elapsedMilliseconds < 380 &&
         travel.dy < -60 &&
         travel.dx.abs() < -travel.dy * 0.8) {
       // The same flick, a slower one: the lens had only just come out when the finger left.
@@ -1903,9 +2859,18 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _lensQuiet();
       _setDrawer(true);
     } else if (!_lifted && _open && _editing) {
-      // While the blobs are being changed the button wears a cog: a tap on it is for the
-      // floating elements, where they may be seen.
-      _showFloating();
+      // While the blobs are being changed the button wears a cog. A tap on the cog is for the
+      // floating elements, where they may be seen. A tap on the X itself is a tap on an X: it
+      // ends the changing, and the blobs stay out.
+      if (onCog) {
+        _showFloating();
+      } else {
+        _setEditing(false);
+      }
+    } else if (!_lifted && _parked) {
+      // The magnifying glass is out and put down somewhere. A tap on the place it lives
+      // calls it home; the next tap is for the blobs.
+      _lensHome();
     } else if (!_lifted) {
       // A tap, or a small nudge that was neither a flick nor a carry.
       _setOpen(!_open);
@@ -1958,6 +2923,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   void _setDrawer(bool v) {
     if (v == _drawerOpen) {
       return;
+    }
+    // The app list does not come up over a magnifying glass that was left out.
+    if (v && _parked) {
+      _lensHome();
     }
     // The drawer may have been up to choose what takes a blob's place.
     final bool choosing = !v && _editSlot != null;
@@ -2039,6 +3008,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   void _go(int tab) {
     if (tab == _tab) {
       return;
+    }
+    // The magnifying glass is over something on the page being left: it goes home.
+    if (_parked || _carrying) {
+      _lensHome();
     }
     setState(() => _tab = tab);
     RestBubble.instance.page(tab == 1);
@@ -2718,7 +3691,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                       : 1.0;
                   return Positioned(
                     left: b.dx - _blob / 2 - 20,
-                    top: b.dy - _blob / 2,
+                    // (Eight above the blob as well, so the marks on its corners can be tapped.)
+                    top: b.dy - _blob / 2 - 8,
                     width: _blob + 40,
                     child: IgnorePointer(
                       ignoring: !_open,
@@ -2730,7 +3704,26 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                           // there; on the button, or flicked at it, the button shoots it out
                           // to the side. Held, all the blobs can be changed: each wears an
                           // edit mark, and a tap on one then changes that one.
-                          onTap: () => _editing ? _pickFor(i) : _blobTap(i),
+                          // While the blobs are being changed, a tap on the red minus
+                          // takes this one away and a tap anywhere else on it changes it.
+                          // (The minus hangs over the blob's corner; where the tap landed
+                          // is worked out here so that every part of it answers.)
+                          onTapUp: (TapUpDetails d) {
+                            if (!_editing) {
+                              _blobTap(i);
+                              return;
+                            }
+                            final Offset from =
+                                d.localPosition -
+                                const Offset((_blob + 40) / 2, 8 + _blob / 2);
+                            if (!empty &&
+                                (from - const Offset(-21.5, -21.5)).distance <
+                                    20) {
+                              _removeBlob(i);
+                            } else {
+                              _pickFor(i);
+                            }
+                          },
                           onLongPress: _editing
                               ? null
                               : () => _setEditing(true),
@@ -2783,6 +3776,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                               : () => _blobDrop(i, bc, Offset.zero),
                           child: Column(
                             children: <Widget>[
+                              const SizedBox(height: 8),
                               Transform(
                                 alignment: Alignment.center,
                                 transform: Matrix4.rotationZ(ang)
@@ -2812,21 +3806,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                             ),
                                           ),
                                           if (!empty)
-                                            Positioned(
-                                              left: -8,
-                                              top: -8,
-                                              child: GestureDetector(
-                                                behavior:
-                                                    HitTestBehavior.opaque,
-                                                onTap: () => _removeBlob(i),
-                                                child: const Padding(
-                                                  padding: EdgeInsets.all(5),
-                                                  child: _EditMark(
-                                                    icon: Icons.remove_rounded,
-                                                    color: Color(0xFFE5484D),
-                                                    ink: Colors.white,
-                                                  ),
-                                                ),
+                                            const Positioned(
+                                              left: -3,
+                                              top: -3,
+                                              child: _EditMark(
+                                                icon: Icons.remove_rounded,
+                                                color: Color(0xFFE5484D),
+                                                ink: Colors.white,
                                               ),
                                             ),
                                         ],
@@ -2894,6 +3880,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         // Names under the blobs, on or off. White, like the marks on the
                         // blobs: the things that can be tapped while changing.
                         GestureDetector(
+                          key: Robot.key('names'),
                           behavior: HitTestBehavior.opaque,
                           onTap: () => _setNames(!BlobSlots.instance.names),
                           child: Padding(
@@ -2930,8 +3917,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                   const SizedBox(width: 7),
                                   Text(
                                     BlobSlots.instance.names
-                                        ? 'Hide names'
-                                        : 'Show names',
+                                        ? 'Hide labels'
+                                        : 'Show labels',
                                     textScaler: TextScaler.noScaling,
                                     style: LumenType.text(
                                       14,
@@ -3907,7 +4894,41 @@ void showPrismSettings(BuildContext context) {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      Pressable(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Haptics.settle();
+                          Diag.instance.longTest?.call();
+                        },
+                        child: Container(
+                          height: 52,
+                          alignment: Alignment.center,
+                          decoration: ShapeDecoration(
+                            color: c.ink.withValues(alpha: 0.08),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Text(
+                            'Run the long test (about 20 min, hands off)',
+                            style: LumenType.text(
+                              15,
+                              weight: 700,
+                              color: c.ink,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 8),
+                      Text(
+                        'The long test drives everything by itself, the floating lens included, checks each step, and then sits still to measure power. Unplug the phone, start it, and leave the phone alone until the report appears.',
+                        style: LumenType.text(
+                          12.5,
+                          color: c.inkMuted,
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
                       Text(
                         'The test runs in two parts under each glass setting: first the app drives itself (hands off), then you use it. One report at the end covers both.',
                         style: LumenType.text(

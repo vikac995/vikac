@@ -34,6 +34,23 @@ class Robot {
     await wait(after);
   }
 
+  /// Touch at [at], stay there for [ms] without moving, and let go.
+  static Future<void> hold(Offset at, {int ms = 700, int after = 450}) async {
+    final int id = _next++;
+    _send(
+      PointerAddedEvent(pointer: id, position: at, timeStamp: _clock.elapsed),
+    );
+    _send(
+      PointerDownEvent(pointer: id, position: at, timeStamp: _clock.elapsed),
+    );
+    await wait(ms);
+    _send(PointerUpEvent(pointer: id, position: at, timeStamp: _clock.elapsed));
+    _send(
+      PointerRemovedEvent(pointer: id, position: at, timeStamp: _clock.elapsed),
+    );
+    await wait(after);
+  }
+
   /// Touch at the first point, travel through the others, let go at the last.
   /// The finger moves once per screen refresh, as a real one is reported.
   /// [legMs] is how long each stretch takes; [dwell] is a pause at each point.
@@ -54,8 +71,25 @@ class Robot {
       PointerDownEvent(pointer: id, position: at, timeStamp: _clock.elapsed),
     );
     await wait(60);
+    // The first few steps are small and come at once, as a real finger's do: what is picked
+    // up is then picked up close to where it was touched, however slowly frames are coming.
+    if (path.length > 1 && (path[1] - path[0]).distance > 40) {
+      final Offset way = (path[1] - path[0]) / (path[1] - path[0]).distance;
+      for (int n = 1; n <= 4; n++) {
+        final Offset p = path.first + way * (6.0 * n);
+        _send(
+          PointerMoveEvent(
+            pointer: id,
+            position: p,
+            delta: p - at,
+            timeStamp: _clock.elapsed + Duration(milliseconds: 4 * n),
+          ),
+        );
+        at = p;
+      }
+    }
     for (int i = 1; i < path.length; i++) {
-      final Offset from = path[i - 1], to = path[i];
+      final Offset from = i == 1 ? at : path[i - 1], to = path[i];
       final int t0 = _clock.elapsedMilliseconds;
       while (true) {
         await SchedulerBinding.instance.endOfFrame;

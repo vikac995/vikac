@@ -104,7 +104,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 77';
+  static const String build = 'Prism build 78';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -463,6 +463,10 @@ class Diag {
   }
 
   Future<void> Function()? autoScript;
+
+  /// The long test: the app drives all of itself, the floating lens included, and measures
+  /// as it goes. Set by the shell, which knows where things are on screen.
+  Future<void> Function()? longTest;
 
   /// One extra line for the top of the report, supplied by whoever knows it.
   String Function()? extraLine;

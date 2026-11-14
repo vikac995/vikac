@@ -319,6 +319,16 @@ class MainActivity : FlutterActivity() {
                     startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
                 }
                 result.success(null)
+            } else if (call.method == "lensTest") {
+                // The long test: Prism's robot asks for one thing at a time, and is told how it went.
+                val asked = call.arguments as? Map<*, *> ?: emptyMap<Any, Any>()
+                var answered = false
+                RestBubble.test(this, asked) { told ->
+                    if (!answered) {
+                        answered = true
+                        try { result.success(told) } catch (e: Exception) {}
+                    }
+                }
             } else if (call.method == "battery") {
                 // One reading of the battery: how full, how fast it is draining, whether it is charging.
                 val bm = getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
@@ -1116,10 +1126,354 @@ object RestBubble {
 
     private val watcher = android.os.Handler(android.os.Looper.getMainLooper())
 
+    // =====================================================================================
+    // The long test, Android's part. Prism's robot asks for one thing at a time: a finger on
+    // the lens along a path, a touch in the lens's menu or on a sheet, a minute of measuring,
+    // a minute with another app in front. The finger is not there: the lens is handed the
+    // same touch events a real one would send, so the code a person exercises is the code that
+    // runs. Each answer says what state everything is in afterwards and how evenly the lens
+    // was drawn meanwhile. None of this does anything unless the test asks.
+    // =====================================================================================
+
+    private var stamps: ArrayList<Long>? = null
+    private var draws = 0L
+    private var awake: android.view.View? = null
+
+    /** The lens or its menu has just been drawn. */
+    private fun drawn() {
+        draws++
+        stamps?.add(System.nanoTime())
+    }
+
+    private fun state(context: Context): HashMap<String, Any?> {
+        val d = context.resources.displayMetrics
+        val m = HashMap<String, Any?>()
+        val v = view
+        m["ok"] = true
+        m["allowed"] = android.provider.Settings.canDrawOverlays(context)
+        m["w"] = d.widthPixels
+        m["h"] = d.heightPixels
+        m["dp"] = d.density.toDouble()
+        m["lens"] = v != null
+        m["mode"] = mode()
+        if (v != null) {
+            m["x"] = v.lensLeft() + lensOffX
+            m["y"] = v.lensTop() + lensOffY
+            m["size"] = v.ownSize()
+            m["window"] = v.lp.width
+            m["roaming"] = v.roamingNow()
+            m["moving"] = v.movingNow()
+            m["seen"] = v.alpha.toDouble()
+        }
+        m["tucked"] = tucked
+        m["docked"] = docked
+        m["pin"] = pin?.key
+        m["menu"] = menu != null
+        m["menuCount"] = menu?.testCount() ?: 0
+        m["menuEditing"] = menu?.testEditing() ?: false
+        m["sheet"] = sheet != null
+        m["closing"] = swallowing
+        m["blobs"] = blobs.size
+        m["active"] = active
+        m["endsAt"] = endsAt
+        m["buzzAt"] = buzzAt
+        m["cpu"] = android.os.Process.getElapsedCpuTime()
+        m["draws"] = draws
+        m["now"] = System.currentTimeMillis()
+        return m
+    }
+
+    /** How evenly something was drawn between the stamps: how many times, how far apart, and how many gaps. */
+    private fun paced(into: HashMap<String, Any?>, times: List<Long>) {
+        val gaps = ArrayList<Double>()
+        for (i in 1 until times.size) gaps.add((times[i] - times[i - 1]) / 1e6)
+        into["frames"] = times.size
+        if (gaps.isEmpty()) return
+        val sorted = gaps.sorted()
+        val usual = sorted[sorted.size / 2]
+        // A gap is a frame that did not come: longer than a frame and a half, but not a pause
+        // between two movements, which is not a stutter.
+        val late = gaps.count { it > usual * 1.6 && it < 120.0 }
+        into["usualMs"] = usual
+        into["late"] = late
+        into["worstMs"] = gaps.filter { it < 120.0 }.maxOrNull() ?: 0.0
+    }
+
+    private fun touch(v: android.view.View, action: Int, sx: Float, sy: Float, down: Long, local: Boolean = false) {
+        val e = android.view.MotionEvent.obtain(down, android.os.SystemClock.uptimeMillis(), action, sx, sy, 0)
+        e.source = android.view.InputDevice.SOURCE_TOUCHSCREEN
+        if (!local) {
+            // Given as a place on the screen; the view is told where that is in itself as well.
+            val at = IntArray(2)
+            v.getLocationOnScreen(at)
+            e.offsetLocation(-at[0].toFloat(), -at[1].toFloat())
+        }
+        try { v.dispatchTouchEvent(e) } catch (ex: Exception) {}
+        e.recycle()
+    }
+
+    private fun points(a: Any?): List<FloatArray> = (a as? List<*>)?.mapNotNull {
+        val p = it as? List<*>
+        if (p != null && p.size >= 2) floatArrayOf((p[0] as Number).toFloat(), (p[1] as Number).toFloat()) else null
+    } ?: emptyList()
+
+    /**
+     * A finger on [v] along [path] (places on the screen, or in the view if [local]): down at
+     * the first, [holdMs] still, then to each of the others in [legMs], [endMs] still, and up.
+     * With [flick] the last stretch speeds up, so the finger is moving when it lets go. Then
+     * it waits until [settled] says everything has come to rest, or [settleMs] at most.
+     */
+    private fun finger(
+        v: android.view.View, path: List<FloatArray>, local: Boolean, holdMs: Long, legMs: Long, endMs: Long, flick: Boolean,
+        settleMs: Long, settled: () -> Boolean, done: () -> Unit,
+    ) {
+        val frames = android.view.Choreographer.getInstance()
+        val down = android.os.SystemClock.uptimeMillis()
+        touch(v, android.view.MotionEvent.ACTION_DOWN, path[0][0], path[0][1], down, local)
+        var leg = 1
+        var legStart = 0L
+        var upAt = 0L
+        val moveFrom = down + holdMs
+        var x = path[0][0]
+        var y = path[0][1]
+        frames.postFrameCallback(object : android.view.Choreographer.FrameCallback {
+            override fun doFrame(nanos: Long) {
+                val now = android.os.SystemClock.uptimeMillis()
+                if (now < moveFrom) {
+                    frames.postFrameCallback(this)
+                    return
+                }
+                if (leg < path.size) {
+                    if (legStart == 0L) legStart = now
+                    val t = ((now - legStart).toFloat() / Math.max(1L, legMs)).coerceIn(0f, 1f)
+                    val last = leg == path.size - 1
+                    val e = if (flick && last) t * t else t * t * (3 - 2 * t)
+                    x = path[leg - 1][0] + (path[leg][0] - path[leg - 1][0]) * e
+                    y = path[leg - 1][1] + (path[leg][1] - path[leg - 1][1]) * e
+                    touch(v, android.view.MotionEvent.ACTION_MOVE, x, y, down, local)
+                    if (t >= 1f) {
+                        leg++
+                        legStart = 0L
+                    }
+                    frames.postFrameCallback(this)
+                    return
+                }
+                if (upAt == 0L) upAt = now + endMs
+                if (now < upAt) {
+                    frames.postFrameCallback(this)
+                    return
+                }
+                touch(v, android.view.MotionEvent.ACTION_UP, x, y, down, local)
+                val until = now + settleMs
+                val wait = object : Runnable {
+                    override fun run() {
+                        val t = android.os.SystemClock.uptimeMillis()
+                        if (t >= until || (t > now + 250 && settled())) done() else watcher.postDelayed(this, 50)
+                    }
+                }
+                watcher.postDelayed(wait, 120)
+            }
+        })
+    }
+
+    private fun texts(v: android.view.View, into: ArrayList<android.widget.TextView>) {
+        if (v.visibility != android.view.View.VISIBLE) return
+        if (v is android.widget.TextView && v.text.isNotEmpty()) into.add(v)
+        if (v is android.view.ViewGroup) for (i in 0 until v.childCount) texts(v.getChildAt(i), into)
+    }
+
+    fun test(activity: MainActivity, a: Map<*, *>, done: (Map<String, Any?>) -> Unit) {
+        val context: Context = activity.applicationContext
+        fun fail(why: String) {
+            val m = state(context)
+            m["ok"] = false
+            m["note"] = why
+            done(m)
+        }
+        fun num(k: String, d: Long): Long = (a[k] as? Number)?.toLong() ?: d
+        try {
+            when (a["op"] as? String) {
+                "begin" -> {
+                    activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    done(state(context))
+                }
+                "end" -> {
+                    activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    stamps = null
+                    done(state(context))
+                }
+                "state" -> done(state(context))
+                // A finger on the lens.
+                "press" -> {
+                    val v = view ?: return fail("there is no lens")
+                    v.rest()
+                    var path = points(a["path"])
+                    if (path.isEmpty() || a["fromLens"] == true) {
+                        val mid = floatArrayOf(v.lensLeft() + lensOffX + v.ownSize() / 2f, v.lensTop() + lensOffY + v.ownSize() / 2f)
+                        path = listOf(mid) + path
+                    }
+                    val kept = ArrayList<Long>()
+                    stamps = kept
+                    finger(v, path, false, num("holdMs", 60), num("legMs", 300), num("endMs", 0), a["flick"] == true, num("settleMs", 1600),
+                        { val now = view; now == null || (!now.movingNow() && !swallowing) }) {
+                        stamps = null
+                        val m = state(context)
+                        paced(m, kept)
+                        done(m)
+                    }
+                }
+                // A finger in the lens's own menu.
+                "menu" -> {
+                    val m = menu ?: return fail("the lens's menu is not open")
+                    val i = num("i", 0).toInt()
+                    val spot = m.testSpot(i)
+                    val kept = ArrayList<Long>()
+                    stamps = kept
+                    val after = {
+                        stamps = null
+                        val st = state(context)
+                        paced(st, kept)
+                        done(st)
+                    }
+                    when (a["what"] as? String) {
+                        "key" -> {
+                            stamps = null
+                            val st = state(context)
+                            st["key"] = m.testKey(i)
+                            done(st)
+                        }
+                        "tap" -> finger(m, listOf(spot), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)
+                        "hold" -> finger(m, listOf(spot), true, 50, 0, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L) + 200, false, 500, { true }, after)
+                        "drag" -> {
+                            val to = points(a["to"])
+                            finger(m, listOf(spot) + to, true, 60, num("legMs", 450), num("endMs", 150), false, num("settleMs", 900), { true }, after)
+                        }
+                        "outside" -> {
+                            val at = points(a["to"])
+                            finger(m, if (at.isEmpty()) listOf(floatArrayOf(4f, 4f)) else at, true, 50, 0, 0, false, num("settleMs", 700), { true }, after)
+                        }
+                        "back" -> {
+                            m.testBack()
+                            watcher.postDelayed({ after() }, num("settleMs", 600))
+                        }
+                        else -> fail("unknown menu step")
+                    }
+                }
+                // A finger on a sheet.
+                "sheet" -> {
+                    val sh = sheet ?: return fail("no sheet is open")
+                    val all = ArrayList<android.widget.TextView>()
+                    texts(sh, all)
+                    when (a["what"] as? String) {
+                        "texts" -> {
+                            val st = state(context)
+                            st["texts"] = all.map { it.text.toString() }
+                            done(st)
+                        }
+                        "tap" -> {
+                            val want = a["text"] as? String ?: ""
+                            val t = all.firstOrNull { it.text.toString().startsWith(want) } ?: return fail("nothing on the sheet says \"$want\"")
+                            val at = IntArray(2)
+                            t.getLocationOnScreen(at)
+                            finger(sh, listOf(floatArrayOf(at[0] + t.width / 2f, at[1] + t.height / 2f)), false, 60, 0, 0, false, num("settleMs", 900), { true }) { done(state(context)) }
+                        }
+                        "back" -> {
+                            sh.testBack()
+                            watcher.postDelayed({ done(state(context)) }, num("settleMs", 900))
+                        }
+                        "outside" -> {
+                            touch(sh, android.view.MotionEvent.ACTION_OUTSIDE, 2f, 2f, android.os.SystemClock.uptimeMillis())
+                            watcher.postDelayed({ done(state(context)) }, num("settleMs", 900))
+                        }
+                        else -> fail("unknown sheet step")
+                    }
+                }
+                // Nothing is touched for a while; what the battery, the processor and the lens do meanwhile is written down.
+                "measure" -> measure(context, num("ms", 60000), done)
+                // The same, with another app in front: Android's own Settings.
+                "away" -> {
+                    if (!android.provider.Settings.canDrawOverlays(context)) return fail("not allowed over other apps")
+                    try {
+                        // A speck of a window that keeps the screen on while Prism is not in front.
+                        val speck = android.view.View(context)
+                        val slp = android.view.WindowManager.LayoutParams(
+                            1, 1, android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                                android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+                            android.graphics.PixelFormat.TRANSLUCENT,
+                        )
+                        slp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
+                        slp.alpha = 0.02f
+                        wm(context).addView(speck, slp)
+                        awake = speck
+                    } catch (e: Exception) {}
+                    activity.startActivity(
+                        android.content.Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                    watcher.postDelayed({
+                        val away = !foreground
+                        measure(context, num("ms", 60000)) { told ->
+                            val m = HashMap(told)
+                            m["away"] = away
+                            m["lensAway"] = view != null
+                            try {
+                                context.startActivity(
+                                    android.content.Intent(context, MainActivity::class.java)
+                                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT),
+                                )
+                            } catch (e: Exception) {}
+                            watcher.postDelayed({
+                                awake?.let { try { wm(context).removeView(it) } catch (e: Exception) {} }
+                                awake = null
+                                m["back"] = foreground
+                                done(m)
+                            }, 2500)
+                        }
+                    }, 4000)
+                }
+                else -> fail("unknown step")
+            }
+        } catch (e: Throwable) {
+            fail("it threw: $e")
+        }
+    }
+
+    private fun measure(context: Context, ms: Long, done: (Map<String, Any?>) -> Unit) {
+        val bm = context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+        val readings = ArrayList<Int>()
+        val cpu0 = android.os.Process.getElapsedCpuTime()
+        val draws0 = draws
+        val t0 = android.os.SystemClock.uptimeMillis()
+        val tick = object : Runnable {
+            override fun run() {
+                readings.add(bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CURRENT_NOW))
+                if (android.os.SystemClock.uptimeMillis() - t0 < ms) {
+                    watcher.postDelayed(this, 1000)
+                    return
+                }
+                val m = state(context)
+                val sticky = try {
+                    context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+                } catch (e: Exception) { null }
+                m["current"] = readings
+                m["cpuMs"] = android.os.Process.getElapsedCpuTime() - cpu0
+                m["lensDraws"] = draws - draws0
+                m["ms"] = android.os.SystemClock.uptimeMillis() - t0
+                m["plugged"] = ((sticky?.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0)
+                m["level"] = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                m["temp"] = (sticky?.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0)
+                m["bright"] = try { android.provider.Settings.System.getInt(context.contentResolver, android.provider.Settings.System.SCREEN_BRIGHTNESS) } catch (e: Exception) { -1 }
+                done(m)
+            }
+        }
+        watcher.postDelayed(tick, 1000)
+    }
+
     // The buzz when a rest ends. It is planned when the rest is, for the moment it ends, and
     // given then whether or not a lens is on the screen. (It used to be given by the lens as it
     // drew itself: a lens closed on the cross, or switched off for where the person is, gave none.)
     private var buzzedFor = 0L
+    private var buzzAt = 0L
     private var buzz: Runnable? = null
 
     fun planBuzz(context: Context) {
@@ -1133,6 +1487,7 @@ object RestBubble {
         val give = Runnable {
             if (active && !timerOff && pausedAt == 0L && endsAt == rest && buzzedFor != rest) {
                 buzzedFor = rest
+                buzzAt = System.currentTimeMillis()
                 haptic(app, "thud")
             }
         }
@@ -1732,8 +2087,16 @@ object RestBubble {
             }
         }
 
+        /** For the long test: where a blob sits in this view, how many there are, and what state the menu is in. */
+        fun testSpot(i: Int): FloatArray = floatArrayOf(restX[i.coerceIn(0, n - 1)], restY[i.coerceIn(0, n - 1)])
+        fun testCount() = n
+        fun testEditing() = editing
+        fun testBack() = backPressed()
+        fun testKey(i: Int): String = items[i.coerceIn(0, n - 1)].key
+
         override fun onDraw(canvas: android.graphics.Canvas) {
             if (!laid) return
+            drawn()
             // The dim, as behind the blobs in Prism, with the lens showing through it untouched.
             val shade = (0.46f * dim.coerceIn(0f, 1f) * 255).toInt()
             if (shade > 0) {
@@ -2576,7 +2939,13 @@ object RestBubble {
             if (Build.VERSION.SDK_INT >= 29) systemGestureExclusionRects = listOf(android.graphics.Rect(0, 0, w, h))
         }
 
+        /** For the long test: where the lens itself is, and whether it is on its way anywhere. */
+        fun lensLeft() = posX()
+        fun lensTop() = posY()
+        fun movingNow() = springing || roaming || (glide?.isRunning ?: false)
+
         override fun onDraw(canvas: android.graphics.Canvas) {
+            drawn()
             // The lens is drawn as it is at its usual size, and scaled to the size it is. While two
             // fingers resize it, that size follows the fingers, and the lens sits in the middle of
             // a window as large as it can get: nothing has to be resized on the way.
@@ -3947,6 +4316,11 @@ object RestBubble {
         // The back button folds the sheet away. Android 13 and later hand it over through a
         // callback; before that it arrives as a key.
         private var back: Any? = null
+
+        /** For the long test: what the back button does here. */
+        fun testBack() {
+            if (!closing) closeSheet(context)
+        }
 
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()

@@ -11,6 +11,7 @@ import '../core/springs.dart';
 import '../core/theme.dart';
 import 'apps.dart';
 import 'diag.dart';
+import 'robot.dart';
 
 /// The app drawer. It grows out of the centre button: the round button
 /// widens and rises into a panel. Inside, the grid never scrolls. A swipe
@@ -406,6 +407,10 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                             widget.onPick?.call(key);
                           },
                           child: SizedBox(
+                            // (The test's robot finds the first of them by this.)
+                            key: key == widget.choices.first.$1
+                                ? Robot.key('choice0')
+                                : null,
                             width: 70,
                             child: Column(
                               children: <Widget>[

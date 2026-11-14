@@ -264,6 +264,10 @@ class RestBubble with WidgetsBindingObserver {
   /// The workout was stopped from the floating sheet. Set by the workout page.
   VoidCallback? onStop;
 
+  /// For the long test: starts a rest of this many seconds, as finishing a set does. Set by
+  /// the workout page.
+  void Function(int seconds)? testRest;
+
   /// A blob was put in the floating lens from its own menu (or taken out: null). Set by the shell.
   void Function(String? key)? onPinned;
 

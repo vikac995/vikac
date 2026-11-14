@@ -265,6 +265,18 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           Haptics.thud();
         }
       }
+      ..testRest = (int seconds) {
+        if (mounted) {
+          _started = true;
+          _pausedAt = null;
+          _timerOff = false;
+          _lastSet = DateTime.now();
+          setState(() {
+            _restOf = seconds;
+            _setRest(DateTime.now().add(Duration(seconds: seconds)));
+          });
+        }
+      }
       ..countUp.addListener(_modeChanged);
   }
 

@@ -1,5 +1,30 @@
 # Lumen changelog
 
+## Prism, build 78 (14 November 2026)
+
+**File:** `releases/prism-build-78.apk`
+
+Needs Play Protect paused to install.
+
+**The long test.** In Prism's settings, under the test tools: "Run the long test (about 20 min, hands off)". The app drives all of itself with a finger that is not there, checks after each step that things are as they should be, keeps how every frame was made while things move, and at the end sits still in one state after another and writes down what each costs. One report at the end, with a Copy button.
+
+- *Prism's side:* every page and scrolling them; the blobs opening and closing; changing them by holding a blob and by holding the X; ending that by the X and by a tap beside them; labels off and on; the red minus, the empty place, "Add a blob" and the new blob joining; the pencil and "Replace"; the cog and its two switches; dragging a blob to another seat and back; the app list, its pages, closing it; the magnifying glass over every card, and a flick still being the app list; the sheets; ticking a set.
+- *The floating lens, driven on Android's side with the same touch events a finger sends:* a blob put down in the open, and put down past the edge; the lens carried, thrown to each side, let go a little past the edge, pushed into the side and tapped out again; its own menu opened by a hold, changed, reordered, a blob dragged from it into the lens; the lens dragged back among Prism's blobs; a blob shot from the button; the lens dropped on the cross; "In Prism" switched off and on; the workout's timer floating, how often it is drawn, its sheet opened, closed by back and by a touch outside; and the buzz at the end of a rest with no lens on the screen.
+- *Power:* a minute each of Home, the blobs out, the app list open, a blob floating, a rest running in the floating timer and its sheet open; and, with Android's Settings in front, nothing floating, a blob floating, a rest running, and the timer between sets. For each: the phone's current, Prism's share of the processor, how many frames Prism made and how often the lens was drawn.
+- During the test the five blobs are Prism's own five actions, so that nothing opens another app. Your blobs, their labels, what was floating and the two switches are put back afterwards. Android's Settings will open four times and Prism will come back by itself.
+- What it cannot do: see the screen. It knows when the lens was drawn and where it is, not what the glass looked like on the way. A one-frame flash would not be caught by it.
+
+**Also in this build**
+
+- **"Hide labels" / "Show labels"**, where it said "names".
+- **While the blobs are being changed, a tap on the X ends that; only a tap on the cog opens its panel.**
+- **The magnifying glass goes home** when you change page or open the app list, and a tap on the place it lives calls it home. It used to stay where it was put, over a different page.
+- **A flick up that starts slowly is the app list again.** Since build 76 the glass could come out on such a flick. How fast the finger is going is now counted from when it began to move, not from when it came down.
+- **All of the red minus can be tapped.** The part that hangs over the blob's corner did not answer.
+
+**Checked:** it compiles. In my preview the long test ran its Prism half from start to finish three times: 34 of its 38 checks there came out right; three cannot (there is nothing to measure power with on a computer) and the fourth is the slow flick, which my preview is too slow to perform. Its first two runs found a fault in the test itself (how its finger picked a blob up), since put right.
+**Not checked:** on a phone, and none of Android's half has ever run. Expect the first report to show some steps as "NOT DONE" or "WRONG" for reasons that are the test's fault and not the app's; that is what the first run is for.
+
 ## Prism, build 77 (14 November 2026)
 
 **File:** `releases/prism-build-77.apk`
