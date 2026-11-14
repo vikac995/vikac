@@ -66,6 +66,30 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   bool get _appBlobs => BlobApps.instance.on.value;
   int get _n => 5;
 
+  /// Whether place [i] holds nothing: its blob was taken away. It is then not among the blobs.
+  /// While they are being changed it is shown, as an outline in the middle of the screen, and
+  /// a tap on it there gives it something again.
+  bool _isEmpty(int i) => _pinKey(i).startsWith('empty:');
+
+  // How far each place is out in the middle of the screen as an empty place: 0 among the
+  // blobs, 1 out there. Only on the way does anything move; out there it is drawn and left.
+  late final List<SpringValue> _gone = <SpringValue>[
+    for (int i = 0; i < 5; i++)
+      SpringValue(this, value: 0, spring: Motions.spatialFast),
+  ];
+  // A place that has just been given something: it comes down from the middle to join the others.
+  int? _joinI;
+
+  /// The red minus on a blob was tapped: its place is empty. What is left closes ranks, and
+  /// the empty place goes to the middle of the screen, where it can be given something else.
+  void _removeBlob(int i) {
+    Haptics.thud();
+    Diag.instance.event('blob removed');
+    _gone[i].animateTo(1);
+    BlobSlots.instance.put(i, 'empty:');
+    _reseat();
+  }
+
   /// Whether place [i] holds an app, rather than one of Prism's own actions or pages.
   bool _isApp(int i) => _pinKey(i).startsWith('app:');
 
@@ -110,11 +134,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     return null;
   }
 
-  String _blobName(int i) => _isApp(i)
+  String _blobName(int i) => _isEmpty(i)
+      ? ''
+      : _isApp(i)
       ? (_blobApp(i)?.name ?? _tile(i)?.label ?? '')
       : (_isScreen(i) ? _tabs[_screenAt(i)].$2 : _actions[_actionAt(i)].$1);
   // A page of Prism's is in Prism's own colour, whatever that is at the moment.
-  Color _blobColor(int i) => _isApp(i)
+  Color _blobColor(int i) => _isEmpty(i)
+      ? const Color(0x00000000)
+      : _isApp(i)
       ? (_blobApp(i)?.color ?? _tile(i)?.color ?? const Color(0xFF5A6373))
       : (_isScreen(i)
             ? LumenColors.of(context).accent
@@ -166,8 +194,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   void _picked(String key) {
     final int? i = _editSlot;
     if (i != null) {
+      // An empty place given something comes down from the middle to join the others.
+      _joinI = _isEmpty(i) ? i : null;
       BlobSlots.instance.put(i, key);
-      Diag.instance.event('blob replaced');
+      Diag.instance.event(_joinI == null ? 'blob replaced' : 'blob added');
     }
     _setDrawer(false);
   }
@@ -401,7 +431,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   bool _floating(int i) => RestBubble.instance.pinned.value == _pinKey(i);
 
   /// Whether place [i] is, for now, not one of the blobs in the menu.
-  bool _leftOut(int i) => _floating(i) || i == _awayI || i == _shotI;
+  bool _leftOut(int i) =>
+      _floating(i) || i == _awayI || i == _shotI || _isEmpty(i);
 
   /// Gives every blob left in the menu its seat. One that was out and is back takes its seat
   /// at once; the others move over to theirs.
@@ -429,7 +460,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   /// The places still in the menu other than [i]: not floating, not on their way out.
   List<int> _others(int i) => <int>[
     for (int k = 0; k < _n; k++)
-      if (k != i && !_floating(k) && k != _shotI) k,
+      if (k != i && !_floating(k) && k != _shotI && !_isEmpty(k)) k,
   ];
 
   /// Which seat among [others] other blobs something at [at] would take, or null if that is
@@ -494,6 +525,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       final List<double> outs = <double>[
         for (final int k in order) _out[k].value,
       ];
+      final List<double> gones = <double>[
+        for (final int k in order) _gone[k].target,
+      ];
       final Set<int> was = <int>{..._seated};
       to = order.indexOf(i);
       _awayI = null;
@@ -502,8 +536,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _seated.clear();
       for (int k = 0; k < _n; k++) {
         _seat[k].jumpTo(seats[k]);
+        _gone[k].jumpTo(gones[k]);
         _out[k].jumpTo(_floating(k) ? 0 : (k == to ? 1 : outs[k]));
-        if (!_floating(k) && _open && outs[k] < 1) {
+        if (!_floating(k) && !_isEmpty(k) && _open && outs[k] < 1) {
           _out[k].animateTo(1, spring: Motions.spatialFast);
         }
         if (k != to && was.contains(order[k])) {
@@ -693,7 +728,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   /// One blob as Android needs it: its name, colour and picture. Null if its app is not known yet.
   Future<Map<String, Object>?> _blobMap(String key) async {
-    if (!mounted) {
+    if (!mounted || key.startsWith('empty:')) {
       return null;
     }
     // Prism's own colour as it is now, read before anything is waited for.
@@ -790,6 +825,21 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   /// The disc of a blob: its colour, lighter at the top, and its mark.
   Widget _blobDisc(int i) {
+    if (_isEmpty(i)) {
+      // An empty place: a plain white line, nothing filled, nothing that moves.
+      return Container(
+        width: _blob,
+        height: _blob,
+        decoration: ShapeDecoration(
+          shape: CircleBorder(
+            side: BorderSide(
+              color: Colors.white.withValues(alpha: 0.62),
+              width: 1.6,
+            ),
+          ),
+        ),
+      );
+    }
     return Container(
       width: _blob,
       height: _blob,
@@ -1047,6 +1097,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   Widget _blobFace(int i) {
+    if (_isEmpty(i)) {
+      return const SizedBox.shrink();
+    }
     if (_isScreen(i)) {
       return Icon(_tabs[_screenAt(i)].$1, color: _onAccent(), size: 26);
     }
@@ -1375,6 +1428,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       ..addListener(_blobsChanged);
     _reseat(jump: true);
     _far.jumpTo(BlobSlots.instance.names ? _reach : _reachBare);
+    for (int i = 0; i < _n; i++) {
+      _gone[i].jumpTo(_isEmpty(i) ? 1 : 0);
+    }
     Apps.instance.addListener(_appsChanged);
     // The numbers on the blobs follow the notifications.
     Notes.instance.counts.addListener(_notesChanged);
@@ -1966,8 +2022,23 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _awayI = null;
       _reseat(jump: true);
       int order = 0;
+      final int? join = _joinI;
+      _joinI = null;
       for (int i = 0; i < _n; i++) {
-        if (_floating(i)) {
+        _gone[i].jumpTo(_isEmpty(i) || i == join ? 1 : 0);
+        if (_floating(i) || _isEmpty(i)) {
+          continue;
+        }
+        if (i == join) {
+          // Just given something: it is out in the middle, as itself, and then comes down to
+          // its seat among the others.
+          _out[i].jumpTo(1);
+          _fuses.add(
+            Timer(
+              const Duration(milliseconds: 240),
+              () => _gone[i].animateTo(0, spring: Motions.spatial),
+            ),
+          );
           continue;
         }
         _fuses.add(
@@ -2072,6 +2143,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       final double a = _seatAngle(_seat[i].value);
       return bc + Offset(-math.cos(a), -math.sin(a)) * _far.value;
     }
+
+    // Where an empty place is shown while the blobs are being changed: each of the five has
+    // its own spot in a row across the middle of the screen, so none of them ever moves over.
+    Offset mid(int i) =>
+        Offset(screen.width / 2 + (i - 2) * 74.0, screen.height * 0.42);
 
     // The system back button undoes the last thing that opened, one step at a time,
     // and only leaves the app from Home with nothing open.
@@ -2507,20 +2583,61 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   _dragAt,
                   _dragBack,
                   _far,
+                  _gone[i],
                 ]),
                 builder: (BuildContext context, Widget? _) {
                   final double p = _out[i].value;
-                  if (p <= 0.001 || _shotI == i) {
+                  final bool empty = _isEmpty(i);
+                  final double gone = _gone[i].value.clamp(0.0, 1.0);
+                  if (_shotI == i) {
+                    return const SizedBox.shrink();
+                  }
+                  if (empty && gone > 0.995) {
+                    // An empty place, out in the middle. It is there only while the blobs are
+                    // being changed: an outline with the edit mark, and a tap gives it something.
+                    if (!_editing || !_open) {
+                      return const SizedBox.shrink();
+                    }
+                    final Offset m = mid(i);
+                    return Positioned(
+                      left: m.dx - _blob / 2 - 6,
+                      top: m.dy - _blob / 2 - 6,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => _pickFor(i),
+                        child: Padding(
+                          padding: const EdgeInsets.all(6),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: <Widget>[
+                              _blobDisc(i),
+                              const Positioned(
+                                right: -3,
+                                top: -3,
+                                child: _EditMark(icon: Icons.edit_rounded),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  if (p <= 0.001) {
                     return const SizedBox.shrink();
                   }
                   // Picked up, it is where the finger has it. Let go away from the button, it
                   // goes back to its place.
                   final bool held = _dragI == i;
-                  final Offset b = held
+                  final Offset among = held
                       ? _dragAt.value
                       : (_backI == i
                             ? rest(i) + (_dropAt - rest(i)) * _dragBack.value
                             : bc + (rest(i) - bc) * p);
+                  // On its way out to the middle as an empty place, or back from there with
+                  // something in it.
+                  final Offset b = gone > 0.001
+                      ? Offset.lerp(among, mid(i), gone)!
+                      : among;
                   final double st = (_out[i].velocity.abs() * 0.04).clamp(
                     0.0,
                     0.46,
@@ -2615,36 +2732,39 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                     1,
                                   )
                                   ..rotateZ(-ang),
-                                // While the blobs are being changed each one wears an edit mark.
+                                // While the blobs are being changed each one wears its marks:
+                                // the pencil on the right, to change it, and the red minus
+                                // on the left, to take it away.
                                 child: _editing
                                     ? Stack(
                                         clipBehavior: Clip.none,
                                         children: <Widget>[
                                           _blobDisc(i),
-                                          Positioned(
+                                          const Positioned(
                                             right: -3,
                                             top: -3,
-                                            child: Container(
-                                              width: 25,
-                                              height: 25,
-                                              decoration: const ShapeDecoration(
-                                                color: Colors.white,
-                                                shape: CircleBorder(),
-                                                shadows: <BoxShadow>[
-                                                  BoxShadow(
-                                                    color: Color(0x55000000),
-                                                    blurRadius: 6,
-                                                    offset: Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: const Icon(
-                                                Icons.edit_rounded,
-                                                size: 14,
-                                                color: Color(0xFF15171C),
-                                              ),
+                                            child: _EditMark(
+                                              icon: Icons.edit_rounded,
                                             ),
                                           ),
+                                          if (!empty)
+                                            Positioned(
+                                              left: -8,
+                                              top: -8,
+                                              child: GestureDetector(
+                                                behavior:
+                                                    HitTestBehavior.opaque,
+                                                onTap: () => _removeBlob(i),
+                                                child: const Padding(
+                                                  padding: EdgeInsets.all(5),
+                                                  child: _EditMark(
+                                                    icon: Icons.remove_rounded,
+                                                    color: Color(0xFFE5484D),
+                                                    ink: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
                                         ],
                                       )
                                     : (_blobNotes(i) > 0 && p > 0.9
@@ -2668,6 +2788,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                 opacity: held
                                     ? 0
                                     : ((p - 0.6) / 0.4).clamp(0.0, 1.0) *
+                                          (1 - gone) *
                                           ((_far.value - _reachBare) /
                                                   (_reach - _reachBare))
                                               .clamp(0.0, 1.0),
@@ -4192,4 +4313,34 @@ class _ThreadPainter extends CustomPainter {
       old.from != from ||
       old.to.length != to.length ||
       old.colors.first != colors.first;
+}
+
+/// The small round mark things wear while the blobs are being changed: white with a dark sign
+/// for "change this", red with a white sign for "take this away".
+class _EditMark extends StatelessWidget {
+  const _EditMark({
+    required this.icon,
+    this.color = Colors.white,
+    this.ink = const Color(0xFF15171C),
+  });
+  final IconData icon;
+  final Color color, ink;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 25,
+    height: 25,
+    decoration: ShapeDecoration(
+      color: color,
+      shape: const CircleBorder(),
+      shadows: const <BoxShadow>[
+        BoxShadow(
+          color: Color(0x55000000),
+          blurRadius: 6,
+          offset: Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Icon(icon, size: icon == Icons.remove_rounded ? 18 : 14, color: ink),
+  );
 }

@@ -1,5 +1,28 @@
 # Lumen changelog
 
+## Prism, build 74 (14 November 2026)
+
+**File:** `releases/prism-build-74.apk`
+
+Needs Play Protect paused to install, like 71 to 73. It contains builds 72 and 73.
+
+- **A red minus on each blob while they are being changed**, at the top left, opposite the pencil. A tap on it takes the blob away. Its place becomes empty: a plain white outline that goes to the middle of the screen, while the blobs that are left close ranks, the same way they do when one is dragged out.
+- **Empty places wait in the middle of the screen**, each with a pencil. Each of the five places has its own fixed spot in a row there, so nothing ever shuffles over. They are an outline and nothing else: nothing in them moves or is redrawn. They are shown only while the blobs are being changed; otherwise the menu simply has fewer blobs.
+- **A tap on an empty place gives it something.** The list opens as "Add a blob". What you choose appears in the middle and comes down to join the others, in the seat that place has in the row. Several can be taken away and given back one by one.
+- The chat head's own menu shows only the blobs there are.
+
+Also in this build, from 72 and 73, for anyone coming from 71: the chat head stays on the screen when its own app opens; the second icon on letting go and the stutter at the edge are dealt with; the cog on the X and "Floating elements"; holding the X; the line of text removed.
+
+**What to look for:**
+- Hold a blob or the X, tap a red minus: the blob should become an outline and go to the middle while the rest move together.
+- Close the blobs and open them again: fewer blobs, no outline.
+- Hold again, tap the outline, choose something: it should appear in the middle and come down into the row.
+- Tap the chat head to open its app: the chat head should still be there.
+
+**Checked:** it compiles. In my preview: the minus and pencil on every blob, a blob taken away and the rest closing ranks, the outline in the middle only while changing, "Add a blob", and the new blob ending in the row with the choice kept after closing. My preview draws too slowly to show the flight itself; I saw it in the middle and then in its seat.
+**Not checked:** on a phone.
+**Not done:** the chat head's own menu has no minus. A place a blob was taken from keeps its position in the row, so a new one joins there, not at the end.
+
 ## Prism, build 73 (14 November 2026)
 
 **File:** `releases/prism-build-73.apk`

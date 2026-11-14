@@ -318,13 +318,17 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                 child: Row(
                   children: <Widget>[
                     Text(
-                      widget.pick == null ? 'Apps' : 'Replace',
+                      widget.pick == null
+                          ? 'Apps'
+                          : (widget.pick!.isEmpty ? 'Add' : 'Replace'),
                       style: LumenType.display(26, color: c.ink),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        widget.pick ?? _range,
+                        widget.pick == null
+                            ? _range
+                            : (widget.pick!.isEmpty ? 'a blob' : widget.pick!),
                         maxLines: 1,
                         overflow: TextOverflow.fade,
                         softWrap: false,
