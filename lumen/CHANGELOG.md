@@ -1,5 +1,21 @@
 # Lumen changelog
 
+## Prism, build 76 (14 November 2026)
+
+**File:** `releases/prism-build-76.apk`
+
+Needs Play Protect paused to install. It contains everything up to build 75.
+
+- **The magnifying glass comes out of the button sooner.** Dragging up from the +, it used to wait 0.2 s before lifting off, so that a flick up for the app list was not mistaken for it. Now it lifts as soon as an upward drag is plainly not a flick: once the finger has gone a little way (24 points) and is taking its time over it. At an unhurried pace that is well under a tenth of a second. If the finger simply rests and then moves, it lifts after 0.14 s (it was 0.2 s). Sideways and downward drags lift as before.
+- **The flick up for the app list is kept.** A fast flick never lifts the glass. A slower one that does lift it for an instant still opens the app list, if the finger left within about a third of a second of coming down.
+
+**What to look for:**
+- Drag up from the + at your usual pace: the glass should be out almost as you start.
+- Flick up from the +, fast and not so fast: the app list should still open every time. If a flick now brings out the glass instead, tell me roughly how fast you flicked.
+
+**Checked:** it compiles. In my preview: an upward drag lifts the glass, and a quick flick opens the app list. My preview cannot reproduce a finger's timing, so how much sooner it feels is for you to judge.
+**Not checked:** on a phone.
+
 ## Prism, build 75 (14 November 2026)
 
 **File:** `releases/prism-build-75.apk`

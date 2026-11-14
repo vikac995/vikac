@@ -1275,6 +1275,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   final Stopwatch _held = Stopwatch();
   bool _drawerOpen = false, _lifted = false;
   Timer? _liftTimer;
+  // When, counted from the finger coming down, the button became the lens.
+  int _liftedAt = 0;
   // Holding the button while the blobs are out: they can all be changed, as when a blob is held.
   Timer? _holdTimer;
   bool _heldEdit = false;
@@ -1787,7 +1789,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       final bool upward = travel.dy < 0 && travel.dx.abs() < -travel.dy * 0.8;
       // A carry needs real evidence: a finger that has been down a while, or one that has gone
       // a fair way sideways or down. A short quick nudge is none of these and lifts nothing.
-      final bool carry = ms >= 200 || (!upward && travel.distance > 22);
+      // Going upward, it is a carry as soon as it is plainly not a flick: it has gone a little
+      // way and is taking its time over it. A flick covers the same ground several times faster.
+      final double pace = travel.distance / math.max(ms, 1);
+      final bool carry =
+          ms >= 140 ||
+          (!upward && travel.distance > 22) ||
+          (upward && travel.distance > 24 && pace < 0.6);
       if (_drawerOpen || !carry) {
         return;
       }
@@ -1808,6 +1816,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   /// The button leaves the bar and becomes the lens.
   void _liftOff() {
     _lifted = true;
+    _liftedAt = _held.elapsedMilliseconds;
     setState(() {
       _carrying = true;
       _returning = false;
@@ -1847,6 +1856,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         travel.dy < -26 &&
         travel.dx.abs() < -travel.dy * 0.8) {
       // A quick flick upward, let go before the button ever became a lens: the app drawer.
+      _setDrawer(true);
+    } else if (_lifted &&
+        _held.elapsedMilliseconds - _liftedAt < 140 &&
+        _held.elapsedMilliseconds < 320 &&
+        travel.dy < -60 &&
+        travel.dx.abs() < -travel.dy * 0.8) {
+      // The same flick, a slower one: the lens had only just come out when the finger left.
+      // It was a flick all the same, so the lens is put away and the app drawer comes up.
+      _lensQuiet();
       _setDrawer(true);
     } else if (!_lifted && _open && _editing) {
       // While the blobs are being changed the button wears a cog: a tap on it is for the
@@ -2992,7 +3010,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     }
                     // A finger that moved and then stopped sends no more movement, so the wait is also timed.
                     _liftTimer?.cancel();
-                    _liftTimer = Timer(const Duration(milliseconds: 200), () {
+                    _liftTimer = Timer(const Duration(milliseconds: 140), () {
                       if (_downAt != null &&
                           _moved &&
                           !_lifted &&
