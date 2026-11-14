@@ -290,6 +290,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
               _home.dy * dpr,
               (_far.target - 58) * dpr,
               (_far.target + 62) * dpr,
+              // How far round from straight up still counts as among them (as a cosine).
+              math.cos(math.pi * (0.155 * _reach / _far.target) * 2.75),
             ]
           : null,
     );
@@ -473,7 +475,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return null;
     }
     final int count = others + 1;
-    final double seat = (math.atan2(-v.dy, -v.dx) / math.pi - 0.5) / 0.155;
+    final double seat = (math.atan2(-v.dy, -v.dx) / math.pi - 0.5) / _step;
     if (seat.abs() > (count - 1) / 2 + 0.75 + (now == null ? 0 : 0.1)) {
       return null;
     }
@@ -632,8 +634,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     });
   }
 
-  /// How far round the fan a seat is: straight up in the middle, about 28 degrees for each place.
-  static double _seatAngle(double seat) => math.pi * (0.5 + seat * 0.155);
+  /// How far apart, round the fan, one seat is from the next: about 28 degrees with the blobs
+  /// at their usual distance. Nearer the button (their names switched off) they are spread
+  /// wider by as much, so that the gap between one blob and the next stays what it was.
+  double get _step => 0.155 * _reach / _far.value;
+
+  /// How far round the fan a seat is: straight up in the middle.
+  double _seatAngle(double seat) => math.pi * (0.5 + seat * _step);
 
   /// The name a blob is pinned under.
   String _pinKey(int i) =>
@@ -2527,7 +2534,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                 ignoring: !_open,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => _setOpen(false),
+                  // A tap beside the blobs closes them. While they are being changed it ends
+                  // the changing first, and they stay out.
+                  onTap: () => _editing ? _setEditing(false) : _setOpen(false),
                   child: ColoredBox(
                     color: Colors.black.withValues(
                       alpha: 0.5 * _t.value.clamp(0.0, 1.0),

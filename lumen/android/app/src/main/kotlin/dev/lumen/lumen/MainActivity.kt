@@ -1466,7 +1466,15 @@ object RestBubble {
         }
 
         /** The direction a seat lies in, for a fan whose middle points along [axis]: Prism's own fan, turned. Seats are counted in places from the middle. */
-        private fun angle(axis: Double, seat: Float): Double = axis + Math.PI * seat * 0.155
+        private fun angle(axis: Double, seat: Float): Double = axis + Math.PI * seat * step()
+
+        /**
+         * How far apart, round the fan, one seat is from the next. With the names switched off
+         * the blobs sit nearer, and are spread wider by as much, so that the gap between one and
+         * the next stays what it is with names. As in Prism.
+         */
+        private fun step(): Double =
+            if (blobNames || reach <= 0f) 0.155 else (0.155 * 178.0 * dp / reach).coerceIn(0.155, 0.1769)
 
         /**
          * Lays the fan out. It points straight into the screen from the side the lens is on, and
@@ -1547,7 +1555,7 @@ object RestBubble {
             var turn = Math.atan2(vy.toDouble(), vx.toDouble()) - axis
             while (turn > Math.PI) turn -= 2 * Math.PI
             while (turn < -Math.PI) turn += 2 * Math.PI
-            val seat = (turn / (Math.PI * 0.155)).toFloat()
+            val seat = (turn / (Math.PI * step())).toFloat()
             if (Math.abs(seat) > (n - 1) / 2f + 0.75f + (if (now >= 0) 0.1f else 0f)) return -1
             val place = seat + (n - 1) / 2f
             if (now >= 0 && Math.abs(place - now) < 0.62f) return now
@@ -2997,7 +3005,8 @@ object RestBubble {
             val vx = lp.x + lp.width / 2f - f[0]
             val vy = lp.y + lp.height / 2f - f[1]
             val d = Math.hypot(vx.toDouble(), vy.toDouble()).toFloat()
-            return d >= f[2] && d <= f[3] && -vy > 0.23f * d
+            // (How far round from straight up still counts comes from Prism, with the rest.)
+            return d >= f[2] && d <= f[3] && -vy > (if (f.size > 4) f[4] else 0.23f) * d
         }
 
         /** While the lens is carried near Prism's blobs, Prism is told where it is, so they can make room for it. */

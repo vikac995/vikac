@@ -1,5 +1,21 @@
 # Lumen changelog
 
+## Prism, build 75 (14 November 2026)
+
+**File:** `releases/prism-build-75.apk`
+
+Needs Play Protect paused to install. It contains builds 72, 73 and 74.
+
+- **Without names the blobs are spread wider.** They sat nearer the button, which also brought them nearer each other. They are now spread further round by as much as they are nearer, so the gap between one blob and the next is what it is with names. The chat head's own menu does the same.
+- **A tap beside the blobs ends the changing first.** While the blobs are being changed, a tap anywhere else (the page, the bar) takes the marks away and leaves the blobs out. A second tap closes them, as always. Back does the same.
+
+**What to look for:**
+- Hide the names: the outer blobs should come down nearly to the bar, with even gaps.
+- While changing, tap the page: marks gone, blobs still out.
+
+**Checked:** it compiles. In my preview: the spacing with and without names, with the marks on.
+**Not checked:** on a phone, including the chat head's own menu with the wider spread.
+
 ## Prism, build 74 (14 November 2026)
 
 **File:** `releases/prism-build-74.apk`
