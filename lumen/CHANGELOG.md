@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 80 (14 November 2026)
+
+**File:** `releases/prism-build-80.apk`
+
+Needs Play Protect paused to install (for the counts on icons; nothing new is asked of Android in this build).
+
+- **A tap on the chat head, when you are already in its app, opens its menu.** Until now that tap reopened the app you were looking at, which did nothing. Now: somewhere else, a tap takes you to the app, as before; in the app, a tap opens the menu with your other blobs. A hold still opens the menu anywhere.
+- **How it knows where you are, with no permission.** Prism is the home screen, so it opens most apps itself: from a blob, the app list, the chat head and the chat head's menu. Each time it notes which. It knows when it is in front itself. It is told when you head for the recent apps, from where you may come back to any app, and forgets. If the counts on icons are switched on, it also sees when a notification is tapped, and whose. Nothing watches and nothing is looked up: it only remembers what it did.
+- **When it is wrong, it costs one tap.** If you got into the app some way Prism did not see, the first tap reopens the app, which does nothing, and from then on Prism knows: the next tap opens the menu. If you left the app some way Prism did not see, a tap opens the menu where you wanted the app: a tap on the chat head itself, in the middle of its own menu, closes the menu and goes to the app.
+- **The same for one of Prism's own pages in the chat head:** on that page, a tap opens the menu; anywhere else, it goes to the page.
+- **The tests check it:** the chat head tapped from Prism opens its app; tapped again there, it opens its menu; a tap on it in the middle of the menu closes the menu; back in Prism, a tap opens the app again.
+
+**Checked:** it compiles.
+**Not checked:** on a phone. This is all on Android's side. The long and hour-long tests now exercise it and will say whether it holds.
+
 ## Prism, build 79 (14 November 2026)
 
 **File:** `releases/prism-build-79.apk`

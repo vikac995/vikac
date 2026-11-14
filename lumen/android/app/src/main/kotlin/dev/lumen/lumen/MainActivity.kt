@@ -53,6 +53,8 @@ class MainActivity : FlutterActivity() {
     override fun onStart() {
         super.onStart()
         RestBubble.foreground = true
+        // Prism itself is in front: no other app is.
+        RestBubble.frontApp = ""
         RestBubble.refresh(applicationContext)
     }
 
@@ -197,6 +199,8 @@ class MainActivity : FlutterActivity() {
                             opts = android.app.ActivityOptions.makeClipRevealAnimation(window.decorView, x, y, w, h).toBundle()
                         }
                         startActivity(i, opts)
+                        // Prism has just opened this app: it is the one in front.
+                        RestBubble.frontApp = pkg
                     }
                     result.success(i != null)
                 }
@@ -296,6 +300,10 @@ class MainActivity : FlutterActivity() {
                     RestBubble.Meal((m["i"] as Number).toInt(), m["name"] as String, m["what"] as String, (m["kcal"] as Number).toInt())
                 }
                 RestBubble.refresh(applicationContext)
+                result.success(null)
+            } else if (call.method == "tab") {
+                // Which of Prism's own pages is the one showing.
+                RestBubble.tab = (call.arguments as Number).toInt()
                 result.success(null)
             } else if (call.method == "page") {
                 // Whether Prism's own workout page is the one showing.
@@ -489,6 +497,16 @@ class Notes : android.service.notification.NotificationListenerService() {
 
     override fun onNotificationRemoved(sbn: android.service.notification.StatusBarNotification?) = soon()
 
+    override fun onNotificationRemoved(
+        sbn: android.service.notification.StatusBarNotification?,
+        rankingMap: android.service.notification.NotificationListenerService.RankingMap?,
+        reason: Int,
+    ) {
+        // Removed because it was tapped: its app is the one the person has just gone to.
+        if (reason == REASON_CLICK && sbn != null) RestBubble.frontApp = sbn.packageName
+        soon()
+    }
+
     override fun onListenerDisconnected() {
         handler.removeCallbacks(counting)
         due = false
@@ -599,6 +617,38 @@ object RestBubble {
     // Where Prism's own blobs sit while they are out: the middle of its button, and how near
     // and how far from it counts as among them. A lens let go among them is put back with them.
     var fan: List<Float>? = null
+
+    // Which app is in front, as far as Prism knows, by its package; nothing when Prism itself is
+    // in front or when it cannot say. Prism is the home screen, so it opens most apps itself
+    // (from a blob, the app list, the lens, the lens's menu) and each time notes which. It is
+    // told when the person heads for the recent apps, from where they may come back to any
+    // app, and forgets. Nothing looks, and nothing is asked of Android: it is only remembered.
+    // It is what lets a tap on the lens tell "take me to my app" from "I am in my app already".
+    var frontApp = ""
+
+    // Which of Prism's own pages is showing.
+    var tab = 0
+
+    private var frontListener: android.content.BroadcastReceiver? = null
+
+    private fun listenForFront(context: Context) {
+        if (frontListener != null) return
+        val app = context.applicationContext
+        val r = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: Context, i: android.content.Intent) {
+                val why = i.getStringExtra("reason")
+                if (why == "recentapps" || why == "homekey") frontApp = ""
+            }
+        }
+        try {
+            @Suppress("DEPRECATION")
+            val filter = android.content.IntentFilter(android.content.Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+            if (Build.VERSION.SDK_INT >= 33) app.registerReceiver(r, filter, Context.RECEIVER_EXPORTED) else app.registerReceiver(r, filter)
+            frontListener = r
+        } catch (e: Exception) {
+            frontListener = null
+        }
+    }
 
     // Where the floating elements may be seen, as chosen in Prism: over Prism itself, and over
     // other apps. Switched off in Prism, they are still seen there while its blobs are out, so
@@ -1037,13 +1087,16 @@ object RestBubble {
      */
     private fun use(context: Context, b: Pin) {
         if (b.key == pin?.key && mode() == 2) {
-            // It is the one in the lens: the same as tapping the lens.
-            tapPinned(context)
+            // It is the one in the lens: it does what it is.
+            usePinned(context)
         } else if (b.kind == "app") {
             val i = context.packageManager.getLaunchIntentForPackage(b.pkg)
             if (i != null) {
                 i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-                try { context.startActivity(i) } catch (e: Exception) {}
+                try {
+                    context.startActivity(i)
+                    frontApp = b.pkg
+                } catch (e: Exception) {}
             } else {
                 haptic(context, "thud")
             }
@@ -1183,6 +1236,7 @@ object RestBubble {
         m["draws"] = draws
         m["now"] = System.currentTimeMillis()
         m["fg"] = foreground
+        m["front"] = frontApp
         return m
     }
 
@@ -1370,6 +1424,7 @@ object RestBubble {
                             done(st)
                         }
                         "tap" -> finger(m, listOf(spot), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)
+                        "middle" -> finger(m, listOf(m.testMiddle()), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)
                         "hold" -> finger(m, listOf(spot), true, 50, 0, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L) + 200, false, 500, { true }, after)
                         "drag" -> {
                             val to = points(a["to"])
@@ -1437,6 +1492,7 @@ object RestBubble {
                     activity.startActivity(
                         android.content.Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
                     )
+                    frontApp = "com.android.settings"
                     watcher.postDelayed({
                         val away = !foreground
                         measure(context, num("ms", 60000)) { told ->
@@ -1522,16 +1578,41 @@ object RestBubble {
         watcher.postDelayed(give, left)
     }
 
-    /** A pinned thing's lens was tapped: it does what the thing is. */
+    /**
+     * A pinned thing's lens was tapped. Where the person is somewhere else, it takes them to
+     * the thing. Where they already are (its app is the one in front, or its page is the one
+     * showing) there is nowhere to take them: it opens the lens's menu, with everything else.
+     * Should Prism be wrong about where they are, the tap that did nothing is followed by one
+     * that opens the menu, and in the menu a tap on the lens itself goes to the thing.
+     */
     private fun tapPinned(context: Context) {
+        val p = pin ?: return
+        val there = when (p.kind) {
+            "app" -> !foreground && frontApp == p.pkg
+            "screen" -> foreground && tab == p.index
+            else -> false
+        }
+        if (there && container && blobs.isNotEmpty()) {
+            haptic(context, "click")
+            openMenu(context)
+        } else {
+            usePinned(context)
+        }
+    }
+
+    /** Does what the pinned thing is, wherever the person is. */
+    private fun usePinned(context: Context) {
         val p = pin ?: return
         if (p.kind == "app") {
             val i = context.packageManager.getLaunchIntentForPackage(p.pkg)
             if (i != null) {
                 i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-                // The lens stays where it is, over the app it has opened: from it any of the
-                // other blobs is a hold away. It is put away by the person, on the cross or into a side.
-                try { context.startActivity(i) } catch (e: Exception) {}
+                // The lens stays where it is, over the app it has opened. From now that app is
+                // the one in front, and a tap on the lens is for its menu.
+                try {
+                    context.startActivity(i)
+                    frontApp = p.pkg
+                } catch (e: Exception) {}
             } else {
                 haptic(context, "thud")
             }
@@ -1629,6 +1710,7 @@ object RestBubble {
             val v = Dot(context, lp)
             wm(context).addView(v, lp)
             view = v
+            listenForFront(context)
             // Tucked away, it has its handle along that edge.
             if (tucked) openGrip(context, lp.y)
         } catch (e: Exception) {
@@ -1644,6 +1726,9 @@ object RestBubble {
         val t = target
         target = null
         if (t != null) try { wm(context).removeView(t) } catch (e: Exception) {}
+        val r = frontListener
+        frontListener = null
+        if (r != null) try { context.applicationContext.unregisterReceiver(r) } catch (e: Exception) {}
         val v = view ?: return
         view = null
         try { wm(context).removeView(v) } catch (e: Exception) {}
@@ -2120,6 +2205,7 @@ object RestBubble {
         fun testEditing() = editing
         fun testBack() = backPressed()
         fun testKey(i: Int): String = items[i.coerceIn(0, n - 1)].key
+        fun testMiddle(): FloatArray = floatArrayOf(cx, cy)
 
         override fun onDraw(canvas: android.graphics.Canvas) {
             if (!laid) return
@@ -2316,7 +2402,12 @@ object RestBubble {
                     } else if (i >= 0) {
                         if (editing) change(i) else choose(i)
                     } else if (!moved) {
+                        // A tap beside the blobs closes the menu. A tap on the lens itself, in
+                        // the middle of its own menu, closes it and goes to what is in the lens.
+                        val onLens = mode() == 2 && Math.hypot((downX - cx).toDouble(), (downY - cy).toDouble()) < lensR + 6 * dp
+                        val c = context
                         close()
+                        if (onLens) watcher.postDelayed({ usePinned(c) }, 110)
                     }
                     invalidate()
                 }

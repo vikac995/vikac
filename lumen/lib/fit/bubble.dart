@@ -357,4 +357,10 @@ class RestBubble with WidgetsBindingObserver {
   void page(bool train) {
     _device.invokeMethod<void>('page', train).catchError((Object _) {});
   }
+
+  /// Tells Android which of Prism's pages is showing. A lens that holds that page then has
+  /// nowhere to take the person, and a tap on it opens its menu.
+  void tellTab(int tab) {
+    _device.invokeMethod<void>('tab', tab).catchError((Object _) {});
+  }
 }

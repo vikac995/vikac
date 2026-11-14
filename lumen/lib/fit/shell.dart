@@ -1394,6 +1394,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       RestBubble.instance.tellFloating();
+      RestBubble.instance.tellTab(_tab);
       _sendPinData();
       _sendPin();
       _sendBlobs();
@@ -2455,12 +2456,37 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
               'lens ${s['lens']}, mode ${s['mode']}',
             );
             s = await press(
+              'lens tapped again, in its own app',
+              <Offset>[],
+              holdMs: 40,
+              settleMs: 900,
+            );
+            t.check(
+              'lens: a second tap, in its own app, opens its menu',
+              s['menu'] == true && s['fg'] == false,
+              'menu ${s['menu']}, Prism thinks "${s['front']}" is in front',
+            );
+            if (s['menu'] == true) {
+              final Map<String, Object?> m = await t.lens(<String, Object?>{
+                'op': 'menu',
+                'what': 'middle',
+                'settleMs': 1200,
+              });
+              t.check(
+                'lens menu: a tap on the lens in the middle of it closes it',
+                m['menu'] != true && m['fg'] == false,
+              );
+            }
+            s = await press(
               'lens held over its app: the menu opens',
               <Offset>[],
               holdMs: 950,
               settleMs: 900,
             );
-            t.check('lens: its menu opens over another app', s['menu'] == true);
+            t.check(
+              'lens: held, its menu opens over another app',
+              s['menu'] == true,
+            );
             int? page;
             final int count = (s['menuCount'] as num?)?.toInt() ?? 0;
             for (int i = 0; i < count && s['menu'] == true; i++) {
@@ -2500,6 +2526,21 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             if (s['fg'] != true) {
               await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
             }
+            await calm();
+            // Back in Prism, the lens's app is no longer the one in front.
+            await press(
+              'lens tapped from Prism: its app opens again',
+              <Offset>[],
+              holdMs: 40,
+              settleMs: 2800,
+            );
+            s = await where();
+            t.check(
+              'lens: with Prism in front, a tap opens its app, not the menu',
+              s['fg'] == false && s['menu'] != true,
+              'in front ${s['fg']}, menu ${s['menu']}',
+            );
+            s = await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
             await calm();
             await press(
               'lens with an app in it dropped on the cross',
@@ -3208,6 +3249,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     }
     setState(() => _tab = tab);
     RestBubble.instance.page(tab == 1);
+    RestBubble.instance.tellTab(tab);
     Diag.instance
       ..page = _tabs[tab].$2.toLowerCase()
       ..event('tab ${_tabs[tab].$2}');
