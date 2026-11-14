@@ -468,6 +468,10 @@ object RestBubble {
     private var fullMode = false
     private var lensX = -1
     private var lensY = -1
+    // How large the lens is, in pixels. Nothing until it is first shown; then its usual size, or the
+    // size two fingers last gave it.
+    private var lensSize = 0
+    private var reach: Reach? = null
     // Tucked into a side of the screen, and which side.
     private var tucked = false
     private var tuckRight = true
@@ -710,7 +714,15 @@ object RestBubble {
             wm(context).addView(t, tlp)
             target = t
 
-            val size = (84 * dp).toInt()
+            val least = (84 * dp).toInt()
+            val most = Math.max(least, minOf(d.widthPixels, d.heightPixels) - (16 * dp).toInt())
+            if (lensSize == 0) {
+                // The size it was last given, kept from one day to the next.
+                val saved = try { context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getFloat("size", 84f) } catch (e: Exception) { 84f }
+                lensSize = (saved * dp).toInt()
+            }
+            lensSize = lensSize.coerceIn(least, most)
+            val size = lensSize
             val lp = android.view.WindowManager.LayoutParams(
                 size, size,
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -733,6 +745,7 @@ object RestBubble {
     }
 
     private fun remove(context: Context) {
+        closeReach(context)
         removeSheet(context)
         val t = target
         target = null
@@ -826,7 +839,7 @@ object RestBubble {
         val v = view
         if (docked && v != null) {
             docked = false
-            v.glideTo(homeX.toFloat(), homeY.toFloat(), 300)
+            v.glideTo(homeX.toFloat(), homeY.toFloat(), 300, lensSize)
         }
         docked = false
     }
@@ -849,12 +862,54 @@ object RestBubble {
         val dp = context.resources.displayMetrics.density
         val at = IntArray(2)
         s.getLocationOnScreen(at)
-        val x = at[0] + s.width - v.width - (2 * dp).toInt() - lensOffX
-        val y = at[1] + s.glassTop() - v.height - (2 * dp).toInt() - lensOffY
+        // On the corner it is always its usual size, however large it has been made.
+        val small = (84 * dp).toInt()
+        val x = at[0] + s.width - small - (2 * dp).toInt() - lensOffX
+        val y = at[1] + s.glassTop() - small - (2 * dp).toInt() - lensOffY
         if (Math.abs(x - dockX) < 2 && Math.abs(y - dockY) < 2) return
         dockX = x
         dockY = y
-        v.glideTo(x.toFloat(), y.toFloat(), ms)
+        v.glideTo(x.toFloat(), y.toFloat(), ms, small)
+    }
+
+    /**
+     * While a finger is on the lens, the rest of the screen listens for a second one, so that two
+     * fingers can resize the lens wherever the second one lands. It is there only for as long as
+     * the lens is being touched, and it shows nothing.
+     */
+    private class Reach(context: Context) : android.view.View(context) {
+        override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            val v = view ?: return true
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN, android.view.MotionEvent.ACTION_MOVE -> v.second(true, e.rawX, e.rawY)
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> v.second(false, 0f, 0f)
+            }
+            return true
+        }
+    }
+
+    private fun openReach(context: Context) {
+        if (reach != null) return
+        try {
+            val r = Reach(context)
+            val lp = android.view.WindowManager.LayoutParams(
+                android.view.WindowManager.LayoutParams.MATCH_PARENT, android.view.WindowManager.LayoutParams.MATCH_PARENT,
+                android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or android.view.WindowManager.LayoutParams.FLAG_SPLIT_TOUCH,
+                android.graphics.PixelFormat.TRANSLUCENT,
+            )
+            wm(context).addView(r, lp)
+            reach = r
+        } catch (e: Exception) {
+            reach = null
+        }
+    }
+
+    private fun closeReach(context: Context) {
+        val r = reach ?: return
+        reach = null
+        try { wm(context).removeView(r) } catch (e: Exception) {}
     }
 
     // How everything here moves: quickly at first, then slowing into its place. Nothing goes
@@ -1007,6 +1062,20 @@ object RestBubble {
         private var wouldTuck = false
         // The rest of this touch is not for the lens.
         private var ignoring = false
+        // The size everything in the lens is drawn for. It is then scaled to the size the lens is.
+        private val base = 84 * dp
+        // Two fingers resizing it: where each is on the screen, how far apart they began, and the
+        // size the lens had then.
+        private var pressed = false
+        private var sizing = false
+        private var sized = false
+        private var stretching = false
+        private var atEnd = false
+        private var wantSize = 0f
+        private var p1x = 0f; private var p1y = 0f; private var p2x = 0f; private var p2y = 0f
+        private var startDist = 1f
+        private var startSize = 0f
+        private var midX = 0f; private var midY = 0f
 
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()
@@ -1017,7 +1086,7 @@ object RestBubble {
         private fun shaders() {
             val c = lensColor()
             val pinned = !active
-            val r = width / 2f
+            val r = base / 2f
             val disc = r - 5 * dp
             // A workout's lens is nearly clear, with a breath of the colour. A pinned thing's lens is
             // filled with its own colour, like the blob it came from, but still lets the app show through.
@@ -1053,22 +1122,25 @@ object RestBubble {
         }
 
         override fun onDraw(canvas: android.graphics.Canvas) {
-            if (tuck <= 0f) {
-                paintLens(canvas)
-                return
-            }
+            // The lens is drawn as it is at its usual size, and scaled to the size it is. While two
+            // fingers resize it, that size follows the fingers, and the lens sits in the middle of
+            // a window as large as it can get: nothing has to be resized on the way.
+            val size = if (stretching) wantSize else width.toFloat()
+            val k = size / base
+            canvas.save()
+            canvas.translate((width - size) / 2f, (height - size) / 2f)
             // Tucked into the side, all but a sliver of it is drawn past the edge. Its window stays
             // on the screen, so the whole of it can still be touched.
-            canvas.save()
-            canvas.translate((if (tuckRight) 1f else -1f) * tuck * (width - 22 * dp), 0f)
-            paintLens(canvas)
+            if (tuck > 0f) canvas.translate((if (tuckRight) 1f else -1f) * tuck * (size - 22 * dp * k), 0f)
+            canvas.scale(k, k)
+            paintLens(canvas, k)
             canvas.restore()
         }
 
-        private fun paintLens(canvas: android.graphics.Canvas) {
+        private fun paintLens(canvas: android.graphics.Canvas, k: Float) {
             if (shadersFor != lensColor() || shadersPinned != !active) shaders()
             val colour = lensColor()
-            val w = width.toFloat(); val r = w / 2f
+            val w = base; val r = w / 2f
             val disc = r - 5 * dp
             val now = System.currentTimeMillis()
             // A workout shows its timer. A pinned thing shows its picture, and has no timer to read.
@@ -1159,6 +1231,19 @@ object RestBubble {
             paint.letterSpacing = if (go) 0.06f else -0.01f
             paint.textSize = (if (go) 19f else 17.5f) * dp
             canvas.drawText(t.text, r, r - (paint.descent() + paint.ascent()) / 2f, paint)
+            if (k > 1.45f && !go) {
+                // Made large enough, it has room to say more: what the time is, above it, and
+                // which set this is, below.
+                val show = ((k - 1.45f) / 0.35f).coerceIn(0f, 1f)
+                paint.letterSpacing = 0.08f
+                paint.textSize = 4.6f * dp
+                paint.color = tint(if (t.resting) shade(colour, 1.25f, 0xFF) else WHITE, (show * 0xD0).toInt())
+                canvas.drawText(t.what, r, r - 13.5f * dp, paint)
+                paint.letterSpacing = 0f
+                paint.textSize = 5.2f * dp
+                paint.color = tint(WHITE, (show * 0xB8).toInt())
+                canvas.drawText(setLabel, r, r + 18.5f * dp, paint)
+            }
             if (go && buzzedFor != endsAt) {
                 buzzedFor = endsAt
                 haptic(context, "thud")
@@ -1171,11 +1256,12 @@ object RestBubble {
         }
 
         /** Takes the lens to a sheet's corner, or back from it: one even movement, nothing springy. */
-        fun glideTo(x: Float, y: Float, ms: Long) {
+        fun glideTo(x: Float, y: Float, ms: Long, size: Int = lp.width) {
             springing = false
             leaving = false
             glide?.cancel()
             val fromX = lp.x.toFloat(); val fromY = lp.y.toFloat()
+            val fromSize = lp.width
             val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
             a.duration = ms
             a.interpolator = EASE
@@ -1183,6 +1269,10 @@ object RestBubble {
                 if (isAttachedToWindow) {
                     val f = it.animatedValue as Float
                     lp.x = Math.round(fromX + (x - fromX) * f); lp.y = Math.round(fromY + (y - fromY) * f)
+                    if (size != fromSize) {
+                        val now = Math.round(fromSize + (size - fromSize) * f)
+                        lp.width = now; lp.height = now
+                    }
                     place()
                 }
             }
@@ -1210,8 +1300,8 @@ object RestBubble {
             tuckRight = right
             target?.held = false
             target?.animate()?.alpha(0f)?.setDuration(200)?.start()
-            val y = lp.y.toFloat().coerceIn(48 * dp, screen.heightPixels - height - 48 * dp)
-            glideTo(if (right) (screen.widthPixels - width).toFloat() else 0f, y, 260)
+            val y = lp.y.toFloat().coerceIn(48 * dp, Math.max(48 * dp, screen.heightPixels - lp.height - 48 * dp))
+            glideTo(if (right) (screen.widthPixels - lp.width).toFloat() else 0f, y, 260)
             slide(1f)
         }
 
@@ -1220,8 +1310,96 @@ object RestBubble {
             val screen = resources.displayMetrics
             haptic(context, "tick")
             tucked = false
-            glideTo(if (tuckRight) screen.widthPixels - width - 8 * dp else 8 * dp, lp.y.toFloat(), 260)
+            glideTo(if (tuckRight) screen.widthPixels - lp.width - 8 * dp else 8 * dp, lp.y.toFloat(), 260)
             slide(0f)
+        }
+
+        private fun rawX(e: android.view.MotionEvent, i: Int): Float =
+            if (Build.VERSION.SDK_INT >= 29) e.getRawX(i) else e.getX(i) + (e.rawX - e.getX(0))
+
+        private fun rawY(e: android.view.MotionEvent, i: Int): Float =
+            if (Build.VERSION.SDK_INT >= 29) e.getRawY(i) else e.getY(i) + (e.rawY - e.getY(0))
+
+        private fun largest(): Int {
+            val screen = resources.displayMetrics
+            return Math.max(base.toInt(), minOf(screen.widthPixels, screen.heightPixels) - (16 * dp).toInt())
+        }
+
+        /**
+         * A second finger, wherever on the screen it is. With the one on the lens it resizes the
+         * lens: apart to make it larger, together to make it smaller. The lens stays where it is
+         * while they do.
+         */
+        fun second(down: Boolean, x: Float, y: Float) {
+            if (!pressed || docked || tucked) return
+            if (!down) {
+                sizing = false
+                return
+            }
+            p2x = x; p2y = y
+            if (!sizing) {
+                sizing = true
+                sized = true
+                if (!stretching) {
+                    // This touch is no longer a drag: the cross goes, and a tap will not follow.
+                    stretching = true
+                    dragged = true
+                    snapped = false
+                    wouldTuck = false
+                    springing = false
+                    glide?.cancel()
+                    target?.held = false
+                    target?.animate()?.alpha(0f)?.setDuration(160)?.start()
+                    animate().scaleX(1f).scaleY(1f).setDuration(120).start()
+                    haptic(context, "tick")
+                    wantSize = lp.width.toFloat()
+                    midX = lp.x + lp.width / 2f; midY = lp.y + lp.height / 2f
+                    val big = largest()
+                    lp.width = big; lp.height = big
+                    lp.x = Math.round(midX - big / 2f); lp.y = Math.round(midY - big / 2f)
+                    place()
+                }
+                startDist = Math.max(Math.hypot((p1x - p2x).toDouble(), (p1y - p2y).toDouble()).toFloat(), 40 * dp)
+                startSize = wantSize
+            }
+            stretch()
+        }
+
+        private fun stretch() {
+            if (!sizing) return
+            val apart = Math.hypot((p1x - p2x).toDouble(), (p1y - p2y).toDouble()).toFloat()
+            val least = base; val most = largest().toFloat()
+            val want = startSize * apart / startDist
+            // A click where it will go no further, either way.
+            val end = want <= least || want >= most
+            if (end && !atEnd) haptic(context, "click")
+            atEnd = end
+            val now = want.coerceIn(least, most)
+            if (now != wantSize) {
+                wantSize = now
+                invalidate()
+            }
+        }
+
+        /** The fingers are off: the lens keeps the size it was given, and settles at the nearer side. */
+        private fun endStretch() {
+            pressed = false
+            sizing = false
+            sized = false
+            closeReach(context)
+            tracker?.recycle()
+            tracker = null
+            if (!stretching) return
+            stretching = false
+            val size = Math.round(wantSize)
+            lp.width = size; lp.height = size
+            lp.x = Math.round(midX - size / 2f); lp.y = Math.round(midY - size / 2f)
+            place()
+            lensSize = size
+            try {
+                context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).edit().putFloat("size", size / dp).apply()
+            } catch (ex: Exception) {}
+            throwIt(0f, 0f)
         }
 
         private fun place() {
@@ -1294,14 +1472,15 @@ object RestBubble {
             val coastX = px + velX * 0.16f
             val coastY = py + velY * 0.18f
             // A flick down toward the middle is a throw at the cross.
-            val atCross = velY > 700 && coastY + height / 2f > screen.heightPixels * 0.70f && Math.abs(coastX + width / 2f - crossX()) < 120 * dp
+            val w = lp.width; val h = lp.height
+            val atCross = velY > 700 && coastY + h / 2f > screen.heightPixels * 0.70f && Math.abs(coastX + w / 2f - crossX()) < 120 * dp
             leaving = snapped || atCross
             if (leaving) {
-                tx = crossX() - width / 2f; ty = crossY() - height / 2f
+                tx = crossX() - w / 2f; ty = crossY() - h / 2f
                 target?.held = true
             } else {
-                tx = if (coastX + width / 2f < screen.widthPixels / 2f) margin else screen.widthPixels - width - margin
-                ty = coastY.coerceIn(48 * dp, screen.heightPixels - height - 48 * dp)
+                tx = if (coastX + w / 2f < screen.widthPixels / 2f) margin else screen.widthPixels - w - margin
+                ty = coastY.coerceIn(48 * dp, Math.max(48 * dp, screen.heightPixels - h - 48 * dp))
                 target?.held = false
                 target?.animate()?.alpha(0f)?.setDuration(200)?.start()
             }
@@ -1347,8 +1526,38 @@ object RestBubble {
                 }
                 return true
             }
+            p1x = e.rawX; p1y = e.rawY
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_POINTER_DOWN -> {
+                    // A second finger, on a phone that sends it to the lens wherever it lands.
+                    if (e.pointerCount >= 2) second(true, rawX(e, 1), rawY(e, 1))
+                    return true
+                }
+                android.view.MotionEvent.ACTION_POINTER_UP -> {
+                    second(false, 0f, 0f)
+                    return true
+                }
+            }
+            if (sized) {
+                // Two fingers are resizing it, or were: this touch no longer moves it or taps it.
+                when (e.actionMasked) {
+                    android.view.MotionEvent.ACTION_MOVE -> {
+                        if (sizing && e.pointerCount >= 2) {
+                            p2x = rawX(e, 1); p2y = rawY(e, 1)
+                        }
+                        stretch()
+                    }
+                    android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> endStretch()
+                }
+                return true
+            }
             when (e.actionMasked) {
                 android.view.MotionEvent.ACTION_DOWN -> {
+                    pressed = true
+                    sizing = false
+                    atEnd = false
+                    // From now until the finger lifts, a second finger anywhere resizes the lens.
+                    openReach(context)
                     springing = false
                     leaving = false
                     wouldTuck = false
@@ -1383,9 +1592,9 @@ object RestBubble {
                         }
                         lp.x = x.toInt(); lp.y = y.toInt()
                         place()
-                        // Pushed far enough into a side, letting go tucks it away there. A tick says so.
-                        val mid = lp.x + width / 2f
-                        val would = !snapped && (mid < 24 * dp || mid > resources.displayMetrics.widthPixels - 24 * dp)
+                        // Pushed a quarter of the way past a side, letting go tucks it away there. A tick says so.
+                        val past = 0.25f * lp.width
+                        val would = !snapped && (lp.x < -past || lp.x + lp.width > resources.displayMetrics.widthPixels + past)
                         if (would != wouldTuck) {
                             wouldTuck = would
                             haptic(context, "tick")
@@ -1393,13 +1602,15 @@ object RestBubble {
                     }
                 }
                 android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    pressed = false
+                    closeReach(context)
                     animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
                     if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !dragged) {
                         haptic(context, "tick")
                         // Tapped. A workout opens its sheet; a pinned thing does what it is.
                         if (active) openSheet(context) else tapPinned(context)
                     } else if (e.actionMasked == android.view.MotionEvent.ACTION_UP && wouldTuck) {
-                        tuckIn(lp.x + width / 2f > resources.displayMetrics.widthPixels / 2f)
+                        tuckIn(lp.x + lp.width / 2f > resources.displayMetrics.widthPixels / 2f)
                     } else {
                         var velX = 0f; var velY = 0f
                         val t = tracker

@@ -1,5 +1,28 @@
 # Lumen changelog
 
+## Prism, build 63 (14 November 2026)
+
+**File:** `releases/prism-build-63.apk`
+
+Two fixes on the version as it stands, before anything new is tried on it.
+
+- **The bar is clear glass.** The lights in the background keep their shape as they pass behind the bar. Before, the bar blurred them into a wash of colour and then darkened that, so a light seemed to stop at the bar's edge. This holds in both glass styles:
+  - **Event (still glass):** it costs nothing. The background is softened once, lightly, and the bar shows the part of that picture that lies behind it, bent a little at its rim.
+  - **Auto and Orig. (real glass):** it costs what it cost before. The bar does the same work on every frame as it did, with a smaller blur.
+  - What still differs: real glass also shows cards scrolling under the bar; still glass shows only the background.
+- **Two fingers resize the lens.** One finger on the lens, a second anywhere on the screen; move them apart or together. It goes from its usual size (84) to the width of the screen less a small margin, and clicks at either end. The lens stays where it is while you do it and settles at the nearer side when you let go.
+  - Past about one and a half times its usual size it also says what the time is (above it) and which set you are on (below it).
+  - It keeps the size you gave it, also after the phone restarts.
+  - On an open sheet's corner it is always its usual size, and goes back to yours when the sheet closes.
+
+**What to look for:**
+- The bar over a light on Home and Train: you should see the light's edge run through the bar.
+- Resizing: whether the second finger is caught wherever it lands. If it lands in the same instant as the first, it may still reach the app underneath.
+- Whether the lens jumps at the moment a resize begins or ends.
+
+**Checked:** it compiles. The bar in my preview, in dark orange, dark blue and light orange, in both glass styles.
+**Not checked:** on a phone. The resize is new touch code written blind. I cannot measure the real glass bar's cost here; it should be the same or slightly less, and the test report will say.
+
 ## Prism, build 62 (14 November 2026)
 
 **File:** `releases/prism-build-62.apk`

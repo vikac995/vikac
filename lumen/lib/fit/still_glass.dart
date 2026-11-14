@@ -27,11 +27,14 @@ void paintStillGlass(
   required Color rim,
   double magnify = 1,
   bool sharp = false,
+  bool soft = false,
   double edge = 0,
   Color? flat,
 }) {
   final Look look = Look.instance;
-  final ui.Image? picture = sharp ? look.crisp : look.frost;
+  final ui.Image? picture = sharp
+      ? look.crisp
+      : (soft ? look.soft ?? look.frost : look.frost);
   final Size screen = look.frostScreen;
   canvas
     ..save()
@@ -84,7 +87,7 @@ void paintStillGlass(
           ),
         )
         ..drawImageRect(picture, slice(magnify * 1.14), box, p)
-        ..drawRect(box, Paint()..color = const Color(0x12FFFFFF))
+        ..drawRect(box, Paint()..color = const Color(0x0AFFFFFF))
         ..restore();
     }
     canvas.drawRect(box, Paint()..color = tint);
@@ -122,6 +125,7 @@ class StillGlass extends SingleChildRenderObjectWidget {
     required this.stamp,
     this.magnify = 1,
     this.sharp = false,
+    this.soft = false,
     this.edge = 0,
     super.child,
   });
@@ -133,6 +137,10 @@ class StillGlass extends SingleChildRenderObjectWidget {
 
   /// Shows the background as it is, not the blurred copy: clear glass, not frosted.
   final bool sharp;
+
+  /// Shows the background softened only a little: clear glass, through which the lights
+  /// behind it keep their shape.
+  final bool soft;
 
   /// How wide the bent band inside the rim is. 0 for none.
   final double edge;
@@ -157,6 +165,7 @@ class StillGlass extends SingleChildRenderObjectWidget {
         old.stamp != stamp ||
         old.magnify != magnify ||
         old.sharp != sharp ||
+        old.soft != soft ||
         old.edge != edge) {
       renderObject.markNeedsPaint();
     }
@@ -180,6 +189,7 @@ class RenderStillGlass extends RenderProxyBox {
       rim: spec.rim,
       magnify: spec.magnify,
       sharp: spec.sharp,
+      soft: spec.soft,
       edge: spec.edge,
     );
     super.paint(context, offset);

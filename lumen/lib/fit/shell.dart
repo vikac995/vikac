@@ -1257,22 +1257,26 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                               Positioned.fill(
                                 child: StillGlass(
                                   radius: _barH / 2,
-                                  tint: c.glassTint.withValues(alpha: 0.40),
+                                  tint: c.glassTint.withValues(alpha: 0.26),
                                   rim: Colors.white.withValues(
                                     alpha: c.dark ? 0.34 : 0.9,
                                   ),
-                                  edge: 9,
+                                  edge: 6,
+                                  soft: true,
                                   stamp: Look.instance.frostReady.value,
                                 ),
                               ),
                             Positioned.fill(
                               child: Glass(
                                 radius: _barH / 2,
+                                // Clear glass: softened just enough that words scrolling under it do
+                                // not fight the labels, and no more, so that the lights behind the
+                                // bar keep their shape as they pass under it.
                                 style: GlassStyle(
-                                  blur: 18,
-                                  tint: 0.42,
-                                  refraction: 30,
-                                  bevel: 20,
+                                  blur: 4,
+                                  tint: 0.27,
+                                  refraction: 16,
+                                  bevel: 12,
                                   // In the new styles the solid bar is matched to the glass one, so swapping does not flash.
                                   fallbackColor: still
                                       ? const Color(0x00000000)
@@ -2655,7 +2659,7 @@ class _WallpaperImageState extends State<_WallpaperImage> {
     pic.dispose();
     // The same picture, blurred once. Every piece of still glass shows a part of this.
     final ui.PictureRecorder rec2 = ui.PictureRecorder();
-    // The same softness as the real glass bar (18 on the screen), scaled to this smaller picture,
+    // Soft enough to lose every edge (18 on the screen), scaled to this smaller picture. This is
     // so still glass and real glass look alike.
     final double sigma = 18 * small.width / size.width;
     Canvas(rec2).drawImage(
@@ -2674,14 +2678,36 @@ class _WallpaperImageState extends State<_WallpaperImage> {
       small.height.toInt(),
     );
     pic2.dispose();
+    // And softened only a little, for the bar. It is clear glass: the lights behind it keep
+    // their shape, as they do through the real glass bar (4 on the screen).
+    final ui.PictureRecorder rec3 = ui.PictureRecorder();
+    final double softSigma = 4 * small.width / size.width;
+    Canvas(rec3).drawImage(
+      img,
+      Offset.zero,
+      Paint()
+        ..imageFilter = ui.ImageFilter.blur(
+          sigmaX: softSigma,
+          sigmaY: softSigma,
+          tileMode: TileMode.clamp,
+        ),
+    );
+    final ui.Picture pic3 = rec3.endRecording();
+    final ui.Image soft = await pic3.toImage(
+      small.width.toInt(),
+      small.height.toInt(),
+    );
+    pic3.dispose();
     if (!mounted) {
       img.dispose();
       frost.dispose();
+      soft.dispose();
       return;
     }
     Look.instance
       ..crisp = img
       ..frost = frost
+      ..soft = soft
       ..frostScreen = size
       ..frostReady.value += 1;
     setState(() {
