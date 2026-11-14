@@ -92,3 +92,7 @@ Without `ORG_GRADLE_PROJECT_fit` and `-t`, the same project builds Lumen. The co
 - The lens works on Home only; Train, Food and Progress do not offer themselves to it yet.
 - Editing the blobs, the bar, or the home screen.
 - The food sheet and the Food page keep separate lists; both change the calories on Home.
+
+## Backlog: for when Prism goes out to testers
+
+- **Tooltips on every option and switch.** The explanations were taken out of the panels (build 120) to cut clutter. Before Prism is sent to people to test, each option and switch gets a small help mark: a tap on it shows what the option does. Each tap is noted in the flight recorder, along with how each option ends up set, so it can be read which features people used, which confused them, and how they set Prism up.

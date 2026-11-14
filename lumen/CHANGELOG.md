@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 123 (15 November 2026)
+
+**File:** `releases/prism-build-123.apk`
+
+Needs Play Protect paused to install. Can be installed over build 122.
+
+- **The density slider no longer disappears, from your two recordings.** While it is dragged, everything else in the panel clears, but the slider itself stays solid, on a small ground of its own, with its name. And a plain tap on the slider just goes to that stop: nothing clears. Only a drag does.
+- **The ring in the app list always holds the cog**, on every page and in the scrolling list. The page number is gone (the ring and the letters in the heading say where you are). The one exception: while an app is being chosen for a blob, there are no settings to open, so the page number stays there.
+- **The cog turns as you move through the list**, like a gear rolling along it: one tooth for each page (following the finger during the swipe) or each row scrolled. It moves only when the list does.
+- Noted for later, in `PRISM.md`: tooltips on every option and switch, with a record of what testers tap and how they set things up.
+
+**Checked:** it compiles; in my preview: the slider held (it stays, the rest clears), a tap on the slider (nothing clears, the stop changes and is saved); the automatic test in the preview: 56 of 60, the usual 4 misses. One run in between missed two blob-dragging checks instead; the run after did not, and that code was not changed, so I take it for my slow preview's timing. Say if dragging blobs to reorder them misbehaves on the phone.
+**Not checked:** on a phone. The cog turning I did not see in motion.
+
 ## Prism, build 122 (15 November 2026)
 
 **File:** `releases/prism-build-122.apk`

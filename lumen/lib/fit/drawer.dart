@@ -216,6 +216,16 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     _ring.animateTo(((_page + 1 + lean) / _pages).clamp(0.0, 1.0));
   }
 
+  /// How far the cog in the ring has turned: one tooth (an eighth of a turn) for each row
+  /// scrolled past, or for each page, part pages included while a finger pulls.
+  double _cogAngle() {
+    const double tooth = math.pi / 4;
+    if (Apps.instance.scrolling) {
+      return _list.hasClients && _rowH > 0 ? _list.offset / _rowH * tooth : 0;
+    }
+    return (_page + (_toward - _page) * _turn.value) * tooth;
+  }
+
   /// How much of the scrolling list has been seen: the bottom of the screen against its whole length.
   double? _listShare() {
     if (!_list.hasClients) {
@@ -514,13 +524,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                 ),
               ),
               Positioned.fill(
-                child: AnimatedOpacity(
-                  // Not all the way: the slider itself stays faintly there, under the finger.
-                  opacity: see ? 0.14 : 1,
-                  duration: const Duration(milliseconds: 160),
-                  curve: Curves.easeOutCubic,
-                  child: panel,
-                ),
+                // (The panel clears from the inside: all of it but the slider, which stays as it is.)
+                child: panel!,
               ),
             ],
           ),
@@ -534,98 +539,164 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
               ),
               child: Material(
                 type: MaterialType.transparency,
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: ShapeDecoration(
-                    color: c.surface,
-                    shape: RoundedSuperellipseBorder(
-                      borderRadius: BorderRadius.circular(36),
-                      side: BorderSide(color: c.hairline),
-                    ),
-                  ),
-                  child: ListenableBuilder(
-                    listenable: Apps.instance,
-                    builder: (BuildContext context, Widget? _) => Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Expanded(
-                              child: Text(
-                                'Apps',
-                                style: LumenType.display(
-                                  22,
-                                  weight: 700,
-                                  color: c.ink,
-                                ),
+                child: ListenableBuilder(
+                  listenable: Listenable.merge(<Listenable>[
+                    Apps.instance,
+                    clear,
+                  ]),
+                  builder: (BuildContext context, Widget? _) =>
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        curve: Curves.easeOutCubic,
+                        padding: const EdgeInsets.all(20),
+                        decoration: ShapeDecoration(
+                          // While the density is dragged the panel itself goes clear, and only the slider is left.
+                          color: c.surface.withValues(
+                            alpha: clear.value ? 0 : c.surface.a,
+                          ),
+                          shape: RoundedSuperellipseBorder(
+                            borderRadius: BorderRadius.circular(36),
+                            side: BorderSide(
+                              color: c.hairline.withValues(
+                                alpha: clear.value ? 0 : c.hairline.a,
                               ),
                             ),
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                Haptics.tick();
-                                Navigator.of(context).pop();
-                              },
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: ShapeDecoration(
-                                  color: c.ink.withValues(alpha: 0.1),
-                                  shape: const CircleBorder(),
-                                ),
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  size: 24,
-                                  color: c.ink,
-                                ),
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            AnimatedOpacity(
+                              opacity: clear.value ? 0 : 1,
+                              duration: const Duration(milliseconds: 160),
+                              curve: Curves.easeOutCubic,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: <Widget>[
+                                  Row(
+                                    children: <Widget>[
+                                      Expanded(
+                                        child: Text(
+                                          'Apps',
+                                          style: LumenType.display(
+                                            22,
+                                            weight: 700,
+                                            color: c.ink,
+                                          ),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () {
+                                          Haptics.tick();
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Container(
+                                          width: 44,
+                                          height: 44,
+                                          decoration: ShapeDecoration(
+                                            color: c.ink.withValues(alpha: 0.1),
+                                            shape: const CircleBorder(),
+                                          ),
+                                          child: Icon(
+                                            Icons.close_rounded,
+                                            size: 24,
+                                            color: c.ink,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 14),
+                                  SwitchLine(
+                                    key: Robot.key('prismIcons'),
+                                    label: 'Prism icons',
+                                    value: Apps.instance.prismIcons,
+                                    onChanged: (bool v) {
+                                      Haptics.tick();
+                                      Apps.instance.setPrismIcons(v);
+                                    },
+                                  ),
+                                  const SizedBox(height: 12),
+                                  SwitchLine(
+                                    key: Robot.key('appsScrolling'),
+                                    label: 'Scrolling list',
+                                    value: Apps.instance.scrolling,
+                                    onChanged: (bool v) {
+                                      Haptics.tick();
+                                      Apps.instance.setScrolling(v);
+                                      // The ring now measures the other way of moving through the list.
+                                      _aim();
+                                    },
+                                  ),
+                                ],
                               ),
+                            ),
+                            const SizedBox(height: 16),
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: <Widget>[
+                                // The slider's own ground, there only while the panel is clear.
+                                Positioned(
+                                  left: -12,
+                                  right: -12,
+                                  top: -8,
+                                  bottom: -2,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 160),
+                                    curve: Curves.easeOutCubic,
+                                    decoration: ShapeDecoration(
+                                      color: c.surface.withValues(
+                                        alpha: clear.value ? c.surface.a : 0,
+                                      ),
+                                      shape: RoundedSuperellipseBorder(
+                                        borderRadius: BorderRadius.circular(24),
+                                        side: BorderSide(
+                                          color: c.hairline.withValues(
+                                            alpha: clear.value
+                                                ? c.hairline.a
+                                                : 0,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: <Widget>[
+                                    Text(
+                                      'Density',
+                                      style: LumenType.text(
+                                        15,
+                                        weight: 560,
+                                        color: c.ink,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    _DensitySlider(
+                                      key: Robot.key('appsDensity'),
+                                      value: Apps.instance.density,
+                                      stops: Apps.columns.length,
+                                      onHold: (bool held) => clear.value = held,
+                                      onChanged: (int v) {
+                                        Apps.instance.setDensity(v);
+                                        _aim();
+                                      },
+                                      onDone: (int v) => Apps.instance
+                                          .setDensity(v, save: true),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 14),
-                        SwitchLine(
-                          key: Robot.key('prismIcons'),
-                          label: 'Prism icons',
-                          value: Apps.instance.prismIcons,
-                          onChanged: (bool v) {
-                            Haptics.tick();
-                            Apps.instance.setPrismIcons(v);
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        SwitchLine(
-                          key: Robot.key('appsScrolling'),
-                          label: 'Scrolling list',
-                          value: Apps.instance.scrolling,
-                          onChanged: (bool v) {
-                            Haptics.tick();
-                            Apps.instance.setScrolling(v);
-                            // The ring now measures the other way of moving through the list.
-                            _aim();
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Density',
-                          style: LumenType.text(15, weight: 560, color: c.ink),
-                        ),
-                        const SizedBox(height: 4),
-                        _DensitySlider(
-                          key: Robot.key('appsDensity'),
-                          value: Apps.instance.density,
-                          stops: Apps.columns.length,
-                          onHold: (bool held) => clear.value = held,
-                          onChanged: (int v) {
-                            Apps.instance.setDensity(v);
-                            _aim();
-                          },
-                          onDone: (int v) =>
-                              Apps.instance.setDensity(v, save: true),
-                        ),
-                      ],
-                    ),
-                  ),
+                      ),
                 ),
               ),
             ),
@@ -898,13 +969,14 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                     GestureDetector(
                       key: Robot.key('drawerCog'),
                       behavior: HitTestBehavior.opaque,
-                      onTap:
-                          (_page == 0 || Apps.instance.scrolling) &&
-                              widget.pick == null
-                          ? _showIconChoice
-                          : null,
+                      onTap: widget.pick == null ? _showIconChoice : null,
                       child: ListenableBuilder(
-                        listenable: _ring,
+                        // The cog turns with the pages and with the list, so those are listened to as well.
+                        listenable: Listenable.merge(<Listenable>[
+                          _ring,
+                          _turn,
+                          _list,
+                        ]),
                         builder: (BuildContext context, Widget? _) =>
                             CustomPaint(
                               size: const Size(38, 38),
@@ -916,10 +988,10 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                               child: SizedBox(
                                 width: 38,
                                 height: 38,
-                                // On the first page, a cog: the app list's own settings.
-                                // On the others, which page this is.
-                                // The change between them is a short cross-fade with a slight scale, so the
-                                // number never just snaps; only this small ring is drawn again.
+                                // A cog, always: the app list's own settings. It turns like a gear rolling
+                                // along the list, one tooth for each page or row, exactly as far as the
+                                // finger has gone, and stands still when the list does. (While an app is
+                                // being chosen for a blob there are no settings: which page this is.)
                                 child: Center(
                                   child: AnimatedSwitcher(
                                     duration: const Duration(milliseconds: 180),
@@ -937,15 +1009,15 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                                 child: w,
                                               ),
                                             ),
-                                    child:
-                                        (_page == 0 ||
-                                                Apps.instance.scrolling) &&
-                                            widget.pick == null
-                                        ? Icon(
-                                            Icons.settings_rounded,
+                                    child: widget.pick == null
+                                        ? Transform.rotate(
                                             key: const ValueKey<String>('cog'),
-                                            size: 18,
-                                            color: c.ink,
+                                            angle: _cogAngle(),
+                                            child: Icon(
+                                              Icons.settings_rounded,
+                                              size: 18,
+                                              color: c.ink,
+                                            ),
                                           )
                                         : Text(
                                             '${_page + 1}',
@@ -1634,7 +1706,12 @@ class _DensitySliderState extends State<_DensitySlider>
         _width = box.maxWidth;
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onHorizontalDragDown: (DragDownDetails d) {
+          // A tap goes to the stop under it, and nothing clears: only a drag is a wish to watch the list.
+          onTapUp: (TapUpDetails d) {
+            _to(d.localPosition.dx);
+            widget.onDone(_at);
+          },
+          onHorizontalDragStart: (DragStartDetails d) {
             _hold(true);
             _to(d.localPosition.dx);
           },
