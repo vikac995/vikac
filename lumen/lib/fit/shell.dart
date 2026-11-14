@@ -1619,7 +1619,8 @@ class _ShellState extends State<Shell>
     stiffness: 560,
     ratio: 0.78,
   );
-  late final SpringValue _rise = SpringValue(this, spring: Motions.spatial);
+  late final SpringValue _rise = SpringValue(this, spring: Motions.spatial)
+    ..addListener(_sheetMoved);
   late final SpringValue _page = SpringValue(
     this,
     value: 1,
@@ -4512,21 +4513,15 @@ class _ShellState extends State<Shell>
     LensBus.instance.pos.value = null;
   }
 
-  // The bar is solid under the drawer and under sheets. Turning glass back on costs one slow
-  // frame, so it waits until the closing animation is over: a slow frame while nothing moves
-  // cannot be seen, one in the middle of an animation is a stutter.
-  bool _coverHold = false;
-  Timer? _coverTimer;
-  void _cover(bool up) {
-    _coverTimer?.cancel();
-    if (up) {
-      _coverHold = true;
-    } else {
-      _coverTimer = Timer(const Duration(milliseconds: 560), () {
-        if (mounted && !_drawerOpen && !_sheetOpen) {
-          setState(() => _coverHold = false);
-        }
-      });
+  // The bar gives up its glass only while a sheet is all the way up and hides it completely:
+  // then nobody can see the change, in either direction. It is glass again from the moment the
+  // sheet starts down. (Before, it stayed without its glass until half a second after the sheet
+  // had gone, and what was behind the bar showed through sharp for that long.)
+  bool _sheetHides = false;
+  void _sheetMoved() {
+    final bool hides = _sheetOpen && _rise.value > 0.985;
+    if (hides != _sheetHides && mounted) {
+      setState(() => _sheetHides = hides);
     }
   }
 
@@ -4814,7 +4809,6 @@ class _ShellState extends State<Shell>
       _sheetWeight = fit.weight;
     });
     _sheetOpen = true;
-    _cover(true);
     _rise.animateTo(1);
     Diag.instance
       ..overlay = '+sheet'
@@ -4822,7 +4816,6 @@ class _ShellState extends State<Shell>
   }
 
   void _closeSheet() {
-    _cover(false);
     setState(() => _sheetOpen = false);
     _rise.animateTo(0);
     Diag.instance
@@ -5108,7 +5101,7 @@ class _ShellState extends State<Shell>
                               // blurred again on every frame for something nobody is looking at. So it
                               // goes solid meanwhile. Under the app drawer it does not: there the bar is
                               // in plain sight, and must be the same bar it is under the blobs.
-                              final bool covered = _sheetOpen || _coverHold;
+                              final bool covered = _sheetOpen && _sheetHides;
                               final bool barSolid =
                                   off ||
                                   covered ||

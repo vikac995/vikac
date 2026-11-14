@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 124 (15 November 2026)
+
+**File:** `releases/prism-build-124.apk`
+
+Needs Play Protect paused to install. Can be installed over build 123.
+
+- **The bottom bar losing its blur around sheets, from your recording.** The cause was in Prism's own code, on purpose: while a quick sheet (Log food, Weigh-in) was up, the bar gave up its real glass for a cheap clear one with no blur, to save work, and took it back only about half a second after the sheet had closed. In that half second, and as the sheet came up, what was behind the bar showed through sharp. Now the bar gives up its glass only while the sheet is all the way up and hides the bar completely, and is glass again the moment the sheet starts down. The swap can no longer be seen.
+
+**Checked:** it compiles; the automatic test in the preview, 56 of 60, the usual 4 misses.
+**Not checked:** on a phone, and I did not see it in my preview either. Two things to look for. One: the very start of a sheet closing, where the glass comes back on; if that first moment hitches, say so and the bar will simply keep its glass all the time. Two: whether the bar still goes sharp at other times. There is one more way it can: with glass style on Auto, Prism falls back to cheaper glass when frames run slow, and the cheapest bar is clear, not blurred. If you see it sharp with no sheet involved, use "Send what just happened" right after: the recorder notes which glass was in use.
+
 ## Prism, build 123 (15 November 2026)
 
 **File:** `releases/prism-build-123.apk`
