@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 100 (14 November 2026)
+
+**File:** `releases/prism-build-100.apk`
+
+Needs Play Protect paused to install. **This is the build to test.**
+
+- **A Stop button while a test runs.** Red, at the top left, under the line that says what the test is doing. A tap stops the test where it is: the step it was on finishes its touch (no finger is left down), everything is put back as it was, and the report comes up with what it had found so far, headed "STOPPED BY YOU while it was at:" and the step. Only a real finger presses it; the test's own touches pass it by.
+- **A note of your own.** The report panel, finished or stopped, has a field "What did you see?". What you write goes at the end of the report, as "NOTE FROM YOU", in what Copy copies and in "Copy the last report" afterwards.
+- **The test no longer pulls the notifications down.** Android let Prism pull them down but not put them away again, so on your phone they stayed open over the rest of the test. Whether the two-finger swipe down opens them is for you to see.
+- (A first upload of this build, at commit 035327b, was made by mistake from an unfinished change and still called itself build 99. This one replaces it.)
+
+**Checked:** in my preview: the test started, Stop pressed part way; it stopped, put everything back and showed the report, stopped, with the note field and the step it was on. It compiles.
+**Not checked:** on a phone.
+
 ## Prism, build 99 (14 November 2026)
 
 **File:** `releases/prism-build-99.apk`

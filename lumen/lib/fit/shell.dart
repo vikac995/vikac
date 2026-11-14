@@ -3515,10 +3515,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           '${Diag.build}  ·  $title, $rounds round${rounds == 1 ? '' : 's'}  ·  ${DateTime.now().toString().substring(0, 16)}\nscreen ${w.round()}x${h.round()} at ${dp}x  ·  allowed over other apps: ${floats ? 'yes' : 'NO'}  ·  ${last['blobs']} blobs known to Android';
     } catch (e, where) {
       if (e is TestStopped) {
-        stoppedAt = (Diag.instance.banner.value ?? '').replaceAll(
-          ' Hands off, please.',
-          '',
-        );
+        stoppedAt = Robot.stoppedWhile
+            .replaceAll(' Hands off, please.', '')
+            .replaceFirst(RegExp(r'^Test[^:]*: '), '');
       } else {
         t.check('the test ran to the end', false, '$e\n$where');
       }
