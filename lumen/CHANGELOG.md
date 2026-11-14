@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 83 (14 November 2026)
+
+**File:** `releases/prism-build-83.apk`
+
+Needs Play Protect paused to install.
+
+- **The cog stands on its own, clear of the X.** It was on the button's corner. It is now up and to the right of the button with a gap between them, and it is its own thing to tap: it answers on itself and a little around itself, never on the button. A tap on the X is always the X and ends the changing.
+- **Blobs can be dragged into another order while they are being changed.** A drag there only rearranges: the others make room, and let go anywhere, even far from them, the blob sits in the seat kept open for it. It never floats and never goes into the button from there. A tap is still the pencil or the minus.
+- **Held, then dragged without letting go.** Holding a blob starts the changing; moving on from that hold now takes the blob along.
+- **The same in the chat head's own menu:** while its blobs are being changed they can be dragged into another order, and a hold can carry straight on into a drag. There a blob dragged clear no longer goes into the lens while they are being changed.
+- **The tests:** held-then-dragged, dragged while changing, and dragged away and let go.
+
+**Checked:** in my preview: the cog's place was looked at; a tap on it opened its panel; a tap on the X ended the changing. The long test's dry run: 41 of 44, the three wrong being power figures that cannot be measured there. The three new order checks were right.
+**Not checked:** on a phone. The chat head menu's part is Android's and only compiles.
+
 ## Prism, build 82 (14 November 2026)
 
 **File:** `releases/prism-build-82.apk`

@@ -178,6 +178,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     if (v == _editing) {
       return;
     }
+    if (!v && _dragI != null) {
+      // One of them is in the hand: it is put down among the others first.
+      _blobDrop(_dragI!, _home, Offset.zero);
+    }
     setState(() => _editing = v);
     v ? Haptics.settle() : Haptics.tick();
     Diag.instance.event(v ? 'blobs: editing' : 'blobs: done editing');
@@ -909,8 +913,17 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   /// A blob picked up out of the menu follows the finger. Near the button it is drawn onto it
   /// and the button swells to take it: letting go there launches it. Over the other blobs they
   /// make room where it would sit; clear of them, they close ranks.
+  ///
+  /// While the blobs are being changed a drag only puts them in another order: the button takes
+  /// nothing in, a side holds nothing, and the seat last made for it stays open wherever the
+  /// finger goes.
   void _blobDrag(int i, Offset at, Offset button) {
+    if (_dragI != i) {
+      return;
+    }
+    final bool free = !_editing;
     final bool near =
+        free &&
         RestBubble.instance.canFloat &&
         (at - button).distance < (_armed ? 80 : 62);
     if (near != _armed) {
@@ -922,7 +935,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     // the finger does: let go there, it is the lens at once, with nowhere left to travel.
     final Size screen = MediaQuery.sizeOf(context);
     final double half = _floatSize / 2, side = 8 + half;
-    final bool stuck = !near && (at.dx <= side || at.dx >= screen.width - side);
+    final bool stuck =
+        free && !near && (at.dx <= side || at.dx >= screen.width - side);
     if (stuck) {
       at = Offset(
         at.dx <= side ? side : screen.width - side,
@@ -934,7 +948,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       stuck ? Haptics.settle() : Haptics.tick();
     }
     _dragAt.value = near ? button + (at - button) * 0.22 : at;
-    final int? gap = near ? null : _seatFor(at, _others(i).length, _gapAt);
+    final int? gap = near
+        ? null
+        : (_seatFor(at, _others(i).length, _gapAt) ?? (free ? null : _gapAt));
     if (gap != _gapAt || _awayI != i) {
       setState(() {
         _awayI = i;
@@ -952,6 +968,18 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return;
     }
     final Offset coast = _dragAt.value + velocity * 0.16;
+    if (_editing) {
+      // While the blobs are being changed a drag only rearranges them. Let go anywhere, it
+      // sits in the seat the others are keeping open for it.
+      _kick.animateTo(1);
+      _stuck = false;
+      _settle(
+        i,
+        _gapAt ?? _others(i).where((int k) => k < i).length,
+        _dragAt.value,
+      );
+      return;
+    }
     if (!RestBubble.instance.canFloat) {
       // Floating elements are switched off: it goes back among the others, where it was or
       // where they made room for it.
@@ -1243,6 +1271,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   int? _dragI;
   final ValueNotifier<Offset> _dragAt = ValueNotifier<Offset>(Offset.zero);
   Offset _dragGrab = Offset.zero;
+  // Where the finger was when a hold on a blob was recognised.
+  Offset _holdFrom = Offset.zero;
+  // Where the cog stands while the blobs are being changed, from the middle of the button:
+  // up and to the right, clear of it.
+  static const Offset _cogAt = Offset(31, -48);
   bool _armed = false;
   // Let go anywhere else, it goes back to its place: 1 is where it was let go, 0 is home.
   int? _backI;
@@ -1902,7 +1935,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           await Robot.wait(700);
         }
         // The cog.
-        await Robot.tap(_home + const Offset(21, -21), after: 900);
+        await Robot.tap(_home + _cogAt, after: 900);
         final Offset? inPrism = Robot.spot('floatIn');
         t.check('cog: a tap on it opens "Floating elements"', inPrism != null);
         if (inPrism != null) {
@@ -1955,6 +1988,75 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           lensOf.pinned.value == null,
           '${lensOf.pinned.value}',
         );
+        // The same while the blobs are being changed. First held, then dragged in one touch.
+        if (!_open) {
+          await Robot.tap(_home, after: 800);
+        }
+        String order() =>
+            <String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(' ');
+        await t.scene(
+          'holding a blob, then dragging it without letting go',
+          () async {
+            await Robot.drag(
+              <Offset>[
+                seat(0),
+                seat(0) + const Offset(0, 1),
+                seat(0) + const Offset(0, 2),
+                seat(0) + const Offset(0, 1),
+                seat(1),
+                seat(2),
+                seat(3),
+                seat(4),
+              ],
+              legMs: 220,
+              dwell: 160,
+              after: 900,
+            );
+          },
+        );
+        t.check(
+          'changing: held and then dragged, the blobs can be changed and the first is now the last',
+          _editing && _pinKey(4) == 'action:0',
+          '${_editing ? 'changing' : 'not changing'}; ${order()}',
+        );
+        if (!_editing) {
+          await Robot.hold(seat(2), after: 600);
+        }
+        await t.scene('dragging a blob while they are being changed', () async {
+          await Robot.drag(
+            <Offset>[seat(4), seat(3), seat(2), seat(1), seat(0)],
+            legMs: 220,
+            dwell: 160,
+            after: 900,
+          );
+        });
+        t.check(
+          'changing: dragged, it goes to another seat, and they can still be changed',
+          _editing && _pinKey(0) == 'action:0' && _pinKey(4) == 'action:4',
+          '${_editing ? 'changing' : 'not changing'}; ${order()}',
+        );
+        // Dragged right away from the others and let go: it goes back among them.
+        await Robot.drag(
+          <Offset>[seat(2), seat(2) - const Offset(0, 230)],
+          legMs: 400,
+          dwell: 300,
+          after: 1000,
+        );
+        t.check(
+          'changing: dragged away and let go, it goes back to its seat and nothing floats',
+          _dragI == null &&
+              lensOf.pinned.value == null &&
+              _pinKey(2) == 'action:2' &&
+              _open,
+          '${lensOf.pinned.value}; ${order()}',
+        );
+        if (lensOf.pinned.value != null) {
+          lensOf.setPin(null);
+          _sendPin();
+        }
+        if (_editing) {
+          await Robot.tap(beside, after: 500);
+        }
         if (lensOf.pinned.value != null) {
           lensOf.setPin(null);
           _sendPin();
@@ -3138,9 +3240,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return;
     }
     final Offset travel = (_lastAt ?? _downAt!) - _downAt!;
-    // Whether the finger came down on the cog, which sits on the button's upper right.
-    final bool onCog =
-        (_downAt! - (_home + const Offset(21, -21))).distance < 22;
     _downAt = null;
     if (_heldEdit) {
       // The hold has done its work: letting go does nothing more.
@@ -3169,14 +3268,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _lensQuiet();
       _setDrawer(true);
     } else if (!_lifted && _open && _editing) {
-      // While the blobs are being changed the button wears a cog. A tap on the cog is for the
-      // floating elements, where they may be seen. A tap on the X itself is a tap on an X: it
-      // ends the changing, and the blobs stay out.
-      if (onCog) {
-        _showFloating();
-      } else {
-        _setEditing(false);
-      }
+      // While the blobs are being changed, a tap on the X is a tap on an X: it ends the
+      // changing, and the blobs stay out. (The cog stands beside the button and is its own.)
+      _setEditing(false);
     } else if (!_lifted && _parked) {
       // The magnifying glass is out and put down somewhere. A tap on the place it lives
       // calls it home; the next tap is for the blobs.
@@ -3539,6 +3633,36 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Offset rest(int i) {
       final double a = _seatAngle(_seat[i].value);
       return bc + Offset(-math.cos(a), -math.sin(a)) * _far.value;
+    }
+
+    // A blob is picked up by a finger at [at]: it comes along from where it sits, and its
+    // seat is kept open for it.
+    void grab(int i, Offset at) {
+      if (_isEmpty(i)) {
+        return;
+      }
+      _dragGrab = at - rest(i);
+      _dragAt.value = rest(i);
+      _armed = false;
+      _stuck = false;
+      if (!_editing) {
+        // How large the lens is now, for where a side stops it.
+        final double dpr = MediaQuery.devicePixelRatioOf(context);
+        RestBubble.instance.lensSize().then((double? px) {
+          if (px != null && px > 0) {
+            _floatSize = px / dpr;
+          }
+        });
+      }
+      final List<int> others = _others(i);
+      setState(() {
+        _dragI = i;
+        _backI = null;
+        _awayI = i;
+        _gapAt = others.where((int k) => k < i).length;
+      });
+      _reseat();
+      Haptics.tick();
     }
 
     // Where an empty place is shown while the blobs are being changed: each of the five has
@@ -4086,56 +4210,34 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                               _pickFor(i);
                             }
                           },
-                          onLongPress: _editing
-                              ? null
-                              : () => _setEditing(true),
-                          onPanStart: _editing
-                              ? null
-                              : (DragStartDetails d) {
-                                  _dragGrab = d.globalPosition - rest(i);
-                                  _dragAt.value = rest(i);
-                                  _armed = false;
-                                  _stuck = false;
-                                  // How large the lens is now, for where a side stops it.
-                                  final double dpr =
-                                      MediaQuery.devicePixelRatioOf(context);
-                                  RestBubble.instance.lensSize().then((
-                                    double? px,
-                                  ) {
-                                    if (px != null && px > 0) {
-                                      _floatSize = px / dpr;
-                                    }
-                                  });
-                                  // Picked up, its seat is kept open for it.
-                                  final List<int> others = _others(i);
-                                  setState(() {
-                                    _dragI = i;
-                                    _backI = null;
-                                    _awayI = i;
-                                    _gapAt = others
-                                        .where((int k) => k < i)
-                                        .length;
-                                  });
-                                  _reseat();
-                                  Haptics.tick();
-                                },
-                          onPanUpdate: _editing
-                              ? null
-                              : (DragUpdateDetails d) => _blobDrag(
-                                  i,
-                                  d.globalPosition - _dragGrab,
-                                  bc,
-                                ),
-                          onPanEnd: _editing
-                              ? null
-                              : (DragEndDetails d) => _blobDrop(
-                                  i,
-                                  bc,
-                                  d.velocity.pixelsPerSecond,
-                                ),
-                          onPanCancel: _editing
-                              ? null
-                              : () => _blobDrop(i, bc, Offset.zero),
+                          // Held: the blobs can be changed. Held and then moved without
+                          // letting go, it comes along, as on any drag.
+                          onLongPressStart: (LongPressStartDetails d) {
+                            _holdFrom = d.globalPosition;
+                            _setEditing(true);
+                          },
+                          onLongPressMoveUpdate:
+                              (LongPressMoveUpdateDetails d) {
+                                if (_dragI != i) {
+                                  if ((d.globalPosition - _holdFrom).distance <
+                                      10) {
+                                    return;
+                                  }
+                                  grab(i, d.globalPosition);
+                                }
+                                _blobDrag(i, d.globalPosition - _dragGrab, bc);
+                              },
+                          onLongPressEnd: (LongPressEndDetails d) =>
+                              _blobDrop(i, bc, d.velocity.pixelsPerSecond),
+                          // Dragged. While the blobs are being changed that only puts them
+                          // in another order.
+                          onPanStart: (DragStartDetails d) =>
+                              grab(i, d.globalPosition),
+                          onPanUpdate: (DragUpdateDetails d) =>
+                              _blobDrag(i, d.globalPosition - _dragGrab, bc),
+                          onPanEnd: (DragEndDetails d) =>
+                              _blobDrop(i, bc, d.velocity.pixelsPerSecond),
+                          onPanCancel: () => _blobDrop(i, bc, Offset.zero),
                           child: Column(
                             children: <Widget>[
                               const SizedBox(height: 8),
@@ -4363,11 +4465,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                 },
               ),
             // The button: one flat colour, in the middle of the bar.
-            // (The cog hangs over the button's corner. While it is worn the button answers a
-            // little beyond its own edge, so that every part of the cog does.)
             Positioned(
-              left: bc.dx - _button / 2 - (_editing && _open ? 8 : 0),
-              top: bc.dy - _button / 2 - (_editing && _open ? 8 : 0),
+              left: bc.dx - _button / 2,
+              top: bc.dy - _button / 2,
               child: Semantics(
                 button: true,
                 label: 'Actions',
@@ -4415,90 +4515,110 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   onPointerMove: _buttonMove,
                   onPointerCancel: (_) => _buttonUp(),
                   onPointerUp: (_) => _buttonUp(),
-                  child: Padding(
-                    padding: EdgeInsets.all(_editing && _open ? 8 : 0),
-                    child: ListenableBuilder(
-                      listenable: Listenable.merge(<Listenable>[
-                        _t,
-                        _kick,
-                        _glass,
-                        _wob,
-                      ]),
-                      builder: (BuildContext context, Widget? _) =>
-                          Transform.scale(
-                            scaleX: _kick.value * (1 + _wob.value),
-                            scaleY: _kick.value * (1 - _wob.value),
-                            child: _glass.value > 0.5 || _returning
-                                // While the button is away, an empty ring marks where it lives.
-                                ? Container(
-                                    width: _button,
-                                    height: _button,
-                                    decoration: ShapeDecoration(
-                                      shape: CircleBorder(
-                                        side: BorderSide(
-                                          color: c.glassInk.withValues(
-                                            alpha: 0.35,
-                                          ),
-                                          width: 1.5,
+                  child: ListenableBuilder(
+                    listenable: Listenable.merge(<Listenable>[
+                      _t,
+                      _kick,
+                      _glass,
+                      _wob,
+                    ]),
+                    builder: (BuildContext context, Widget? _) =>
+                        Transform.scale(
+                          scaleX: _kick.value * (1 + _wob.value),
+                          scaleY: _kick.value * (1 - _wob.value),
+                          child: _glass.value > 0.5 || _returning
+                              // While the button is away, an empty ring marks where it lives.
+                              ? Container(
+                                  width: _button,
+                                  height: _button,
+                                  decoration: ShapeDecoration(
+                                    shape: CircleBorder(
+                                      side: BorderSide(
+                                        color: c.glassInk.withValues(
+                                          alpha: 0.35,
                                         ),
-                                      ),
-                                    ),
-                                  )
-                                // The button is the home of the floating lens, and looks like it:
-                                // dark glass with a breath of Prism's colour, a lit rim, and a
-                                // glow at its foot. The buttons that simply do something are the
-                                // bright ones; this one opens things out, and is not one of them.
-                                : Container(
-                                    width: _button,
-                                    height: _button,
-                                    decoration: const ShapeDecoration(
-                                      shape: CircleBorder(),
-                                      shadows: <BoxShadow>[
-                                        BoxShadow(
-                                          color: Color(0x66000000),
-                                          blurRadius: 14,
-                                          offset: Offset(0, 6),
-                                        ),
-                                      ],
-                                    ),
-                                    child: CustomPaint(
-                                      painter: _LensDisc(c.accent),
-                                      child: Stack(
-                                        clipBehavior: Clip.none,
-                                        alignment: Alignment.center,
-                                        children: <Widget>[
-                                          Transform.rotate(
-                                            angle:
-                                                _t.value.clamp(0.0, 1.2) *
-                                                math.pi /
-                                                4,
-                                            child: const Icon(
-                                              Icons.add_rounded,
-                                              color: Colors.white,
-                                              size: 34,
-                                            ),
-                                          ),
-                                          // While the blobs are being changed: the same white mark
-                                          // they wear, with a cog. A tap is then for the floating elements.
-                                          if (_editing && _open)
-                                            const Positioned(
-                                              right: -6,
-                                              top: -6,
-                                              child: _EditMark(
-                                                icon: Icons.settings_rounded,
-                                                size: 34,
-                                              ),
-                                            ),
-                                        ],
+                                        width: 1.5,
                                       ),
                                     ),
                                   ),
-                          ),
-                    ),
+                                )
+                              // The button is the home of the floating lens, and looks like it:
+                              // dark glass with a breath of Prism's colour, a lit rim, and a
+                              // glow at its foot. The buttons that simply do something are the
+                              // bright ones; this one opens things out, and is not one of them.
+                              : Container(
+                                  width: _button,
+                                  height: _button,
+                                  decoration: const ShapeDecoration(
+                                    shape: CircleBorder(),
+                                    shadows: <BoxShadow>[
+                                      BoxShadow(
+                                        color: Color(0x66000000),
+                                        blurRadius: 14,
+                                        offset: Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: CustomPaint(
+                                    painter: _LensDisc(c.accent),
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      alignment: Alignment.center,
+                                      children: <Widget>[
+                                        Transform.rotate(
+                                          angle:
+                                              _t.value.clamp(0.0, 1.2) *
+                                              math.pi /
+                                              4,
+                                          child: const Icon(
+                                            Icons.add_rounded,
+                                            color: Colors.white,
+                                            size: 34,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                        ),
                   ),
                 ),
               ),
             ),
+            // While the blobs are being changed: the cog, for the floating elements. It wears
+            // the white mark the blobs wear, larger, and stands clear of the button: a tap on
+            // the X is a tap on the X, a tap on the cog is a tap on the cog, and neither can
+            // be taken for the other. (It answers on a round patch a little larger than itself.)
+            if (_editing && _open)
+              Positioned(
+                left: bc.dx + _cogAt.dx - 22,
+                top: bc.dy + _cogAt.dy - 22,
+                width: 44,
+                height: 44,
+                child: Semantics(
+                  button: true,
+                  label: 'Floating elements',
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: <Widget>[
+                      const IgnorePointer(
+                        child: _EditMark(
+                          icon: Icons.settings_rounded,
+                          size: 34,
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: ClipOval(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _showFloating,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             // The lens, its explanation, and (once put down) its buttons.
             ListenableBuilder(
               listenable: Listenable.merge(<Listenable>[

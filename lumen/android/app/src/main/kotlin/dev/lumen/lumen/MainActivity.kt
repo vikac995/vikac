@@ -2338,14 +2338,16 @@ object RestBubble {
         }
 
         // Held still on any blob: all of them can now be changed, and each wears an edit mark.
+        // The blob stays under the finger: moved from here without letting go, it comes along.
         private val keep = Runnable {
             val i = pressedAt
-            if (i >= 0 && !kept && opening && !editing) {
+            if (i >= 0 && !kept && opening) {
                 kept = true
-                pressedAt = -1
-                editing = true
-                haptic(context, "click")
-                invalidate()
+                if (!editing) {
+                    editing = true
+                    haptic(context, "click")
+                    invalidate()
+                }
             }
         }
 
@@ -2366,7 +2368,7 @@ object RestBubble {
                         // Moved: neither a tap nor a hold. If it began on a blob, the blob comes along.
                         moved = true
                         removeCallbacks(keep)
-                        if (pressedAt >= 0 && !kept && !editing) {
+                        if (pressedAt >= 0) {
                             dragging = pressedAt
                             // Picked up, its own seat is kept open for it.
                             room = dragging
@@ -2378,7 +2380,10 @@ object RestBubble {
                         dragX = seatX[dragging] + (e.x - downX)
                         dragY = seatY[dragging] + (e.y - downY)
                         // Over the others they make room where it would sit; clear of them, they close ranks.
-                        val g = seatFor(dragX, dragY, room)
+                        // While the blobs are being changed a drag only puts them in another order:
+                        // the seat last made for it stays open wherever the finger goes.
+                        val found = seatFor(dragX, dragY, room)
+                        val g = if (found < 0 && editing) room else found
                         if (g != room) {
                             room = g
                             seats(dragging, g)
@@ -2398,7 +2403,8 @@ object RestBubble {
                         // Let go among the others, it sits in the seat they made for it. Let go clear of them, it goes into the lens.
                         val g = room
                         room = -1
-                        if (g < 0) put(d, dragX, dragY) else settle(d, g)
+                        // (While they are being changed it never goes into the lens: it sits in the seat kept for it.)
+                        if (g < 0 && !editing) put(d, dragX, dragY) else settle(d, if (g < 0) d else g)
                     } else if (kept) {
                         // Already being changed, by the hold.
                     } else if (i >= 0) {
