@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 91 (14 November 2026)
+
+**File:** `releases/prism-build-91.apk`
+
+Needs Play Protect paused to install.
+
+- **The panel behind the cog has a round X in its corner** that closes it. A tap outside it, and back, still close it too.
+- **The panel is called "Blob"**, where it said "Floating elements".
+
+**Checked:** looked at in my preview; the long test's dry run, which now closes the panel by its X.
+**Not checked:** on a phone.
+
 ## Prism, build 90 (14 November 2026)
 
 **File:** `releases/prism-build-90.apk`

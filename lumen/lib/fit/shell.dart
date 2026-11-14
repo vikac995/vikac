@@ -468,9 +468,45 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      Text(
-                        'Floating elements',
-                        style: LumenType.display(22, weight: 700, color: c.ink),
+                      // Its name, and a plain way out: the round X in the corner.
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              'Blob',
+                              style: LumenType.display(
+                                22,
+                                weight: 700,
+                                color: c.ink,
+                              ),
+                            ),
+                          ),
+                          Semantics(
+                            button: true,
+                            label: 'Close',
+                            child: GestureDetector(
+                              key: Robot.key('floatClose'),
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                Haptics.tick();
+                                Navigator.of(context).pop();
+                              },
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: ShapeDecoration(
+                                  color: c.ink.withValues(alpha: 0.1),
+                                  shape: const CircleBorder(),
+                                ),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  size: 24,
+                                  color: c.ink,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -2080,7 +2116,16 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         // The cog.
         await Robot.tap(_home, after: 900);
         final Offset? inPrism = Robot.spot('floatIn');
-        t.check('cog: a tap on it opens "Floating elements"', inPrism != null);
+        t.check('cog: a tap on it opens its panel', inPrism != null);
+        final Offset? shut = Robot.spot('floatClose');
+        if (shut != null) {
+          await Robot.tap(shut, after: 700);
+          t.check(
+            'cog: the X in the panel closes it',
+            Robot.spot('floatIn') == null,
+          );
+          await Robot.tap(_home, after: 900);
+        }
         if (inPrism != null) {
           await Robot.tap(inPrism, after: 500);
           t.check('floating: "In Prism" switches off', !lensOf.floatIn.value);
