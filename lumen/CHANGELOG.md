@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 82 (14 November 2026)
+
+**File:** `releases/prism-build-82.apk`
+
+Needs Play Protect paused to install.
+
+- **The pencil and the red minus are a little larger.** The round mark goes from 25 to 28 across, the sign inside it grows by about a fifth, and its shadow is a touch stronger. They sit one step further out on the blob's corner, so no more of the blob is covered than before.
+- **The cog on the X is larger than the blobs' marks:** 34 across where it was 25, its sign half as large again. It hangs further over the button's corner, clear of the X. While it is worn, the button answers a little beyond its own edge, so that every part of the cog can be tapped. A tap on the X itself still ends the changing.
+- **The pencils in the chat head's own menu** are the same size and in the same place as in Prism.
+- Where a tap counts as the minus, and where as the cog, moved with them.
+
+**Checked:** in my preview, with the dark purple look: the marks and the cog were looked at; a tap on the cog opened its panel, a tap on the X ended the changing with the blobs still out, a tap on a minus took that blob away. The long test's dry run there: 38 of 41, the three wrong being the power figures that cannot be measured there.
+**Not checked:** on a phone. The chat head menu's pencils are drawn on Android's side and were not seen at all.
+
 ## Prism, build 81 (14 November 2026)
 
 **File:** `releases/prism-build-81.apk`

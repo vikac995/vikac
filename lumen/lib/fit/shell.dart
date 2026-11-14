@@ -1855,7 +1855,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         }
         // Taking a blob away and giving the place something again.
         await t.scene('taking a blob away', () async {
-          await Robot.tap(seat(2) + const Offset(-21.5, -21.5), after: 900);
+          await Robot.tap(seat(2) + const Offset(-21, -21), after: 900);
         });
         t.check('minus: the third place is empty', _isEmpty(2));
         t.check('minus: four blobs are left', shown() == 4, '${shown()}');
@@ -1902,7 +1902,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           await Robot.wait(700);
         }
         // The cog.
-        await Robot.tap(_home + const Offset(22.5, -22.5), after: 900);
+        await Robot.tap(_home + const Offset(21, -21), after: 900);
         final Offset? inPrism = Robot.spot('floatIn');
         t.check('cog: a tap on it opens "Floating elements"', inPrism != null);
         if (inPrism != null) {
@@ -3140,7 +3140,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     final Offset travel = (_lastAt ?? _downAt!) - _downAt!;
     // Whether the finger came down on the cog, which sits on the button's upper right.
     final bool onCog =
-        (_downAt! - (_home + const Offset(22.5, -22.5))).distance < 24;
+        (_downAt! - (_home + const Offset(21, -21))).distance < 22;
     _downAt = null;
     if (_heldEdit) {
       // The hold has done its work: letting go does nothing more.
@@ -4012,8 +4012,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                             children: <Widget>[
                               _blobDisc(i),
                               const Positioned(
-                                right: -3,
-                                top: -3,
+                                right: -4,
+                                top: -4,
                                 child: _EditMark(icon: Icons.edit_rounded),
                               ),
                             ],
@@ -4080,8 +4080,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                 d.localPosition -
                                 const Offset((_blob + 40) / 2, 8 + _blob / 2);
                             if (!empty &&
-                                (from - const Offset(-21.5, -21.5)).distance <
-                                    20) {
+                                (from - const Offset(-21, -21)).distance < 21) {
                               _removeBlob(i);
                             } else {
                               _pickFor(i);
@@ -4162,16 +4161,16 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                         children: <Widget>[
                                           _blobDisc(i),
                                           const Positioned(
-                                            right: -3,
-                                            top: -3,
+                                            right: -4,
+                                            top: -4,
                                             child: _EditMark(
                                               icon: Icons.edit_rounded,
                                             ),
                                           ),
                                           if (!empty)
                                             const Positioned(
-                                              left: -3,
-                                              top: -3,
+                                              left: -4,
+                                              top: -4,
                                               child: _EditMark(
                                                 icon: Icons.remove_rounded,
                                                 color: Color(0xFFE5484D),
@@ -4364,9 +4363,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                 },
               ),
             // The button: one flat colour, in the middle of the bar.
+            // (The cog hangs over the button's corner. While it is worn the button answers a
+            // little beyond its own edge, so that every part of the cog does.)
             Positioned(
-              left: bc.dx - _button / 2,
-              top: bc.dy - _button / 2,
+              left: bc.dx - _button / 2 - (_editing && _open ? 8 : 0),
+              top: bc.dy - _button / 2 - (_editing && _open ? 8 : 0),
               child: Semantics(
                 button: true,
                 label: 'Actions',
@@ -4414,82 +4415,86 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   onPointerMove: _buttonMove,
                   onPointerCancel: (_) => _buttonUp(),
                   onPointerUp: (_) => _buttonUp(),
-                  child: ListenableBuilder(
-                    listenable: Listenable.merge(<Listenable>[
-                      _t,
-                      _kick,
-                      _glass,
-                      _wob,
-                    ]),
-                    builder: (BuildContext context, Widget? _) =>
-                        Transform.scale(
-                          scaleX: _kick.value * (1 + _wob.value),
-                          scaleY: _kick.value * (1 - _wob.value),
-                          child: _glass.value > 0.5 || _returning
-                              // While the button is away, an empty ring marks where it lives.
-                              ? Container(
-                                  width: _button,
-                                  height: _button,
-                                  decoration: ShapeDecoration(
-                                    shape: CircleBorder(
-                                      side: BorderSide(
-                                        color: c.glassInk.withValues(
-                                          alpha: 0.35,
+                  child: Padding(
+                    padding: EdgeInsets.all(_editing && _open ? 8 : 0),
+                    child: ListenableBuilder(
+                      listenable: Listenable.merge(<Listenable>[
+                        _t,
+                        _kick,
+                        _glass,
+                        _wob,
+                      ]),
+                      builder: (BuildContext context, Widget? _) =>
+                          Transform.scale(
+                            scaleX: _kick.value * (1 + _wob.value),
+                            scaleY: _kick.value * (1 - _wob.value),
+                            child: _glass.value > 0.5 || _returning
+                                // While the button is away, an empty ring marks where it lives.
+                                ? Container(
+                                    width: _button,
+                                    height: _button,
+                                    decoration: ShapeDecoration(
+                                      shape: CircleBorder(
+                                        side: BorderSide(
+                                          color: c.glassInk.withValues(
+                                            alpha: 0.35,
+                                          ),
+                                          width: 1.5,
                                         ),
-                                        width: 1.5,
                                       ),
                                     ),
-                                  ),
-                                )
-                              // The button is the home of the floating lens, and looks like it:
-                              // dark glass with a breath of Prism's colour, a lit rim, and a
-                              // glow at its foot. The buttons that simply do something are the
-                              // bright ones; this one opens things out, and is not one of them.
-                              : Container(
-                                  width: _button,
-                                  height: _button,
-                                  decoration: const ShapeDecoration(
-                                    shape: CircleBorder(),
-                                    shadows: <BoxShadow>[
-                                      BoxShadow(
-                                        color: Color(0x66000000),
-                                        blurRadius: 14,
-                                        offset: Offset(0, 6),
-                                      ),
-                                    ],
-                                  ),
-                                  child: CustomPaint(
-                                    painter: _LensDisc(c.accent),
-                                    child: Stack(
-                                      clipBehavior: Clip.none,
-                                      alignment: Alignment.center,
-                                      children: <Widget>[
-                                        Transform.rotate(
-                                          angle:
-                                              _t.value.clamp(0.0, 1.2) *
-                                              math.pi /
-                                              4,
-                                          child: const Icon(
-                                            Icons.add_rounded,
-                                            color: Colors.white,
-                                            size: 34,
-                                          ),
+                                  )
+                                // The button is the home of the floating lens, and looks like it:
+                                // dark glass with a breath of Prism's colour, a lit rim, and a
+                                // glow at its foot. The buttons that simply do something are the
+                                // bright ones; this one opens things out, and is not one of them.
+                                : Container(
+                                    width: _button,
+                                    height: _button,
+                                    decoration: const ShapeDecoration(
+                                      shape: CircleBorder(),
+                                      shadows: <BoxShadow>[
+                                        BoxShadow(
+                                          color: Color(0x66000000),
+                                          blurRadius: 14,
+                                          offset: Offset(0, 6),
                                         ),
-                                        // While the blobs are being changed: the same white mark
-                                        // they wear, with a cog. A tap is then for the floating elements.
-                                        if (_editing && _open)
-                                          const Positioned(
-                                            right: -3,
-                                            top: -3,
-                                            child: _EditMark(
-                                              icon: Icons.settings_rounded,
-                                            ),
-                                          ),
                                       ],
                                     ),
+                                    child: CustomPaint(
+                                      painter: _LensDisc(c.accent),
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        alignment: Alignment.center,
+                                        children: <Widget>[
+                                          Transform.rotate(
+                                            angle:
+                                                _t.value.clamp(0.0, 1.2) *
+                                                math.pi /
+                                                4,
+                                            child: const Icon(
+                                              Icons.add_rounded,
+                                              color: Colors.white,
+                                              size: 34,
+                                            ),
+                                          ),
+                                          // While the blobs are being changed: the same white mark
+                                          // they wear, with a cog. A tap is then for the floating elements.
+                                          if (_editing && _open)
+                                            const Positioned(
+                                              right: -6,
+                                              top: -6,
+                                              child: _EditMark(
+                                                icon: Icons.settings_rounded,
+                                                size: 34,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                ),
-                        ),
+                          ),
+                    ),
                   ),
                 ),
               ),
@@ -5837,26 +5842,32 @@ class _EditMark extends StatelessWidget {
     required this.icon,
     this.color = Colors.white,
     this.ink = const Color(0xFF15171C),
+    this.size = 28,
   });
   final IconData icon;
   final Color color, ink;
+  final double size;
 
   @override
   Widget build(BuildContext context) => Container(
-    width: 25,
-    height: 25,
+    width: size,
+    height: size,
     decoration: ShapeDecoration(
       color: color,
       shape: const CircleBorder(),
       shadows: const <BoxShadow>[
         BoxShadow(
-          color: Color(0x55000000),
-          blurRadius: 6,
+          color: Color(0x66000000),
+          blurRadius: 7,
           offset: Offset(0, 2),
         ),
       ],
     ),
-    child: Icon(icon, size: icon == Icons.remove_rounded ? 18 : 14, color: ink),
+    child: Icon(
+      icon,
+      size: size * (icon == Icons.remove_rounded ? 0.72 : 0.6),
+      color: ink,
+    ),
   );
 }
 

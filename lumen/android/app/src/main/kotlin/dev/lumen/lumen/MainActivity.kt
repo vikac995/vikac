@@ -2290,18 +2290,20 @@ object RestBubble {
                 paintBlob(canvas, items[i], 0f, 0f, 31 * dp, dp, true, (alpha * 255).toInt())
                 if (editing) {
                     // The edit mark: a small white disc with a pencil, at the blob's upper right.
-                    val mx = 22 * dp
-                    val my = -22 * dp
+                    // The same size and place as the marks in Prism.
+                    val mx = 21 * dp
+                    val my = -21 * dp
                     val a = (alpha * 255).toInt().coerceIn(0, 255)
                     mark.style = android.graphics.Paint.Style.FILL
-                    mark.color = 0x000000 or (a * 70 / 255 shl 24)
-                    canvas.drawCircle(mx, my + 1.5f * dp, 13 * dp, mark)
+                    mark.color = 0x000000 or (a * 85 / 255 shl 24)
+                    canvas.drawCircle(mx, my + 1.5f * dp, 14.5f * dp, mark)
                     mark.color = 0xFFFFFF or (a shl 24)
-                    canvas.drawCircle(mx, my, 12.5f * dp, mark)
+                    canvas.drawCircle(mx, my, 14 * dp, mark)
                     mark.color = 0x15171C or (a shl 24)
                     canvas.save()
                     canvas.translate(mx, my)
                     canvas.rotate(45f)
+                    canvas.scale(1.2f, 1.2f)
                     pencil.rewind()
                     pencil.addRect(-1.9f * dp, -6 * dp, 1.9f * dp, 2.6f * dp, android.graphics.Path.Direction.CW)
                     pencil.moveTo(-1.9f * dp, 3.6f * dp)
