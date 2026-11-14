@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 93 (14 November 2026)
+
+**File:** `releases/prism-build-93.apk`
+
+Needs Play Protect paused to install.
+
+- **The button's sign, tidied.** No dot at the foot: the white stems now meet in a point. The stems are slimmer. With fewer blobs the stems open wider and the dots are larger, so two blobs are an open V with two large dots, not a thin bunch, and one blob is a single large dot on a short stem. The order and the colours are still the menu's; the spread is the sign's own.
+
+**Checked:** looked at in my preview with five, four, three, two and one blob.
+**Not checked:** on a phone, with real app colours.
+
 ## Prism, build 92 (14 November 2026)
 
 **File:** `releases/prism-build-92.apk`

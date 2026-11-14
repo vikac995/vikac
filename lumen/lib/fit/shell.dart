@@ -6513,26 +6513,32 @@ class _FanMark extends CustomPainter {
         ..drawLine(Offset(9 * u, 19 * u), Offset(29 * u, 19 * u), line);
       return;
     }
-    // Fewer blobs, larger dots; five still stand clear of one another.
-    final double dot = (blobs.length <= 3 ? 4.6 : 3.9) * u, reach = 21.5 * u;
-    for (final (double a, Color c) in blobs) {
+    // The order and the colours are the menu's. The spread is the sign's own: with few
+    // blobs the stems open wider and the dots are larger, so it is never a thin bunch; with
+    // five they stand as the five do, clear of one another.
+    final int n = blobs.length;
+    final double
+    dot = const <double>[6.4, 5.8, 5.1, 4.4, 3.9][n.clamp(1, 5) - 1] * u,
+    step = const <double>[0, 52, 40, 32, 28][n.clamp(1, 5) - 1] * math.pi / 180,
+    reach = (n == 1 ? 17.0 : 21.0) * u;
+    final Offset from = n == 1 ? Offset(19 * u, 29 * u) : foot;
+    for (int k = 0; k < n; k++) {
+      final double a = math.pi / 2 + (k - (n - 1) / 2) * step;
       final Offset way = Offset(-math.cos(a), -math.sin(a)),
           side = Offset(-way.dy, way.dx),
-          tip = foot + way * reach;
-      // The stem: a hair at the foot, nearly the dot's width where it meets the dot.
-      final Offset neck = tip - way * dot * 0.6;
+          tip = from + way * reach;
+      // The stem: a point at the foot, half the dot's width where it meets the dot.
+      final Offset neck = tip - way * dot * 0.7;
       canvas.drawPath(
         Path()
-          ..moveTo((foot - side * 0.35 * u).dx, (foot - side * 0.35 * u).dy)
-          ..lineTo((neck - side * dot * 0.46).dx, (neck - side * dot * 0.46).dy)
-          ..lineTo((neck + side * dot * 0.46).dx, (neck + side * dot * 0.46).dy)
-          ..lineTo((foot + side * 0.35 * u).dx, (foot + side * 0.35 * u).dy)
+          ..moveTo(from.dx, from.dy)
+          ..lineTo((neck - side * dot * 0.5).dx, (neck - side * dot * 0.5).dy)
+          ..lineTo((neck + side * dot * 0.5).dx, (neck + side * dot * 0.5).dy)
           ..close(),
         ink,
       );
-      canvas.drawCircle(tip, dot, Paint()..color = c);
+      canvas.drawCircle(tip, dot, Paint()..color = blobs[k].$2);
     }
-    canvas.drawCircle(foot, 1.4 * u, ink);
   }
 
   @override
