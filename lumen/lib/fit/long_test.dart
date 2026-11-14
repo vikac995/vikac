@@ -195,6 +195,74 @@ class TestRun {
     );
   }
 
+  /// A few numbers that sum the whole run up, to set beside another phone's or another build's.
+  void _summary(StringBuffer o) {
+    final List<FrameTiming> all = <FrameTiming>[
+      for (final (String _, List<FrameTiming> fs, int _) in scenes) ...fs,
+    ];
+    o.writeln('SUMMARY, for comparing phones and builds:');
+    if (all.isNotEmpty) {
+      final List<double> work = <double>[
+        for (final FrameTiming f in all)
+          (f.buildDuration.inMicroseconds + f.rasterDuration.inMicroseconds) /
+              1000,
+      ]..sort();
+      int late = 0;
+      for (final (String _, List<FrameTiming> fs, int _) in scenes) {
+        final List<int> at = <int>[
+          for (final FrameTiming f in fs)
+            f.timestampInMicroseconds(FramePhase.vsyncStart),
+        ]..sort();
+        for (int i = 1; i < at.length; i++) {
+          final double gap = (at[i] - at[i - 1]) / 1000;
+          if (gap > budget * 1.6 && gap < 120) {
+            late++;
+          }
+        }
+      }
+      double pct(double q) => work[((work.length - 1) * q).round()];
+      final int over = work.where((double w) => w > budget).length;
+      o.writeln(
+        '  Prism while moving: ${all.length} frames, ${_f(late * 100 / all.length)}% late, ${_f(over * 100 / all.length)}% over a refresh  ·  work per frame: usual ${_f(pct(0.5))} ms, 1 in 20 over ${_f(pct(0.95))} ms, 1 in 100 over ${_f(pct(0.99))} ms, worst ${_f(work.last)} ms',
+      );
+    }
+    final List<Map<String, Object?>> runs = <Map<String, Object?>>[
+      for (final (String _, Map<String, Object?> m) in lensRuns)
+        if (m['ok'] == true && _num(m['frames']) > 1) m,
+    ];
+    if (runs.isNotEmpty) {
+      final double drawn = runs.fold(0, (double a, m) => a + _num(m['frames']));
+      final double late = runs.fold(0, (double a, m) => a + _num(m['late']));
+      final List<double> usual = <double>[
+        for (final Map<String, Object?> m in runs) _num(m['usualMs']),
+      ]..sort();
+      final List<double> worst = <double>[
+        for (final Map<String, Object?> m in runs) _num(m['worstMs']),
+      ]..sort();
+      o.writeln(
+        '  floating lens while moving: ${drawn.round()} drawn, ${_f(late * 100 / math.max(1, drawn))}% late  ·  usual gap ${_f(usual[usual.length ~/ 2])} ms  ·  worst gap: usually ${_f(worst[worst.length ~/ 2])} ms, at most ${_f(worst.last)} ms',
+      );
+    }
+    final List<(String, Map<String, Object?>, int, bool)> still =
+        <(String, Map<String, Object?>, int, bool)>[
+          for (final p in phases)
+            if (!p.$1.contains('timer') &&
+                !p.$1.contains('a blob') &&
+                p.$2['ok'] == true)
+              p,
+        ];
+    if (still.isNotEmpty) {
+      final List<double> cpu = <double>[
+        for (final (String _, Map<String, Object?> m, int _, bool _) in still)
+          _num(m['cpuMs']) / math.max(1, _num(m['ms']) / 1000) / 10,
+      ];
+      o.writeln(
+        '  Prism at rest, nothing floating: ${_f(cpu.reduce((double a, double b) => a + b) / cpu.length, 2)}% of a core on average',
+      );
+    }
+    o.writeln();
+  }
+
   static double _num(Object? v) => v is num ? v.toDouble() : 0;
   static String _f(double x, [int d = 1]) => x.toStringAsFixed(d);
 
@@ -237,10 +305,11 @@ class TestRun {
       ..writeln(
         'took ${clock.elapsed.inMinutes} min ${clock.elapsed.inSeconds % 60} s  ·  one refresh is ${_f(budget)} ms',
       )
-      ..writeln()
-      ..writeln(
-        'CHECKS: ${checks.length - wrong} right, $wrong wrong, of ${checks.length}',
-      );
+      ..writeln();
+    _summary(o);
+    o.writeln(
+      'CHECKS: ${checks.length - wrong} right, $wrong wrong, of ${checks.length}',
+    );
     // The same check made in several rounds is one line: how many times it was right, and
     // what was said when it was not.
     final Map<String, (int, int, String)> byName =

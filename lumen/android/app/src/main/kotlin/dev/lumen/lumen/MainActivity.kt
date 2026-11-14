@@ -1656,7 +1656,24 @@ class Floater(val timer: Boolean) {
             when (a["op"] as? String) {
                 "begin" -> {
                     activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    done(state(context))
+                    // Which phone this is, so that reports from two phones can be set side by side.
+                    val m = state(context)
+                    m["model"] = "${Build.MANUFACTURER} ${Build.MODEL}"
+                    m["soc"] = if (Build.VERSION.SDK_INT >= 31) "${Build.SOC_MANUFACTURER} ${Build.SOC_MODEL}" else Build.HARDWARE
+                    m["android"] = "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
+                    m["hz"] = try { activity.display?.refreshRate?.toDouble() ?: 0.0 } catch (e: Exception) { 0.0 }
+                    m["ramGb"] = try {
+                        val mi = android.app.ActivityManager.MemoryInfo()
+                        (context.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager).getMemoryInfo(mi)
+                        Math.round(mi.totalMem / 1e9 * 10) / 10.0
+                    } catch (e: Exception) { 0.0 }
+                    m["battMah"] = try {
+                        val bm = context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+                        val counter = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER).toDouble()
+                        val level = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY).toDouble()
+                        if (counter > 0 && level > 0) Math.round(counter / 1000.0 / level * 100.0).toInt() else 0
+                    } catch (e: Exception) { 0 }
+                    done(m)
                 }
                 "end" -> {
                     activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)

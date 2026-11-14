@@ -2080,6 +2080,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       }
       await Robot.wait(900);
       Map<String, Object?> s = await t.lens(<String, Object?>{'op': 'begin'});
+      final Map<String, Object?> begun = s;
       final bool floats = s['allowed'] == true;
       final double w = (s['w'] as num?)?.toDouble() ?? sc.width * dpr,
           h = (s['h'] as num?)?.toDouble() ?? sc.height * dpr,
@@ -3678,7 +3679,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         );
       }
       build =
-          '${Diag.build}  ·  $title${drain ? '' : ', $rounds round${rounds == 1 ? '' : 's'}'}  ·  ${DateTime.now().toString().substring(0, 16)}\nscreen ${w.round()}x${h.round()} at ${dp}x  ·  allowed over other apps: ${floats ? 'yes' : 'NO'}  ·  ${last['blobs']} blobs known to Android';
+          '${Diag.build}  ·  $title${drain ? '' : ', $rounds round${rounds == 1 ? '' : 's'}'}  ·  ${DateTime.now().toString().substring(0, 16)}${begun['model'] == null ? '' : '\n${begun['model']}  ·  chip ${begun['soc']}  ·  Android ${begun['android']}  ·  ${(begun['hz'] as num?)?.round() ?? '?'} Hz  ·  ${begun['ramGb']} GB memory  ·  battery about ${begun['battMah']} mAh when full'}\nscreen ${w.round()}x${h.round()} at ${dp}x  ·  allowed over other apps: ${floats ? 'yes' : 'NO'}  ·  ${last['blobs']} blobs known to Android';
     } catch (e, where) {
       if (e is TestStopped) {
         stoppedAt = Robot.stoppedWhile

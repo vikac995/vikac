@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 107 (14 November 2026)
+
+**File:** `releases/prism-build-107.apk`
+
+Needs Play Protect paused to install. Can be installed over build 106.
+
+**Reports that set two phones side by side.**
+- **Which phone:** the top of every report now names the phone, its chip, its Android, its refresh rate, its memory, and about how much its battery holds when full (worked out from the battery's own count).
+- **A summary:** just under that, a few numbers for the whole run: of all the frames Prism made while things moved, how many were late and how many took longer than a refresh; how long a frame's work usually took, and the slowest one in twenty, in a hundred, and the slowest of all; the same for the floating lens; and Prism's share of the processor at rest with nothing floating.
+
+The tests themselves are as they were. Run the hour-long test on each phone with the same brightness, unplugged, to compare them.
+
+**Checked:** it compiles; in my preview the summary is written.
+**Not checked:** on a phone.
+
 ## Prism, build 106 (14 November 2026)
 
 **File:** `releases/prism-build-106.apk`
