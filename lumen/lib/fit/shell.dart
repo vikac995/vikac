@@ -1415,9 +1415,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   Offset _dragGrab = Offset.zero;
   // Where the finger was when a hold on a blob was recognised.
   Offset _holdFrom = Offset.zero;
-  // Where the cog stands while the blobs are being changed, from the middle of the button:
-  // up and to the right, clear of it.
-  static const Offset _cogAt = Offset(31, -48);
+
   bool _armed = false;
   // Let go anywhere else, it goes back to its place: 1 is where it was let go, 0 is home.
   int? _backI;
@@ -1849,7 +1847,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Offset spare(int i) =>
         Offset(sc.width / 2 + (i - 2) * 74.0, sc.height * 0.42);
     // A place on the page that is beside everything the test opens.
-    final Offset beside = Offset(sc.width / 2, top + 150);
+    // (Clear of the swipes' places at the top and of the empty places in the middle.)
+    final Offset beside = Offset(sc.width / 2, sc.height * 0.56);
     List<double> px(Offset o) => <double>[o.dx * dpr, o.dy * dpr];
     int shown() => _others(-1).length;
     const List<String> five = <String>[
@@ -1997,9 +1996,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           await Robot.hold(seat(2), after: 500);
         });
         t.check('changing: holding a blob starts it', _editing && _open);
-        await Robot.tap(_home, after: 500);
+        await Robot.tap(beside, after: 500);
         t.check(
-          'changing: a tap on the X ends it and leaves the blobs out',
+          'changing: a tap beside the blobs ends it and leaves the blobs out',
           !_editing && _open,
         );
         await Robot.hold(_home, ms: 650, after: 500);
@@ -2079,7 +2078,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           await Robot.wait(700);
         }
         // The cog.
-        await Robot.tap(_home + _cogAt, after: 900);
+        await Robot.tap(_home, after: 900);
         final Offset? inPrism = Robot.spot('floatIn');
         t.check('cog: a tap on it opens "Floating elements"', inPrism != null);
         if (inPrism != null) {
@@ -3508,9 +3507,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _lensQuiet();
       _setDrawer(true);
     } else if (!_lifted && _open && _editing) {
-      // While the blobs are being changed, a tap on the X is a tap on an X: it ends the
-      // changing, and the blobs stay out. (The cog stands beside the button and is its own.)
-      _setEditing(false);
+      // While the blobs are being changed the button shows a cog, and a tap on it is for
+      // the floating elements. (A tap beside the blobs, or back, ends the changing.)
+      _showFloating();
     } else if (!_lifted && _parked) {
       // The magnifying glass is out and put down somewhere. A tap on the place it lives
       // calls it home; the next tap is for the blobs.
@@ -4836,16 +4835,49 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                         clipBehavior: Clip.none,
                                         alignment: Alignment.center,
                                         children: <Widget>[
-                                          Transform.rotate(
-                                            angle:
-                                                _t.value.clamp(0.0, 1.2) *
-                                                math.pi /
-                                                4,
-                                            child: const Icon(
-                                              Icons.add_rounded,
-                                              color: Colors.white,
-                                              size: 34,
+                                          // While the blobs are being changed the X becomes a cog: the
+                                          // button is then the way to the floating elements.
+                                          AnimatedSwitcher(
+                                            duration: const Duration(
+                                              milliseconds: 160,
                                             ),
+                                            transitionBuilder:
+                                                (
+                                                  Widget w,
+                                                  Animation<double> a,
+                                                ) => ScaleTransition(
+                                                  scale: a,
+                                                  child: FadeTransition(
+                                                    opacity: a,
+                                                    child: w,
+                                                  ),
+                                                ),
+                                            child: _editing && _open
+                                                ? const Icon(
+                                                    Icons.settings_rounded,
+                                                    key: ValueKey<String>(
+                                                      'cog',
+                                                    ),
+                                                    color: Colors.white,
+                                                    size: 30,
+                                                  )
+                                                : Transform.rotate(
+                                                    key: const ValueKey<String>(
+                                                      'plus',
+                                                    ),
+                                                    angle:
+                                                        _t.value.clamp(
+                                                          0.0,
+                                                          1.2,
+                                                        ) *
+                                                        math.pi /
+                                                        4,
+                                                    child: const Icon(
+                                                      Icons.add_rounded,
+                                                      color: Colors.white,
+                                                      size: 34,
+                                                    ),
+                                                  ),
                                           ),
                                         ],
                                       ),
@@ -4983,40 +5015,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                ),
-              // While the blobs are being changed: the cog, for the floating elements. It wears
-              // the white mark the blobs wear, larger, and stands clear of the button: a tap on
-              // the X is a tap on the X, a tap on the cog is a tap on the cog, and neither can
-              // be taken for the other. (It answers on a round patch a little larger than itself.)
-              if (_editing && _open)
-                Positioned(
-                  left: bc.dx + _cogAt.dx - 22,
-                  top: bc.dy + _cogAt.dy - 22,
-                  width: 44,
-                  height: 44,
-                  child: Semantics(
-                    button: true,
-                    label: 'Floating elements',
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: <Widget>[
-                        const IgnorePointer(
-                          child: _EditMark(
-                            icon: Icons.settings_rounded,
-                            size: 34,
-                          ),
-                        ),
-                        Positioned.fill(
-                          child: ClipOval(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: _showFloating,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),

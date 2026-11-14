@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 87 (14 November 2026)
+
+**File:** `releases/prism-build-87.apk`
+
+Needs Play Protect paused to install.
+
+- **While the blobs are being changed, the X in the button becomes a cog.** The separate cog above the button is gone. A tap on the button then opens the floating elements' panel. The changing is ended by a tap beside the blobs, or by back; the button no longer ends it, since it no longer shows an X.
+- Holding the button while the blobs are out still starts the changing.
+
+**Checked:** in my preview: looked at; the long test's dry run.
+**Not checked:** on a phone.
+
 ## Prism, build 86 (14 November 2026)
 
 **File:** `releases/prism-build-86.apk`
