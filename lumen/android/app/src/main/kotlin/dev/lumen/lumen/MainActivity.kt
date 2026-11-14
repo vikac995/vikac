@@ -55,6 +55,8 @@ class MainActivity : FlutterActivity() {
         RestBubble.foreground = true
         // Prism itself is in front: no other app is.
         RestBubble.frontApp = ""
+        // A blob that only came along with an app gives way to whatever was floating before.
+        RestBubble.homeAgain()
         RestBubble.refresh(applicationContext)
     }
 
@@ -201,6 +203,8 @@ class MainActivity : FlutterActivity() {
                         startActivity(i, opts)
                         // Prism has just opened this app: it is the one in front.
                         RestBubble.frontApp = pkg
+                        // Prism is told, so that the app's blob can go along if that is switched on.
+                        if (RestBubble.follow) RestBubble.channel?.invokeMethod("launched", pkg)
                     }
                     result.success(i != null)
                 }
@@ -243,8 +247,13 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "pin") {
                 // What is pinned from the blob menu to float over the phone, or nothing.
                 val a = call.arguments as? Map<*, *>
-                RestBubble.pin = if (a == null) null else RestBubble.blobOf(a)
+                RestBubble.pinFromPrism(if (a == null) null else RestBubble.blobOf(a))
                 RestBubble.refresh(applicationContext)
+                result.success(null)
+            } else if (call.method == "follow") {
+                // The blob of an app Prism has just opened: it floats for now, tucked at the side.
+                val a = call.arguments as? Map<*, *>
+                if (a != null) RestBubble.followTo(applicationContext, RestBubble.blobOf(a))
                 result.success(null)
             } else if (call.method == "land") {
                 // A blob has been shot out of Prism's button to become the lens. The lens is put in
@@ -272,6 +281,8 @@ class MainActivity : FlutterActivity() {
                 val where = call.arguments as? List<*>
                 RestBubble.floatIn = (where?.getOrNull(0) as? Boolean) ?: true
                 RestBubble.floatOut = (where?.getOrNull(1) as? Boolean) ?: true
+                RestBubble.follow = (where?.getOrNull(2) as? Boolean) ?: false
+                if (!RestBubble.follow) RestBubble.homeAgain()
                 RestBubble.refresh(applicationContext)
                 result.success(null)
             } else if (call.method == "fan") {
@@ -665,6 +676,43 @@ object RestBubble {
     // that one can be put back among them. Switched off in both, there are none.
     var floatIn = true
     var floatOut = true
+
+    // "Launch and follow". An app opened from Prism brings its blob along as the one in the
+    // lens, tucked at the side: a guest, in nobody's place. What the person had floating (or
+    // nothing) is kept aside and is back when Prism is. The five blobs are never changed by it.
+    var follow = false
+    private var guest = false
+    private var own: Pin? = null
+    private var tuckWhenShown = false
+
+    /** What Prism says is pinned. While a guest is in the lens it is only noted, for afterwards. */
+    fun pinFromPrism(p: Pin?) {
+        if (guest) own = p else pin = p
+    }
+
+    fun followTo(context: Context, blob: Pin) {
+        if (!follow || !floatOut || !container || blob.kind != "app") return
+        // Already the one in the lens: it stays as it is.
+        if (pin?.key == blob.key) return
+        if (!guest) {
+            own = pin
+            guest = true
+        }
+        pin = blob
+        tuckWhenShown = true
+        refresh(context)
+        val v = view
+        if (v != null) v.post { if (tuckWhenShown) { tuckWhenShown = false; v.tuckNow() } }
+    }
+
+    /** Prism is in front again, or following was switched off: the guest goes. */
+    fun homeAgain() {
+        if (!guest) return
+        guest = false
+        tuckWhenShown = false
+        pin = own
+        own = null
+    }
 
     private fun seen(): Boolean = if (foreground) (floatIn || (floatOut && fan != null)) else floatOut
 
@@ -1106,6 +1154,8 @@ object RestBubble {
                 try {
                     context.startActivity(i)
                     frontApp = b.pkg
+                    // Opened from the lens's own menu: with following on, this one is in the lens now.
+                    followTo(context, b)
                 } catch (e: Exception) {}
             } else {
                 haptic(context, "thud")
@@ -1720,6 +1770,8 @@ object RestBubble {
             val v = Dot(context, lp)
             wm(context).addView(v, lp)
             view = v
+            // A blob that came along with an app starts tucked at the side.
+            if (tuckWhenShown) v.post { if (tuckWhenShown) { tuckWhenShown = false; v.tuckNow() } }
             listenForFront(context)
             // Tucked away, it has its handle along that edge.
             if (tucked) openGrip(context, lp.y)
@@ -2496,6 +2548,9 @@ object RestBubble {
             opening = false
             val lens = view
             lens?.hideInner = true
+            // Put there by hand: it is the person's own now, not a guest.
+            guest = false
+            own = null
             pin = b
             channel?.invokeMethod("pinned", b.key)
             lens?.invalidate()
@@ -3310,6 +3365,12 @@ object RestBubble {
             openGrip(context, y.toInt())
         }
 
+        /** Goes to the side it is nearer and tucks in there, unless a finger has it. */
+        fun tuckNow() {
+            if (tucked || pressed) return
+            tuckIn(lp.x + lp.width / 2 > resources.displayMetrics.widthPixels / 2)
+        }
+
         /** Tapped while tucked away: it comes back out to where a lens rests at that side. */
         private fun untuck() {
             val screen = resources.displayMetrics
@@ -3777,6 +3838,9 @@ object RestBubble {
                     if (wasWorkout) {
                         dismissed = true
                     } else {
+                        // Dropped on the cross, nothing floats: a guest goes, and so does what it stood in for.
+                        guest = false
+                        own = null
                         pin = null
                         channel?.invokeMethod("unpinned", null)
                     }

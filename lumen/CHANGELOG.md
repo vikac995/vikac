@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 92 (14 November 2026)
+
+**File:** `releases/prism-build-92.apk`
+
+Needs Play Protect paused to install.
+
+- **"Launch and follow"**, a third switch in the Blob panel, off as Prism starts. With it on, an app opened from Prism (from a blob, the app list, a two-finger swipe, or the chat head's own menu) brings its blob along as the chat head, tucked at the side it was last at.
+- **It is a guest, a sixth blob.** It need not be one of the five, and the five are never changed by it. Whatever was floating before (or nothing) is kept aside and is back as soon as Prism is in front again. Open another blob from its menu and that app's blob takes its place.
+- **Dropped on the cross, nothing floats.** Dragged into it from the menu by hand, a blob is yours and no longer a guest.
+- Switching it on switches "Over other apps" on; switching that off switches it off. Only apps are followed, not Prism's own pages or actions.
+- **Which build this is** is now written in Prism's settings, beside "Testing".
+
+**Checked:** it compiles on both sides. In my preview the switch is in the panel and goes on and off; the long test's dry run.
+**Not checked:** on a phone, and none of the following itself: it is all on Android's side and has never run. Expect faults.
+
 ## Prism, build 91 (14 November 2026)
 
 **File:** `releases/prism-build-91.apk`

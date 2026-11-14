@@ -463,6 +463,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   listenable: Listenable.merge(<Listenable>[
                     b.floatIn,
                     b.floatOut,
+                    b.follow,
                   ]),
                   builder: (BuildContext context, Widget? _) => Column(
                     mainAxisSize: MainAxisSize.min,
@@ -532,6 +533,22 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         onChanged: (bool v) => _setFloating(overApps: v),
                       ),
                       const SizedBox(height: 12),
+                      SwitchLine(
+                        key: Robot.key('floatFollow'),
+                        label: 'Launch and follow',
+                        value: b.follow.value,
+                        onChanged: (bool v) => _setFloating(follow: v),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'An app opened from Prism brings its blob along, tucked at the side, until you are back in Prism.',
+                        style: LumenType.text(
+                          13,
+                          color: c.inkMuted,
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Text(
                         !b.canFloat
                             ? 'With both off nothing floats, and a blob dragged out goes back to its place.'
@@ -573,9 +590,27 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     );
   }
 
-  void _setFloating({bool? inPrism, bool? overApps}) {
+  /// Prism has just opened an app. With "Launch and follow" on, that app's blob goes along
+  /// as the floating one, whether or not it is one of the five.
+  Future<void> _launched(String package) async {
+    final RestBubble b = RestBubble.instance;
+    if (!mounted || !b.follow.value || !b.floatOut.value) {
+      return;
+    }
+    final Map<String, Object>? blob = await _blobMap('app:$package');
+    if (blob != null) {
+      Diag.instance.event('follow $package');
+      b.followTo(blob);
+    }
+  }
+
+  void _setFloating({bool? inPrism, bool? overApps, bool? follow}) {
     Haptics.tick();
-    RestBubble.instance.setFloating(inPrism: inPrism, overApps: overApps);
+    RestBubble.instance.setFloating(
+      inPrism: inPrism,
+      overApps: overApps,
+      followApps: follow,
+    );
     if (!RestBubble.instance.canFloat &&
         RestBubble.instance.pinned.value != null) {
       // Nothing floats any more: what was floating is a blob in the menu again.
@@ -1575,6 +1610,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         }
         _run(action);
       }
+      ..onLaunched = _launched
       ..onPinned = (String? key) {
         // Put in the floating lens from its own menu: Prism keeps it, and it leaves the menu.
         RestBubble.instance.setPin(key);
@@ -2119,6 +2155,17 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         t.check('cog: a tap on it opens its panel', inPrism != null);
         final Offset? shut = Robot.spot('floatClose');
         if (shut != null) {
+          final Offset? fol = Robot.spot('floatFollow');
+          t.check('follow: its switch is in the panel', fol != null);
+          if (fol != null) {
+            await Robot.tap(fol, after: 500);
+            t.check(
+              'follow: switches on',
+              lensOf.follow.value && lensOf.floatOut.value,
+            );
+            await Robot.tap(fol, after: 500);
+            t.check('follow: and off again', !lensOf.follow.value);
+          }
           await Robot.tap(shut, after: 700);
           t.check(
             'cog: the X in the panel closes it',
@@ -5786,8 +5833,10 @@ void showPrismSettings(BuildContext context) {
                         onChanged: (GlassQuality v) => settings.quality = v,
                       ),
                       const SizedBox(height: 18),
+                      // (With which build this is, so there is never a doubt which one is installed.)
                       Text(
-                        'Testing',
+                        'Testing  ·  ${Diag.build}',
+                        key: Robot.key('buildName'),
                         style: LumenType.label(color: c.inkMuted),
                       ),
                       const SizedBox(height: 8),
