@@ -243,11 +243,10 @@ class MainActivity : FlutterActivity() {
                 // A blob has been shot out of Prism's button to become the lens. The lens is put in
                 // its place, unseen if it was not there, and Prism is told where that is.
                 val a = call.arguments as? Map<*, *>
-                if (a != null) RestBubble.pin = RestBubble.blobOf(a)
                 // Where it was put down, if it was put down somewhere, and how fast it was going.
                 val at = if (a?.get("atX") != null) floatArrayOf((a["atX"] as Number).toFloat(), (a["atY"] as Number).toFloat()) else null
                 val fling = floatArrayOf(((a?.get("vx")) as? Number)?.toFloat() ?: 0f, ((a?.get("vy")) as? Number)?.toFloat() ?: 0f)
-                RestBubble.incoming(applicationContext, at, fling) { spot -> result.success(spot) }
+                RestBubble.incoming(applicationContext, if (a != null) RestBubble.blobOf(a) else null, at, fling) { spot -> result.success(spot) }
             } else if (call.method == "landed") {
                 RestBubble.landed()
                 result.success(null)
@@ -469,6 +468,19 @@ object RestBubble {
     var blobs: List<Pin> = emptyList()
     private var menu: Menu? = null
 
+    // A lens has been dropped on the cross and is being closed. Until that is done no new lens is made.
+    private var swallowing = false
+    private var afterSwallow: (() -> Unit)? = null
+
+    /** Takes the lens itself off the screen, leaving the cross to finish. */
+    private fun dropLens(context: Context) {
+        closeReach(context)
+        closeGrip(context)
+        val v = view ?: return
+        view = null
+        try { wm(context).removeView(v) } catch (e: Exception) {}
+    }
+
     // A lens put in place for a blob that is still on its way to it is not seen until the blob lands.
     private var unseen = false
 
@@ -484,8 +496,11 @@ object RestBubble {
      * somewhere ([at], the middle of where, on the screen), there. [done] is told where the lens
      * is on the screen: its corner and its size, in pixels. Nothing, if it cannot float here.
      */
-    fun incoming(context: Context, at: FloatArray?, fling: FloatArray, done: (Map<String, Int>?) -> Unit) {
+    fun incoming(context: Context, blob: Pin?, at: FloatArray?, fling: FloatArray, done: (Map<String, Int>?) -> Unit) {
         returned(context)
+        // Should a lens still be closing on the cross, that is finished first. Then this blob is the one in the lens.
+        afterSwallow?.invoke()
+        if (blob != null) pin = blob
         if (view == null) unseen = true
         refresh(context)
         val v = view
@@ -537,9 +552,12 @@ object RestBubble {
         v.invalidate()
         v.thump()
         if (placedDown) {
-            // Put down somewhere: from there it carries on as it was going, and settles at a side.
+            // Put down somewhere: it is seen there first, where it was put. A moment later it
+            // goes to the nearer side, carrying on with a flick if it was flicked.
             placedDown = false
-            v.letFly(flingX, flingY)
+            val fx = flingX
+            val fy = flingY
+            watcher.postDelayed({ if (view === v) v.letFly(fx, fy) }, 130)
         }
     }
 
@@ -876,6 +894,8 @@ object RestBubble {
 
     /** Something changed: decide whether the lens should be there, and bring what is shown up to date. */
     fun refresh(context: Context) {
+        // A lens is being closed on the cross: what should be there is settled when that is done.
+        if (swallowing) return
         val want = mode() != 0 && android.provider.Settings.canDrawOverlays(context)
         if (!want) {
             remove(context)
@@ -909,6 +929,10 @@ object RestBubble {
             tlp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
             tlp.x = d.widthPixels / 2 - (75 * dp).toInt()
             tlp.y = d.heightPixels - (104 * dp).toInt() - (75 * dp).toInt()
+            // Until a lens is picked up its window counts for nothing: a window that cannot be
+            // touched but is not see-through makes Android refuse touches on the app under it.
+            tlp.alpha = 0f
+            t.lp = tlp
             t.alpha = 0f
             wm(context).addView(t, tlp)
             target = t
@@ -1762,39 +1786,70 @@ object RestBubble {
         private val mix = android.animation.ArgbEvaluator()
         private var gulp = -1f
         private var taken = 0
+        var lp: android.view.WindowManager.LayoutParams? = null
+        private var up = false
         var held = false
             set(v) {
                 if (field != v) {
                     field = v
-                    animate().scaleX(if (v) 1.28f else 1f).scaleY(if (v) 1.28f else 1f).setDuration(160)
-                        .setInterpolator(android.view.animation.OvershootInterpolator(2.5f)).start()
+                    animate().scaleX(if (v) 1.22f else 1f).scaleY(if (v) 1.22f else 1f).setDuration(160).setInterpolator(EASE).start()
                     invalidate()
                 }
             }
 
+        private fun window(alpha: Float) {
+            val l = lp ?: return
+            if (l.alpha == alpha) return
+            l.alpha = alpha
+            try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, l) } catch (e: Exception) {}
+        }
+
+        /** A lens has been picked up: the cross shows. */
+        fun rise() {
+            if (!up) {
+                up = true
+                gulp = -1f
+                translationY = 0f
+                window(1f)
+            }
+            animate().alpha(1f).setDuration(160).start()
+        }
+
+        /** The lens was let go somewhere else: the cross goes, and its window counts for nothing again. */
+        fun fall() {
+            if (!up) return
+            animate().alpha(0f).setDuration(180).withEndAction { rest() }.start()
+        }
+
+        private fun rest() {
+            up = false
+            window(0f)
+        }
+
+        /** A lens was dropped on it: it takes the lens's colour for a moment, settles, and sinks away. Short. */
         fun swallow(color: Int, done: () -> Unit) {
             taken = color
             animate().cancel()
             val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
-            a.duration = 900
+            a.duration = 380
             a.interpolator = android.view.animation.LinearInterpolator()
             a.addUpdateListener {
                 val t = it.animatedValue as Float
                 gulp = t
-                // It was swollen to hold the lens; it eases back to its own size as it swallows.
-                val base = 1.28f - 0.28f * Math.min(1f, t / 0.45f)
-                // Wider, taller, wider, dying away: a drop that has just landed.
-                val w = 0.24f * Math.exp(-5.5 * t).toFloat() * Math.cos(2 * Math.PI * 3.4 * t).toFloat()
+                // It was swollen to hold the lens; it comes back to its own size, with one small give.
+                val base = 1.22f - 0.22f * EASE.getInterpolation(Math.min(1f, t / 0.5f))
+                val w = 0.07f * Math.exp(-6.0 * t).toFloat() * Math.cos(2 * Math.PI * 2.4 * t).toFloat()
                 scaleX = base * (1 + w)
                 scaleY = base * (1 - w)
-                // Then it sinks.
-                val s = ((t - 0.6f) / 0.4f).coerceIn(0f, 1f)
-                translationY = s * s * 150 * dp
+                // Then it sinks a little way and is gone.
+                val s = ((t - 0.5f) / 0.5f).coerceIn(0f, 1f)
+                translationY = s * s * 36 * dp
                 alpha = 1f - s
                 invalidate()
             }
             a.addListener(object : android.animation.AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: android.animation.Animator) {
+                    rest()
                     done()
                 }
             })
@@ -1806,15 +1861,7 @@ object RestBubble {
             val r = 40 * dp
             val dark = if (held) 0xE6181A20.toInt() else 0xCC101216.toInt()
             // While swallowing, the colour of what fell in shows through and then fades.
-            val colour = if (gulp >= 0f) (Math.max(0f, 1f - gulp / 0.5f)) else 0f
-            if (gulp >= 0f && gulp < 0.55f) {
-                // One ring, going out.
-                val k = gulp / 0.55f
-                paint.style = android.graphics.Paint.Style.STROKE
-                paint.strokeWidth = 2.4f * dp * (1 - k)
-                paint.color = tint(taken, ((1 - k) * 170).toInt().coerceIn(0, 255))
-                canvas.drawCircle(c, c, r * (1f + 0.75f * k), paint)
-            }
+            val colour = if (gulp >= 0f) (Math.max(0f, 1f - gulp / 0.6f)) else 0f
             paint.style = android.graphics.Paint.Style.FILL
             paint.color = if (colour > 0f) mix.evaluate(colour, dark, tint(taken, 0xF0)) as Int else dark
             canvas.drawCircle(c, c, r, paint)
@@ -2174,7 +2221,7 @@ object RestBubble {
             tucked = true
             tuckRight = right
             target?.held = false
-            target?.animate()?.alpha(0f)?.setDuration(200)?.start()
+            target?.fall()
             val y = lp.y.toFloat().coerceIn(48 * dp, Math.max(48 * dp, screen.heightPixels - lp.height - 48 * dp))
             glideTo(parkedX(right), y, 260)
             openGrip(context, y.toInt())
@@ -2208,7 +2255,7 @@ object RestBubble {
             snapped = false
             // It starts past the edge, where letting go would tuck it again. The tick comes when it is clear of that.
             wouldTuck = true
-            target?.animate()?.alpha(1f)?.setDuration(160)?.start()
+            target?.rise()
             haptic(context, "tick")
             val at = IntArray(2)
             getLocationOnScreen(at)
@@ -2336,7 +2383,7 @@ object RestBubble {
                     springing = false
                     glide?.cancel()
                     target?.held = false
-                    target?.animate()?.alpha(0f)?.setDuration(160)?.start()
+                    target?.fall()
                     animate().scaleX(1f).scaleY(1f).setDuration(120).start()
                     haptic(context, "tick")
                     wantSize = lp.width.toFloat()
@@ -2416,7 +2463,7 @@ object RestBubble {
             catchX = 0f; catchY = 0f; catchUp = 0f
             tracker?.recycle()
             tracker = android.view.VelocityTracker.obtain()
-            target?.animate()?.alpha(1f)?.setDuration(160)?.start()
+            target?.rise()
         }
 
         private fun track(e: android.view.MotionEvent) {
@@ -2528,22 +2575,33 @@ object RestBubble {
             val c = context
             val wasWorkout = mode() == 1
             val colour = lensColor()
-            animate().scaleX(0f).scaleY(0f).setDuration(210).setInterpolator(android.view.animation.AccelerateInterpolator(1.6f)).start()
+            // From this moment it takes no touch: a tap where it was goes to what is underneath.
+            // It shrinks into the cross and is taken off the screen; the cross finishes alone.
+            swallowing = true
+            lp.flags = lp.flags or android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, lp) } catch (ex: Exception) {}
+            animate().scaleX(0f).scaleY(0f).setDuration(150).setInterpolator(android.view.animation.AccelerateInterpolator(1.6f))
+                .withEndAction { dropLens(c) }.start()
             val finish: () -> Unit = {
-                if (wasWorkout) {
-                    dismissed = true
-                } else {
-                    pin = null
-                    channel?.invokeMethod("unpinned", null)
+                if (swallowing) {
+                    swallowing = false
+                    afterSwallow = null
+                    if (wasWorkout) {
+                        dismissed = true
+                    } else {
+                        pin = null
+                        channel?.invokeMethod("unpinned", null)
+                    }
+                    // It comes back at its usual place, not on the cross. If something is still due (a
+                    // container's other thing, once the workout's timer is closed), that is a fresh lens.
+                    lensX = -1; lensY = -1
+                    placed = false
+                    tucked = false
+                    remove(c)
+                    refresh(c)
                 }
-                // It comes back at its usual place, not on the cross. If something is still due (a
-                // container's other thing, once the workout's timer is closed), that is a fresh lens.
-                lensX = -1; lensY = -1
-                placed = false
-                tucked = false
-                remove(c)
-                refresh(c)
             }
+            afterSwallow = finish
             val t = target
             if (t != null) t.swallow(colour, finish) else finish()
         }
@@ -2567,7 +2625,7 @@ object RestBubble {
                 tx = if (coastX + w / 2f < screen.widthPixels / 2f) margin else screen.widthPixels - w - margin
                 ty = coastY.coerceIn(48 * dp, Math.max(48 * dp, screen.heightPixels - h - 48 * dp))
                 target?.held = false
-                target?.animate()?.alpha(0f)?.setDuration(200)?.start()
+                target?.fall()
             }
             lastFrame = 0L
             if (!springing) {
@@ -2695,7 +2753,7 @@ object RestBubble {
                         dragged = true
                         removeCallbacks(holder)
                         // The cross appears as soon as the lens is picked up.
-                        target?.animate()?.alpha(1f)?.setDuration(160)?.start()
+                        target?.rise()
                     }
                     if (dragged) follow()
                 }

@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 69 (14 November 2026)
+
+**File:** `releases/prism-build-69.apk`
+
+From the recording of build 68.
+
+- **A blob put down stays where you put it.** It was carried on by whatever movement your hand still had when you let go, which is why the lens appeared above the spot. Now only a real flick carries it. Otherwise it is seen where you put it, and a moment later slides to the nearer side at that height.
+- **A tap during the closing no longer opens the app.** When the lens was dropped on the cross it shrank out of sight but was still there for the rest of the animation, so a tap in that spot was a tap on the lens. Now it takes no touch from the moment it is dropped, and is off the screen 0.15 s later. A tap there goes to what is underneath.
+- **The closing is shorter and quieter.** 0.38 s (it was 0.9 s). The ring that went out is gone; the cross gives once, slightly, and sinks a short way.
+- **The cross can no longer be in the way of touches.** Its window sat at the bottom middle of the screen the whole time a lens was floating, unseen. Android refuses touches on an app that lies under another app's window of that kind, so taps there in other apps may have been lost. I have not seen that happen on your phone; it follows from how the window was set up. The window now counts for nothing except while a lens is being carried.
+
+**What to look for:**
+- Put a blob down and hold your hand still as you let go: the lens should be exactly there.
+- Drop the lens on the cross and tap the + at once: the blobs should open; nothing else.
+
+**Checked:** it compiles.
+**Not checked:** on a phone.
+
 ## Prism, build 68 (14 November 2026)
 
 **File:** `releases/prism-build-68.apk`

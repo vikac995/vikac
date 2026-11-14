@@ -477,7 +477,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         : await RestBubble.instance.land(
             blob,
             at: at * dpr,
-            velocity: velocity * dpr,
+            // Only a real flick carries it on. Let go with the hand merely still moving, it
+            // stays where it was put.
+            velocity: velocity.distance > 800 ? velocity * dpr : Offset.zero,
           );
     if (!mounted) {
       return;
