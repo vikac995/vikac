@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 110 (14 November 2026)
+
+**File:** `releases/prism-build-110.apk`
+
+Needs Play Protect paused to install. Can be installed over build 109.
+
+- **A cog in the app list.** On the first page, the ring at the top right shows a cog instead of "1". A tap on it opens the app list's own settings. On the other pages it is the page number, as before. (Not while choosing what goes in a blob.)
+- **"Prism icons", on or off.** On: every app in Prism's look, as until now. Off: every app with its own icon, as the phone has it, in the same tile shape. Only one of the two is held at a time: the apps' own icons are fetched the first time (a second or two), kept on disk after that, and let go again when Prism's are chosen. The choice is kept.
+- The blobs keep Prism's look either way.
+
+**Checked:** it compiles; in my preview the cog shows on the first page.
+**Not checked:** on a phone, where the apps' own icons are fetched.
+
 ## Prism, build 109 (14 November 2026)
 
 **File:** `releases/prism-build-109.apk`

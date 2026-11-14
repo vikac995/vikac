@@ -12,6 +12,7 @@ import '../core/theme.dart';
 import 'apps.dart';
 import 'diag.dart';
 import 'robot.dart';
+import '../widgets/panel.dart';
 
 /// The app drawer. It grows out of the centre button: the round button
 /// widens and rises into a panel. Inside, the grid never scrolls. A swipe
@@ -116,6 +117,109 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
         _aim();
       }
     }
+  }
+
+  /// The app list's own settings, behind the cog on its first page.
+  void _showIconChoice() {
+    Haptics.tick();
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Close',
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (BuildContext context, _, _) {
+        final LumenColors c = LumenColors.of(context);
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              10,
+              0,
+              10,
+              MediaQuery.paddingOf(context).bottom + 10,
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: ShapeDecoration(
+                  color: c.surface,
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(36),
+                    side: BorderSide(color: c.hairline),
+                  ),
+                ),
+                child: ListenableBuilder(
+                  listenable: Apps.instance,
+                  builder: (BuildContext context, Widget? _) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Row(
+                        children: <Widget>[
+                          Expanded(
+                            child: Text(
+                              'Apps',
+                              style: LumenType.display(
+                                22,
+                                weight: 700,
+                                color: c.ink,
+                              ),
+                            ),
+                          ),
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              Haptics.tick();
+                              Navigator.of(context).pop();
+                            },
+                            child: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: ShapeDecoration(
+                                color: c.ink.withValues(alpha: 0.1),
+                                shape: const CircleBorder(),
+                              ),
+                              child: Icon(
+                                Icons.close_rounded,
+                                size: 24,
+                                color: c.ink,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      SwitchLine(
+                        key: Robot.key('prismIcons'),
+                        label: 'Prism icons',
+                        value: Apps.instance.prismIcons,
+                        onChanged: (bool v) {
+                          Haptics.tick();
+                          Apps.instance.setPrismIcons(v);
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        Apps.instance.prismIcons
+                            ? 'Every app in Prism\'s look: its mark in white, on a calm colour of its own.'
+                            : 'Every app with its own icon, as the phone has it.',
+                        style: LumenType.text(
+                          13,
+                          color: c.inkMuted,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -361,31 +465,47 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                       ),
                     ),
                     // How far through the apps you are: the same ring the rest of Prism uses.
-                    ListenableBuilder(
-                      listenable: _ring,
-                      builder: (BuildContext context, Widget? _) => CustomPaint(
-                        size: const Size(38, 38),
-                        painter: _RingPainter(
-                          _ring.value,
-                          c.accent,
-                          c.ink.withValues(alpha: 0.1),
-                        ),
-                        child: SizedBox(
-                          width: 38,
-                          height: 38,
-                          child: Center(
-                            child: Text(
-                              '${_page + 1}',
-                              textScaler: TextScaler.noScaling,
-                              style: LumenType.text(
-                                13,
-                                weight: 700,
-                                color: c.ink,
-                                height: 1,
+                    GestureDetector(
+                      key: Robot.key('drawerCog'),
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _page == 0 && widget.pick == null
+                          ? _showIconChoice
+                          : null,
+                      child: ListenableBuilder(
+                        listenable: _ring,
+                        builder: (BuildContext context, Widget? _) =>
+                            CustomPaint(
+                              size: const Size(38, 38),
+                              painter: _RingPainter(
+                                _ring.value,
+                                c.accent,
+                                c.ink.withValues(alpha: 0.1),
+                              ),
+                              child: SizedBox(
+                                width: 38,
+                                height: 38,
+                                // On the first page, a cog: the app list's own settings.
+                                // On the others, which page this is.
+                                child: Center(
+                                  child: _page == 0 && widget.pick == null
+                                      ? Icon(
+                                          Icons.settings_rounded,
+                                          size: 18,
+                                          color: c.ink,
+                                        )
+                                      : Text(
+                                          '${_page + 1}',
+                                          textScaler: TextScaler.noScaling,
+                                          style: LumenType.text(
+                                            13,
+                                            weight: 700,
+                                            color: c.ink,
+                                            height: 1,
+                                          ),
+                                        ),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
                       ),
                     ),
                   ],
@@ -754,7 +874,16 @@ class _GridPainter extends CustomPainter {
     final Paint p = Paint()
       ..color = Colors.white.withValues(alpha: alpha)
       ..filterQuality = FilterQuality.medium;
-    if (t.picture != null) {
+    if (t.own != null) {
+      // The app's own icon, in the tile's shape.
+      final ui.Image im = t.own!;
+      canvas.drawImageRect(
+        im,
+        Rect.fromLTWH(0, 0, im.width.toDouble(), im.height.toDouble()),
+        box.inflate(box.width * 0.04),
+        p,
+      );
+    } else if (t.picture != null) {
       // A picture fills its squircle.
       final ui.Image im = t.picture!;
       canvas.drawImageRect(
@@ -852,9 +981,15 @@ class _GridPainter extends CustomPainter {
           canvas.scale(0.9);
           fill.color = Color.lerp(fill.color, Colors.white, 0.14)!;
         }
-        canvas.drawPath(outline, fill);
+        // (An app's own icon is its own colour: the tile under it is not drawn.)
+        if (a?.own == null && b?.own == null) {
+          canvas.drawPath(outline, fill);
+        }
         // Only a picture can reach the edge of its tile, so only a picture needs trimming to it.
-        if (a?.picture != null || b?.picture != null) {
+        if (a?.picture != null ||
+            b?.picture != null ||
+            a?.own != null ||
+            b?.own != null) {
           canvas.clipPath(outline);
         }
         if (a != null) {

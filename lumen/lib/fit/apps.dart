@@ -745,6 +745,9 @@ class AppTile {
   Color color = const Color(0xFF5A6373);
   ui.Image? glyph, picture;
   String made = 'waiting';
+
+  /// The app's own icon, as the phone has it. Held only while Prism's icons are switched off.
+  ui.Image? own;
 }
 
 /// Every app on the phone, each given its Prism look once and then remembered.
@@ -756,6 +759,103 @@ class Apps extends ChangeNotifier {
   static const MethodChannel _channel = MethodChannel('lumen/apps');
   List<AppTile> all = <AppTile>[];
   bool _busy = false;
+
+  // ---- Prism's icons, or the apps' own.
+
+  /// True: the apps are shown in Prism's look. False: with their own icons, as the phone has them.
+  bool prismIcons = true;
+
+  File get _iconsFile {
+    final Directory files = Directory(
+      '${Directory.systemTemp.parent.path}/files',
+    );
+    return File(
+      '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_icons',
+    );
+  }
+
+  void loadIconChoice() {
+    try {
+      prismIcons = _iconsFile.readAsStringSync().trim() != '0';
+    } catch (_) {
+      // Never changed: Prism's icons.
+    }
+  }
+
+  /// Switches between Prism's icons and the apps' own. Only one of the two is held at a time:
+  /// the apps' own are fetched (or read back from disk) when they are wanted, and let go when not.
+  Future<void> setPrismIcons(bool v) async {
+    prismIcons = v;
+    try {
+      _iconsFile.writeAsStringSync(v ? '1' : '0');
+    } catch (_) {
+      // Not saved: Prism's icons next time.
+    }
+    if (v) {
+      for (final AppTile t in all) {
+        t.own = null;
+      }
+      notifyListeners();
+    } else {
+      await _loadOwn();
+    }
+  }
+
+  bool _owning = false;
+
+  Future<void> _loadOwn() async {
+    if (_owning || prismIcons) {
+      return;
+    }
+    _owning = true;
+    try {
+      _dir.createSync(recursive: true);
+      final List<AppTile> todo = <AppTile>[];
+      for (final AppTile t in all.where((AppTile t) => t.own == null)) {
+        final File f = File('${_file(t)}.own.png');
+        if (f.existsSync()) {
+          t.own = await IconEngine.decode(f.readAsBytesSync());
+        } else {
+          todo.add(t);
+        }
+      }
+      notifyListeners();
+      for (int i = 0; i < todo.length && !prismIcons; i += 12) {
+        final List<AppTile> batch = todo.sublist(
+          i,
+          math.min(i + 12, todo.length),
+        );
+        final List<Object?> got =
+            await _channel.invokeMethod<List<Object?>>('icons', <String>[
+              for (final AppTile t in batch) t.package,
+            ]) ??
+            <Object?>[];
+        for (final Object? o in got) {
+          final Map<Object?, Object?> m = o! as Map<Object?, Object?>;
+          final AppTile t = batch.firstWhere(
+            (AppTile t) => t.package == m['asked'],
+          );
+          final Uint8List bytes = m['icon']! as Uint8List;
+          t.own = await IconEngine.decode(bytes);
+          try {
+            File('${_file(t)}.own.png').writeAsBytesSync(bytes);
+          } catch (_) {
+            // Fetched again next time.
+          }
+        }
+        notifyListeners();
+      }
+      if (prismIcons) {
+        for (final AppTile t in all) {
+          t.own = null;
+        }
+      }
+    } catch (_) {
+      // Off the phone, or the phone would not say: Prism's icons stay.
+    }
+    _owning = false;
+    notifyListeners();
+  }
 
   /// What the last refresh did, for the test report.
   String summary = 'not run';
@@ -846,6 +946,9 @@ class Apps extends ChangeNotifier {
         }
         notifyListeners();
       }
+      if (!prismIcons) {
+        await _loadOwn();
+      }
       int count(String kind) => all.where((AppTile t) => t.made == kind).length;
       summary =
           '${all.length} apps: ${count('outline')} outline, ${count('cut-out')} cut-out, ${count('picture')} picture; '
@@ -888,7 +991,8 @@ class Apps extends ChangeNotifier {
     try {
       // Older results for the same app are no longer needed.
       for (final FileSystemEntity f in _dir.listSync()) {
-        if (f.path.startsWith('${_dir.path}/${t.package}_')) {
+        if (f.path.startsWith('${_dir.path}/${t.package}_') &&
+            !f.path.startsWith(_file(t))) {
           f.deleteSync();
         }
       }

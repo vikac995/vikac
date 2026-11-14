@@ -1811,6 +1811,7 @@ class _ShellState extends State<Shell>
       ..load()
       ..addListener(_blobsChanged);
     GestureSlots.instance.load();
+    Apps.instance.loadIconChoice();
     _reseat(jump: true);
     _far.jumpTo(BlobSlots.instance.names ? _reach : _reachBare);
     for (int i = 0; i < _n; i++) {
