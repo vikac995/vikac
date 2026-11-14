@@ -250,6 +250,10 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "landed") {
                 RestBubble.landed()
                 result.success(null)
+            } else if (call.method == "fan") {
+                // Where Prism's own blobs sit while they are out, or nothing when they are not.
+                RestBubble.fan = (call.arguments as? List<*>)?.map { (it as Number).toFloat() }
+                result.success(null)
             } else if (call.method == "blobs") {
                 // What the blobs in the menu are, in order, so the floating lens can open the same menu.
                 val list = call.arguments as? List<*>
@@ -467,6 +471,10 @@ object RestBubble {
     /** What the blobs in the menu are, in order: the same blobs Prism's own button shows. */
     var blobs: List<Pin> = emptyList()
     private var menu: Menu? = null
+
+    // Where Prism's own blobs sit while they are out: the middle of its button, and how near
+    // and how far from it counts as among them. A lens let go among them is put back with them.
+    var fan: List<Float>? = null
 
     // A lens has been dropped on the cross and is being closed. Until that is done no new lens is made.
     private var swallowing = false
@@ -1149,6 +1157,10 @@ object RestBubble {
         private var downY = 0f
         private var moved = false
         private var kept = false
+        // The blobs are being changed: each wears an edit mark, and a tap on one changes it.
+        private var editing = false
+        private val mark = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        private val pencil = android.graphics.Path()
         // A blob picked up and being dragged, and where the finger has it.
         private var dragging = -1
         private var dragX = 0f
@@ -1203,7 +1215,10 @@ object RestBubble {
 
         override fun dispatchKeyEvent(e: android.view.KeyEvent): Boolean {
             if (e.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
-                if (e.action == android.view.KeyEvent.ACTION_UP) close()
+                if (e.action == android.view.KeyEvent.ACTION_UP) {
+                    // Back first ends the changing, then closes the blobs.
+                    if (editing) { editing = false; haptic(context, "tick"); invalidate() } else close()
+                }
                 return true
             }
             return super.dispatchKeyEvent(e)
@@ -1442,6 +1457,29 @@ object RestBubble {
                 canvas.scale(size * (1 + stretch), size * (1 - stretch * 0.5f))
                 canvas.rotate(-turn)
                 paintBlob(canvas, items[i], 0f, 0f, 31 * dp, dp, items[i].key == inLens && i != flying, true, (alpha * 255).toInt())
+                if (editing) {
+                    // The edit mark: a small white disc with a pencil, at the blob's upper right.
+                    val mx = 22 * dp
+                    val my = -22 * dp
+                    val a = (alpha * 255).toInt().coerceIn(0, 255)
+                    mark.style = android.graphics.Paint.Style.FILL
+                    mark.color = 0x000000 or (a * 70 / 255 shl 24)
+                    canvas.drawCircle(mx, my + 1.5f * dp, 13 * dp, mark)
+                    mark.color = 0xFFFFFF or (a shl 24)
+                    canvas.drawCircle(mx, my, 12.5f * dp, mark)
+                    mark.color = 0x15171C or (a shl 24)
+                    canvas.save()
+                    canvas.translate(mx, my)
+                    canvas.rotate(45f)
+                    pencil.rewind()
+                    pencil.addRect(-1.9f * dp, -6 * dp, 1.9f * dp, 2.6f * dp, android.graphics.Path.Direction.CW)
+                    pencil.moveTo(-1.9f * dp, 3.6f * dp)
+                    pencil.lineTo(1.9f * dp, 3.6f * dp)
+                    pencil.lineTo(0f, 6.6f * dp)
+                    pencil.close()
+                    canvas.drawPath(pencil, mark)
+                    canvas.restore()
+                }
                 canvas.restore()
                 // The name appears once the blob is nearly there, not while it is a speck.
                 val show = if (i == dragging) 0f else if (i == flying) 1f - fly * 3f else (p - 0.6f) / 0.4f
@@ -1464,13 +1502,15 @@ object RestBubble {
             return -1
         }
 
-        // Held still on a blob: it is to be changed. That is done in Prism, where the apps are.
+        // Held still on any blob: all of them can now be changed, and each wears an edit mark.
         private val keep = Runnable {
             val i = pressedAt
-            if (i >= 0 && !kept && opening) {
+            if (i >= 0 && !kept && opening && !editing) {
                 kept = true
                 pressedAt = -1
-                change(i)
+                editing = true
+                haptic(context, "click")
+                invalidate()
             }
         }
 
@@ -1491,7 +1531,7 @@ object RestBubble {
                         // Moved: neither a tap nor a hold. If it began on a blob, the blob comes along.
                         moved = true
                         removeCallbacks(keep)
-                        if (pressedAt >= 0 && !kept) {
+                        if (pressedAt >= 0 && !kept && !editing) {
                             dragging = pressedAt
                             haptic(context, "tick")
                         }
@@ -1531,7 +1571,7 @@ object RestBubble {
                     } else if (kept) {
                         // Already being changed, by the hold.
                     } else if (i >= 0) {
-                        choose(i)
+                        if (editing) change(i) else choose(i)
                     } else if (!moved) {
                         close()
                     }
@@ -1581,7 +1621,7 @@ object RestBubble {
             watcher.postDelayed({ use(c, b) }, 110)
         }
 
-        /** Held: it is to be changed for something else. Prism comes to the front with its apps to choose from. */
+        /** Tapped while the blobs are being changed: Prism comes to the front with its apps to choose from. */
         private fun change(i: Int) {
             val c = context
             haptic(c, "click")
@@ -2294,6 +2334,7 @@ object RestBubble {
             }
             lp.x = x.toInt(); lp.y = y.toInt()
             place()
+            overBlobs()
             // Pushed a quarter of the way past a side, letting go tucks it away there. A tick says so.
             val past = 0.25f * lp.width
             val would = !snapped && (lp.x < -past || lp.x + lp.width > resources.displayMetrics.widthPixels + past)
@@ -2504,7 +2545,78 @@ object RestBubble {
             }
         }
 
-        /** The finger dragging the lens has lifted: into a side, onto the cross, or thrown to rest. */
+        // Whether Prism has been told the lens is being carried near its blobs, and where it last was told.
+        private var toldBlobs = false
+        private var toldX = 0f
+        private var toldY = 0f
+
+        /** Whether the middle of the lens is among Prism's own blobs, which are out, with something in it to put back. */
+        private fun amongBlobs(): Boolean {
+            val f = fan ?: return false
+            if (f.size < 4 || !RestBubble.foreground || pin == null || snapped) return false
+            val vx = lp.x + lp.width / 2f - f[0]
+            val vy = lp.y + lp.height / 2f - f[1]
+            val d = Math.hypot(vx.toDouble(), vy.toDouble()).toFloat()
+            return d >= f[2] && d <= f[3] && -vy > 0.23f * d
+        }
+
+        /** While the lens is carried near Prism's blobs, Prism is told where it is, so they can make room for it. */
+        private fun overBlobs() {
+            val f = fan
+            if (f == null || f.size < 4 || !RestBubble.foreground || pin == null) return
+            val cx = lp.x + lp.width / 2f
+            val cy = lp.y + lp.height / 2f
+            val near = !snapped && Math.hypot((cx - f[0]).toDouble(), (cy - f[1]).toDouble()) < f[3] + 60 * dp
+            if (near) {
+                if (!toldBlobs || Math.abs(cx - toldX) + Math.abs(cy - toldY) > 3 * dp) {
+                    toldBlobs = true
+                    toldX = cx; toldY = cy
+                    channel?.invokeMethod("lensAt", listOf(cx.toDouble(), cy.toDouble()))
+                }
+            } else if (toldBlobs) {
+                toldBlobs = false
+                channel?.invokeMethod("lensAt", null)
+            }
+        }
+
+        /**
+         * Let go among Prism's own blobs: what was in the lens is one of them again. Prism draws
+         * it from here, where it was let go, to its seat. A lens that was only that goes; one
+         * that is also a workout's stays, and goes to its side.
+         */
+        private fun putBack() {
+            val c = context
+            toldBlobs = false
+            target?.fall()
+            val at = listOf((lp.x + lp.width / 2f).toDouble(), (lp.y + lp.height / 2f).toDouble())
+            if (mode() != 2) {
+                channel?.invokeMethod("returnedAt", at)
+                throwIt(0f, 0f)
+                return
+            }
+            // From this moment it takes no touch, and fades as Prism's blob takes over.
+            swallowing = true
+            lp.flags = lp.flags or android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, lp) } catch (ex: Exception) {}
+            val finish: () -> Unit = {
+                if (swallowing) {
+                    swallowing = false
+                    afterSwallow = null
+                    pin = null
+                    lensX = -1; lensY = -1
+                    placed = false
+                    tucked = false
+                    remove(c)
+                    refresh(c)
+                }
+            }
+            afterSwallow = finish
+            channel?.invokeMethod("returnedAt", at)
+            animate().alpha(0f).scaleX(0.74f).scaleY(0.74f).setDuration(110).setInterpolator(EASE)
+                .withEndAction { dropLens(c); finish() }.start()
+        }
+
+        /** The finger dragging the lens has lifted: into a side, onto the cross, back among Prism's blobs, or thrown to rest. */
         private fun letGo(up: Boolean) {
             pressed = false
             adopted = false
@@ -2513,20 +2625,29 @@ object RestBubble {
             closeReach(context)
             // The handle of a lens that was pulled out of a side has done its work.
             closeGrip(context)
+            var velX = 0f; var velY = 0f
+            val t = tracker
+            if (t != null) {
+                t.computeCurrentVelocity(1000)
+                velX = t.xVelocity; velY = t.yVelocity
+            }
+            tracker?.recycle()
+            tracker = null
+            // Let go among Prism's blobs, and not flicked through them: it is put back with them.
+            if (up && !wouldTuck && amongBlobs() && Math.hypot(velX.toDouble(), velY.toDouble()) < 900 * dp) {
+                putBack()
+                return
+            }
+            if (toldBlobs) {
+                toldBlobs = false
+                channel?.invokeMethod("lensAt", null)
+            }
             animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
             if (up && wouldTuck) {
                 tuckIn(lp.x + lp.width / 2f > resources.displayMetrics.widthPixels / 2f)
             } else {
-                var velX = 0f; var velY = 0f
-                val t = tracker
-                if (t != null) {
-                    t.computeCurrentVelocity(1000)
-                    velX = t.xVelocity; velY = t.yVelocity
-                }
                 throwIt(velX, velY)
             }
-            tracker?.recycle()
-            tracker = null
         }
 
         private fun place() {

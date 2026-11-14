@@ -250,11 +250,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: widget.onClose,
-                child: ColoredBox(
-                  color: Colors.black.withValues(
-                    alpha: 0.5 * g.clamp(0.0, 1.0),
-                  ),
-                ),
+                // The dim behind it is the shell's, the same one the blobs have.
+                child: const SizedBox.expand(),
               ),
             ),
             Positioned.fromRect(

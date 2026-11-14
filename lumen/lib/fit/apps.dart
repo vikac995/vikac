@@ -637,6 +637,14 @@ class BlobSlots extends ChangeNotifier {
     }
   }
 
+  /// Every place at once, in a new order.
+  void putAll(List<String> all) {
+    for (int i = 0; i < keys.length && i < all.length; i++) {
+      keys[i] = all[i];
+    }
+    put(0, keys[0]);
+  }
+
   void put(int i, String? key) {
     keys[i] = key;
     try {

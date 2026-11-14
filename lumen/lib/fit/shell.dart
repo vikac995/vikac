@@ -120,12 +120,24 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             ? LumenColors.of(context).accent
             : _actions[_actionAt(i)].$3);
 
-  // Changing a blob: hold it. The app drawer comes up to choose what takes its place.
+  // Changing the blobs: hold any one of them. Every blob then wears an edit mark, and a tap on
+  // one brings up the app drawer to choose what takes its place. The X, a tap elsewhere, or
+  // back ends it.
+  bool _editing = false;
   int? _editSlot;
 
-  /// A blob was held: the drawer comes up to choose what takes its place.
+  void _setEditing(bool v) {
+    if (v == _editing) {
+      return;
+    }
+    setState(() => _editing = v);
+    v ? Haptics.settle() : Haptics.tick();
+    Diag.instance.event(v ? 'blobs: editing' : 'blobs: done editing');
+  }
+
+  /// While editing, a blob was tapped: the drawer comes up to choose what takes its place.
   void _pickFor(int i) {
-    Haptics.settle();
+    Haptics.tick();
     Diag.instance.event('blob: change');
     setState(() => _editSlot = i);
     _setDrawer(true);
@@ -190,8 +202,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       SpringValue(this, value: i - 2.0, spring: Motions.spatialFast),
   ];
   final Set<int> _seated = <int>{0, 1, 2, 3, 4};
-  // The blob that has been dragged clear of the others, if one has.
+  // The blob that has been picked up out of the others, if one has.
   int? _awayI;
+  // The seat kept open among the others for the thing being carried over them (a blob that was
+  // picked up, or the floating lens): where it would sit if let go now. Null while it is clear
+  // of them, and then the others close ranks.
+  int? _gapAt;
 
   /// Whether the thing in place [i] is the one floating as the lens.
   bool _floating(int i) => RestBubble.instance.pinned.value == _pinKey(i);
@@ -206,9 +222,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       for (int i = 0; i < _n; i++)
         if (!_leftOut(i)) i,
     ];
+    final int? gap = _gapAt;
+    final int count = shown.length + (gap == null ? 0 : 1);
     for (int j = 0; j < shown.length; j++) {
       final int i = shown[j];
-      final double to = j - (shown.length - 1) / 2;
+      final double to = (gap != null && j >= gap ? j + 1 : j) - (count - 1) / 2;
       if (jump || !_seated.contains(i)) {
         _seat[i].jumpTo(to);
       } else {
@@ -218,6 +236,158 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     _seated
       ..clear()
       ..addAll(shown);
+  }
+
+  /// The places still in the menu other than [i]: not floating, not on their way out.
+  List<int> _others(int i) => <int>[
+    for (int k = 0; k < _n; k++)
+      if (k != i && !_floating(k) && k != _shotI) k,
+  ];
+
+  /// Which seat among [others] other blobs something at [at] would take, or null if that is
+  /// not among the blobs. [now] is the seat it has at the moment: it keeps that one until it
+  /// is clearly over another, and stays among the blobs a little further out than it came in.
+  int? _seatFor(Offset at, int others, int? now) {
+    final Offset v = at - _home;
+    final double d = v.distance, slack = now == null ? 0 : 14;
+    if (d < _reach - 58 - slack || d > _reach + 62 + slack) {
+      return null;
+    }
+    final int count = others + 1;
+    final double seat = (math.atan2(-v.dy, -v.dx) / math.pi - 0.5) / 0.155;
+    if (seat.abs() > (count - 1) / 2 + 0.75 + (now == null ? 0 : 0.1)) {
+      return null;
+    }
+    final double place = seat + (count - 1) / 2;
+    if (now != null && (place - now).abs() < 0.62) {
+      return now;
+    }
+    return place.round().clamp(0, count - 1);
+  }
+
+  /// The thing in place [i] is put down among the blobs at seat [gap], coming from [from]. If
+  /// that is a different seat from the one it had, the places change order to match, and that
+  /// is how they stay.
+  void _settle(int i, int gap, Offset from) {
+    final List<int> others = _others(i);
+    final List<int> order = <int>[
+      for (int k = 0; k < _n; k++)
+        if (k != i) k,
+    ];
+    order.insert(
+      others.isEmpty
+          ? order.length
+          : (gap < others.length
+                ? order.indexOf(others[gap])
+                : order.indexOf(others.last) + 1),
+      i,
+    );
+    bool same = BlobSlots.instance.paused;
+    if (!same) {
+      same = true;
+      for (int k = 0; k < _n; k++) {
+        same = same && order[k] == k;
+      }
+    }
+    int to = i;
+    if (!same) {
+      // Each thing moves to its new place, and is drawn where it already was.
+      final List<String> keys = <String>[for (final int k in order) _pinKey(k)];
+      final List<double> seats = <double>[
+        for (final int k in order) _seat[k].value,
+      ];
+      final List<double> outs = <double>[
+        for (final int k in order) _out[k].value,
+      ];
+      final Set<int> was = <int>{..._seated};
+      to = order.indexOf(i);
+      _awayI = null;
+      _gapAt = null;
+      BlobSlots.instance.putAll(keys);
+      _seated.clear();
+      for (int k = 0; k < _n; k++) {
+        _seat[k].jumpTo(seats[k]);
+        _out[k].jumpTo(_floating(k) ? 0 : (k == to ? 1 : outs[k]));
+        if (!_floating(k) && _open && outs[k] < 1) {
+          _out[k].animateTo(1, spring: Motions.spatialFast);
+        }
+        if (k != to && was.contains(order[k])) {
+          _seated.add(k);
+        }
+      }
+      Diag.instance.event('blobs reordered');
+    }
+    _dropAt = from;
+    setState(() {
+      _dragI = null;
+      _backI = to;
+      _awayI = null;
+      _gapAt = null;
+    });
+    _reseat();
+    _dragBack
+      ..jumpTo(1)
+      ..animateTo(0);
+    Haptics.settle();
+    if (!same) {
+      _sendBlobs();
+    }
+  }
+
+  /// The place of the thing floating as the lens, if one of the blobs is.
+  int? get _floatingI {
+    for (int i = 0; i < _n; i++) {
+      if (_floating(i)) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  /// The floating lens is being carried over the blobs: they make room where it would sit.
+  void _lensOver(Offset? at) {
+    final int? f = _floatingI;
+    if (!mounted || !_open || f == null || _dragI != null) {
+      return;
+    }
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    final int? gap = at == null
+        ? null
+        : _seatFor(at / dpr, _others(f).length, _gapAt);
+    if (gap != _gapAt) {
+      _gapAt = gap;
+      _reseat();
+      Haptics.tick();
+    }
+  }
+
+  /// The floating lens was let go among the blobs: it is one of them again, in that seat.
+  void _lensBack(Offset at) {
+    final int? f = _floatingI;
+    if (!mounted || f == null) {
+      RestBubble.instance.setPin(null);
+      _sendPin();
+      return;
+    }
+    if (!_open) {
+      _gapAt = null;
+      RestBubble.instance.setPin(null);
+      _sendPin();
+      return;
+    }
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    final int n = _others(f).length;
+    final int gap = _seatFor(at / dpr, n, _gapAt) ?? _gapAt ?? (n + 1) ~/ 2;
+    Diag.instance.event('lens put back with the blobs');
+    // It is drawn where it was let go, at once, and from there goes to its seat.
+    _dropAt = at / dpr;
+    _awayI = f;
+    _backI = f;
+    _dragBack.jumpTo(1);
+    _out[f].jumpTo(1);
+    RestBubble.instance.setPin(null);
+    _sendPin();
+    _settle(f, gap, at / dpr);
   }
 
   /// How far round the fan a seat is: straight up in the middle, about 28 degrees for each place.
@@ -402,8 +572,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   /// A blob picked up out of the menu follows the finger. Near the button it is drawn onto it
-  /// and the button swells to take it: letting go there launches it.
-  void _blobDrag(int i, Offset at, Offset button, Offset home) {
+  /// and the button swells to take it: letting go there launches it. Over the other blobs they
+  /// make room where it would sit; clear of them, they close ranks.
+  void _blobDrag(int i, Offset at, Offset button) {
     final bool near = (at - button).distance < (_armed ? 80 : 62);
     if (near != _armed) {
       _armed = near;
@@ -411,11 +582,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _kick.animateTo(near ? 1.2 : 1);
     }
     _dragAt.value = near ? button + (at - button) * 0.22 : at;
-    // Clear of its place, it has left the menu: the others close ranks at once. Brought back,
-    // they make room for it again.
-    final bool clear = (at - home).distance > (_awayI == i ? 56 : 70);
-    if (clear != (_awayI == i)) {
-      setState(() => _awayI = clear ? i : null);
+    final int? gap = near ? null : _seatFor(at, _others(i).length, _gapAt);
+    if (gap != _gapAt || _awayI != i) {
+      setState(() {
+        _awayI = i;
+        _gapAt = gap;
+      });
       _reseat();
       if (!near) {
         Haptics.tick();
@@ -423,32 +595,30 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     }
   }
 
-  void _blobDrop(int i, Offset button, Offset home, Offset velocity) {
+  void _blobDrop(int i, Offset button, Offset velocity) {
     if (_dragI != i) {
       return;
     }
     // On the button, or flicked at it: the button shoots it out to the side.
     final Offset coast = _dragAt.value + velocity * 0.16;
     if (_armed || (velocity.distance > 700 && (coast - button).distance < 84)) {
+      _gapAt = null;
       _fire(i, button);
       return;
     }
     _kick.animateTo(1);
-    // Put down anywhere else away from its place, or flicked away from it: it floats there.
-    if ((_dragAt.value - home).distance > 70 || velocity.distance > 900) {
-      _place(i, _dragAt.value, velocity);
+    // Let go among the blobs: it sits there, in the seat they made for it. A flick that would
+    // carry it clear of them is not that.
+    final int? gap = _gapAt;
+    final int n = _others(i).length;
+    if (gap != null &&
+        (velocity.distance < 900 || _seatFor(coast, n, gap) != null)) {
+      _settle(i, gap, _dragAt.value);
       return;
     }
-    _dropAt = _dragAt.value;
-    setState(() {
-      _dragI = null;
-      _backI = i;
-      _awayI = null;
-    });
-    _reseat();
-    _dragBack
-      ..jumpTo(1)
-      ..animateTo(0);
+    // Put down anywhere else, or flicked away: it floats there.
+    _gapAt = null;
+    _place(i, _dragAt.value, velocity);
   }
 
   /// Put down somewhere on the screen. It becomes the floating lens right there, and from there
@@ -821,6 +991,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         RestBubble.instance.setPin(key);
         _sendPin();
       }
+      ..onLensAt = _lensOver
+      ..onReturned = _lensBack
       ..container.addListener(_sendPinData)
       ..pinned.addListener(_pinChanged);
     _shot.addListener(_shotTick);
@@ -843,6 +1015,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             if (_sheetOpen) {
               _closeSheet();
             }
+            // Afterwards Prism's own blobs are out, being changed, as they would be here.
+            _editing = true;
             _pickFor((call.arguments as num).toInt().clamp(0, _n - 1));
             return;
           }
@@ -1369,7 +1543,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       ..event(v ? 'drawer open' : 'drawer close');
     Haptics.settle();
     if (choosing) {
-      // Chosen or not, the blobs come back out.
+      // Chosen or not, the blobs come back out, still being changed.
       _setOpen(true);
     }
   }
@@ -1455,10 +1629,27 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       // No blob is left picked up, or on its way back, from the last time.
       _dragI = null;
       _backI = null;
+      // Closing them ends the changing, unless they are only out of the drawer's way.
+      if (!v && _editSlot == null) {
+        _editing = false;
+      }
     });
     Diag.instance
       ..overlay = v ? '+blobs' : ''
       ..event(v ? 'blobs open' : 'blobs close');
+    _gapAt = null;
+    // While they are out Android knows where they sit, so a lens let go among them is put back.
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    RestBubble.instance.tellFan(
+      v
+          ? <double>[
+              _home.dx * dpr,
+              _home.dy * dpr,
+              (_reach - 58) * dpr,
+              (_reach + 62) * dpr,
+            ]
+          : null,
+    );
     _t.animateTo(v ? 1 : 0);
     for (final Timer t in _fuses) {
       t.cancel();
@@ -1595,6 +1786,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         } else if (_parked || _carrying) {
           Diag.instance.event('back: lens home');
           _lensHome();
+        } else if (_open && _editing) {
+          Diag.instance.event('back: done changing blobs');
+          _setEditing(false);
         } else if (_open) {
           Diag.instance.event('back: close blobs');
           _setOpen(false);
@@ -1676,23 +1870,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         c.bg.withValues(alpha: 0),
                       ],
                     ),
-                  ),
-                ),
-              ),
-            ),
-            // Dim behind the blobs.
-            ListenableBuilder(
-              listenable: _t,
-              builder: (BuildContext context, Widget? _) => IgnorePointer(
-                ignoring: !_open,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => _setOpen(false),
-                  child: ColoredBox(
-                    color: Colors.black.withValues(
-                      alpha: 0.46 * _t.value.clamp(0.0, 1.0),
-                    ),
-                    child: const SizedBox.expand(),
                   ),
                 ),
               ),
@@ -1961,6 +2138,24 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                 ),
               ),
             ),
+            // One dim for the blobs and for the drawer, over the page and over the bar alike. The
+            // bar looks the same under both, so going from one to the other changes nothing on it.
+            ListenableBuilder(
+              listenable: _t,
+              builder: (BuildContext context, Widget? _) => IgnorePointer(
+                ignoring: !_open,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _setOpen(false),
+                  child: ColoredBox(
+                    color: Colors.black.withValues(
+                      alpha: 0.5 * _t.value.clamp(0.0, 1.0),
+                    ),
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+            ),
             // The app drawer, which grows out of the button.
             Positioned.fill(
               child: AppDrawer(
@@ -2040,35 +2235,50 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         opacity: (p * 12).clamp(0.0, 1.0),
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          // A tap uses it. Held, it is to be changed for something else.
-                          // Picked up and put down somewhere, it floats there; on the button,
-                          // or flicked at it, the button shoots it out to the side.
-                          onTap: () => _blobTap(i),
-                          onLongPress: () => _pickFor(i),
-                          onPanStart: (DragStartDetails d) {
-                            _dragGrab = d.globalPosition - rest(i);
-                            _dragAt.value = rest(i);
-                            _armed = false;
-                            setState(() {
-                              _dragI = i;
-                              _backI = null;
-                            });
-                            Haptics.tick();
-                          },
-                          onPanUpdate: (DragUpdateDetails d) => _blobDrag(
-                            i,
-                            d.globalPosition - _dragGrab,
-                            bc,
-                            rest(i),
-                          ),
-                          onPanEnd: (DragEndDetails d) => _blobDrop(
-                            i,
-                            bc,
-                            rest(i),
-                            d.velocity.pixelsPerSecond,
-                          ),
-                          onPanCancel: () =>
-                              _blobDrop(i, bc, rest(i), Offset.zero),
+                          // A tap uses it. Picked up and put down somewhere, it floats
+                          // there; on the button, or flicked at it, the button shoots it out
+                          // to the side. Held, all the blobs can be changed: each wears an
+                          // edit mark, and a tap on one then changes that one.
+                          onTap: () => _editing ? _pickFor(i) : _blobTap(i),
+                          onLongPress: _editing
+                              ? null
+                              : () => _setEditing(true),
+                          onPanStart: _editing
+                              ? null
+                              : (DragStartDetails d) {
+                                  _dragGrab = d.globalPosition - rest(i);
+                                  _dragAt.value = rest(i);
+                                  _armed = false;
+                                  // Picked up, its seat is kept open for it.
+                                  final List<int> others = _others(i);
+                                  setState(() {
+                                    _dragI = i;
+                                    _backI = null;
+                                    _awayI = i;
+                                    _gapAt = others
+                                        .where((int k) => k < i)
+                                        .length;
+                                  });
+                                  _reseat();
+                                  Haptics.tick();
+                                },
+                          onPanUpdate: _editing
+                              ? null
+                              : (DragUpdateDetails d) => _blobDrag(
+                                  i,
+                                  d.globalPosition - _dragGrab,
+                                  bc,
+                                ),
+                          onPanEnd: _editing
+                              ? null
+                              : (DragEndDetails d) => _blobDrop(
+                                  i,
+                                  bc,
+                                  d.velocity.pixelsPerSecond,
+                                ),
+                          onPanCancel: _editing
+                              ? null
+                              : () => _blobDrop(i, bc, Offset.zero),
                           child: Column(
                             children: <Widget>[
                               Transform(
@@ -2081,7 +2291,39 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                     1,
                                   )
                                   ..rotateZ(-ang),
-                                child: _blobDisc(i),
+                                // While the blobs are being changed each one wears an edit mark.
+                                child: _editing
+                                    ? Stack(
+                                        clipBehavior: Clip.none,
+                                        children: <Widget>[
+                                          _blobDisc(i),
+                                          Positioned(
+                                            right: -3,
+                                            top: -3,
+                                            child: Container(
+                                              width: 25,
+                                              height: 25,
+                                              decoration: const ShapeDecoration(
+                                                color: Colors.white,
+                                                shape: CircleBorder(),
+                                                shadows: <BoxShadow>[
+                                                  BoxShadow(
+                                                    color: Color(0x55000000),
+                                                    blurRadius: 6,
+                                                    offset: Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: const Icon(
+                                                Icons.edit_rounded,
+                                                size: 14,
+                                                color: Color(0xFF15171C),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : _blobDisc(i),
                               ),
                               const SizedBox(height: 7),
                               // The name appears once the blob is nearly there, not while it is a speck.
@@ -2109,6 +2351,44 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     ),
                   );
                 },
+              ),
+            // While the blobs are being changed, a line above them says what a tap does.
+            if (_editing && _open)
+              Positioned(
+                left: 0,
+                right: 0,
+                top: bc.dy - _reach - _blob / 2 - 62,
+                child: IgnorePointer(
+                  child: ListenableBuilder(
+                    listenable: _t,
+                    builder: (BuildContext context, Widget? _) => Opacity(
+                      opacity: _t.value.clamp(0.0, 1.0),
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: const ShapeDecoration(
+                            color: Color(0xA6000000),
+                            shape: StadiumBorder(),
+                          ),
+                          child: Text(
+                            'Tap a blob to change it',
+                            textAlign: TextAlign.center,
+                            textScaler: TextScaler.noScaling,
+                            style: LumenType.text(
+                              15,
+                              weight: 620,
+                              color: Colors.white.withValues(alpha: 0.92),
+                              height: 1.2,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             // A blob dropped on the button: taken in under it, then shot out to the side on a
             // thread, to become the floating lens.

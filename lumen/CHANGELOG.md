@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Prism, build 70 (14 November 2026)
+
+**File:** `releases/prism-build-70.apk`
+
+From your three messages after build 68.
+
+- **Hold any blob and all of them can be changed.** Every blob gets a small pencil mark and a line above says "Tap a blob to change it". A tap on one brings up the list to choose from ("Replace ..."); after choosing you are back at the blobs, still changing, so you can do the next one. Back, the X, or a tap beside the blobs ends it. While changing, blobs cannot be dragged or used. The floating lens's own menu does the same: hold a blob there, the marks appear, a tap on one opens Prism to choose.
+- **Drag a blob among the others to move it.** As you carry it over the row the others make room where it would sit; let go and it sits there. The new order is kept, and the lens's own menu shows the same order. Carried clear of the row (about a blob's width above or below it) the others close ranks and letting go makes it the chat head, as before. On the button it is still shot to the side.
+- **Drag the chat head back into the row to put it away.** While Prism's blobs are out, carry the floating lens over them: they make room, and letting go puts it back as an ordinary blob in that seat. It is then no longer a chat head. Dropping it on the cross still does the same without choosing a seat. If the lens is also holding a workout, only the blob goes back and the workout's lens stays.
+- **The bottom bar no longer flickers between the blobs and the app list.** In your recording the bar was bright with the blobs out and dimmed under the app list, so it changed twice each time you went from one to the other. There is now one dim for both, over the page and the bar alike. This means the bar is now dimmed while the blobs are out, which it was not before.
+
+**What to look for:**
+- Hold a blob: pencil marks on all five. Tap one, choose something, and you should be back at the blobs with the marks still on.
+- Drag a blob sideways along the row: the others should move over under your finger, before you let go.
+- With a chat head floating, open the blobs and drag the chat head down into the row: a seat should open for it, and on letting go it should travel into that seat. Watch the moment of letting go: the lens fades as Prism's blob takes over, and that hand-over is the part I could not see.
+- Go blobs, app list, blobs: the bar should stay the same the whole way.
+
+**Checked:** it compiles, and the file asks only for vibration and drawing over other apps. In my preview: the pencil marks and the "Replace" list; reordering by dragging, with the others making room, and the order still there after closing and opening; a blob carried clear still becomes the chat head; a put-back played by hand (the seat opening and the blob ending in it); the bar the same under blobs and app list.
+**Not checked:** anything on a phone. In particular everything on the Android side is unseen: the lens being handed back to Prism, the marks in the lens's own menu, and whether the lens's position lines up with Prism's seats on your screen.
+**Not done:** dragging to reorder inside the lens's own menu (the one that opens around the chat head in other apps). There a drag still only puts a blob into the lens.
+
 ## Prism, build 69 (14 November 2026)
 
 **File:** `releases/prism-build-69.apk`

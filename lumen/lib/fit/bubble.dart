@@ -137,6 +137,19 @@ class RestBubble with WidgetsBindingObserver {
     _device.invokeMethod<void>('pin', pin).catchError((Object _) {});
   }
 
+  /// Tells Android where Prism's own blobs sit while they are out (the middle of the button and
+  /// how near and far from it counts as among them, in real pixels), or null when they are not.
+  /// A lens let go among them is put back with them.
+  void tellFan(List<double>? fan) {
+    _device.invokeMethod<void>('fan', fan).catchError((Object _) {});
+  }
+
+  /// The lens is being carried over Prism's blobs (where, in real pixels; null once it is not).
+  void Function(Offset? at)? onLensAt;
+
+  /// The lens was let go among Prism's blobs, there: it is one of them again.
+  void Function(Offset at)? onReturned;
+
   /// Tells Android what the blobs in the menu are, so the floating lens can open the same menu.
   void tellBlobs(List<Map<String, Object>> blobs) {
     _device.invokeMethod<void>('blobs', blobs).catchError((Object _) {});
@@ -218,6 +231,24 @@ class RestBubble with WidgetsBindingObserver {
         toggleMode();
       case 'unpinned':
         setPin(null);
+      case 'lensAt':
+        final List<Object?>? at = call.arguments as List<Object?>?;
+        onLensAt?.call(
+          at == null
+              ? null
+              : Offset((at[0]! as num).toDouble(), (at[1]! as num).toDouble()),
+        );
+      case 'returnedAt':
+        final List<Object?> at = call.arguments as List<Object?>;
+        final Offset where = Offset(
+          (at[0]! as num).toDouble(),
+          (at[1]! as num).toDouble(),
+        );
+        if (onReturned == null) {
+          setPin(null);
+        } else {
+          onReturned!(where);
+        }
       case 'stop':
         onStop?.call();
       case 'timerPause':
