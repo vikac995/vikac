@@ -2250,6 +2250,18 @@ void showPrismSettings(BuildContext context) {
                       ),
                       const SizedBox(height: 12),
                       ListenableBuilder(
+                        listenable: RestBubble.instance.seesApps,
+                        builder: (BuildContext context, Widget? _) =>
+                            SwitchLine(
+                              label: 'Pinned app returns when you leave it',
+                              value: RestBubble.instance.seesApps.value,
+                              // Android decides this too, on its own screen.
+                              onChanged: (bool _) =>
+                                  RestBubble.instance.askUsage(),
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      ListenableBuilder(
                         listenable: BlobApps.instance.on,
                         builder: (BuildContext context, Widget? _) =>
                             SwitchLine(

@@ -1,5 +1,27 @@
 # Lumen changelog
 
+## Prism, build 62 (14 November 2026)
+
+**File:** `releases/prism-build-62.apk`
+
+From the recording of build 61: the floating sheet and the lens no longer bounce, and the small sheet says which set it is.
+
+- **Small sheet to tall sheet (and back) is one movement.** Before, the contents were swapped in one go, Android slid the new sheet into place by itself, and the lens chased it on a spring. Now the top edge of the glass travels to its new place, what was on the sheet fades out early and the new contents come up after, and the "Set done" button does not move at all. The lens stays on the corner as the corner moves. The arrow bends over to its other side; it does not flip.
+- **Opening and closing are short and quiet.** The sheet comes up a short way and is solid almost at once (it used to cross a third of the screen while half see-through). Closing is a small drop and a quick fade. A sheet that is closing keeps showing what it showed when you let it go.
+- **The lens glides to the sheet's corner and back** in one even movement. A thrown lens still coasts with the throw, then settles without bouncing back. Pressing it, its appearing, and its "rest over" pulse no longer overshoot.
+- **No arrow on the lens while a sheet is open.** It keeps showing the timer (or the pinned thing). Tapping it still folds the sheet away.
+- **The small sheet says which set it is.** "Set 1 of 3" is larger and white, and under it is a bar with one segment per set: green for done, your colour for the one in hand, faint for the rest. The short first segment is the warm-up. It is the same bar the workout page draws for its exercises.
+- **In the tall sheet,** when a rest starts or ends, the "+15 s" and "Skip" line appears or goes with the timer sliding to its new place; the sheet no longer jumps.
+- **The lens can be tucked into the side.** Drag it into the left or right edge until it ticks, and let go: it slides away and leaves a sliver about 17 wide. Its touch area stays the full width of the lens (84), which is well past the phone's swipe-from-the-edge zone. Touch it anywhere there and it comes back out; that first touch only brings it out, the next tap uses it.
+- **Touching the lens at the edge is not a "back" swipe.** The lens now tells Android that touches on it are its own, tucked or not.
+- **A pinned app's lens can come back the moment you leave that app** (the recent-apps screen counts). Android only allows this with "usage access", so it is off until you turn on **Pinned app returns when you leave it** in Prism's settings and allow Prism on the screen that opens. While the lens is hidden in its app, Prism then looks three times a second at which app is in front, and stops as soon as the lens is back. Without the permission it behaves as before: the lens returns when Prism is next on screen.
+- **Left alone:** the cross and the swallow when the lens is dropped on it.
+
+**What to look for:** switching between the small and the tall sheet. The button should stay perfectly still and the top edge should travel in one go. If the sheet still slides or jumps at the start or the end of that movement, Android is not doing what I asked of it on your phone, and a recording will show me which part.
+
+**Checked:** it compiles, the Android code included.
+**Not checked:** on a phone. How the sheet is drawn and resized was rebuilt for this, and the tuck and the return-on-leave check are new; none of it has run on a real device. Whether Samsung's recent-apps screen is reported as "another app in front" is the part I am least sure of.
+
 ## Prism, build 61 (14 November 2026)
 
 **File:** `releases/prism-build-61.apk`

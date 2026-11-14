@@ -47,6 +47,21 @@ class RestBubble with WidgetsBindingObserver {
     try {
       allowed.value =
           await _device.invokeMethod<bool>('overlayAllowed') ?? false;
+      seesApps.value =
+          await _device.invokeMethod<bool>('usageAllowed') ?? false;
+    } catch (_) {
+      // Not on Android.
+    }
+  }
+
+  /// Whether Android lets Prism see which app is in front. It is used for one thing: a pinned
+  /// app's lens, which steps aside when it has opened its app, comes back when that app is left.
+  final ValueNotifier<bool> seesApps = ValueNotifier<bool>(false);
+
+  /// Opens Android's own screen for that. Only the person can grant it.
+  Future<void> askUsage() async {
+    try {
+      await _device.invokeMethod<void>('askUsage');
     } catch (_) {
       // Not on Android.
     }

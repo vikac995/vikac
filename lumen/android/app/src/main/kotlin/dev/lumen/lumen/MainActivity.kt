@@ -266,6 +266,15 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
             } else if (call.method == "overlayAllowed") {
                 result.success(android.provider.Settings.canDrawOverlays(this))
+            } else if (call.method == "usageAllowed") {
+                result.success(RestBubble.usageAllowed(this))
+            } else if (call.method == "askUsage") {
+                try {
+                    startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS, android.net.Uri.parse("package:$packageName")))
+                } catch (e: Exception) {
+                    try { startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS)) } catch (e2: Exception) {}
+                }
+                result.success(null)
             } else if (call.method == "askOverlay") {
                 try {
                     startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:$packageName")))
@@ -459,6 +468,9 @@ object RestBubble {
     private var fullMode = false
     private var lensX = -1
     private var lensY = -1
+    // Tucked into a side of the screen, and which side.
+    private var tucked = false
+    private var tuckRight = true
 
     /** Prism's theme. The sheets follow it. The lens is always dark glass, so it reads over any app. */
     var light = false
@@ -540,6 +552,90 @@ object RestBubble {
     /** The colour the lens is tinted with. */
     private fun lensColor(): Int = if (active) accent else (pin?.color ?: accent)
 
+    /**
+     * Whether Android lets Prism see which app is in front. Used for one thing: a pinned app's
+     * lens, which steps aside when it has opened its app, comes back the moment that app is left.
+     */
+    fun usageAllowed(context: Context): Boolean {
+        return try {
+            val ops = context.getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+            val mode = if (Build.VERSION.SDK_INT >= 29) {
+                ops.unsafeCheckOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
+            } else {
+                @Suppress("DEPRECATION")
+                ops.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
+            }
+            mode == android.app.AppOpsManager.MODE_ALLOWED
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private val watcher = android.os.Handler(android.os.Looper.getMainLooper())
+    private var watching = false
+
+    /**
+     * The lens has opened its pinned app and stepped aside. Three times a second, and only until
+     * that app is left, this looks at which app is in front; when it is another one (the list of
+     * recent apps counts), the lens comes back. Nothing runs while the screen is off, and nothing
+     * at all if Android has not been told Prism may look.
+     */
+    private fun watchAway(context: Context) {
+        if (watching || !usageAllowed(context)) return
+        val app = context.applicationContext
+        watching = true
+        val began = System.currentTimeMillis()
+        var from = began - 3000
+        var seen = false
+        var gone = 0
+        watcher.postDelayed(object : Runnable {
+            override fun run() {
+                val p = pin
+                if (!awayInApp || p == null) {
+                    watching = false
+                    return
+                }
+                var next = 330L
+                try {
+                    val power = app.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+                    if (!power.isInteractive) {
+                        next = 3000L
+                    } else {
+                        val usage = app.getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
+                        val now = System.currentTimeMillis()
+                        val events = usage.queryEvents(from, now + 1000)
+                        val e = android.app.usage.UsageEvents.Event()
+                        var front: String? = null
+                        while (events.hasNextEvent()) {
+                            events.getNextEvent(e)
+                            if (e.eventType == 1) { // an app's screen came to the front
+                                front = e.packageName
+                                from = e.timeStamp
+                            }
+                        }
+                        if (front == p.pkg) {
+                            seen = true
+                            gone = 0
+                        } else if (front != null && (seen || now - began > 2500)) {
+                            // Seen twice running, so that one screen of the app handing over to another is not mistaken for leaving.
+                            gone++
+                        }
+                        if (gone >= 2) {
+                            watching = false
+                            awayInApp = false
+                            refresh(app)
+                            return
+                        }
+                    }
+                } catch (ex: Exception) {
+                    watching = false
+                    return
+                }
+                watcher.postDelayed(this, next)
+            }
+        }, 330)
+    }
+
     /** A pinned thing's lens was tapped: it does what the thing is. */
     private fun tapPinned(context: Context) {
         val p = pin ?: return
@@ -548,9 +644,11 @@ object RestBubble {
             if (i != null) {
                 i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
                 try { context.startActivity(i) } catch (e: Exception) {}
-                // Out of the way while that app is in front; back when Prism is next on screen.
+                // Out of the way while that app is in front. It is back when that app is left, if
+                // Android lets Prism see that; otherwise when Prism is next on screen.
                 awayInApp = true
                 refresh(context)
+                watchAway(context)
             } else {
                 haptic(context, "thud")
             }
@@ -620,7 +718,10 @@ object RestBubble {
                 android.graphics.PixelFormat.TRANSLUCENT,
             )
             lp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
+            // It goes exactly where it is put: Android adds no slide of its own.
+            if (Build.VERSION.SDK_INT >= 34) lp.setCanPlayMoveAnimation(false)
             // Where it was last left, so it is in the same spot everywhere.
+            if (lensX < 0) tucked = false
             lp.x = if (lensX >= 0) lensX else d.widthPixels - size - (8 * dp).toInt()
             lp.y = if (lensY >= 0) lensY else (d.heightPixels * 0.30f).toInt()
             val v = Dot(context, lp)
@@ -685,6 +786,8 @@ object RestBubble {
             // Always at the bottom, wherever the lens is: that is where a thumb reaches.
             lp.gravity = android.view.Gravity.BOTTOM or android.view.Gravity.CENTER_HORIZONTAL
             lp.y = (14 * dp).toInt()
+            // When it changes size it is simply the new size: Android adds no slide of its own.
+            if (Build.VERSION.SDK_INT >= 34) lp.setCanPlayMoveAnimation(false)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 // And to keep it clear of a keyboard: when one is up, the sheet sits on top of it.
                 lp.fitInsetsTypes = android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.ime()
@@ -704,7 +807,6 @@ object RestBubble {
                 dockX = -1
                 dockY = -1
                 docked = true
-                v.invalidate()
             }
             host.arrive()
         } catch (e: Exception) {
@@ -712,28 +814,35 @@ object RestBubble {
         }
     }
 
-    /** Folds the sheet back into the lens, with a little movement. */
+    /** Folds the sheet away. The lens sets off for its own place at the same moment. */
     private fun closeSheet(context: Context) {
         val s = sheet ?: return
-        s.leave { removeSheet(context) }
+        undock()
+        s.leave { if (sheet === s) removeSheet(context) }
+    }
+
+    /** The lens leaves the sheet's corner and goes back to where it was. */
+    private fun undock() {
+        val v = view
+        if (docked && v != null) {
+            docked = false
+            v.glideTo(homeX.toFloat(), homeY.toFloat(), 300)
+        }
+        docked = false
     }
 
     private fun removeSheet(context: Context) {
         val s = sheet ?: return
         sheet = null
         try { wm(context).removeView(s) } catch (e: Exception) {}
-        val v = view
-        if (docked && v != null) {
-            // The lens goes back to where it was, and shows its own face again.
-            docked = false
-            v.flyTo(homeX.toFloat(), homeY.toFloat())
-            v.invalidate()
-        }
-        docked = false
+        undock()
     }
 
-    /** Puts the lens on the open sheet's top right corner, just above it. Called again whenever the sheet may have moved or grown. */
-    private fun dock(context: Context) {
+    /**
+     * Puts the lens on the open sheet's top right corner, just above it. Called again whenever
+     * the sheet may have moved or changed size; [ms] is how long the lens takes to get there.
+     */
+    private fun dock(context: Context, ms: Long = 300) {
         val v = view ?: return
         val s = sheet ?: return
         if (!docked || s.width == 0) return
@@ -741,11 +850,20 @@ object RestBubble {
         val at = IntArray(2)
         s.getLocationOnScreen(at)
         val x = at[0] + s.width - v.width - (2 * dp).toInt() - lensOffX
-        val y = at[1] + s.paddingTop - v.height - (2 * dp).toInt() - lensOffY
+        val y = at[1] + s.glassTop() - v.height - (2 * dp).toInt() - lensOffY
         if (Math.abs(x - dockX) < 2 && Math.abs(y - dockY) < 2) return
         dockX = x
         dockY = y
-        v.flyTo(x.toFloat(), y.toFloat())
+        v.glideTo(x.toFloat(), y.toFloat(), ms)
+    }
+
+    // How everything here moves: quickly at first, then slowing into its place. Nothing goes
+    // past its place and comes back.
+    private val EASE = android.view.animation.PathInterpolator(0.2f, 0f, 0f, 1f)
+
+    private fun smooth(x: Float): Float {
+        val t = x.coerceIn(0f, 1f)
+        return t * t * (3f - 2f * t)
     }
 
     /** What the timer shows, the same for the lens and for the sheet. */
@@ -882,11 +1000,18 @@ object RestBubble {
         private var springing = false
         private var lastFrame = 0L
         private var leaving = false
+        private var glide: android.animation.ValueAnimator? = null
+        // How far it is tucked into the side: 0 is out, 1 is away with only a sliver showing.
+        private var tuck = if (tucked) 1f else 0f
+        private var tucking: android.animation.ValueAnimator? = null
+        private var wouldTuck = false
+        // The rest of this touch is not for the lens.
+        private var ignoring = false
 
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()
-            scaleX = 0.5f; scaleY = 0.5f; alpha = 0f
-            animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(320).setInterpolator(android.view.animation.OvershootInterpolator(2.2f)).start()
+            scaleX = 0.8f; scaleY = 0.8f; alpha = 0f
+            animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(220).setInterpolator(EASE).start()
         }
 
         private fun shaders() {
@@ -920,17 +1045,35 @@ object RestBubble {
             shadersPinned = pinned
         }
 
-        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) = shaders()
+        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+            shaders()
+            // All of it is the lens's to touch, even where it lies over the phone's own
+            // swipe-in-from-the-edge zone: a touch there is for the lens and is not a "back".
+            if (Build.VERSION.SDK_INT >= 29) systemGestureExclusionRects = listOf(android.graphics.Rect(0, 0, w, h))
+        }
 
         override fun onDraw(canvas: android.graphics.Canvas) {
+            if (tuck <= 0f) {
+                paintLens(canvas)
+                return
+            }
+            // Tucked into the side, all but a sliver of it is drawn past the edge. Its window stays
+            // on the screen, so the whole of it can still be touched.
+            canvas.save()
+            canvas.translate((if (tuckRight) 1f else -1f) * tuck * (width - 22 * dp), 0f)
+            paintLens(canvas)
+            canvas.restore()
+        }
+
+        private fun paintLens(canvas: android.graphics.Canvas) {
             if (shadersFor != lensColor() || shadersPinned != !active) shaders()
             val colour = lensColor()
             val w = width.toFloat(); val r = w / 2f
             val disc = r - 5 * dp
             val now = System.currentTimeMillis()
             // A workout shows its timer. A pinned thing shows its picture, and has no timer to read.
-            // On a sheet's corner it shows neither: it is the sheet's fold-away button.
-            val t = if (active && !docked) reading(now) else null
+            // On a sheet's corner it shows the same, and a tap there folds the sheet away.
+            val t = if (active) reading(now) else null
             val go = t != null && t.go
             paint.style = android.graphics.Paint.Style.FILL
             paint.shader = shadow
@@ -982,20 +1125,6 @@ object RestBubble {
             canvas.drawCircle(r, r, disc - 0.65f * dp, paint)
             paint.shader = null
             paint.style = android.graphics.Paint.Style.FILL
-            if (docked) {
-                // An arrow pointing down, in the colour: tap to fold the sheet back into this lens.
-                round.reset()
-                round.moveTo(r - 11 * dp, r - 4.5f * dp)
-                round.lineTo(r, r + 6 * dp)
-                round.lineTo(r + 11 * dp, r - 4.5f * dp)
-                paint.style = android.graphics.Paint.Style.STROKE
-                paint.strokeWidth = 3.4f * dp
-                paint.strokeCap = android.graphics.Paint.Cap.ROUND
-                paint.strokeJoin = android.graphics.Paint.Join.ROUND
-                paint.color = shade(colour, 1.2f, 0xFF)
-                canvas.drawPath(round, paint)
-                return
-            }
             if (t == null) {
                 // The pinned thing's picture: its white mark, or its own icon cut round.
                 val p = pin
@@ -1033,24 +1162,66 @@ object RestBubble {
             if (go && buzzedFor != endsAt) {
                 buzzedFor = endsAt
                 haptic(context, "thud")
-                animate().scaleX(1.14f).scaleY(1.14f).setDuration(160).withEndAction {
-                    animate().scaleX(1f).scaleY(1f).setDuration(420).setInterpolator(android.view.animation.OvershootInterpolator(3f)).start()
+                animate().scaleX(1.12f).scaleY(1.12f).setDuration(180).setInterpolator(EASE).withEndAction {
+                    animate().scaleX(1f).scaleY(1f).setDuration(380).setInterpolator(EASE).start()
                 }.start()
             }
             // Smooth while a rest is running; otherwise once a second is enough.
             postInvalidateDelayed(if (t.resting) 66 else if (go) 250 else 1000)
         }
 
-        /** Sends the lens to a place, on the same spring a throw uses. */
-        fun flyTo(x: Float, y: Float) {
-            px = lp.x.toFloat(); py = lp.y.toFloat()
-            tx = x; ty = y
+        /** Takes the lens to a sheet's corner, or back from it: one even movement, nothing springy. */
+        fun glideTo(x: Float, y: Float, ms: Long) {
+            springing = false
             leaving = false
-            lastFrame = 0L
-            if (!springing) {
-                springing = true
-                android.view.Choreographer.getInstance().postFrameCallback(frame)
+            glide?.cancel()
+            val fromX = lp.x.toFloat(); val fromY = lp.y.toFloat()
+            val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
+            a.duration = ms
+            a.interpolator = EASE
+            a.addUpdateListener {
+                if (isAttachedToWindow) {
+                    val f = it.animatedValue as Float
+                    lp.x = Math.round(fromX + (x - fromX) * f); lp.y = Math.round(fromY + (y - fromY) * f)
+                    place()
+                }
             }
+            glide = a
+            a.start()
+        }
+
+        private fun slide(to: Float) {
+            tucking?.cancel()
+            val a = android.animation.ValueAnimator.ofFloat(tuck, to)
+            a.duration = 260
+            a.interpolator = EASE
+            a.addUpdateListener {
+                tuck = it.animatedValue as Float
+                invalidate()
+            }
+            tucking = a
+            a.start()
+        }
+
+        /** Pushed into a side of the screen and let go: it goes away there, leaving a sliver to see it by. */
+        private fun tuckIn(right: Boolean) {
+            val screen = resources.displayMetrics
+            tucked = true
+            tuckRight = right
+            target?.held = false
+            target?.animate()?.alpha(0f)?.setDuration(200)?.start()
+            val y = lp.y.toFloat().coerceIn(48 * dp, screen.heightPixels - height - 48 * dp)
+            glideTo(if (right) (screen.widthPixels - width).toFloat() else 0f, y, 260)
+            slide(1f)
+        }
+
+        /** Touched while tucked away: it comes back out to where a lens rests at that side. */
+        private fun untuck() {
+            val screen = resources.displayMetrics
+            haptic(context, "tick")
+            tucked = false
+            glideTo(if (tuckRight) screen.widthPixels - width - 8 * dp else 8 * dp, lp.y.toFloat(), 260)
+            slide(0f)
         }
 
         private fun place() {
@@ -1065,13 +1236,14 @@ object RestBubble {
         private fun crossX() = resources.displayMetrics.widthPixels / 2f
         private fun crossY() = resources.displayMetrics.heightPixels - 104 * dp
 
-        // A spring with some give: it overshoots a little and settles, as a thrown thing does.
+        // A firm spring for a thrown lens: it carries on a little with the throw and comes to rest
+        // without bouncing.
         private val frame = object : android.view.Choreographer.FrameCallback {
             override fun doFrame(nanos: Long) {
                 if (!springing || !isAttachedToWindow) { springing = false; return }
                 val dt = if (lastFrame == 0L) 1f / 120f else ((nanos - lastFrame) / 1e9f).coerceIn(0.001f, 0.032f)
                 lastFrame = nanos
-                val k = if (leaving) 320f else 210f; val c = if (leaving) 30f else 19f
+                val k = if (leaving) 320f else 240f; val c = if (leaving) 30f else 28f
                 vx += (-k * (px - tx) - c * vx) * dt; px += vx * dt
                 vy += (-k * (py - ty) - c * vy) * dt; py += vy * dt
                 lp.x = px.toInt(); lp.y = py.toInt()
@@ -1106,6 +1278,7 @@ object RestBubble {
                 }
                 // It comes back at its usual place, not on the cross.
                 lensX = -1; lensY = -1
+                tucked = false
                 refresh(c)
             }
             val t = target
@@ -1115,6 +1288,7 @@ object RestBubble {
         private fun throwIt(velX: Float, velY: Float) {
             val screen = resources.displayMetrics
             val margin = 8 * dp
+            glide?.cancel()
             px = lp.x.toFloat(); py = lp.y.toFloat(); vx = velX; vy = velY
             // Where it would coast to decides where it ends up, so a flick carries it.
             val coastX = px + velX * 0.16f
@@ -1144,7 +1318,7 @@ object RestBubble {
                 when (e.actionMasked) {
                     android.view.MotionEvent.ACTION_DOWN -> animate().scaleX(0.9f).scaleY(0.9f).setDuration(90).start()
                     android.view.MotionEvent.ACTION_UP -> {
-                        animate().scaleX(1f).scaleY(1f).setDuration(220).setInterpolator(android.view.animation.OvershootInterpolator(2.5f)).start()
+                        animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
                         haptic(context, "tick")
                         closeSheet(context)
                     }
@@ -1152,10 +1326,33 @@ object RestBubble {
                 }
                 return true
             }
+            if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) ignoring = false
+            if (ignoring) return true
+            if (tucked) {
+                // Tucked away, a touch anywhere on it does one thing: it brings the lens back out.
+                when (e.actionMasked) {
+                    android.view.MotionEvent.ACTION_DOWN -> {
+                        downX = e.rawX; downY = e.rawY
+                    }
+                    android.view.MotionEvent.ACTION_MOVE -> {
+                        if (Math.hypot((e.rawX - downX).toDouble(), (e.rawY - downY).toDouble()) > 12 * dp) {
+                            ignoring = true
+                            untuck()
+                        }
+                    }
+                    android.view.MotionEvent.ACTION_UP -> {
+                        ignoring = true
+                        untuck()
+                    }
+                }
+                return true
+            }
             when (e.actionMasked) {
                 android.view.MotionEvent.ACTION_DOWN -> {
                     springing = false
                     leaving = false
+                    wouldTuck = false
+                    glide?.cancel()
                     tracker?.recycle()
                     tracker = android.view.VelocityTracker.obtain()
                     downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y; dragged = false; snapped = false
@@ -1186,14 +1383,23 @@ object RestBubble {
                         }
                         lp.x = x.toInt(); lp.y = y.toInt()
                         place()
+                        // Pushed far enough into a side, letting go tucks it away there. A tick says so.
+                        val mid = lp.x + width / 2f
+                        val would = !snapped && (mid < 24 * dp || mid > resources.displayMetrics.widthPixels - 24 * dp)
+                        if (would != wouldTuck) {
+                            wouldTuck = would
+                            haptic(context, "tick")
+                        }
                     }
                 }
                 android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
-                    animate().scaleX(1f).scaleY(1f).setDuration(220).setInterpolator(android.view.animation.OvershootInterpolator(2.5f)).start()
+                    animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
                     if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !dragged) {
                         haptic(context, "tick")
                         // Tapped. A workout opens its sheet; a pinned thing does what it is.
                         if (active) openSheet(context) else tapPinned(context)
+                    } else if (e.actionMasked == android.view.MotionEvent.ACTION_UP && wouldTuck) {
+                        tuckIn(lp.x + width / 2f > resources.displayMetrics.widthPixels / 2f)
                     } else {
                         var velX = 0f; var velY = 0f
                         val t = tracker
@@ -1441,11 +1647,30 @@ object RestBubble {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val path = android.graphics.Path()
         private val dp = resources.displayMetrics.density
+        // How far it is bent, and which way: 1 is toward the bottom, -1 toward the top.
+        private var bend = 1f
+        private var turning: android.animation.ValueAnimator? = null
         var up = false
             set(v) {
                 if (field != v) {
                     field = v
-                    invalidate()
+                    val to = if (v) -1f else 1f
+                    turning?.cancel()
+                    if (isLaidOut) {
+                        // It bends over to the other side; it does not flip.
+                        val a = android.animation.ValueAnimator.ofFloat(bend, to)
+                        a.duration = 280
+                        a.interpolator = EASE
+                        a.addUpdateListener {
+                            bend = it.animatedValue as Float
+                            invalidate()
+                        }
+                        turning = a
+                        a.start()
+                    } else {
+                        bend = to
+                        invalidate()
+                    }
                 }
             }
 
@@ -1454,7 +1679,7 @@ object RestBubble {
             val cy = height / 2f
             // Wide, with a slight bend at the middle: toward the top when the sheet can be pulled up.
             val w = 31 * dp
-            val h = 3.4f * dp * (if (up) -1 else 1)
+            val h = 3.4f * dp * bend
             path.reset()
             path.moveTo(cx - w, cy - h)
             path.lineTo(cx, cy + h)
@@ -1465,6 +1690,36 @@ object RestBubble {
             paint.strokeJoin = android.graphics.Paint.Join.ROUND
             paint.color = accent
             canvas.drawPath(path, paint)
+        }
+    }
+
+    /**
+     * Which set this is and how many there are, at a glance: one segment for each set, the same
+     * bar the workout page draws for its exercises. Done is green, the one in hand is in the
+     * colour, the rest are faint. The warm-up is the short one at the start.
+     */
+    private class Pips(context: Context) : android.view.View(context) {
+        private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        private val dp = resources.displayMetrics.density
+
+        override fun onDraw(canvas: android.graphics.Canvas) {
+            val n = sets.size
+            if (n == 0) return
+            val gap = 5 * dp
+            val h = height.toFloat()
+            val short = 0.34f
+            val unit = (width - gap * (n - 1)) / ((n - 1) + short)
+            var x = 0f
+            for (i in 0 until n) {
+                val w = if (i == 0) unit * short else unit
+                paint.color = when {
+                    sets[i].done -> GREEN
+                    i == current -> accent
+                    else -> tint(ink(), 0x30)
+                }
+                canvas.drawRoundRect(x, 0f, x + w, h, h / 2f, h / 2f, paint)
+                x += w + gap
+            }
         }
     }
 
@@ -1483,35 +1738,89 @@ object RestBubble {
         protected val fill = android.widget.LinearLayout.LayoutParams.MATCH_PARENT
         protected val card = android.widget.LinearLayout(context)
         protected val grab = Grab(context)
+        private val grabBox = android.widget.FrameLayout(context)
+        // Nearly solid, with a lit edge. It cannot blur what is underneath, and text showing
+        // through unblurred only got in the way of reading the sheet.
+        private val glass = android.graphics.drawable.GradientDrawable(
+            android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
+            if (light) intArrayOf(0xFBFFFDF8.toInt(), 0xFAF3EEE4.toInt()) else intArrayOf(0xF81C1F27.toInt(), 0xFA0E0F13.toInt()),
+        )
+        // How far below the top of [body] the glass starts: nothing, except while the sheet is changing size.
+        private var edge = 0
+        // What was on the glass before a change of size, fading away where it stood.
+        private var ghost: android.graphics.Bitmap? = null
+        private var ghostAlpha = 0f
+        private var ghostTop = 0
+        private val ghostPaint = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG)
+
+        /** The glass and everything on it. This is what comes up, drops away and follows a pull. */
+        protected val body: android.widget.FrameLayout = object : android.widget.FrameLayout(context) {
+            override fun onDraw(canvas: android.graphics.Canvas) {
+                glass.setBounds(0, edge, width, height)
+                glass.draw(canvas)
+            }
+
+            override fun dispatchDraw(canvas: android.graphics.Canvas) {
+                super.dispatchDraw(canvas)
+                val g = ghost
+                if (g != null && ghostAlpha > 0.004f) {
+                    ghostPaint.alpha = (ghostAlpha * 255).toInt()
+                    canvas.drawBitmap(g, 0f, ghostTop.toFloat(), ghostPaint)
+                }
+            }
+        }
         private var downX = 0f
         private var downY = 0f
         private var pulling = false
         private var tracker: android.view.VelocityTracker? = null
-        private var closing = false
+        protected var closing = false
+            private set
+
+        // A change of size under way.
+        private var morphing: android.animation.ValueAnimator? = null
+        protected var changing = false
+            private set
+        private var part = 1f
+        private var glassFrom = 0f
+        private var glassNow = 0f
+        private var through: List<android.view.View> = emptyList()
+        private var riders: List<android.view.View> = emptyList()
+        private var steady: android.view.View? = null
+        private var docking = false
+        private var morphMs = 300L
 
         init {
-            // A little room above the card, so it can lean past its place when pulled up. Kept small:
+            // A little room above the glass, so it can lean past its place when pulled up. Kept small:
             // this strip belongs to the sheet's window, and the lens sits just above it.
             setPadding(0, px(8f), 0, 0)
             clipChildren = false
             clipToPadding = false
             card.orientation = android.widget.LinearLayout.VERTICAL
             card.setPadding(px(14f), px(4f), px(14f), px(14f))
-            // Nearly solid, with a lit edge. It cannot blur what is underneath, and text showing
-            // through unblurred only got in the way of reading the sheet.
-            val glass = android.graphics.drawable.GradientDrawable(
-                android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
-                if (light) intArrayOf(0xFBFFFDF8.toInt(), 0xFAF3EEE4.toInt()) else intArrayOf(0xF81C1F27.toInt(), 0xFA0E0F13.toInt()),
-            )
+            card.clipChildren = false
+            card.clipToPadding = false
             glass.cornerRadius = 32 * dp
             glass.setStroke(px(1.2f), if (light) 0x24000000 else 0x40FFFFFF)
-            card.background = glass
-            addView(card, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+            // The glass is drawn by [body], and everything on it is cut to the glass's shape, so
+            // that nothing shows past its top edge while that edge is moving.
+            body.setWillNotDraw(false)
+            body.clipChildren = false
+            body.outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(view: android.view.View, outline: android.graphics.Outline) {
+                    outline.setRoundRect(0, edge, view.width, view.height, 32 * dp)
+                }
+            }
+            body.clipToOutline = true
+            body.addView(card, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, android.view.Gravity.BOTTOM))
+            addView(body, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
             // The grabber: pull it, or tap it. An arrow in the colour, pointing the way the sheet can go.
-            val grabBox = android.widget.FrameLayout(context)
             grabBox.addView(grab, LayoutParams(px(88f), px(24f), android.view.Gravity.CENTER))
             grabBox.setOnClickListener { tappedGrabber() }
             card.addView(grabBox, android.widget.LinearLayout.LayoutParams(fill, px(30f)))
+            // The lens keeps to this sheet's corner: it is told as soon as the sheet has a size, or a new one.
+            addOnLayoutChangeListener { _, left, top, right, bottom, wasLeft, wasTop, wasRight, wasBottom ->
+                if (right - left != wasRight - wasLeft || bottom - top != wasBottom - wasTop) post { dock(context) }
+            }
         }
 
         // Keeps the lens on this sheet's corner while the sheet is open, wherever the sheet goes.
@@ -1521,6 +1830,13 @@ object RestBubble {
                 dock(context)
                 postDelayed(this, 200)
             }
+        }
+
+        // While the sheet is changing size, everything is put in its place after layout and
+        // before each frame is drawn.
+        private val beforeDraw = android.view.ViewTreeObserver.OnPreDrawListener {
+            if (morphing != null) pose()
+            true
         }
 
         /** Pulled or flicked down. */
@@ -1534,31 +1850,156 @@ object RestBubble {
         /** Brings what is shown up to date. */
         open fun sync() {}
 
-        /** It rises from the bottom edge. */
+        /** Where the top of the glass is, or is on its way to, measured from the top of this sheet's window. */
+        fun glassTop(): Int = body.top + body.height - card.height
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            viewTreeObserver.addOnPreDrawListener(beforeDraw)
+        }
+
+        override fun onDetachedFromWindow() {
+            viewTreeObserver.removeOnPreDrawListener(beforeDraw)
+            stopMorph(false)
+            super.onDetachedFromWindow()
+        }
+
+        /** It comes up a short way into its place. */
         open fun arrive() {
-            card.translationY = 260 * dp
-            card.alpha = 0f
-            card.animate().translationY(0f).alpha(1f).setDuration(320).setInterpolator(android.view.animation.OvershootInterpolator(0.9f)).start()
+            body.translationY = 26 * dp
+            body.alpha = 0f
+            body.animate().translationY(0f).alpha(1f).setDuration(300).setInterpolator(EASE).start()
             post(keeper)
         }
 
-        /** It sinks away again. */
+        /** It drops a little and is gone. What it shows stays as it was while it goes. */
         fun leave(then: () -> Unit) {
             if (closing) return
             closing = true
-            card.animate().translationY(card.height + 40 * dp).alpha(0f).setDuration(190)
-                .setInterpolator(android.view.animation.AccelerateInterpolator(1.4f)).withEndAction { then() }.start()
+            var gone = false
+            val finish = Runnable {
+                if (!gone) {
+                    gone = true
+                    then()
+                }
+            }
+            body.animate().translationY(body.translationY + 16 * dp).alpha(0f).setDuration(150)
+                .setInterpolator(android.view.animation.AccelerateInterpolator(1.2f)).withEndAction(finish).start()
+            // Whatever becomes of that movement, the sheet goes.
+            postDelayed(finish, 320)
         }
 
-        /** The small movement a sheet makes when it changes size. */
-        protected fun shift(grew: Boolean) {
-            card.alpha = 0.65f
-            card.translationY = if (grew) 30 * dp else -7 * dp
-            card.animate().alpha(1f).translationY(0f).setDuration(260).setInterpolator(android.view.animation.OvershootInterpolator(1.3f)).start()
+        /**
+         * Changes the sheet's size in one even movement. The top edge of the glass travels to its
+         * new place. [fade] is what is swapped on the way: what was there goes first, what
+         * replaces it comes after. [ride] keeps its place under the edge as that moves. [keep]
+         * is the thing at the bottom that stays exactly as it is.
+         */
+        protected fun morph(ms: Long, fade: List<android.view.View>, ride: List<android.view.View>, keep: android.view.View?, change: () -> Unit) {
+            if (!isLaidOut || card.height == 0 || closing || (changing && morphing == null)) {
+                change()
+                return
+            }
+            val again = morphing != null
+            val from = if (again) glassNow else card.height.toFloat()
+            stopMorph(false)
+            changing = true
+            ghost = if (!again && fade.isNotEmpty()) snapshot(fade, keep?.top ?: card.height) else null
+            // The window keeps its height until the glass has finished moving inside it.
+            body.minimumHeight = body.height
+            through = fade
+            riders = ride
+            steady = keep
+            glassFrom = from
+            part = 0f
+            morphMs = ms
+            docking = true
+            change()
+            body.animate().translationY(0f).setDuration(ms).setInterpolator(EASE).start()
+            val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
+            a.duration = ms
+            a.interpolator = android.view.animation.LinearInterpolator()
+            a.addUpdateListener {
+                part = it.animatedValue as Float
+                body.invalidate()
+            }
+            a.addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    if (morphing === animation) stopMorph(true)
+                }
+            })
+            morphing = a
+            a.start()
+        }
+
+        /** Puts everything where it belongs at this moment of a change of size. */
+        private fun pose() {
+            val to = card.height.toFloat()
+            glassNow = glassFrom + (to - glassFrom) * EASE.getInterpolation(part)
+            edge = Math.round(body.height - glassNow).coerceAtLeast(0)
+            val off = (edge - card.top).toFloat()
+            grabBox.translationY = off
+            for (v in riders) v.translationY = off
+            // What was there goes first and quickly; what replaces it comes up after.
+            ghostAlpha = 1f - smooth(part / 0.34f)
+            ghostTop = card.top + (steady?.top ?: card.height) - (ghost?.height ?: 0)
+            val shown = smooth((part - 0.22f) / 0.6f)
+            for (v in through) v.alpha = shown
+            body.invalidate()
+            body.invalidateOutline()
+            if (docking) {
+                // The lens sets off for the corner's new place with the edge, and takes as long.
+                docking = false
+                dock(context, morphMs)
+            }
+        }
+
+        private fun stopMorph(release: Boolean) {
+            val a = morphing
+            morphing = null
+            changing = false
+            if (a != null) {
+                a.removeAllListeners()
+                a.removeAllUpdateListeners()
+                a.cancel()
+            }
+            grabBox.translationY = 0f
+            for (v in riders) v.translationY = 0f
+            for (v in through) v.alpha = 1f
+            riders = emptyList()
+            through = emptyList()
+            steady = null
+            ghost = null
+            ghostAlpha = 0f
+            if (release) {
+                edge = 0
+                body.minimumHeight = 0
+            }
+            body.invalidate()
+            body.invalidateOutline()
+        }
+
+        /** A picture of [views] as they stand, from the top of the card down to [until]. */
+        private fun snapshot(views: List<android.view.View>, until: Int): android.graphics.Bitmap? {
+            if (card.width <= 0 || until <= 0) return null
+            return try {
+                val b = android.graphics.Bitmap.createBitmap(card.width, until, android.graphics.Bitmap.Config.ARGB_8888)
+                val c = android.graphics.Canvas(b)
+                for (v in views) {
+                    if (v.visibility != android.view.View.VISIBLE) continue
+                    c.save()
+                    c.translate(v.left.toFloat(), v.top.toFloat())
+                    v.draw(c)
+                    c.restore()
+                }
+                b
+            } catch (e: Throwable) {
+                null
+            }
         }
 
         private fun settle() {
-            card.animate().translationY(0f).setDuration(240).setInterpolator(android.view.animation.OvershootInterpolator(1.6f)).start()
+            body.animate().translationY(0f).setDuration(240).setInterpolator(EASE).start()
         }
 
         override fun dispatchTouchEvent(e: android.view.MotionEvent): Boolean {
@@ -1567,6 +2008,8 @@ object RestBubble {
                 closeSheet(context)
                 return true
             }
+            // On its way out it takes no more touches.
+            if (closing) return true
             return super.dispatchTouchEvent(e)
         }
 
@@ -1611,7 +2054,7 @@ object RestBubble {
                     if (pulling) {
                         val dy = e.rawY - downY
                         // Down, it follows the finger. Up, it only leans.
-                        card.translationY = if (dy > 0) dy else -Math.min(7 * dp, -dy * 0.12f)
+                        body.translationY = if (dy > 0) dy else -Math.min(7 * dp, -dy * 0.12f)
                     }
                 }
                 android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
@@ -1656,6 +2099,7 @@ object RestBubble {
         private val add = label(context, 13f, ink(), true)
         private val skip = label(context, 13f, ink(), true)
         private val open = label(context, 13f, ink(), true)
+        private val pips = Pips(context)
         private val rows = android.widget.LinearLayout(context)
         private val rowViews = ArrayList<Row>()
         private val done = label(context, 16.5f, onAccent, true)
@@ -1715,6 +2159,13 @@ object RestBubble {
             header.addView(controls)
             card.addView(header, android.widget.LinearLayout.LayoutParams(fill, wrap))
 
+            // The small sheet shows one set; this bar says which one it is, out of how many.
+            val pipsLp = android.widget.LinearLayout.LayoutParams(fill, px(5f))
+            pipsLp.topMargin = px(13f)
+            pipsLp.leftMargin = px(4f)
+            pipsLp.rightMargin = px(4f)
+            card.addView(pips, pipsLp)
+
             rows.orientation = android.widget.LinearLayout.VERTICAL
             val rowsLp = android.widget.LinearLayout.LayoutParams(fill, wrap)
             rowsLp.topMargin = px(12f)
@@ -1738,37 +2189,34 @@ object RestBubble {
             super.arrive()
             postDelayed(ticker, 250)
             if (!fullMode) {
-                // The arrow lifts once as the small sheet arrives: there is more above.
-                grab.animate().translationY(-6 * dp).setStartDelay(420).setDuration(240).withEndAction {
-                    grab.animate().translationY(0f).setStartDelay(0).setDuration(380).setInterpolator(android.view.animation.OvershootInterpolator(3f)).start()
+                // The arrow lifts once, gently, as the small sheet arrives: there is more above.
+                grab.animate().translationY(-4 * dp).setStartDelay(380).setDuration(260).setInterpolator(EASE).withEndAction {
+                    grab.animate().translationY(0f).setStartDelay(0).setDuration(420)
+                        .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator()).start()
                 }.start()
             }
         }
 
+        /** Becomes the small sheet or the tall one. The button at the bottom stays as it is throughout. */
+        private fun resize(full: Boolean) {
+            fullMode = full
+            morph(340, listOf(header, pips, rows), emptyList(), done) { applyMode() }
+        }
+
         // Down: the tall sheet becomes the small one; the small one becomes the lens.
         override fun pulledDown() {
-            if (fullMode) {
-                fullMode = false
-                applyMode()
-                shift(false)
-            } else {
-                closeSheet(context)
-            }
+            if (fullMode) resize(false) else closeSheet(context)
         }
 
         override fun pulledUp(): Boolean {
             if (fullMode) return false
-            fullMode = true
-            applyMode()
-            shift(true)
+            resize(true)
             return true
         }
 
         override fun tappedGrabber() {
             haptic(context, "tick")
-            fullMode = !fullMode
-            applyMode()
-            shift(fullMode)
+            resize(!fullMode)
         }
 
         private fun buildRows() {
@@ -1833,10 +2281,21 @@ object RestBubble {
             val ctlLp = android.widget.LinearLayout.LayoutParams(wrap, wrap)
             if (full) ctlLp.topMargin = px(12f)
             controls.layoutParams = ctlLp
+            // The tall sheet lists every set. The small one shows one, so it says which: the line
+            // under the name is written to be read, and the bar below shows it out of how many.
+            pips.visibility = if (full) android.view.View.GONE else android.view.View.VISIBLE
+            which.setTextColor(if (full) muted() else ink())
+            which.textSize = if (full) 12.5f else 14.5f
+            which.typeface = android.graphics.Typeface.create(
+                if (full) "sans-serif" else "sans-serif-medium",
+                if (full) android.graphics.Typeface.NORMAL else android.graphics.Typeface.BOLD,
+            )
             sync()
         }
 
         private fun texts() {
+            // A sheet on its way out stays as it was when it was let go.
+            if (closing) return
             val t = reading(System.currentTimeMillis())
             // The tall sheet has room to say what a tap does; the small one shows a pair of arrows.
             what.text = when {
@@ -1847,14 +2306,32 @@ object RestBubble {
             what.setTextColor(if (t.resting) accent else muted())
             val show = if (fullMode && t.resting) android.view.View.VISIBLE else android.view.View.GONE
             if (add.visibility != show) {
-                add.visibility = show
-                skip.visibility = show
+                val flip = {
+                    add.visibility = show
+                    skip.visibility = show
+                }
+                if (fullMode && !changing && isLaidOut) {
+                    // The tall sheet gains or loses a line. The timer keeps its place under the top
+                    // edge as that moves, and the two buttons come up once there is room for them.
+                    morph(260, emptyList(), listOf(clock, info), null, flip)
+                    if (show == android.view.View.VISIBLE) {
+                        for (v in listOf(add, skip)) {
+                            v.alpha = 0f
+                            v.animate().alpha(1f).setStartDelay(110).setDuration(180).start()
+                        }
+                    }
+                } else {
+                    flip()
+                }
             }
         }
 
         override fun sync() {
+            // A sheet on its way out stays as it was when it was let go.
+            if (closing) return
             if (rowViews.size != sets.size) buildRows()
             val full = fullMode
+            pips.invalidate()
             name.text = title
             which.text = if (full) exercise else setLabel
             for (i in rowViews.indices) {
