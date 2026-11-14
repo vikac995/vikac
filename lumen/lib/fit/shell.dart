@@ -2028,6 +2028,82 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           t.check('glass: dragging from the button brings it out', lifted);
         }
         await calm();
+        // Put down on something with things to do, and dragged off again from there.
+        final List<LensTargetState> doing = <LensTargetState>[
+          for (final LensTargetState c in LensBus.instance.targets)
+            if (c.widget.page == 'home' &&
+                c.rect != null &&
+                c.widget.actions.isNotEmpty &&
+                c.rect!.center.dy > top + 140 &&
+                c.rect!.center.dy < _home.dy - 150)
+              c,
+        ];
+        if (doing.length >= 2) {
+          // The glass rides 62 above the finger.
+          const Offset under = Offset(0, 62);
+          await Robot.drag(
+            <Offset>[_home, doing[0].rect!.center + under],
+            legMs: 500,
+            dwell: 450,
+            after: 900,
+          );
+          t.check(
+            'glass: put down on a card with something to do, it stays there',
+            _parked && _pill == doing[0],
+            _pill?.widget.title ?? 'on nothing',
+          );
+          await t.scene('picking the put-down glass up again', () async {
+            await Robot.drag(
+              <Offset>[_lensRect.center, doing[1].rect!.center + under],
+              legMs: 500,
+              dwell: 450,
+              after: 900,
+            );
+          });
+          t.check(
+            'glass: dragged from where it was put down, it goes to another card and stays',
+            _parked && _pill == doing[1],
+            _pill?.widget.title ?? 'on nothing',
+          );
+          // Somewhere with nothing to do under the glass.
+          Offset? bare;
+          for (
+            double y = top + 120;
+            y < _home.dy - 80 && bare == null;
+            y += 24
+          ) {
+            for (final double x in <double>[
+              sc.width * 0.5,
+              sc.width * 0.2,
+              sc.width * 0.8,
+            ]) {
+              final Offset p = Offset(x, y);
+              if (!doing.any((LensTargetState c) => c.near(p) > 0.5)) {
+                bare = p;
+                break;
+              }
+            }
+          }
+          if (bare != null && _parked) {
+            await Robot.drag(
+              <Offset>[_lensRect.center, bare + under],
+              legMs: 500,
+              dwell: 350,
+              after: 1100,
+            );
+            t.check(
+              'glass: dragged off and let go over nothing to do, it goes home',
+              !_parked && !_carrying,
+            );
+          } else if (_parked) {
+            await Robot.tap(_home, after: 900);
+          }
+        } else {
+          t.note(
+            'fewer than two cards on Home offer something to do where the glass can reach, so picking it up again was not tested',
+          );
+        }
+        await calm();
         // A flick must still be the app list, however the glass has been tuned.
         await Robot.drag(
           <Offset>[_home, _home - const Offset(0, 110)],
@@ -3179,6 +3255,58 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     if (choosing) {
       // Chosen or not, the blobs come back out, still being changed.
       _setOpen(true);
+    }
+  }
+
+  // The magnifying glass, put down on something, has been picked up again by dragging it.
+  bool _regrab = false;
+
+  void _pillGrab() {
+    if (!_parked) {
+      return;
+    }
+    _regrab = true;
+    setState(() {
+      _parked = false;
+      _carrying = true;
+      _returning = false;
+    });
+    // The same as when it leaves the button.
+    Haptics.settle();
+    Diag.instance
+      ..overlay = '+lens'
+      ..event('lens picked up again');
+  }
+
+  /// It rides above the finger, as it does when carried from the button.
+  void _pillCarry(Offset at) {
+    if (!_regrab || !_carrying) {
+      return;
+    }
+    final Size screen = MediaQuery.sizeOf(context);
+    _lx.animateTo(at.dx.clamp(_lensSize / 2, screen.width - _lensSize / 2));
+    _ly.animateTo(
+      (at.dy - 62).clamp(_lensSize / 2 + 30, screen.height - _lensSize / 2),
+    );
+  }
+
+  /// Let go: over something with things to do it stays; anywhere else it goes home.
+  void _pillDrop() {
+    if (!_regrab) {
+      return;
+    }
+    _regrab = false;
+    if (!_carrying) {
+      return;
+    }
+    if (_target != null && _target!.widget.actions.isNotEmpty) {
+      setState(() {
+        _carrying = false;
+        _parked = true;
+      });
+      Haptics.settle();
+    } else {
+      _lensHome();
     }
   }
 
@@ -4420,18 +4548,29 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   children: <Widget>[
                     if (_parked)
                       Positioned.fill(
+                        key: const ValueKey<String>('lens away'),
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: _lensHome,
                         ),
                       ),
                     Positioned.fromRect(
+                      // Keyed: the layer under it comes and goes, and a drag that began on
+                      // the pill must not be dropped when it does.
+                      key: const ValueKey<String>('lens body'),
                       rect: lens,
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTapUp: _parked
                             ? (TapUpDetails d) => _pillTap(d.globalPosition)
                             : null,
+                        // Put down, it can be dragged off again: it is picked up and
+                        // carried from there, as it is from the button.
+                        onPanStart: (_) => _pillGrab(),
+                        onPanUpdate: (DragUpdateDetails d) =>
+                            _pillCarry(d.globalPosition),
+                        onPanEnd: (_) => _pillDrop(),
+                        onPanCancel: _pillDrop,
                         child: Glass(
                           radius: lh / 2,
                           // Clear and magnifying while it only looks; coloured and calm once it holds actions.

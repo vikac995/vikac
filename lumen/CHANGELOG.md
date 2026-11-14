@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 81 (14 November 2026)
+
+**File:** `releases/prism-build-81.apk`
+
+Needs Play Protect paused to install.
+
+- **The magnifying glass, once put down, can be dragged off again.** Put down on a card it becomes the pill with that card's button. Until now a drag on the pill did nothing. Now a drag picks it up from where it lies and it is carried as it is from the button: it rides above the finger, opens over the cards it passes, stays where it is let go over something with a button, and goes home from anywhere else. A tap on the pill still presses its button; a tap beside it still sends it home. The same buzz as when it leaves the button.
+- **The page counter in the app list changes colour more from page to page.** The ring went a little darker and nine degrees round the colour wheel between the first page and the last; it now goes twenty-two. With the orange accent the first page is orange and the last a red-orange. It is one number and can go either way.
+- **The tests:** the long and hour-long tests now put the glass down on a card, drag it from there to another card, and drag it off to nothing.
+
+**Checked:** in my preview the robot put the glass down on "Today's workout", dragged it from there to "Calories", where it stayed, then dragged it off and it went home; a flick up was still the app list afterwards. The counter's colours were looked at on the first and the last page (light theme, orange).
+**Not checked:** on a phone. How the pick-up feels under a finger, and how the counter's colours read on your dark theme.
+
 ## Prism, build 80 (14 November 2026)
 
 **File:** `releases/prism-build-80.apk`

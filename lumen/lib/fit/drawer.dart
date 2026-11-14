@@ -913,12 +913,12 @@ class _RingPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     canvas.drawArc(r, 0, math.pi * 2, false, p..color = track);
     final double f = v.clamp(0.0, 1.0);
-    // The colour deepens ever so slightly as the end comes near: a little darker and a touch
-    // toward its deeper neighbour, so the last pages feel like arriving.
+    // The colour deepens as the end comes near: a little darker and well toward its deeper
+    // neighbour, so each page is a visible step and the last pages feel like arriving.
     final HSLColor h = HSLColor.fromColor(this.color);
     final Color color = h
         .withLightness((h.lightness * (1 - 0.20 * f)).clamp(0.0, 1.0))
-        .withHue((h.hue - 9 * f + 360) % 360)
+        .withHue((h.hue - 22 * f + 360) % 360)
         .toColor();
     if (f > 0.0005) {
       canvas.drawArc(
