@@ -161,14 +161,30 @@ class TestRun {
       ..writeln(
         'CHECKS: ${checks.length - wrong} right, $wrong wrong, of ${checks.length}',
       );
+    // The same check made in several rounds is one line: how many times it was right, and
+    // what was said when it was not.
+    final Map<String, (int, int, String)> byName =
+        <String, (int, int, String)>{};
     for (final (String what, bool ok, String note) in checks) {
-      if (!ok) {
-        o.writeln('  WRONG  $what${note.isEmpty ? '' : '  [$note]'}');
+      final (int right, int bad, String said) = byName[what] ?? (0, 0, '');
+      byName[what] = ok
+          ? (right + 1, bad, bad == 0 ? note : said)
+          : (right, bad + 1, bad == 0 ? note : said);
+    }
+    for (final MapEntry<String, (int, int, String)> e in byName.entries) {
+      final (int right, int bad, String said) = e.value;
+      if (bad > 0) {
+        o.writeln(
+          '  WRONG  ${e.key}${right + bad > 1 ? '  ($bad of ${right + bad} times)' : ''}${said.isEmpty ? '' : '  [$said]'}',
+        );
       }
     }
-    for (final (String what, bool ok, String note) in checks) {
-      if (ok) {
-        o.writeln('  ok     $what${note.isEmpty ? '' : '  [$note]'}');
+    for (final MapEntry<String, (int, int, String)> e in byName.entries) {
+      final (int right, int bad, String said) = e.value;
+      if (bad == 0) {
+        o.writeln(
+          '  ok     ${e.key}${right > 1 ? '  (all $right times)' : ''}${said.isEmpty ? '' : '  [$said]'}',
+        );
       }
     }
 
@@ -181,7 +197,18 @@ class TestRun {
       ..writeln(
         '${'what'.padRight(46)} frames  late  over  build avg/max  draw avg/max   took',
       );
+    final Map<String, (List<FrameTiming>, int, int)> stretches =
+        <String, (List<FrameTiming>, int, int)>{};
     for (final (String name, List<FrameTiming> fs, int ms) in scenes) {
+      final (List<FrameTiming> all, int took, int times) =
+          stretches[name] ?? (<FrameTiming>[], 0, 0);
+      stretches[name] = (<FrameTiming>[...all, ...fs], took + ms, times + 1);
+    }
+    for (final MapEntry<String, (List<FrameTiming>, int, int)> e
+        in stretches.entries) {
+      final String name = e.value.$3 > 1 ? '${e.key} x${e.value.$3}' : e.key;
+      final List<FrameTiming> fs = e.value.$1;
+      final int ms = e.value.$2;
       if (fs.isEmpty) {
         o.writeln('${name.padRight(46)}      0');
         continue;
@@ -230,9 +257,36 @@ class TestRun {
           'THE FLOATING LENS. How evenly Android drew it while each thing was done to it. This is when it was drawn, which is not proof of when the screen showed it.',
         )
         ..writeln('${'what'.padRight(46)} drawn   gaps  usual gap  worst gap');
+      final Map<String, List<Map<String, Object?>>> done =
+          <String, List<Map<String, Object?>>>{};
       for (final (String name, Map<String, Object?> m) in lensRuns) {
+        (done[name] ??= <Map<String, Object?>>[]).add(m);
+      }
+      for (final MapEntry<String, List<Map<String, Object?>>> e
+          in done.entries) {
+        final List<Map<String, Object?>> all = e.value;
+        final List<Map<String, Object?>> good = <Map<String, Object?>>[
+          for (final Map<String, Object?> m in all)
+            if (m['ok'] == true && m['frames'] != null) m,
+        ];
+        final int failed = all
+            .where((Map<String, Object?> m) => m['ok'] != true)
+            .length;
+        final String name = all.length > 1 ? '${e.key} x${all.length}' : e.key;
+        if (good.isEmpty) {
+          o.writeln(
+            '${name.padRight(46)}     -      -          -          -   NOT DONE: ${all.first['note']}',
+          );
+          continue;
+        }
+        double sum(String k) => good
+            .map((Map<String, Object?> m) => _num(m[k]))
+            .reduce((double a, double b) => a + b);
+        final double worst = good
+            .map((Map<String, Object?> m) => _num(m['worstMs']))
+            .reduce(math.max);
         o.writeln(
-          '${name.padRight(46)} ${'${m['frames'] ?? '-'}'.padLeft(5)} ${'${m['late'] ?? '-'}'.padLeft(6)}  ${(m['usualMs'] == null ? '-' : '${_f(_num(m['usualMs']))} ms').padLeft(9)}  ${(m['worstMs'] == null ? '-' : '${_f(_num(m['worstMs']))} ms').padLeft(9)}${m['ok'] == true ? '' : '   NOT DONE: ${m['note']}'}',
+          '${name.padRight(46)} ${sum('frames').round().toString().padLeft(5)} ${sum('late').round().toString().padLeft(6)}  ${'${_f(sum('usualMs') / good.length)} ms'.padLeft(9)}  ${'${_f(worst)} ms'.padLeft(9)}${failed > 0 ? '   NOT DONE $failed of ${all.length} times: ${all.firstWhere((Map<String, Object?> m) => m['ok'] != true)['note']}' : ''}',
         );
       }
     }
@@ -272,17 +326,33 @@ class TestRun {
     return o.toString();
   }
 
-  /// Keeps the report where it can be found again if the screen showing it is closed.
+  static File get _kept {
+    final Directory files = Directory(
+      '${Directory.systemTemp.parent.path}/files',
+    );
+    return File(
+      '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_long_test.txt',
+    );
+  }
+
+  /// Keeps the report where it can be found again: at the bottom of Prism's settings,
+  /// whenever that is next opened. It is kept after every round, so a test that was cut
+  /// short still leaves what it had found.
   static void keep(String text) {
     try {
-      final Directory files = Directory(
-        '${Directory.systemTemp.parent.path}/files',
-      );
-      File(
-        '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_long_test.txt',
-      ).writeAsStringSync(text);
+      _kept.writeAsStringSync(text);
     } catch (_) {
       // Not kept: it is still on the screen and can be copied from there.
+    }
+  }
+
+  /// The last report that was kept, if there is one.
+  static String? last() {
+    try {
+      final String text = _kept.readAsStringSync();
+      return text.trim().isEmpty ? null : text;
+    } catch (_) {
+      return null;
     }
   }
 }

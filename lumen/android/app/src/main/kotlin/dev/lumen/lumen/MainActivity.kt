@@ -898,7 +898,8 @@ object RestBubble {
 
     /** The same three clicks Prism's own dials make. */
     fun haptic(context: Context, kind: String) {
-        if (!hapticsOn) return
+        // (A test left running overnight makes no noise.)
+        if (!hapticsOn || testQuiet) return
         try {
             val vib: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
@@ -1137,6 +1138,7 @@ object RestBubble {
 
     private var stamps: ArrayList<Long>? = null
     private var draws = 0L
+    private var testQuiet = false
     private var awake: android.view.View? = null
 
     /** The lens or its menu has just been drawn. */
@@ -1180,6 +1182,7 @@ object RestBubble {
         m["cpu"] = android.os.Process.getElapsedCpuTime()
         m["draws"] = draws
         m["now"] = System.currentTimeMillis()
+        m["fg"] = foreground
         return m
     }
 
@@ -1300,7 +1303,29 @@ object RestBubble {
                 "end" -> {
                     activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     stamps = null
+                    testQuiet = false
                     done(state(context))
+                }
+                // No buzzes, for a test left running while someone sleeps.
+                "quiet" -> {
+                    testQuiet = a["on"] == true
+                    done(state(context))
+                }
+                // How much memory Prism is using, in kilobytes.
+                "memory" -> {
+                    val m = state(context)
+                    m["pss"] = android.os.Debug.getPss()
+                    done(m)
+                }
+                // Prism is brought back to the front, from whatever app is there.
+                "front" -> {
+                    try {
+                        context.startActivity(
+                            android.content.Intent(context, MainActivity::class.java)
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT),
+                        )
+                    } catch (e: Exception) {}
+                    watcher.postDelayed({ done(state(context)) }, num("settleMs", 2500))
                 }
                 "state" -> done(state(context))
                 // A finger on the lens.
@@ -1340,6 +1365,8 @@ object RestBubble {
                             stamps = null
                             val st = state(context)
                             st["key"] = m.testKey(i)
+                            st["spotX"] = spot[0].toDouble()
+                            st["spotY"] = spot[1].toDouble()
                             done(st)
                         }
                         "tap" -> finger(m, listOf(spot), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)

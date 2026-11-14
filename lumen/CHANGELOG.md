@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Prism, build 79 (14 November 2026)
+
+**File:** `releases/prism-build-79.apk`
+
+Needs Play Protect paused to install.
+
+**The hour-long test.** A second button under the long test: "Run the hour-long test (overnight, silent)". It is the long test done four times over, then the still stretches at three minutes each where the long test has one. It makes no buzz, here or from Android. About an hour.
+
+- **The report is kept.** After every round, and at the end, it is written down. Whenever Prism's settings are next opened, the last report is at the bottom of the test tools with "Copy the last report". A test that was cut short leaves what it had found, marked UNFINISHED.
+- **Repeats are combined.** A check made in every round is one line: right all four times, or wrong so many times of four, with what was found. Frames from the same stretch in every round are counted together.
+- **Memory** is written down after each round, to see whether it grows with use.
+
+**More of the blobs, in both tests**
+
+- A blob that is an app: tapped, the app opens; Prism can be brought back.
+- That app as the floating lens: tapped, its app opens and **the lens stays on the screen over it**; held there, its menu opens over the other app; a tap in it on one of Prism's pages brings Prism to the front on that page; dropped on the cross, nothing floats.
+- Android's own Settings stands in for "an app" throughout: it is on every phone and nothing in it is touched.
+
+**Checked:** it compiles. In my preview two rounds of the Prism half ran from start to finish: 69 of 73 checks right. Three of the four cannot be right there (power, with nothing to measure it), and the fourth, a slow flick, was right in one round of the two: my preview is too slow to flick reliably. The kept report and its Copy button are there in the settings.
+**Not checked:** on a phone. None of Android's half has ever run, the app steps included.
+
 ## Prism, build 78 (14 November 2026)
 
 **File:** `releases/prism-build-78.apk`
