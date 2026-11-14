@@ -97,7 +97,8 @@ class Journal with WidgetsBindingObserver {
     _stillMa = _moveMa = _bright = 0;
     _level0 = _level1 = -1;
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 10), (_) => _sample());
+    // One reading as Prism comes on screen. (It used to be read every ten seconds for as long
+    // as Prism was up, which woke the phone for nothing.)
     _sample();
   }
 

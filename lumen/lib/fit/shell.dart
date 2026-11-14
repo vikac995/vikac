@@ -108,6 +108,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     }
   }
 
+  /// The blobs that would come out of the button, for its sign: where each sits and its colour.
+  List<(double, Color)> get _fanBlobs => <(double, Color)>[
+    for (int i = 0; i < _n; i++)
+      if (!_floating(i) && !_isEmpty(i))
+        (_seatAngle(_seat[i].target), _blobColor(i)),
+  ];
+
   void _removeBlob(int i) {
     Haptics.thud();
     Diag.instance.event('blob removed');
@@ -511,7 +518,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'A blob you put down, and the workout timer, float over the screen. Choose where.',
+                        'A blob you put down, and the timer, float over the screen. Choose where.',
                         style: LumenType.text(
                           13.5,
                           color: c.inkMuted,
@@ -5178,6 +5185,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                           end: lensTone(c.accent),
                           ink: Colors.white,
                           button: _button,
+                          sign: _fanBlobs,
                         ),
                       ),
                     );
@@ -5574,7 +5582,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             onChanged: (double v) => setState(() => _sheetSeconds = v),
           ),
           const SizedBox(height: 14),
-          cta('Start ${_sheetSeconds.round()} s', _closeSheet),
+          // Starts it: the floating timer counts it, wherever you go next.
+          cta('Start ${_sheetSeconds.round()} s', () {
+            RestBubble.instance.testRest?.call(_sheetSeconds.round());
+            _closeSheet();
+          }),
         ] else ...<Widget>[
           Text(
             'The camera would open here, in this sheet, and close itself once it reads a barcode.',
@@ -6380,7 +6392,11 @@ class _BlobPainter extends CustomPainter {
     required this.end,
     required this.ink,
     required this.button,
+    required this.sign,
   });
+
+  /// What the button shows: the blobs, for its sign.
+  final List<(double, Color)> sign;
   final Rect body;
   final Offset velocity, home, from;
   final Color start, end, ink;
@@ -6421,17 +6437,17 @@ class _BlobPainter extends CustomPainter {
         )
         ..restore();
     }
-    // The plus draws itself in as the drop arrives.
+    // The button's sign draws itself in as the drop arrives.
     final double a = ((p - 0.7) / 0.3).clamp(0.0, 1.0);
     if (a > 0) {
-      final Paint line = Paint()
-        ..color = ink.withValues(alpha: a)
-        ..strokeWidth = 3.4
-        ..strokeCap = StrokeCap.round;
-      const double l = 9.5;
       canvas
-        ..drawLine(at - const Offset(l, 0), at + const Offset(l, 0), line)
-        ..drawLine(at - const Offset(0, l), at + const Offset(0, l), line);
+        ..saveLayer(
+          Rect.fromCenter(center: at, width: 44, height: 44),
+          Paint()..color = ink.withValues(alpha: a),
+        )
+        ..translate(at.dx - 19, at.dy - 19);
+      _FanMark(sign).paint(canvas, const Size(38, 38));
+      canvas.restore();
     }
   }
 

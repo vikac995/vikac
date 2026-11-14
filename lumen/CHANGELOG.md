@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 94 (14 November 2026)
+
+**File:** `releases/prism-build-94.apk`
+
+Needs Play Protect paused to install.
+
+- **Fixed: the magnifying glass, flying home, showed the old plus for a moment.** The drop that flies back drew a plus as it landed. It now draws the button's own sign, the one it is about to become. Nothing else in Prism still draws the old plus (the plus in an empty place and the "add" button on the food sheet are meant).
+- **The rest bar is gone from the workout page.** The rest is timed by the floating timer alone.
+- **"Timer" starts a timer.** Its sheet's button used only to close the sheet. It now starts a rest of that length, counted by the floating timer.
+- **The battery reading every ten seconds is gone.** It was a leftover from development that woke the phone for as long as Prism was on screen. One reading is taken when Prism comes on screen.
+
+**Checked:** in my preview, the long test's dry run.
+**Not checked:** on a phone. Without the bar, a rest can only be seen and changed on the floating timer: with floating switched off in both places there is nothing to see it by.
+**Still to come from the list:** the timer as a floating thing of its own beside the blob, and the short bounce as either appears.
+
 ## Prism, build 93 (14 November 2026)
 
 **File:** `releases/prism-build-93.apk`

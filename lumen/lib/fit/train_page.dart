@@ -12,7 +12,6 @@ import '../core/springs.dart';
 import '../core/theme.dart';
 import '../widgets/pressable.dart';
 import '../widgets/tag.dart';
-import '../core/glass.dart';
 import 'common.dart';
 import 'diag.dart';
 import '../rooms/patterns/inputs_room.dart';
@@ -671,147 +670,9 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
               ),
             ],
           ),
-          // Rest timer: appears when a set is finished, floats, never blocks the rows.
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: safe.bottom + 96,
-            child: ListenableBuilder(
-              listenable: _rest,
-              builder: (BuildContext context, Widget? child) => IgnorePointer(
-                ignoring: _rest.value < 0.5,
-                child: Transform.translate(
-                  offset: Offset(0, (1 - _rest.value) * 280),
-                  child: child,
-                ),
-              ),
-              child: Tag(
-                'R39.4',
-                'Rest timer starts itself',
-                child: Container(
-                  height: 72,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: ShapeDecoration(shape: const StadiumBorder()),
-                  child: Stack(
-                    children: <Widget>[
-                      Positioned.fill(
-                        child: Glass(
-                          radius: 36,
-                          style: GlassStyle(
-                            blur: 18,
-                            tint: 0.5,
-                            refraction: 26,
-                            bevel: 18,
-                            fallbackColor: c.surfaceHigh,
-                          ),
-                        ),
-                      ),
-                      AnimatedFractionallySizedBox(
-                        duration: const Duration(seconds: 1),
-                        // The bar empties in a countdown and fills when counting up.
-                        widthFactor: _restOf == 0
-                            ? 0
-                            : ((RestBubble.instance.countUp.value
-                                          ? _restOf - _restLeft
-                                          : _restLeft) /
-                                      _restOf)
-                                  .clamp(0.0, 1.0),
-                        heightFactor: 1,
-                        alignment: Alignment.centerLeft,
-                        child: ColoredBox(
-                          color: c.accent.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 24, right: 10),
-                        child: Row(
-                          children: <Widget>[
-                            // A tap on the time switches between counting down and counting up.
-                            GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                RestBubble.instance.toggleMode();
-                                Haptics.settle();
-                              },
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Text(
-                                    _pausedAt != null
-                                        ? 'PAUSED'
-                                        : RestBubble.instance.countUp.value
-                                        ? 'RESTING'
-                                        : 'REST LEFT',
-                                    style: LumenType.label(color: c.inkMuted),
-                                  ),
-                                  Text(
-                                    _mmss(
-                                      RestBubble.instance.countUp.value
-                                          ? (_restOf - _restLeft).clamp(
-                                              0,
-                                              86400,
-                                            )
-                                          : _restLeft,
-                                    ),
-                                    textScaler: TextScaler.noScaling,
-                                    style:
-                                        LumenType.display(
-                                          28,
-                                          weight: 700,
-                                          color: c.ink,
-                                          height: 1.05,
-                                        ).copyWith(
-                                          fontFeatures: const <FontFeature>[
-                                            FontFeature.tabularFigures(),
-                                          ],
-                                        ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Spacer(),
-                            _pill(c, '+15 s', _addRest),
-                            const SizedBox(width: 8),
-                            _pill(c, 'Skip', _skipRest, strong: true),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // (The rest is timed by the floating timer alone: there is no bar for it here.)
         ],
       ),
     );
   }
-
-  Widget _pill(
-    LumenColors c,
-    String label,
-    VoidCallback onTap, {
-    bool strong = false,
-  }) => Pressable(
-    onTap: onTap,
-    child: Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      alignment: Alignment.center,
-      decoration: ShapeDecoration(
-        color: strong ? c.accent : c.ink.withValues(alpha: 0.08),
-        shape: const StadiumBorder(),
-      ),
-      child: Text(
-        label,
-        style: LumenType.text(
-          14.5,
-          weight: 680,
-          color: strong ? c.onAccent : c.ink,
-          height: 1,
-        ),
-      ),
-    ),
-  );
 }
