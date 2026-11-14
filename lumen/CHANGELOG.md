@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 96 (14 November 2026)
+
+**File:** `releases/prism-build-96.apk`
+
+Needs Play Protect paused to install.
+
+- **The button's sign is one drawing that changes shape.** It used to be three pictures faded into one another. Now, as the blobs come out, the fan folds into its own foot: the stems shorten, the dots shrink and pale to white, and the foot rises to the middle of the button. Out of that point the X unfolds, turning as it comes, and swings a hair past its size before it settles. Closing, the same in reverse. While the blobs are being changed the X turns on and shrinks away as the cog turns in. It rides on the same springs as the blobs, so it follows them exactly and can be turned back half way.
+- **Fixed: a quick swipe up for the app list woke the magnifying glass for a moment.** A card lit up with its explanation for a frame before the app list came. The glass is no longer given to a finger that is, at that very moment, going upward fast: that is a flick. A carry upward is slower and gets the glass as before; a fast one gets it the moment it slows; and nothing is held back beyond a quarter of a second. Going sideways or down is unchanged.
+- **The drop that flies home is dark glass, not a yellow blob.** It is drawn in the button's own dark tone, lit from above, with a bright line round its upper edge: two fills and a line, nothing that costs. Let go as a pill, it still starts from the pill's colour.
+
+**Checked:** in my preview: the long test's dry run, with every check on the glass and the app list right, the flick among them; the sign looked at as the fan, the X and the cog.
+**Not checked:** on a phone. The sign in motion: my preview is too slow to show the in-between frames. The flying drop: I did not catch it in a picture.
+
 ## Prism, build 95 (14 November 2026)
 
 **File:** `releases/prism-build-95.apk`

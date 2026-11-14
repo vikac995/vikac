@@ -115,6 +115,16 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         (_seatAngle(_seat[i].target), _blobColor(i)),
   ];
 
+  // How far the button's X has turned into the cog: 0 the X, 1 the cog.
+  late final SpringValue _cog = SpringValue(
+    this,
+    value: 0,
+    spring: Motions.spatialFast,
+  );
+
+  /// The cog is the button's sign only while the blobs are out and being changed.
+  void _signSync() => _cog.animateTo(_editing && _open ? 1 : 0);
+
   void _removeBlob(int i) {
     Haptics.thud();
     Diag.instance.event('blob removed');
@@ -223,6 +233,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _blobDrop(_dragI!, _home, Offset.zero);
     }
     setState(() => _editing = v);
+    _signSync();
     v ? Haptics.settle() : Haptics.tick();
     Diag.instance.event(v ? 'blobs: editing' : 'blobs: done editing');
   }
@@ -3485,9 +3496,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   void _lensHome() {
     final bool away = _glass.value > 0.05, wasParked = _parked;
     _retFrom = Offset(_lx.value, _ly.value);
+    // It flies home as the dark glass it is about to be again; let go as a pill, it starts
+    // from the pill's own colour.
     _retColor =
         (_parked ? _pill?.widget.color : null) ??
-        LumenColors.of(context).accent;
+        lensTone(LumenColors.of(context).accent);
     setState(() {
       _returning = away;
       _carrying = false;
@@ -3511,11 +3524,61 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Haptics.tick();
   }
 
+  // How fast the finger on the button is going just now, in pixels a millisecond, smoothed
+  // over its last few movements; and where and when it was last measured.
+  double _pace = 0;
+  Offset? _paceFrom;
+  int _paceMs = 0;
+
+  /// Whether the finger is in the middle of a flick up for the app list: going upward, fast,
+  /// this very moment, and not down long. Such a finger is not given the magnifying glass, so
+  /// that the glass and the cards it wakes are never seen for a moment under a flick. A carry
+  /// upward is slower than this, and gets the glass as before; a fast one gets it the moment
+  /// it slows.
+  bool _flicking() {
+    final Offset? down = _downAt, last = _lastAt;
+    if (down == null || last == null) {
+      return false;
+    }
+    final Offset travel = last - down;
+    final int ms = _held.elapsedMilliseconds;
+    return travel.dy < 0 &&
+        travel.dx.abs() < -travel.dy * 0.8 &&
+        _pace > 0.9 &&
+        ms - _paceMs < 45 &&
+        ms < 260;
+  }
+
+  /// A finger that moved and then stopped sends no more movement, so the lift is also timed.
+  void _liftCheck() {
+    if (_downAt == null || !_moved || _lifted || _drawerOpen || !mounted) {
+      return;
+    }
+    if (_flicking()) {
+      // Still on its way up: looked at again in a moment.
+      _liftTimer = Timer(const Duration(milliseconds: 40), _liftCheck);
+      return;
+    }
+    _liftOff();
+    final Offset at = _lastAt ?? _home;
+    _lx.animateTo(at.dx);
+    _ly.animateTo(at.dy - 62);
+  }
+
   void _buttonMove(PointerMoveEvent e) {
     if (_downAt == null) {
       return;
     }
     _lastAt = e.position;
+    final int nowMs = _held.elapsedMilliseconds;
+    if (_paceFrom != null && nowMs > _paceMs) {
+      final double v = (e.position - _paceFrom!).distance / (nowMs - _paceMs);
+      _pace = _pace * 0.4 + v * 0.6;
+    }
+    if (_paceFrom == null || nowMs > _paceMs) {
+      _paceFrom = e.position;
+      _paceMs = nowMs;
+    }
     final Size screen = MediaQuery.sizeOf(context);
     final Offset travel = e.position - _downAt!;
     if (!_moved) {
@@ -3542,9 +3605,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       final int moving = ms - _movedAt;
       final double pace = travel.distance / math.max(moving, 1);
       final bool carry =
-          ms >= 140 ||
-          (!upward && travel.distance > 22) ||
-          (upward && travel.distance > 24 && moving >= 24 && pace < 0.6);
+          !_flicking() &&
+          (ms >= 140 ||
+              (!upward && travel.distance > 22) ||
+              (upward && travel.distance > 24 && moving >= 24 && pace < 0.6));
       if (_drawerOpen || !carry) {
         return;
       }
@@ -3843,6 +3907,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         _editing = false;
       }
     });
+    _signSync();
     Diag.instance
       ..overlay = v ? '+blobs' : ''
       ..event(v ? 'blobs open' : 'blobs close');
@@ -4876,19 +4941,14 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         );
                       }
                       // A finger that moved and then stopped sends no more movement, so the wait is also timed.
+                      _pace = 0;
+                      _paceFrom = null;
+                      _paceMs = 0;
                       _liftTimer?.cancel();
-                      _liftTimer = Timer(const Duration(milliseconds: 140), () {
-                        if (_downAt != null &&
-                            _moved &&
-                            !_lifted &&
-                            !_drawerOpen &&
-                            mounted) {
-                          _liftOff();
-                          final Offset at = _lastAt ?? _home;
-                          _lx.animateTo(at.dx);
-                          _ly.animateTo(at.dy - 62);
-                        }
-                      });
+                      _liftTimer = Timer(
+                        const Duration(milliseconds: 140),
+                        _liftCheck,
+                      );
                       _kick.animateTo(0.92);
                     },
                     onPointerMove: _buttonMove,
@@ -4900,6 +4960,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         _kick,
                         _glass,
                         _wob,
+                        _cog,
                       ]),
                       builder: (BuildContext context, Widget? _) =>
                           Transform.scale(
@@ -4944,73 +5005,16 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                         clipBehavior: Clip.none,
                                         alignment: Alignment.center,
                                         children: <Widget>[
-                                          // While the blobs are being changed the X becomes a cog: the
-                                          // button is then the way to the floating elements.
-                                          AnimatedSwitcher(
-                                            duration: const Duration(
-                                              milliseconds: 160,
+                                          // The button's sign: one drawing that turns from the fan into the X as the
+                                          // blobs come out, and from the X into the cog while they are being changed.
+                                          // It follows the same springs the blobs do, so it can be turned back half way.
+                                          CustomPaint(
+                                            size: const Size(38, 38),
+                                            painter: _ButtonSign(
+                                              blobs: _fanBlobs,
+                                              open: _t.value,
+                                              cog: _cog.value,
                                             ),
-                                            transitionBuilder:
-                                                (
-                                                  Widget w,
-                                                  Animation<double> a,
-                                                ) => ScaleTransition(
-                                                  scale: a,
-                                                  child: FadeTransition(
-                                                    opacity: a,
-                                                    child: w,
-                                                  ),
-                                                ),
-                                            // Closed, the button shows what it does: things fan out of it. Open, it is
-                                            // the X that puts them away.
-                                            child: _editing && _open
-                                                ? const Icon(
-                                                    Icons.settings_rounded,
-                                                    key: ValueKey<String>(
-                                                      'cog',
-                                                    ),
-                                                    color: Colors.white,
-                                                    size: 30,
-                                                  )
-                                                : (_open || _drawerOpen
-                                                      ? const Icon(
-                                                          Icons.close_rounded,
-                                                          key: ValueKey<String>(
-                                                            'x',
-                                                          ),
-                                                          color: Colors.white,
-                                                          size: 34,
-                                                        )
-                                                      : CustomPaint(
-                                                          key:
-                                                              const ValueKey<
-                                                                String
-                                                              >('fan'),
-                                                          size: const Size(
-                                                            38,
-                                                            38,
-                                                          ),
-                                                          painter: _FanMark(<
-                                                            (double, Color)
-                                                          >[
-                                                            for (
-                                                              int i = 0;
-                                                              i < _n;
-                                                              i++
-                                                            )
-                                                              if (!_floating(
-                                                                    i,
-                                                                  ) &&
-                                                                  !_isEmpty(i))
-                                                                (
-                                                                  _seatAngle(
-                                                                    _seat[i]
-                                                                        .target,
-                                                                  ),
-                                                                  _blobColor(i),
-                                                                ),
-                                                          ]),
-                                                        )),
                                           ),
                                         ],
                                       ),
@@ -6417,35 +6421,68 @@ class _BlobPainter extends CustomPainter {
     final Offset at = body.center;
     final double whole = math.max((from - home).distance, 1);
     final double p = (1 - (at - home).distance / whole).clamp(0.0, 1.0);
-    final Paint paint = Paint()
-      ..color = Color.lerp(start, end, Curves.easeOut.transform(p))!;
+    final Color tone = Color.lerp(start, end, Curves.easeOut.transform(p))!;
     final double r = body.shortestSide / 2;
     final double speed = velocity.distance;
+    // Drawn to pass for the glass it came from and is going back to, with nothing that costs:
+    // the dark tone, lit from above, with a bright line round its upper edge that fades
+    // toward the foot. Two fills and one stroke.
+    void glassy(Rect box, RRect shape) {
+      canvas
+        ..drawRRect(shape, Paint()..color = tone)
+        ..drawRRect(
+          shape,
+          Paint()
+            ..shader = ui.Gradient.linear(
+              box.topCenter,
+              box.bottomCenter,
+              <Color>[
+                Colors.white.withValues(alpha: 0.2),
+                Colors.white.withValues(alpha: 0.0),
+                end.withValues(alpha: 0.0),
+              ],
+              <double>[0, 0.55, 1],
+            ),
+        )
+        ..drawRRect(
+          shape.deflate(0.75),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5
+            ..shader = ui.Gradient.linear(
+              box.topCenter,
+              box.bottomCenter,
+              <Color>[
+                Colors.white.withValues(alpha: 0.6),
+                Colors.white.withValues(alpha: 0.14),
+              ],
+            ),
+        );
+    }
+
     if (body.width > body.height * 1.25) {
       // Still a pill, just let go of: it rounds up as it leaves.
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(body, Radius.circular(r)),
-        paint,
-      );
+      glassy(body, RRect.fromRectAndRadius(body, Radius.circular(r)));
     } else {
       // One drop, no tail. It appears small and swells in the first stretch of the way,
       // and is pulled long by its own speed, thinner as it gets longer, as liquid is.
       final double grow =
           0.55 + 0.45 * Curves.easeOut.transform((p / 0.14).clamp(0.0, 1.0));
       final double st = (speed / 3600).clamp(0.0, 0.42);
+      final Rect box = Rect.fromCenter(
+        center: Offset.zero,
+        width: 2 * r * grow * (1 + st),
+        height: 2 * r * grow * (1 - st * 0.45),
+      );
       canvas
         ..save()
         ..translate(at.dx, at.dy)
-        ..rotate(speed < 1 ? 0 : velocity.direction)
-        ..drawOval(
-          Rect.fromCenter(
-            center: Offset.zero,
-            width: 2 * r * grow * (1 + st),
-            height: 2 * r * grow * (1 - st * 0.45),
-          ),
-          paint,
-        )
-        ..restore();
+        ..rotate(speed < 1 ? 0 : velocity.direction);
+      glassy(
+        box,
+        RRect.fromRectAndRadius(box, Radius.circular(box.shortestSide / 2)),
+      );
+      canvas.restore();
     }
     // The button's sign draws itself in as the drop arrives.
     final double a = ((p - 0.7) / 0.3).clamp(0.0, 1.0);
@@ -6518,7 +6555,11 @@ class _ThreadPainter extends CustomPainter {
 /// would come out, from one point at the foot, thin there and thickening on the way, each
 /// ending in a dot of that blob's colour, standing where that blob will stand.
 class _FanMark extends CustomPainter {
-  const _FanMark(this.blobs);
+  const _FanMark(this.blobs, {this.fold = 0});
+
+  /// How far it has folded away into its foot: 0 open, 1 gone. As it folds the foot rises to
+  /// the middle of the button, the stems shorten, and the dots shrink and pale toward white.
+  final double fold;
 
   /// For each blob: the angle of its seat as the menu has it, and its colour.
   final List<(double, Color)> blobs;
@@ -6526,9 +6567,12 @@ class _FanMark extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final double u = size.width / 38;
-    final Offset foot = Offset(19 * u, 31 * u);
+    final Offset foot = Offset(19 * u, (31 - 12 * fold) * u);
     final Paint ink = Paint()..color = Colors.white;
     if (blobs.isEmpty) {
+      if (fold > 0.5) {
+        return;
+      }
       // Nothing to come out: a plain plus, to add something.
       final Paint line = Paint()
         ..color = Colors.white
@@ -6544,10 +6588,15 @@ class _FanMark extends CustomPainter {
     // five they stand as the five do, clear of one another.
     final int n = blobs.length;
     final double
-    dot = const <double>[6.4, 5.8, 5.1, 4.4, 3.9][n.clamp(1, 5) - 1] * u,
+    dot =
+        const <double>[6.4, 5.8, 5.1, 4.4, 3.9][n.clamp(1, 5) - 1] *
+        u *
+        (1 - 0.72 * fold),
     step = const <double>[0, 52, 40, 32, 28][n.clamp(1, 5) - 1] * math.pi / 180,
-    reach = (n == 1 ? 17.0 : 21.0) * u;
-    final Offset from = n == 1 ? Offset(19 * u, 29 * u) : foot;
+    reach = (n == 1 ? 17.0 : 21.0) * u * (1 - fold);
+    final Offset from = n == 1 ? Offset(19 * u, (29 - 10 * fold) * u) : foot;
+    final double seen = (1 - fold * fold).clamp(0.0, 1.0);
+    ink.color = Colors.white.withValues(alpha: seen);
     for (int k = 0; k < n; k++) {
       final double a = math.pi / 2 + (k - (n - 1) / 2) * step;
       final Offset way = Offset(-math.cos(a), -math.sin(a)),
@@ -6563,7 +6612,16 @@ class _FanMark extends CustomPainter {
           ..close(),
         ink,
       );
-      canvas.drawCircle(tip, dot, Paint()..color = blobs[k].$2);
+      canvas.drawCircle(
+        tip,
+        dot,
+        Paint()
+          ..color = Color.lerp(
+            blobs[k].$2,
+            Colors.white,
+            fold,
+          )!.withValues(alpha: seen),
+      );
     }
   }
 
@@ -6579,6 +6637,83 @@ class _FanMark extends CustomPainter {
     }
     return false;
   }
+}
+
+/// The button's sign in all its states, as one drawing. [open] is how far the blobs are out:
+/// at 0 it is the fan (see [_FanMark]); as it rises the fan folds into its own foot, which
+/// rises to the middle, and out of that point the X unfolds, turning as it comes. [cog] is how
+/// far the X has become the cog: the X turns on and shrinks away as the cog turns in.
+class _ButtonSign extends CustomPainter {
+  const _ButtonSign({
+    required this.blobs,
+    required this.open,
+    required this.cog,
+  });
+  final List<(double, Color)> blobs;
+  final double open, cog;
+
+  static final TextPainter _gear = TextPainter(
+    text: TextSpan(
+      text: String.fromCharCode(Icons.settings_rounded.codePoint),
+      style: TextStyle(
+        fontFamily: Icons.settings_rounded.fontFamily,
+        package: Icons.settings_rounded.fontPackage,
+        fontSize: 30,
+        color: Colors.white,
+        height: 1,
+      ),
+    ),
+    textDirection: TextDirection.ltr,
+  )..layout();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double u = size.width / 38;
+    final Offset mid = Offset(19 * u, 19 * u);
+    // The fan folds away over the first half of the way.
+    final double a = Curves.easeInOut.transform((open / 0.5).clamp(0.0, 1.0));
+    if (a < 0.999) {
+      _FanMark(blobs, fold: a).paint(canvas, size);
+    }
+    // The X unfolds over the second half, and may swing a little past its size.
+    final double b = ((open - 0.42) / 0.58).clamp(0.0, 1.25);
+    final double c = cog.clamp(0.0, 1.0);
+    if (b > 0.001 && c < 0.999) {
+      final double arm = 8.6 * u * b * (1 - c),
+          turn = (1 - b.clamp(0.0, 1.0)) * 0.5 + c * 0.5;
+      final Paint line = Paint()
+        ..color = Colors.white.withValues(
+          alpha: (b * 2.2).clamp(0.0, 1.0) * (1 - c),
+        )
+        ..strokeWidth = 3.3 * u
+        ..strokeCap = StrokeCap.round;
+      canvas
+        ..save()
+        ..translate(mid.dx, mid.dy)
+        ..rotate(math.pi / 4 + turn * math.pi)
+        ..drawLine(Offset(-arm, 0), Offset(arm, 0), line)
+        ..drawLine(Offset(0, -arm), Offset(0, arm), line)
+        ..restore();
+    }
+    if (c > 0.001) {
+      canvas
+        ..saveLayer(
+          Rect.fromCenter(center: mid, width: 40 * u, height: 40 * u),
+          Paint()..color = Colors.white.withValues(alpha: c),
+        )
+        ..translate(mid.dx, mid.dy)
+        ..rotate((1 - c) * -math.pi / 2)
+        ..scale((0.55 + 0.45 * c) * u);
+      _gear.paint(canvas, Offset(-_gear.width / 2, -_gear.height / 2));
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ButtonSign old) =>
+      old.open != open ||
+      old.cog != cog ||
+      _FanMark(old.blobs).shouldRepaint(_FanMark(blobs));
 }
 
 /// The small round mark things wear while the blobs are being changed: white with a dark sign
