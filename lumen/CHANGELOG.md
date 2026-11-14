@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 101 (14 November 2026)
+
+**File:** `releases/prism-build-101.apk`
+
+Needs Play Protect paused to install. **The build for the second test run.**
+
+After the first full run on a phone (build 100: 121 of 129 right):
+
+- **The note field is no longer behind the keyboard.** The report panel rises above it while you type.
+- **What a blob left floating costs, measured properly.** Four times, Settings in front for 90 seconds with nothing floating, then 90 seconds with a blob floating, one after the other, so the battery's own drift falls on both alike. About 12 minutes more.
+- **The lens says what it was touched with.** Six of the eight wrong checks were the lens holding an app: three taps on it drew nothing and a hold had no answer. The report now gives, for each, where the touch came down, where the lens was, whether it was tucked, roaming or not yet shown, and what it then did (opened its app, opened its menu, or tried to and could not). That tells a fault in the lens from a fault in the test.
+- **The test taps the timer's controls in their own place.** The tap on pause did nothing; it was very likely aimed by the window's place on the screen, which Android can shift.
+- **"At the height it was put down"** allows 10 where it allowed 6 (it was 6 off: not to be seen).
+
+**Checked:** it compiles; in my preview the Prism half of the test.
+**Not checked:** on a phone.
+**Still to look into:** Prism was using 777 MB of memory four minutes in. That is a lot, and Android closes apps that use a lot when they are out of sight.
+
 ## Prism, build 100 (14 November 2026)
 
 **File:** `releases/prism-build-100.apk`

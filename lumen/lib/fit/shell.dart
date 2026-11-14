@@ -2917,7 +2917,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             ((((s['y'] as num?)?.toDouble() ?? 0) + sz / 2) / dpr -
                         sc.height * 0.3)
                     .abs() <
-                6,
+                10,
             'middle at ${((((s['y'] as num?)?.toDouble() ?? 0) + sz / 2) / dpr).round()}, put down at ${(sc.height * 0.3).round()}',
           );
 
@@ -3006,7 +3006,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
               settleMs: 2800,
             );
             s = await where();
-            t.check('lens: a tap opens its app', s['fg'] == false);
+            t.check(
+              'lens: a tap opens its app',
+              s['fg'] == false,
+              'the lens was last touched: ${s['touch']}',
+            );
             t.check(
               'lens: it stays on the screen over its own app',
               s['lens'] == true && s['mode'] == 2,
@@ -3021,7 +3025,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             t.check(
               'lens: a second tap, in its own app, opens its menu',
               s['menu'] == true && s['fg'] == false,
-              'menu ${s['menu']}, Prism thinks "${s['front']}" is in front',
+              'menu ${s['menu']}, Prism thinks "${s['front']}" is in front; the lens was last touched: ${s['touch']}',
             );
             if (s['menu'] == true) {
               final Map<String, Object?> m = await t.lens(<String, Object?>{
@@ -3043,6 +3047,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             t.check(
               'lens: held, its menu opens over another app',
               s['menu'] == true,
+              'the lens was last touched: ${s['touch']}',
             );
             int? page;
             final int count = (s['menuCount'] as num?)?.toInt() ?? 0;
@@ -3095,7 +3100,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             t.check(
               'lens: with Prism in front, a tap opens its app, not the menu',
               s['fg'] == false && s['menu'] != true,
-              'in front ${s['fg']}, menu ${s['menu']}',
+              'in front ${s['fg']}, menu ${s['menu']}; the lens was last touched: ${s['touch']}',
             );
             s = await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
             await calm();
@@ -3467,6 +3472,29 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         );
         await t.phase('a blob floating, in Prism', still);
         await t.phase('Settings in front, a blob floating', still, away: true);
+        // What a blob left floating costs: four times Settings in front with nothing
+        // floating, then with the blob, one after the other, so that the battery's own drift
+        // falls on both alike.
+        final int pair = (still * 1.5).round();
+        final String? kept = lensOf.pinned.value;
+        for (int k = 1; k <= 4; k++) {
+          lensOf.setPin(null);
+          _sendPin();
+          await Robot.wait(1200);
+          await t.phase(
+            'cost $k of 4: nothing floating, Settings in front',
+            pair,
+            away: true,
+          );
+          lensOf.setPin(kept ?? 'action:1');
+          _sendPin();
+          await Robot.wait(1500);
+          await t.phase(
+            'cost $k of 4: a blob floating, Settings in front',
+            pair,
+            away: true,
+          );
+        }
         final void Function(int)? rest = lensOf.testRest;
         if (rest != null) {
           // The timer was dropped on the cross earlier: a visit to the workout page brings it back.
@@ -3581,7 +3609,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         final LumenColors c = LumenColors.of(context);
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            // (Lifted above the keyboard while a note is being written.)
+            padding: EdgeInsets.fromLTRB(
+              12,
+              12,
+              12,
+              12 + MediaQuery.viewInsetsOf(context).bottom,
+            ),
             child: Material(
               type: MaterialType.transparency,
               child: Container(

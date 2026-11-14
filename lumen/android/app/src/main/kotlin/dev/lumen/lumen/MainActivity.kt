@@ -674,6 +674,9 @@ class Floater(val timer: Boolean) {
         }
     }
 
+    // What the lens last had from a finger, and what it made of it: for the test report.
+    var lastTouch = "nothing yet"
+
     // The timer's controls, under it once it is large: the same three, in the same order as
     // at the foot of the screen. A small window of its own that is there only while the timer
     // lies still, and goes the moment the timer is touched.
@@ -1513,6 +1516,7 @@ class Floater(val timer: Boolean) {
         }
         m["tucked"] = tucked
         m["guest"] = guest
+        m["touch"] = lastTouch
         m["paused"] = pausedAt > 0
         m["off"] = timerOff
         m["closed"] = dismissed
@@ -1688,10 +1692,10 @@ class Floater(val timer: Boolean) {
                 // A tap on one of the timer's controls under it: 0 pause, 1 the cross, 2 count up.
                 "tray" -> {
                     val t = tray ?: return fail("the timer has no controls under it")
-                    val l = t.layoutParams as android.view.WindowManager.LayoutParams
                     val i = num("i", 0).toInt().coerceIn(0, 2)
-                    val at = floatArrayOf(l.x + t.width / 6f + i * t.width / 3f, l.y + t.height / 2f)
-                    finger(t, listOf(at), false, 60, 0, 0, false, num("settleMs", 900), { true }) { done(state(context)) }
+                    // (Given in the controls' own place: where their window is on the screen does not come into it.)
+                    val at = floatArrayOf(t.width / 6f + i * t.width / 3f, t.height / 2f)
+                    finger(t, listOf(at), true, 60, 0, 0, false, num("settleMs", 900), { true }) { done(state(context)) }
                 }
                 // A finger on the lens.
                 "press" -> {
@@ -1904,10 +1908,14 @@ class Floater(val timer: Boolean) {
             "screen" -> foreground && tab == p.index
             else -> false
         }
+        lastTouch += "; Prism in front ${foreground}, thinks ${if (frontApp.isEmpty()) "nothing" else frontApp} is in front"
         if (there && container && blobs.isNotEmpty()) {
+            lastTouch += "; so it opens the menu"
             haptic(context, "click")
             openMenu(context)
+            if (menu == null) lastTouch += ", which did not open"
         } else {
+            lastTouch += "; so it opens ${p.key}"
             usePinned(context)
         }
     }
@@ -4237,6 +4245,11 @@ class Floater(val timer: Boolean) {
         }
 
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+                lastTouch = "down at ${e.rawX.toInt()},${e.rawY.toInt()}; lens at ${posX().toInt()},${posY().toInt()} size ${sizeNow().toInt()}" +
+                    (if (roaming) ", roaming" else "") + (if (tucked) ", tucked" else "") + (if (hideInner) ", not yet shown" else "") +
+                    (if (swallowing) ", closing" else "") + ", mode ${mode()}"
+            }
             if (roaming && e.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
                 // Its window covers the way it is going. Only the lens itself is the lens's to
                 // touch; caught, it stops there and its window is its own size again.
@@ -4381,6 +4394,7 @@ class Floater(val timer: Boolean) {
                         animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
                         haptic(context, "tick")
                         // Tapped. A workout opens its sheet; a pinned thing does what it is.
+                        lastTouch += "; a tap"
                         if (mode() == 1) openSheet(context) else tapPinned(context)
                         tracker?.recycle()
                         tracker = null
