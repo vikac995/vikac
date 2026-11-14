@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 98 (14 November 2026)
+
+**File:** `releases/prism-build-98.apk`
+
+Needs Play Protect paused to install.
+
+- **A floating blob can no longer be made large.** Stretched with two fingers it gives about a tenth and stops there, with the click that says it will go no further. One that was left large by an earlier build comes back to that size the next time it appears. This is what the two recordings showed: with a finger on the floating blob and another moving a blob in the menu, the two fingers were read as a stretch, the blob grew to fill the screen, and stayed that size for every blob put down afterwards.
+- **The timer can still be made as large as the screen.**
+
+**Checked:** it compiles.
+**Not checked:** on a phone. The stretch itself is still read from two fingers of which one may be elsewhere on the menu; it now gives a tenth at most, but I have not stopped it being read.
+
 ## Prism, build 97 (14 November 2026)
 
 **File:** `releases/prism-build-97.apk`

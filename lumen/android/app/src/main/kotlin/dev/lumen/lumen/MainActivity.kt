@@ -1070,7 +1070,7 @@ class Floater(val timer: Boolean) {
         if (lensSize > 0) return lensSize
         val dp = context.resources.displayMetrics.density
         val saved = try { context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getFloat(if (timer) "timerSize" else "size", 84f) } catch (e: Exception) { 84f }
-        return (saved * dp).toInt()
+        return ((if (timer) saved else saved.coerceIn(84f, 84f * 1.1f)) * dp).toInt()
     }
 
     // A lens let go among Prism's own blobs waits here until Prism has drawn the blob in its place.
@@ -1981,7 +1981,8 @@ class Floater(val timer: Boolean) {
             target = t
 
             val least = (84 * dp).toInt()
-            val most = Math.max(least, minOf(d.widthPixels, d.heightPixels) - (16 * dp).toInt())
+            // (A blob gives a tenth and no more; one kept larger from before comes back to that.)
+            val most = if (timer) Math.max(least, minOf(d.widthPixels, d.heightPixels) - (16 * dp).toInt()) else (least * 1.1f).toInt()
             if (lensSize == 0) {
                 // The size it was last given, kept from one day to the next.
                 val saved = try { context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getFloat(if (timer) "timerSize" else "size", 84f) } catch (e: Exception) { 84f }
@@ -3789,6 +3790,9 @@ class Floater(val timer: Boolean) {
 
         private fun largest(): Int {
             val screen = resources.displayMetrics
+            // A blob is an app's sign and stays about that size: it gives a tenth and no more.
+            // The timer is for reading from across a room, and may be as large as the screen.
+            if (!timer) return (base * 1.1f).toInt()
             return Math.max(base.toInt(), minOf(screen.widthPixels, screen.heightPixels) - (16 * dp).toInt())
         }
 
