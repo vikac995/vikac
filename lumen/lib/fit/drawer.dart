@@ -203,8 +203,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                       const SizedBox(height: 8),
                       Text(
                         Apps.instance.prismIcons
-                            ? 'Every app in Prism\'s look, here and in the blobs: its mark in white, on a calm colour of its own.'
-                            : 'Every app with its own icon, as the phone has it, here and in the blobs.',
+                            ? 'Every app in Prism\'s look: its mark in white, on a calm colour of its own. The blobs have a switch of their own, in the Blob panel.'
+                            : 'Every app with its own icon, as the phone has it. The blobs have a switch of their own, in the Blob panel.',
                         style: LumenType.text(
                           13,
                           color: c.inkMuted,
@@ -867,6 +867,9 @@ class _GridPainter extends CustomPainter {
     }
   }
 
+  /// The app's own icon, when the app list is set to show the apps' own.
+  static ui.Image? _own(AppTile? t) => Apps.instance.prismIcons ? null : t?.own;
+
   void _mark(Canvas canvas, AppTile t, Rect box, double alpha, double scale) {
     if (alpha <= 0) {
       return;
@@ -874,9 +877,9 @@ class _GridPainter extends CustomPainter {
     final Paint p = Paint()
       ..color = Colors.white.withValues(alpha: alpha)
       ..filterQuality = FilterQuality.medium;
-    if (t.own != null) {
+    if (_own(t) != null) {
       // The app's own icon, in the tile's shape.
-      final ui.Image im = t.own!;
+      final ui.Image im = _own(t)!;
       canvas.drawImageRect(
         im,
         Rect.fromLTWH(0, 0, im.width.toDouble(), im.height.toDouble()),
@@ -982,14 +985,14 @@ class _GridPainter extends CustomPainter {
           fill.color = Color.lerp(fill.color, Colors.white, 0.14)!;
         }
         // (An app's own icon is its own colour: the tile under it is not drawn.)
-        if (a?.own == null && b?.own == null) {
+        if (_own(a) == null && _own(b) == null) {
           canvas.drawPath(outline, fill);
         }
         // Only a picture can reach the edge of its tile, so only a picture needs trimming to it.
         if (a?.picture != null ||
             b?.picture != null ||
-            a?.own != null ||
-            b?.own != null) {
+            _own(a) != null ||
+            _own(b) != null) {
           canvas.clipPath(outline);
         }
         if (a != null) {

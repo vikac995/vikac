@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 114 (14 November 2026)
+
+**File:** `releases/prism-build-114.apk`
+
+Needs Play Protect paused to install. Can be installed over build 113.
+
+- **Fixed: the magnifying glass could be left out, stuck.** In your recording it stayed over "Today's list", with its explanation up, while you scrolled, opened the blobs and the app list. Prism now counts every finger on the screen: a quarter of a second after the last one leaves, the glass is either put down on something with things to do, or it goes home, and no card is left lit up. If that ever has to step in, the flight recorder notes it, so we learn what led there.
+- **Colour strength: Soft, Balanced, Vivid.** Under the colours in Prism's settings. It changes how strong every colour is, the accent and the background lights alike. **Balanced is now the starting point**, a step calmer than before; Vivid is how Prism was until now.
+- **Prism icons, set separately.** The app list's choice is behind its cog; the blobs' choice is in the Blob panel. Both start with Prism's icons.
+- **The glass settings test.** A new button, "Run the glass settings test (about 15 min)". The same movements (switching tabs, scrolling, the blobs, the app list, the magnifying glass over the cards) under each of ten settings, each changed on its own from a starting point: glass quality Medium and Low; glass style One at a time, Frosted and Event; background lights off; the Pattern background; reduce transparency; and all of the cheapest together. Twice over. The report ends with a table: for each, frames a second, the share late, how long drawing a frame takes (mostly the graphics chip's work) and the slowest one in twenty, laying it out, and Prism's share of the processor, each beside the starting point. Your own settings are put back afterwards.
+
+**Checked:** it compiles.
+**Not checked:** on a phone; the colours by eye; the glass test's table, which was still being made in my slow preview.
+
 ## Prism, build 113 (14 November 2026)
 
 **File:** `releases/prism-build-113.apk`

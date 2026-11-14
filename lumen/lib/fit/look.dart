@@ -39,6 +39,14 @@ class Look extends ChangeNotifier {
   double _hue = 38;
   int _vibe = 0, _pattern = 0;
 
+  /// How strong the colours are: 0 soft, 1 balanced, 2 vivid (as Prism was until build 113).
+  int _strength = 1;
+  int get strength => _strength;
+  static const List<String> strengths = <String>['Soft', 'Balanced', 'Vivid'];
+
+  /// How much of the full colour each strength keeps.
+  static double get _k => const <double>[0.5, 0.72, 1.0][instance._strength];
+
   /// The kinds of pattern.
   static const List<String> patterns = <String>[
     'Ripples',
@@ -85,6 +93,9 @@ class Look extends ChangeNotifier {
             ThemeMode.values[int.parse(saved[3])
                 .clamp(0, ThemeMode.values.length - 1)];
       }
+      if (saved.length > 4) {
+        _strength = int.parse(saved[4]).clamp(0, 2);
+      }
       _remake();
     } catch (_) {
       // Nothing chosen yet: amber and flow.
@@ -97,7 +108,8 @@ class Look extends ChangeNotifier {
     choose();
   }
 
-  void choose({double? hue, int? vibe, int? pattern}) {
+  void choose({double? hue, int? vibe, int? pattern, int? strength}) {
+    _strength = (strength ?? _strength).clamp(0, 2);
     _pattern = pattern ?? _pattern;
     _hue = hue ?? _hue;
     _vibe = vibe ?? _vibe;
@@ -105,7 +117,7 @@ class Look extends ChangeNotifier {
     notifyListeners();
     try {
       _file.writeAsStringSync(
-        '$_hue $_vibe $_pattern ${settings.themeMode.index}',
+        '$_hue $_vibe $_pattern ${settings.themeMode.index} $_strength',
       );
     } catch (_) {
       // Not saved: it is simply asked for again next time.
@@ -143,7 +155,12 @@ class Look extends ChangeNotifier {
     // natural brightness, kept between a floor (so it shows on black) and a ceiling.
     final double natural = _hsl(h, 1, 0.5).computeLuminance();
     final double want = (natural * 1.05).clamp(0.24, 0.52);
-    return _atBrightness(h, 0.95, dark ? want : want * 0.74);
+    // Softer colours are less saturated, and a touch less bright so they do not turn pastel.
+    return _atBrightness(
+      h,
+      0.95 * _k,
+      (dark ? want : want * 0.74) * (0.88 + 0.12 * _k),
+    );
   }
 
   LumenColors _colours(bool dark) {
@@ -188,7 +205,7 @@ class Look extends ChangeNotifier {
 
   /// What the background shades through: a deeper neighbour, the colour itself, a lighter neighbour.
   /// Amber gives deep orange to yellow; blue gives indigo to sky. Always the two hues either side.
-  Color get deep => _hsl(_hue - 16, 0.95, 0.40);
-  Color get mid => _hsl(_hue, 0.98, 0.50);
-  Color get light => _hsl(_hue + 18, 0.98, 0.66);
+  Color get deep => _hsl(_hue - 16, 0.95 * _k, 0.40);
+  Color get mid => _hsl(_hue, 0.98 * _k, 0.50);
+  Color get light => _hsl(_hue + 18, 0.98 * _k, 0.66);
 }

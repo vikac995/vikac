@@ -115,6 +115,9 @@ class TestRun {
   /// would be on the screen over it.
   String? other;
 
+  /// The glass settings test: for each setting, Prism's processor time and the time it took.
+  final List<(String, double, double)> glassRows = <(String, double, double)>[];
+
   /// The chat-head battery test: its four states, for the summary at the end.
   List<String>? drainStates;
 
@@ -135,6 +138,82 @@ class TestRun {
       check('$name: the other app came to the front', told['away'] == true);
       check('$name: Prism came back afterwards', told['back'] == true);
     }
+  }
+
+  /// The glass settings test, summed up: what each setting costs, beside the starting point.
+  void _glass(StringBuffer o) {
+    final List<String> labels = <String>[];
+    for (final (String l, double _, double _) in glassRows) {
+      if (!labels.contains(l)) {
+        labels.add(l);
+      }
+    }
+    // For each setting: its frames, and from them the rate, the late share, and how long the
+    // work took (building and drawing; drawing is mostly the graphics chip's share).
+    final Map<String, List<double>> row = <String, List<double>>{};
+    for (final String l in labels) {
+      final Iterable<(String, List<FrameTiming>, int)> mine = scenes.where(
+        ((String, List<FrameTiming>, int) s) => s.$1.startsWith('$l: '),
+      );
+      final (double fps, double late, double worst, int n) = _smooth(mine);
+      final List<double> draw = <double>[
+        for (final (String _, List<FrameTiming> fs, int _) in mine)
+          for (final FrameTiming f in fs)
+            f.rasterDuration.inMicroseconds / 1000,
+      ]..sort();
+      final List<double> build = <double>[
+        for (final (String _, List<FrameTiming> fs, int _) in mine)
+          for (final FrameTiming f in fs) f.buildDuration.inMicroseconds / 1000,
+      ];
+      double cpu = 0, ms = 0;
+      for (final (String gl, double c, double m) in glassRows) {
+        if (gl == l) {
+          cpu += c;
+          ms += m;
+        }
+      }
+      row[l] = <double>[
+        fps,
+        late,
+        draw.isEmpty
+            ? 0
+            : draw.reduce((double a, double b) => a + b) / draw.length,
+        draw.isEmpty ? 0 : draw[((draw.length - 1) * 0.95).round()],
+        build.isEmpty
+            ? 0
+            : build.reduce((double a, double b) => a + b) / build.length,
+        ms <= 0 ? 0 : cpu / ms * 100,
+        worst,
+        n.toDouble(),
+      ];
+    }
+    final List<double> a = row[labels.first]!;
+    String vs(double v, double b, int d) {
+      final double x = v - b;
+      return '${x >= 0 ? '+' : ''}${_f(x, d)}';
+    }
+
+    o
+      ..writeln()
+      ..writeln(
+        'GLASS SETTINGS. The same movements under each setting, each changed on its own from A, twice over. "draw" is the drawing of each frame, mostly the graphics chip\'s work; "build" is laying it out; the processor figure is Prism\'s share of one core while it moved. The screen can do ${_f(1000 / budget, 0)} frames a second, ${_f(budget)} ms each.',
+      )
+      ..writeln(
+        '${'setting'.padRight(66)} ${'fps'.padLeft(6)} ${'late %'.padLeft(7)} ${'draw avg'.padLeft(9)} ${'draw 1/20'.padLeft(10)} ${'build avg'.padLeft(10)} ${'processor'.padLeft(10)} ${'worst'.padLeft(7)}',
+      );
+    for (final String l in labels) {
+      final List<double> v = row[l]!;
+      final bool first = l == labels.first;
+      String cell(int i, int d, String unit) => first
+          ? '${_f(v[i], d)}$unit'
+          : '${_f(v[i], d)} (${vs(v[i], a[i], d)})';
+      o.writeln(
+        '${l.padRight(66)} ${cell(0, 0, '').padLeft(6)} ${cell(1, 1, '').padLeft(7)} ${cell(2, 1, '').padLeft(9)} ${cell(3, 1, '').padLeft(10)} ${cell(4, 1, '').padLeft(10)} ${'${_f(v[5], 1)}%'.padLeft(10)} ${_f(v[6], 0).padLeft(7)}',
+      );
+    }
+    o.writeln(
+      'Read across: the figure in brackets is the change from A. Lower draw and processor is cheaper; the setting is affordable on this phone while fps stays near the screen\'s and late stays near nothing.',
+    );
   }
 
   /// The chat-head battery test, summed up: each state's stretches taken together.
@@ -555,6 +634,9 @@ class TestRun {
       if (states != null) {
         _drain(o, states);
       }
+    }
+    if (glassRows.isNotEmpty) {
+      _glass(o);
     }
     if (notes.isNotEmpty) {
       o

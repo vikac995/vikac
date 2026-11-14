@@ -762,8 +762,18 @@ class Apps extends ChangeNotifier {
 
   // ---- Prism's icons, or the apps' own.
 
-  /// True: the apps are shown in Prism's look. False: with their own icons, as the phone has them.
+  /// True: the apps in the app list are shown in Prism's look. False: with their own icons, as
+  /// the phone has them.
   bool prismIcons = true;
+
+  /// The same for the blobs, chosen on its own in the Blob panel.
+  bool blobPrismIcons = true;
+
+  /// The apps' own icons are held while either of the two wants them.
+  bool get _wantOwn => !prismIcons || !blobPrismIcons;
+
+  File get _blobIconsFile =>
+      File('${_iconsFile.parent.path}/prism_icons_blobs');
 
   File get _iconsFile {
     final Directory files = Directory(
@@ -780,18 +790,27 @@ class Apps extends ChangeNotifier {
     } catch (_) {
       // Never changed: Prism's icons.
     }
+    try {
+      blobPrismIcons = _blobIconsFile.readAsStringSync().trim() != '0';
+    } catch (_) {
+      // Never changed: Prism's icons.
+    }
   }
 
   /// Switches between Prism's icons and the apps' own. Only one of the two is held at a time:
   /// the apps' own are fetched (or read back from disk) when they are wanted, and let go when not.
-  Future<void> setPrismIcons(bool v) async {
-    prismIcons = v;
+  Future<void> setPrismIcons(bool v, {bool blobs = false}) async {
+    if (blobs) {
+      blobPrismIcons = v;
+    } else {
+      prismIcons = v;
+    }
     try {
-      _iconsFile.writeAsStringSync(v ? '1' : '0');
+      (blobs ? _blobIconsFile : _iconsFile).writeAsStringSync(v ? '1' : '0');
     } catch (_) {
       // Not saved: Prism's icons next time.
     }
-    if (v) {
+    if (!_wantOwn) {
       for (final AppTile t in all) {
         t.own = null;
       }
@@ -804,7 +823,7 @@ class Apps extends ChangeNotifier {
   bool _owning = false;
 
   Future<void> _loadOwn() async {
-    if (_owning || prismIcons) {
+    if (_owning || !_wantOwn) {
       return;
     }
     _owning = true;
@@ -820,7 +839,7 @@ class Apps extends ChangeNotifier {
         }
       }
       notifyListeners();
-      for (int i = 0; i < todo.length && !prismIcons; i += 12) {
+      for (int i = 0; i < todo.length && _wantOwn; i += 12) {
         final List<AppTile> batch = todo.sublist(
           i,
           math.min(i + 12, todo.length),
@@ -845,7 +864,7 @@ class Apps extends ChangeNotifier {
         }
         notifyListeners();
       }
-      if (prismIcons) {
+      if (!_wantOwn) {
         for (final AppTile t in all) {
           t.own = null;
         }
@@ -946,7 +965,7 @@ class Apps extends ChangeNotifier {
         }
         notifyListeners();
       }
-      if (!prismIcons) {
+      if (_wantOwn) {
         await _loadOwn();
       }
       int count(String kind) => all.where((AppTile t) => t.made == kind).length;
