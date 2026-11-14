@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'apps.dart';
+
 /// The workout, floating over other apps: a small glass lens with the timer, which opens
 /// into a panel for logging the set. It appears when Prism leaves the screen during a workout. It is drawn by Android itself,
 /// not by Flutter, so it costs nothing in Prism and works over any app.
@@ -52,21 +54,8 @@ class RestBubble with WidgetsBindingObserver {
     try {
       allowed.value =
           await _device.invokeMethod<bool>('overlayAllowed') ?? false;
-      seesApps.value =
-          await _device.invokeMethod<bool>('usageAllowed') ?? false;
-    } catch (_) {
-      // Not on Android.
-    }
-  }
-
-  /// Whether Android lets Prism see which app is in front. It is used for one thing: a pinned
-  /// app's lens, which steps aside when it has opened its app, comes back when that app is left.
-  final ValueNotifier<bool> seesApps = ValueNotifier<bool>(false);
-
-  /// Opens Android's own screen for that. Only the person can grant it.
-  Future<void> askUsage() async {
-    try {
-      await _device.invokeMethod<void>('askUsage');
+      // The person may also just have allowed Prism to be told of notifications.
+      await Notes.instance.refresh();
     } catch (_) {
       // Not on Android.
     }
@@ -157,13 +146,27 @@ class RestBubble with WidgetsBindingObserver {
     _device.invokeMethod<void>('blobs', blobs).catchError((Object _) {});
   }
 
-  /// A blob has been shot out of Prism's button to become the floating lens. Android puts the
-  /// lens in its place, unseen if it was not there already, and answers with where that is on
-  /// the screen in real pixels (x, y of its corner, and its size), so the blob can land on it.
-  /// Null if the lens cannot float here.
-  Future<Map<Object?, Object?>?> land(Map<String, Object> blob) async {
+  /// A blob is on its way to become the floating lens: shot out of Prism's button, or put down
+  /// somewhere ([at], the middle of where, and [velocity], how fast it was going, both in real
+  /// pixels). Android puts the lens in its place, unseen if it was not there already, and
+  /// answers with where that is on the screen in real pixels (x, y of its corner, and its
+  /// size), so the blob can land on it. Null if the lens cannot float here.
+  Future<Map<Object?, Object?>?> land(
+    Map<String, Object> blob, {
+    Offset? at,
+    Offset velocity = Offset.zero,
+  }) async {
     try {
-      return await _device.invokeMethod<Map<Object?, Object?>>('land', blob);
+      return await _device.invokeMethod<Map<Object?, Object?>>(
+        'land',
+        <String, Object>{
+          ...blob,
+          if (at != null) 'atX': at.dx,
+          if (at != null) 'atY': at.dy,
+          'vx': velocity.dx,
+          'vy': velocity.dy,
+        },
+      );
     } catch (_) {
       return null; // Not on Android.
     }
@@ -173,6 +176,10 @@ class RestBubble with WidgetsBindingObserver {
   void landed() {
     _device.invokeMethod<void>('landed').catchError((Object _) {});
   }
+
+  /// The timer in the floating sheet was tapped ('pause'), or one of the things it offers when
+  /// held was chosen ('reset', 'off'). Set by the workout page.
+  void Function(String what)? onTimer;
 
   /// The workout was stopped from the floating sheet. Set by the workout page.
   VoidCallback? onStop;
@@ -217,6 +224,12 @@ class RestBubble with WidgetsBindingObserver {
         setPin(null);
       case 'stop':
         onStop?.call();
+      case 'timerPause':
+        onTimer?.call('pause');
+      case 'timerReset':
+        onTimer?.call('reset');
+      case 'timerOff':
+        onTimer?.call('off');
       case 'pinned':
         onPinned?.call(call.arguments as String?);
       case 'weigh':

@@ -1,5 +1,34 @@
 # Lumen changelog
 
+## Prism, build 67 (14 November 2026)
+
+**File:** `releases/prism-build-67.apk`
+
+**The blobs: three gestures, each with one meaning.**
+- **Tap** a blob: use it.
+- **Drag** a blob and put it down anywhere: it floats there as the lens, then does what any lens does when let go (it carries on with a flick and settles at the nearer side). Put down close to its own place, it goes back. Dropped on the button, or flicked at it, the button still shoots it out to the side.
+- **Hold** a blob: change it. The app drawer comes up as "Replace ...". Its top row holds Prism's own actions and Prism's own pages (Home, Train, Food, Progress); it slides sideways. Below are all the apps. Tap what you want and you are back at the blobs.
+- The X only closes again. Holding it no longer does anything; the marks and the line of text from build 66 are gone.
+- The floating lens's own menu follows the same three: tap uses, a blob dragged out of its place goes into the lens, a held blob brings Prism up to change it.
+
+**Notification counts.** A small number on an app, in the colour opposite the app's own so it stands out against its icon. On tiles in the app drawer, on app blobs (in Prism and in the lens's menu), and on the lens when it holds an app. Android only allows this once you turn on **Notification counts on icons** in Prism's settings and allow Prism on the screen that opens. After that Android tells Prism when a notification comes or goes; Prism never looks for them, so nothing runs in between.
+
+**The timer in the tall sheet is its own control.**
+- **Tap it:** pause, and again to carry on. Paused, the time dims and stands still, on the lens too.
+- **Hold it** (or tap the line under it): for a few seconds the row under it offers Count up / Count down, Start over, and Switch off.
+- **Switched off:** no time is shown anywhere; the lens shows which set you are on ("2/3"). A tap on the empty ring switches it back on. No rest starts while it is off.
+- A line says this once, until you have held the timer.
+
+**Removed:** the "Pinned app returns when you leave it" switch, its permission and the code that checked which app was in front. Your test showed the lens comes back without it.
+
+**What to look for:**
+- Put a blob down in the middle of the screen, and flick one toward a side: whether it lands under your finger and travels from there.
+- The numbers: whether they match what the notification shade shows.
+- Pause on the timer, then look at the lens.
+
+**Checked:** it compiles. In my preview: holding a blob opens "Replace ..."; dragging one away closes the blobs and keeps it; the numbers on drawer tiles and blobs (with made-up counts); the picker's row with actions and pages.
+**Not checked:** on a phone. Placing a blob as the lens, the notification listener, and the timer controls are written blind.
+
 ## Prism, build 66 (14 November 2026)
 
 **File:** `releases/prism-build-66.apk`

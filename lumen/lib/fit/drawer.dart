@@ -24,7 +24,7 @@ class AppDrawer extends StatefulWidget {
     required this.button,
     required this.onClose,
     this.pick,
-    this.actions = const <(String, IconData, Color)>[],
+    this.choices = const <(String, String, IconData, Color)>[],
     this.onPick,
   });
   final bool open;
@@ -33,10 +33,11 @@ class AppDrawer extends StatefulWidget {
   final VoidCallback onClose;
 
   /// When the drawer is up to choose what takes a blob's place: that blob's name. The drawer
-  /// then says so, offers Prism's own [actions] above the apps, and a tap on anything calls
-  /// [onPick] with 'action:2' or 'app:com.whatsapp' and opens nothing.
+  /// then says so, offers Prism's own [choices] above the apps (its actions and its pages:
+  /// what each is kept as, its name, its mark and its colour), and a tap on anything calls
+  /// [onPick] with 'action:2', 'screen:1' or 'app:com.whatsapp' and opens nothing.
   final String? pick;
-  final List<(String, IconData, Color)> actions;
+  final List<(String, String, IconData, Color)> choices;
   final void Function(String key)? onPick;
 
   @override
@@ -70,6 +71,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     Apps.instance.addListener(_changed);
+    Notes.instance.counts.addListener(_changed);
   }
 
   void _changed() {
@@ -102,6 +104,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   @override
   void dispose() {
     Apps.instance.removeListener(_changed);
+    Notes.instance.counts.removeListener(_changed);
     _rise.dispose();
     _ring.dispose();
     _turn.dispose();
@@ -367,39 +370,50 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                 ),
               ),
               if (widget.pick != null)
-                // Prism's own actions, offered as round blobs above the apps.
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                // Prism's own actions and pages, offered as round blobs above the apps. There
+                // are more than fit, so the row slides sideways; the last one showing is cut
+                // short, which says so.
+                SizedBox(
+                  height: 78,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.fromLTRB(14, 2, 14, 8),
                     children: <Widget>[
-                      for (int i = 0; i < widget.actions.length; i++)
+                      for (final (
+                            String key,
+                            String name,
+                            IconData icon,
+                            Color color,
+                          )
+                          in widget.choices)
                         GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () {
                             Haptics.tick();
-                            widget.onPick?.call('action:$i');
+                            widget.onPick?.call(key);
                           },
                           child: SizedBox(
-                            width: 68,
+                            width: 70,
                             child: Column(
                               children: <Widget>[
                                 Container(
                                   width: 46,
                                   height: 46,
                                   decoration: ShapeDecoration(
-                                    color: widget.actions[i].$3,
+                                    color: color,
                                     shape: const CircleBorder(),
                                   ),
                                   child: Icon(
-                                    widget.actions[i].$2,
-                                    color: Colors.white,
+                                    icon,
+                                    color: color.computeLuminance() > 0.45
+                                        ? const Color(0xFF15171C)
+                                        : Colors.white,
                                     size: 21,
                                   ),
                                 ),
                                 const SizedBox(height: 5),
                                 Text(
-                                  widget.actions[i].$1,
+                                  name,
                                   maxLines: 1,
                                   softWrap: false,
                                   overflow: TextOverflow.fade,
@@ -516,6 +530,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                 turn: _turn,
                                 ink: c.ink.withValues(alpha: 0.84),
                                 accent: c.accent,
+                                surface: c.surface,
+                                counts: Notes.instance.counts.value,
                                 pressed: _pressed,
                               ),
                             ),
@@ -548,8 +564,14 @@ class _GridPainter extends CustomPainter {
     required this.turn,
     required this.ink,
     required this.accent,
+    required this.surface,
+    required this.counts,
     required this.pressed,
   }) : super(repaint: turn);
+
+  /// The panel's own colour, and how many notifications each app has.
+  final Color surface;
+  final Map<String, int> counts;
   final List<AppTile> apps;
   final int from, to, dir, rows, cols;
   final Animation<double> turn;
@@ -648,6 +670,55 @@ class _GridPainter extends CustomPainter {
         ellipsis: '…',
       )..layout(maxWidth: width - 6),
     );
+  }
+
+  static final Map<String, TextPainter> _figures = <String, TextPainter>{};
+
+  /// The small number on an app: how many notifications it has, on the colour opposite the
+  /// app's own, with an edge of the panel's colour that cuts it clear of the tile.
+  void _badge(Canvas canvas, AppTile t, double alpha) {
+    final int n = counts[t.package] ?? 0;
+    if (n <= 0 || alpha <= 0.01) {
+      return;
+    }
+    final String text = n > 99 ? '99+' : '$n';
+    final TextPainter tp = _figures.putIfAbsent(
+      text,
+      () => TextPainter(
+        text: TextSpan(
+          text: text,
+          style: LumenType.text(
+            11.5,
+            weight: 720,
+            color: Colors.white,
+            height: 1,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(),
+    );
+    const double r = 10.5;
+    final double half = math.max(r, tp.width / 2 + 5);
+    // Its middle sits on the tile's top right corner, a little way in.
+    const Offset at = Offset(_tile / 2 - 5, -_tile / 2 + 5);
+    final RRect pill = RRect.fromRectAndRadius(
+      Rect.fromLTRB(at.dx - half, at.dy - r, at.dx + half, at.dy + r),
+      const Radius.circular(r),
+    );
+    final bool dim = alpha < 0.999;
+    if (dim) {
+      canvas.saveLayer(
+        pill.outerRect.inflate(4),
+        Paint()..color = Colors.white.withValues(alpha: alpha),
+      );
+    }
+    canvas
+      ..drawRRect(pill.inflate(2.2), Paint()..color = surface)
+      ..drawRRect(pill, Paint()..color = Notes.colourFor(t.color, accent));
+    tp.paint(canvas, at - Offset(tp.width / 2, tp.height / 2));
+    if (dim) {
+      canvas.restore();
+    }
   }
 
   void _mark(Canvas canvas, AppTile t, Rect box, double alpha, double scale) {
@@ -765,6 +836,17 @@ class _GridPainter extends CustomPainter {
         }
         if (b != null && e > 0) {
           _mark(canvas, b, box, arrive, 0.4 + 0.6 * arrive);
+        }
+        canvas.restore();
+        // The numbers go with the marks: the old one out with the old mark, the new one in with the new.
+        canvas
+          ..save()
+          ..translate(cw * (col + 0.5), ch * row + 8 + _tile / 2);
+        if (a != null) {
+          _badge(canvas, a, 1 - leave);
+        }
+        if (b != null && e > 0) {
+          _badge(canvas, b, arrive);
         }
         canvas.restore();
       }

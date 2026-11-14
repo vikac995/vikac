@@ -56,6 +56,65 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
     _sync();
   }
 
+  /// Paused: the moment it was paused. The time stands at that moment until it is started
+  /// again, and everything is then moved on by as long as it stood.
+  DateTime? _pausedAt;
+
+  /// Switched off: no rest is timed and no time is shown anywhere, only which set this is.
+  bool _timerOff = false;
+
+  /// What the timer in the floating sheet asks for.
+  void _timer(String what) {
+    final DateTime now = DateTime.now();
+    switch (what) {
+      case 'pause':
+        if (_timerOff) {
+          return;
+        }
+        if (_pausedAt == null) {
+          setState(() => _pausedAt = now);
+        } else {
+          final Duration stood = now.difference(_pausedAt!);
+          setState(() {
+            _restEnds = _restEnds?.add(stood);
+            _lastSet = _lastSet.add(stood);
+            _pausedAt = null;
+          });
+        }
+        Haptics.tick();
+      case 'reset':
+        // A rest starts over from its full length; between rests, the count since the last set starts from nothing.
+        setState(() {
+          _pausedAt = null;
+          if (_restEnds != null) {
+            _restOf = _restTotal;
+            _restEnds = now.add(const Duration(seconds: _restTotal));
+            _restLeft = _restTotal;
+          } else {
+            _lastSet = now;
+          }
+        });
+        Haptics.settle();
+      case 'off':
+        setState(() {
+          _timerOff = !_timerOff;
+          _pausedAt = null;
+          if (_timerOff) {
+            _restEnds = null;
+            _restLeft = 0;
+          } else {
+            _lastSet = now;
+          }
+        });
+        if (_timerOff) {
+          _rest.animateTo(0, spring: Motions.spatial);
+          Diag.instance.extra = '';
+        }
+        Haptics.settle();
+    }
+    _sync();
+  }
+
   /// A workout is on from the first set you touch until the last one is ticked.
   bool _started = false;
   DateTime _lastSet = DateTime.now();
@@ -104,6 +163,10 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           },
       ],
       'countUp': RestBubble.instance.countUp.value,
+      'pausedAt': _pausedAt?.millisecondsSinceEpoch ?? 0,
+      'off': _timerOff,
+      // What the lens shows in place of a time when the timer is switched off.
+      'short': i == 0 ? 'W' : '$i/${_done.length - 1}',
       'haptics': settings.haptics,
       'endsAt': _restEnds?.millisecondsSinceEpoch ?? 0,
       'total': _restOf,
@@ -141,6 +204,11 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           add ? _addRest() : _skipRest();
         }
       }
+      ..onTimer = (String what) {
+        if (mounted) {
+          _timer(what);
+        }
+      }
       ..onStop = () {
         if (mounted) {
           // Stopped from the floating sheet. The workout is no longer on, so its timer stops
@@ -163,7 +231,8 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           : (void Function() f) => f();
       apply(() {
         _elapsed++;
-        if (_restEnds != null) {
+        // Paused, the rest stands where it was.
+        if (_restEnds != null && _pausedAt == null) {
           _restLeft =
               (_restEnds!.difference(DateTime.now()).inMilliseconds / 1000)
                   .ceil()
@@ -211,7 +280,9 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
     _pop[i].animateTo(1);
     final bool all = !_done.contains(false);
     _next.animateTo(all ? 1 : 0);
-    if (_done[i] && !all) {
+    // A set ticked while the timer was paused starts it going again.
+    _pausedAt = null;
+    if (_done[i] && !all && !_timerOff) {
       // Finishing a set starts the rest; nobody should have to ask for it.
       Haptics.settle();
       setState(() {
@@ -639,7 +710,9 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: <Widget>[
                                   Text(
-                                    RestBubble.instance.countUp.value
+                                    _pausedAt != null
+                                        ? 'PAUSED'
+                                        : RestBubble.instance.countUp.value
                                         ? 'RESTING'
                                         : 'REST LEFT',
                                     style: LumenType.label(color: c.inkMuted),

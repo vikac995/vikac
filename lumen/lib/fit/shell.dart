@@ -66,8 +66,21 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   bool get _appBlobs => BlobApps.instance.on.value;
   int get _n => 5;
 
-  /// Whether place [i] holds an app (true) or one of Prism's own actions.
+  /// Whether place [i] holds an app, rather than one of Prism's own actions or pages.
   bool _isApp(int i) => _pinKey(i).startsWith('app:');
+
+  /// Whether place [i] holds one of Prism's own pages, and which.
+  bool _isScreen(int i) => _pinKey(i).startsWith('screen:');
+  int _screenAt(int i) =>
+      (int.tryParse(_pinKey(i).substring(7)) ?? 0).clamp(0, _tabs.length - 1);
+
+  /// The colour of the mark on Prism's own colour: dark on a light one, white on a dark one.
+  Color _onAccent() {
+    final LumenColors c = LumenColors.of(context);
+    return c.accent.computeLuminance() > 0.45
+        ? const Color(0xFF15171C)
+        : Colors.white;
+  }
 
   /// Which of Prism's actions place [i] holds.
   int _actionAt(int i) => (int.tryParse(_pinKey(i).substring(7)) ?? 0).clamp(
@@ -99,29 +112,40 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   String _blobName(int i) => _isApp(i)
       ? (_blobApp(i)?.name ?? _tile(i)?.label ?? '')
-      : _actions[_actionAt(i)].$1;
+      : (_isScreen(i) ? _tabs[_screenAt(i)].$2 : _actions[_actionAt(i)].$1);
+  // A page of Prism's is in Prism's own colour, whatever that is at the moment.
   Color _blobColor(int i) => _isApp(i)
       ? (_blobApp(i)?.color ?? _tile(i)?.color ?? const Color(0xFF5A6373))
-      : _actions[_actionAt(i)].$3;
+      : (_isScreen(i)
+            ? LumenColors.of(context).accent
+            : _actions[_actionAt(i)].$3);
 
-  // Changing the blobs: hold the X while they are out. A tap on a blob then brings up the app
-  // drawer to choose what takes its place.
-  bool _editing = false;
-  int? _editSlot;
-  Timer? _editHold;
-  bool _heldToEdit = false;
-
-  void _setEditing(bool v) {
-    if (v == _editing) {
-      return;
+  /// How many notifications the app in place [i] has. Nothing for actions and pages.
+  int _blobNotes(int i) {
+    if (!_isApp(i)) {
+      return 0;
     }
-    setState(() => _editing = v);
-    v ? Haptics.settle() : Haptics.tick();
-    Diag.instance.event(v ? 'blobs: editing' : 'blobs: done editing');
+    final String package = _pinKey(i).substring(4);
+    if (package.startsWith('label:')) {
+      // Known by the name on the home screen: its notifications are under its real package.
+      final String name = package.substring(6).toLowerCase();
+      for (final AppTile t in Apps.instance.all) {
+        if (t.label.toLowerCase() == name) {
+          return Notes.instance.of(t.package);
+        }
+      }
+      return 0;
+    }
+    return Notes.instance.of(package);
   }
 
-  /// While editing, a blob was tapped: the drawer comes up to choose what takes its place.
+  // Changing a blob: hold it. The app drawer comes up to choose what takes its place.
+  int? _editSlot;
+
+  /// A blob was held: the drawer comes up to choose what takes its place.
   void _pickFor(int i) {
+    Haptics.settle();
+    Diag.instance.event('blob: change');
     setState(() => _editSlot = i);
     _setDrawer(true);
   }
@@ -166,21 +190,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       BlobSlots.instance.at(i) ??
       (_appBlobs ? 'app:${BlobApps.instance.apps[i].package}' : 'action:$i');
 
-  /// A long press on a blob pins it: it then floats over the whole phone as a lens.
-  /// A long press on the pinned one lets it go again.
-  void _blobHold(int i) {
-    final String key = _pinKey(i);
-    final bool was = RestBubble.instance.pinned.value == key;
-    RestBubble.instance.setPin(was ? null : key);
-    Haptics.thud();
-    Diag.instance.event(was ? 'blob unpinned' : 'blob pinned');
-    _sendPin();
-    if (!was && !RestBubble.instance.allowed.value) {
-      // It cannot float until Android allows it; take the person to where that is granted.
-      RestBubble.instance.ask();
-    }
-  }
-
   void _sendPinData() {
     // The colours as they are now, not as the last drawn frame had them: this also runs at the
     // moment the theme or the look changes, before anything has been redrawn.
@@ -213,7 +222,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   /// One of Prism's own icons as a white picture, for the lens to show.
-  static Future<Uint8List?> _iconPng(IconData icon) async {
+  static Future<Uint8List?> _iconPng(
+    IconData icon, {
+    Color color = Colors.white,
+  }) async {
     final ui.PictureRecorder rec = ui.PictureRecorder();
     final TextPainter tp = TextPainter(
       text: TextSpan(
@@ -222,7 +234,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           fontFamily: icon.fontFamily,
           package: icon.fontPackage,
           fontSize: 104,
-          color: Colors.white,
+          color: color,
           height: 1,
         ),
       ),
@@ -253,7 +265,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     for (int i = 0; i < _n; i++) {
       final Map<String, Object>? blob = await _blobMap(_pinKey(i));
       if (blob != null) {
-        all.add(blob);
+        // Which place it is in, so the floating lens's menu can ask for that place to be changed.
+        all.add(<String, Object>{...blob, 'slot': i});
       }
     }
     RestBubble.instance.tellBlobs(all);
@@ -261,6 +274,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   /// One blob as Android needs it: its name, colour and picture. Null if its app is not known yet.
   Future<Map<String, Object>?> _blobMap(String key) async {
+    if (!mounted) {
+      return null;
+    }
+    // Prism's own colour as it is now, read before anything is waited for.
+    final Color accent = LumenColors.of(context).accent;
+    final Color onAccent = _onAccent();
     final String what = key.substring(key.indexOf(':') + 1);
     String name = '', package = '';
     Color color = const Color(0xFF5A6373);
@@ -268,10 +287,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Uint8List? icon;
     bool picture = false;
     if (key.startsWith('action:')) {
-      index = int.tryParse(what) ?? 0;
+      index = (int.tryParse(what) ?? 0).clamp(0, _actions.length - 1);
       name = _actions[index].$1;
       color = _actions[index].$3;
       icon = await _iconPng(_actions[index].$2);
+    } else if (key.startsWith('screen:')) {
+      index = (int.tryParse(what) ?? 0).clamp(0, _tabs.length - 1);
+      name = _tabs[index].$2;
+      color = accent;
+      icon = await _iconPng(_tabs[index].$1, color: onAccent);
     } else {
       package = what;
       final Iterable<BlobApp> found = BlobApps.instance.apps.where(
@@ -304,11 +328,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     }
     return <String, Object>{
       'key': key,
-      'kind': key.startsWith('action:') ? 'action' : 'app',
+      'kind': key.substring(0, key.indexOf(':')),
       'index': index,
       'package': package,
       'name': name,
       'color': color.toARGB32(),
+      // The colour of the small number on it: the one opposite its own.
+      'badge': Notes.colourFor(color, accent).toARGB32(),
       'picture': picture,
       'icon': ?icon,
     };
@@ -340,6 +366,33 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     );
   }
 
+  /// The small number on an app's blob: how many notifications it has, on the colour opposite
+  /// the app's own, with a dark edge that cuts it clear of the blob.
+  Widget _noteBadge(int i) {
+    final int n = _blobNotes(i);
+    return Container(
+      constraints: const BoxConstraints(minWidth: 25, minHeight: 25),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      alignment: Alignment.center,
+      decoration: ShapeDecoration(
+        color: Notes.colourFor(_blobColor(i), LumenColors.of(context).accent),
+        shape: const StadiumBorder(
+          side: BorderSide(color: Color(0xEB101216), width: 2),
+        ),
+      ),
+      child: Text(
+        n > 99 ? '99+' : '$n',
+        textScaler: TextScaler.noScaling,
+        style: LumenType.text(
+          11.5,
+          weight: 720,
+          color: Colors.white,
+          height: 1,
+        ),
+      ),
+    );
+  }
+
   /// A blob picked up out of the menu follows the finger. Near the button it is drawn onto it
   /// and the button swells to take it: letting go there launches it.
   void _blobDrag(Offset at, Offset button) {
@@ -352,17 +405,22 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     _dragAt.value = near ? button + (at - button) * 0.22 : at;
   }
 
-  void _blobDrop(int i, Offset button, Offset velocity) {
+  void _blobDrop(int i, Offset button, Offset home, Offset velocity) {
     if (_dragI != i) {
       return;
     }
-    // A flick at the button counts as a drop on it.
+    // On the button, or flicked at it: the button shoots it out to the side.
     final Offset coast = _dragAt.value + velocity * 0.16;
     if (_armed || (velocity.distance > 700 && (coast - button).distance < 84)) {
       _fire(i, button);
       return;
     }
     _kick.animateTo(1);
+    // Put down anywhere else away from its place, or flicked away from it: it floats there.
+    if ((_dragAt.value - home).distance > 70 || velocity.distance > 900) {
+      _place(i, _dragAt.value, velocity);
+      return;
+    }
     _dropAt = _dragAt.value;
     setState(() {
       _dragI = null;
@@ -371,6 +429,60 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     _dragBack
       ..jumpTo(1)
       ..animateTo(0);
+  }
+
+  /// Put down somewhere on the screen. It becomes the floating lens right there, and from there
+  /// does what any lens does when it is let go: it carries on with the flick and settles at the
+  /// nearer side.
+  Future<void> _place(int i, Offset at, Offset velocity) async {
+    final String key = _pinKey(i);
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    _armed = false;
+    _landed = true;
+    _shotFrom = at;
+    setState(() {
+      _dragI = null;
+      _backI = null;
+      _shotI = i;
+    });
+    // It stays drawn where it was put down until the lens is there to take over.
+    _gulp.jumpTo(0);
+    _shot.jumpTo(0);
+    Diag.instance.event('blob placed');
+    final Map<String, Object>? blob = await _blobMap(key);
+    final Map<Object?, Object?>? spot = blob == null
+        ? null
+        : await RestBubble.instance.land(
+            blob,
+            at: at * dpr,
+            velocity: velocity * dpr,
+          );
+    if (!mounted) {
+      return;
+    }
+    if (spot == null && Platform.isAndroid) {
+      // It cannot float until Android allows it. The person is taken to where that is granted,
+      // and the blob goes back to its place.
+      RestBubble.instance.ask();
+      _dropAt = at;
+      setState(() {
+        _shotI = null;
+        _backI = i;
+      });
+      _dragBack
+        ..jumpTo(1)
+        ..animateTo(0);
+      return;
+    }
+    RestBubble.instance.setPin(key);
+    _setOpen(false);
+    Haptics.settle();
+    RestBubble.instance.landed();
+    Future<void>.delayed(const Duration(milliseconds: 90), () {
+      if (mounted) {
+        setState(() => _shotI = null);
+      }
+    });
   }
 
   /// Dropped on the button. The button takes the blob in, holds it for a moment and shoots it
@@ -464,6 +576,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   Widget _blobFace(int i) {
+    if (_isScreen(i)) {
+      return Icon(_tabs[_screenAt(i)].$1, color: _onAccent(), size: 26);
+    }
     if (!_isApp(i)) {
       return Icon(_actions[_actionAt(i)].$2, color: Colors.white, size: 26);
     }
@@ -660,6 +775,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         if (_drawerOpen) {
           _setDrawer(false);
         }
+        if (action >= 100) {
+          // One of Prism's own pages, asked for from the floating lens.
+          if (_sheetOpen) {
+            _closeSheet();
+          }
+          _setOpen(false);
+          _go((action - 100).clamp(0, _tabs.length - 1));
+          return;
+        }
         _run(action);
       }
       ..onPinned = (String? key) {
@@ -683,6 +807,20 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     // Pressing the home button while Prism is the home screen: everything closes and Home shows.
     const MethodChannel('lumen/device')
         .setMethodCallHandler((MethodCall call) async {
+          if (call.method == 'editSlot' && mounted) {
+            // A blob was held in the floating lens's own menu: Prism has come to the front to
+            // choose what takes its place.
+            if (_sheetOpen) {
+              _closeSheet();
+            }
+            _pickFor((call.arguments as num).toInt().clamp(0, _n - 1));
+            return;
+          }
+          if (call.method == 'notes') {
+            // Android says how many notifications each app has.
+            Notes.instance.take(call.arguments);
+            return;
+          }
           if (RestBubble.instance.handle(call)) {
             Diag.instance.event('floating workout: ${call.method}');
             return;
@@ -737,6 +875,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       ..load()
       ..addListener(_blobsChanged);
     Apps.instance.addListener(_appsChanged);
+    // The numbers on the blobs follow the notifications.
+    Notes.instance.counts.addListener(_pinChanged);
+    Notes.instance.refresh();
     if (BlobSlots.instance.keys.any(
       (String? k) => k != null && k.startsWith('app:'),
     )) {
@@ -1071,15 +1212,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         return;
       }
       _moved = true;
-      _editHold?.cancel();
-      if (_heldToEdit) {
-        // Already holding the X to edit: moving the finger now does nothing more.
-        return;
-      }
       _setOpen(false);
-    }
-    if (_heldToEdit) {
-      return;
     }
     if (!_lifted) {
       // Not a lens yet. A quick upward movement is probably a flick for the app drawer, and a
@@ -1126,15 +1259,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   void _buttonUp() {
     _liftTimer?.cancel();
-    _editHold?.cancel();
     _kick.animateTo(1);
     if (_downAt == null) {
-      return;
-    }
-    if (_heldToEdit) {
-      // The hold that began the editing: letting go leaves the blobs out.
-      _heldToEdit = false;
-      _downAt = null;
       return;
     }
     final Offset travel = (_lastAt ?? _downAt!) - _downAt!;
@@ -1220,7 +1346,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       ..event(v ? 'drawer open' : 'drawer close');
     Haptics.settle();
     if (choosing) {
-      // Chosen or not, the blobs come back out, still being edited.
+      // Chosen or not, the blobs come back out.
       _setOpen(true);
     }
   }
@@ -1306,10 +1432,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       // No blob is left picked up, or on its way back, from the last time.
       _dragI = null;
       _backI = null;
-      // Closing them ends the editing, unless they are only out of the drawer's way.
-      if (!v && _editSlot == null) {
-        _editing = false;
-      }
     });
     Diag.instance
       ..overlay = v ? '+blobs' : ''
@@ -1340,6 +1462,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   /// A blob was tapped. What that means depends on what the blobs are showing.
   void _blobTap(int i) {
+    if (_isScreen(i)) {
+      // One of Prism's own pages: straight to it.
+      _setOpen(false);
+      Haptics.settle();
+      _go(_screenAt(i));
+      return;
+    }
     if (_isApp(i)) {
       final BlobApp? a = _blobApp(i);
       final AppTile? t = _tile(i);
@@ -1434,9 +1563,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         } else if (_parked || _carrying) {
           Diag.instance.event('back: lens home');
           _lensHome();
-        } else if (_open && _editing) {
-          Diag.instance.event('back: done editing blobs');
-          _setEditing(false);
         } else if (_open) {
           Diag.instance.event('back: close blobs');
           _setOpen(false);
@@ -1813,7 +1939,17 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                 // Up to choose what takes a blob's place: it says so, offers Prism's own
                 // actions as well as the apps, and a tap chooses.
                 pick: _editSlot == null ? null : _blobName(_editSlot!),
-                actions: _actions,
+                choices: <(String, String, IconData, Color)>[
+                  for (int k = 0; k < _actions.length; k++)
+                    (
+                      'action:$k',
+                      _actions[k].$1,
+                      _actions[k].$2,
+                      _actions[k].$3,
+                    ),
+                  for (int k = 0; k < _tabs.length; k++)
+                    ('screen:$k', _tabs[k].$2, _tabs[k].$1, c.accent),
+                ],
                 onPick: _picked,
               ),
             ),
@@ -1871,36 +2007,31 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                         opacity: (p * 12).clamp(0.0, 1.0),
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTap: () => _editing ? _pickFor(i) : _blobTap(i),
-                          onLongPress: _editing ? null : () => _blobHold(i),
-                          // Picked up and dragged: onto the button and let go, it is launched to
-                          // float. A flick at the button does the same.
-                          onPanStart: _editing
-                              ? null
-                              : (DragStartDetails d) {
-                                  _dragGrab = d.globalPosition - rest(i);
-                                  _dragAt.value = rest(i);
-                                  _armed = false;
-                                  setState(() {
-                                    _dragI = i;
-                                    _backI = null;
-                                  });
-                                  Haptics.tick();
-                                },
-                          onPanUpdate: _editing
-                              ? null
-                              : (DragUpdateDetails d) =>
-                                    _blobDrag(d.globalPosition - _dragGrab, bc),
-                          onPanEnd: _editing
-                              ? null
-                              : (DragEndDetails d) => _blobDrop(
-                                  i,
-                                  bc,
-                                  d.velocity.pixelsPerSecond,
-                                ),
-                          onPanCancel: _editing
-                              ? null
-                              : () => _blobDrop(i, bc, Offset.zero),
+                          // A tap uses it. Held, it is to be changed for something else.
+                          // Picked up and put down somewhere, it floats there; on the button,
+                          // or flicked at it, the button shoots it out to the side.
+                          onTap: () => _blobTap(i),
+                          onLongPress: () => _pickFor(i),
+                          onPanStart: (DragStartDetails d) {
+                            _dragGrab = d.globalPosition - rest(i);
+                            _dragAt.value = rest(i);
+                            _armed = false;
+                            setState(() {
+                              _dragI = i;
+                              _backI = null;
+                            });
+                            Haptics.tick();
+                          },
+                          onPanUpdate: (DragUpdateDetails d) =>
+                              _blobDrag(d.globalPosition - _dragGrab, bc),
+                          onPanEnd: (DragEndDetails d) => _blobDrop(
+                            i,
+                            bc,
+                            rest(i),
+                            d.velocity.pixelsPerSecond,
+                          ),
+                          onPanCancel: () =>
+                              _blobDrop(i, bc, rest(i), Offset.zero),
                           child: Column(
                             children: <Widget>[
                               Transform(
@@ -1913,36 +2044,16 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                     1,
                                   )
                                   ..rotateZ(-ang),
-                                // While the blobs are being edited each one wears a small
-                                // mark: a tap on it changes it.
-                                child: _editing
+                                // An app with notifications wears their number.
+                                child: _blobNotes(i) > 0 && p > 0.9
                                     ? Stack(
                                         clipBehavior: Clip.none,
                                         children: <Widget>[
                                           _blobDisc(i),
                                           Positioned(
-                                            right: -3,
-                                            top: -3,
-                                            child: Container(
-                                              width: 24,
-                                              height: 24,
-                                              decoration: const ShapeDecoration(
-                                                color: Colors.white,
-                                                shape: CircleBorder(),
-                                                shadows: <BoxShadow>[
-                                                  BoxShadow(
-                                                    color: Color(0x55000000),
-                                                    blurRadius: 6,
-                                                    offset: Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: const Icon(
-                                                Icons.swap_horiz_rounded,
-                                                size: 17,
-                                                color: Color(0xFF15171C),
-                                              ),
-                                            ),
+                                            right: -4,
+                                            top: -4,
+                                            child: _noteBadge(i),
                                           ),
                                         ],
                                       )
@@ -1974,44 +2085,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     ),
                   );
                 },
-              ),
-            // While the blobs are being edited, a line above them says what a tap does.
-            if (_editing && _open)
-              Positioned(
-                left: 0,
-                right: 0,
-                top: bc.dy - _reach - _blob / 2 - 58,
-                child: IgnorePointer(
-                  child: ListenableBuilder(
-                    listenable: _t,
-                    builder: (BuildContext context, Widget? _) => Opacity(
-                      opacity: _t.value.clamp(0.0, 1.0),
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: const ShapeDecoration(
-                            color: Color(0xA6000000),
-                            shape: StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Tap a blob to change it',
-                            textAlign: TextAlign.center,
-                            textScaler: TextScaler.noScaling,
-                            style: LumenType.text(
-                              15,
-                              weight: 620,
-                              color: Colors.white.withValues(alpha: 0.92),
-                              height: 1.2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
               ),
             // A blob dropped on the button: taken in under it, then shot out to the side on a
             // thread, to become the floating lens.
@@ -2108,17 +2181,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                       }
                     });
                     _kick.animateTo(0.92);
-                    // Held still on the X while the blobs are out: they can be changed.
-                    _editHold?.cancel();
-                    _heldToEdit = false;
-                    if (_open && !_editing) {
-                      _editHold = Timer(const Duration(milliseconds: 450), () {
-                        if (_downAt != null && !_moved && _open && mounted) {
-                          _heldToEdit = true;
-                          _setEditing(true);
-                        }
-                      });
-                    }
                   },
                   onPointerMove: _buttonMove,
                   onPointerCancel: (_) => _buttonUp(),
@@ -2813,14 +2875,13 @@ void showPrismSettings(BuildContext context) {
                       ),
                       const SizedBox(height: 12),
                       ListenableBuilder(
-                        listenable: RestBubble.instance.seesApps,
+                        listenable: Notes.instance.allowed,
                         builder: (BuildContext context, Widget? _) =>
                             SwitchLine(
-                              label: 'Pinned app returns when you leave it',
-                              value: RestBubble.instance.seesApps.value,
+                              label: 'Notification counts on icons',
+                              value: Notes.instance.allowed.value,
                               // Android decides this too, on its own screen.
-                              onChanged: (bool _) =>
-                                  RestBubble.instance.askUsage(),
+                              onChanged: (bool _) => Notes.instance.ask(),
                             ),
                       ),
                       const SizedBox(height: 12),

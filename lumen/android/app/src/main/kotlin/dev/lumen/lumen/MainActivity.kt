@@ -224,6 +224,9 @@ class MainActivity : FlutterActivity() {
                     RestBubble.total = (a["total"] as Number).toInt()
                     RestBubble.sinceAt = (a["sinceAt"] as Number).toLong()
                     RestBubble.countUp = a["countUp"] as Boolean
+                    RestBubble.pausedAt = (a["pausedAt"] as? Number)?.toLong() ?: 0L
+                    RestBubble.timerOff = (a["off"] as? Boolean) ?: false
+                    RestBubble.short = (a["short"] as? String) ?: ""
                     RestBubble.hapticsOn = a["haptics"] as Boolean
                     RestBubble.accent = (a["accent"] as Number).toInt()
                     RestBubble.onAccent = (a["onAccent"] as Number).toInt()
@@ -241,7 +244,10 @@ class MainActivity : FlutterActivity() {
                 // its place, unseen if it was not there, and Prism is told where that is.
                 val a = call.arguments as? Map<*, *>
                 if (a != null) RestBubble.pin = RestBubble.blobOf(a)
-                RestBubble.incoming(applicationContext) { spot -> result.success(spot) }
+                // Where it was put down, if it was put down somewhere, and how fast it was going.
+                val at = if (a?.get("atX") != null) floatArrayOf((a["atX"] as Number).toFloat(), (a["atY"] as Number).toFloat()) else null
+                val fling = floatArrayOf(((a?.get("vx")) as? Number)?.toFloat() ?: 0f, ((a?.get("vy")) as? Number)?.toFloat() ?: 0f)
+                RestBubble.incoming(applicationContext, at, fling) { spot -> result.success(spot) }
             } else if (call.method == "landed") {
                 RestBubble.landed()
                 result.success(null)
@@ -272,15 +278,15 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
             } else if (call.method == "overlayAllowed") {
                 result.success(android.provider.Settings.canDrawOverlays(this))
-            } else if (call.method == "usageAllowed") {
-                result.success(RestBubble.usageAllowed(this))
-            } else if (call.method == "askUsage") {
+            } else if (call.method == "notesAllowed") {
+                result.success(RestBubble.notesAllowed(this))
+            } else if (call.method == "askNotes") {
                 try {
-                    startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS, android.net.Uri.parse("package:$packageName")))
-                } catch (e: Exception) {
-                    try { startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS)) } catch (e2: Exception) {}
-                }
+                    startActivity(android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                } catch (e: Exception) {}
                 result.success(null)
+            } else if (call.method == "notes") {
+                result.success(RestBubble.notes)
             } else if (call.method == "askOverlay") {
                 try {
                     startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:$packageName")))
@@ -417,7 +423,58 @@ class MainActivity : FlutterActivity() {
  * to fold it back into the lens. Everything is drawn by Android itself, and nothing exists
  * when no workout is on.
  */
+/**
+ * Android tells this whenever a notification appears or goes, once the person has allowed it
+ * (on Android's own screen). It keeps one number for each app: how many notifications that app
+ * has that can be swiped away. Nothing here runs by itself; it only answers when told.
+ */
+class Notes : android.service.notification.NotificationListenerService() {
+    override fun onListenerConnected() = count()
+
+    override fun onNotificationPosted(sbn: android.service.notification.StatusBarNotification?) = count()
+
+    override fun onNotificationRemoved(sbn: android.service.notification.StatusBarNotification?) = count()
+
+    override fun onListenerDisconnected() {
+        RestBubble.setNotes(applicationContext, emptyMap())
+    }
+
+    private fun count() {
+        val next = HashMap<String, Int>()
+        try {
+            for (n in activeNotifications ?: emptyArray()) {
+                val flags = n.notification.flags
+                // Not the heading of a bundle, and not things that only say something is running.
+                if (flags and android.app.Notification.FLAG_GROUP_SUMMARY != 0) continue
+                if (flags and android.app.Notification.FLAG_ONGOING_EVENT != 0) continue
+                if (!n.isClearable) continue
+                next[n.packageName] = (next[n.packageName] ?: 0) + 1
+            }
+        } catch (e: Exception) {
+            return
+        }
+        RestBubble.setNotes(applicationContext, next)
+    }
+}
+
 object RestBubble {
+    /** How many notifications each app has, by package. Empty until the person allows Prism to be told. */
+    var notes: Map<String, Int> = emptyMap()
+        private set
+
+    fun setNotes(context: Context, next: Map<String, Int>) {
+        if (next == notes) return
+        notes = next
+        try { channel?.invokeMethod("notes", next) } catch (e: Exception) {}
+        view?.invalidate()
+        menu?.invalidate()
+    }
+
+    fun notesAllowed(context: Context): Boolean {
+        val listed = android.provider.Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners") ?: return false
+        return listed.split(":").any { android.content.ComponentName.unflattenFromString(it)?.packageName == context.packageName }
+    }
+
     const val OPEN_TRAIN = "dev.lumen.OPEN_TRAIN"
 
     class SetRow(var kg: Double, var reps: Int, var done: Boolean)
@@ -433,6 +490,13 @@ object RestBubble {
     var total = 90
     var sinceAt = 0L
     var countUp = false
+
+    // Paused: the moment it was paused, and the time stands at that moment. Otherwise 0.
+    var pausedAt = 0L
+
+    // Switched off: no timer is shown anywhere, only which set this is.
+    var timerOff = false
+    var short = ""
     var accent = 0xFFFFAE1A.toInt()
     var onAccent = 0xFF1D1300.toInt()
     var foreground = true
@@ -442,7 +506,14 @@ object RestBubble {
     var hapticsOn = true
 
     /** Something from Prism's blob menu, pinned to float over the phone. */
-    class Pin(val key: String, val kind: String, val index: Int, val pkg: String, val name: String, val color: Int, val icon: android.graphics.Bitmap?, val picture: Boolean)
+    class Pin(
+        val key: String, val kind: String, val index: Int, val pkg: String, val name: String, val color: Int,
+        val icon: android.graphics.Bitmap?, val picture: Boolean,
+        // The colour of the small number on it: the one opposite its own, which Prism works out.
+        val badge: Int,
+        // Which of the menu's five places it is in, where that is known.
+        val slot: Int,
+    )
 
     class Meal(val index: Int, val name: String, val what: String, val kcal: Int)
 
@@ -463,12 +534,19 @@ object RestBubble {
     // A lens put in place for a blob that is still on its way to it is not seen until the blob lands.
     private var unseen = false
 
+    // A blob put down somewhere becomes the lens there, and then does what any lens does when
+    // let go: this is how fast it was going when it was.
+    private var flingX = 0f
+    private var flingY = 0f
+    private var placedDown = false
+
     /**
-     * A blob is on its way from Prism's button to become the lens, or to go into it. The lens is
-     * put in its place (unseen, if there was none) and [done] is told where that is on the
-     * screen: its corner and its size, in pixels. Nothing, if the lens cannot float here.
+     * A blob is on its way from Prism's blobs to become the lens, or to go into it. The lens is
+     * put in its place, unseen if there was none: its usual place, or, if the blob was put down
+     * somewhere ([at], the middle of where, on the screen), there. [done] is told where the lens
+     * is on the screen: its corner and its size, in pixels. Nothing, if it cannot float here.
      */
-    fun incoming(context: Context, done: (Map<String, Int>?) -> Unit) {
+    fun incoming(context: Context, at: FloatArray?, fling: FloatArray, done: (Map<String, Int>?) -> Unit) {
         returned(context)
         if (view == null) unseen = true
         refresh(context)
@@ -478,19 +556,32 @@ object RestBubble {
             done(null)
             return
         }
+        placedDown = at != null
+        flingX = fling[0]
+        flingY = fling[1]
         // What is in the lens, or its dot on the rim, is not drawn until the blob arrives.
         v.hideInner = true
         v.invalidate()
         var tries = 0
+        var moved = false
         val answer = object : Runnable {
             override fun run() {
                 if (!v.isLaidOut && tries++ < 20) {
                     v.postDelayed(this, 16)
                     return
                 }
-                val at = IntArray(2)
-                v.getLocationOnScreen(at)
-                done(mapOf("x" to at[0], "y" to at[1], "size" to v.width))
+                val here = IntArray(2)
+                v.getLocationOnScreen(here)
+                if (at != null && !moved) {
+                    // Put down somewhere: the lens goes there, by as much as it is away from it now.
+                    moved = true
+                    val dx = Math.round(at[0] - v.width / 2f) - here[0]
+                    val dy = Math.round(at[1] - v.height / 2f) - here[1]
+                    v.jumpBy(dx, dy)
+                    here[0] += dx
+                    here[1] += dy
+                }
+                done(mapOf("x" to here[0], "y" to here[1], "size" to v.width))
             }
         }
         v.post(answer)
@@ -502,10 +593,16 @@ object RestBubble {
     fun landed() {
         unseen = false
         val v = view ?: return
+        if (!v.hideInner && v.alpha == 1f) return
         v.hideInner = false
         v.alpha = 1f
         v.invalidate()
         v.thump()
+        if (placedDown) {
+            // Put down somewhere: from there it carries on as it was going, and settles at a side.
+            placedDown = false
+            v.letFly(flingX, flingY)
+        }
     }
 
     fun blobOf(a: Map<*, *>): Pin {
@@ -514,7 +611,33 @@ object RestBubble {
         return Pin(
             a["key"] as String, a["kind"] as String, (a["index"] as Number).toInt(), a["package"] as String,
             a["name"] as String, (a["color"] as Number).toInt(), bmp, a["picture"] as Boolean,
+            (a["badge"] as? Number)?.toInt() ?: 0xFFE5484D.toInt(),
+            (a["slot"] as? Number)?.toInt() ?: -1,
         )
+    }
+
+    private val badgePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+
+    /** The small number on an app: how many notifications it has. Drawn with its middle at the given place. */
+    private fun paintBadge(canvas: android.graphics.Canvas, b: Pin, cx: Float, cy: Float, dp: Float, scale: Float = 1f) {
+        val count = if (b.kind == "app") notes[b.pkg] ?: 0 else 0
+        if (count <= 0) return
+        val text = if (count > 99) "99+" else count.toString()
+        val p = badgePaint
+        p.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+        p.textSize = 11.5f * dp * scale
+        p.textAlign = android.graphics.Paint.Align.CENTER
+        val r = 10.5f * dp * scale
+        val half = Math.max(r, (p.measureText(text) + 9 * dp * scale) / 2f)
+        val edge = 1.8f * dp * scale
+        p.style = android.graphics.Paint.Style.FILL
+        // A dark edge, so it stands clear of whatever it lies on.
+        p.color = 0xEB101216.toInt()
+        canvas.drawRoundRect(cx - half - edge, cy - r - edge, cx + half + edge, cy + r + edge, r + edge, r + edge, p)
+        p.color = b.badge
+        canvas.drawRoundRect(cx - half, cy - r, cx + half, cy + r, r, r, p)
+        p.color = WHITE
+        canvas.drawText(text, cx, cy - (p.descent() + p.ascent()) / 2f, p)
     }
     var weight = 80.0
     var kcalLeft = 0
@@ -716,6 +839,8 @@ object RestBubble {
             } else {
                 haptic(context, "thud")
             }
+        } else if (b.kind == "screen") {
+            openScreen(context, b.index)
         } else if (b.index == 1 || b.index == 3) {
             // Logging food and weighing in are done right here, over whatever is open.
             openSheet(context, b.index)
@@ -759,24 +884,7 @@ object RestBubble {
         try { wm(context).removeView(m) } catch (e: Exception) {}
     }
 
-    /**
-     * Whether Android lets Prism see which app is in front. Used for one thing: a pinned app's
-     * lens, which steps aside when it has opened its app, comes back the moment that app is left.
-     */
-    fun usageAllowed(context: Context): Boolean {
-        return try {
-            val ops = context.getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
-            val mode = if (Build.VERSION.SDK_INT >= 29) {
-                ops.unsafeCheckOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
-            } else {
-                @Suppress("DEPRECATION")
-                ops.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
-            }
-            mode == android.app.AppOpsManager.MODE_ALLOWED
-        } catch (e: Exception) {
-            false
-        }
-    }
+    private val watcher = android.os.Handler(android.os.Looper.getMainLooper())
 
     /**
      * The lens opened its pinned app and stepped aside. Android announces the moment the person
@@ -814,71 +922,6 @@ object RestBubble {
         try { context.applicationContext.unregisterReceiver(r) } catch (e: Exception) {}
     }
 
-    private val watcher = android.os.Handler(android.os.Looper.getMainLooper())
-    private var watching = false
-
-    /**
-     * The lens has opened its pinned app and stepped aside. Three times a second, and only until
-     * that app is left, this looks at which app is in front; when it is another one (the list of
-     * recent apps counts), the lens comes back. Nothing runs while the screen is off, and nothing
-     * at all if Android has not been told Prism may look.
-     */
-    private fun watchAway(context: Context) {
-        if (watching || !usageAllowed(context)) return
-        val app = context.applicationContext
-        watching = true
-        val began = System.currentTimeMillis()
-        var from = began - 3000
-        var seen = false
-        var gone = 0
-        watcher.postDelayed(object : Runnable {
-            override fun run() {
-                val p = pin
-                if (!awayInApp || p == null) {
-                    watching = false
-                    return
-                }
-                var next = 330L
-                try {
-                    val power = app.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
-                    if (!power.isInteractive) {
-                        next = 3000L
-                    } else {
-                        val usage = app.getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
-                        val now = System.currentTimeMillis()
-                        val events = usage.queryEvents(from, now + 1000)
-                        val e = android.app.usage.UsageEvents.Event()
-                        var front: String? = null
-                        while (events.hasNextEvent()) {
-                            events.getNextEvent(e)
-                            if (e.eventType == 1) { // an app's screen came to the front
-                                front = e.packageName
-                                from = e.timeStamp
-                            }
-                        }
-                        if (front == p.pkg) {
-                            seen = true
-                            gone = 0
-                        } else if (front != null && (seen || now - began > 2500)) {
-                            // Seen twice running, so that one screen of the app handing over to another is not mistaken for leaving.
-                            gone++
-                        }
-                        if (gone >= 2) {
-                            watching = false
-                            returned(app)
-                            refresh(app)
-                            return
-                        }
-                    }
-                } catch (ex: Exception) {
-                    watching = false
-                    return
-                }
-                watcher.postDelayed(this, next)
-            }
-        }, 330)
-    }
-
     /** A pinned thing's lens was tapped: it does what the thing is. */
     private fun tapPinned(context: Context) {
         val p = pin ?: return
@@ -887,15 +930,15 @@ object RestBubble {
             if (i != null) {
                 i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
                 try { context.startActivity(i) } catch (e: Exception) {}
-                // Out of the way while that app is in front. It is back when that app is left, if
-                // Android lets Prism see that; otherwise when Prism is next on screen.
+                // Out of the way while that app is in front. It is back the moment that app is left.
                 awayInApp = true
                 refresh(context)
                 listenForLeaving(context)
-                watchAway(context)
             } else {
                 haptic(context, "thud")
             }
+        } else if (p.kind == "screen") {
+            openScreen(context, p.index)
         } else if (p.index == 1 || p.index == 3) {
             // Logging food and weighing in are done right here, over whatever is open.
             openSheet(context)
@@ -914,6 +957,9 @@ object RestBubble {
             .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         try { context.startActivity(i) } catch (ex: Exception) {}
     }
+
+    /** Opens Prism on one of its own pages. (Sent the same way as an action, numbered from a hundred.) */
+    private fun openScreen(context: Context, index: Int) = openAction(context, 100 + index)
 
     /** Something changed: decide whether the lens should be there, and bring what is shown up to date. */
     fun refresh(context: Context) {
@@ -1128,8 +1174,9 @@ object RestBubble {
     /**
      * The blob menu, opened by holding the lens when it is a container. These are the blobs
      * Prism's own button shows, shot out on the same spring, in the same fan, turned to face into
-     * the screen from wherever the lens is. A tap on a blob does it once and leaves the lens as
-     * it is. Holding a blob puts it in the lens; holding the one already in it takes it out.
+     * the screen from wherever the lens is. As in Prism: a tap on a blob uses it once and leaves
+     * the lens as it is; a blob dragged out of its place and let go goes into the lens; a blob
+     * held still is to be changed for something else, which is done in Prism.
      * A tap anywhere else, or the back button, closes the menu.
      */
     private class Menu(context: Context, val ox: Float, val oy: Float, val lensR: Float) : android.view.View(context) {
@@ -1157,6 +1204,12 @@ object RestBubble {
         private var downY = 0f
         private var moved = false
         private var kept = false
+        // A blob picked up and being dragged, and where the finger has it.
+        private var dragging = -1
+        private var dragX = 0f
+        private var dragY = 0f
+        private var flyFromX = 0f
+        private var flyFromY = 0f
         // A blob on its way into the lens.
         private var flying = -1
         private var fly = 0f
@@ -1387,11 +1440,17 @@ object RestBubble {
                 var size = 0.14f + 0.86f * Math.pow(reached.toDouble(), 1.5).toFloat() + (if (p > 1f) (p - 1f) * 0.35f else 0f)
                 var stretch = (Math.abs(speed[i]) * 0.04f).coerceIn(0f, 0.46f)
                 var alpha = (p * 12f).coerceIn(0f, 1f)
-                if (i == flying) {
-                    // Kept: it goes into the lens, coming down to the size it has in there.
+                if (i == dragging) {
+                    // Picked up: it is where the finger has it.
+                    bx = dragX
+                    by = dragY
+                    size = 1.08f
+                    stretch = 0f
+                } else if (i == flying) {
+                    // Let go: it goes into the lens, coming down to the size it has in there.
                     val f = EASE.getInterpolation(fly)
-                    bx = restX[i] + (cx - restX[i]) * f
-                    by = restY[i] + (cy - restY[i]) * f
+                    bx = flyFromX + (cx - flyFromX) * f
+                    by = flyFromY + (cy - flyFromY) * f
                     size = 1f + (22.5f / 31f - 1f) * f
                     stretch = 0f
                     alpha = 1f
@@ -1408,8 +1467,10 @@ object RestBubble {
                 canvas.rotate(-turn)
                 paintBlob(canvas, items[i], 0f, 0f, 31 * dp, dp, items[i].key == inLens && i != flying, true, (alpha * 255).toInt())
                 canvas.restore()
+                // Once it is out: how many notifications it has.
+                if (p >= 0.9f && i != flying && i != dragging) paintBadge(canvas, items[i], bx + 22 * dp, by - 22 * dp, dp)
                 // The name appears once the blob is nearly there, not while it is a speck.
-                val show = if (i == flying) 1f - fly * 3f else (p - 0.6f) / 0.4f
+                val show = if (i == dragging) 0f else if (i == flying) 1f - fly * 3f else (p - 0.6f) / 0.4f
                 if (show > 0f) {
                     names.alpha = (show.coerceIn(0f, 1f) * 255).toInt()
                     canvas.drawText(items[i].name, bx, by + 50 * dp, names)
@@ -1429,12 +1490,13 @@ object RestBubble {
             return -1
         }
 
+        // Held still on a blob: it is to be changed. That is done in Prism, where the apps are.
         private val keep = Runnable {
             val i = pressedAt
             if (i >= 0 && !kept && opening) {
                 kept = true
                 pressedAt = -1
-                put(i)
+                change(i)
             }
         }
 
@@ -1445,25 +1507,40 @@ object RestBubble {
                     downX = e.x; downY = e.y
                     kept = false
                     moved = false
+                    dragging = -1
                     pressedAt = at(e.x, e.y)
                     if (pressedAt >= 0) postDelayed(keep, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L))
                     invalidate()
                 }
                 android.view.MotionEvent.ACTION_MOVE -> {
                     if (!moved && Math.hypot((e.x - downX).toDouble(), (e.y - downY).toDouble()) > 14 * dp) {
-                        // Slid off: neither a tap nor a hold.
+                        // Moved: neither a tap nor a hold. If it began on a blob, the blob comes along.
                         moved = true
                         removeCallbacks(keep)
+                        if (pressedAt >= 0 && !kept) {
+                            dragging = pressedAt
+                            haptic(context, "tick")
+                        }
                         pressedAt = -1
-                        invalidate()
                     }
+                    if (dragging >= 0) {
+                        dragX = restX[dragging] + (e.x - downX)
+                        dragY = restY[dragging] + (e.y - downY)
+                    }
+                    invalidate()
                 }
                 android.view.MotionEvent.ACTION_UP -> {
                     removeCallbacks(keep)
                     val i = pressedAt
+                    val d = dragging
                     pressedAt = -1
-                    if (kept) {
-                        // Already put in the lens by the hold.
+                    dragging = -1
+                    if (d >= 0) {
+                        // Let go away from its place, it goes into the lens. Let go near it, it stays.
+                        val far = Math.hypot((dragX - restX[d]).toDouble(), (dragY - restY[d]).toDouble()) > 64 * dp
+                        if (far) put(d, dragX, dragY)
+                    } else if (kept) {
+                        // Already being changed, by the hold.
                     } else if (i >= 0) {
                         choose(i)
                     } else if (!moved) {
@@ -1474,6 +1551,7 @@ object RestBubble {
                 android.view.MotionEvent.ACTION_CANCEL -> {
                     removeCallbacks(keep)
                     pressedAt = -1
+                    dragging = -1
                     invalidate()
                 }
             }
@@ -1511,32 +1589,35 @@ object RestBubble {
             watcher.postDelayed({ use(c, b) }, 110)
         }
 
-        /** Held: it goes into the lens. Holding the one that is already there takes it out. */
-        private fun put(i: Int) {
+        /** Held: it is to be changed for something else. Prism comes to the front with its apps to choose from. */
+        private fun change(i: Int) {
+            val c = context
+            haptic(c, "click")
+            val slot = if (items[i].slot >= 0) items[i].slot else i
+            close()
+            openPrism(c)
+            // Once Prism is in front.
+            watcher.postDelayed({ channel?.invokeMethod("editSlot", slot) }, 220)
+        }
+
+        /** Dragged out of its place and let go, at this spot: it goes into the lens. */
+        private fun put(i: Int, fromX: Float, fromY: Float) {
             val b = items[i]
             val c = context
             haptic(c, "thud")
-            if (pin?.key == b.key) {
-                pin = null
-                awayInApp = false
-                channel?.invokeMethod("pinned", null)
-                view?.invalidate()
-                close()
-                // The lens may have nothing left to show; it goes once the menu has.
-                watcher.postDelayed({ refresh(c) }, 320)
-                return
-            }
+            flyFromX = fromX
+            flyFromY = fromY
             flying = i
             fly = 0f
             opening = false
             val lens = view
             lens?.hideInner = true
             pin = b
-            awayInApp = false
+            returned(c)
             channel?.invokeMethod("pinned", b.key)
             lens?.invalidate()
             val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
-            a.duration = 300
+            a.duration = 280
             a.interpolator = android.view.animation.LinearInterpolator()
             a.addUpdateListener {
                 fly = it.animatedValue as Float
@@ -1544,9 +1625,10 @@ object RestBubble {
             }
             a.addListener(object : android.animation.AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: android.animation.Animator) {
-                    // It has arrived: from here the lens draws it, in the same place at the same size.
+                    // It has arrived: from here the lens draws it, and gives a little as it catches it.
                     view?.hideInner = false
                     view?.invalidate()
+                    view?.thump()
                     flying = -1
                     out[i] = 0f
                     speed[i] = 0f
@@ -1663,23 +1745,42 @@ object RestBubble {
     }
 
     /** What the timer shows, the same for the lens and for the sheet. */
-    private class Reading(val text: String, val part: Float, val resting: Boolean, val go: Boolean, val urgent: Boolean, val what: String)
+    private class Reading(
+        val text: String, val part: Float, val resting: Boolean, val go: Boolean, val urgent: Boolean, val what: String,
+        val paused: Boolean = false, val off: Boolean = false,
+    )
 
-    private fun reading(now: Long): Reading {
+    /** The moment the timer is read at: now, or, while it is paused, the moment it was paused. */
+    private fun timerNow(wall: Long): Long = if (pausedAt > 0) pausedAt else wall
+
+    private fun reading(wall: Long): Reading {
+        // Switched off, there is no time to show: it says which set this is.
+        if (timerOff) return Reading(short, -1f, false, false, false, "TIMER OFF", off = true)
+        val paused = pausedAt > 0
+        val now = timerNow(wall)
         val left = endsAt - now
         val resting = left > 0
-        val go = endsAt > 0 && !resting && now - endsAt < 3000
+        val go = endsAt > 0 && !resting && now - endsAt < 3000 && !paused
         val since = now - sinceAt
         if (go) return Reading("GO", 1f, false, true, false, "REST IS OVER")
         if (resting) {
             val gone = (total * 1000L - left).coerceAtLeast(0)
             return if (countUp) {
-                Reading(clock(gone), (gone / (total * 1000f)).coerceIn(0f, 1f), true, false, left <= 10000, "RESTING")
+                Reading(clock(gone), (gone / (total * 1000f)).coerceIn(0f, 1f), true, false, left <= 10000 && !paused, if (paused) "PAUSED" else "RESTING", paused)
             } else {
-                Reading(clock(left + 999), (left / (total * 1000f)).coerceIn(0f, 1f), true, false, left <= 10000, "REST LEFT")
+                Reading(clock(left + 999), (left / (total * 1000f)).coerceIn(0f, 1f), true, false, left <= 10000 && !paused, if (paused) "PAUSED" else "REST LEFT", paused)
             }
         }
-        return Reading(clock(since), -1f, false, false, false, "SINCE LAST SET")
+        return Reading(clock(since), -1f, false, false, false, if (paused) "PAUSED" else "SINCE LAST SET", paused)
+    }
+
+    /** Two short bars: the timer is paused. */
+    private fun pauseMark(canvas: android.graphics.Canvas, paint: android.graphics.Paint, cx: Float, cy: Float, h: Float, color: Int) {
+        paint.style = android.graphics.Paint.Style.FILL
+        paint.color = color
+        val w = h * 0.34f
+        canvas.drawRoundRect(cx - w * 1.6f, cy - h / 2, cx - w * 0.6f, cy + h / 2, w / 2, w / 2, paint)
+        canvas.drawRoundRect(cx + w * 0.6f, cy - h / 2, cx + w * 1.6f, cy + h / 2, w / 2, w / 2, paint)
     }
 
     /**
@@ -1845,6 +1946,21 @@ object RestBubble {
             animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(220).setInterpolator(EASE).start()
         }
 
+        /** Moves the lens at once, by this much. Used to put it where a blob was put down. */
+        fun jumpBy(dx: Int, dy: Int) {
+            springing = false
+            glide?.cancel()
+            lp.x += dx; lp.y += dy
+            place()
+        }
+
+        /** Lets the lens go from where it is, at this speed: it carries on and settles at the nearer side. */
+        fun letFly(velX: Float, velY: Float) {
+            if (docked || tucked) return
+            snapped = false
+            throwIt(velX, velY)
+        }
+
         /** Something has just landed in it: it gives a little, wider then taller, and is still again. */
         fun thump() {
             animate().cancel()
@@ -1957,13 +2073,13 @@ object RestBubble {
                 canvas.drawCircle(bx, by, 5.2f * dp, paint)
                 paint.color = WHITE
                 canvas.drawCircle(bx, by, 2.1f * dp, paint)
-            } else if (t != null && !go) {
+            } else if (t != null && !go && !t.off) {
                 // No rest running: a quiet ring with one bead going round once a minute, like a second hand.
                 paint.style = android.graphics.Paint.Style.STROKE
                 paint.strokeWidth = 2.2f * dp
                 paint.color = 0x22FFFFFF
                 canvas.drawArc(arc, 0f, 360f, false, paint)
-                val a = Math.toRadians((-90.0 + 360.0 * (((now - sinceAt) % 60000L) / 60000.0)))
+                val a = Math.toRadians((-90.0 + 360.0 * (((timerNow(now) - sinceAt) % 60000L) / 60000.0)))
                 paint.style = android.graphics.Paint.Style.FILL
                 paint.color = colour
                 canvas.drawCircle(r + (arc.width() / 2f) * Math.cos(a).toFloat(), r + (arc.height() / 2f) * Math.sin(a).toFloat(), 2.6f * dp, paint)
@@ -1977,7 +2093,10 @@ object RestBubble {
             if (t == null && container) {
                 // The container: what was put in it sits inside as the blob it is, with the glass around it.
                 val inside = pin
-                if (inside != null && !hideInner) paintBlob(canvas, inside, r + lagX / k, r + lagY / k, 22.5f * dp, dp, false)
+                if (inside != null && !hideInner) {
+                    paintBlob(canvas, inside, r + lagX / k, r + lagY / k, 22.5f * dp, dp, false)
+                    paintBadge(canvas, inside, r + disc * 0.66f, r - disc * 0.66f, dp, 0.9f)
+                }
                 return
             }
             if (t == null) {
@@ -2007,13 +2126,15 @@ object RestBubble {
                 }
                 return // Nothing in it moves, so it is drawn once and left alone.
             }
-            paint.color = if (go) onAccent else if (t.urgent) shade(colour, 1.25f, 0xFF) else WHITE
+            // Paused, the time is dimmed and two bars sit under it.
+            paint.color = if (go) onAccent else if (t.paused) 0x99FFFFFF.toInt() else if (t.urgent) shade(colour, 1.25f, 0xFF) else WHITE
             paint.textAlign = android.graphics.Paint.Align.CENTER
             paint.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
             paint.fontFeatureSettings = "tnum"
             paint.letterSpacing = if (go) 0.06f else -0.01f
             paint.textSize = (if (go) 19f else 17.5f) * dp
             canvas.drawText(t.text, r, r - (paint.descent() + paint.ascent()) / 2f, paint)
+            if (t.paused && k <= 1.45f) pauseMark(canvas, paint, r, r + 15.5f * dp, 7 * dp, shade(colour, 1.25f, 0xFF))
             val under = pin
             if (container && under != null && !hideInner) {
                 // What was put in the container waits underneath while a workout has it: a small
@@ -2046,8 +2167,9 @@ object RestBubble {
                     animate().scaleX(1f).scaleY(1f).setDuration(380).setInterpolator(EASE).start()
                 }.start()
             }
-            // Smooth while a rest is running; otherwise once a second is enough.
-            postInvalidateDelayed(if (t.resting) 66 else if (go) 250 else 1000)
+            // Smooth while a rest is running; otherwise once a second is enough. Paused or switched
+            // off, nothing in it moves, so it is drawn once and left alone.
+            if (!t.paused && !t.off) postInvalidateDelayed(if (t.resting) 66 else if (go) 250 else 1000)
         }
 
         /** Takes the lens to a sheet's corner, or back from it: one even movement, nothing springy. */
@@ -2648,6 +2770,24 @@ object RestBubble {
             val stroke = Math.max(3.5f * dp, w * 0.055f)
             arc.set(stroke, stroke, w - stroke, w - stroke)
             paint.shader = null
+            if (t.off) {
+                // Switched off: an empty ring, and the words. A tap switches it on again.
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = stroke
+                paint.color = tint(ink(), 0x18)
+                canvas.drawArc(arc, 0f, 360f, false, paint)
+                paint.style = android.graphics.Paint.Style.FILL
+                paint.color = muted()
+                paint.textAlign = android.graphics.Paint.Align.CENTER
+                paint.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+                paint.textSize = Math.max(w * 0.13f, 10 * dp)
+                if (w > 100 * dp) {
+                    canvas.drawText("Timer off", r, r - (paint.descent() + paint.ascent()) / 2f, paint)
+                } else {
+                    canvas.drawText("Off", r, r - (paint.descent() + paint.ascent()) / 2f, paint)
+                }
+                return
+            }
             if (t.go) {
                 paint.style = android.graphics.Paint.Style.FILL
                 paint.color = accent
@@ -2658,23 +2798,28 @@ object RestBubble {
                 paint.strokeCap = android.graphics.Paint.Cap.ROUND
                 paint.color = tint(ink(), 0x22)
                 canvas.drawArc(arc, 0f, 360f, false, paint)
-                paint.color = accent
+                // Paused, the ring is dimmed.
+                paint.color = if (t.paused) tint(accent, 0x80) else accent
                 if (t.resting) {
                     canvas.drawArc(arc, -90f, 360f * t.part, false, paint)
                 } else {
-                    val a = Math.toRadians((-90.0 + 360.0 * (((now - sinceAt) % 60000L) / 60000.0)))
+                    val a = Math.toRadians((-90.0 + 360.0 * (((timerNow(now) - sinceAt) % 60000L) / 60000.0)))
                     paint.style = android.graphics.Paint.Style.FILL
                     canvas.drawCircle(r + (arc.width() / 2f) * Math.cos(a).toFloat(), r + (arc.height() / 2f) * Math.sin(a).toFloat(), stroke * 0.8f, paint)
                 }
             }
             paint.style = android.graphics.Paint.Style.FILL
-            paint.color = if (t.go) onAccent else if (t.urgent) shade(accent, 1.25f, 0xFF) else ink()
+            paint.color = if (t.go) onAccent else if (t.paused) tint(ink(), 0x99) else if (t.urgent) shade(accent, 1.25f, 0xFF) else ink()
             paint.textAlign = android.graphics.Paint.Align.CENTER
             paint.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
             paint.fontFeatureSettings = "tnum"
             paint.textSize = w * 0.27f
             canvas.drawText(t.text, r, r - (paint.descent() + paint.ascent()) / 2f, paint)
-            postInvalidateDelayed(if (t.resting) 50 else 500)
+            if (t.paused) {
+                pauseMark(canvas, paint, r, r + w * 0.24f, w * 0.1f, accent)
+            } else {
+                postInvalidateDelayed(if (t.resting) 50 else 500)
+            }
         }
     }
 
@@ -3316,6 +3461,16 @@ object RestBubble {
         private val rows = android.widget.LinearLayout(context)
         private val rowViews = ArrayList<Row>()
         private val done = label(context, 16.5f, onAccent, true)
+        // What holding the timer offers: counting the other way, starting over, switching it off.
+        private val turnMode = label(context, 13f, ink(), true)
+        private val startOver = label(context, 13f, ink(), true)
+        private val switchOff = label(context, 13f, ink(), true)
+        private val hint = label(context, 11f, muted(), false)
+        private var options = false
+        private val endOptions = Runnable {
+            options = false
+            texts()
+        }
         private val stop = label(context, 13f, muted(), true)
         private val stopRow = android.widget.LinearLayout(context)
         private var stopArmed = false
@@ -3333,20 +3488,24 @@ object RestBubble {
         }
 
         init {
-            // The timer. A tap on it switches between counting down and counting up.
-            val switchMode = android.view.View.OnClickListener {
+            // The timer is its own control. A tap pauses it, or starts it again (or switches it
+            // back on). Held, it offers the rest: counting the other way, starting over, and off.
+            clock.setOnClickListener {
                 haptic(context, "click")
-                countUp = !countUp
-                channel?.invokeMethod("timerMode", null)
-                texts()
-                clock.invalidate()
-                view?.invalidate()
+                channel?.invokeMethod(if (timerOff) "timerOff" else "timerPause", null)
             }
-            clock.setOnClickListener(switchMode)
+            clock.setOnLongClickListener {
+                haptic(context, "click")
+                showOptions()
+                true
+            }
             what.letterSpacing = 0.08f
             what.maxLines = 1
             name.maxLines = 1
-            what.setOnClickListener(switchMode)
+            what.setOnClickListener {
+                haptic(context, "tick")
+                showOptions()
+            }
             what.setPadding(0, px(4f), 0, px(4f))
             info.orientation = android.widget.LinearLayout.VERTICAL
             info.addView(what)
@@ -3354,6 +3513,11 @@ object RestBubble {
             val whichLp = android.widget.LinearLayout.LayoutParams(wrap, wrap)
             whichLp.topMargin = px(2f)
             info.addView(which, whichLp)
+            // Said once, in the tall sheet, until the timer has been held: what the timer does.
+            hint.text = "Tap the timer to pause it. Hold it for more."
+            val hintLp = android.widget.LinearLayout.LayoutParams(wrap, wrap)
+            hintLp.topMargin = px(6f)
+            info.addView(hint, hintLp)
 
             // [click] is false where Prism does the thing and gives its own click for it.
             fun pill(t: android.widget.TextView, text: String, click: Boolean, action: () -> Unit) {
@@ -3368,11 +3532,33 @@ object RestBubble {
             pill(add, "+15 s", false) { channel?.invokeMethod("restAdd", null) }
             pill(skip, "Skip", false) { channel?.invokeMethod("restSkip", null) }
             pill(open, "Open workout", true) { openPrism(context) }
+            pill(turnMode, "Count up", true) {
+                countUp = !countUp
+                channel?.invokeMethod("timerMode", null)
+                clock.invalidate()
+                view?.invalidate()
+                endOptionsNow()
+            }
+            // Prism does these two and gives the click for them.
+            pill(startOver, "Start over", false) {
+                channel?.invokeMethod("timerReset", null)
+                endOptionsNow()
+            }
+            pill(switchOff, "Switch off", false) {
+                channel?.invokeMethod("timerOff", null)
+                endOptionsNow()
+            }
             controls.gravity = android.view.Gravity.CENTER_VERTICAL
             val gapLp = { android.widget.LinearLayout.LayoutParams(wrap, wrap).also { it.leftMargin = px(8f) } }
             controls.addView(add, android.widget.LinearLayout.LayoutParams(wrap, wrap))
             controls.addView(skip, gapLp())
             controls.addView(open, gapLp())
+            controls.addView(turnMode, android.widget.LinearLayout.LayoutParams(wrap, wrap))
+            controls.addView(startOver, gapLp())
+            controls.addView(switchOff, gapLp())
+            turnMode.visibility = android.view.View.GONE
+            startOver.visibility = android.view.View.GONE
+            switchOff.visibility = android.view.View.GONE
 
             // Stopping the workout: only in the tall sheet, and it takes two taps, so a thumb
             // cannot do it by passing over it.
@@ -3438,6 +3624,26 @@ object RestBubble {
                         .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator()).start()
                 }.start()
             }
+        }
+
+        /** Holding the timer: the row under it offers what else the timer can do, for a few seconds. */
+        private fun showOptions() {
+            if (timerOff) return
+            try {
+                context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).edit().putBoolean("timer_hint_seen", true).apply()
+            } catch (e: Exception) {}
+            // The small sheet has no room for them: it becomes the tall one first.
+            if (!fullMode) resize(true)
+            options = true
+            removeCallbacks(endOptions)
+            postDelayed(endOptions, 6000)
+            texts()
+        }
+
+        private fun endOptionsNow() {
+            removeCallbacks(endOptions)
+            options = false
+            texts()
         }
 
         private fun stopLook() {
@@ -3567,28 +3773,41 @@ object RestBubble {
             // A sheet on its way out stays as it was when it was let go.
             if (closing) return
             val t = reading(System.currentTimeMillis())
-            // The tall sheet has room to say what a tap does; the small one shows a pair of arrows.
-            what.text = when {
-                !t.resting -> t.what
-                fullMode -> t.what + (if (countUp) "  ·  TAP TO COUNT DOWN" else "  ·  TAP TO COUNT UP")
-                else -> t.what + "  ⇄"
-            }
-            what.setTextColor(if (t.resting) accent else muted())
-            val show = if (fullMode && t.resting) android.view.View.VISIBLE else android.view.View.GONE
-            if (add.visibility != show) {
+            val shown = android.view.View.VISIBLE
+            val away = android.view.View.GONE
+            what.text = t.what
+            what.setTextColor(if (t.resting || t.paused) accent else muted())
+            turnMode.text = if (countUp) "Count down" else "Count up"
+            val seen = try {
+                context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getBoolean("timer_hint_seen", false)
+            } catch (e: Exception) { true }
+            val wantHint = if (fullMode && !seen) shown else away
+            // The row under the timer shows what a running rest needs, or, for a few seconds
+            // after the timer has been held, what else the timer can do.
+            val rest = if (fullMode && !options && t.resting && !t.paused) shown else away
+            val more = if (fullMode && options && !t.off) shown else away
+            // On Prism's own workout page there is nowhere for "Open workout" to take you.
+            val wantOpen = if (options || (RestBubble.foreground && onTrain)) away else shown
+            if (add.visibility != rest || turnMode.visibility != more || open.visibility != wantOpen || hint.visibility != wantHint) {
+                val fresh = ArrayList<android.view.View>()
+                if (rest == shown && add.visibility != shown) { fresh.add(add); fresh.add(skip) }
+                if (more == shown && turnMode.visibility != shown) { fresh.add(turnMode); fresh.add(startOver); fresh.add(switchOff) }
                 val flip = {
-                    add.visibility = show
-                    skip.visibility = show
+                    add.visibility = rest
+                    skip.visibility = rest
+                    turnMode.visibility = more
+                    startOver.visibility = more
+                    switchOff.visibility = more
+                    open.visibility = wantOpen
+                    hint.visibility = wantHint
                 }
                 if (fullMode && !changing && isLaidOut) {
-                    // The tall sheet gains or loses a line. The timer keeps its place under the top
-                    // edge as that moves, and the two buttons come up once there is room for them.
+                    // The tall sheet may gain or lose a line. The timer keeps its place under the
+                    // top edge as that moves, and what is new comes up once there is room for it.
                     morph(260, emptyList(), listOf(clock, info), null, flip)
-                    if (show == android.view.View.VISIBLE) {
-                        for (v in listOf(add, skip)) {
-                            v.alpha = 0f
-                            v.animate().alpha(1f).setStartDelay(110).setDuration(180).start()
-                        }
+                    for (v in fresh) {
+                        v.alpha = 0f
+                        v.animate().alpha(1f).setStartDelay(110).setDuration(180).start()
                     }
                 } else {
                     flip()
@@ -3633,8 +3852,6 @@ object RestBubble {
             }
             // What it does, and exactly what it will log.
             done.text = if (current in sets.indices) "Set done  \u00B7  " + number(sets[current].kg) + " kg \u00D7 " + sets[current].reps else "Set done"
-            // On Prism's own workout page there is nowhere for this to take you.
-            open.visibility = if (RestBubble.foreground && onTrain) android.view.View.GONE else android.view.View.VISIBLE
             done.setTextColor(onAccent)
             done.background = rounded(accent, 100 * dp)
             texts()
