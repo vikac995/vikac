@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 86 (14 November 2026)
+
+**File:** `releases/prism-build-86.apk`
+
+Needs Play Protect paused to install.
+
+- **The empty places are always centred.** The first blob taken away goes to the middle of the screen. The next joins it and the two stand centred side by side, the first sliding over to make room; and so on up to five. When one is given something and goes back down, the rest close up around the middle. They used to keep fixed spots, so one alone could stand off to a side.
+
+**Checked:** looked at in my preview with one, two and three taken away.
+**Not checked:** on a phone; how the slide looks in motion.
+
 ## Prism, build 85 (14 November 2026)
 
 **File:** `releases/prism-build-85.apk`

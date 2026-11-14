@@ -84,12 +84,37 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   /// The red minus on a blob was tapped: its place is empty. What is left closes ranks, and
   /// the empty place goes to the middle of the screen, where it can be given something else.
+  // Where each empty place stands across the middle, from the middle of the screen. The empty
+  // places are always centred as a group: one alone is in the middle, the next joins it and
+  // both move over, and so on.
+  late final List<SpringValue> _midX = <SpringValue>[
+    for (int i = 0; i < 5; i++)
+      SpringValue(this, value: 0, spring: Motions.spatialFast),
+  ];
+
+  void _recentre({bool jump = false}) {
+    final List<int> empty = <int>[
+      for (int i = 0; i < _n; i++)
+        if (_isEmpty(i)) i,
+    ];
+    for (int k = 0; k < empty.length; k++) {
+      final double x = (k - (empty.length - 1) / 2) * 74.0;
+      // One that is only now on its way out goes straight to its spot.
+      if (jump || _gone[empty[k]].value < 0.05) {
+        _midX[empty[k]].jumpTo(x);
+      } else {
+        _midX[empty[k]].animateTo(x);
+      }
+    }
+  }
+
   void _removeBlob(int i) {
     Haptics.thud();
     Diag.instance.event('blob removed');
     _gone[i].animateTo(1);
     BlobSlots.instance.put(i, 'empty:');
     _reseat();
+    _recentre();
   }
 
   /// Whether place [i] holds something of the phone's own: its notifications.
@@ -330,6 +355,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _sendPin();
       _sendBlobs();
       _reseat();
+      _recentre();
     }
   }
 
@@ -1646,6 +1672,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     for (int i = 0; i < _n; i++) {
       _gone[i].jumpTo(_isEmpty(i) ? 1 : 0);
     }
+    _recentre(jump: true);
     Apps.instance.addListener(_appsChanged);
     // The numbers on the blobs follow the notifications.
     Notes.instance.counts.addListener(_notesChanged);
@@ -3878,10 +3905,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       Haptics.tick();
     }
 
-    // Where an empty place is shown while the blobs are being changed: each of the five has
-    // its own spot in a row across the middle of the screen, so none of them ever moves over.
+    // Where an empty place is shown while the blobs are being changed: in a row across the
+    // middle of the screen, the row always centred.
     Offset mid(int i) =>
-        Offset(screen.width / 2 + (i - 2) * 74.0, screen.height * 0.42);
+        Offset(screen.width / 2 + _midX[i].value, screen.height * 0.42);
 
     // The system back button undoes the last thing that opened, one step at a time,
     // and only leaves the app from Home with nothing open.
@@ -4352,6 +4379,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                     _dragBack,
                     _far,
                     _gone[i],
+                    _midX[i],
                   ]),
                   builder: (BuildContext context, Widget? _) {
                     final double p = _out[i].value;
