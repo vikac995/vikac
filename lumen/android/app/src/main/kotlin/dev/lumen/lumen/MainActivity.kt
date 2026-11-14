@@ -52,7 +52,7 @@ class MainActivity : FlutterActivity() {
     override fun onStart() {
         super.onStart()
         RestBubble.foreground = true
-        RestBubble.awayInApp = false
+        RestBubble.returned(applicationContext)
         RestBubble.refresh(applicationContext)
     }
 
@@ -485,6 +485,10 @@ object RestBubble {
     private var fullMode = false
     private var lensX = -1
     private var lensY = -1
+    // Whether the lens has been put somewhere. (Tucked into the left side, its place is past the edge.)
+    private var placed = false
+    private var grip: Grip? = null
+    private var leaveListener: android.content.BroadcastReceiver? = null
     // How large the lens is, in pixels. Nothing until it is first shown; then its usual size, or the
     // size two fingers last gave it.
     private var lensSize = 0
@@ -717,6 +721,42 @@ object RestBubble {
         }
     }
 
+    /**
+     * The lens opened its pinned app and stepped aside. Android announces the moment the person
+     * heads for the home screen or the list of recent apps, to anyone listening; this listens,
+     * only while the lens is away, and brings the lens back at that moment. Nothing runs in
+     * between: it is told, it does not look.
+     */
+    private fun listenForLeaving(context: Context) {
+        if (leaveListener != null) return
+        val app = context.applicationContext
+        val r = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: Context, i: android.content.Intent) {
+                val why = i.getStringExtra("reason")
+                if (awayInApp && (why == "homekey" || why == "recentapps")) {
+                    returned(app)
+                    refresh(app)
+                }
+            }
+        }
+        try {
+            @Suppress("DEPRECATION")
+            val filter = android.content.IntentFilter(android.content.Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+            if (Build.VERSION.SDK_INT >= 33) app.registerReceiver(r, filter, Context.RECEIVER_EXPORTED) else app.registerReceiver(r, filter)
+            leaveListener = r
+        } catch (e: Exception) {
+            leaveListener = null
+        }
+    }
+
+    /** The lens is no longer away in its app: it may show again, and nothing listens any more. */
+    fun returned(context: Context) {
+        awayInApp = false
+        val r = leaveListener ?: return
+        leaveListener = null
+        try { context.applicationContext.unregisterReceiver(r) } catch (e: Exception) {}
+    }
+
     private val watcher = android.os.Handler(android.os.Looper.getMainLooper())
     private var watching = false
 
@@ -768,7 +808,7 @@ object RestBubble {
                         }
                         if (gone >= 2) {
                             watching = false
-                            awayInApp = false
+                            returned(app)
                             refresh(app)
                             return
                         }
@@ -794,6 +834,7 @@ object RestBubble {
                 // Android lets Prism see that; otherwise when Prism is next on screen.
                 awayInApp = true
                 refresh(context)
+                listenForLeaving(context)
                 watchAway(context)
             } else {
                 haptic(context, "thud")
@@ -875,12 +916,14 @@ object RestBubble {
             // It goes exactly where it is put: Android adds no slide of its own.
             if (Build.VERSION.SDK_INT >= 34) lp.setCanPlayMoveAnimation(false)
             // Where it was last left, so it is in the same spot everywhere.
-            if (lensX < 0) tucked = false
-            lp.x = if (lensX >= 0) lensX else d.widthPixels - size - (8 * dp).toInt()
-            lp.y = if (lensY >= 0) lensY else (d.heightPixels * 0.30f).toInt()
+            if (!placed) tucked = false
+            lp.x = if (placed) lensX else d.widthPixels - size - (8 * dp).toInt()
+            lp.y = if (placed) lensY else (d.heightPixels * 0.30f).toInt()
             val v = Dot(context, lp)
             wm(context).addView(v, lp)
             view = v
+            // Tucked away, it has its handle along that edge.
+            if (tucked) openGrip(context, lp.y)
         } catch (e: Exception) {
             view = null
         }
@@ -889,6 +932,7 @@ object RestBubble {
     private fun remove(context: Context) {
         removeMenu(context)
         closeReach(context)
+        closeGrip(context)
         removeSheet(context)
         val t = target
         target = null
@@ -1484,6 +1528,54 @@ object RestBubble {
         }
     }
 
+    /**
+     * The handle of a lens tucked into a side: a strip along that edge, wider than the sliver
+     * that shows and wider than the phone's own swipe-in-from-the-edge zone. It shows nothing. A
+     * touch on it is a touch on the lens. It is there only while the lens is tucked.
+     */
+    private class Grip(context: Context) : android.view.View(context) {
+        override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+            // A touch here is for the lens and is not a "back".
+            if (Build.VERSION.SDK_INT >= 29) systemGestureExclusionRects = listOf(android.graphics.Rect(0, 0, w, h))
+        }
+
+        override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            view?.onTouchEvent(e)
+            return true
+        }
+    }
+
+    /** Puts the handle beside the tucked lens, whose top is at [y]. */
+    private fun openGrip(context: Context, y: Int) {
+        val v = view ?: return
+        closeGrip(context)
+        try {
+            val d = context.resources.displayMetrics
+            val dp = d.density
+            val wide = (76 * dp).toInt()
+            val lp = android.view.WindowManager.LayoutParams(
+                wide, v.lp.height + (16 * dp).toInt(),
+                android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                android.graphics.PixelFormat.TRANSLUCENT,
+            )
+            lp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
+            lp.x = if (tuckRight) d.widthPixels - wide else 0
+            lp.y = y - (8 * dp).toInt()
+            val g = Grip(context)
+            wm(context).addView(g, lp)
+            grip = g
+        } catch (e: Exception) {
+            grip = null
+        }
+    }
+
+    private fun closeGrip(context: Context) {
+        val g = grip ?: return
+        grip = null
+        try { wm(context).removeView(g) } catch (e: Exception) {}
+    }
+
     private fun openReach(context: Context) {
         if (reach != null) return
         try {
@@ -1655,10 +1747,11 @@ object RestBubble {
         private var lastFrame = 0L
         private var leaving = false
         private var glide: android.animation.ValueAnimator? = null
-        // How far it is tucked into the side: 0 is out, 1 is away with only a sliver showing.
-        private var tuck = if (tucked) 1f else 0f
-        private var tucking: android.animation.ValueAnimator? = null
         private var wouldTuck = false
+        // Pulled out of a side, it comes under the finger over a moment while it follows: how far
+        // it has to come, and how much of that it has covered.
+        private var catchX = 0f; private var catchY = 0f; private var catchUp = 0f
+        private var catching: android.animation.ValueAnimator? = null
         // The rest of this touch is not for the lens.
         private var ignoring = false
         // The size everything in the lens is drawn for. It is then scaled to the size the lens is.
@@ -1739,9 +1832,6 @@ object RestBubble {
             val k = size / base
             canvas.save()
             canvas.translate((width - size) / 2f, (height - size) / 2f)
-            // Tucked into the side, all but a sliver of it is drawn past the edge. Its window stays
-            // on the screen, so the whole of it can still be touched.
-            if (tuck > 0f) canvas.translate((if (tuckRight) 1f else -1f) * tuck * (size - 22 * dp * k), 0f)
             canvas.scale(k, k)
             paintLens(canvas, k)
             canvas.restore()
@@ -1908,17 +1998,10 @@ object RestBubble {
             a.start()
         }
 
-        private fun slide(to: Float) {
-            tucking?.cancel()
-            val a = android.animation.ValueAnimator.ofFloat(tuck, to)
-            a.duration = 260
-            a.interpolator = EASE
-            a.addUpdateListener {
-                tuck = it.animatedValue as Float
-                invalidate()
-            }
-            tucking = a
-            a.start()
+        /** Where the lens sits when it is tucked into a side: past the edge, with a sliver of it left showing. */
+        private fun parkedX(right: Boolean): Float {
+            val k = lp.width / base
+            return if (right) resources.displayMetrics.widthPixels - 22 * dp * k else -(lp.width - 22 * dp * k)
         }
 
         /** Pushed into a side of the screen and let go: it goes away there, leaving a sliver to see it by. */
@@ -1929,17 +2012,84 @@ object RestBubble {
             target?.held = false
             target?.animate()?.alpha(0f)?.setDuration(200)?.start()
             val y = lp.y.toFloat().coerceIn(48 * dp, Math.max(48 * dp, screen.heightPixels - lp.height - 48 * dp))
-            glideTo(if (right) (screen.widthPixels - lp.width).toFloat() else 0f, y, 260)
-            slide(1f)
+            glideTo(parkedX(right), y, 260)
+            openGrip(context, y.toInt())
         }
 
-        /** Touched while tucked away: it comes back out to where a lens rests at that side. */
+        /** Tapped while tucked away: it comes back out to where a lens rests at that side. */
         private fun untuck() {
             val screen = resources.displayMetrics
             haptic(context, "tick")
             tucked = false
             glideTo(if (tuckRight) screen.widthPixels - lp.width - 8 * dp else 8 * dp, lp.y.toFloat(), 260)
-            slide(0f)
+        }
+
+        /**
+         * Pulled while tucked away. From this moment it is a lens being dragged: it follows the
+         * finger at once, and closes the distance to the finger over a moment as it goes.
+         */
+        private fun pullOut(e: android.view.MotionEvent) {
+            tucked = false
+            pressed = true
+            sizing = false
+            atEnd = false
+            menuTouch = false
+            springing = false
+            leaving = false
+            glide?.cancel()
+            tracker?.recycle()
+            tracker = android.view.VelocityTracker.obtain()
+            downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y
+            dragged = true
+            snapped = false
+            // It starts past the edge, where letting go would tuck it again. The tick comes when it is clear of that.
+            wouldTuck = true
+            target?.animate()?.alpha(1f)?.setDuration(160)?.start()
+            haptic(context, "tick")
+            val at = IntArray(2)
+            getLocationOnScreen(at)
+            catchX = e.rawX - (at[0] + width * scaleX / 2f)
+            catchY = e.rawY - (at[1] + height * scaleY / 2f)
+            catchUp = 0f
+            catching?.cancel()
+            val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
+            a.duration = 180
+            a.interpolator = EASE
+            a.addUpdateListener {
+                catchUp = it.animatedValue as Float
+                // The finger may be holding still: the lens keeps coming to it all the same.
+                if (pressed && dragged && !sized) follow()
+            }
+            catching = a
+            a.start()
+        }
+
+        /** Puts the lens where the finger has it: moved as far as the finger has moved, and onto the cross when near it. */
+        private fun follow() {
+            var x = startX + (p1x - downX) + catchX * catchUp
+            var y = startY + (p1y - downY) + catchY * catchUp
+            // Near the cross the lens is pulled onto it, and lets go again if dragged clear.
+            val cx = x + width / 2f; val cy = y + height / 2f
+            val dist = Math.hypot((cx - crossX()).toDouble(), (cy - crossY()).toDouble()).toFloat()
+            val was = snapped
+            snapped = dist < (if (snapped) 118 else 92) * dp
+            if (snapped) {
+                x = crossX() - width / 2f + (cx - crossX()) * 0.18f
+                y = crossY() - height / 2f + (cy - crossY()) * 0.18f
+            }
+            if (snapped != was) {
+                haptic(context, if (snapped) "click" else "tick")
+                target?.held = snapped
+            }
+            lp.x = x.toInt(); lp.y = y.toInt()
+            place()
+            // Pushed a quarter of the way past a side, letting go tucks it away there. A tick says so.
+            val past = 0.25f * lp.width
+            val would = !snapped && (lp.x < -past || lp.x + lp.width > resources.displayMetrics.widthPixels + past)
+            if (would != wouldTuck) {
+                wouldTuck = would
+                haptic(context, "tick")
+            }
         }
 
         private fun lag() {
@@ -2059,7 +2209,9 @@ object RestBubble {
             pressed = false
             sizing = false
             sized = false
+            catching?.cancel()
             closeReach(context)
+            closeGrip(context)
             tracker?.recycle()
             tracker = null
             if (!stretching) return
@@ -2079,6 +2231,7 @@ object RestBubble {
             // Its place on a sheet's corner is not where it lives; only its own place is remembered.
             if (!docked) {
                 lensX = lp.x; lensY = lp.y
+                placed = true
             }
             lag()
             try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, lp) } catch (ex: Exception) {}
@@ -2131,6 +2284,7 @@ object RestBubble {
                 // It comes back at its usual place, not on the cross. If something is still due (a
                 // container's other thing, once the workout's timer is closed), that is a fresh lens.
                 lensX = -1; lensY = -1
+                placed = false
                 tucked = false
                 remove(c)
                 refresh(c)
@@ -2184,23 +2338,25 @@ object RestBubble {
             if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) ignoring = false
             if (ignoring) return true
             if (tucked) {
-                // Tucked away, a touch anywhere on it does one thing: it brings the lens back out.
+                // Tucked away. A tap brings it back out to rest at that side. A pull brings it out
+                // under the finger, and from there on it is being dragged like at any other time.
                 when (e.actionMasked) {
                     android.view.MotionEvent.ACTION_DOWN -> {
                         downX = e.rawX; downY = e.rawY
+                        return true
                     }
                     android.view.MotionEvent.ACTION_MOVE -> {
-                        if (Math.hypot((e.rawX - downX).toDouble(), (e.rawY - downY).toDouble()) > 12 * dp) {
-                            ignoring = true
-                            untuck()
-                        }
+                        if (Math.hypot((e.rawX - downX).toDouble(), (e.rawY - downY).toDouble()) < 6 * dp) return true
+                        pullOut(e)
                     }
                     android.view.MotionEvent.ACTION_UP -> {
                         ignoring = true
                         untuck()
+                        closeGrip(context)
+                        return true
                     }
+                    else -> return true
                 }
-                return true
             }
             p1x = e.rawX; p1y = e.rawY
             when (e.actionMasked) {
@@ -2257,6 +2413,8 @@ object RestBubble {
                     leaving = false
                     wouldTuck = false
                     glide?.cancel()
+                    catching?.cancel()
+                    catchX = 0f; catchY = 0f; catchUp = 0f
                     tracker?.recycle()
                     tracker = android.view.VelocityTracker.obtain()
                     downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y; dragged = false; snapped = false
@@ -2271,36 +2429,15 @@ object RestBubble {
                         // The cross appears as soon as the lens is picked up.
                         target?.animate()?.alpha(1f)?.setDuration(160)?.start()
                     }
-                    if (dragged) {
-                        var x = startX + dx; var y = startY + dy
-                        // Near the cross the lens is pulled onto it, and lets go again if dragged clear.
-                        val cx = x + width / 2f; val cy = y + height / 2f
-                        val dist = Math.hypot((cx - crossX()).toDouble(), (cy - crossY()).toDouble()).toFloat()
-                        val was = snapped
-                        snapped = dist < (if (snapped) 118 else 92) * dp
-                        if (snapped) {
-                            x = crossX() - width / 2f + (cx - crossX()) * 0.18f
-                            y = crossY() - height / 2f + (cy - crossY()) * 0.18f
-                        }
-                        if (snapped != was) {
-                            haptic(context, if (snapped) "click" else "tick")
-                            target?.held = snapped
-                        }
-                        lp.x = x.toInt(); lp.y = y.toInt()
-                        place()
-                        // Pushed a quarter of the way past a side, letting go tucks it away there. A tick says so.
-                        val past = 0.25f * lp.width
-                        val would = !snapped && (lp.x < -past || lp.x + lp.width > resources.displayMetrics.widthPixels + past)
-                        if (would != wouldTuck) {
-                            wouldTuck = would
-                            haptic(context, "tick")
-                        }
-                    }
+                    if (dragged) follow()
                 }
                 android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
                     pressed = false
                     removeCallbacks(holder)
+                    catching?.cancel()
                     closeReach(context)
+                    // The handle of a lens that was pulled out of a side has done its work.
+                    closeGrip(context)
                     animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
                     if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !dragged) {
                         haptic(context, "tick")

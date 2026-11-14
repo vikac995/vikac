@@ -1,5 +1,22 @@
 # Lumen changelog
 
+## Prism, build 65 (14 November 2026)
+
+**File:** `releases/prism-build-65.apk`
+
+Three fixes, before anything new.
+
+- **A tucked lens follows your finger at once.** Pull it and it is being dragged from that moment, coming under your finger within a fifth of a second. Before, the first touch only made it slide out by itself. A tap on it still brings it out to rest at that side. How it is built changed too: tucked, the lens really sits past the edge, and a strip along that edge (76 wide, there only while the lens is tucked) is its handle.
+- **A pinned app's lens comes back when you leave the app, with no permission.** When you head for the home screen or the recent-apps list, Android announces it; Prism now listens for that, only while the lens is hidden in its app, and shows the lens at that moment. Nothing runs in between. The "Pinned app returns when you leave it" switch and its permission are still there as a second way; if this works for you without them, I will remove both.
+- **With the blobs out, a tap anywhere on the bar closes them.** It no longer changes the page.
+
+**What to look for:**
+- Pin an app, tap the lens, then swipe up to the recent-apps list: the lens should be there as the list appears. This is the part I am least sure of on a Samsung with swipe gestures.
+- Pull the tucked lens out slowly and quickly, from the middle of the strip and from its far end.
+
+**Checked:** it compiles. The bar closing the blobs, in my preview.
+**Not checked:** on a phone.
+
 ## Prism, build 64 (14 November 2026)
 
 **File:** `releases/prism-build-64.apk`

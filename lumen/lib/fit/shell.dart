@@ -1183,258 +1183,266 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
               right: 14,
               bottom: safe.bottom + 14,
               height: _barH,
-              child: LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints box) {
-                  if (_barW != box.maxWidth) {
-                    _barW = box.maxWidth;
-                    scheduleMicrotask(() => _lensX.jumpTo(_centre(_tab)));
-                  }
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTapUp: (TapUpDetails d) {
-                      final int s = (d.localPosition.dx / _slot).floor().clamp(
-                        0,
-                        4,
-                      );
-                      if (s != 2) {
-                        _lift.animateTo(0, velocity: 7);
-                        _go(s < 2 ? s : s - 1);
-                      }
-                    },
-                    // Slide along the bar and the lens comes with you.
-                    onHorizontalDragStart: (_) => _lift.animateTo(1),
-                    onHorizontalDragUpdate: (DragUpdateDetails d) =>
-                        _lensX.animateTo(
-                          d.localPosition.dx.clamp(
-                            _slot / 2,
-                            _barW - _slot / 2,
-                          ),
-                        ),
-                    onHorizontalDragEnd: (_) {
-                      _lift.animateTo(0);
-                      int best = 0;
-                      for (int i = 1; i < 4; i++) {
-                        if ((_centre(i) - _lensX.target).abs() <
-                            (_centre(best) - _lensX.target).abs()) {
-                          best = i;
+              // While the blobs are out, the bar is not for changing pages: a tap anywhere on it
+              // falls through to the dim behind it, which closes the blobs.
+              child: IgnorePointer(
+                ignoring: _open,
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints box) {
+                    if (_barW != box.maxWidth) {
+                      _barW = box.maxWidth;
+                      scheduleMicrotask(() => _lensX.jumpTo(_centre(_tab)));
+                    }
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapUp: (TapUpDetails d) {
+                        final int s = (d.localPosition.dx / _slot)
+                            .floor()
+                            .clamp(0, 4);
+                        if (s != 2) {
+                          _lift.animateTo(0, velocity: 7);
+                          _go(s < 2 ? s : s - 1);
                         }
-                      }
-                      if (best == _tab) {
-                        _lensX.animateTo(_centre(best));
-                      } else {
-                        _go(best);
-                      }
-                    },
-                    child: ListenableBuilder(
-                      listenable: Listenable.merge(<Listenable>[
-                        _lensX,
-                        _lift,
-                        Diag.instance.glassMode,
-                        Diag.instance.autoLevel,
-                        Look.instance.frostReady,
-                        Diag.instance.wallpaperOn,
-                      ]),
-                      builder: (BuildContext context, Widget? _) {
-                        // The lens swells when lifted, stretches along its travel and thins to keep its volume.
-                        final double stretch = (_lensX.velocity.abs() / 70)
-                            .clamp(0.0, 26.0);
-                        final double grow = 1 + 0.14 * _lift.value;
-                        final double w = (_slot - 8) * grow + stretch,
-                            h = (_barH - 12) * grow * (1 - stretch / 220);
-                        final Rect lens = Rect.fromCenter(
-                          center: Offset(_lensX.value, _barH / 2),
-                          width: w,
-                          height: h,
-                        );
-                        final RRect shape = RRect.fromRectAndRadius(
-                          lens,
-                          Radius.circular(h / 2),
-                        );
-                        final bool off = settings.reduceTransparency;
-                        final int mode = Diag.instance.barMode;
-                        final bool lensOut = _carrying || _parked;
-                        final bool moving =
-                            (_lensX.value - _lensX.target).abs() > 0.5 ||
-                            _lift.value > 0.01;
-                        // The bar itself, and the small lens that rides in it.
-                        // While the drawer or a sheet is up, the bar sits dimmed underneath it. Glass there
-                        // is blurred again on every frame for something nobody is looking at: measured, it
-                        // was most of the cost of turning pages in the drawer. So it goes solid meanwhile.
-                        final bool covered =
-                            _drawerOpen || _sheetOpen || _coverHold;
-                        final bool barSolid =
-                            off ||
-                            covered ||
-                            mode == 3 ||
-                            (mode == 1 && lensOut);
-                        final bool riderSolid =
-                            off ||
-                            covered ||
-                            mode == 3 ||
-                            (mode == 1 && (moving || lensOut));
-                        final bool solid = barSolid || riderSolid;
-                        // Whenever the bar is not real glass, it is still glass: the blurred copy of the
-                        // background shows through it, so it keeps its colour and never goes flat.
-                        final bool still =
-                            barSolid &&
-                            !off &&
-                            Diag.instance.wallpaperOn.value &&
-                            Look.instance.frost != null;
-                        return Stack(
-                          clipBehavior: Clip.none,
-                          children: <Widget>[
-                            if (still)
-                              Positioned.fill(
-                                child: StillGlass(
-                                  radius: _barH / 2,
-                                  tint: c.glassTint.withValues(alpha: 0.26),
-                                  rim: Colors.white.withValues(
-                                    alpha: c.dark ? 0.34 : 0.9,
-                                  ),
-                                  edge: 6,
-                                  soft: true,
-                                  stamp: Look.instance.frostReady.value,
-                                ),
-                              ),
-                            Positioned.fill(
-                              child: Glass(
-                                radius: _barH / 2,
-                                // Clear glass: softened just enough that words scrolling under it do
-                                // not fight the labels, and no more, so that the lights behind the
-                                // bar keep their shape as they pass under it.
-                                style: GlassStyle(
-                                  blur: 4,
-                                  tint: 0.27,
-                                  refraction: 16,
-                                  bevel: 12,
-                                  // In the new styles the solid bar is matched to the glass one, so swapping does not flash.
-                                  fallbackColor: still
-                                      ? const Color(0x00000000)
-                                      : (mode == 0 && !covered
-                                            ? c.surfaceHigh
-                                            : Color.lerp(
-                                                c.bg,
-                                                c.surfaceHigh,
-                                                0.35,
-                                              )),
-                                ),
-                                hole: solid ? null : shape.deflate(0.5),
-                                solid: barSolid,
-                                quality: mode == 2 ? GlassQuality.low : null,
-                              ),
+                      },
+                      // Slide along the bar and the lens comes with you.
+                      onHorizontalDragStart: (_) => _lift.animateTo(1),
+                      onHorizontalDragUpdate: (DragUpdateDetails d) =>
+                          _lensX.animateTo(
+                            d.localPosition.dx.clamp(
+                              _slot / 2,
+                              _barW - _slot / 2,
                             ),
-                            if (still)
-                              // The lens around the selected tab: clear glass that enlarges what is behind it.
+                          ),
+                      onHorizontalDragEnd: (_) {
+                        _lift.animateTo(0);
+                        int best = 0;
+                        for (int i = 1; i < 4; i++) {
+                          if ((_centre(i) - _lensX.target).abs() <
+                              (_centre(best) - _lensX.target).abs()) {
+                            best = i;
+                          }
+                        }
+                        if (best == _tab) {
+                          _lensX.animateTo(_centre(best));
+                        } else {
+                          _go(best);
+                        }
+                      },
+                      child: ListenableBuilder(
+                        listenable: Listenable.merge(<Listenable>[
+                          _lensX,
+                          _lift,
+                          Diag.instance.glassMode,
+                          Diag.instance.autoLevel,
+                          Look.instance.frostReady,
+                          Diag.instance.wallpaperOn,
+                        ]),
+                        builder: (BuildContext context, Widget? _) {
+                          // The lens swells when lifted, stretches along its travel and thins to keep its volume.
+                          final double stretch = (_lensX.velocity.abs() / 70)
+                              .clamp(0.0, 26.0);
+                          final double grow = 1 + 0.14 * _lift.value;
+                          final double w = (_slot - 8) * grow + stretch,
+                              h = (_barH - 12) * grow * (1 - stretch / 220);
+                          final Rect lens = Rect.fromCenter(
+                            center: Offset(_lensX.value, _barH / 2),
+                            width: w,
+                            height: h,
+                          );
+                          final RRect shape = RRect.fromRectAndRadius(
+                            lens,
+                            Radius.circular(h / 2),
+                          );
+                          final bool off = settings.reduceTransparency;
+                          final int mode = Diag.instance.barMode;
+                          final bool lensOut = _carrying || _parked;
+                          final bool moving =
+                              (_lensX.value - _lensX.target).abs() > 0.5 ||
+                              _lift.value > 0.01;
+                          // The bar itself, and the small lens that rides in it.
+                          // While the drawer or a sheet is up, the bar sits dimmed underneath it. Glass there
+                          // is blurred again on every frame for something nobody is looking at: measured, it
+                          // was most of the cost of turning pages in the drawer. So it goes solid meanwhile.
+                          final bool covered =
+                              _drawerOpen || _sheetOpen || _coverHold;
+                          final bool barSolid =
+                              off ||
+                              covered ||
+                              mode == 3 ||
+                              (mode == 1 && lensOut);
+                          final bool riderSolid =
+                              off ||
+                              covered ||
+                              mode == 3 ||
+                              (mode == 1 && (moving || lensOut));
+                          final bool solid = barSolid || riderSolid;
+                          // Whenever the bar is not real glass, it is still glass: the blurred copy of the
+                          // background shows through it, so it keeps its colour and never goes flat.
+                          final bool still =
+                              barSolid &&
+                              !off &&
+                              Diag.instance.wallpaperOn.value &&
+                              Look.instance.frost != null;
+                          return Stack(
+                            clipBehavior: Clip.none,
+                            children: <Widget>[
+                              if (still)
+                                Positioned.fill(
+                                  child: StillGlass(
+                                    radius: _barH / 2,
+                                    tint: c.glassTint.withValues(alpha: 0.26),
+                                    rim: Colors.white.withValues(
+                                      alpha: c.dark ? 0.34 : 0.9,
+                                    ),
+                                    edge: 6,
+                                    soft: true,
+                                    stamp: Look.instance.frostReady.value,
+                                  ),
+                                ),
+                              Positioned.fill(
+                                child: Glass(
+                                  radius: _barH / 2,
+                                  // Clear glass: softened just enough that words scrolling under it do
+                                  // not fight the labels, and no more, so that the lights behind the
+                                  // bar keep their shape as they pass under it.
+                                  style: GlassStyle(
+                                    blur: 4,
+                                    tint: 0.27,
+                                    refraction: 16,
+                                    bevel: 12,
+                                    // In the new styles the solid bar is matched to the glass one, so swapping does not flash.
+                                    fallbackColor: still
+                                        ? const Color(0x00000000)
+                                        : (mode == 0 && !covered
+                                              ? c.surfaceHigh
+                                              : Color.lerp(
+                                                  c.bg,
+                                                  c.surfaceHigh,
+                                                  0.35,
+                                                )),
+                                  ),
+                                  hole: solid ? null : shape.deflate(0.5),
+                                  solid: barSolid,
+                                  quality: mode == 2 ? GlassQuality.low : null,
+                                ),
+                              ),
+                              if (still)
+                                // The lens around the selected tab: clear glass that enlarges what is behind it.
+                                Positioned.fromRect(
+                                  rect: lens,
+                                  child: StillGlass(
+                                    radius: h / 2,
+                                    sharp: true,
+                                    magnify: 1.22,
+                                    edge: 7,
+                                    tint: c.accent.withValues(alpha: 0.10),
+                                    rim: Colors.white.withValues(
+                                      alpha: c.dark ? 0.6 : 0.95,
+                                    ),
+                                    stamp: Look.instance.frostReady.value,
+                                  ),
+                                ),
                               Positioned.fromRect(
                                 rect: lens,
-                                child: StillGlass(
+                                child: Glass(
+                                  solid: riderSolid,
                                   radius: h / 2,
-                                  sharp: true,
-                                  magnify: 1.22,
-                                  edge: 7,
-                                  tint: c.accent.withValues(alpha: 0.10),
-                                  rim: Colors.white.withValues(
-                                    alpha: c.dark ? 0.6 : 0.95,
+                                  style: GlassStyle(
+                                    blur: 2.5,
+                                    tint: 0.16,
+                                    refraction: 22,
+                                    bevel: 13,
+                                    dispersion: 0.2,
+                                    magnify: 1.12,
+                                    light: 0.9,
+                                    saturation: 1.4,
+                                    adapt: 0.42,
+                                    shadow: 0.6,
+                                    fallbackColor: still
+                                        ? const Color(0x00000000)
+                                        : (mode == 0 && !covered
+                                              ? c.accent.withValues(alpha: 0.3)
+                                              : c.ink.withValues(alpha: 0.10)),
                                   ),
-                                  stamp: Look.instance.frostReady.value,
                                 ),
                               ),
-                            Positioned.fromRect(
-                              rect: lens,
-                              child: Glass(
-                                solid: riderSolid,
-                                radius: h / 2,
-                                style: GlassStyle(
-                                  blur: 2.5,
-                                  tint: 0.16,
-                                  refraction: 22,
-                                  bevel: 13,
-                                  dispersion: 0.2,
-                                  magnify: 1.12,
-                                  light: 0.9,
-                                  saturation: 1.4,
-                                  adapt: 0.42,
-                                  shadow: 0.6,
-                                  fallbackColor: still
-                                      ? const Color(0x00000000)
-                                      : (mode == 0 && !covered
-                                            ? c.accent.withValues(alpha: 0.3)
-                                            : c.ink.withValues(alpha: 0.10)),
-                                ),
+                              Row(
+                                children: <Widget>[
+                                  for (int s = 0; s < 5; s++)
+                                    Expanded(
+                                      child: s == 2
+                                          ? const SizedBox.shrink()
+                                          : Builder(
+                                              builder: (BuildContext context) {
+                                                final int i = s < 2 ? s : s - 1;
+                                                // Brightness follows the lens, not the tap, so it reads as the lens lighting the tab.
+                                                final double on =
+                                                    (1 -
+                                                            ((_centre(i) -
+                                                                        _lensX
+                                                                            .value)
+                                                                    .abs() /
+                                                                _slot))
+                                                        .clamp(0.0, 1.0);
+                                                return Semantics(
+                                                  button: true,
+                                                  selected: i == _tab,
+                                                  label: _tabs[i].$2,
+                                                  child: Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: <Widget>[
+                                                      Transform.scale(
+                                                        scale: 1 + 0.12 * on,
+                                                        child: Icon(
+                                                          _tabs[i].$1,
+                                                          size: 23,
+                                                          color: Color.lerp(
+                                                            c.glassInk
+                                                                .withValues(
+                                                                  alpha: 0.6,
+                                                                ),
+                                                            c.glassInk,
+                                                            on,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(height: 3),
+                                                      Text(
+                                                        _tabs[i].$2,
+                                                        textScaler: TextScaler
+                                                            .noScaling,
+                                                        style: LumenType.text(
+                                                          10.5,
+                                                          weight:
+                                                              560 + 140 * on,
+                                                          color: Color.lerp(
+                                                            c.glassInk
+                                                                .withValues(
+                                                                  alpha: 0.6,
+                                                                ),
+                                                            c.glassInk,
+                                                            on,
+                                                          ),
+                                                          height: 1.1,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                    ),
+                                ],
                               ),
-                            ),
-                            Row(
-                              children: <Widget>[
-                                for (int s = 0; s < 5; s++)
-                                  Expanded(
-                                    child: s == 2
-                                        ? const SizedBox.shrink()
-                                        : Builder(
-                                            builder: (BuildContext context) {
-                                              final int i = s < 2 ? s : s - 1;
-                                              // Brightness follows the lens, not the tap, so it reads as the lens lighting the tab.
-                                              final double on =
-                                                  (1 -
-                                                          ((_centre(i) -
-                                                                      _lensX
-                                                                          .value)
-                                                                  .abs() /
-                                                              _slot))
-                                                      .clamp(0.0, 1.0);
-                                              return Semantics(
-                                                button: true,
-                                                selected: i == _tab,
-                                                label: _tabs[i].$2,
-                                                child: Column(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.center,
-                                                  children: <Widget>[
-                                                    Transform.scale(
-                                                      scale: 1 + 0.12 * on,
-                                                      child: Icon(
-                                                        _tabs[i].$1,
-                                                        size: 23,
-                                                        color: Color.lerp(
-                                                          c.glassInk.withValues(
-                                                            alpha: 0.6,
-                                                          ),
-                                                          c.glassInk,
-                                                          on,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    const SizedBox(height: 3),
-                                                    Text(
-                                                      _tabs[i].$2,
-                                                      textScaler:
-                                                          TextScaler.noScaling,
-                                                      style: LumenType.text(
-                                                        10.5,
-                                                        weight: 560 + 140 * on,
-                                                        color: Color.lerp(
-                                                          c.glassInk.withValues(
-                                                            alpha: 0.6,
-                                                          ),
-                                                          c.glassInk,
-                                                          on,
-                                                        ),
-                                                        height: 1.1,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  );
-                },
+                            ],
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
             // The app drawer, which grows out of the button.
