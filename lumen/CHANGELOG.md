@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 89 (14 November 2026)
+
+**File:** `releases/prism-build-89.apk`
+
+Needs Play Protect paused to install.
+
+- **The fan of arrows is drawn in Prism's own weight.** Its lines are as heavy and as round-ended as the X it turns into and the signs on the tabs, and the side arrows lean out low and wide, the way the blobs themselves spread from the button. In build 88 it was a thin line drawing that did not sit with the rest.
+
+**Checked:** looked at in my preview beside the tabs and the X.
+**Not checked:** on a phone.
+
 ## Prism, build 88 (14 November 2026)
 
 **File:** `releases/prism-build-88.apk`

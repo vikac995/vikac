@@ -6381,14 +6381,14 @@ class _FanMark extends CustomPainter {
     final Paint p = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5 * u
+      ..strokeWidth = 3.3 * u
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
     final Path path = Path();
     void head(Offset tip, Offset way) {
       final Offset d = way / way.distance, n = Offset(-d.dy, d.dx);
-      final Offset a = tip - d * 4.2 * u + n * 3.8 * u,
-          b = tip - d * 4.2 * u - n * 3.8 * u;
+      final Offset a = tip - d * 4.2 * u + n * 4.2 * u,
+          b = tip - d * 4.2 * u - n * 4.2 * u;
       path
         ..moveTo(a.dx, a.dy)
         ..lineTo(tip.dx, tip.dy)
@@ -6397,16 +6397,16 @@ class _FanMark extends CustomPainter {
 
     // Straight up.
     path
-      ..moveTo(17 * u, 29.5 * u)
-      ..lineTo(17 * u, 4.5 * u);
-    head(Offset(17 * u, 4.5 * u), const Offset(0, -1));
+      ..moveTo(17 * u, 29 * u)
+      ..lineTo(17 * u, 5 * u);
+    head(Offset(17 * u, 5 * u), const Offset(0, -1));
     // Out to each side, bending away as it goes.
     for (final double s in <double>[-1, 1]) {
-      final Offset tip = Offset((17 + s * 14.5) * u, 15.5 * u);
+      final Offset tip = Offset((17 + s * 14) * u, 19 * u);
       path
-        ..moveTo(17 * u, 29.5 * u)
-        ..quadraticBezierTo((17 + s * 3.5) * u, 19.5 * u, tip.dx, tip.dy);
-      head(tip, Offset(s * 0.93, -0.37));
+        ..moveTo(17 * u, 29 * u)
+        ..quadraticBezierTo((17 + s * 5) * u, 24 * u, tip.dx, tip.dy);
+      head(tip, Offset(s * 0.83, -0.56));
     }
     canvas.drawPath(path, p);
   }
