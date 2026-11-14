@@ -415,9 +415,10 @@ class _ShellState extends State<Shell>
 
   void _appsChanged() {
     // Only places that hold an app from the drawer take their look from it.
-    if (BlobSlots.instance.keys.any(
-      (String? k) => k != null && k.startsWith('app:'),
-    )) {
+    if (_appBlobs ||
+        BlobSlots.instance.keys.any(
+          (String? k) => k != null && k.startsWith('app:'),
+        )) {
       _blobsChanged();
     }
   }
@@ -539,6 +540,7 @@ class _ShellState extends State<Shell>
                     b.floatIn,
                     b.floatOut,
                     b.follow,
+                    Apps.instance,
                   ]),
                   builder: (BuildContext context, Widget? _) => Column(
                     mainAxisSize: MainAxisSize.min,
@@ -622,6 +624,16 @@ class _ShellState extends State<Shell>
                           color: c.inkMuted,
                           height: 1.35,
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      // The same switch as behind the cog in the app list: one choice for both.
+                      SwitchLine(
+                        label: 'Prism icons',
+                        value: Apps.instance.prismIcons,
+                        onChanged: (bool v) {
+                          Haptics.tick();
+                          Apps.instance.setPrismIcons(v);
+                        },
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -1087,7 +1099,7 @@ class _ShellState extends State<Shell>
       if (found.isEmpty && tiles.isEmpty) {
         return null; // Its app has not been found yet; this runs again when it has.
       }
-      final ui.Image? image;
+      ui.Image? image;
       if (found.isNotEmpty) {
         final BlobApp a = found.first;
         name = a.name;
@@ -1100,6 +1112,12 @@ class _ShellState extends State<Shell>
         color = t.color;
         image = t.glyph ?? t.picture;
         picture = t.glyph == null;
+      }
+      // With Prism's icons switched off, the floating blob shows the app's own icon too.
+      final ui.Image? own = _ownIcon(what);
+      if (own != null) {
+        image = own;
+        picture = true;
       }
       if (image != null) {
         icon = await _pngOf(image);
@@ -1149,7 +1167,42 @@ class _ShellState extends State<Shell>
   }
 
   /// The disc of a blob: its colour, lighter at the top, and its mark.
+  /// With Prism's icons switched off: the app's own icon, as the phone has it, if it is there.
+  ui.Image? _ownIcon(String package) {
+    if (Apps.instance.prismIcons) {
+      return null;
+    }
+    for (final AppTile t in Apps.instance.all) {
+      if (t.package == package) {
+        return t.own;
+      }
+    }
+    return null;
+  }
+
   Widget _blobDisc(int i) {
+    final ui.Image? own = _isApp(i) ? _ownIcon(_pinKey(i).substring(4)) : null;
+    if (own != null) {
+      // The app's own icon fills the blob.
+      return Container(
+        width: _blob,
+        height: _blob,
+        decoration: ShapeDecoration(
+          shape: CircleBorder(
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+          ),
+        ),
+        child: ClipOval(
+          child: RawImage(
+            image: own,
+            width: _blob,
+            height: _blob,
+            fit: BoxFit.cover,
+            filterQuality: FilterQuality.medium,
+          ),
+        ),
+      );
+    }
     if (_isEmpty(i)) {
       // An empty place: a plain white line, nothing filled, nothing that moves.
       return Container(

@@ -203,8 +203,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                       const SizedBox(height: 8),
                       Text(
                         Apps.instance.prismIcons
-                            ? 'Every app in Prism\'s look: its mark in white, on a calm colour of its own.'
-                            : 'Every app with its own icon, as the phone has it.',
+                            ? 'Every app in Prism\'s look, here and in the blobs: its mark in white, on a calm colour of its own.'
+                            : 'Every app with its own icon, as the phone has it, here and in the blobs.',
                         style: LumenType.text(
                           13,
                           color: c.inkMuted,

@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 113 (14 November 2026)
+
+**File:** `releases/prism-build-113.apk`
+
+Needs Play Protect paused to install. Can be installed over build 112.
+
+- **"Prism icons" is in the Blob panel too**, under "Launch and follow". It is the same switch as behind the cog in the app list: one choice, shown in both places.
+- **It now covers the blobs.** Off, a blob holding an app shows the app's own icon, filling the circle, among Prism's blobs and as the floating chat head. Blobs that are Prism's own actions and pages keep their look.
+
+**What it costs:** nothing more than before: the same icons the app list already fetched, shown in a few more places.
+
+**Checked:** it compiles; in my preview the switch is in the panel.
+**Not checked:** on a phone, where the apps' own icons are.
+
 ## Prism, build 112 (14 November 2026)
 
 **File:** `releases/prism-build-112.apk`
