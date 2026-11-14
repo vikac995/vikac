@@ -3558,10 +3558,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           // Three times each, in a turning order, so that the battery's own drift falls on all alike.
           for (int r = 1; r <= 3; r++) {
             for (int k = 0; k < 4; k++) {
-              final int i = (k + r - 1) % 4;
+              // (Each round begins with something on the screen: the first thing seen is that it works.)
+              final int i = (k + r) % 4;
               final bool blob = i == 1 || i == 3, timer = i >= 2;
               say(
-                'measuring the battery, ${(r - 1) * 4 + k + 1} of 12: ${states[i]}, about ${((12 - (r - 1) * 4 - k) * (still + 12) / 60).ceil()} min left',
+                'measuring the battery, ${(r - 1) * 4 + k + 1} of 12: ${i == 0 ? 'nothing floating, on purpose' : states[i]}, about ${((12 - (r - 1) * 4 - k) * (still + 12) / 60).ceil()} min left',
               );
               lensOf.setPin(blob ? 'action:1' : null);
               _sendPin();

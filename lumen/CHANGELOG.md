@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 106 (14 November 2026)
+
+**File:** `releases/prism-build-106.apk`
+
+Needs Play Protect paused to install. Can be installed over build 105.
+
+- **The battery test begins with a blob on the screen.** It began with "nothing floating", the reference with no chat head on purpose, so for the first two and a half minutes there was nothing to see over the other app, and it looked as if the test was not working. Each round now goes: a blob, the timer, both, nothing. The line at the top says "nothing floating, on purpose" for those steps (it is seen only when Prism is in front).
+
+**Checked:** it compiles.
+**Not checked:** on a phone.
+
 ## Prism, build 105 (14 November 2026)
 
 **File:** `releases/prism-build-105.apk`
