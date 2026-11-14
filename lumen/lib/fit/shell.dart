@@ -2003,6 +2003,19 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     final bool namesWere = BlobSlots.instance.names;
     final String? pinWas = lensOf.pinned.value;
     final bool inWas = lensOf.floatIn.value, outWas = lensOf.floatOut.value;
+    final bool followWas = lensOf.follow.value;
+    // Every setting as it was when the test began, for the top of the report.
+    String onOff(bool v) => v ? 'on' : 'off';
+    final List<String> settingsWere = <String>[
+      'SETTINGS when the test began:',
+      '  colour ${Look.instance.hue.round()}  ·  background ${Look.vibes[Look.instance.vibe]}${Look.instance.vibe != 0 ? ' ${Look.instance.pattern}' : ''}  ·  theme ${settings.themeMode.name}',
+      '  frame-rate readout ${onOff(settings.showFps)}  ·  haptics ${onOff(settings.haptics)}  ·  reduce transparency ${onOff(settings.reduceTransparency)}  ·  background lights ${onOff(Diag.instance.wallpaperOn.value)}',
+      '  glass style ${const <String>['Orig.', 'One', 'Frost', 'Event', 'Auto'][Diag.instance.glassMode.value.clamp(0, 4)]}${Diag.instance.glassMode.value == 4 ? ' (now ${const <String>['Orig.', 'One', 'Frost', 'Event'][Diag.instance.autoLevel.value.clamp(0, 3)]})' : ''}  ·  glass quality ${settings.quality.name}',
+      '  floats over other apps ${onOff(lensOf.allowed.value)}  ·  lens is a container ${onOff(lensOf.container.value)}  ·  notification counts ${onOff(Notes.instance.allowed.value)}  ·  blobs open real apps ${onOff(BlobApps.instance.on.value)}',
+      '  blob: in Prism ${onOff(inWas)}  ·  over other apps ${onOff(outWas)}  ·  launch and follow ${onOff(followWas)}  ·  labels ${onOff(BlobSlots.instance.names)}  ·  floating ${pinWas ?? 'nothing'}',
+      '  blobs: ${<String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(', ')}',
+      '  swipes: ${<String>[for (int g = 0; g < 4; g++) '${GestureSlots.names[g]} ${GestureSlots.instance.keys[g]}'].join(', ')}',
+    ];
     String build = Diag.build;
     try {
       say('getting ready');
@@ -3476,6 +3489,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         TestRun.keep(
           t.report(<String>[
             '${Diag.build}  ·  $title  ·  UNFINISHED: this is as far as it had got after round $n of $rounds',
+            ...settingsWere,
           ]),
         );
         await Robot.wait(800);
@@ -3490,6 +3504,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           );
         } else {
           final void Function(int)? rest = lensOf.testRest;
+          // (Launch and follow off while it measures, so nothing floats that was not put there.)
+          lensOf.setFloating(followApps: false);
           const List<String> states = <String>[
             'nothing floating',
             'a blob',
@@ -3640,7 +3656,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       if (BlobSlots.instance.names != namesWere) {
         _setNames(namesWere);
       }
-      lensOf.setFloating(inPrism: inWas, overApps: outWas);
+      lensOf.setFloating(
+        inPrism: inWas,
+        overApps: outWas,
+        followApps: followWas,
+      );
       lensOf.setPin(pinWas);
       _sendPin();
       if (_tab != 0) {
@@ -3653,6 +3673,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _testing = false;
       final String text = t.report(<String>[
         ...build.split('\n'),
+        ...settingsWere,
         if (stoppedAt != null)
           'STOPPED BY YOU while it was at: $stoppedAt (what follows is as far as it got)',
       ]);

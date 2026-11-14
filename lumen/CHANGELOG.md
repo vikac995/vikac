@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 104 (14 November 2026)
+
+**File:** `releases/prism-build-104.apk`
+
+Needs Play Protect paused to install. Can be installed over build 103: your settings stay.
+
+- **Every test report begins with your settings** as they were when the test began: colour, background, theme, the frame-rate readout, haptics, reduce transparency, background lights, glass style (and, on Auto, which it had settled on), glass quality, the four switches below them, the blob's three switches, labels, what was floating, the five blobs and the four swipes.
+- **"Launch and follow" is put back as you had it** after a test. Until now the long test left it off, whatever it had been.
+- **The battery test switches "Launch and follow" off while it measures** and puts it back afterwards, so nothing floats that the test did not put there.
+
+**Checked:** it compiles; in my preview the long test's report begins with the settings.
+**Not checked:** on a phone.
+
 ## Prism, build 103 (14 November 2026)
 
 **File:** `releases/prism-build-103.apk`
