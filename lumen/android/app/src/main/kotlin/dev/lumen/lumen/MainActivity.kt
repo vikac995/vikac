@@ -345,13 +345,6 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Throwable) {
                     false
                 })
-            } else if (call.method == "shadeClose") {
-                // Puts the notifications away again. Only the test asks for this.
-                try {
-                    val bar = getSystemService("statusbar")
-                    Class.forName("android.app.StatusBarManager").getMethod("collapsePanels").invoke(bar)
-                } catch (e: Throwable) {}
-                result.success(null)
             } else if (call.method == "notesAllowed") {
                 result.success(RestBubble.notesAllowed(this))
             } else if (call.method == "askNotes") {

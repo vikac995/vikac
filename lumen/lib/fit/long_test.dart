@@ -7,6 +7,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
 import 'diag.dart';
+import 'robot.dart';
 
 /// What the long test writes down as it goes, and the report it makes of it.
 ///
@@ -61,17 +62,21 @@ class TestRun {
     int extraMs = 0,
   }) async {
     try {
-      final Map<Object?, Object?>? told = await _device
-          .invokeMethod<Map<Object?, Object?>>(
-            'lensTest',
-            timer ? <String, Object?>{...ask, 'timer': true} : ask,
-          )
-          .timeout(Duration(milliseconds: 20000 + extraMs));
+      final Map<Object?, Object?>? told = await Robot.guard(
+        _device
+            .invokeMethod<Map<Object?, Object?>>(
+              'lensTest',
+              timer ? <String, Object?>{...ask, 'timer': true} : ask,
+            )
+            .timeout(Duration(milliseconds: 20000 + extraMs)),
+      );
       return <String, Object?>{
         for (final MapEntry<Object?, Object?> e
             in (told ?? <Object?, Object?>{}).entries)
           '${e.key}': e.value,
       };
+    } on TestStopped {
+      rethrow;
     } catch (e) {
       return <String, Object?>{'ok': false, 'note': 'no answer ($e)'};
     }

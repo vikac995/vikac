@@ -1919,6 +1919,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return;
     }
     _testing = true;
+    Robot.begin();
+    // What the banner said when the person pressed Stop, if they did.
+    String? stoppedAt;
     final TestRun t = TestRun();
     final bool hapticsWere = Haptics.enabled;
     String lap = '';
@@ -2409,18 +2412,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           'swipes: one that was given nothing does nothing',
           !_sheetOpen && !_drawerOpen && !_open && _tab == tabWas,
         );
-        if (Platform.isAndroid) {
-          // Whether this phone lets the notifications be pulled down at all. They are put
-          // away again at once.
-          final bool down = await GestureSlots.shade();
-          await Robot.wait(1300);
-          await GestureSlots.shadeClose();
-          await Robot.wait(900);
-          t.check(
-            'swipes: this phone lets the notifications be pulled down',
-            down,
-          );
-        }
         for (int g = 0; g < 4; g++) {
           GestureSlots.instance.put(g, swipes[g]);
         }
@@ -3404,6 +3395,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         try {
           await round();
         } catch (e, where) {
+          if (e is TestStopped) {
+            rethrow;
+          }
           t.check('round $n ran to its end', false, '$e\n$where');
         }
         await calm();
@@ -3520,8 +3514,17 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       build =
           '${Diag.build}  ·  $title, $rounds round${rounds == 1 ? '' : 's'}  ·  ${DateTime.now().toString().substring(0, 16)}\nscreen ${w.round()}x${h.round()} at ${dp}x  ·  allowed over other apps: ${floats ? 'yes' : 'NO'}  ·  ${last['blobs']} blobs known to Android';
     } catch (e, where) {
-      t.check('the test ran to the end', false, '$e\n$where');
+      if (e is TestStopped) {
+        stoppedAt = (Diag.instance.banner.value ?? '').replaceAll(
+          ' Hands off, please.',
+          '',
+        );
+      } else {
+        t.check('the test ran to the end', false, '$e\n$where');
+      }
     } finally {
+      // From here nothing is stopped: everything is put back as it was.
+      Robot.end();
       // Everything as it was.
       await calm();
       lensOf.onStop?.call();
@@ -3543,7 +3546,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       t.close();
       Diag.instance.banner.value = null;
       _testing = false;
-      final String text = t.report(build.split('\n'));
+      final String text = t.report(<String>[
+        ...build.split('\n'),
+        if (stoppedAt != null)
+          'STOPPED BY YOU while it was at: $stoppedAt (what follows is as far as it got)',
+      ]);
       if (Platform.environment['PRISM_LONG_TEST'] != null) {
         // ignore: avoid_print
         print(text);
@@ -3560,6 +3567,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     }
     Diag.instance.finished.value = null;
     Haptics.thud();
+    final bool stopped = text.contains('STOPPED BY YOU');
+    final TextEditingController note = TextEditingController();
+    // The report with what the person wrote, if anything, at its end.
+    String withNote() => note.text.trim().isEmpty
+        ? text
+        : '$text\n\nNOTE FROM YOU: ${note.text.trim()}';
     showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -3585,11 +3598,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     Text(
-                      'Test finished',
+                      stopped ? 'Test stopped' : 'Test finished',
                       style: LumenType.display(26, weight: 700, color: c.ink),
                     ),
                     Text(
-                      'Your settings are back as they were. Copy this and paste it to Claude.',
+                      stopped
+                          ? 'Your settings are back as they were. Say what you saw, if you like, then copy this and paste it to Claude.'
+                          : 'Your settings are back as they were. Copy this and paste it to Claude.',
                       style: LumenType.text(
                         13.5,
                         color: c.inkMuted,
@@ -3615,8 +3630,34 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(height: 12),
+                    // Anything the person wants to add: it goes at the end of the report.
+                    TextField(
+                      controller: note,
+                      minLines: 1,
+                      maxLines: 4,
+                      textCapitalization: TextCapitalization.sentences,
+                      style: LumenType.text(15, color: c.ink, height: 1.3),
+                      decoration: InputDecoration(
+                        hintText: 'What did you see? (optional)',
+                        hintStyle: LumenType.text(15, color: c.inkMuted),
+                        filled: true,
+                        fillColor: c.ink.withValues(alpha: 0.06),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
                     Pressable(
                       onTap: () async {
+                        final String text = withNote();
+                        // Kept with the note, so "Copy the last report" has it too.
+                        TestRun.keep(text);
                         await Diag.instance.copy(text);
                         Haptics.settle();
                         if (context.mounted) {

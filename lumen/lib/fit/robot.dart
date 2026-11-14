@@ -7,6 +7,13 @@ import 'package:flutter/widgets.dart';
 /// A finger that is not there. It sends the app the same touch events a
 /// real finger would, so an automatic test exercises exactly the code a
 /// person does: the same hit testing, the same gestures, the same springs.
+/// The person pressed Stop while a test was running.
+class TestStopped implements Exception {
+  const TestStopped();
+  @override
+  String toString() => 'stopped by you';
+}
+
 class Robot {
   Robot._();
   static int _next = 9000;
@@ -14,8 +21,59 @@ class Robot {
 
   static void _send(PointerEvent e) =>
       GestureBinding.instance.handlePointerEvent(e);
-  static Future<void> wait(int ms) =>
+  // A pause inside a touch: never cut short, so a finger is never left down.
+  static Future<void> _pause(int ms) =>
       Future<void>.delayed(Duration(milliseconds: ms));
+
+  /// A pause between steps. If the person has stopped the test, it ends here.
+  static Future<void> wait(int ms) => guard(_pause(ms));
+
+  // ---- Stopping a test by hand.
+
+  /// Whether a test is running, for the Stop button.
+  static final ValueNotifier<bool> running = ValueNotifier<bool>(false);
+  static Completer<void>? _stop;
+
+  /// A test begins: it can be stopped from now on.
+  static void begin() {
+    _stop = Completer<void>();
+    running.value = true;
+  }
+
+  /// The test is over, stopped or not: what it does from here (putting things back) runs freely.
+  static void end() {
+    _stop = null;
+    running.value = false;
+  }
+
+  /// What the test was doing when Stop was pressed.
+  static String stoppedWhile = '';
+
+  /// The person pressed Stop.
+  static void stop() {
+    final Completer<void>? c = _stop;
+    if (c != null && !c.isCompleted) {
+      c.complete();
+    }
+  }
+
+  /// Whether a touch is one of the robot's, not a real finger's.
+  static bool mine(int pointer) => pointer >= 9000 && pointer < _next;
+
+  /// Waits for [work], unless the test is stopped first: then it ends with [TestStopped].
+  static Future<T> guard<T>(Future<T> work) {
+    final Completer<void>? c = _stop;
+    if (c == null) {
+      return work;
+    }
+    if (c.isCompleted) {
+      return Future<T>.error(const TestStopped());
+    }
+    return Future.any<T>(<Future<T>>[
+      work,
+      c.future.then<T>((_) => throw const TestStopped()),
+    ]);
+  }
 
   /// Touch and let go at [at], then pause so the result can play out.
   static Future<void> tap(Offset at, {int after = 450}) async {
@@ -26,7 +84,7 @@ class Robot {
     _send(
       PointerDownEvent(pointer: id, position: at, timeStamp: _clock.elapsed),
     );
-    await wait(50);
+    await _pause(50);
     _send(PointerUpEvent(pointer: id, position: at, timeStamp: _clock.elapsed));
     _send(
       PointerRemovedEvent(pointer: id, position: at, timeStamp: _clock.elapsed),
@@ -62,7 +120,7 @@ class Robot {
         ),
       );
     }
-    await wait(40);
+    await _pause(40);
     final int t0 = _clock.elapsedMilliseconds;
     Offset last = Offset.zero;
     while (true) {
@@ -112,7 +170,7 @@ class Robot {
     _send(
       PointerDownEvent(pointer: id, position: at, timeStamp: _clock.elapsed),
     );
-    await wait(ms);
+    await _pause(ms);
     _send(PointerUpEvent(pointer: id, position: at, timeStamp: _clock.elapsed));
     _send(
       PointerRemovedEvent(pointer: id, position: at, timeStamp: _clock.elapsed),
@@ -139,7 +197,7 @@ class Robot {
     _send(
       PointerDownEvent(pointer: id, position: at, timeStamp: _clock.elapsed),
     );
-    await wait(60);
+    await _pause(60);
     // The first few steps are small and come at once, as a real finger's do: what is picked
     // up is then picked up close to where it was touched, however slowly frames are coming.
     if (path.length > 1 && (path[1] - path[0]).distance > 40) {
@@ -184,7 +242,7 @@ class Robot {
         }
       }
       if (dwell > 0) {
-        await wait(dwell);
+        await _pause(dwell);
       }
     }
     _send(PointerUpEvent(pointer: id, position: at, timeStamp: _clock.elapsed));

@@ -13,6 +13,7 @@ import 'look.dart';
 import 'bubble.dart';
 import 'diag.dart';
 import 'journal.dart';
+import 'robot.dart';
 import 'shell.dart';
 
 /// Prism: a fitness app prototype built from Lumen's parts. A second app
@@ -120,6 +121,68 @@ class PrismApp extends StatelessWidget {
                                       height: 1.2,
                                     ),
                                   ),
+                                ),
+                              ),
+                            ),
+                          ),
+                  ),
+                  // While a test runs: Stop, at the top left, clear of everything the test touches.
+                  // Only a real finger presses it; the test's own touches pass it by.
+                  ValueListenableBuilder<bool>(
+                    valueListenable: Robot.running,
+                    builder: (BuildContext context, bool on, Widget? _) => !on
+                        ? const SizedBox.shrink()
+                        : Positioned(
+                            top:
+                                MediaQuery.paddingOf(context).top +
+                                (settings.showFps ? 38 : 4) +
+                                44,
+                            left: 12,
+                            child: Listener(
+                              // (Translucent: the test's own touches go on to what is beneath.)
+                              behavior: HitTestBehavior.translucent,
+                              onPointerDown: (PointerDownEvent e) {
+                                if (Robot.mine(e.pointer)) {
+                                  return;
+                                }
+                                Haptics.thud();
+                                Robot.stoppedWhile =
+                                    Diag.instance.banner.value ?? '';
+                                Diag.instance.banner.value =
+                                    'Stopping the test, putting things back…';
+                                Robot.stop();
+                              },
+                              child: Container(
+                                height: 40,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                alignment: Alignment.center,
+                                decoration: const ShapeDecoration(
+                                  color: Color(0xF0E5484D),
+                                  shape: StadiumBorder(),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    Icon(
+                                      Icons.stop_rounded,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    SizedBox(width: 6),
+                                    Text(
+                                      'Stop test',
+                                      textScaler: TextScaler.noScaling,
+                                      style: TextStyle(
+                                        fontFamily: 'Inter',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                        height: 1,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
