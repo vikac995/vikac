@@ -53,7 +53,6 @@ class MainActivity : FlutterActivity() {
     override fun onStart() {
         super.onStart()
         RestBubble.foreground = true
-        RestBubble.returned(applicationContext)
         RestBubble.refresh(applicationContext)
     }
 
@@ -614,10 +613,28 @@ object RestBubble {
      * is on the screen: its corner and its size, in pixels. Nothing, if it cannot float here.
      */
     fun incoming(context: Context, blob: Pin?, at: FloatArray?, fling: FloatArray, done: (Map<String, Int>?) -> Unit) {
-        returned(context)
         // Should a lens still be closing on the cross, that is finished first. Then this blob is the one in the lens.
         afterSwallow?.invoke()
         if (blob != null) pin = blob
+        if (at != null && !docked && sheet == null) {
+            // Put down somewhere. The lens is made right there, not made elsewhere and moved:
+            // Android moves a window a frame or two after it is told to, and for that long the
+            // lens was seen where it had been. One that is somewhere else goes, and a new one
+            // is made where the blob is.
+            val size = lensSizeNow(context)
+            val wantX = Math.round(at[0] - size / 2f) - lensOffX
+            val wantY = Math.round(at[1] - size / 2f) - lensOffY
+            val old = view
+            if (old != null) {
+                old.rest()
+                if (Math.abs(old.lp.x - wantX) > 1 || Math.abs(old.lp.y - wantY) > 1) remove(context)
+            }
+            if (view == null) {
+                lensX = wantX; lensY = wantY
+                placed = true
+                tucked = false
+            }
+        }
         if (view == null) unseen = true
         refresh(context)
         val v = view
@@ -641,17 +658,36 @@ object RestBubble {
                     return
                 }
                 val here = IntArray(2)
-                v.getLocationOnScreen(here)
+                if (v.roamingNow()) {
+                    // Its window was covering its way: where the lens is comes from where its window is asked to be.
+                    v.rest()
+                    here[0] = v.lp.x + lensOffX
+                    here[1] = v.lp.y + lensOffY
+                } else {
+                    v.getLocationOnScreen(here)
+                    // How far a window's own place is from its place on the screen (the top bar, a
+                    // camera cut-out). Found here, and used to make the next lens in the right place.
+                    if (v.scaleX == 1f && v.scaleY == 1f) {
+                        lensOffX = here[0] - v.lp.x
+                        lensOffY = here[1] - v.lp.y
+                    }
+                }
+                var late = 0L
                 if (at != null && !moved) {
-                    // Put down somewhere: the lens goes there, by as much as it is away from it now.
                     moved = true
                     val dx = Math.round(at[0] - v.width / 2f) - here[0]
                     val dy = Math.round(at[1] - v.height / 2f) - here[1]
-                    v.jumpBy(dx, dy)
-                    here[0] += dx
-                    here[1] += dy
+                    if (dx != 0 || dy != 0) {
+                        // Not quite where the blob is (the first time, before that distance is
+                        // known): it is moved, and given time to have arrived before it is shown.
+                        v.jumpBy(dx, dy)
+                        here[0] += dx
+                        here[1] += dy
+                        late = 60L
+                    }
                 }
-                done(mapOf("x" to here[0], "y" to here[1], "size" to v.width))
+                val spot = mapOf("x" to here[0], "y" to here[1], "size" to v.width)
+                if (late > 0L) watcher.postDelayed({ done(spot) }, late) else done(spot)
             }
         }
         v.post(answer)
@@ -754,8 +790,6 @@ object RestBubble {
     var kcalLeft = 0
     var meals: List<Meal> = emptyList()
 
-    /** After the lens has opened an app it keeps out of the way until Prism is next on screen. */
-    var awayInApp = false
 
     private var view: Dot? = null
     private var target: Target? = null
@@ -779,7 +813,6 @@ object RestBubble {
     // Whether the lens has been put somewhere. (Tucked into the left side, its place is past the edge.)
     private var placed = false
     private var grip: Grip? = null
-    private var leaveListener: android.content.BroadcastReceiver? = null
     // How large the lens is, in pixels. Nothing until it is first shown; then its usual size, or the
     // size two fingers last gave it.
     private var lensSize = 0
@@ -866,7 +899,7 @@ object RestBubble {
     private fun mode(): Int = when {
         active && !dismissed -> 1
         active && !container -> 0
-        pin != null && !awayInApp -> 2
+        pin != null -> 2
         else -> 0
     }
 
@@ -966,6 +999,7 @@ object RestBubble {
     private fun openMenu(context: Context) {
         val v = view ?: return
         if (menu != null || blobs.isEmpty()) return
+        v.rest()
         try {
             val dp = context.resources.displayMetrics.density
             val at = IntArray(2)
@@ -1029,42 +1063,6 @@ object RestBubble {
 
     private val watcher = android.os.Handler(android.os.Looper.getMainLooper())
 
-    /**
-     * The lens opened its pinned app and stepped aside. Android announces the moment the person
-     * heads for the home screen or the list of recent apps, to anyone listening; this listens,
-     * only while the lens is away, and brings the lens back at that moment. Nothing runs in
-     * between: it is told, it does not look.
-     */
-    private fun listenForLeaving(context: Context) {
-        if (leaveListener != null) return
-        val app = context.applicationContext
-        val r = object : android.content.BroadcastReceiver() {
-            override fun onReceive(c: Context, i: android.content.Intent) {
-                val why = i.getStringExtra("reason")
-                if (awayInApp && (why == "homekey" || why == "recentapps")) {
-                    returned(app)
-                    refresh(app)
-                }
-            }
-        }
-        try {
-            @Suppress("DEPRECATION")
-            val filter = android.content.IntentFilter(android.content.Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
-            if (Build.VERSION.SDK_INT >= 33) app.registerReceiver(r, filter, Context.RECEIVER_EXPORTED) else app.registerReceiver(r, filter)
-            leaveListener = r
-        } catch (e: Exception) {
-            leaveListener = null
-        }
-    }
-
-    /** The lens is no longer away in its app: it may show again, and nothing listens any more. */
-    fun returned(context: Context) {
-        awayInApp = false
-        val r = leaveListener ?: return
-        leaveListener = null
-        try { context.applicationContext.unregisterReceiver(r) } catch (e: Exception) {}
-    }
-
     /** A pinned thing's lens was tapped: it does what the thing is. */
     private fun tapPinned(context: Context) {
         val p = pin ?: return
@@ -1072,11 +1070,9 @@ object RestBubble {
             val i = context.packageManager.getLaunchIntentForPackage(p.pkg)
             if (i != null) {
                 i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                // The lens stays where it is, over the app it has opened: from it any of the
+                // other blobs is a hold away. It is put away by the person, on the cross or into a side.
                 try { context.startActivity(i) } catch (e: Exception) {}
-                // Out of the way while that app is in front. It is back the moment that app is left.
-                awayInApp = true
-                refresh(context)
-                listenForLeaving(context)
             } else {
                 haptic(context, "thud")
             }
@@ -1258,11 +1254,15 @@ object RestBubble {
             if (v != null) {
                 // The lens stays, and moves to the sheet's corner. Where it is on the screen and
                 // where its window was asked to be can differ by a fixed amount; measure it once.
-                val at = IntArray(2)
-                v.getLocationOnScreen(at)
-                // (Less what being pressed in has moved its corner by.)
-                lensOffX = at[0] - ((1f - v.scaleX) * v.width / 2f).toInt() - v.lp.x
-                lensOffY = at[1] - ((1f - v.scaleY) * v.height / 2f).toInt() - v.lp.y
+                if (v.roamingNow()) {
+                    v.rest()
+                } else {
+                    val at = IntArray(2)
+                    v.getLocationOnScreen(at)
+                    // (Less what being pressed in has moved its corner by.)
+                    lensOffX = at[0] - ((1f - v.scaleX) * v.width / 2f).toInt() - v.lp.x
+                    lensOffY = at[1] - ((1f - v.scaleY) * v.height / 2f).toInt() - v.lp.y
+                }
                 homeX = v.lp.x
                 homeY = v.lp.y
                 dockX = -1
@@ -1906,7 +1906,6 @@ object RestBubble {
             val lens = view
             lens?.hideInner = true
             pin = b
-            returned(c)
             channel?.invokeMethod("pinned", b.key)
             lens?.invalidate()
             val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
@@ -1982,7 +1981,7 @@ object RestBubble {
             val dp = d.density
             val wide = (76 * dp).toInt()
             val lp = android.view.WindowManager.LayoutParams(
-                wide, v.lp.height + (16 * dp).toInt(),
+                wide, v.ownSize() + (16 * dp).toInt(),
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 android.graphics.PixelFormat.TRANSLUCENT,
@@ -2266,6 +2265,7 @@ object RestBubble {
         fun jumpBy(dx: Int, dy: Int) {
             springing = false
             glide?.cancel()
+            rest()
             lp.x += dx; lp.y += dy
             place()
         }
@@ -2290,6 +2290,81 @@ object RestBubble {
 
         // How far a blob that was put down has become the lens: 0 it is just that blob, 1 it is the lens.
         private var come = 1f
+
+        // While the lens travels by itself (thrown, going to a side, tucking away) its window
+        // stays still. Android moves a window a frame or two after it is told to, and not in step
+        // with the screen, which is seen as a stutter. So the window is made, once, to cover the
+        // whole of the way; the lens is drawn at its place inside it, frame by frame, which is in
+        // step; and at the end the window is the lens's own size again, around where it stopped.
+        private var roaming = false
+        private var roamSize = 0
+        private var offX = 0f
+        private var offY = 0f
+
+        /** Where the lens is and how large, whether its window is its own size or covers its way. */
+        private fun posX() = if (roaming) Math.round(lp.x + offX) else lp.x
+        private fun posY() = if (roaming) Math.round(lp.y + offY) else lp.y
+        private fun sizeNow() = if (roaming) roamSize else lp.width
+
+        private fun relay() {
+            try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, lp) } catch (ex: Exception) {}
+        }
+
+        /** The window is made to cover every place the lens will be, between these corners. From now the lens is drawn inside it. */
+        private fun roam(minX: Float, minY: Float, maxX: Float, maxY: Float) {
+            if (roaming || stretching || docked) return
+            val size = lp.width
+            val pad = (6 * dp).toInt()
+            val wx = Math.floor(Math.min(minX, lp.x.toFloat()).toDouble()).toInt() - pad
+            val wy = Math.floor(Math.min(minY, lp.y.toFloat()).toDouble()).toInt() - pad
+            offX = (lp.x - wx).toFloat()
+            offY = (lp.y - wy).toFloat()
+            roamSize = size
+            lp.width = Math.ceil((Math.max(maxX, lp.x.toFloat()) - wx).toDouble()).toInt() + size + pad
+            lp.height = Math.ceil((Math.max(maxY, lp.y.toFloat()) - wy).toDouble()).toInt() + size + pad
+            lp.x = wx; lp.y = wy
+            roaming = true
+            pivotX = offX + size / 2f
+            pivotY = offY + size / 2f
+            relay()
+            invalidate()
+        }
+
+        /** Puts the lens at this place: drawn there while its window covers its way, or by moving its window otherwise. */
+        private fun moveTo(x: Float, y: Float) {
+            if (!roaming) {
+                lp.x = x.toInt(); lp.y = y.toInt()
+                place()
+                return
+            }
+            offX = (x - lp.x).coerceIn(0f, (lp.width - roamSize).toFloat())
+            offY = (y - lp.y).coerceIn(0f, (lp.height - roamSize).toFloat())
+            pivotX = offX + roamSize / 2f
+            pivotY = offY + roamSize / 2f
+            if (!docked) {
+                lensX = posX(); lensY = posY()
+                placed = true
+            }
+            lag()
+            invalidate()
+        }
+
+        /** Whether its window is covering its way just now, and how large the lens itself is. */
+        fun roamingNow() = roaming
+        fun ownSize() = sizeNow()
+
+        /** The travelling is over, or something else needs the lens: its window is its own size again, around where it is. */
+        fun rest() {
+            if (!roaming) return
+            val x = posX(); val y = posY()
+            roaming = false
+            lp.width = roamSize; lp.height = roamSize
+            lp.x = x; lp.y = y
+            if (Build.VERSION.SDK_INT >= 28) resetPivot() else { pivotX = roamSize / 2f; pivotY = roamSize / 2f }
+            wasX = x; wasY = y; wasSize = roamSize
+            place()
+            invalidate()
+        }
 
         /**
          * A blob was put down here and this lens takes over from it. It is drawn as that blob
@@ -2387,10 +2462,10 @@ object RestBubble {
             // The lens is drawn as it is at its usual size, and scaled to the size it is. While two
             // fingers resize it, that size follows the fingers, and the lens sits in the middle of
             // a window as large as it can get: nothing has to be resized on the way.
-            val size = if (stretching) wantSize else width.toFloat()
+            val size = if (stretching) wantSize else if (roaming) roamSize.toFloat() else width.toFloat()
             val k = size / base
             canvas.save()
-            canvas.translate((width - size) / 2f, (height - size) / 2f)
+            if (roaming) canvas.translate(offX, offY) else canvas.translate((width - size) / 2f, (height - size) / 2f)
             canvas.scale(k, k)
             val arriving = pin
             if (come < 1f && arriving != null && container && mode() == 2) {
@@ -2552,27 +2627,44 @@ object RestBubble {
             if (!t.paused && !t.off) postInvalidateDelayed(if (t.resting) 66 else if (go) 250 else 1000)
         }
 
-        /** Takes the lens to a sheet's corner, or back from it: one even movement, nothing springy. */
+        /**
+         * Takes the lens somewhere in one even movement, nothing springy: to a side, into a side,
+         * to a sheet's corner or back from it. Keeping its size, it is drawn moving inside a
+         * window that stays still; changing size on the way, its window moves and grows with it.
+         */
         fun glideTo(x: Float, y: Float, ms: Long, size: Int = lp.width) {
             springing = false
             leaving = false
             glide?.cancel()
+            rest()
             val fromX = lp.x.toFloat(); val fromY = lp.y.toFloat()
             val fromSize = lp.width
+            if (size == fromSize) roam(Math.min(fromX, x), Math.min(fromY, y), Math.max(fromX, x), Math.max(fromY, y))
             val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
             a.duration = ms
             a.interpolator = EASE
             a.addUpdateListener {
                 if (isAttachedToWindow) {
                     val f = it.animatedValue as Float
-                    lp.x = Math.round(fromX + (x - fromX) * f); lp.y = Math.round(fromY + (y - fromY) * f)
-                    if (size != fromSize) {
-                        val now = Math.round(fromSize + (size - fromSize) * f)
-                        lp.width = now; lp.height = now
+                    if (roaming) {
+                        moveTo(fromX + (x - fromX) * f, fromY + (y - fromY) * f)
+                    } else {
+                        lp.x = Math.round(fromX + (x - fromX) * f); lp.y = Math.round(fromY + (y - fromY) * f)
+                        if (size != fromSize) {
+                            val now = Math.round(fromSize + (size - fromSize) * f)
+                            lp.width = now; lp.height = now
+                        }
+                        place()
                     }
-                    place()
                 }
             }
+            a.addListener(object : android.animation.AnimatorListenerAdapter() {
+                // Arrived, or stopped on the way by something else: the window is the lens's own again.
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    if (glide === animation) glide = null
+                    if (isAttachedToWindow) rest()
+                }
+            })
             glide = a
             a.start()
         }
@@ -2616,6 +2708,7 @@ object RestBubble {
             springing = false
             leaving = false
             glide?.cancel()
+            rest()
             tracker?.recycle()
             tracker = android.view.VelocityTracker.obtain()
             downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y
@@ -2673,9 +2766,10 @@ object RestBubble {
         }
 
         private fun lag() {
-            val dx = lp.x - wasX; val dy = lp.y - wasY
-            val resized = lp.width != wasSize
-            wasX = lp.x; wasY = lp.y; wasSize = lp.width
+            val hereX = posX(); val hereY = posY(); val hereSize = sizeNow()
+            val dx = hereX - wasX; val dy = hereY - wasY
+            val resized = hereSize != wasSize
+            wasX = hereX; wasY = hereY; wasSize = hereSize
             // Only a container showing its blob has anything to hang back, and a change of size is not a movement.
             if (!container || mode() != 2 || resized || stretching || (dx == 0 && dy == 0)) return
             val most = 4.5f * dp
@@ -2751,6 +2845,7 @@ object RestBubble {
                     wouldTuck = false
                     springing = false
                     glide?.cancel()
+                    rest()
                     target?.held = false
                     target?.fall()
                     animate().scaleX(1f).scaleY(1f).setDuration(120).start()
@@ -3013,20 +3108,23 @@ object RestBubble {
         // without bouncing.
         private val frame = object : android.view.Choreographer.FrameCallback {
             override fun doFrame(nanos: Long) {
+                // (Whatever stopped it has already seen to its window.)
                 if (!springing || !isAttachedToWindow) { springing = false; return }
                 val dt = if (lastFrame == 0L) 1f / 120f else ((nanos - lastFrame) / 1e9f).coerceIn(0.001f, 0.032f)
                 lastFrame = nanos
                 val k = if (leaving) 320f else 240f; val c = if (leaving) 30f else 31f
                 vx += (-k * (px - tx) - c * vx) * dt; px += vx * dt
                 vy += (-k * (py - ty) - c * vy) * dt; py += vy * dt
-                lp.x = px.toInt(); lp.y = py.toInt()
-                place()
                 val near = if (leaving) 6f else 0.6f
                 val still = Math.abs(px - tx) < near && Math.abs(py - ty) < near && (leaving || (Math.abs(vx) < 12f && Math.abs(vy) < 12f))
                 if (still) {
                     springing = false
-                    if (leaving) close()
+                    // It ends exactly at its place, and its window is its own size again around it.
+                    // (On the cross it is about to be gone: it is closed as it is.)
+                    moveTo(tx, ty)
+                    if (leaving) close() else rest()
                 } else {
+                    moveTo(px, py)
                     android.view.Choreographer.getInstance().postFrameCallback(this)
                 }
             }
@@ -3076,6 +3174,7 @@ object RestBubble {
             val screen = resources.displayMetrics
             val margin = 8 * dp
             glide?.cancel()
+            rest()
             px = lp.x.toFloat(); py = lp.y.toFloat(); vx = velX; vy = velY
             // Where it would coast to decides where it ends up, so a flick carries it.
             val coastX = px + velX * 0.16f
@@ -3093,6 +3192,22 @@ object RestBubble {
                 target?.held = false
                 target?.fall()
             }
+            // The whole of the way it will go, worked out ahead, so that its window can cover it once and stay still.
+            val k = if (leaving) 320f else 240f
+            val c = if (leaving) 30f else 31f
+            var sx = px; var sy = py; var svx = vx; var svy = vy
+            var loX = Math.min(px, tx); var hiX = Math.max(px, tx)
+            var loY = Math.min(py, ty); var hiY = Math.max(py, ty)
+            val step = 1f / 240f
+            for (n in 0 until 720) {
+                svx += (-k * (sx - tx) - c * svx) * step; sx += svx * step
+                svy += (-k * (sy - ty) - c * svy) * step; sy += svy * step
+                if (sx < loX) loX = sx
+                if (sx > hiX) hiX = sx
+                if (sy < loY) loY = sy
+                if (sy > hiY) hiY = sy
+            }
+            roam(loX, loY, hiX, hiY)
             lastFrame = 0L
             if (!springing) {
                 springing = true
@@ -3101,6 +3216,16 @@ object RestBubble {
         }
 
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            if (roaming && e.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+                // Its window covers the way it is going. Only the lens itself is the lens's to
+                // touch; caught, it stops there and its window is its own size again.
+                val dx = e.x - (offX + roamSize / 2f)
+                val dy = e.y - (offY + roamSize / 2f)
+                if (dx * dx + dy * dy > (roamSize / 2f) * (roamSize / 2f)) return false
+                springing = false
+                glide?.cancel()
+                rest()
+            }
             if (docked) {
                 // On a sheet's corner it is one thing only: the button that folds the sheet away.
                 when (e.actionMasked) {

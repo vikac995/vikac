@@ -1,5 +1,28 @@
 # Lumen changelog
 
+## Prism, build 72 (14 November 2026)
+
+**File:** `releases/prism-build-72.apk`
+
+Like build 71, it needs Play Protect paused to install (the counts on icons).
+
+From your recordings of build 71 and the frame you picked out.
+
+- **The second icon that showed for a split second is gone at its cause.** In your frame there are two WhatsApp blobs: the one under your finger and one higher up, where the lens used to rest. The higher one was the lens. It was made at its usual place, told to move to where you put the blob, and then shown. Android moves a window a frame or two after it is told to, so for one frame the lens was shown where it had been. Now the lens is made where the blob is, and is not moved at all. (It was not the old hold-to-float code, which is gone, but your frame is what found it.)
+- **The stutter when the lens comes away from the edge has the same cause, and is dealt with the same way.** I measured the lens's position in every frame of your clip: while it slid back in, some frames it barely moved and the next it moved double. Moving a window is not in step with the screen. So when the lens travels by itself (thrown, going to a side, tucking away), its window now stays still: it is made, once, to cover the whole of the way, and the lens is drawn at its place inside it frame by frame, which is in step. At the end the window is the lens's own size again. While you drag it, it still follows your finger as before.
+- **The lens stays when its own app opens.** It used to step aside while its app was in front and come back when you left. Now it stays where it is: from it, any other blob is a hold away. To be rid of it, drop it on the cross or push it into a side. The code that hid it, and the listening for the app being left, are removed.
+
+**A consequence to know about:** for the fraction of a second that the lens is travelling by itself, a tap in the strip of screen it is travelling through is not passed to the app underneath. A tap on the lens itself still catches it.
+
+**What to look for:**
+- Put a blob down anywhere, several times: there should be one icon only, at every moment.
+- Throw the lens, and let it go a little past a side: its movement should be even. Watch the very start and the very end of a throw. If the lens jumps for one frame there, the window and the drawing are not changing together on your phone, and I need to know.
+- Tap the lens to open its app: the lens should still be there, and holding it should open its menu.
+- Catch the lens while it is still moving: it should stop under your finger and follow it.
+
+**Checked:** it compiles. Nothing else: all of this is on the Android side, which my preview cannot run.
+**Not checked:** on a phone. The stutter fix rests on Android changing a window's size and its picture in the same frame. Your two-finger resize has relied on the same thing since build 65 without a visible jump, which is why I expect it to hold, but it is an expectation. Build 71 is the fallback.
+
 ## Prism, build 71 (14 November 2026)
 
 **File:** `releases/prism-build-71.apk`
