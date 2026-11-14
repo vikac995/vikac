@@ -109,7 +109,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     }
     final List<AppTile> all = Apps.instance.all;
     final int i =
-        ((_list.offset / _rowH + 0.4).floor().clamp(0, 1 << 20) * _cols).clamp(
+        ((_list.offset / _rowH + 0.7).floor().clamp(0, 1 << 20) * _cols).clamp(
           0,
           math.max(0, all.length - 1),
         );
@@ -141,12 +141,9 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     }
     _letter = l;
     Haptics.tick();
-    // A little of the row before it stays in sight, so the place in the alphabet is clear.
+    // Exactly on its row: a part of a row at the top showed names with no icons above them.
     _list.jumpTo(
-      ((i ~/ _cols) * rowH - rowH * 0.3).clamp(
-        0.0,
-        _list.position.maxScrollExtent,
-      ),
+      ((i ~/ _cols) * rowH).clamp(0.0, _list.position.maxScrollExtent),
     );
     setState(() => _bounceAt = i);
     _bounce
@@ -240,51 +237,59 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
           top: 0,
           bottom: 0,
           width: w,
-          child: ListView.builder(
-            controller: _list,
-            physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics(),
-            ),
-            itemExtent: rowH,
-            itemCount: rowsAll,
-            itemBuilder: (BuildContext context, int r) => GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapUp: (TapUpDetails d) {
-                final int col = (d.localPosition.dx / (w / _cols))
-                    .floor()
-                    .clamp(0, _cols - 1);
-                final double dpr = MediaQuery.devicePixelRatioOf(context);
-                final Offset centre =
-                    d.globalPosition -
-                    d.localPosition +
-                    Offset(w / _cols * (col + 0.5), 8 + _GridPainter._tile / 2);
-                _open(
-                  r * _cols + col,
-                  Rect.fromCenter(
-                    center: centre * dpr,
-                    width: _GridPainter._tile * dpr,
-                    height: _GridPainter._tile * dpr,
-                  ),
-                );
-              },
-              child: RepaintBoundary(
-                child: CustomPaint(
-                  size: Size(w, rowH),
-                  painter: _GridPainter(
-                    apps: all,
-                    from: r,
-                    to: r,
-                    dir: 0,
-                    rows: 1,
-                    cols: _cols,
-                    turn: kAlwaysDismissedAnimation,
-                    ink: c.ink.withValues(alpha: 0.84),
-                    accent: c.accent,
-                    surface: c.surface,
-                    counts: Notes.instance.counts.value,
-                    pressed: -1,
-                    bounceAt: _bounceAt ~/ _cols == r ? _bounceAt : -1,
-                    bounce: _bounceAt ~/ _cols == r ? _bounce : null,
+          // (No scrollbar: it ran down over the letters, and the letters are the scrollbar.)
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context)
+                .copyWith(scrollbars: false),
+            child: ListView.builder(
+              controller: _list,
+              physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics(),
+              ),
+              itemExtent: rowH,
+              itemCount: rowsAll,
+              itemBuilder: (BuildContext context, int r) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTapUp: (TapUpDetails d) {
+                  final int col = (d.localPosition.dx / (w / _cols))
+                      .floor()
+                      .clamp(0, _cols - 1);
+                  final double dpr = MediaQuery.devicePixelRatioOf(context);
+                  final Offset centre =
+                      d.globalPosition -
+                      d.localPosition +
+                      Offset(
+                        w / _cols * (col + 0.5),
+                        8 + _GridPainter._tile / 2,
+                      );
+                  _open(
+                    r * _cols + col,
+                    Rect.fromCenter(
+                      center: centre * dpr,
+                      width: _GridPainter._tile * dpr,
+                      height: _GridPainter._tile * dpr,
+                    ),
+                  );
+                },
+                child: RepaintBoundary(
+                  child: CustomPaint(
+                    size: Size(w, rowH),
+                    painter: _GridPainter(
+                      apps: all,
+                      from: r,
+                      to: r,
+                      dir: 0,
+                      rows: 1,
+                      cols: _cols,
+                      turn: kAlwaysDismissedAnimation,
+                      ink: c.ink.withValues(alpha: 0.84),
+                      accent: c.accent,
+                      surface: c.surface,
+                      counts: Notes.instance.counts.value,
+                      pressed: -1,
+                      bounceAt: _bounceAt ~/ _cols == r ? _bounceAt : -1,
+                      bounce: _bounceAt ~/ _cols == r ? _bounce : null,
+                    ),
                   ),
                 ),
               ),
@@ -297,7 +302,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
           left: 0,
           top: 0,
           width: w,
-          height: 14,
+          height: 34,
           child: IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -314,7 +319,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
           left: 0,
           bottom: 0,
           width: w,
-          height: 26,
+          height: 34,
           child: IgnorePointer(
             child: DecoratedBox(
               decoration: BoxDecoration(

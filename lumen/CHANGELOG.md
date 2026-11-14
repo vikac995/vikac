@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 119 (14 November 2026)
+
+**File:** `releases/prism-build-119.apk`
+
+Needs Play Protect paused to install. Can be installed over build 118.
+
+From your recording of the scrolling app list:
+- **No more names without icons at the top.** Where the list stopped part way through a row, the top showed a strip of names with their icons cut away. Going to a letter now lands exactly on its row (build 118 left a slice of the row before, which made this more likely), and the fade at the top is deeper, so a part of a row dissolves instead of showing bare names. The bubble and the letter in the heading say where you are.
+- **No scrollbar.** A grey scrollbar ran down the right edge, over the letters. Gone: the letters are the scrollbar.
+- **A deeper fade at the foot** too.
+
+**Checked:** it compiles; in my preview.
+**Not checked:** on a phone.
+
 ## Prism, build 118 (14 November 2026)
 
 **File:** `releases/prism-build-118.apk`
