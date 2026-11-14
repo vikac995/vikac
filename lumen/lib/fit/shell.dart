@@ -1970,15 +1970,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       return 'com.android.settings';
     }
 
-    final String otherPkg = standIn();
-    t.other = otherPkg == 'com.android.settings' ? null : otherPkg;
-    if (t.other == null) {
-      t.note(
-        'none of the usual apps (Calculator, Clock, Chrome) was found, so Android\'s Settings stood in for "another app": Settings hides floating windows, so whatever floated was not on the screen',
-      );
-    } else {
-      t.note('"another app" in this test is $otherPkg');
-    }
+    // (Chosen once the list of the phone's apps is there: see "getting ready".)
+    String otherPkg = 'com.android.settings';
     const List<String> five = <String>[
       'action:0',
       'action:1',
@@ -2013,6 +2006,23 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     String build = Diag.build;
     try {
       say('getting ready');
+      // The list of the phone's apps is only read when the app list is first opened. It is
+      // read now, so that "another app" can be chosen from it.
+      if (Platform.isAndroid) {
+        unawaited(Apps.instance.refresh());
+        for (int i = 0; i < 100 && Apps.instance.all.isEmpty; i++) {
+          await Robot.wait(100);
+        }
+      }
+      otherPkg = standIn();
+      t.other = otherPkg == 'com.android.settings' ? null : otherPkg;
+      if (t.other == null) {
+        t.note(
+          'none of the usual apps (Calculator, Clock, Chrome) was found among ${Apps.instance.all.length} apps, so Android\'s Settings stood in for "another app": Settings hides floating windows, so whatever floated was not on the screen',
+        );
+      } else {
+        t.note('"another app" in this test is $otherPkg');
+      }
       if (quiet) {
         // Left running while someone sleeps: no buzzes, here or from Android.
         Haptics.enabled = false;

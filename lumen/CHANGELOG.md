@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 103 (14 November 2026)
+
+**File:** `releases/prism-build-103.apk`
+
+Needs Play Protect paused to install.
+
+- **Fixed: the tests still used Settings as "another app".** Prism reads the list of the phone's apps only when the app list is first opened, and the test looked for Calculator, Clock or Chrome before that, found none, and fell back to Settings, which hides the chat head. The test now reads the list first. If it still finds none of them, the note says how many apps it did see.
+
+**Checked:** it compiles; in my preview the Prism half of the long test.
+**Not checked:** on a phone.
+
 ## Prism, build 102 (14 November 2026)
 
 **File:** `releases/prism-build-102.apk`
