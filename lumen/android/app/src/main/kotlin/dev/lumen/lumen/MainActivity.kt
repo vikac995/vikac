@@ -222,6 +222,8 @@ class MainActivity : FlutterActivity() {
                 val a = call.arguments as? Map<*, *>
                 // (Both are told: the timer shows it, and the blob's menu opens the workout's sheet from it.)
                 for (b in Floaters) {
+                val endedAt = b.endsAt
+                val wasOff = b.timerOff
                 if (a == null) {
                     b.active = false
                 } else {
@@ -245,6 +247,7 @@ class MainActivity : FlutterActivity() {
                     b.accent = (a["accent"] as Number).toInt()
                     b.onAccent = (a["onAccent"] as Number).toInt()
                 }
+                b.restTold(endedAt, wasOff)
                 b.planBuzz(applicationContext)
                 b.refresh(applicationContext)
                 }
@@ -596,6 +599,198 @@ class Floater(val timer: Boolean) {
         private const val GREEN = 0xFF2FA84F.toInt()
         private const val SHEET_AUTO = -1
         private const val SHEET_WORKOUT = -2
+
+        // How far to either side of the cross the timer's other two places are, and how large
+        // the timer must be for its controls to be under it instead (both in dp).
+        private const val SIDE = 104
+        private const val BIG = 170
+    }
+
+    /** Whether the timer is large enough to carry its controls under it. Then only the cross is at the foot. */
+    private fun big(context: Context): Boolean = timer && lensSize >= BIG * context.resources.displayMetrics.density
+
+    /** A new rest was begun, or the timer switched on again: one that was closed is back. */
+    fun restTold(endedAt: Long, wasOff: Boolean) {
+        if (timer && dismissed && ((endsAt > 0 && endsAt != endedAt) || (wasOff && !timerOff))) dismissed = false
+    }
+
+    /**
+     * What the timer's three places do. 0 the cross: the timer is stopped and taken off the
+     * screen. 1 pause: it stands, or goes on again. 2 count up: it counts up from nothing.
+     */
+    private fun timerDo(context: Context, what: Int) {
+        when (what) {
+            1 -> channel?.invokeMethod("timerPause", null)
+            2 -> channel?.invokeMethod("timerUp", null)
+            else -> {
+                dismissed = true
+                if (!timerOff) channel?.invokeMethod("timerOff", null)
+                closeTray(context)
+                refresh(context)
+            }
+        }
+    }
+
+    /** The signs on the timer's places: 0 a cross, 1 pause (or go on, when it stands), 2 a stopwatch with an arrow up. */
+    private fun paintSign(canvas: android.graphics.Canvas, what: Int, cx: Float, cy: Float, dp: Float, paint: android.graphics.Paint) {
+        paint.color = WHITE
+        paint.strokeCap = android.graphics.Paint.Cap.ROUND
+        paint.strokeJoin = android.graphics.Paint.Join.ROUND
+        when (what) {
+            0 -> {
+                val a = 8.5f * dp
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = 2.6f * dp
+                canvas.drawLine(cx - a, cy - a, cx + a, cy + a, paint)
+                canvas.drawLine(cx - a, cy + a, cx + a, cy - a, paint)
+            }
+            1 -> if (pausedAt > 0) {
+                // Standing: the sign to go on.
+                paint.style = android.graphics.Paint.Style.FILL_AND_STROKE
+                paint.strokeWidth = 2f * dp
+                val t = android.graphics.Path()
+                t.moveTo(cx - 5 * dp, cy - 8 * dp); t.lineTo(cx + 8 * dp, cy); t.lineTo(cx - 5 * dp, cy + 8 * dp); t.close()
+                canvas.drawPath(t, paint)
+            } else {
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = 4.2f * dp
+                canvas.drawLine(cx - 5 * dp, cy - 7.5f * dp, cx - 5 * dp, cy + 7.5f * dp, paint)
+                canvas.drawLine(cx + 5 * dp, cy - 7.5f * dp, cx + 5 * dp, cy + 7.5f * dp, paint)
+            }
+            else -> {
+                // A stopwatch, and beside it an arrow up.
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = 2.2f * dp
+                val wx = cx - 4.5f * dp; val wy = cy + 1.5f * dp
+                canvas.drawCircle(wx, wy, 7.5f * dp, paint)
+                canvas.drawLine(wx, wy - 7.5f * dp, wx, wy - 10.5f * dp, paint)
+                canvas.drawLine(wx - 2.6f * dp, wy - 11f * dp, wx + 2.6f * dp, wy - 11f * dp, paint)
+                canvas.drawLine(wx, wy, wx, wy - 4f * dp, paint)
+                val ax = cx + 9.5f * dp
+                canvas.drawLine(ax, cy + 7 * dp, ax, cy - 7 * dp, paint)
+                canvas.drawLine(ax - 3.6f * dp, cy - 3.2f * dp, ax, cy - 7 * dp, paint)
+                canvas.drawLine(ax + 3.6f * dp, cy - 3.2f * dp, ax, cy - 7 * dp, paint)
+            }
+        }
+    }
+
+    // The timer's controls, under it once it is large: the same three, in the same order as
+    // at the foot of the screen. A small window of its own that is there only while the timer
+    // lies still, and goes the moment the timer is touched.
+    private var tray: Tray? = null
+    private var trayTries = 0
+    private val trayLater = Runnable { view?.let { syncTray(it.context) } }
+
+    private fun closeTray(context: Context) {
+        watcher.removeCallbacks(trayLater)
+        val t = tray ?: return
+        tray = null
+        try { wm(context).removeView(t) } catch (e: Exception) {}
+    }
+
+    /** Looked at again a little later: after it is let go the timer is still on its way for a moment. */
+    private fun trayAfter(ms: Long) {
+        if (!timer) return
+        watcher.removeCallbacks(trayLater)
+        watcher.postDelayed(trayLater, ms)
+    }
+
+    private fun syncTray(context: Context) {
+        if (!timer) return
+        val v = view
+        val want = v != null && mode() == 1 && !tucked && !docked && sheet == null && !swallowing && big(context)
+        if (!want || v == null) {
+            closeTray(context)
+            return
+        }
+        if (v.busy()) {
+            // Still moving, or in the hand: not yet. Looked at again shortly, a few times at most.
+            closeTray(context)
+            if (trayTries++ < 12) trayAfter(250)
+            return
+        }
+        trayTries = 0
+        val d = context.resources.displayMetrics
+        val dp = d.density
+        val w = (176 * dp).toInt(); val h = (56 * dp).toInt()
+        val size = v.ownSize()
+        val x = (v.lensLeft() + size / 2 - w / 2).toInt().coerceIn((8 * dp).toInt(), Math.max((8 * dp).toInt(), d.widthPixels - w - (8 * dp).toInt()))
+        // Under it; where there is no room under it, over it.
+        val under = (v.lensTop() + size + 6 * dp).toInt()
+        val y = if (under + h < d.heightPixels - 24 * dp) under else (v.lensTop() - h - 6 * dp).toInt()
+        val t = tray
+        if (t != null) {
+            val l = t.layoutParams as android.view.WindowManager.LayoutParams
+            if (l.x != x || l.y != y) {
+                l.x = x; l.y = y
+                try { wm(context).updateViewLayout(t, l) } catch (e: Exception) {}
+            }
+            t.invalidate()
+            return
+        }
+        try {
+            val n = Tray(context)
+            val l = android.view.WindowManager.LayoutParams(
+                w, h,
+                android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                android.graphics.PixelFormat.TRANSLUCENT,
+            )
+            l.gravity = android.view.Gravity.TOP or android.view.Gravity.START
+            l.x = x; l.y = y
+            if (Build.VERSION.SDK_INT >= 34) l.setCanPlayMoveAnimation(false)
+            wm(context).addView(n, l)
+            n.alpha = 0f
+            n.animate().alpha(1f).setDuration(140).start()
+            tray = n
+        } catch (e: Exception) {
+            tray = null
+        }
+    }
+
+    private inner class Tray(context: Context) : android.view.View(context) {
+        private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        private val dp = resources.displayMetrics.density
+        private var down = -1
+
+        private fun at(x: Float): Int = (x / (width / 3f)).toInt().coerceIn(0, 2)
+
+        override fun onDraw(canvas: android.graphics.Canvas) {
+            val cy = height / 2f
+            for (k in 0..2) {
+                val cx = width / 6f + k * width / 3f
+                val r = 24 * dp
+                paint.style = android.graphics.Paint.Style.FILL
+                paint.color = if (down == k) 0xF0262A33.toInt() else 0xE0101216.toInt()
+                canvas.drawCircle(cx, cy, r, paint)
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = 1.3f * dp
+                paint.color = if (down == k) accent else 0x66FFFFFF
+                canvas.drawCircle(cx, cy, r - paint.strokeWidth / 2, paint)
+                canvas.save()
+                canvas.scale(0.82f, 0.82f, cx, cy)
+                // Left to right as at the foot of the screen: pause, the cross, count up.
+                paintSign(canvas, if (k == 0) 1 else if (k == 1) 0 else 2, cx, cy, dp, paint)
+                canvas.restore()
+            }
+        }
+
+        override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> { down = at(e.x); invalidate() }
+                android.view.MotionEvent.ACTION_CANCEL -> { down = -1; invalidate() }
+                android.view.MotionEvent.ACTION_UP -> {
+                    val k = down
+                    down = -1
+                    invalidate()
+                    if (k >= 0 && k == at(e.x) && e.y >= 0 && e.y <= height) {
+                        haptic(context, if (k == 1) "thud" else "click")
+                        timerDo(context, if (k == 0) 1 else if (k == 1) 0 else 2)
+                    }
+                }
+            }
+            return true
+        }
     }
 
     /** How many notifications each app has, by package. Empty until the person allows Prism to be told. */
@@ -1749,6 +1944,7 @@ class Floater(val timer: Boolean) {
         if (view == null) add(context)
         sheet?.sync()
         view?.invalidate()
+        syncTray(context)
     }
 
     /** Prism's workout page came on screen or left it. Going to it brings back a lens that was closed. */
@@ -1764,15 +1960,17 @@ class Floater(val timer: Boolean) {
             val dp = d.density
             // The cross to drop it on. Added first, so it lies under the lens; it cannot be touched.
             val t = Target(context)
+            // (The timer's has a place either side of the cross: to pause it, and to count up from nothing.)
+            val wide = ((if (timer) 150 + 2 * SIDE else 150) * dp).toInt()
             val tlp = android.view.WindowManager.LayoutParams(
-                (150 * dp).toInt(), (150 * dp).toInt(),
+                wide, (150 * dp).toInt(),
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 android.graphics.PixelFormat.TRANSLUCENT,
             )
             tlp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
-            tlp.x = d.widthPixels / 2 - (75 * dp).toInt()
+            tlp.x = d.widthPixels / 2 - wide / 2
             tlp.y = d.heightPixels - (104 * dp).toInt() - (75 * dp).toInt()
             // Until a lens is picked up its window counts for nothing: a window that cannot be
             // touched but is not see-through makes Android refuse touches on the app under it.
@@ -1829,6 +2027,7 @@ class Floater(val timer: Boolean) {
     }
 
     private fun remove(context: Context) {
+        closeTray(context)
         removeMenu(context)
         closeReach(context)
         closeGrip(context)
@@ -2802,11 +3001,16 @@ class Floater(val timer: Boolean) {
         private var taken = 0
         var lp: android.view.WindowManager.LayoutParams? = null
         private var up = false
+
+        // Which place the lens is over: 0 the cross, 1 pause, 2 count up. Only the cross swells
+        // to take the lens in; the other two light up.
+        var which = 0
         var held = false
             set(v) {
                 if (field != v) {
                     field = v
-                    animate().scaleX(if (v) 1.22f else 1f).scaleY(if (v) 1.22f else 1f).setDuration(160).setInterpolator(EASE).start()
+                    val grow = v && which == 0
+                    animate().scaleX(if (grow) 1.22f else 1f).scaleY(if (grow) 1.22f else 1f).setDuration(160).setInterpolator(EASE).start()
                     invalidate()
                 }
             }
@@ -2872,25 +3076,43 @@ class Floater(val timer: Boolean) {
 
         override fun onDraw(canvas: android.graphics.Canvas) {
             val c = width / 2f
+            val cy = height / 2f
+            // The small timer has a place either side of the cross. (Not while the cross is swallowing.)
+            if (timer && !big(context) && gulp < 0f) {
+                for (k in 1..2) {
+                    val x = c + (if (k == 1) -SIDE else SIDE) * dp
+                    val on = held && which == k
+                    val r2 = (if (on) 36 else 32) * dp
+                    paint.style = android.graphics.Paint.Style.FILL
+                    paint.color = if (on) 0xE6181A20.toInt() else 0xCC101216.toInt()
+                    canvas.drawCircle(x, cy, r2, paint)
+                    paint.style = android.graphics.Paint.Style.STROKE
+                    paint.strokeWidth = (if (on) 2.2f else 1.4f) * dp
+                    paint.color = if (on) accent else 0x66FFFFFF
+                    canvas.drawCircle(x, cy, r2 - paint.strokeWidth / 2, paint)
+                    paintSign(canvas, k, x, cy, dp, paint)
+                }
+            }
             val r = 40 * dp
+            val held = this.held && which == 0
             val dark = if (held) 0xE6181A20.toInt() else 0xCC101216.toInt()
             // While swallowing, the colour of what fell in shows through and then fades.
             val colour = if (gulp >= 0f) (Math.max(0f, 1f - gulp / 0.6f)) else 0f
             paint.style = android.graphics.Paint.Style.FILL
             paint.color = if (colour > 0f) mix.evaluate(colour, dark, tint(taken, 0xF0)) as Int else dark
-            canvas.drawCircle(c, c, r, paint)
+            canvas.drawCircle(c, cy, r, paint)
             paint.style = android.graphics.Paint.Style.STROKE
             paint.strokeWidth = (if (held) 2.2f else 1.4f) * dp
             paint.color = if (held || gulp >= 0f) accent else 0x66FFFFFF
-            canvas.drawCircle(c, c, r - paint.strokeWidth / 2, paint)
+            canvas.drawCircle(c, cy, r - paint.strokeWidth / 2, paint)
             // The cross closes as it swallows.
             val a = 9 * dp * (if (gulp >= 0f) Math.max(0f, 1f - gulp / 0.25f) else 1f)
             if (a > 0.5f) {
                 paint.strokeWidth = 2.6f * dp
                 paint.strokeCap = android.graphics.Paint.Cap.ROUND
                 paint.color = WHITE
-                canvas.drawLine(c - a, c - a, c + a, c + a, paint)
-                canvas.drawLine(c - a, c + a, c + a, c - a, paint)
+                canvas.drawLine(c - a, cy - a, c + a, cy + a, paint)
+                canvas.drawLine(c - a, cy + a, c + a, cy - a, paint)
             }
         }
     }
@@ -2920,6 +3142,13 @@ class Floater(val timer: Boolean) {
         private var downX = 0f; private var downY = 0f; private var startX = 0; private var startY = 0
         private var dragged = false
         private var snapped = false
+
+        // Which of the places at the foot it is snapped to: 0 the cross, 1 pause, 2 count up.
+        // Only the small timer has the other two.
+        private var spot = 0
+
+        /** Whether it is in the hand or on its way somewhere. */
+        fun busy() = pressed || springing || roaming || glide?.isRunning == true
         // The rest whose end the lens has swelled for.
         private var swelledFor = 0L
         private val dp = resources.displayMetrics.density
@@ -3472,15 +3701,28 @@ class Floater(val timer: Boolean) {
             var y = startY + (p1y - downY) + catchY * catchUp
             // Near the cross the lens is pulled onto it, and lets go again if dragged clear.
             val cx = x + lp.width / 2f; val cy = y + lp.height / 2f
-            val dist = Math.hypot((cx - crossX()).toDouble(), (cy - crossY()).toDouble()).toFloat()
+            // The small timer has three places there, and is pulled onto the nearest.
+            val three = timer && !big(context)
+            var near = 0
+            var dist = Math.hypot((cx - crossX()).toDouble(), (cy - crossY()).toDouble()).toFloat()
+            if (three) for (k in 1..2) {
+                val d2 = Math.hypot((cx - placeX(k)).toDouble(), (cy - crossY()).toDouble()).toFloat()
+                if (d2 < dist) { dist = d2; near = k }
+            }
             val was = snapped
-            snapped = dist < (if (snapped) 118 else 92) * dp
+            val wasSpot = spot
+            // (With three side by side each one's pull reaches less far, so that they do not fight.)
+            val reach = if (three) (if (snapped && spot == near) 66 else 52) else (if (snapped) 118 else 92)
+            snapped = dist < reach * dp
             if (snapped) {
-                x = crossX() - lp.width / 2f + (cx - crossX()) * 0.18f
+                spot = near
+                x = placeX(near) - lp.width / 2f + (cx - placeX(near)) * 0.18f
                 y = crossY() - lp.height / 2f + (cy - crossY()) * 0.18f
             }
-            if (snapped != was) {
+            if (snapped != was || (snapped && spot != wasSpot)) {
                 haptic(context, if (snapped) "click" else "tick")
+                target?.held = false
+                target?.which = spot
                 target?.held = snapped
             }
             lp.x = x.toInt(); lp.y = y.toInt()
@@ -3814,6 +4056,22 @@ class Floater(val timer: Boolean) {
                 channel?.invokeMethod("lensAt", null)
             }
             animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
+            trayAfter(450)
+            // (A touch that was taken away while on pause or count up does neither, and is no throw at the cross.)
+            if (!up && spot != 0) { snapped = false; spot = 0; target?.held = false }
+            if (up && snapped && spot != 0) {
+                // Let go on pause or on count up: that is done, and the timer goes back to
+                // where it was picked up from.
+                val what = spot
+                snapped = false
+                spot = 0
+                target?.held = false
+                target?.fall()
+                haptic(context, "thud")
+                timerDo(context, what)
+                glideTo(startX.toFloat(), startY.toFloat(), 300)
+                return
+            }
             if (up && wouldTuck) {
                 tuckIn(lp.x + lp.width / 2f > resources.displayMetrics.widthPixels / 2f)
             } else {
@@ -3830,6 +4088,9 @@ class Floater(val timer: Boolean) {
             lag()
             try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, lp) } catch (ex: Exception) {}
         }
+
+        /** The middle of each of the timer's places at the foot: 0 the cross, 1 pause to its left, 2 count up to its right. */
+        private fun placeX(k: Int) = crossX() + (if (k == 1) -SIDE else if (k == 2) SIDE else 0) * dp
 
         /** The middle of the cross, on the screen. */
         private fun crossX() = resources.displayMetrics.widthPixels / 2f
@@ -3882,7 +4143,9 @@ class Floater(val timer: Boolean) {
                     swallowing = false
                     afterSwallow = null
                     if (wasWorkout) {
+                        // The timer on the cross: it is stopped, and off the screen. A new rest brings it back.
                         dismissed = true
+                        if (!timerOff) channel?.invokeMethod("timerOff", null)
                     } else {
                         // Dropped on the cross, nothing floats: a guest goes, and so does what it stood in for.
                         guest = false
@@ -4049,6 +4312,9 @@ class Floater(val timer: Boolean) {
             }
             when (e.actionMasked) {
                 android.view.MotionEvent.ACTION_DOWN -> {
+                    closeTray(context)
+                    spot = 0
+                    target?.which = 0
                     pressed = true
                     sizing = false
                     atEnd = false

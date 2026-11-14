@@ -329,6 +329,12 @@ class RestBubble with WidgetsBindingObserver {
         onRest?.call(false);
       case 'timerMode':
         toggleMode();
+      case 'timerUp':
+        // Count up, from nothing.
+        if (!countUp.value) {
+          toggleMode();
+        }
+        onTimer?.call('reset');
       case 'unpinned':
         setPin(null);
       case 'lensAt':

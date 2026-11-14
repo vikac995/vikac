@@ -6676,7 +6676,7 @@ class _ButtonSign extends CustomPainter {
       _FanMark(blobs, fold: a).paint(canvas, size);
     }
     // The X unfolds over the second half, and may swing a little past its size.
-    final double b = ((open - 0.42) / 0.58).clamp(0.0, 1.25);
+    final double b = ((open - 0.5) / 0.5).clamp(0.0, 1.25);
     final double c = cog.clamp(0.0, 1.0);
     if (b > 0.001 && c < 0.999) {
       final double arm = 8.6 * u * b * (1 - c),

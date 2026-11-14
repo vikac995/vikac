@@ -1,5 +1,28 @@
 # Lumen changelog
 
+## Prism, build 97 (14 November 2026)
+
+**File:** `releases/prism-build-97.apk`
+
+Needs Play Protect paused to install.
+
+**The timer's own places to be dropped on, and its own controls.**
+
+- **Picked up small, the timer has three places at the foot of the screen:** pause on the left, the cross in the middle, and a stopwatch with an arrow up on the right. It is pulled onto whichever it is nearest, and that one lights up.
+  - **The cross stops the timer and takes it off the screen.** Nothing goes on running behind. (It used to hide it for that workout while the rest went on.) To keep it running out of the way, push it into a side instead. A new rest, or "Timer" from the blobs, brings it back.
+  - **Pause:** the timer stands, and flies back to where it was picked up from. Dropped there again, it goes on; the sign is then the one for going on.
+  - **Count up:** it counts up from nothing, and flies back to where it was picked up from.
+- **Large, the timer carries the same three under it,** in the same order: pause, the cross, count up. They are there while it lies still and go the moment it is touched. Where there is no room under it they sit over it. A tap does what dropping it there would.
+- **Large, only the cross is at the foot,** as large and as easy to hit as it was.
+- "Large" is from a little over twice its smallest size. Resize it past that and the controls come; back under it and the three places return.
+- The blob's cross is as it was.
+
+**Also**
+- The button's sign: the X no longer begins to unfold before the fan has finished folding, so the two are never seen on top of one another.
+
+**Checked:** it compiles; the Prism half of the long test in my preview.
+**Not checked:** on a phone, any of it. All of this is on Android's side and has never run. The signs for pause and count up are drawn by hand and I have not seen them.
+
 ## Prism, build 96 (14 November 2026)
 
 **File:** `releases/prism-build-96.apk`
