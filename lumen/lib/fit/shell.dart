@@ -991,6 +991,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             ),
           ),
         ),
+        // A plus in the same white as the line: something can be put here.
+        child: Icon(
+          Icons.add_rounded,
+          size: 30,
+          color: Colors.white.withValues(alpha: 0.62),
+        ),
       );
     }
     return Container(
@@ -4369,17 +4375,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                           onTap: () => _pickFor(i),
                           child: Padding(
                             padding: const EdgeInsets.all(6),
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: <Widget>[
-                                _blobDisc(i),
-                                const Positioned(
-                                  right: -4,
-                                  top: -4,
-                                  child: _EditMark(icon: Icons.edit_rounded),
-                                ),
-                              ],
-                            ),
+                            child: _blobDisc(i),
                           ),
                         ),
                       );
@@ -4891,14 +4887,15 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                                     child: _blobDisc(100 + g),
                                                   ),
                                                 ),
-                                                const Positioned(
-                                                  right: 2,
-                                                  top: 0,
-                                                  child: _EditMark(
-                                                    icon: Icons.edit_rounded,
-                                                    size: 24,
+                                                if (!_isEmpty(100 + g))
+                                                  const Positioned(
+                                                    right: 2,
+                                                    top: 0,
+                                                    child: _EditMark(
+                                                      icon: Icons.edit_rounded,
+                                                      size: 24,
+                                                    ),
                                                   ),
-                                                ),
                                                 if (!_isEmpty(100 + g))
                                                   Positioned(
                                                     left: 2,

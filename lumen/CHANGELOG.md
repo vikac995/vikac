@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 85 (14 November 2026)
+
+**File:** `releases/prism-build-85.apk`
+
+Needs Play Protect paused to install.
+
+- **An empty place has a plus in it, and no pencil.** The plus is the same white as the ring. This is so for an empty blob out in the middle and for a swipe that does nothing. A tap on it still asks what to put there.
+
+**Checked:** looked at in my preview.
+**Not checked:** on a phone.
+
 ## Prism, build 84 (14 November 2026)
 
 **File:** `releases/prism-build-84.apk`
