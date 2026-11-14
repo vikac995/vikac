@@ -265,6 +265,126 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     );
   }
 
+  /// Where the floating elements may be seen. Opened from the cog on the button.
+  void _showFloating() {
+    Haptics.tick();
+    Diag.instance.event('floating elements: settings');
+    showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: 'Close',
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (BuildContext context, _, _) {
+        final LumenColors c = LumenColors.of(context);
+        final RestBubble b = RestBubble.instance;
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              10,
+              0,
+              10,
+              MediaQuery.paddingOf(context).bottom + 10,
+            ),
+            child: Material(
+              type: MaterialType.transparency,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: ShapeDecoration(
+                  color: c.surface,
+                  shape: RoundedSuperellipseBorder(
+                    borderRadius: BorderRadius.circular(36),
+                    side: BorderSide(color: c.hairline),
+                  ),
+                ),
+                child: ListenableBuilder(
+                  listenable: Listenable.merge(<Listenable>[
+                    b.floatIn,
+                    b.floatOut,
+                  ]),
+                  builder: (BuildContext context, Widget? _) => Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Text(
+                        'Floating elements',
+                        style: LumenType.display(22, weight: 700, color: c.ink),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'A blob you put down, and the workout timer, float over the screen. Choose where.',
+                        style: LumenType.text(
+                          13.5,
+                          color: c.inkMuted,
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SwitchLine(
+                        label: 'In Prism',
+                        value: b.floatIn.value,
+                        onChanged: (bool v) => _setFloating(inPrism: v),
+                      ),
+                      const SizedBox(height: 12),
+                      SwitchLine(
+                        label: 'Over other apps',
+                        value: b.floatOut.value,
+                        onChanged: (bool v) => _setFloating(overApps: v),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        !b.canFloat
+                            ? 'With both off nothing floats, and a blob dragged out goes back to its place.'
+                            : (!b.floatIn.value
+                                  ? 'In Prism they are then seen only while the blobs are out, so that one can be put back.'
+                                  : (!b.floatOut.value
+                                        ? 'They are then gone as soon as Prism is left.'
+                                        : 'Drop one on the cross, or push it into a side, to put it away.')),
+                        style: LumenType.text(
+                          13,
+                          color: c.inkMuted,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder:
+          (
+            BuildContext context,
+            Animation<double> a,
+            _,
+            Widget child,
+          ) => FadeTransition(
+            opacity: a,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.08),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
+              child: child,
+            ),
+          ),
+    );
+  }
+
+  void _setFloating({bool? inPrism, bool? overApps}) {
+    Haptics.tick();
+    RestBubble.instance.setFloating(inPrism: inPrism, overApps: overApps);
+    if (!RestBubble.instance.canFloat &&
+        RestBubble.instance.pinned.value != null) {
+      // Nothing floats any more: what was floating is a blob in the menu again.
+      RestBubble.instance.setPin(null);
+      _sendPin();
+    }
+  }
+
   // The blob being carried is held against a side of the screen, where the lens rests.
   bool _stuck = false;
   // How large the lens is, as Android last said, so a blob stops where the lens would rest.
@@ -694,7 +814,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   /// and the button swells to take it: letting go there launches it. Over the other blobs they
   /// make room where it would sit; clear of them, they close ranks.
   void _blobDrag(int i, Offset at, Offset button) {
-    final bool near = (at - button).distance < (_armed ? 80 : 62);
+    final bool near =
+        RestBubble.instance.canFloat &&
+        (at - button).distance < (_armed ? 80 : 62);
     if (near != _armed) {
       _armed = near;
       near ? Haptics.settle() : Haptics.tick();
@@ -733,8 +855,21 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     if (_dragI != i) {
       return;
     }
-    // On the button, or flicked at it: the button shoots it out to the side.
     final Offset coast = _dragAt.value + velocity * 0.16;
+    if (!RestBubble.instance.canFloat) {
+      // Floating elements are switched off: it goes back among the others, where it was or
+      // where they made room for it.
+      _kick.animateTo(1);
+      _stuck = false;
+      Haptics.thud();
+      _settle(
+        i,
+        _gapAt ?? _others(i).where((int k) => k < i).length,
+        _dragAt.value,
+      );
+      return;
+    }
+    // On the button, or flicked at it: the button shoots it out to the side.
     if (_armed || (velocity.distance > 700 && (coast - button).distance < 84)) {
       _gapAt = null;
       _fire(i, button);
@@ -1080,6 +1215,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   final Stopwatch _held = Stopwatch();
   bool _drawerOpen = false, _lifted = false;
   Timer? _liftTimer;
+  // Holding the button while the blobs are out: they can all be changed, as when a blob is held.
+  Timer? _holdTimer;
+  bool _heldEdit = false;
   Offset _home = Offset.zero;
   LensTargetState? _target, _pill;
   // On its way home the lens is a blob of the button's colour, not glass.
@@ -1138,6 +1276,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     settings.addListener(_sendPinData);
     RestBubble.instance.onTheme = _sendPinData;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      RestBubble.instance.tellFloating();
       _sendPinData();
       _sendPin();
       _sendBlobs();
@@ -1574,6 +1713,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         return;
       }
       _moved = true;
+      _holdTimer?.cancel();
       _setOpen(false);
     }
     if (!_lifted) {
@@ -1621,12 +1761,18 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   void _buttonUp() {
     _liftTimer?.cancel();
+    _holdTimer?.cancel();
     _kick.animateTo(1);
     if (_downAt == null) {
       return;
     }
     final Offset travel = (_lastAt ?? _downAt!) - _downAt!;
     _downAt = null;
+    if (_heldEdit) {
+      // The hold has done its work: letting go does nothing more.
+      _heldEdit = false;
+      return;
+    }
     if (_drawerOpen) {
       // While the drawer is up, the button only closes it.
       if (_lifted) {
@@ -1639,6 +1785,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         travel.dx.abs() < -travel.dy * 0.8) {
       // A quick flick upward, let go before the button ever became a lens: the app drawer.
       _setDrawer(true);
+    } else if (!_lifted && _open && _editing) {
+      // While the blobs are being changed the button wears a cog: a tap on it is for the
+      // floating elements, where they may be seen.
+      _showFloating();
     } else if (!_lifted) {
       // A tap, or a small nudge that was neither a flick nor a carry.
       _setOpen(!_open);
@@ -2542,7 +2692,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   );
                 },
               ),
-            // While the blobs are being changed, a line above them says what a tap does.
+            // While the blobs are being changed: the switch for their names, above them. (The
+            // marks on the blobs say the rest.)
             if (_editing && _open)
               Positioned(
                 left: 0,
@@ -2605,30 +2756,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                     ),
                                   ),
                                 ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        IgnorePointer(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: const ShapeDecoration(
-                              color: Color(0xA6000000),
-                              shape: StadiumBorder(),
-                            ),
-                            child: Text(
-                              'Tap a blob to change it',
-                              textAlign: TextAlign.center,
-                              textScaler: TextScaler.noScaling,
-                              style: LumenType.text(
-                                15,
-                                weight: 620,
-                                color: Colors.white.withValues(alpha: 0.92),
-                                height: 1.2,
                               ),
                             ),
                           ),
@@ -2718,6 +2845,21 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                       ..start();
                     _moved = false;
                     _lifted = false;
+                    // Held still while the blobs are out: the same as holding a blob.
+                    _heldEdit = false;
+                    _holdTimer?.cancel();
+                    if (_open && !_editing && !_drawerOpen) {
+                      _holdTimer = Timer(const Duration(milliseconds: 450), () {
+                        if (_downAt != null &&
+                            !_moved &&
+                            _open &&
+                            !_editing &&
+                            mounted) {
+                          _heldEdit = true;
+                          _setEditing(true);
+                        }
+                      });
+                    }
                     // A finger that moved and then stopped sends no more movement, so the wait is also timed.
                     _liftTimer?.cancel();
                     _liftTimer = Timer(const Duration(milliseconds: 200), () {
@@ -2778,14 +2920,49 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                       ),
                                     ],
                                   ),
-                                  child: Transform.rotate(
-                                    angle:
-                                        _t.value.clamp(0.0, 1.2) * math.pi / 4,
-                                    child: Icon(
-                                      Icons.add_rounded,
-                                      color: c.onAccent,
-                                      size: 34,
-                                    ),
+                                  child: Stack(
+                                    clipBehavior: Clip.none,
+                                    alignment: Alignment.center,
+                                    children: <Widget>[
+                                      Transform.rotate(
+                                        angle:
+                                            _t.value.clamp(0.0, 1.2) *
+                                            math.pi /
+                                            4,
+                                        child: Icon(
+                                          Icons.add_rounded,
+                                          color: c.onAccent,
+                                          size: 34,
+                                        ),
+                                      ),
+                                      // While the blobs are being changed: the same white mark
+                                      // they wear, with a cog. A tap is then for the floating elements.
+                                      if (_editing && _open)
+                                        Positioned(
+                                          right: -3,
+                                          top: -3,
+                                          child: Container(
+                                            width: 25,
+                                            height: 25,
+                                            decoration: const ShapeDecoration(
+                                              color: Colors.white,
+                                              shape: CircleBorder(),
+                                              shadows: <BoxShadow>[
+                                                BoxShadow(
+                                                  color: Color(0x55000000),
+                                                  blurRadius: 6,
+                                                  offset: Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            child: const Icon(
+                                              Icons.settings_rounded,
+                                              size: 15,
+                                              color: Color(0xFF15171C),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
                         ),

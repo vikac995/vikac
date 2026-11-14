@@ -34,6 +34,15 @@ class RestBubble with WidgetsBindingObserver {
     } catch (_) {
       // Never chosen: the container.
     }
+    try {
+      final List<String> where = _floatFile.readAsStringSync().trim().split(
+        ' ',
+      );
+      floatIn.value = where[0] != '0';
+      floatOut.value = where.length < 2 || where[1] != '0';
+    } catch (_) {
+      // Never chosen: both.
+    }
     refresh();
   }
 
@@ -113,6 +122,36 @@ class RestBubble with WidgetsBindingObserver {
     } catch (_) {
       // Not saved: it is the container next time.
     }
+  }
+
+  /// Where the floating elements (a blob that was put down, the workout's timer) may be seen:
+  /// over Prism itself, and over other apps. Both, unless the person chooses otherwise.
+  final ValueNotifier<bool> floatIn = ValueNotifier<bool>(true);
+  final ValueNotifier<bool> floatOut = ValueNotifier<bool>(true);
+
+  /// Whether there can be floating elements at all.
+  bool get canFloat => floatIn.value || floatOut.value;
+
+  File get _floatFile => File('${_styleFile.parent.path}/prism_floating');
+
+  void setFloating({bool? inPrism, bool? overApps}) {
+    floatIn.value = inPrism ?? floatIn.value;
+    floatOut.value = overApps ?? floatOut.value;
+    try {
+      _floatFile.writeAsStringSync(
+        '${floatIn.value ? 1 : 0} ${floatOut.value ? 1 : 0}',
+      );
+    } catch (_) {
+      // Not saved: both are on next time.
+    }
+    tellFloating();
+  }
+
+  /// Tells Android where the floating elements may be seen.
+  void tellFloating() {
+    _device
+        .invokeMethod<void>('floating', <bool>[floatIn.value, floatOut.value])
+        .catchError((Object _) {});
   }
 
   /// What is pinned from the blob menu to float over the phone: 'action:3', 'app:com.whatsapp', or null.

@@ -1,5 +1,27 @@
 # Lumen changelog
 
+## Prism, build 73 (14 November 2026)
+
+**File:** `releases/prism-build-73.apk`
+
+Like 71 and 72, it needs Play Protect paused to install. It contains build 72, which was never installed on its own.
+
+- **A cog on the X while the blobs are being changed.** The same white mark the blobs wear, with a cog. A tap on the button then opens "Floating elements", where they may be seen: "In Prism" and "Over other apps". Both are on to start with. The choice is kept.
+  - *In Prism* off: they are not shown over Prism, except while the blobs are out, so that one can still be dragged back among them.
+  - *Over other apps* off: they are gone as soon as Prism is left, and back when you return.
+  - Both off: nothing floats. What was floating is a blob in the menu again, a blob dragged out goes back to its place, and the button does not offer to take one.
+- **Holding the X does what holding a blob does.** With the blobs out, hold the X: the marks appear on the blobs and the cog on the X.
+- **"Tap a blob to change it" is gone.** "Hide names" sits where it was.
+- While the blobs are being changed, a tap on the X is for the cog, so it no longer closes them. A tap beside the blobs, or back, ends the changing.
+
+**What to look for:**
+- Hold the X with the blobs out: pencils and cog. Tap the X: the panel with the two switches.
+- Switch "In Prism" off and close the blobs: the chat head should go. Open the blobs: it should be back, and it should go back into the row when dragged there.
+- Switch "Over other apps" off and open another app: no chat head there.
+
+**Checked:** it compiles. In my preview: holding the X, the cog, the panel and its switches, the choice being kept, and the edit state without the line of text.
+**Not checked:** on a phone. What the two switches do to the chat head itself is on the Android side and unseen. The chat head's own menu (the one around it in other apps) has no cog.
+
 ## Prism, build 72 (14 November 2026)
 
 **File:** `releases/prism-build-72.apk`

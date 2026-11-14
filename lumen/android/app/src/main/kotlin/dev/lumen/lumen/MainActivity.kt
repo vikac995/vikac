@@ -262,9 +262,18 @@ class MainActivity : FlutterActivity() {
                 // Whether the blobs show their names under them.
                 RestBubble.blobNames = (call.arguments as? Boolean) ?: true
                 result.success(null)
+            } else if (call.method == "floating") {
+                // Where the floating elements may be seen: over Prism itself, and over other apps.
+                val where = call.arguments as? List<*>
+                RestBubble.floatIn = (where?.getOrNull(0) as? Boolean) ?: true
+                RestBubble.floatOut = (where?.getOrNull(1) as? Boolean) ?: true
+                RestBubble.refresh(applicationContext)
+                result.success(null)
             } else if (call.method == "fan") {
                 // Where Prism's own blobs sit while they are out, or nothing when they are not.
                 RestBubble.fan = (call.arguments as? List<*>)?.map { (it as Number).toFloat() }
+                // (With floating elements switched off in Prism, they are seen there only while the blobs are out.)
+                if (!RestBubble.floatIn) RestBubble.refresh(applicationContext)
                 result.success(null)
             } else if (call.method == "blobs") {
                 // What the blobs in the menu are, in order, so the floating lens can open the same menu.
@@ -579,6 +588,14 @@ object RestBubble {
     // Where Prism's own blobs sit while they are out: the middle of its button, and how near
     // and how far from it counts as among them. A lens let go among them is put back with them.
     var fan: List<Float>? = null
+
+    // Where the floating elements may be seen, as chosen in Prism: over Prism itself, and over
+    // other apps. Switched off in Prism, they are still seen there while its blobs are out, so
+    // that one can be put back among them. Switched off in both, there are none.
+    var floatIn = true
+    var floatOut = true
+
+    private fun seen(): Boolean = if (foreground) (floatIn || (floatOut && fan != null)) else floatOut
 
     // Whether the blobs show their names under them, as chosen in Prism. Without them the
     // blobs sit a little nearer.
@@ -1104,7 +1121,7 @@ object RestBubble {
     fun refresh(context: Context) {
         // A lens is being closed on the cross: what should be there is settled when that is done.
         if (swallowing) return
-        val want = mode() != 0 && android.provider.Settings.canDrawOverlays(context)
+        val want = mode() != 0 && seen() && android.provider.Settings.canDrawOverlays(context)
         if (!want) {
             remove(context)
             return
