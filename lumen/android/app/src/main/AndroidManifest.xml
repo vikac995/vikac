@@ -1,9 +1,12 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- For the two-finger swipe that pulls the notifications down. Granted without asking. -->
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <!-- For the rest timer that floats over other apps. The person grants it on Android's own screen. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- For today's screen time on Home. The person grants it on Android's own screen ("usage access"). -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
     <application
         android:label="${appLabel}"
         android:name="${applicationName}"

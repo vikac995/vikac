@@ -12,6 +12,7 @@ import 'lens.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'look.dart';
+import 'screen_time.dart';
 
 const List<String> _plan = <String>[
   'Overhead press',
@@ -431,6 +432,9 @@ class HomePage extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 12),
+            // Today's screen time, as Android keeps it.
+            const ScreenTimeCard(),
           ],
         );
       },

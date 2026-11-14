@@ -346,6 +346,78 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Throwable) {
                     false
                 })
+            } else if (call.method == "usageAllowed") {
+                // Whether the person has given Prism usage access, for screen time.
+                val ops = getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+                val mode = if (Build.VERSION.SDK_INT >= 29) {
+                    ops.unsafeCheckOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
+                } else {
+                    @Suppress("DEPRECATION")
+                    ops.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
+                }
+                result.success(mode == android.app.AppOpsManager.MODE_ALLOWED)
+            } else if (call.method == "askUsage") {
+                try {
+                    startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                } catch (e: Exception) {}
+                result.success(null)
+            } else if (call.method == "screenTime") {
+                // Today's screen time, worked out from Android's own record of which app was in
+                // front when, since midnight. Read once, off the main thread; nothing is kept.
+                Thread {
+                    val out = HashMap<String, Any>()
+                    try {
+                        val um = getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
+                        val cal = java.util.Calendar.getInstance()
+                        cal.set(java.util.Calendar.HOUR_OF_DAY, 0); cal.set(java.util.Calendar.MINUTE, 0)
+                        cal.set(java.util.Calendar.SECOND, 0); cal.set(java.util.Calendar.MILLISECOND, 0)
+                        val now = System.currentTimeMillis()
+                        val events = um.queryEvents(cal.timeInMillis, now)
+                        val e = android.app.usage.UsageEvents.Event()
+                        // For each app: since when it has been in front, and how many of its screens are.
+                        val since = HashMap<String, Long>()
+                        val open = HashMap<String, Int>()
+                        val per = HashMap<String, Long>()
+                        var unlocks = 0
+                        fun close(pkg: String, at: Long) {
+                            val s0 = since.remove(pkg) ?: return
+                            open.remove(pkg)
+                            per[pkg] = (per[pkg] ?: 0L) + Math.max(0L, at - s0)
+                        }
+                        while (events.hasNextEvent()) {
+                            events.getNextEvent(e)
+                            val pkg = e.packageName ?: continue
+                            when (e.eventType) {
+                                android.app.usage.UsageEvents.Event.ACTIVITY_RESUMED -> {
+                                    if ((open[pkg] ?: 0) == 0) since[pkg] = e.timeStamp
+                                    open[pkg] = (open[pkg] ?: 0) + 1
+                                }
+                                android.app.usage.UsageEvents.Event.ACTIVITY_PAUSED -> {
+                                    val n = (open[pkg] ?: 0) - 1
+                                    if (n <= 0) close(pkg, e.timeStamp) else open[pkg] = n
+                                }
+                                // The screen went off: nothing is in use any more.
+                                android.app.usage.UsageEvents.Event.SCREEN_NON_INTERACTIVE -> for (k in since.keys.toList()) close(k, e.timeStamp)
+                                android.app.usage.UsageEvents.Event.KEYGUARD_HIDDEN -> unlocks++
+                            }
+                        }
+                        for (k in since.keys.toList()) close(k, now)
+                        // Prism itself is the home screen, and the system's own screens are not apps anyone uses.
+                        per.remove(packageName)
+                        per.remove("com.android.systemui")
+                        per.remove("com.sec.android.app.launcher")
+                        val sorted = per.entries.filter { it.value > 0 }.sortedByDescending { it.value }
+                        out["total"] = sorted.sumOf { it.value }
+                        out["unlocks"] = unlocks
+                        out["top"] = sorted.take(5).map {
+                            val label = try { packageManager.getApplicationLabel(packageManager.getApplicationInfo(it.key, 0)).toString() } catch (ex: Exception) { it.key }
+                            mapOf("label" to label, "ms" to it.value)
+                        }
+                    } catch (ex: Exception) {
+                        out["error"] = ex.javaClass.simpleName
+                    }
+                    runOnUiThread { result.success(out) }
+                }.start()
             } else if (call.method == "notesAllowed") {
                 result.success(RestBubble.notesAllowed(this))
             } else if (call.method == "askNotes") {

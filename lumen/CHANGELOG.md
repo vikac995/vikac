@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 111 (14 November 2026)
+
+**File:** `releases/prism-build-111.apk`
+
+Needs Play Protect paused to install. Can be installed over build 110. Asks for one new permission, which you give on Android's own screen: usage access.
+
+**Screen time on Home.** A card at the bottom of Home: how long the screen was in use today, how many times the phone was unlocked, and the three apps used longest, each with a bar.
+- **Until usage access is given** the card says so, with a button that opens Android's screen for it. Back in Prism, the card fills in.
+- **How it is worked out:** from Android's own record of which app was in front when, since midnight. The time with the screen off is not counted; Prism itself (the home screen) is left out.
+- **What it costs:** it is read when Home comes on screen, at most once a minute, off the main thread. Nothing runs in the background and nothing is kept.
+- The magnifying glass explains it like any other card.
+
+**Checked:** both sides compile; in my preview the card shows made-up figures.
+**Not checked:** on a phone, or how close its figures are to Samsung's Digital Wellbeing (they are worked out the same way, and may differ by a few minutes). Whether Google Play asks for a declaration for usage access: not yet looked up properly.
+
 ## Prism, build 110 (14 November 2026)
 
 **File:** `releases/prism-build-110.apk`
