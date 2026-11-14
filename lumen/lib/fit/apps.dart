@@ -769,6 +769,20 @@ class Apps extends ChangeNotifier {
   /// The same for the blobs, chosen on its own in the Blob panel.
   bool blobPrismIcons = true;
 
+  /// The app list as one list that scrolls, with letters at the side, instead of pages.
+  bool scrolling = false;
+  File get _scrollFile => File('${_iconsFile.parent.path}/prism_apps_scroll');
+
+  void setScrolling(bool v) {
+    scrolling = v;
+    try {
+      _scrollFile.writeAsStringSync(v ? '1' : '0');
+    } catch (_) {
+      // Not saved: pages next time.
+    }
+    notifyListeners();
+  }
+
   /// The apps' own icons are held while either of the two wants them.
   bool get _wantOwn => !prismIcons || !blobPrismIcons;
 
@@ -794,6 +808,11 @@ class Apps extends ChangeNotifier {
       blobPrismIcons = _blobIconsFile.readAsStringSync().trim() != '0';
     } catch (_) {
       // Never changed: Prism's icons.
+    }
+    try {
+      scrolling = _scrollFile.readAsStringSync().trim() == '1';
+    } catch (_) {
+      // Never changed: pages.
     }
   }
 

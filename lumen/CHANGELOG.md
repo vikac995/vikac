@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 116 (14 November 2026)
+
+**File:** `releases/prism-build-116.apk`
+
+Needs Play Protect paused to install. Can be installed over build 115.
+
+**The app list as a scrolling list.** Behind the app list's cog, a new switch: "Scrolling list". On, the pages give way to one list of every app that scrolls, with the letters down its right side.
+- **The letters:** a tap on one, or a finger sliding along them, takes the list to that letter at once. The letter under the finger lights in Prism's colour, and the first app of that letter (the one whose first letter is coloured) jumps, once. A small tick with each new letter.
+- **Taps** open apps, and choose them for a blob, as on the pages.
+- **What it costs:** rows are made only as they scroll into view, and each is drawn as one picture, as the pages are. The cog stays in the ring while the list scrolls.
+- Off, the pages are as they were. The choice is kept.
+
+**Checked:** it compiles; in my preview, the list, a tap on S, and a slide down the letters with Bank jumping at B and the list following to M.
+**Not checked:** on a phone; the jump at full speed.
+
 ## Prism, build 115 (14 November 2026)
 
 **File:** `releases/prism-build-115.apk`

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:material_ui/material_ui.dart';
 
 import 'dart:typed_data';
@@ -67,6 +68,54 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   );
   int _page = 0, _rows = 5, _pressed = -1;
 
+  // ---- The app list as one list that scrolls.
+  final ScrollController _list = ScrollController();
+  late final SpringValue _bounce = SpringValue(
+    this,
+    value: 1,
+    spring: Motions.expressiveFast,
+  );
+  int _bounceAt = -1;
+  String _letter = '';
+
+  /// The letters the apps begin with, in order, and the first app for each.
+  List<(String, int)> _letters() {
+    final List<(String, int)> out = <(String, int)>[];
+    final List<AppTile> all = Apps.instance.all;
+    for (int i = 0; i < all.length; i++) {
+      final String l = all[i].label.isEmpty
+          ? '#'
+          : all[i].label.substring(0, 1).toUpperCase();
+      if (out.isEmpty || out.last.$1 != l) {
+        out.add((l, i));
+      }
+    }
+    return out;
+  }
+
+  /// A finger on the letters at [y] of [height]: the list goes to that letter's first app,
+  /// and that app jumps.
+  void _toLetter(double y, double height, double rowH) {
+    final List<(String, int)> ls = _letters();
+    if (ls.isEmpty || !_list.hasClients) {
+      return;
+    }
+    final (String l, int i) =
+        ls[(y / height * ls.length).floor().clamp(0, ls.length - 1)];
+    if (l == _letter) {
+      return;
+    }
+    _letter = l;
+    Haptics.tick();
+    _list.jumpTo(
+      ((i ~/ _cols) * rowH).clamp(0.0, _list.position.maxScrollExtent),
+    );
+    setState(() => _bounceAt = i);
+    _bounce
+      ..jumpTo(1.22)
+      ..animateTo(1);
+  }
+
   void _unpress() {
     if (_pressed != -1 && mounted) {
       setState(() => _pressed = -1);
@@ -117,6 +166,129 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
         _aim();
       }
     }
+  }
+
+  /// Opens app [i], or picks it for a blob.
+  void _open(int i, Rect tile) {
+    final List<AppTile> all = Apps.instance.all;
+    if (i >= all.length) {
+      return;
+    }
+    if (widget.onPick != null && widget.pick != null) {
+      widget.onPick!('app:${all[i].package}');
+      return;
+    }
+    Diag.instance.event('drawer open app');
+    Apps.instance.launch(all[i], from: tile);
+  }
+
+  /// The app list as one list that scrolls, row by row, with the letters at the side. Rows are
+  /// made only as they come into view, and each is drawn as one picture, as the pages are.
+  Widget _scrolled(BuildContext context, BoxConstraints box, LumenColors c) {
+    final List<AppTile> all = Apps.instance.all;
+    final int rowsAll = (all.length / _cols).ceil();
+    final double rowH = box.maxHeight / _rows;
+    const double rail = 26;
+    final double w = box.maxWidth - rail;
+    final List<(String, int)> ls = _letters();
+    return Stack(
+      children: <Widget>[
+        Positioned(
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: w,
+          child: ListView.builder(
+            controller: _list,
+            physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+            itemExtent: rowH,
+            itemCount: rowsAll,
+            itemBuilder: (BuildContext context, int r) => GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapUp: (TapUpDetails d) {
+                final int col = (d.localPosition.dx / (w / _cols))
+                    .floor()
+                    .clamp(0, _cols - 1);
+                final double dpr = MediaQuery.devicePixelRatioOf(context);
+                final Offset centre =
+                    d.globalPosition -
+                    d.localPosition +
+                    Offset(w / _cols * (col + 0.5), 8 + _GridPainter._tile / 2);
+                _open(
+                  r * _cols + col,
+                  Rect.fromCenter(
+                    center: centre * dpr,
+                    width: _GridPainter._tile * dpr,
+                    height: _GridPainter._tile * dpr,
+                  ),
+                );
+              },
+              child: RepaintBoundary(
+                child: CustomPaint(
+                  size: Size(w, rowH),
+                  painter: _GridPainter(
+                    apps: all,
+                    from: r,
+                    to: r,
+                    dir: 0,
+                    rows: 1,
+                    cols: _cols,
+                    turn: kAlwaysDismissedAnimation,
+                    ink: c.ink.withValues(alpha: 0.84),
+                    accent: c.accent,
+                    surface: c.surface,
+                    counts: Notes.instance.counts.value,
+                    pressed: -1,
+                    bounceAt: _bounceAt ~/ _cols == r ? _bounceAt : -1,
+                    bounce: _bounceAt ~/ _cols == r ? _bounce : null,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        // The letters. A finger on them, or sliding along them, goes to that letter.
+        Positioned(
+          right: 0,
+          top: 0,
+          bottom: 0,
+          width: rail,
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints r) =>
+                // (Answered the instant the finger lands, and with every movement after: no
+                // waiting to see whether it is a tap or a drag. Lit until the finger leaves.)
+                Listener(
+                  key: Robot.key('letters'),
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: (PointerDownEvent d) =>
+                      _toLetter(d.localPosition.dy, r.maxHeight, rowH),
+                  onPointerMove: (PointerMoveEvent d) =>
+                      _toLetter(d.localPosition.dy, r.maxHeight, rowH),
+                  onPointerUp: (_) => setState(() => _letter = ''),
+                  onPointerCancel: (_) => setState(() => _letter = ''),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      for (final (String l, int _) in ls)
+                        Text(
+                          l,
+                          textScaler: TextScaler.noScaling,
+                          style: LumenType.text(
+                            11,
+                            weight: l == _letter ? 800 : 650,
+                            color: l == _letter ? c.accent : c.inkMuted,
+                            height: 1,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+          ),
+        ),
+      ],
+    );
   }
 
   /// The app list's own settings, behind the cog on its first page.
@@ -200,11 +372,21 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                           Apps.instance.setPrismIcons(v);
                         },
                       ),
+                      const SizedBox(height: 12),
+                      SwitchLine(
+                        key: Robot.key('appsScrolling'),
+                        label: 'Scrolling list',
+                        value: Apps.instance.scrolling,
+                        onChanged: (bool v) {
+                          Haptics.tick();
+                          Apps.instance.setScrolling(v);
+                        },
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         Apps.instance.prismIcons
-                            ? 'Every app in Prism\'s look: its mark in white, on a calm colour of its own. The blobs have a switch of their own, in the Blob panel.'
-                            : 'Every app with its own icon, as the phone has it. The blobs have a switch of their own, in the Blob panel.',
+                            ? 'Every app in Prism\'s look: its mark in white, on a calm colour of its own. The blobs have a switch of their own, in the Blob panel. A scrolling list has the letters at its side: slide along them.'
+                            : 'Every app with its own icon, as the phone has it. The blobs have a switch of their own, in the Blob panel. A scrolling list has the letters at its side: slide along them.',
                         style: LumenType.text(
                           13,
                           color: c.inkMuted,
@@ -228,6 +410,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     Notes.instance.counts.removeListener(_countsChanged);
     _rise.dispose();
     _ring.dispose();
+    _list.dispose();
+    _bounce.dispose();
     _turn.dispose();
     super.dispose();
   }
@@ -449,7 +633,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                     Expanded(
                       child: Text(
                         widget.pick == null
-                            ? _range
+                            ? (Apps.instance.scrolling ? '' : _range)
                             : (widget.pickTitle?.$2 ??
                                   (widget.pick!.isEmpty
                                       ? 'a blob'
@@ -468,7 +652,9 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                     GestureDetector(
                       key: Robot.key('drawerCog'),
                       behavior: HitTestBehavior.opaque,
-                      onTap: _page == 0 && widget.pick == null
+                      onTap:
+                          (_page == 0 || Apps.instance.scrolling) &&
+                              widget.pick == null
                           ? _showIconChoice
                           : null,
                       child: ListenableBuilder(
@@ -487,7 +673,9 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                 // On the first page, a cog: the app list's own settings.
                                 // On the others, which page this is.
                                 child: Center(
-                                  child: _page == 0 && widget.pick == null
+                                  child:
+                                      (_page == 0 || Apps.instance.scrolling) &&
+                                          widget.pick == null
                                       ? Icon(
                                           Icons.settings_rounded,
                                           size: 18,
@@ -581,44 +769,12 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
               Expanded(
                 child: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints box) =>
+                      Apps.instance.scrolling
+                      ? _scrolled(context, box, c)
                       // The tile answers the instant a finger lands, before anyone can tell whether it
                       // is a tap or a drag. Waiting to be sure costs a tenth of a second of nothing.
-                      Listener(
-                        onPointerDown: (PointerDownEvent d) {
-                          final int col =
-                              (d.localPosition.dx / (box.maxWidth / _cols))
-                                  .floor()
-                                  .clamp(0, _cols - 1);
-                          final int row =
-                              (d.localPosition.dy / (box.maxHeight / _rows))
-                                  .floor()
-                                  .clamp(0, _rows - 1);
-                          final int i = row * _cols + col;
-                          if (_page * _perPage + i < Apps.instance.all.length) {
-                            setState(() => _pressed = i);
-                            Haptics.tick();
-                          }
-                        },
-                        onPointerUp: (_) => _unpress(),
-                        onPointerCancel: (_) => _unpress(),
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onPanStart: (_) {
-                            _unpress();
-                            _settle();
-                          },
-                          // No scrolling. Up or left is forward, down or right is back, whichever way the finger mostly goes.
-                          onPanUpdate: (DragUpdateDetails d) => _drag(
-                            d.delta.dy.abs() >= d.delta.dx.abs()
-                                ? d.delta.dy
-                                : d.delta.dx,
-                          ),
-                          onPanEnd: (DragEndDetails d) {
-                            final Offset v = d.velocity.pixelsPerSecond;
-                            _release(v.dy.abs() >= v.dx.abs() ? v.dy : v.dx);
-                          },
-                          onPanCancel: () => _release(0),
-                          onTapUp: (TapUpDetails d) {
+                      : Listener(
+                          onPointerDown: (PointerDownEvent d) {
                             final int col =
                                 (d.localPosition.dx / (box.maxWidth / _cols))
                                     .floor()
@@ -627,63 +783,98 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                 (d.localPosition.dy / (box.maxHeight / _rows))
                                     .floor()
                                     .clamp(0, _rows - 1);
-                            final int i = _page * _perPage + row * _cols + col;
-                            if (i < Apps.instance.all.length &&
-                                widget.onPick != null &&
-                                widget.pick != null) {
-                              // Up to choose a blob's replacement: this one is it.
-                              widget.onPick!(
-                                'app:${Apps.instance.all[i].package}',
-                              );
-                            } else if (i < Apps.instance.all.length) {
-                              Diag.instance.event('drawer open app');
-                              // Where the tile is on the glass, in real pixels: the app opens out of it.
-                              final double dpr = MediaQuery.devicePixelRatioOf(
-                                context,
-                              );
-                              final Offset origin =
-                                  d.globalPosition - d.localPosition;
-                              final Offset centre =
-                                  origin +
-                                  Offset(
-                                    box.maxWidth / _cols * (col + 0.5),
-                                    box.maxHeight / _rows * row +
-                                        8 +
-                                        _GridPainter._tile / 2,
-                                  );
-                              final Rect tile = Rect.fromCenter(
-                                center: centre * dpr,
-                                width: _GridPainter._tile * dpr,
-                                height: _GridPainter._tile * dpr,
-                              );
-                              Apps.instance.launch(
-                                Apps.instance.all[i],
-                                from: tile,
-                              );
+                            final int i = row * _cols + col;
+                            if (_page * _perPage + i <
+                                Apps.instance.all.length) {
+                              setState(() => _pressed = i);
+                              Haptics.tick();
                             }
                           },
-                          // Its own layer: opening, closing and the ring never make the grid redraw.
-                          child: RepaintBoundary(
-                            child: CustomPaint(
-                              size: Size(box.maxWidth, box.maxHeight),
-                              painter: _GridPainter(
-                                apps: Apps.instance.all,
-                                from: _page,
-                                to: _toward,
-                                dir: _dir,
-                                rows: _rows,
-                                cols: _cols,
-                                turn: _turn,
-                                ink: c.ink.withValues(alpha: 0.84),
-                                accent: c.accent,
-                                surface: c.surface,
-                                counts: Notes.instance.counts.value,
-                                pressed: _pressed,
+                          onPointerUp: (_) => _unpress(),
+                          onPointerCancel: (_) => _unpress(),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onPanStart: (_) {
+                              _unpress();
+                              _settle();
+                            },
+                            // No scrolling. Up or left is forward, down or right is back, whichever way the finger mostly goes.
+                            onPanUpdate: (DragUpdateDetails d) => _drag(
+                              d.delta.dy.abs() >= d.delta.dx.abs()
+                                  ? d.delta.dy
+                                  : d.delta.dx,
+                            ),
+                            onPanEnd: (DragEndDetails d) {
+                              final Offset v = d.velocity.pixelsPerSecond;
+                              _release(v.dy.abs() >= v.dx.abs() ? v.dy : v.dx);
+                            },
+                            onPanCancel: () => _release(0),
+                            onTapUp: (TapUpDetails d) {
+                              final int col =
+                                  (d.localPosition.dx / (box.maxWidth / _cols))
+                                      .floor()
+                                      .clamp(0, _cols - 1);
+                              final int row =
+                                  (d.localPosition.dy / (box.maxHeight / _rows))
+                                      .floor()
+                                      .clamp(0, _rows - 1);
+                              final int i =
+                                  _page * _perPage + row * _cols + col;
+                              if (i < Apps.instance.all.length &&
+                                  widget.onPick != null &&
+                                  widget.pick != null) {
+                                // Up to choose a blob's replacement: this one is it.
+                                widget.onPick!(
+                                  'app:${Apps.instance.all[i].package}',
+                                );
+                              } else if (i < Apps.instance.all.length) {
+                                Diag.instance.event('drawer open app');
+                                // Where the tile is on the glass, in real pixels: the app opens out of it.
+                                final double dpr =
+                                    MediaQuery.devicePixelRatioOf(context);
+                                final Offset origin =
+                                    d.globalPosition - d.localPosition;
+                                final Offset centre =
+                                    origin +
+                                    Offset(
+                                      box.maxWidth / _cols * (col + 0.5),
+                                      box.maxHeight / _rows * row +
+                                          8 +
+                                          _GridPainter._tile / 2,
+                                    );
+                                final Rect tile = Rect.fromCenter(
+                                  center: centre * dpr,
+                                  width: _GridPainter._tile * dpr,
+                                  height: _GridPainter._tile * dpr,
+                                );
+                                Apps.instance.launch(
+                                  Apps.instance.all[i],
+                                  from: tile,
+                                );
+                              }
+                            },
+                            // Its own layer: opening, closing and the ring never make the grid redraw.
+                            child: RepaintBoundary(
+                              child: CustomPaint(
+                                size: Size(box.maxWidth, box.maxHeight),
+                                painter: _GridPainter(
+                                  apps: Apps.instance.all,
+                                  from: _page,
+                                  to: _toward,
+                                  dir: _dir,
+                                  rows: _rows,
+                                  cols: _cols,
+                                  turn: _turn,
+                                  ink: c.ink.withValues(alpha: 0.84),
+                                  accent: c.accent,
+                                  surface: c.surface,
+                                  counts: Notes.instance.counts.value,
+                                  pressed: _pressed,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
                 ),
               ),
             ],
@@ -713,7 +904,17 @@ class _GridPainter extends CustomPainter {
     required this.surface,
     required this.counts,
     required this.pressed,
-  }) : super(repaint: turn);
+    this.bounceAt = -1,
+    this.bounce,
+  }) : super(
+         repaint: bounce == null
+             ? turn
+             : Listenable.merge(<Listenable>[turn, bounce]),
+       );
+
+  /// The app (by its place in [apps]) that bounces, and how far through its bounce it is.
+  final int bounceAt;
+  final ValueListenable<double>? bounce;
 
   /// The panel's own colour, and how many notifications each app has.
   final Color surface;
@@ -979,6 +1180,10 @@ class _GridPainter extends CustomPainter {
         canvas
           ..save()
           ..translate(cw * (col + 0.5), ch * row + 8 + _tile / 2);
+        if (ia == bounceAt && bounce != null) {
+          // Found from the letters at the side: it jumps, once.
+          canvas.scale(bounce!.value);
+        }
         if (i == pressed && e <= 0) {
           // Pressed: it gives a little and lightens, at once.
           canvas.scale(0.9);
