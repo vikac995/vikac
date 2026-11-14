@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 90 (14 November 2026)
+
+**File:** `releases/prism-build-90.apk`
+
+Needs Play Protect paused to install.
+
+- **The button's sign is a small picture of the menu it opens.** One stem for each blob that would come out, all from one point at the foot. Each stem is a hair at the foot and thickens on the way up, and ends in a round dot of that blob's colour, standing where that blob will stand. Take a blob away, put one down as the chat head, change one or move one, and the sign changes with it. With three or fewer the dots are larger. With none, it is a plus.
+- Dots, not arrowheads: they are the blobs in small, and five of them stay clear of one another where five arrowheads did not.
+
+**Checked:** looked at in my preview with five, four and three blobs, dark and light.
+**Not checked:** on a phone. Real app colours: two neighbouring apps of a similar colour will give two similar dots.
+
 ## Prism, build 89 (14 November 2026)
 
 **File:** `releases/prism-build-89.apk`

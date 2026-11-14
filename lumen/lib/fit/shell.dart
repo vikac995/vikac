@@ -4872,12 +4872,35 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                                           color: Colors.white,
                                                           size: 34,
                                                         )
-                                                      : const CustomPaint(
-                                                          key: ValueKey<String>(
-                                                            'fan',
+                                                      : CustomPaint(
+                                                          key:
+                                                              const ValueKey<
+                                                                String
+                                                              >('fan'),
+                                                          size: const Size(
+                                                            38,
+                                                            38,
                                                           ),
-                                                          size: Size(34, 34),
-                                                          painter: _FanMark(),
+                                                          painter: _FanMark(<
+                                                            (double, Color)
+                                                          >[
+                                                            for (
+                                                              int i = 0;
+                                                              i < _n;
+                                                              i++
+                                                            )
+                                                              if (!_floating(
+                                                                    i,
+                                                                  ) &&
+                                                                  !_isEmpty(i))
+                                                                (
+                                                                  _seatAngle(
+                                                                    _seat[i]
+                                                                        .target,
+                                                                  ),
+                                                                  _blobColor(i),
+                                                                ),
+                                                          ]),
                                                         )),
                                           ),
                                         ],
@@ -6371,48 +6394,65 @@ class _ThreadPainter extends CustomPainter {
       old.colors.first != colors.first;
 }
 
-/// The button's own sign: three arrows fanning out of one point, as the blobs do.
+/// The button's own sign: a small picture of the menu it opens. One stem for each blob that
+/// would come out, from one point at the foot, thin there and thickening on the way, each
+/// ending in a dot of that blob's colour, standing where that blob will stand.
 class _FanMark extends CustomPainter {
-  const _FanMark();
+  const _FanMark(this.blobs);
+
+  /// For each blob: the angle of its seat as the menu has it, and its colour.
+  final List<(double, Color)> blobs;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double u = size.width / 34;
-    final Paint p = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.3 * u
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final Path path = Path();
-    void head(Offset tip, Offset way) {
-      final Offset d = way / way.distance, n = Offset(-d.dy, d.dx);
-      final Offset a = tip - d * 4.2 * u + n * 4.2 * u,
-          b = tip - d * 4.2 * u - n * 4.2 * u;
-      path
-        ..moveTo(a.dx, a.dy)
-        ..lineTo(tip.dx, tip.dy)
-        ..lineTo(b.dx, b.dy);
+    final double u = size.width / 38;
+    final Offset foot = Offset(19 * u, 31 * u);
+    final Paint ink = Paint()..color = Colors.white;
+    if (blobs.isEmpty) {
+      // Nothing to come out: a plain plus, to add something.
+      final Paint line = Paint()
+        ..color = Colors.white
+        ..strokeWidth = 3.3 * u
+        ..strokeCap = StrokeCap.round;
+      canvas
+        ..drawLine(Offset(19 * u, 9 * u), Offset(19 * u, 29 * u), line)
+        ..drawLine(Offset(9 * u, 19 * u), Offset(29 * u, 19 * u), line);
+      return;
     }
-
-    // Straight up.
-    path
-      ..moveTo(17 * u, 29 * u)
-      ..lineTo(17 * u, 5 * u);
-    head(Offset(17 * u, 5 * u), const Offset(0, -1));
-    // Out to each side, bending away as it goes.
-    for (final double s in <double>[-1, 1]) {
-      final Offset tip = Offset((17 + s * 14) * u, 19 * u);
-      path
-        ..moveTo(17 * u, 29 * u)
-        ..quadraticBezierTo((17 + s * 5) * u, 24 * u, tip.dx, tip.dy);
-      head(tip, Offset(s * 0.83, -0.56));
+    // Fewer blobs, larger dots; five still stand clear of one another.
+    final double dot = (blobs.length <= 3 ? 4.6 : 3.9) * u, reach = 21.5 * u;
+    for (final (double a, Color c) in blobs) {
+      final Offset way = Offset(-math.cos(a), -math.sin(a)),
+          side = Offset(-way.dy, way.dx),
+          tip = foot + way * reach;
+      // The stem: a hair at the foot, nearly the dot's width where it meets the dot.
+      final Offset neck = tip - way * dot * 0.6;
+      canvas.drawPath(
+        Path()
+          ..moveTo((foot - side * 0.35 * u).dx, (foot - side * 0.35 * u).dy)
+          ..lineTo((neck - side * dot * 0.46).dx, (neck - side * dot * 0.46).dy)
+          ..lineTo((neck + side * dot * 0.46).dx, (neck + side * dot * 0.46).dy)
+          ..lineTo((foot + side * 0.35 * u).dx, (foot + side * 0.35 * u).dy)
+          ..close(),
+        ink,
+      );
+      canvas.drawCircle(tip, dot, Paint()..color = c);
     }
-    canvas.drawPath(path, p);
+    canvas.drawCircle(foot, 1.4 * u, ink);
   }
 
   @override
-  bool shouldRepaint(_FanMark old) => false;
+  bool shouldRepaint(_FanMark old) {
+    if (old.blobs.length != blobs.length) {
+      return true;
+    }
+    for (int i = 0; i < blobs.length; i++) {
+      if (old.blobs[i] != blobs[i]) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 /// The small round mark things wear while the blobs are being changed: white with a dark sign
