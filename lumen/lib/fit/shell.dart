@@ -56,7 +56,48 @@ class Shell extends StatefulWidget {
   State<Shell> createState() => _ShellState();
 }
 
-class _ShellState extends State<Shell> with TickerProviderStateMixin {
+class _ShellState extends State<Shell>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
+  // ---- Giving memory back.
+  // Prism is a home screen: it must be there all day. Android closes apps that hold a lot of
+  // memory when they are out of sight. So whatever can be made again is let go: when Android
+  // asks, and when Prism has been out of sight for two minutes.
+  Timer? _freeLater;
+
+  void _freeMemory() {
+    PaintingBinding.instance.imageCache
+      ..clear()
+      ..clearLiveImages();
+    _imagePngs.clear();
+    _markPngs.clear();
+    Diag.instance.event('memory given back');
+  }
+
+  @override
+  void didHaveMemoryPressure() => _freeMemory();
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _freeLater?.cancel();
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      _freeLater = Timer(const Duration(minutes: 2), _freeMemory);
+    }
+  }
+
+  /// What Prism's side holds in pictures, in bytes: the picture cache, and the apps' icons.
+  (int cache, int icons) _pictureBytes() {
+    int icons = 0;
+    int of(ui.Image? i) => i == null ? 0 : i.width * i.height * 4;
+    for (final AppTile t in Apps.instance.all) {
+      icons += of(t.glyph) + of(t.picture);
+    }
+    for (final BlobApp a in BlobApps.instance.apps) {
+      icons += of(a.glyph) + of(a.icon) + of(a.picture);
+    }
+    return (PaintingBinding.instance.imageCache.currentSizeBytes, icons);
+  }
+
   static const double _barH = 66, _button = 64, _blob = 62, _reach = 178;
   int _tab = 0;
   double _barW = 0;
@@ -1595,6 +1636,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     Diag.instance.finished.addListener(_showReport);
+    WidgetsBinding.instance.addObserver(this);
     Diag.instance.autoScript = _robot;
     Diag.instance.longTest = _longTest;
     Diag.instance.drainTest = () => _longTest(
@@ -3536,7 +3578,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         if (_tab != 0) {
           _go(0);
         }
-        t.roundEnd(n, here);
+        final (int cache, int icons) = _pictureBytes();
+        t.roundEnd(n, <String, Object?>{...here, 'pictures': cache + icons});
         if (rounds <= 4) {
           t.note(
             'after round $n: Prism was using ${(((here['pss'] as num?) ?? 0) / 1024).toStringAsFixed(0)} MB, ${t.clock.elapsed.inMinutes} min in',
@@ -4297,6 +4340,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _freeLater?.cancel();
     for (final Timer t in _fuses) {
       t.cancel();
     }

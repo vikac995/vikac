@@ -55,6 +55,7 @@ class MainActivity : FlutterActivity() {
     override fun onStart() {
         super.onStart()
         for (b in Floaters) b.foreground = true
+        Floater.activity = java.lang.ref.WeakReference(this)
         // Prism itself is in front: no other app is.
         for (b in Floaters) b.frontApp = ""
         // A blob that only came along with an app gives way to whatever was floating before.
@@ -604,6 +605,9 @@ class Floater(val timer: Boolean) {
         // the timer must be for its controls to be under it instead (both in dp).
         private const val SIDE = 104
         private const val BIG = 170
+
+        /** Prism's own screen, while it exists: apps are opened from it when it is in front. */
+        var activity: java.lang.ref.WeakReference<MainActivity>? = null
     }
 
     /** Whether the timer is large enough to carry its controls under it. Then only the cross is at the foot. */
@@ -1385,12 +1389,13 @@ class Floater(val timer: Boolean) {
             val i = context.packageManager.getLaunchIntentForPackage(b.pkg)
             if (i != null) {
                 i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-                try {
-                    context.startActivity(i)
+                val how = launch(context, i)
+                lastTouch += "; ${b.pkg} opened $how"
+                if (!how.startsWith("could")) {
                     frontApp = b.pkg
                     // Opened from the lens's own menu: with following on, this one is in the lens now.
                     followTo(context, b)
-                } catch (e: Exception) {}
+                }
             } else {
                 haptic(context, "thud")
             }
@@ -1695,6 +1700,16 @@ class Floater(val timer: Boolean) {
                 "memory" -> {
                     val m = state(context)
                     m["pss"] = android.os.Debug.getPss()
+                    // Where it goes, in kilobytes: Java, native (the engine, pictures), graphics
+                    // (what the graphics chip holds for Prism), code, and the rest.
+                    try {
+                        val mi = android.os.Debug.MemoryInfo()
+                        android.os.Debug.getMemoryInfo(mi)
+                        for ((k, name) in listOf("java" to "summary.java-heap", "native" to "summary.native-heap", "graphics" to "summary.graphics",
+                                "code" to "summary.code", "stack" to "summary.stack", "other" to "summary.private-other", "system" to "summary.system")) {
+                            m["mem_$k"] = mi.getMemoryStat(name)?.toIntOrNull() ?: 0
+                        }
+                    } catch (e: Exception) {}
                     done(m)
                 }
                 // Prism is brought back to the front, from whatever app is there.
@@ -1954,6 +1969,26 @@ class Floater(val timer: Boolean) {
         }
     }
 
+    /**
+     * Opens an app from the floating blob. With Prism in front it is opened from Prism's own
+     * screen, which Android always allows; over another app, from the floating window itself.
+     * Says which, or why it could not.
+     */
+    private fun launch(context: Context, i: android.content.Intent): String {
+        val act = activity?.get()
+        return try {
+            if (act != null && foreground && !act.isFinishing) {
+                act.startActivity(i)
+                "from Prism's screen"
+            } else {
+                context.startActivity(i)
+                "from the floating window"
+            }
+        } catch (e: Exception) {
+            "could not: ${e.javaClass.simpleName}"
+        }
+    }
+
     /** Does what the pinned thing is, wherever the person is. */
     private fun usePinned(context: Context) {
         val p = pin ?: return
@@ -1963,10 +1998,9 @@ class Floater(val timer: Boolean) {
                 i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
                 // The lens stays where it is, over the app it has opened. From now that app is
                 // the one in front, and a tap on the lens is for its menu.
-                try {
-                    context.startActivity(i)
-                    frontApp = p.pkg
-                } catch (e: Exception) {}
+                val how = launch(context, i)
+                lastTouch += "; opened $how"
+                if (!how.startsWith("could")) frontApp = p.pkg
             } else {
                 haptic(context, "thud")
             }

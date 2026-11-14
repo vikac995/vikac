@@ -334,7 +334,7 @@ class TestRun {
           'ROUND BY ROUND. If smoothness falls, or memory or heat keeps rising, it shows here.',
         )
         ..writeln(
-          '${'round'.padRight(6)} ${'min in'.padLeft(6)} ${'frames'.padLeft(7)} ${'fps'.padLeft(6)} ${'late %'.padLeft(7)} ${'worst ms'.padLeft(9)} ${'memory MB'.padLeft(10)} ${'battery %'.padLeft(10)} ${'°C'.padLeft(5)}',
+          '${'round'.padRight(6)} ${'min in'.padLeft(6)} ${'frames'.padLeft(7)} ${'fps'.padLeft(6)} ${'late %'.padLeft(7)} ${'worst ms'.padLeft(9)} ${'memory MB'.padLeft(10)} ${'battery %'.padLeft(10)} ${'°C'.padLeft(5)}   memory: graphics / native / java / code / other / Prism\'s pictures, MB',
         );
       for (final (int n, int from, int to, Map<String, Object?> st, int mins)
           in rounds) {
@@ -342,7 +342,9 @@ class TestRun {
           scenes.sublist(from, to),
         );
         o.writeln(
-          '${'$n'.padRight(6)} ${'$mins'.padLeft(6)} ${'$frames'.padLeft(7)} ${_f(fps).padLeft(6)} ${_f(late).padLeft(7)} ${_f(worst).padLeft(9)} ${(_num(st['pss']) / 1024).round().toString().padLeft(10)} ${'${st['level'] ?? '?'}'.padLeft(10)} ${_f(_num(st['temp']) / 10).padLeft(5)}',
+          '${'$n'.padRight(6)} ${'$mins'.padLeft(6)} ${'$frames'.padLeft(7)} ${_f(fps).padLeft(6)} ${_f(late).padLeft(7)} ${_f(worst).padLeft(9)} ${(_num(st['pss']) / 1024).round().toString().padLeft(10)} ${'${st['level'] ?? '?'}'.padLeft(10)} ${_f(_num(st['temp']) / 10).padLeft(5)}   ${<String>[
+            for (final String k in const <String>['graphics', 'native', 'java', 'code', 'other']) (_num(st['mem_$k']) / 1024).round().toString(),
+          ].join(' / ')} / ${(_num(st['pictures']) / 1048576).round()}',
         );
       }
     }

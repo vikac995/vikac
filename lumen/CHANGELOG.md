@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 109 (14 November 2026)
+
+**File:** `releases/prism-build-109.apk`
+
+Needs Play Protect paused to install. Can be installed over build 108.
+
+**Stability first.** A home screen has to be there all day. The first steps:
+
+- **Prism gives memory back.** When Android says memory is short, and whenever Prism has been out of sight for two minutes, it lets go of every picture it can make again (cached pictures, and the pictures it prepared for the chat head). Android closes the apps that hold most when memory is short; this makes Prism one of the last.
+- **Where the memory goes, round by round.** The round-by-round table now splits Prism's memory into what the graphics chip holds for it, the engine's own, Java's, the code, the rest, and how much of it is pictures Prism made (the apps' icons and the cache). This is to find what made it grow from 777 to 921 MB across your runs, instead of guessing.
+- **The floating blob opens its app from Prism's own screen when Prism is in front.** In every phone run, a tap on the floating blob holding an app reached it and it tried to open the app, and the app did not come. Android allows an app to be opened from Prism's own screen without question; from a floating window it can refuse without saying so. Over another app it still opens from the floating window. The report now says which way it was opened, or why it could not be.
+
+**Checked:** both sides compile; in my preview the long test, and the round-by-round table with the new columns.
+**Not checked:** on a phone. Whether giving memory back lowers the figure, and whether the app now opens from the blob, are for the next run to show.
+
 ## Prism, build 108 (14 November 2026)
 
 **File:** `releases/prism-build-108.apk`
