@@ -27,6 +27,11 @@ class RestBubble with WidgetsBindingObserver {
     } catch (_) {
       // Never chosen: a countdown.
     }
+    try {
+      container.value = _styleFile.readAsStringSync().trim() != 'classic';
+    } catch (_) {
+      // Never chosen: the container.
+    }
     refresh();
   }
 
@@ -98,6 +103,29 @@ class RestBubble with WidgetsBindingObserver {
     }
   }
 
+  /// Which floating lens this is. True: a container, always the same glass button, that holds
+  /// what was put in it, and opens the blob menu when held. False: the lens as it was before,
+  /// which takes on the look of the thing pinned to it.
+  final ValueNotifier<bool> container = ValueNotifier<bool>(true);
+
+  File get _styleFile {
+    final Directory files = Directory(
+      '${Directory.systemTemp.parent.path}/files',
+    );
+    return File(
+      '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_lens_style',
+    );
+  }
+
+  void setContainer(bool v) {
+    container.value = v;
+    try {
+      _styleFile.writeAsStringSync(v ? 'container' : 'classic');
+    } catch (_) {
+      // Not saved: it is the container next time.
+    }
+  }
+
   /// What is pinned from the blob menu to float over the phone: 'action:3', 'app:com.whatsapp', or null.
   final ValueNotifier<String?> pinned = ValueNotifier<String?>(null);
 
@@ -123,6 +151,14 @@ class RestBubble with WidgetsBindingObserver {
   void tellPin(Map<String, Object>? pin) {
     _device.invokeMethod<void>('pin', pin).catchError((Object _) {});
   }
+
+  /// Tells Android what the blobs in the menu are, so the floating lens can open the same menu.
+  void tellBlobs(List<Map<String, Object>> blobs) {
+    _device.invokeMethod<void>('blobs', blobs).catchError((Object _) {});
+  }
+
+  /// A blob was put in the floating lens from its own menu (or taken out: null). Set by the shell.
+  void Function(String? key)? onPinned;
 
   /// Tells Android the numbers the pinned sheets show.
   void tellData(Map<String, Object> data) {
@@ -159,6 +195,8 @@ class RestBubble with WidgetsBindingObserver {
         toggleMode();
       case 'unpinned':
         setPin(null);
+      case 'pinned':
+        onPinned?.call(call.arguments as String?);
       case 'weigh':
         onWeigh?.call((call.arguments as num).toDouble());
       case 'food':

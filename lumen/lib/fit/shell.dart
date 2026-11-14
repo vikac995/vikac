@@ -70,8 +70,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   void _blobsChanged() {
     if (mounted) {
       setState(() {});
-      // The apps' pictures have arrived or the menu changed: the pinned lens may need its picture.
+      // The apps' pictures have arrived or the menu changed: the pinned lens may need its picture,
+      // and the floating lens's own menu shows these same blobs.
       _sendPin();
+      _sendBlobs();
     }
   }
 
@@ -113,6 +115,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     final LumenColors now = dark ? Look.instance.night : Look.instance.day;
     RestBubble.instance.tellData(<String, Object>{
       'light': !dark,
+      'container': RestBubble.instance.container.value,
       'haptics': settings.haptics,
       'accent': now.accent.toARGB32(),
       'onAccent': now.onAccent.toARGB32(),
@@ -159,6 +162,26 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       RestBubble.instance.tellPin(null);
       return;
     }
+    final Map<String, Object>? blob = await _blobMap(key);
+    if (blob != null) {
+      RestBubble.instance.tellPin(blob);
+    }
+  }
+
+  /// Tells Android what all the blobs in the menu are, in order.
+  Future<void> _sendBlobs() async {
+    final List<Map<String, Object>> all = <Map<String, Object>>[];
+    for (int i = 0; i < _n; i++) {
+      final Map<String, Object>? blob = await _blobMap(_pinKey(i));
+      if (blob != null) {
+        all.add(blob);
+      }
+    }
+    RestBubble.instance.tellBlobs(all);
+  }
+
+  /// One blob as Android needs it: its name, colour and picture. Null if its app is not known yet.
+  Future<Map<String, Object>?> _blobMap(String key) async {
     final String what = key.substring(key.indexOf(':') + 1);
     String name = '', package = '';
     Color color = const Color(0xFF5A6373);
@@ -176,7 +199,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         (BlobApp a) => a.package == what,
       );
       if (found.isEmpty) {
-        return; // Its app has not been found yet; this runs again when it has.
+        return null; // Its app has not been found yet; this runs again when it has.
       }
       final BlobApp a = found.first;
       name = a.name;
@@ -188,7 +211,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             .asUint8List();
       }
     }
-    RestBubble.instance.tellPin(<String, Object>{
+    return <String, Object>{
       'key': key,
       'kind': key.startsWith('action:') ? 'action' : 'app',
       'index': index,
@@ -197,7 +220,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       'color': color.toARGB32(),
       'picture': picture,
       'icon': ?icon,
-    });
+    };
   }
 
   Widget _blobFace(int i) {
@@ -331,6 +354,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         }
         _run(action);
       }
+      ..onPinned = (String? key) {
+        // Put in the floating lens from its own menu: Prism keeps it, and its blob wears the ring.
+        RestBubble.instance.setPin(key);
+        _sendPin();
+      }
+      ..container.addListener(_sendPinData)
       ..pinned.addListener(_pinChanged);
     fit.addListener(_sendPinData);
     // The sheets follow Prism's colours, so Android is told whenever those change.
@@ -340,6 +369,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _sendPinData();
       _sendPin();
+      _sendBlobs();
     });
     // Pressing the home button while Prism is the home screen: everything closes and Home shows.
     const MethodChannel('lumen/device')
@@ -2250,6 +2280,16 @@ void showPrismSettings(BuildContext context) {
                               value: RestBubble.instance.allowed.value,
                               // Android decides this, on its own screen. The switch only takes you there.
                               onChanged: (bool _) => RestBubble.instance.ask(),
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      ListenableBuilder(
+                        listenable: RestBubble.instance.container,
+                        builder: (BuildContext context, Widget? _) =>
+                            SwitchLine(
+                              label: 'The lens is a container (new)',
+                              value: RestBubble.instance.container.value,
+                              onChanged: RestBubble.instance.setContainer,
                             ),
                       ),
                       const SizedBox(height: 12),

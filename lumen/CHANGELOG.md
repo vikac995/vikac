@@ -1,5 +1,29 @@
 # Lumen changelog
 
+## Prism, build 64 (14 November 2026)
+
+**File:** `releases/prism-build-64.apk`
+
+The new version of the floating lens: a container. Build 63 is kept as the fallback in three ways: a switch in Prism's settings (**The lens is a container (new)**; off is the lens exactly as it was in build 63), the file `releases/prism-build-63.apk`, and the source in `backups/prism-build-63-source.zip`.
+
+- **The lens is always the same glass button, in your colour.** It no longer turns into the thing pinned to it. What you put in it sits inside as its blob, smaller, with the glass around it. The blob hangs back slightly when you move the lens and comes to rest in the middle.
+- **Hold the lens and the blob menu opens out of it,** with the click the button in Prism gives when held. These are the same blobs, on the same spring, in the same fan as in Prism, turned to face into the screen from wherever the lens is. It works over any app and in Prism.
+  - **Tap a blob:** it is done once. Its app opens, or (Log food, Weigh-in, a workout that is on) its sheet opens right there. What is in the lens does not change.
+  - **Hold a blob:** it goes into the lens with a thud, and replaces what was there. Holding the one already in the lens takes it out.
+  - **Without lifting:** hold the lens, slide onto a blob, let go. That uses the blob in one movement.
+  - A tap anywhere else, or the back button, closes the menu.
+- **A workout and something in the lens at the same time is now a stack.** The workout's timer lies on top while a workout is on. What you put in the lens waits underneath, and a small dot of its colour on the rim says so. Drop the timer on the cross and what is underneath shows. Drop that on the cross and it is taken out. Opening the workout page puts the timer back on top. In build 63 the workout kept the lens to itself, so pinning something during a workout showed nothing.
+- Tapping the lens does what it shows: the timer opens the workout's sheet, a blob does what the blob is. That is unchanged.
+
+**What to look for:**
+- Hold the lens at the right edge, at the left edge, near the top and near the bottom: the fan should turn so that every blob and its name is on the screen.
+- Whether the menu looks and moves like the one in Prism. It is drawn a second time on the Android side with the same numbers; I cannot see either on a real screen.
+- Put something in the lens during a workout: the dot should appear on the rim.
+- The back button with the menu open.
+
+**Checked:** it compiles, the Android code included.
+**Not checked:** on a phone. The menu, the container's look and the stack are new and written blind.
+
 ## Prism, build 63 (14 November 2026)
 
 **File:** `releases/prism-build-63.apk`

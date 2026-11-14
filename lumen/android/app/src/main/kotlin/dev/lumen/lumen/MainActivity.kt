@@ -233,22 +233,19 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "pin") {
                 // What is pinned from the blob menu to float over the phone, or nothing.
                 val a = call.arguments as? Map<*, *>
-                if (a == null) {
-                    RestBubble.pin = null
-                } else {
-                    val bytes = a["icon"] as? ByteArray
-                    val bmp = if (bytes != null) android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) else null
-                    RestBubble.pin = RestBubble.Pin(
-                        a["key"] as String, a["kind"] as String, (a["index"] as Number).toInt(), a["package"] as String,
-                        a["name"] as String, (a["color"] as Number).toInt(), bmp, a["picture"] as Boolean,
-                    )
-                }
+                RestBubble.pin = if (a == null) null else RestBubble.blobOf(a)
                 RestBubble.refresh(applicationContext)
+                result.success(null)
+            } else if (call.method == "blobs") {
+                // What the blobs in the menu are, in order, so the floating lens can open the same menu.
+                val list = call.arguments as? List<*>
+                RestBubble.blobs = list?.mapNotNull { (it as? Map<*, *>)?.let { m -> RestBubble.blobOf(m) } } ?: emptyList()
                 result.success(null)
             } else if (call.method == "pinData") {
                 // The numbers the pinned sheets show.
                 val a = call.arguments as Map<*, *>
                 RestBubble.light = a["light"] as Boolean
+                RestBubble.container = (a["container"] as? Boolean) ?: false
                 RestBubble.hapticsOn = a["haptics"] as Boolean
                 RestBubble.accent = (a["accent"] as Number).toInt()
                 RestBubble.onAccent = (a["onAccent"] as Number).toInt()
@@ -442,6 +439,26 @@ object RestBubble {
 
     const val OPEN_ACTION = "dev.lumen.OPEN_ACTION"
     var pin: Pin? = null
+
+    /**
+     * The lens's style. True: a container. It is always the same glass button in Prism's colour;
+     * what was put in it sits inside it as its blob; held, it opens the blob menu. False: the
+     * lens as it was at build 63, which takes on the look of the thing pinned to it.
+     */
+    var container = false
+
+    /** What the blobs in the menu are, in order: the same blobs Prism's own button shows. */
+    var blobs: List<Pin> = emptyList()
+    private var menu: Menu? = null
+
+    fun blobOf(a: Map<*, *>): Pin {
+        val bytes = a["icon"] as? ByteArray
+        val bmp = if (bytes != null) android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size) else null
+        return Pin(
+            a["key"] as String, a["kind"] as String, (a["index"] as Number).toInt(), a["package"] as String,
+            a["name"] as String, (a["color"] as Number).toInt(), bmp, a["picture"] as Boolean,
+        )
+    }
     var weight = 80.0
     var kcalLeft = 0
     var meals: List<Meal> = emptyList()
@@ -544,17 +561,142 @@ object RestBubble {
     }
 
     /**
-     * Which lens is due. There is one place for a lens: a workout has it while it is on (1);
-     * otherwise a pinned thing has it (2); otherwise there is none (0).
+     * What the lens shows. There is one lens. A workout has it while it is on (1); otherwise the
+     * thing put in it has it (2); otherwise there is no lens (0).
+     *
+     * As a container, the two are a stack: the workout lies on top and the other thing waits
+     * underneath, so closing the workout's timer shows what is underneath. As the lens was
+     * before, a workout that is on keeps the lens to itself even after its timer is closed.
      */
     private fun mode(): Int = when {
-        active -> if (!dismissed) 1 else 0
+        active && !dismissed -> 1
+        active && !container -> 0
         pin != null && !awayInApp -> 2
         else -> 0
     }
 
-    /** The colour the lens is tinted with. */
-    private fun lensColor(): Int = if (active) accent else (pin?.color ?: accent)
+    /** The colour the lens is tinted with. A container is always Prism's colour, whatever is in it. */
+    private fun lensColor(): Int = if (container || active) accent else (pin?.color ?: accent)
+
+    private val blobPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG or android.graphics.Paint.FILTER_BITMAP_FLAG)
+    private val blobClip = android.graphics.Path()
+    private val blobBox = android.graphics.RectF()
+
+    private fun mix(a: Int, b: Int, t: Float): Int {
+        fun ch(shift: Int): Int {
+            val x = (a shr shift) and 0xFF
+            val y = (b shr shift) and 0xFF
+            return (x + (y - x) * t).toInt().coerceIn(0, 255)
+        }
+        return (ch(24) shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
+    }
+
+    /**
+     * One blob: a disc of its colour, lighter at the top, with its mark or its picture in the
+     * middle. It is the same blob wherever it is drawn: in the menu, and inside the lens.
+     * [kept] gives it the bright ring of the one that is in the lens.
+     */
+    private fun paintBlob(
+        canvas: android.graphics.Canvas, b: Pin, cx: Float, cy: Float, radius: Float, dp: Float,
+        kept: Boolean, face: Boolean = true, alpha: Int = 255,
+    ) {
+        val p = blobPaint
+        val scale = radius / (31 * dp)
+        p.style = android.graphics.Paint.Style.FILL
+        p.shader = android.graphics.LinearGradient(
+            cx, cy - radius, cx, cy + radius, mix(b.color, WHITE, 0.14f), b.color, android.graphics.Shader.TileMode.CLAMP,
+        )
+        p.alpha = alpha
+        canvas.drawCircle(cx, cy, radius, p)
+        p.shader = null
+        p.style = android.graphics.Paint.Style.STROKE
+        p.strokeWidth = (if (kept) 2.5f else 1f) * dp * Math.max(scale, 0.6f)
+        p.color = tint(WHITE, ((if (kept) 0.95f else 0.2f) * alpha).toInt())
+        canvas.drawCircle(cx, cy, radius - p.strokeWidth / 2f, p)
+        p.style = android.graphics.Paint.Style.FILL
+        if (!face) return
+        p.color = tint(WHITE, alpha)
+        val bmp = b.icon
+        if (bmp != null) {
+            // Prism's own marks, an app's outline, and an app's picture are drawn at the sizes the menu in Prism draws them.
+            val half = (if (b.picture) 18f else if (b.kind == "app") 17f else 15f) * dp * scale
+            blobBox.set(cx - half, cy - half, cx + half, cy + half)
+            if (b.picture) {
+                blobClip.reset()
+                blobClip.addCircle(cx, cy, half, android.graphics.Path.Direction.CW)
+                canvas.save()
+                canvas.clipPath(blobClip)
+                canvas.drawBitmap(bmp, null, blobBox, p)
+                canvas.restore()
+            } else {
+                canvas.drawBitmap(bmp, null, blobBox, p)
+            }
+        } else if (b.name.isNotEmpty()) {
+            p.textAlign = android.graphics.Paint.Align.CENTER
+            p.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+            p.textSize = 24 * dp * scale
+            canvas.drawText(b.name.substring(0, 1).uppercase(), cx, cy - (p.descent() + p.ascent()) / 2f, p)
+        }
+    }
+
+    /**
+     * Does what a blob is, once, from the lens's menu: its app opens, or its action is done in
+     * place where that is possible. What is in the lens does not change.
+     */
+    private fun use(context: Context, b: Pin) {
+        if (b.key == pin?.key && mode() == 2) {
+            // It is the one in the lens: the same as tapping the lens.
+            tapPinned(context)
+        } else if (b.kind == "app") {
+            val i = context.packageManager.getLaunchIntentForPackage(b.pkg)
+            if (i != null) {
+                i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                try { context.startActivity(i) } catch (e: Exception) {}
+            } else {
+                haptic(context, "thud")
+            }
+        } else if (b.index == 1 || b.index == 3) {
+            // Logging food and weighing in are done right here, over whatever is open.
+            openSheet(context, b.index)
+        } else if (b.index == 0 && active) {
+            // The workout that is on: its sheet, right here.
+            openSheet(context, SHEET_WORKOUT)
+        } else {
+            openAction(context, b.index)
+        }
+    }
+
+    private fun openMenu(context: Context) {
+        val v = view ?: return
+        if (menu != null || blobs.isEmpty()) return
+        try {
+            val dp = context.resources.displayMetrics.density
+            val at = IntArray(2)
+            v.getLocationOnScreen(at)
+            // The lens is still pressed in a little; its middle is found from the size it is drawn at.
+            val m = Menu(context, at[0] + v.width * v.scaleX / 2f, at[1] + v.height * v.scaleY / 2f, v.width / 2f - 5 * dp)
+            // It can be given the back button, so it takes the focus while it is open.
+            val lp = android.view.WindowManager.LayoutParams(
+                android.view.WindowManager.LayoutParams.MATCH_PARENT, android.view.WindowManager.LayoutParams.MATCH_PARENT,
+                android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                android.graphics.PixelFormat.TRANSLUCENT,
+            )
+            if (Build.VERSION.SDK_INT >= 28) {
+                lp.layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+            wm(context).addView(m, lp)
+            menu = m
+        } catch (e: Exception) {
+            menu = null
+        }
+    }
+
+    private fun removeMenu(context: Context) {
+        val m = menu ?: return
+        menu = null
+        try { wm(context).removeView(m) } catch (e: Exception) {}
+    }
 
     /**
      * Whether Android lets Prism see which app is in front. Used for one thing: a pinned app's
@@ -745,6 +887,7 @@ object RestBubble {
     }
 
     private fun remove(context: Context) {
+        removeMenu(context)
         closeReach(context)
         removeSheet(context)
         val t = target
@@ -780,13 +923,21 @@ object RestBubble {
         return t
     }
 
-    private fun openSheet(context: Context) {
+    // Which sheet to open: the one that goes with what the lens shows, the workout's, or (0 and up) an action's.
+    private const val SHEET_AUTO = -1
+    private const val SHEET_WORKOUT = -2
+
+    private fun openSheet(context: Context, what: Int = SHEET_AUTO) {
         if (sheet != null) return
         try {
             val d = context.resources.displayMetrics
             val dp = d.density
             val p = pin
-            val host: Sheet = if (active || p == null) WorkoutSheet(context) else ActionSheet(context, p.index)
+            val host: Sheet = when {
+                what >= 0 -> ActionSheet(context, what)
+                what == SHEET_WORKOUT || mode() == 1 || p == null -> WorkoutSheet(context)
+                else -> ActionSheet(context, p.index)
+            }
             val lp = android.view.WindowManager.LayoutParams(
                 minOf(d.widthPixels - (16 * dp).toInt(), (440 * dp).toInt()), android.view.WindowManager.LayoutParams.WRAP_CONTENT,
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -813,8 +964,9 @@ object RestBubble {
                 // where its window was asked to be can differ by a fixed amount; measure it once.
                 val at = IntArray(2)
                 v.getLocationOnScreen(at)
-                lensOffX = at[0] - v.lp.x
-                lensOffY = at[1] - v.lp.y
+                // (Less what being pressed in has moved its corner by.)
+                lensOffX = at[0] - ((1f - v.scaleX) * v.width / 2f).toInt() - v.lp.x
+                lensOffY = at[1] - ((1f - v.scaleY) * v.height / 2f).toInt() - v.lp.y
                 homeX = v.lp.x
                 homeY = v.lp.y
                 dockX = -1
@@ -870,6 +1022,450 @@ object RestBubble {
         dockX = x
         dockY = y
         v.glideTo(x.toFloat(), y.toFloat(), ms, small)
+    }
+
+    /**
+     * The blob menu, opened by holding the lens when it is a container. These are the blobs
+     * Prism's own button shows, shot out on the same spring, in the same fan, turned to face into
+     * the screen from wherever the lens is. A tap on a blob does it once and leaves the lens as
+     * it is. Holding a blob puts it in the lens; holding the one already in it takes it out.
+     * A tap anywhere else, or the back button, closes the menu.
+     */
+    private class Menu(context: Context, val ox: Float, val oy: Float, val lensR: Float) : android.view.View(context) {
+        private val dp = resources.displayMetrics.density
+        private val items = blobs
+        private val n = items.size
+        // Where each blob comes to rest, and the lens's own middle, in this view.
+        private val restX = FloatArray(n)
+        private val restY = FloatArray(n)
+        private var cx = 0f
+        private var cy = 0f
+        private var laid = false
+        // How far out each blob is (0 in the lens, 1 at rest) and how fast it is going.
+        private val out = FloatArray(n)
+        private val speed = FloatArray(n)
+        private var dim = 0f
+        private var dimSpeed = 0f
+        private var opening = true
+        private var born = 0L
+        private var running = false
+        private var last = 0L
+        private var pressedAt = -1
+        private var hot = -1
+        private var downX = 0f
+        private var downY = 0f
+        private var moved = false
+        private var kept = false
+        // A blob on its way into the lens.
+        private var flying = -1
+        private var fly = 0f
+        private var hadFocus = false
+        private var back: Any? = null
+        private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        private val hole = android.graphics.Path()
+        private val thread = android.graphics.Path()
+        private val names = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+
+        init {
+            names.color = WHITE
+            names.textAlign = android.graphics.Paint.Align.CENTER
+            names.textSize = 13.5f * dp
+            // Prism's own lettering, at the weight the menu in Prism uses.
+            try {
+                names.typeface = android.graphics.Typeface.createFromAsset(context.assets, "flutter_assets/assets/fonts/Inter.ttf")
+                if (Build.VERSION.SDK_INT >= 26) names.fontVariationSettings = "'wght' 650"
+            } catch (e: Exception) {
+                names.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+            }
+            // Over another app there is no telling what is behind the names.
+            names.setShadowLayer(5 * dp, 0f, 1 * dp, 0x99000000.toInt())
+        }
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            isFocusableInTouchMode = true
+            requestFocus()
+            if (Build.VERSION.SDK_INT >= 33) {
+                val callback = android.window.OnBackInvokedCallback { close() }
+                back = callback
+                findOnBackInvokedDispatcher()?.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, callback)
+            }
+        }
+
+        override fun onDetachedFromWindow() {
+            if (Build.VERSION.SDK_INT >= 33) {
+                val callback = back as? android.window.OnBackInvokedCallback
+                if (callback != null) findOnBackInvokedDispatcher()?.unregisterOnBackInvokedCallback(callback)
+            }
+            removeCallbacks(keep)
+            running = false
+            super.onDetachedFromWindow()
+        }
+
+        override fun dispatchKeyEvent(e: android.view.KeyEvent): Boolean {
+            if (e.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                if (e.action == android.view.KeyEvent.ACTION_UP) close()
+                return true
+            }
+            return super.dispatchKeyEvent(e)
+        }
+
+        // Something else came to the front (the home screen, the notification shade): the menu goes.
+        override fun onWindowFocusChanged(has: Boolean) {
+            super.onWindowFocusChanged(has)
+            if (has) hadFocus = true else if (hadFocus) close()
+        }
+
+        override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+            val at = IntArray(2)
+            getLocationOnScreen(at)
+            cx = ox - at[0]
+            cy = oy - at[1]
+            fan()
+            if (!laid) {
+                laid = true
+                born = android.os.SystemClock.uptimeMillis()
+                run()
+            }
+        }
+
+        /** The direction blob [i] lies in, for a fan whose middle points along [axis]: Prism's own fan, turned. */
+        private fun angle(axis: Double, i: Int): Double =
+            axis + Math.PI * (0.19 + 0.62 * (if (n > 1) i.toDouble() / (n - 1) else 0.5)) - Math.PI / 2
+
+        /**
+         * Lays the fan out. It points straight into the screen from the side the lens is on, and
+         * turns up or down only as far as it must for every blob and its name to be on the screen.
+         */
+        private fun fan() {
+            val w = width.toFloat()
+            val h = height.toFloat()
+            val reach = Math.max(178 * dp, lensR + 75 * dp)
+            val left = 45 * dp
+            val right = Math.max(left, w - 45 * dp)
+            val top = 78 * dp
+            val bottom = Math.max(top, h - 100 * dp)
+            val onRight = cx > w / 2f
+            val inward = if (onRight) Math.PI else 0.0
+            // Which way the fan turns to point further down the screen, and which way to try first.
+            val down = if (onRight) -1.0 else 1.0
+            val first = if (cy < h / 2f) down else -down
+            var best = inward
+            var least = Float.MAX_VALUE
+            search@ for (j in 0..11) {
+                for (way in doubleArrayOf(first, -first)) {
+                    val axis = inward + way * j * Math.toRadians(8.0)
+                    var over = 0f
+                    for (i in 0 until n) {
+                        val a = angle(axis, i)
+                        val x = cx + reach * Math.cos(a).toFloat()
+                        val y = cy + reach * Math.sin(a).toFloat()
+                        over += Math.max(0f, left - x) + Math.max(0f, x - right) + Math.max(0f, top - y) + Math.max(0f, y - bottom)
+                    }
+                    if (over < least) {
+                        least = over
+                        best = axis
+                    }
+                    if (over == 0f) break@search
+                    if (j == 0) break
+                }
+            }
+            for (i in 0 until n) {
+                val a = angle(best, i)
+                restX[i] = (cx + reach * Math.cos(a).toFloat()).coerceIn(left, right)
+                restY[i] = (cy + reach * Math.sin(a).toFloat()).coerceIn(top, bottom)
+            }
+        }
+
+        private fun run() {
+            if (running) return
+            running = true
+            last = 0L
+            android.view.Choreographer.getInstance().postFrameCallback(frame)
+        }
+
+        // The same springs as the menu in Prism: out on a quick one with a little give, each blob
+        // a moment after the one before; back in on a firm one, all together.
+        private val frame = object : android.view.Choreographer.FrameCallback {
+            override fun doFrame(nanos: Long) {
+                if (!running || !isAttachedToWindow) {
+                    running = false
+                    return
+                }
+                val dt = if (last == 0L) 1f / 120f else ((nanos - last) / 1e9f).coerceIn(0.001f, 0.034f)
+                last = nanos
+                val since = android.os.SystemClock.uptimeMillis() - born
+                val steps = Math.ceil((dt / 0.005f).toDouble()).toInt().coerceAtLeast(1)
+                val h = dt / steps
+                val to = if (opening) 1f else 0f
+                val k = if (opening) 1150f else 1400f
+                val c = if (opening) 40.7f else 67.3f
+                for (step in 0 until steps) {
+                    for (i in 0 until n) {
+                        if (i == flying || (opening && since < i * 18L)) continue
+                        speed[i] += (-k * (out[i] - to) - c * speed[i]) * h
+                        out[i] += speed[i] * h
+                    }
+                    dimSpeed += (-1400f * (dim - to) - 67.3f * dimSpeed) * h
+                    dim += dimSpeed * h
+                }
+                var moving = flying >= 0 || Math.abs(dim - to) > 0.004f
+                for (i in 0 until n) {
+                    if (i == flying) continue
+                    if (opening && since < i * 18L) moving = true
+                    if (Math.abs(out[i] - to) > 0.002f || Math.abs(speed[i]) > 0.02f) moving = true
+                }
+                if (!opening && flying < 0) {
+                    // Closing: once everything is back in and the dim is gone, the menu is gone.
+                    var gone = dim < 0.03f
+                    for (i in 0 until n) if (out[i] > 0.03f) gone = false
+                    if (gone) {
+                        running = false
+                        removeMenu(context)
+                        return
+                    }
+                    moving = true
+                }
+                invalidate()
+                if (moving) android.view.Choreographer.getInstance().postFrameCallback(this) else running = false
+            }
+        }
+
+        override fun onDraw(canvas: android.graphics.Canvas) {
+            if (!laid) return
+            // The dim, as behind the blobs in Prism, with the lens showing through it untouched.
+            val shade = (0.46f * dim.coerceIn(0f, 1f) * 255).toInt()
+            if (shade > 0) {
+                hole.reset()
+                hole.fillType = android.graphics.Path.FillType.EVEN_ODD
+                hole.addRect(0f, 0f, width.toFloat(), height.toFloat(), android.graphics.Path.Direction.CW)
+                hole.addCircle(cx, cy, lensR + 1 * dp, android.graphics.Path.Direction.CW)
+                paint.shader = null
+                paint.style = android.graphics.Paint.Style.FILL
+                paint.color = shade shl 24
+                canvas.drawPath(hole, paint)
+            }
+            // The threads: each blob stays tied to the lens until it arrives. Only on the way out.
+            if (opening) {
+                for (i in 0 until n) {
+                    val p = out[i]
+                    if (p <= 0.02f || p >= 0.97f) continue
+                    val bx = cx + (restX[i] - cx) * p
+                    val by = cy + (restY[i] - cy) * p
+                    val dx = bx - cx
+                    val dy = by - cy
+                    val len = Math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
+                    if (len < 1f) continue
+                    val nx = -dy / len
+                    val ny = dx / len
+                    // Thick at the lens, thin at the blob.
+                    val thick = (1.5f + 9f * (1 - p)) * dp / 2f
+                    val thin = 0.9f * dp / 2f
+                    thread.reset()
+                    thread.moveTo(cx + nx * thick, cy + ny * thick)
+                    thread.lineTo(bx + nx * thin, by + ny * thin)
+                    thread.lineTo(bx - nx * thin, by - ny * thin)
+                    thread.lineTo(cx - nx * thick, cy - ny * thick)
+                    thread.close()
+                    paint.color = items[i].color
+                    canvas.save()
+                    // Not over the lens itself.
+                    canvas.clipPath(hole)
+                    canvas.drawPath(thread, paint)
+                    canvas.restore()
+                }
+            }
+            val inLens = pin?.key
+            for (i in 0 until n) {
+                val p = out[i]
+                if (p <= 0.02f && i != flying) continue
+                var bx = cx + (restX[i] - cx) * p
+                var by = cy + (restY[i] - cy) * p
+                // It starts as a speck and swells on the way, stretched along its travel while it is fast.
+                val reached = p.coerceIn(0f, 1f)
+                var size = 0.14f + 0.86f * Math.pow(reached.toDouble(), 1.5).toFloat() + (if (p > 1f) (p - 1f) * 0.35f else 0f)
+                var stretch = (Math.abs(speed[i]) * 0.04f).coerceIn(0f, 0.46f)
+                var alpha = (p * 12f).coerceIn(0f, 1f)
+                if (i == flying) {
+                    // Kept: it goes into the lens, coming down to the size it has in there.
+                    val f = EASE.getInterpolation(fly)
+                    bx = restX[i] + (cx - restX[i]) * f
+                    by = restY[i] + (cy - restY[i]) * f
+                    size = 1f + (22.5f / 31f - 1f) * f
+                    stretch = 0f
+                    alpha = 1f
+                } else if (i == pressedAt) {
+                    size *= 0.94f
+                } else if (i == hot) {
+                    size *= 1.1f
+                }
+                val turn = Math.toDegrees(Math.atan2((restY[i] - cy).toDouble(), (restX[i] - cx).toDouble())).toFloat()
+                canvas.save()
+                canvas.translate(bx, by)
+                canvas.rotate(turn)
+                canvas.scale(size * (1 + stretch), size * (1 - stretch * 0.5f))
+                canvas.rotate(-turn)
+                paintBlob(canvas, items[i], 0f, 0f, 31 * dp, dp, items[i].key == inLens && i != flying, true, (alpha * 255).toInt())
+                canvas.restore()
+                // The name appears once the blob is nearly there, not while it is a speck.
+                val show = if (i == flying) 1f - fly * 3f else (p - 0.6f) / 0.4f
+                if (show > 0f) {
+                    names.alpha = (show.coerceIn(0f, 1f) * 255).toInt()
+                    canvas.drawText(items[i].name, bx, by + 50 * dp, names)
+                }
+            }
+        }
+
+        /** Which blob is at this place in the view, or none. A blob's name counts as the blob. */
+        private fun at(x: Float, y: Float): Int {
+            for (i in 0 until n) {
+                if (out[i] < 0.5f) continue
+                val dx = x - restX[i]
+                val dy = y - restY[i]
+                if (dx * dx + dy * dy < (40 * dp) * (40 * dp)) return i
+                if (Math.abs(dx) < 40 * dp && dy > 0 && dy < 62 * dp) return i
+            }
+            return -1
+        }
+
+        private val keep = Runnable {
+            val i = pressedAt
+            if (i >= 0 && !kept && opening) {
+                kept = true
+                pressedAt = -1
+                put(i)
+            }
+        }
+
+        override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            if (!opening || flying >= 0) return true
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    downX = e.x; downY = e.y
+                    kept = false
+                    moved = false
+                    pressedAt = at(e.x, e.y)
+                    if (pressedAt >= 0) postDelayed(keep, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L))
+                    invalidate()
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    if (!moved && Math.hypot((e.x - downX).toDouble(), (e.y - downY).toDouble()) > 14 * dp) {
+                        // Slid off: neither a tap nor a hold.
+                        moved = true
+                        removeCallbacks(keep)
+                        pressedAt = -1
+                        invalidate()
+                    }
+                }
+                android.view.MotionEvent.ACTION_UP -> {
+                    removeCallbacks(keep)
+                    val i = pressedAt
+                    pressedAt = -1
+                    if (kept) {
+                        // Already put in the lens by the hold.
+                    } else if (i >= 0) {
+                        choose(i)
+                    } else if (!moved) {
+                        close()
+                    }
+                    invalidate()
+                }
+                android.view.MotionEvent.ACTION_CANCEL -> {
+                    removeCallbacks(keep)
+                    pressedAt = -1
+                    invalidate()
+                }
+            }
+            return true
+        }
+
+        /** The finger that opened the menu is still down and sliding: the blob under it swells. Places are on the screen. */
+        fun hover(sx: Float, sy: Float) {
+            if (!opening || flying >= 0) return
+            val here = IntArray(2)
+            getLocationOnScreen(here)
+            val i = if (sx < 0f) -1 else at(sx - here[0], sy - here[1])
+            if (i != hot) {
+                hot = i
+                if (i >= 0) haptic(context, "tick")
+                invalidate()
+            }
+        }
+
+        /** That finger let go: over a blob, the blob is used; anywhere else the menu stays open for a tap. */
+        fun release(sx: Float, sy: Float) {
+            hover(sx, sy)
+            val i = hot
+            hot = -1
+            if (i >= 0) choose(i) else invalidate()
+        }
+
+        /** Tapped: it is done once. The lens stays as it is. */
+        private fun choose(i: Int) {
+            haptic(context, "tick")
+            val b = items[i]
+            val c = context
+            close()
+            // Once the blobs are on their way back in.
+            watcher.postDelayed({ use(c, b) }, 110)
+        }
+
+        /** Held: it goes into the lens. Holding the one that is already there takes it out. */
+        private fun put(i: Int) {
+            val b = items[i]
+            val c = context
+            haptic(c, "thud")
+            if (pin?.key == b.key) {
+                pin = null
+                awayInApp = false
+                channel?.invokeMethod("pinned", null)
+                view?.invalidate()
+                close()
+                // The lens may have nothing left to show; it goes once the menu has.
+                watcher.postDelayed({ refresh(c) }, 320)
+                return
+            }
+            flying = i
+            fly = 0f
+            opening = false
+            val lens = view
+            lens?.hideInner = true
+            pin = b
+            awayInApp = false
+            channel?.invokeMethod("pinned", b.key)
+            lens?.invalidate()
+            val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
+            a.duration = 300
+            a.interpolator = android.view.animation.LinearInterpolator()
+            a.addUpdateListener {
+                fly = it.animatedValue as Float
+                invalidate()
+            }
+            a.addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    // It has arrived: from here the lens draws it, in the same place at the same size.
+                    view?.hideInner = false
+                    view?.invalidate()
+                    flying = -1
+                    out[i] = 0f
+                    speed[i] = 0f
+                    refresh(c)
+                    run()
+                }
+            })
+            a.start()
+            run()
+        }
+
+        fun close() {
+            if (!opening) return
+            opening = false
+            removeCallbacks(keep)
+            pressedAt = -1
+            hot = -1
+            invalidate()
+            run()
+        }
     }
 
     /**
@@ -1026,8 +1622,11 @@ object RestBubble {
 
     /**
      * The lens: a see-through tinted disc (what is underneath shows through it), a rim lit from
-     * above and a soft highlight across the top. During a workout it carries the timer. For a
-     * pinned thing it carries that thing's picture and its colour, and nothing in it moves.
+     * above and a soft highlight across the top. During a workout it carries the timer.
+     *
+     * As a container it is always that same glass in Prism's colour, and what was put in it sits
+     * inside as its blob, smaller, with the glass around it; held, it opens the blob menu. As it
+     * was before, it takes the pinned thing's colour and shows its picture.
      */
     private class Dot(context: Context, val lp: android.view.WindowManager.LayoutParams) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
@@ -1076,6 +1675,14 @@ object RestBubble {
         private var startDist = 1f
         private var startSize = 0f
         private var midX = 0f; private var midY = 0f
+        // Held until its menu opened: the rest of that touch belongs to the menu.
+        private var menuTouch = false
+        // The blob in a container hangs back a little when the container moves, and comes to rest in its middle.
+        private var lagX = 0f; private var lagY = 0f
+        private var wasX = lp.x; private var wasY = lp.y; private var wasSize = lp.width
+        private var resting: android.animation.ValueAnimator? = null
+        // While a blob is on its way in from the menu, the one inside is not drawn yet.
+        var hideInner = false
 
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()
@@ -1083,9 +1690,12 @@ object RestBubble {
             animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(220).setInterpolator(EASE).start()
         }
 
+        /** Filled with the pinned thing's colour: only the lens as it was before, showing a pinned thing. */
+        private fun filled() = !container && mode() != 1
+
         private fun shaders() {
             val c = lensColor()
-            val pinned = !active
+            val pinned = filled()
             val r = base / 2f
             val disc = r - 5 * dp
             // A workout's lens is nearly clear, with a breath of the colour. A pinned thing's lens is
@@ -1138,14 +1748,14 @@ object RestBubble {
         }
 
         private fun paintLens(canvas: android.graphics.Canvas, k: Float) {
-            if (shadersFor != lensColor() || shadersPinned != !active) shaders()
+            if (shadersFor != lensColor() || shadersPinned != filled()) shaders()
             val colour = lensColor()
             val w = base; val r = w / 2f
             val disc = r - 5 * dp
             val now = System.currentTimeMillis()
             // A workout shows its timer. A pinned thing shows its picture, and has no timer to read.
             // On a sheet's corner it shows the same, and a tap there folds the sheet away.
-            val t = if (active) reading(now) else null
+            val t = if (mode() == 1) reading(now) else null
             val go = t != null && t.go
             paint.style = android.graphics.Paint.Style.FILL
             paint.shader = shadow
@@ -1197,6 +1807,12 @@ object RestBubble {
             canvas.drawCircle(r, r, disc - 0.65f * dp, paint)
             paint.shader = null
             paint.style = android.graphics.Paint.Style.FILL
+            if (t == null && container) {
+                // The container: what was put in it sits inside as the blob it is, with the glass around it.
+                val inside = pin
+                if (inside != null && !hideInner) paintBlob(canvas, inside, r + lagX / k, r + lagY / k, 22.5f * dp, dp, false)
+                return
+            }
             if (t == null) {
                 // The pinned thing's picture: its white mark, or its own icon cut round.
                 val p = pin
@@ -1231,6 +1847,18 @@ object RestBubble {
             paint.letterSpacing = if (go) 0.06f else -0.01f
             paint.textSize = (if (go) 19f else 17.5f) * dp
             canvas.drawText(t.text, r, r - (paint.descent() + paint.ascent()) / 2f, paint)
+            val under = pin
+            if (container && under != null && !hideInner) {
+                // What was put in the container waits underneath while a workout has it: a small
+                // dot of it on the rim says it is still there.
+                val a = Math.toRadians(42.0)
+                val out = disc - 2.5f * dp
+                val bx = r + (out * Math.cos(a)).toFloat(); val by = r + (out * Math.sin(a)).toFloat()
+                paint.style = android.graphics.Paint.Style.FILL
+                paint.color = 0xF2101216.toInt()
+                canvas.drawCircle(bx, by, 9.6f * dp, paint)
+                paintBlob(canvas, under, bx, by, 8f * dp, dp, false, face = false)
+            }
             if (k > 1.45f && !go) {
                 // Made large enough, it has room to say more: what the time is, above it, and
                 // which set this is, below.
@@ -1314,6 +1942,49 @@ object RestBubble {
             slide(0f)
         }
 
+        private fun lag() {
+            val dx = lp.x - wasX; val dy = lp.y - wasY
+            val resized = lp.width != wasSize
+            wasX = lp.x; wasY = lp.y; wasSize = lp.width
+            // Only a container showing its blob has anything to hang back, and a change of size is not a movement.
+            if (!container || mode() != 2 || resized || stretching || (dx == 0 && dy == 0)) return
+            val most = 4.5f * dp
+            lagX += ((-dx * 0.8f).coerceIn(-most, most) - lagX) * 0.4f
+            lagY += ((-dy * 0.8f).coerceIn(-most, most) - lagY) * 0.4f
+            invalidate()
+            resting?.cancel()
+            removeCallbacks(comeToRest)
+            postDelayed(comeToRest, 50)
+        }
+
+        private val comeToRest = Runnable {
+            val fromX = lagX; val fromY = lagY
+            if (fromX != 0f || fromY != 0f) {
+                val a = android.animation.ValueAnimator.ofFloat(1f, 0f)
+                a.duration = 260
+                a.interpolator = EASE
+                a.addUpdateListener {
+                    val f = it.animatedValue as Float
+                    lagX = fromX * f; lagY = fromY * f
+                    invalidate()
+                }
+                resting = a
+                a.start()
+            }
+        }
+
+        // Held still for as long as the phone counts as a hold: the blob menu opens out of the container.
+        private val holder = Runnable {
+            if (pressed && !dragged && !sized && !docked && !tucked && container && menu == null && isAttachedToWindow && blobs.isNotEmpty()) {
+                menuTouch = true
+                closeReach(context)
+                animate().scaleX(1f).scaleY(1f).setDuration(160).setInterpolator(EASE).start()
+                // The same click the button in Prism gives when it is held.
+                haptic(context, "click")
+                openMenu(context)
+            }
+        }
+
         private fun rawX(e: android.view.MotionEvent, i: Int): Float =
             if (Build.VERSION.SDK_INT >= 29) e.getRawX(i) else e.getX(i) + (e.rawX - e.getX(0))
 
@@ -1337,6 +2008,8 @@ object RestBubble {
                 return
             }
             p2x = x; p2y = y
+            if (menuTouch) return
+            removeCallbacks(holder)
             if (!sizing) {
                 sizing = true
                 sized = true
@@ -1407,6 +2080,7 @@ object RestBubble {
             if (!docked) {
                 lensX = lp.x; lensY = lp.y
             }
+            lag()
             try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, lp) } catch (ex: Exception) {}
         }
 
@@ -1444,7 +2118,7 @@ object RestBubble {
         private fun close() {
             haptic(context, "thud")
             val c = context
-            val wasWorkout = active
+            val wasWorkout = mode() == 1
             val colour = lensColor()
             animate().scaleX(0f).scaleY(0f).setDuration(210).setInterpolator(android.view.animation.AccelerateInterpolator(1.6f)).start()
             val finish: () -> Unit = {
@@ -1454,9 +2128,11 @@ object RestBubble {
                     pin = null
                     channel?.invokeMethod("unpinned", null)
                 }
-                // It comes back at its usual place, not on the cross.
+                // It comes back at its usual place, not on the cross. If something is still due (a
+                // container's other thing, once the workout's timer is closed), that is a fresh lens.
                 lensX = -1; lensY = -1
                 tucked = false
+                remove(c)
                 refresh(c)
             }
             val t = target
@@ -1551,11 +2227,30 @@ object RestBubble {
                 }
                 return true
             }
+            if (menuTouch) {
+                // The menu is open under this same touch: slide onto a blob and let go to use it,
+                // or just let go and then tap one.
+                when (e.actionMasked) {
+                    android.view.MotionEvent.ACTION_MOVE -> menu?.hover(e.rawX, e.rawY)
+                    android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                        menuTouch = false
+                        pressed = false
+                        tracker?.recycle()
+                        tracker = null
+                        if (e.actionMasked == android.view.MotionEvent.ACTION_UP) menu?.release(e.rawX, e.rawY) else menu?.hover(-1f, -1f)
+                    }
+                }
+                return true
+            }
             when (e.actionMasked) {
                 android.view.MotionEvent.ACTION_DOWN -> {
                     pressed = true
                     sizing = false
                     atEnd = false
+                    menuTouch = false
+                    if (container) {
+                        postDelayed(holder, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L))
+                    }
                     // From now until the finger lifts, a second finger anywhere resizes the lens.
                     openReach(context)
                     springing = false
@@ -1572,6 +2267,7 @@ object RestBubble {
                     val slop = 10 * dp
                     if (!dragged && dx * dx + dy * dy > slop * slop) {
                         dragged = true
+                        removeCallbacks(holder)
                         // The cross appears as soon as the lens is picked up.
                         target?.animate()?.alpha(1f)?.setDuration(160)?.start()
                     }
@@ -1603,12 +2299,13 @@ object RestBubble {
                 }
                 android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
                     pressed = false
+                    removeCallbacks(holder)
                     closeReach(context)
                     animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
                     if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !dragged) {
                         haptic(context, "tick")
                         // Tapped. A workout opens its sheet; a pinned thing does what it is.
-                        if (active) openSheet(context) else tapPinned(context)
+                        if (mode() == 1) openSheet(context) else tapPinned(context)
                     } else if (e.actionMasked == android.view.MotionEvent.ACTION_UP && wouldTuck) {
                         tuckIn(lp.x + lp.width / 2f > resources.displayMetrics.widthPixels / 2f)
                     } else {
