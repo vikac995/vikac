@@ -1,5 +1,24 @@
 # Lumen changelog
 
+## Prism, build 117 (14 November 2026)
+
+**File:** `releases/prism-build-117.apk`
+
+Needs Play Protect paused to install. Can be installed over build 116.
+
+**What the flight recorder found** (your report from build 113):
+- **Why the magnifying glass was stuck:** holding the button starts the changing of the blobs; the finger then moved, and the glass came out; on letting go, Prism saw "this was the hold that started the changing" and did nothing more. Now a hold that has started the changing never brings the glass out, and if it were ever out on letting go, it goes home. (Build 114's guard already caught it; this removes the cause.)
+- **Android closed Prism twice in thirteen minutes** while you were in other apps: "Prism started" at 22:04 and again at 22:09, two minutes after you opened Claude.
+- **Very likely why:** Prism held 943 MB, and 596 MB of it was graphics memory: what the graphics chip holds for the glass and the background. That is the next thing to bring down.
+
+**The glass settings test now also measures:**
+- **The apps' own icons** (setting K): the same movements with the app list and the blobs showing the apps' own icons, beside Prism's.
+- **Memory under every setting:** a second table, for each setting, of Prism's memory in all, what the graphics chip holds, the engine's own, and Prism's own pictures. This shows which of the glass effects holds the most memory, so it can be brought down where it costs least to the look.
+- About 20 minutes now.
+
+**Checked:** it compiles; in my preview the long test.
+**Not checked:** on a phone.
+
 ## Prism, build 116 (14 November 2026)
 
 **File:** `releases/prism-build-116.apk`

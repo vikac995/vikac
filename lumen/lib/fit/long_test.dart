@@ -118,6 +118,10 @@ class TestRun {
   /// The glass settings test: for each setting, Prism's processor time and the time it took.
   final List<(String, double, double)> glassRows = <(String, double, double)>[];
 
+  /// The glass settings test: Prism's memory after each setting, in MB.
+  final List<(String, Map<String, double>)> glassMemory =
+      <(String, Map<String, double>)>[];
+
   /// The chat-head battery test: its four states, for the summary at the end.
   List<String>? drainStates;
 
@@ -214,6 +218,37 @@ class TestRun {
     o.writeln(
       'Read across: the figure in brackets is the change from A. Lower draw and processor is cheaper; the setting is affordable on this phone while fps stays near the screen\'s and late stays near nothing.',
     );
+    // Memory under each setting: what Android weighs when it decides which apps to close.
+    if (glassMemory.isNotEmpty) {
+      final Map<String, List<Map<String, double>>> by =
+          <String, List<Map<String, double>>>{};
+      for (final (String l, Map<String, double> m) in glassMemory) {
+        (by[l] ??= <Map<String, double>>[]).add(m);
+      }
+      double avg(String l, String k) {
+        final List<Map<String, double>> v = by[l] ?? <Map<String, double>>[];
+        return v.isEmpty
+            ? 0
+            : v
+                      .map((Map<String, double> m) => m[k] ?? 0)
+                      .reduce((double a, double b) => a + b) /
+                  v.length;
+      }
+
+      o
+        ..writeln()
+        ..writeln(
+          'MEMORY under each setting, in MB, after its movements (the average of its two turns). "graphics" is what the graphics chip holds for Prism; "pictures" is Prism\'s own pictures (the apps\' icons and its cache). Android closes the apps that hold most when they are out of sight, so lower is safer.',
+        )
+        ..writeln(
+          '${'setting'.padRight(66)} ${'total'.padLeft(7)} ${'graphics'.padLeft(9)} ${'native'.padLeft(7)} ${'pictures'.padLeft(9)}',
+        );
+      for (final String l in labels) {
+        o.writeln(
+          '${l.padRight(66)} ${_f(avg(l, 'total'), 0).padLeft(7)} ${_f(avg(l, 'graphics'), 0).padLeft(9)} ${_f(avg(l, 'native'), 0).padLeft(7)} ${_f(avg(l, 'pictures'), 1).padLeft(9)}',
+        );
+      }
+    }
   }
 
   /// The chat-head battery test, summed up: each state's stretches taken together.

@@ -3691,6 +3691,13 @@ class _ShellState extends State<Shell>
       if (glass) {
         // The same movements under each setting, changed one at a time from a starting point,
         // so that what each one costs can be read off. Twice over, in the same order.
+        final bool listIconsWere = Apps.instance.prismIcons,
+            blobIconsWere = Apps.instance.blobPrismIcons;
+        Future<void> icons(bool prism) async {
+          await Apps.instance.setPrismIcons(prism);
+          await Apps.instance.setPrismIcons(prism, blobs: true);
+        }
+
         void base() {
           Diag.instance.glassMode.value = 0;
           settings.quality = GlassQuality.full;
@@ -3761,6 +3768,8 @@ class _ShellState extends State<Shell>
               settings.reduceTransparency = true;
             },
           ),
+          // The apps' own icons, in the app list and the blobs (switched below, as it is not instant).
+          ('K  the apps\' own icons, not Prism\'s', () {}),
         ];
         final List<Rect> cards = <Rect>[
           for (final LensTargetState c in LensBus.instance.targets)
@@ -3774,6 +3783,7 @@ class _ShellState extends State<Shell>
             );
             base();
             change();
+            await icons(!label.startsWith('K'));
             await Robot.wait(1500);
             final Map<String, Object?> s0 = await t.lens(<String, Object?>{
               'op': 'state',
@@ -3850,9 +3860,25 @@ class _ShellState extends State<Shell>
                   .toDouble(),
               (t.clock.elapsedMilliseconds - at0).toDouble(),
             ));
+            // What it holds in memory under this setting, the graphics chip's share above all.
+            final Map<String, Object?> mem = await t.lens(<String, Object?>{
+              'op': 'memory',
+            });
+            final (int cache, int iconBytes) = _pictureBytes();
+            t.glassMemory.add((
+              label,
+              <String, double>{
+                'total': ((mem['pss'] as num?) ?? 0) / 1024,
+                'graphics': ((mem['mem_graphics'] as num?) ?? 0) / 1024,
+                'native': ((mem['mem_native'] as num?) ?? 0) / 1024,
+                'pictures': (cache + iconBytes) / 1048576,
+              },
+            ));
           }
         }
         base();
+        await Apps.instance.setPrismIcons(listIconsWere);
+        await Apps.instance.setPrismIcons(blobIconsWere, blobs: true);
       } else
       // ---------------------------------------------------------------- chat heads and the battery
       if (drain) {
@@ -4340,7 +4366,13 @@ class _ShellState extends State<Shell>
 
   /// A finger that moved and then stopped sends no more movement, so the lift is also timed.
   void _liftCheck() {
-    if (_downAt == null || !_moved || _lifted || _drawerOpen || !mounted) {
+    // (A hold that has started the changing of the blobs is not a carry.)
+    if (_downAt == null ||
+        !_moved ||
+        _lifted ||
+        _drawerOpen ||
+        _heldEdit ||
+        !mounted) {
       return;
     }
     if (_flicking()) {
@@ -4378,6 +4410,10 @@ class _ShellState extends State<Shell>
       _movedAt = _held.elapsedMilliseconds;
       _holdTimer?.cancel();
       _setOpen(false);
+    }
+    if (_heldEdit) {
+      // The hold has started the changing of the blobs: moving on does not bring the glass out.
+      return;
     }
     if (!_lifted) {
       // Not a lens yet. A quick upward movement is probably a flick for the app drawer, and a
@@ -4443,8 +4479,12 @@ class _ShellState extends State<Shell>
     final Offset travel = (_lastAt ?? _downAt!) - _downAt!;
     _downAt = null;
     if (_heldEdit) {
-      // The hold has done its work: letting go does nothing more.
+      // The hold has done its work: letting go does nothing more. (Should the glass have come
+      // out after all, it goes home: the flight recorder found it left out from here.)
       _heldEdit = false;
+      if (_lifted || _carrying) {
+        _lensHome();
+      }
       return;
     }
     if (_drawerOpen) {
@@ -6869,7 +6909,7 @@ void showPrismSettings(BuildContext context) {
                             shape: const StadiumBorder(),
                           ),
                           child: Text(
-                            'Run the glass settings test (about 15 min)',
+                            'Run the glass settings test (about 20 min)',
                             style: LumenType.text(
                               15,
                               weight: 700,
