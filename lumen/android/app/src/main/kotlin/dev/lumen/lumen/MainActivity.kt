@@ -1537,6 +1537,10 @@ class Floater(val timer: Boolean) {
         m["now"] = System.currentTimeMillis()
         m["fg"] = foreground
         m["front"] = frontApp
+        m["plugged"] = try {
+            (context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+                ?.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
+        } catch (e: Exception) { false }
         return m
     }
 

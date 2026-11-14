@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Prism, build 105 (14 November 2026)
+
+**File:** `releases/prism-build-105.apk`
+
+Needs Play Protect paused to install. Can be installed over build 104: your settings stay.
+
+**The tests set themselves up.** At the start every test now checks the settings and sets right whatever would spoil a reading, and puts everything back at the end:
+- the frame-rate readout off (it draws all the time);
+- glass style and glass quality to Auto;
+- the blob allowed in Prism and over other apps;
+- "Launch and follow" off.
+
+What it changed is written at the top of the report under "SET FOR THE TEST", below your own settings.
+
+**And checks what it cannot set:**
+- *Not allowed over other apps:* Android's screen for it is opened, and the report says so. The battery test stops there, since it has nothing to measure.
+- *Charging:* the test says so for four seconds, and the report says in capitals that the current readings mean nothing.
+
+**Checked:** it compiles; in my preview the long test sets and puts back the frame-rate readout.
+**Not checked:** on a phone.
+
 ## Prism, build 104 (14 November 2026)
 
 **File:** `releases/prism-build-104.apk`

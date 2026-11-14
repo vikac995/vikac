@@ -2004,6 +2004,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     final String? pinWas = lensOf.pinned.value;
     final bool inWas = lensOf.floatIn.value, outWas = lensOf.floatOut.value;
     final bool followWas = lensOf.follow.value;
+    final bool fpsWas = settings.showFps;
+    final GlassQuality qualityWas = settings.quality;
+    final int glassWas = Diag.instance.glassMode.value;
+    // What the test set differently for itself.
+    final List<String> adjusted = <String>[];
     // Every setting as it was when the test began, for the top of the report.
     String onOff(bool v) => v ? 'on' : 'off';
     final List<String> settingsWere = <String>[
@@ -2042,10 +2047,30 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         await t.lens(<String, Object?>{'op': 'quiet', 'on': true});
       }
       await calm();
+      // The test's own setup: whatever would spoil a reading is set right for it, and put
+      // back afterwards. What was changed is written at the top of the report.
+      if (settings.showFps) {
+        settings.showFps = false;
+        adjusted.add('frame-rate readout off (it draws all the time)');
+      }
+      if (Diag.instance.glassMode.value != 4) {
+        Diag.instance.glassMode.value = 4;
+        adjusted.add('glass style to Auto');
+      }
+      if (settings.quality != GlassQuality.auto) {
+        settings.quality = GlassQuality.auto;
+        adjusted.add('glass quality to Auto');
+      }
+      if (!inWas || !outWas) {
+        adjusted.add('the blob allowed in Prism and over other apps');
+      }
+      if (followWas) {
+        adjusted.add('launch and follow off');
+      }
       lensOf.onStop?.call();
       lensOf.setPin(null);
       _sendPin();
-      lensOf.setFloating(inPrism: true, overApps: true);
+      lensOf.setFloating(inPrism: true, overApps: true, followApps: false);
       BlobSlots.instance.putAll(five);
       if (!BlobSlots.instance.names) {
         _setNames(true);
@@ -2061,8 +2086,26 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           dp = (s['dp'] as num?)?.toDouble() ?? dpr;
       if (!floats) {
         t.note(
-          'Prism is not allowed over other apps, so nothing about the floating lens was tested. Allow it in Prism\'s settings and run the test again.',
+          'Prism is not allowed over other apps, so nothing about the floating lens was tested. Android\'s screen for it was opened: allow Prism there and run the test again.',
         );
+        if (Platform.isAndroid) {
+          lensOf.ask();
+        }
+        if (drain) {
+          // Without it there is nothing to measure.
+          throw StateError(
+            'Prism is not allowed over other apps; allow it and start again',
+          );
+        }
+      }
+      if (s['plugged'] == true) {
+        t.note(
+          'THE PHONE WAS CHARGING when the test began: every current reading below means nothing. Unplug it and run the test again.',
+        );
+        say(
+          'the phone is charging: unplug it, or the battery readings mean nothing',
+        );
+        await Robot.wait(4000);
       }
       Future<Map<String, Object?>> where() =>
           t.lens(<String, Object?>{'op': 'state'});
@@ -3661,6 +3704,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         overApps: outWas,
         followApps: followWas,
       );
+      settings.showFps = fpsWas;
+      settings.quality = qualityWas;
+      Diag.instance.glassMode.value = glassWas;
       lensOf.setPin(pinWas);
       _sendPin();
       if (_tab != 0) {
@@ -3674,6 +3720,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       final String text = t.report(<String>[
         ...build.split('\n'),
         ...settingsWere,
+        if (adjusted.isNotEmpty)
+          'SET FOR THE TEST, and put back afterwards: ${adjusted.join('  ·  ')}',
         if (stoppedAt != null)
           'STOPPED BY YOU while it was at: $stoppedAt (what follows is as far as it got)',
       ]);
