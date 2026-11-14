@@ -1,5 +1,24 @@
 # Lumen changelog
 
+## Prism, build 118 (14 November 2026)
+
+**File:** `releases/prism-build-118.apk`
+
+Needs Play Protect paused to install. Can be installed over build 117.
+
+**The scrolling app list, made for everyday use.** From the practice of the best launchers and the phones' own lists:
+- **The letter beside the thumb.** While a finger is on the letters, the letter under it shows large in a round bubble just to its left, where the thumb does not cover it, in Prism's colour.
+- **A wave on the letters.** The letters near the finger swell and lean out toward it, so a thumb can pick one out on a narrow strip; the one under it is in Prism's colour.
+- **The letter in the heading.** While the list is scrolled by hand, the heading says which letter is at the top.
+- **Where it lands.** Going to a letter leaves a little of the row before it in sight, so where you are in the alphabet stays clear. The first app of the letter still jumps once, with a tick for each new letter.
+- **Soft edges.** Rows fade in at the top of the list and out at its foot instead of being cut off.
+- **The finger is taken a little wider** than the letters are drawn, so they are easier to hit.
+
+**What it costs:** while a finger is on the letters only the letters and the bubble are redrawn; the list is moved, not rebuilt. The edges are plain shades, not blur.
+
+**Checked:** it compiles; in my preview, a slide down the letters with the bubble, the wave and the jump, and the heading's letter after.
+**Not checked:** on a phone.
+
 ## Prism, build 117 (14 November 2026)
 
 **File:** `releases/prism-build-117.apk`

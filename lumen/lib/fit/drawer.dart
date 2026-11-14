@@ -95,6 +95,38 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
 
   /// A finger on the letters at [y] of [height]: the list goes to that letter's first app,
   /// and that app jumps.
+  // While a finger is on the letters: where it is on them, and the letter under it.
+  final ValueNotifier<double?> _railY = ValueNotifier<double?>(null);
+  String _railLetter = '';
+  double _rowH = 100;
+
+  /// The letter at the top of the list as it scrolls, for the heading.
+  String _topLetter = '';
+
+  void _listMoved() {
+    if (!_list.hasClients || _rowH <= 0) {
+      return;
+    }
+    final List<AppTile> all = Apps.instance.all;
+    final int i =
+        ((_list.offset / _rowH + 0.4).floor().clamp(0, 1 << 20) * _cols).clamp(
+          0,
+          math.max(0, all.length - 1),
+        );
+    final String l = all.isEmpty || all[i].label.isEmpty
+        ? ''
+        : all[i].label.substring(0, 1).toUpperCase();
+    if (l != _topLetter) {
+      setState(() => _topLetter = l);
+    }
+  }
+
+  void _letGoLetters() {
+    _letter = '';
+    _railLetter = '';
+    _railY.value = null;
+  }
+
   void _toLetter(double y, double height, double rowH) {
     final List<(String, int)> ls = _letters();
     if (ls.isEmpty || !_list.hasClients) {
@@ -102,13 +134,19 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     }
     final (String l, int i) =
         ls[(y / height * ls.length).floor().clamp(0, ls.length - 1)];
+    _railLetter = l;
+    _railY.value = y;
     if (l == _letter) {
       return;
     }
     _letter = l;
     Haptics.tick();
+    // A little of the row before it stays in sight, so the place in the alphabet is clear.
     _list.jumpTo(
-      ((i ~/ _cols) * rowH).clamp(0.0, _list.position.maxScrollExtent),
+      ((i ~/ _cols) * rowH - rowH * 0.3).clamp(
+        0.0,
+        _list.position.maxScrollExtent,
+      ),
     );
     setState(() => _bounceAt = i);
     _bounce
@@ -131,6 +169,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     super.initState();
     Apps.instance.addListener(_changed);
     Notes.instance.counts.addListener(_countsChanged);
+    _list.addListener(_listMoved);
   }
 
   void _changed() {
@@ -188,10 +227,13 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     final List<AppTile> all = Apps.instance.all;
     final int rowsAll = (all.length / _cols).ceil();
     final double rowH = box.maxHeight / _rows;
-    const double rail = 26;
+    // The letters take a narrow strip at the side; a finger is taken a little wider than it.
+    const double rail = 24, reach = 40;
     final double w = box.maxWidth - rail;
+    _rowH = rowH;
     final List<(String, int)> ls = _letters();
     return Stack(
+      clipBehavior: Clip.none,
       children: <Widget>[
         Positioned(
           left: 0,
@@ -249,42 +291,141 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
             ),
           ),
         ),
-        // The letters. A finger on them, or sliding along them, goes to that letter.
+        // Soft edges: rows fade in at the top and out at the bottom instead of being cut.
+        // (Plain shades of the panel's own colour: nothing is blurred.)
+        Positioned(
+          left: 0,
+          top: 0,
+          width: w,
+          height: 14,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[c.surface, c.surface.withValues(alpha: 0)],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          bottom: 0,
+          width: w,
+          height: 26,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: <Color>[c.surface.withValues(alpha: 0), c.surface],
+                ),
+              ),
+            ),
+          ),
+        ),
+        // The letters, the wave and the bubble. Only this part is redrawn while a finger is
+        // on the letters; the list is moved, not rebuilt.
         Positioned(
           right: 0,
           top: 0,
           bottom: 0,
-          width: rail,
+          width: reach,
           child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints r) =>
-                // (Answered the instant the finger lands, and with every movement after: no
-                // waiting to see whether it is a tap or a drag. Lit until the finger leaves.)
-                Listener(
-                  key: Robot.key('letters'),
-                  behavior: HitTestBehavior.opaque,
-                  onPointerDown: (PointerDownEvent d) =>
-                      _toLetter(d.localPosition.dy, r.maxHeight, rowH),
-                  onPointerMove: (PointerMoveEvent d) =>
-                      _toLetter(d.localPosition.dy, r.maxHeight, rowH),
-                  onPointerUp: (_) => setState(() => _letter = ''),
-                  onPointerCancel: (_) => setState(() => _letter = ''),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            builder: (BuildContext context, BoxConstraints r) => Listener(
+              key: Robot.key('letters'),
+              behavior: HitTestBehavior.opaque,
+              onPointerDown: (PointerDownEvent d) =>
+                  _toLetter(d.localPosition.dy, r.maxHeight, rowH),
+              onPointerMove: (PointerMoveEvent d) =>
+                  _toLetter(d.localPosition.dy, r.maxHeight, rowH),
+              onPointerUp: (_) => _letGoLetters(),
+              onPointerCancel: (_) => _letGoLetters(),
+              child: ValueListenableBuilder<double?>(
+                valueListenable: _railY,
+                builder: (BuildContext context, double? y, Widget? _) {
+                  final double h = r.maxHeight;
+                  final double step = h / math.max(1, ls.length);
+                  return Stack(
+                    clipBehavior: Clip.none,
                     children: <Widget>[
-                      for (final (String l, int _) in ls)
-                        Text(
-                          l,
-                          textScaler: TextScaler.noScaling,
-                          style: LumenType.text(
-                            11,
-                            weight: l == _letter ? 800 : 650,
-                            color: l == _letter ? c.accent : c.inkMuted,
-                            height: 1,
+                      for (final (int k, (String l, int _)) in ls.indexed)
+                        () {
+                          // Near the finger the letters swell and lean out, so a thumb can
+                          // find one: a wave that follows the finger.
+                          final double mid = step * (k + 0.5);
+                          final double d = y == null ? 99 : (mid - y) / step;
+                          final double near = math.exp(-d * d / 3.2);
+                          final bool on = l == _railLetter;
+                          return Positioned(
+                            right: (rail - 14) / 2 + 22 * near,
+                            top: mid - 8,
+                            width: 14,
+                            height: 16,
+                            child: Transform.scale(
+                              scale: 1 + 0.75 * near,
+                              child: Text(
+                                l,
+                                textAlign: TextAlign.center,
+                                textScaler: TextScaler.noScaling,
+                                style: LumenType.text(
+                                  11,
+                                  weight: on ? 800 : 650,
+                                  color: on
+                                      ? c.accent
+                                      : Color.lerp(c.inkMuted, c.ink, near),
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          );
+                        }(),
+                      // The letter, large, beside the finger: the thumb covers the letters, not this.
+                      if (y != null && _railLetter.isNotEmpty)
+                        Positioned(
+                          right: reach + 26,
+                          top: (y - 30).clamp(-20.0, h - 40),
+                          width: 60,
+                          height: 60,
+                          child: DecoratedBox(
+                            decoration: ShapeDecoration(
+                              color: c.surfaceHigh,
+                              shape: CircleBorder(
+                                side: BorderSide(
+                                  color: c.accent.withValues(alpha: 0.7),
+                                  width: 1.5,
+                                ),
+                              ),
+                              shadows: const <BoxShadow>[
+                                BoxShadow(
+                                  color: Color(0x55000000),
+                                  blurRadius: 14,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                _railLetter,
+                                textScaler: TextScaler.noScaling,
+                                style: LumenType.display(
+                                  30,
+                                  weight: 700,
+                                  color: c.accent,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                     ],
-                  ),
-                ),
+                  );
+                },
+              ),
+            ),
           ),
         ),
       ],
@@ -410,7 +551,10 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     Notes.instance.counts.removeListener(_countsChanged);
     _rise.dispose();
     _ring.dispose();
-    _list.dispose();
+    _list
+      ..removeListener(_listMoved)
+      ..dispose();
+    _railY.dispose();
     _bounce.dispose();
     _turn.dispose();
     super.dispose();
@@ -633,7 +777,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                     Expanded(
                       child: Text(
                         widget.pick == null
-                            ? (Apps.instance.scrolling ? '' : _range)
+                            ? (Apps.instance.scrolling ? _topLetter : _range)
                             : (widget.pickTitle?.$2 ??
                                   (widget.pick!.isEmpty
                                       ? 'a blob'
