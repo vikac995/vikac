@@ -4852,6 +4852,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                                     child: w,
                                                   ),
                                                 ),
+                                            // Closed, the button shows what it does: things fan out of it. Open, it is
+                                            // the X that puts them away.
                                             child: _editing && _open
                                                 ? const Icon(
                                                     Icons.settings_rounded,
@@ -4861,23 +4863,22 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                                     color: Colors.white,
                                                     size: 30,
                                                   )
-                                                : Transform.rotate(
-                                                    key: const ValueKey<String>(
-                                                      'plus',
-                                                    ),
-                                                    angle:
-                                                        _t.value.clamp(
-                                                          0.0,
-                                                          1.2,
-                                                        ) *
-                                                        math.pi /
-                                                        4,
-                                                    child: const Icon(
-                                                      Icons.add_rounded,
-                                                      color: Colors.white,
-                                                      size: 34,
-                                                    ),
-                                                  ),
+                                                : (_open || _drawerOpen
+                                                      ? const Icon(
+                                                          Icons.close_rounded,
+                                                          key: ValueKey<String>(
+                                                            'x',
+                                                          ),
+                                                          color: Colors.white,
+                                                          size: 34,
+                                                        )
+                                                      : const CustomPaint(
+                                                          key: ValueKey<String>(
+                                                            'fan',
+                                                          ),
+                                                          size: Size(34, 34),
+                                                          painter: _FanMark(),
+                                                        )),
                                           ),
                                         ],
                                       ),
@@ -6368,6 +6369,50 @@ class _ThreadPainter extends CustomPainter {
       old.from != from ||
       old.to.length != to.length ||
       old.colors.first != colors.first;
+}
+
+/// The button's own sign: three arrows fanning out of one point, as the blobs do.
+class _FanMark extends CustomPainter {
+  const _FanMark();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double u = size.width / 34;
+    final Paint p = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5 * u
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final Path path = Path();
+    void head(Offset tip, Offset way) {
+      final Offset d = way / way.distance, n = Offset(-d.dy, d.dx);
+      final Offset a = tip - d * 4.2 * u + n * 3.8 * u,
+          b = tip - d * 4.2 * u - n * 3.8 * u;
+      path
+        ..moveTo(a.dx, a.dy)
+        ..lineTo(tip.dx, tip.dy)
+        ..lineTo(b.dx, b.dy);
+    }
+
+    // Straight up.
+    path
+      ..moveTo(17 * u, 29.5 * u)
+      ..lineTo(17 * u, 4.5 * u);
+    head(Offset(17 * u, 4.5 * u), const Offset(0, -1));
+    // Out to each side, bending away as it goes.
+    for (final double s in <double>[-1, 1]) {
+      final Offset tip = Offset((17 + s * 14.5) * u, 15.5 * u);
+      path
+        ..moveTo(17 * u, 29.5 * u)
+        ..quadraticBezierTo((17 + s * 3.5) * u, 19.5 * u, tip.dx, tip.dy);
+      head(tip, Offset(s * 0.93, -0.37));
+    }
+    canvas.drawPath(path, p);
+  }
+
+  @override
+  bool shouldRepaint(_FanMark old) => false;
 }
 
 /// The small round mark things wear while the blobs are being changed: white with a dark sign

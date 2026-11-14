@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 88 (14 November 2026)
+
+**File:** `releases/prism-build-88.apk`
+
+Needs Play Protect paused to install.
+
+- **The button's sign is a fan of three arrows, not a plus.** One arrow straight up, one bending out to each side, from one point: what the button does. It is drawn by Prism in its own line, not taken from a picture. With the blobs or the app list out it is the X; while the blobs are being changed it is the cog. The three change into one another with a short fade and swell; the plus used to turn into the X.
+
+**Checked:** looked at in my preview, closed and open; the long test's dry run.
+**Not checked:** on a phone; how the change between the three signs looks in motion.
+
 ## Prism, build 87 (14 November 2026)
 
 **File:** `releases/prism-build-87.apk`
