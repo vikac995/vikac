@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 120 (14 November 2026)
+
+**File:** `releases/prism-build-120.apk`
+
+Needs Play Protect paused to install. Can be installed over build 119.
+
+- **The app list opens faster.** It used a bouncy spring that overshot by about 5% and took about a third of a second. It now uses a stiffer one: about 1% overshoot, settled in roughly half the time. Closing is unchanged.
+- **Every bottom panel moves the same way.** Before: Weigh-in (and the other quick sheets) slid up quickly; the Apps panel faded in place; the Blob panel faded with a small rise; Prism's settings slid up from the very bottom of the screen. Now the Apps, Blob and settings panels all slide up by their own height in 0.26 s, like Weigh-in. Weigh-in itself is unchanged.
+- **The ring at the top of the app list is always accurate.** In the scrolling list it now follows the list exactly as you scroll: how much of the list you have seen. Switching between paged and scrolling re-aims it.
+- **The cog and the page number in the ring cross-fade** with a slight scale (0.18 s), instead of snapping. Only the small ring is redrawn.
+- **Less text.** The explanations under the Apps and Blob panel switches are gone. In Prism's settings, the "prototype" line is gone, and "Glass style" lost its long explanation.
+
+**Checked:** it compiles; in my preview (screenshots of the app list ring while scrolled, the Apps panel); the automatic test in the preview: 56 of 60 right, the 4 misses are the usual ones (3 need Android, 1 is a preview timing artefact).
+**Not checked:** on a phone. How the new opening speed feels is yours to judge.
+
 ## Prism, build 119 (14 November 2026)
 
 **File:** `releases/prism-build-119.apk`

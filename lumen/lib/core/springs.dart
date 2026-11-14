@@ -18,6 +18,9 @@ abstract final class Motions {
   static final SpringDescription expressive = _s(380, 0.7);
   static final SpringDescription expressiveSlow = _s(200, 0.75);
 
+  /// Things you do all day, like opening the app list: quick, with only a hint of give.
+  static final SpringDescription snappy = _s(1100, 0.82);
+
   // Standard: almost no overshoot, for everyday feedback.
   static final SpringDescription spatialFast = _s(1400, 0.9);
   static final SpringDescription spatial = _s(700, 0.9);

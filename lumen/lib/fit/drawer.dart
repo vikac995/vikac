@@ -107,6 +107,11 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     if (!_list.hasClients || _rowH <= 0) {
       return;
     }
+    // The ring follows the finger exactly: no spring to lag behind it.
+    final double? share = _listShare();
+    if (share != null) {
+      _ring.jumpTo(share);
+    }
     final List<AppTile> all = Apps.instance.all;
     final int i =
         ((_list.offset / _rowH + 0.7).floor().clamp(0, 1 << 20) * _cols).clamp(
@@ -185,8 +190,38 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   }
 
   /// Where the ring should be: the share of pages reached, plus a lean while the finger pulls.
-  void _aim({double lean = 0}) =>
-      _ring.animateTo(((_page + 1 + lean) / _pages).clamp(0.0, 1.0));
+  /// In the scrolling list: the share of the list seen so far, the same idea as pages reached.
+  void _aim({double lean = 0}) {
+    if (Apps.instance.scrolling) {
+      final double? s = _listShare();
+      if (s != null) {
+        _ring.animateTo(s);
+      } else {
+        // The list is not laid out yet: aim once it is.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final double? s = mounted ? _listShare() : null;
+          if (s != null) {
+            _ring.animateTo(s);
+          }
+        });
+      }
+      return;
+    }
+    _ring.animateTo(((_page + 1 + lean) / _pages).clamp(0.0, 1.0));
+  }
+
+  /// How much of the scrolling list has been seen: the bottom of the screen against its whole length.
+  double? _listShare() {
+    if (!_list.hasClients) {
+      return null;
+    }
+    final ScrollPosition p = _list.position;
+    if (!p.hasContentDimensions || !p.hasViewportDimension) {
+      return null;
+    }
+    final double v = p.viewportDimension;
+    return ((p.pixels + v) / (p.maxScrollExtent + v)).clamp(0.0, 1.0);
+  }
 
   @override
   void didUpdateWidget(AppDrawer old) {
@@ -194,7 +229,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     if (widget.open != old.open) {
       _rise.animateTo(
         widget.open ? 1 : 0,
-        spring: widget.open ? Motions.expressive : Motions.spatialFast,
+        spring: widget.open ? Motions.snappy : Motions.spatialFast,
       );
       if (widget.open) {
         Apps.instance.refresh();
@@ -445,11 +480,11 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       barrierDismissible: true,
       barrierLabel: 'Close',
       barrierColor: Colors.black.withValues(alpha: 0.4),
-      transitionDuration: const Duration(milliseconds: 220),
+      transitionDuration: panelTime,
+      transitionBuilder: panelNoFade,
       pageBuilder: (BuildContext context, _, _) {
         final LumenColors c = LumenColors.of(context);
-        return Align(
-          alignment: Alignment.bottomCenter,
+        return PanelRise(
           child: Padding(
             padding: EdgeInsets.fromLTRB(
               10,
@@ -526,18 +561,9 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                         onChanged: (bool v) {
                           Haptics.tick();
                           Apps.instance.setScrolling(v);
+                          // The ring now measures the other way of moving through the list.
+                          _aim();
                         },
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        Apps.instance.prismIcons
-                            ? 'Every app in Prism\'s look: its mark in white, on a calm colour of its own. The blobs have a switch of their own, in the Blob panel. A scrolling list has the letters at its side: slide along them.'
-                            : 'Every app with its own icon, as the phone has it. The blobs have a switch of their own, in the Blob panel. A scrolling list has the letters at its side: slide along them.',
-                        style: LumenType.text(
-                          13,
-                          color: c.inkMuted,
-                          height: 1.35,
-                        ),
                       ),
                     ],
                   ),
@@ -821,25 +847,47 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                 height: 38,
                                 // On the first page, a cog: the app list's own settings.
                                 // On the others, which page this is.
+                                // The change between them is a short cross-fade with a slight scale, so the
+                                // number never just snaps; only this small ring is drawn again.
                                 child: Center(
-                                  child:
-                                      (_page == 0 || Apps.instance.scrolling) &&
-                                          widget.pick == null
-                                      ? Icon(
-                                          Icons.settings_rounded,
-                                          size: 18,
-                                          color: c.ink,
-                                        )
-                                      : Text(
-                                          '${_page + 1}',
-                                          textScaler: TextScaler.noScaling,
-                                          style: LumenType.text(
-                                            13,
-                                            weight: 700,
+                                  child: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 180),
+                                    switchInCurve: Curves.easeOutCubic,
+                                    switchOutCurve: Curves.easeInCubic,
+                                    transitionBuilder:
+                                        (Widget w, Animation<double> a) =>
+                                            FadeTransition(
+                                              opacity: a,
+                                              child: ScaleTransition(
+                                                scale: Tween<double>(
+                                                  begin: 0.6,
+                                                  end: 1,
+                                                ).animate(a),
+                                                child: w,
+                                              ),
+                                            ),
+                                    child:
+                                        (_page == 0 ||
+                                                Apps.instance.scrolling) &&
+                                            widget.pick == null
+                                        ? Icon(
+                                            Icons.settings_rounded,
+                                            key: const ValueKey<String>('cog'),
+                                            size: 18,
                                             color: c.ink,
-                                            height: 1,
+                                          )
+                                        : Text(
+                                            '${_page + 1}',
+                                            key: ValueKey<int>(_page),
+                                            textScaler: TextScaler.noScaling,
+                                            style: LumenType.text(
+                                              13,
+                                              weight: 700,
+                                              color: c.ink,
+                                              height: 1,
+                                            ),
                                           ),
-                                        ),
+                                  ),
                                 ),
                               ),
                             ),

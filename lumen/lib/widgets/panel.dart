@@ -112,3 +112,46 @@ class RoomScaffold extends StatelessWidget {
     );
   }
 }
+
+/// How every bottom panel comes and goes: it slides up from the bottom edge
+/// by its own height, the same quick move as the quick-action sheets
+/// (Weigh-in and the others). Only the panel moves; nothing behind it is redrawn.
+class PanelRise extends StatelessWidget {
+  const PanelRise({super.key, required this.child});
+  final Widget child;
+
+  static final Animatable<Offset> _path = Tween<Offset>(
+    begin: const Offset(0, 1.1),
+    end: Offset.zero,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final Animation<double> a =
+        ModalRoute.of(context)?.animation ?? kAlwaysCompleteAnimation;
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: SlideTransition(
+        position: _path.animate(
+          CurvedAnimation(
+            parent: a,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+/// The timing every bottom panel uses, with [PanelRise].
+const Duration panelTime = Duration(milliseconds: 260);
+
+/// No fade on the panel itself: it slides, and only the shade behind it fades.
+Widget panelNoFade(
+  BuildContext context,
+  Animation<double> a,
+  Animation<double> b,
+  Widget child,
+) => child;

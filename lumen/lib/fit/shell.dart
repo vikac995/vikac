@@ -511,12 +511,12 @@ class _ShellState extends State<Shell>
       barrierDismissible: true,
       barrierLabel: 'Close',
       barrierColor: Colors.black.withValues(alpha: 0.4),
-      transitionDuration: const Duration(milliseconds: 220),
+      transitionDuration: panelTime,
+      transitionBuilder: panelNoFade,
       pageBuilder: (BuildContext context, _, _) {
         final LumenColors c = LumenColors.of(context);
         final RestBubble b = RestBubble.instance;
-        return Align(
-          alignment: Alignment.bottomCenter,
+        return PanelRise(
           child: Padding(
             padding: EdgeInsets.fromLTRB(
               10,
@@ -586,15 +586,6 @@ class _ShellState extends State<Shell>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'A blob you put down, and the timer, float over the screen. Choose where.',
-                        style: LumenType.text(
-                          13.5,
-                          color: c.inkMuted,
-                          height: 1.35,
-                        ),
-                      ),
                       const SizedBox(height: 16),
                       SwitchLine(
                         key: Robot.key('floatIn'),
@@ -616,15 +607,6 @@ class _ShellState extends State<Shell>
                         value: b.follow.value,
                         onChanged: (bool v) => _setFloating(follow: v),
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'An app opened from Prism brings its blob along, tucked at the side, until you are back in Prism.',
-                        style: LumenType.text(
-                          13,
-                          color: c.inkMuted,
-                          height: 1.35,
-                        ),
-                      ),
                       const SizedBox(height: 12),
                       // The blobs' own choice; the app list has its own, behind its cog.
                       SwitchLine(
@@ -635,21 +617,6 @@ class _ShellState extends State<Shell>
                           Apps.instance.setPrismIcons(v, blobs: true);
                         },
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        !b.canFloat
-                            ? 'With both off nothing floats, and a blob dragged out goes back to its place.'
-                            : (!b.floatIn.value
-                                  ? 'In Prism they are then seen only while the blobs are out, so that one can be put back.'
-                                  : (!b.floatOut.value
-                                        ? 'They are then gone as soon as Prism is left.'
-                                        : 'Drop one on the cross, or push it into a side, to put it away.')),
-                        style: LumenType.text(
-                          13,
-                          color: c.inkMuted,
-                          height: 1.35,
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -658,22 +625,6 @@ class _ShellState extends State<Shell>
           ),
         );
       },
-      transitionBuilder:
-          (
-            BuildContext context,
-            Animation<double> a,
-            _,
-            Widget child,
-          ) => FadeTransition(
-            opacity: a,
-            child: SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 0.08),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
-              child: child,
-            ),
-          ),
     );
   }
 
@@ -6507,11 +6458,11 @@ void showPrismSettings(BuildContext context) {
     barrierDismissible: true,
     barrierLabel: 'Close',
     barrierColor: Colors.black.withValues(alpha: 0.4),
-    transitionDuration: const Duration(milliseconds: 260),
+    transitionDuration: panelTime,
+    transitionBuilder: panelNoFade,
     pageBuilder: (BuildContext context, _, _) {
       final LumenColors c = LumenColors.of(context);
-      return Align(
-        alignment: Alignment.bottomCenter,
+      return PanelRise(
         child: Padding(
           padding: EdgeInsets.fromLTRB(
             10,
@@ -6548,14 +6499,6 @@ void showPrismSettings(BuildContext context) {
                       Text(
                         'Prism',
                         style: LumenType.display(26, weight: 700, color: c.ink),
-                      ),
-                      Text(
-                        'A fitness app prototype in the Lumen glass design. Data is made up.',
-                        style: LumenType.text(
-                          13.5,
-                          color: c.inkMuted,
-                          height: 1.35,
-                        ),
                       ),
                       const SizedBox(height: 16),
                       Text('Colour', style: LumenType.label(color: c.inkMuted)),
@@ -6667,7 +6610,7 @@ void showPrismSettings(BuildContext context) {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Glass style (Auto and Orig.: real glass, shows what scrolls under it. Event: still glass, cheaper, shows only the background)',
+                        'Glass style',
                         style: LumenType.label(color: c.inkMuted),
                       ),
                       const SizedBox(height: 8),
@@ -7063,15 +7006,6 @@ void showPrismSettings(BuildContext context) {
         ),
       );
     },
-    transitionBuilder:
-        (BuildContext context, Animation<double> a, _, Widget child) =>
-            SlideTransition(
-              position: Tween<Offset>(
-                begin: const Offset(0, 1),
-                end: Offset.zero,
-              ).animate(CurvedAnimation(parent: a, curve: Curves.easeOutCubic)),
-              child: child,
-            ),
   );
 }
 
