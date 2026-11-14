@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 121 (14 November 2026)
+
+**File:** `releases/prism-build-121.apk`
+
+Needs Play Protect paused to install. Can be installed over build 120.
+
+- **A floating blob in its own app shows the Blob sign.** When the app a blob stands for is already open (Bose in Bose, Claude in Claude), a tap on the blob opens the blobs, not the app. It now looks like that: the white stems with a dot in each blob's colour, as on Prism's button, instead of the app's icon. Apps whose icon looked like something else (Bose Connect's is a white plus) no longer confuse. The same goes for a blob of a Prism page while that page shows.
+- **It points the way the blobs come out:** into the screen from the side it is on, turned down when it is high and up when it is low.
+- It changes as soon as Prism knows you are in that app or have left it.
+
+**Checked:** it compiles.
+**Not checked:** on a phone, and not in my preview (the floating blob only exists on Android). The direction is worked out roughly the way the menu lays the blobs out, so it may be a few degrees off from where they actually land. If Prism wrongly thinks you are in the app (you left it from the recent apps another way), the blob shows the sign, and a tap opens the blobs: the same as the tap already did.
+
 ## Prism, build 120 (14 November 2026)
 
 **File:** `releases/prism-build-120.apk`

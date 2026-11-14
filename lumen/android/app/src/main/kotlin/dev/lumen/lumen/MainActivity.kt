@@ -975,7 +975,9 @@ class Floater(val timer: Boolean) {
     var short = ""
     var accent = 0xFFFFAE1A.toInt()
     var onAccent = 0xFF1D1300.toInt()
+    // Each of these can turn the lens into the Blob sign or back (see [atHome]), so it is drawn again.
     var foreground = true
+        set(v) { if (field != v) { field = v; view?.postInvalidate() } }
     var onTrain = false
 
     /** Prism's own Haptics switch. The floating parts obey it too. */
@@ -1021,9 +1023,11 @@ class Floater(val timer: Boolean) {
     // app, and forgets. Nothing looks, and nothing is asked of Android: it is only remembered.
     // It is what lets a tap on the lens tell "take me to my app" from "I am in my app already".
     var frontApp = ""
+        set(v) { if (field != v) { field = v; view?.postInvalidate() } }
 
     // Which of Prism's own pages is showing.
     var tab = 0
+        set(v) { if (field != v) { field = v; view?.postInvalidate() } }
 
     private var frontListener: android.content.BroadcastReceiver? = null
 
@@ -1470,6 +1474,59 @@ class Floater(val timer: Boolean) {
         blobMatrix.postTranslate(cx, cy)
         g.setLocalMatrix(blobMatrix)
         return g
+    }
+
+    /** The person is already where [p] leads: its app is in front, or its page is showing. */
+    private fun here(p: Pin): Boolean = when (p.kind) {
+        "app" -> !foreground && frontApp == p.pkg
+        "screen" -> foreground && tab == p.index
+        else -> false
+    }
+
+    /**
+     * The lens is where it leads, so a tap on it opens the blobs instead of the thing. It then
+     * shows the Blob sign, as Prism's button does, not the thing's own picture: an app's icon
+     * here would promise the app, which is already open (and some icons, like a plain plus,
+     * read as something else entirely).
+     */
+    private fun atHome(): Boolean {
+        val p = pin ?: return false
+        return mode() != 1 && container && blobs.isNotEmpty() && here(p)
+    }
+
+    /**
+     * The Blob sign: a stem for each blob with a dot in its colour, as on Prism's button, turned
+     * to [toward] (radians), the way the blobs will come out. [u] is the size of one of the
+     * button sign's 38 units.
+     */
+    private fun paintFanSign(canvas: android.graphics.Canvas, cx: Float, cy: Float, u: Float, toward: Double, paint: android.graphics.Paint) {
+        val n = blobs.size.coerceIn(1, 5)
+        val dot = floatArrayOf(6.4f, 5.8f, 5.1f, 4.4f, 3.9f)[n - 1] * u
+        val step = doubleArrayOf(0.0, 52.0, 40.0, 32.0, 28.0)[n - 1] * Math.PI / 180.0
+        val reach = (if (n == 1) 17f else 21f) * u
+        // The foot sits back from the middle, opposite the way the sign points, so the whole sign is centred.
+        val back = (if (n == 1) 10f else 12f) * u
+        val fx = cx - back * Math.cos(toward).toFloat()
+        val fy = cy - back * Math.sin(toward).toFloat()
+        val path = android.graphics.Path()
+        paint.style = android.graphics.Paint.Style.FILL
+        paint.shader = null
+        for (k in 0 until n) {
+            val a = toward + (k - (n - 1) / 2.0) * step
+            val wx = Math.cos(a).toFloat(); val wy = Math.sin(a).toFloat()
+            val sx = -wy; val sy = wx
+            val tx = fx + wx * reach; val ty = fy + wy * reach
+            val nx = tx - wx * dot * 0.7f; val ny = ty - wy * dot * 0.7f
+            path.reset()
+            path.moveTo(fx, fy)
+            path.lineTo(nx - sx * dot * 0.5f, ny - sy * dot * 0.5f)
+            path.lineTo(nx + sx * dot * 0.5f, ny + sy * dot * 0.5f)
+            path.close()
+            paint.color = WHITE
+            canvas.drawPath(path, paint)
+            paint.color = blobs[k].color or 0xFF000000.toInt()
+            canvas.drawCircle(tx, ty, dot, paint)
+        }
     }
 
     private fun paintBlob(
@@ -2090,11 +2147,7 @@ class Floater(val timer: Boolean) {
      */
     private fun tapPinned(context: Context) {
         val p = pin ?: return
-        val there = when (p.kind) {
-            "app" -> !foreground && frontApp == p.pkg
-            "screen" -> foreground && tab == p.index
-            else -> false
-        }
+        val there = here(p)
         lastTouch += "; Prism in front ${foreground}, thinks ${if (frontApp.isEmpty()) "nothing" else frontApp} is in front"
         if (there && container && blobs.isNotEmpty()) {
             lastTouch += "; so it opens the menu"
@@ -3681,6 +3734,21 @@ class Floater(val timer: Boolean) {
             canvas.restore()
         }
 
+        /**
+         * Roughly the way the blobs' fan opens from here: into the screen from the side the lens
+         * is on, turned toward the middle when the lens is high or low, as the menu lays it out.
+         */
+        private fun toward(): Double {
+            val m = resources.displayMetrics
+            val x = lp.x + width / 2f
+            val y = lp.y + height / 2f
+            val inward = if (x > m.widthPixels / 2f) Math.PI else 0.0
+            // How far from the middle, up or down: at the very top or foot it turns about 60 degrees.
+            val off = ((y - m.heightPixels / 2f) / (m.heightPixels / 2f)).coerceIn(-1f, 1f)
+            val turn = -off * Math.toRadians(60.0)
+            return if (inward == 0.0) turn else Math.PI - turn
+        }
+
         private fun paintLens(canvas: android.graphics.Canvas, k: Float, inner: Boolean = true) {
             if (shadersFor != lensColor() || shadersPinned != filled()) shaders()
             val colour = lensColor()
@@ -3741,6 +3809,11 @@ class Floater(val timer: Boolean) {
             canvas.drawCircle(r, r, disc - 0.65f * dp, paint)
             paint.shader = null
             paint.style = android.graphics.Paint.Style.FILL
+            if (t == null && atHome()) {
+                // Already where it leads: the Blob sign, pointing the way the blobs will come out.
+                paintFanSign(canvas, r, r, 1.05f * dp, toward(), paint)
+                return
+            }
             if (t == null && container) {
                 // The container: what was put in it sits inside as the blob it is, with the glass around it.
                 val inside = pin
