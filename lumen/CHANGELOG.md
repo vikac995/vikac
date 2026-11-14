@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 125 (15 November 2026)
+
+**File:** `releases/prism-build-125.apk`
+
+Needs Play Protect paused to install. Can be installed over build 124.
+
+From your recording and the flight recorder (00:45:55, "thinks nothing is in front" while you were in Claude):
+
+- **The floating blob no longer turns back into the app's icon after the recent apps.** Prism keeps a note of which app it opened, to know whether the blob is in its own app. Opening the recent apps (the task manager) wiped that note, on purpose, because from there you can go anywhere. So back in Claude, the blob showed Claude's icon until a tap reminded it. Now the note is kept: most often you come straight back to the same app.
+- **Where Prism has usage access, it looks instead of guessing.** After the recent apps it checks which app you landed in (every second and a half, for at most 18 seconds, stopping as soon as it knows), and it checks once more at the moment you tap the blob. So a tap does the right thing even if you changed apps in a way Prism was not told of. Without usage access it keeps the last app it opened.
+- **The Blob sign turns smoothly.** As the blob is dragged, the sign follows the direction the blobs will come out in a glide instead of jumping. It is drawn again only while it is still turning; at rest nothing runs.
+
+**Checked:** it compiles.
+**Not checked:** on a phone, and not in my preview (the floating blob only exists on Android). You have not given Prism usage access yet (the card on Home says so), so on your phone it will use the kept note. That fixes coming back to the same app. Its known limit without usage access: go from Claude, through the recent apps, into another app, and the Claude blob there shows the Blob sign and a tap opens the blobs, not Claude. With usage access that case is right too. Allowing it on the Home card is worth it for this.
+
 ## Prism, build 124 (15 November 2026)
 
 **File:** `releases/prism-build-124.apk`

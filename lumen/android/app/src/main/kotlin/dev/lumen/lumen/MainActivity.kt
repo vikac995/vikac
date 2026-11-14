@@ -1030,6 +1030,58 @@ class Floater(val timer: Boolean) {
         set(v) { if (field != v) { field = v; view?.postInvalidate() } }
 
     private var frontListener: android.content.BroadcastReceiver? = null
+    private val frontHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var frontChecks = 0
+
+    /**
+     * Which app Android says is in front, from the usage record: null where Prism may not look
+     * (no usage access), empty where it cannot yet be told (the recent apps or a launcher are
+     * showing, or Prism itself), otherwise the app's package. One short look at the last half
+     * minute: nothing is kept running for it.
+     */
+    private fun frontFromUsage(context: Context): String? {
+        try {
+            val ops = context.getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+            val mode = if (Build.VERSION.SDK_INT >= 29) {
+                ops.unsafeCheckOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
+            } else {
+                @Suppress("DEPRECATION")
+                ops.checkOpNoThrow(android.app.AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), context.packageName)
+            }
+            if (mode != android.app.AppOpsManager.MODE_ALLOWED) return null
+            val um = context.getSystemService(Context.USAGE_STATS_SERVICE) as android.app.usage.UsageStatsManager
+            val now = System.currentTimeMillis()
+            val events = um.queryEvents(now - 30000, now)
+            val e = android.app.usage.UsageEvents.Event()
+            var last = ""
+            while (events.hasNextEvent()) {
+                events.getNextEvent(e)
+                if (e.eventType == 1) last = e.packageName ?: "" // 1: an activity came to the front
+            }
+            if (last == context.packageName || last.contains("launcher") || last.contains("systemui")) return ""
+            return last
+        } catch (ex: Exception) {
+            return null
+        }
+    }
+
+    /** The recent apps were opened. Looks, every second and a half for a while, for the app the person lands in. */
+    private fun watchFront(context: Context) {
+        frontChecks = 12
+        frontHandler.removeCallbacksAndMessages(null)
+        frontHandler.postDelayed(object : Runnable {
+            override fun run() {
+                if (frontChecks-- <= 0 || foreground) return
+                val p = frontFromUsage(context) ?: return
+                if (p.isEmpty()) {
+                    frontHandler.postDelayed(this, 1500)
+                } else if (p != frontApp) {
+                    Trail.add("$who: after the recent apps, $p is in front")
+                    frontApp = p
+                }
+            }
+        }, 1200)
+    }
 
     private fun listenForFront(context: Context) {
         if (frontListener != null) return
@@ -1037,7 +1089,10 @@ class Floater(val timer: Boolean) {
         val r = object : android.content.BroadcastReceiver() {
             override fun onReceive(c: Context, i: android.content.Intent) {
                 val why = i.getStringExtra("reason")
-                if (why == "recentapps" || why == "homekey") frontApp = ""
+                // Home leads back to Prism, which is the home screen. The recent apps lead anywhere:
+                // most often straight back to the same app, so that is what is kept, and where
+                // Prism may look (usage access) it looks, a few times, until it knows.
+                if (why == "homekey") frontApp = "" else if (why == "recentapps") watchFront(c.applicationContext)
             }
         }
         try {
@@ -2147,6 +2202,14 @@ class Floater(val timer: Boolean) {
      */
     private fun tapPinned(context: Context) {
         val p = pin ?: return
+        // Where Prism may look, it looks before deciding: the person may have changed apps in a way it was not told of.
+        if (!foreground) {
+            val now = frontFromUsage(context)
+            if (!now.isNullOrEmpty() && now != frontApp) {
+                Trail.add("$who: on a tap, $now is in front (Prism thought ${if (frontApp.isEmpty()) "nothing" else frontApp})")
+                frontApp = now
+            }
+        }
         val there = here(p)
         lastTouch += "; Prism in front ${foreground}, thinks ${if (frontApp.isEmpty()) "nothing" else frontApp} is in front"
         if (there && container && blobs.isNotEmpty()) {
@@ -3738,10 +3801,32 @@ class Floater(val timer: Boolean) {
          * Roughly the way the blobs' fan opens from here: into the screen from the side the lens
          * is on, turned toward the middle when the lens is high or low, as the menu lays it out.
          */
+        // The way the sign is drawn pointing just now. It follows [toward] smoothly, and is drawn
+        // again only while it still has some way to go: at rest nothing runs.
+        private var signTurn = Double.NaN
+        private var signAt = 0L
+
+        private fun signAngle(): Double {
+            val want = toward()
+            val now = android.os.SystemClock.uptimeMillis()
+            if (signTurn.isNaN() || now - signAt > 400) {
+                signTurn = want
+            } else {
+                // The short way round, and a share of it each frame that does not depend on the frame rate.
+                var d = (want - signTurn) % (2 * Math.PI)
+                if (d > Math.PI) d -= 2 * Math.PI
+                if (d < -Math.PI) d += 2 * Math.PI
+                signTurn += d * (1 - Math.exp(-(now - signAt) / 70.0))
+                if (Math.abs(d) > 0.004) postInvalidateOnAnimation() else signTurn = want
+            }
+            signAt = now
+            return signTurn
+        }
+
         private fun toward(): Double {
             val m = resources.displayMetrics
-            val x = lp.x + width / 2f
-            val y = lp.y + height / 2f
+            val x = posX() + sizeNow() / 2f
+            val y = posY() + sizeNow() / 2f
             val inward = if (x > m.widthPixels / 2f) Math.PI else 0.0
             // How far from the middle, up or down: at the very top or foot it turns about 60 degrees.
             val off = ((y - m.heightPixels / 2f) / (m.heightPixels / 2f)).coerceIn(-1f, 1f)
@@ -3811,7 +3896,7 @@ class Floater(val timer: Boolean) {
             paint.style = android.graphics.Paint.Style.FILL
             if (t == null && atHome()) {
                 // Already where it leads: the Blob sign, pointing the way the blobs will come out.
-                paintFanSign(canvas, r, r, 1.05f * dp, toward(), paint)
+                paintFanSign(canvas, r, r, 1.05f * dp, signAngle(), paint)
                 return
             }
             if (t == null && container) {
