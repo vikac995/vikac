@@ -120,25 +120,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             ? LumenColors.of(context).accent
             : _actions[_actionAt(i)].$3);
 
-  /// How many notifications the app in place [i] has. Nothing for actions and pages.
-  int _blobNotes(int i) {
-    if (!_isApp(i)) {
-      return 0;
-    }
-    final String package = _pinKey(i).substring(4);
-    if (package.startsWith('label:')) {
-      // Known by the name on the home screen: its notifications are under its real package.
-      final String name = package.substring(6).toLowerCase();
-      for (final AppTile t in Apps.instance.all) {
-        if (t.label.toLowerCase() == name) {
-          return Notes.instance.of(t.package);
-        }
-      }
-      return 0;
-    }
-    return Notes.instance.of(package);
-  }
-
   // Changing a blob: hold it. The app drawer comes up to choose what takes its place.
   int? _editSlot;
 
@@ -176,14 +157,71 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       // and the floating lens's own menu shows these same blobs.
       _sendPin();
       _sendBlobs();
+      _reseat();
     }
   }
 
   void _pinChanged() {
-    if (mounted) {
-      setState(() {});
+    if (!mounted) {
+      return;
     }
+    setState(() {});
+    // What floats is out of the menu, and what has stopped floating is back in it.
+    _reseat();
+    if (_open) {
+      for (int i = 0; i < _n; i++) {
+        if (_floating(i)) {
+          _out[i].animateTo(0, spring: Motions.spatialFast);
+        } else if (_out[i].target < 0.5 && _shotI != i) {
+          _out[i].animateTo(1, spring: _shoot);
+        }
+      }
+    }
+    // The floating lens's own menu holds the same blobs.
+    _sendBlobs();
   }
+
+  // Where each blob sits along the fan, counted in places from the middle. With all five in,
+  // they sit at -2 to 2. A blob that is floating as the lens is out of the menu, and so is one
+  // that has been dragged away from it: the ones left close ranks around the middle, so that
+  // four in the menu looks like a way it can stay, not a gap waiting to be filled.
+  late final List<SpringValue> _seat = <SpringValue>[
+    for (int i = 0; i < 5; i++)
+      SpringValue(this, value: i - 2.0, spring: Motions.spatialFast),
+  ];
+  final Set<int> _seated = <int>{0, 1, 2, 3, 4};
+  // The blob that has been dragged clear of the others, if one has.
+  int? _awayI;
+
+  /// Whether the thing in place [i] is the one floating as the lens.
+  bool _floating(int i) => RestBubble.instance.pinned.value == _pinKey(i);
+
+  /// Whether place [i] is, for now, not one of the blobs in the menu.
+  bool _leftOut(int i) => _floating(i) || i == _awayI || i == _shotI;
+
+  /// Gives every blob left in the menu its seat. One that was out and is back takes its seat
+  /// at once; the others move over to theirs.
+  void _reseat({bool jump = false}) {
+    final List<int> shown = <int>[
+      for (int i = 0; i < _n; i++)
+        if (!_leftOut(i)) i,
+    ];
+    for (int j = 0; j < shown.length; j++) {
+      final int i = shown[j];
+      final double to = j - (shown.length - 1) / 2;
+      if (jump || !_seated.contains(i)) {
+        _seat[i].jumpTo(to);
+      } else {
+        _seat[i].animateTo(to);
+      }
+    }
+    _seated
+      ..clear()
+      ..addAll(shown);
+  }
+
+  /// How far round the fan a seat is: straight up in the middle, about 28 degrees for each place.
+  static double _seatAngle(double seat) => math.pi * (0.5 + seat * 0.155);
 
   /// The name a blob is pinned under.
   String _pinKey(int i) =>
@@ -263,6 +301,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   Future<void> _sendBlobs() async {
     final List<Map<String, Object>> all = <Map<String, Object>>[];
     for (int i = 0; i < _n; i++) {
+      if (_floating(i)) {
+        continue; // It is in the lens, not in the menu.
+      }
       final Map<String, Object>? blob = await _blobMap(_pinKey(i));
       if (blob != null) {
         // Which place it is in, so the floating lens's menu can ask for that place to be changed.
@@ -333,16 +374,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       'package': package,
       'name': name,
       'color': color.toARGB32(),
-      // The colour of the small number on it: the one opposite its own.
-      'badge': Notes.colourFor(color, accent).toARGB32(),
       'picture': picture,
       'icon': ?icon,
     };
   }
 
-  /// The disc of a blob: its colour, lighter at the top, and its mark. The one that floats wears a bright ring.
+  /// The disc of a blob: its colour, lighter at the top, and its mark.
   Widget _blobDisc(int i) {
-    final bool floats = RestBubble.instance.pinned.value == _pinKey(i);
     return Container(
       width: _blob,
       height: _blob,
@@ -356,46 +394,16 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           ],
         ),
         shape: CircleBorder(
-          side: BorderSide(
-            color: Colors.white.withValues(alpha: floats ? 0.95 : 0.2),
-            width: floats ? 2.5 : 1,
-          ),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
         ),
       ),
       child: _blobFace(i),
     );
   }
 
-  /// The small number on an app's blob: how many notifications it has, on the colour opposite
-  /// the app's own, with a dark edge that cuts it clear of the blob.
-  Widget _noteBadge(int i) {
-    final int n = _blobNotes(i);
-    return Container(
-      constraints: const BoxConstraints(minWidth: 25, minHeight: 25),
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      alignment: Alignment.center,
-      decoration: ShapeDecoration(
-        color: Notes.colourFor(_blobColor(i), LumenColors.of(context).accent),
-        shape: const StadiumBorder(
-          side: BorderSide(color: Color(0xEB101216), width: 2),
-        ),
-      ),
-      child: Text(
-        n > 99 ? '99+' : '$n',
-        textScaler: TextScaler.noScaling,
-        style: LumenType.text(
-          11.5,
-          weight: 720,
-          color: Colors.white,
-          height: 1,
-        ),
-      ),
-    );
-  }
-
   /// A blob picked up out of the menu follows the finger. Near the button it is drawn onto it
   /// and the button swells to take it: letting go there launches it.
-  void _blobDrag(Offset at, Offset button) {
+  void _blobDrag(int i, Offset at, Offset button, Offset home) {
     final bool near = (at - button).distance < (_armed ? 80 : 62);
     if (near != _armed) {
       _armed = near;
@@ -403,6 +411,16 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _kick.animateTo(near ? 1.2 : 1);
     }
     _dragAt.value = near ? button + (at - button) * 0.22 : at;
+    // Clear of its place, it has left the menu: the others close ranks at once. Brought back,
+    // they make room for it again.
+    final bool clear = (at - home).distance > (_awayI == i ? 56 : 70);
+    if (clear != (_awayI == i)) {
+      setState(() => _awayI = clear ? i : null);
+      _reseat();
+      if (!near) {
+        Haptics.tick();
+      }
+    }
   }
 
   void _blobDrop(int i, Offset button, Offset home, Offset velocity) {
@@ -425,7 +443,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     setState(() {
       _dragI = null;
       _backI = i;
+      _awayI = null;
     });
+    _reseat();
     _dragBack
       ..jumpTo(1)
       ..animateTo(0);
@@ -444,7 +464,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _dragI = null;
       _backI = null;
       _shotI = i;
+      _awayI = null;
     });
+    _reseat();
     // It stays drawn where it was put down until the lens is there to take over.
     _gulp.jumpTo(0);
     _shot.jumpTo(0);
@@ -469,6 +491,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         _shotI = null;
         _backI = i;
       });
+      _reseat();
       _dragBack
         ..jumpTo(1)
         ..animateTo(0);
@@ -481,6 +504,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Future<void>.delayed(const Duration(milliseconds: 90), () {
       if (mounted) {
         setState(() => _shotI = null);
+        _reseat();
       }
     });
   }
@@ -497,7 +521,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _dragI = null;
       _backI = null;
       _shotI = i;
+      _awayI = null;
     });
+    _reseat();
     _shot.jumpTo(0);
     _gulp
       ..jumpTo(0)
@@ -523,6 +549,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         _shotI = null;
         _backI = i;
       });
+      _reseat();
       _dragBack
         ..jumpTo(1)
         ..animateTo(0);
@@ -570,6 +597,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       Future<void>.delayed(const Duration(milliseconds: 90), () {
         if (mounted) {
           setState(() => _shotI = null);
+          _reseat();
         }
       });
     }
@@ -816,11 +844,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             _pickFor((call.arguments as num).toInt().clamp(0, _n - 1));
             return;
           }
-          if (call.method == 'notes') {
-            // Android says how many notifications each app has.
-            Notes.instance.take(call.arguments);
-            return;
-          }
           if (RestBubble.instance.handle(call)) {
             Diag.instance.event('floating workout: ${call.method}');
             return;
@@ -874,10 +897,8 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     BlobSlots.instance
       ..load()
       ..addListener(_blobsChanged);
+    _reseat(jump: true);
     Apps.instance.addListener(_appsChanged);
-    // The numbers on the blobs follow the notifications.
-    Notes.instance.counts.addListener(_pinChanged);
-    Notes.instance.refresh();
     if (BlobSlots.instance.keys.any(
       (String? k) => k != null && k.startsWith('app:'),
     )) {
@@ -1442,13 +1463,22 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     }
     _fuses.clear();
     if (v) {
+      // The blobs in the menu take their seats and shoot out, one a moment after another.
+      // What is floating as the lens is not among them.
+      _awayI = null;
+      _reseat(jump: true);
+      int order = 0;
       for (int i = 0; i < _n; i++) {
+        if (_floating(i)) {
+          continue;
+        }
         _fuses.add(
           Timer(
-            Duration(milliseconds: i * 18),
+            Duration(milliseconds: order * 18),
             () => _out[i].animateTo(1, spring: _shoot),
           ),
         );
+        order++;
       }
       _kick.jumpTo(0.84);
       _kick.animateTo(1);
@@ -1476,7 +1506,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       Diag.instance.event('open ${_blobName(i)}');
       // The app opens out of the blob that was tapped.
       final double dpr = MediaQuery.devicePixelRatioOf(context);
-      final double angle = math.pi * (0.19 + 0.62 * i / (_n - 1));
+      final double angle = _seatAngle(_seat[i].value);
       final Offset at =
           _home + Offset(-math.cos(angle), -math.sin(angle)) * _reach;
       final Rect from = Rect.fromCenter(
@@ -1541,7 +1571,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     );
     _home = bc;
     Offset rest(int i) {
-      final double a = math.pi * (0.19 + 0.62 * i / (_n - 1));
+      final double a = _seatAngle(_seat[i].value);
       return bc + Offset(-math.cos(a), -math.sin(a)) * _reach;
     }
 
@@ -1971,6 +2001,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
               ListenableBuilder(
                 listenable: Listenable.merge(<Listenable>[
                   _out[i],
+                  _seat[i],
                   _dragAt,
                   _dragBack,
                 ]),
@@ -2022,8 +2053,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                             });
                             Haptics.tick();
                           },
-                          onPanUpdate: (DragUpdateDetails d) =>
-                              _blobDrag(d.globalPosition - _dragGrab, bc),
+                          onPanUpdate: (DragUpdateDetails d) => _blobDrag(
+                            i,
+                            d.globalPosition - _dragGrab,
+                            bc,
+                            rest(i),
+                          ),
                           onPanEnd: (DragEndDetails d) => _blobDrop(
                             i,
                             bc,
@@ -2044,20 +2079,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                     1,
                                   )
                                   ..rotateZ(-ang),
-                                // An app with notifications wears their number.
-                                child: _blobNotes(i) > 0 && p > 0.9
-                                    ? Stack(
-                                        clipBehavior: Clip.none,
-                                        children: <Widget>[
-                                          _blobDisc(i),
-                                          Positioned(
-                                            right: -4,
-                                            top: -4,
-                                            child: _noteBadge(i),
-                                          ),
-                                        ],
-                                      )
-                                    : _blobDisc(i),
+                                child: _blobDisc(i),
                               ),
                               const SizedBox(height: 7),
                               // The name appears once the blob is nearly there, not while it is a speck.
@@ -2871,17 +2893,6 @@ void showPrismSettings(BuildContext context) {
                               label: 'The lens is a container (new)',
                               value: RestBubble.instance.container.value,
                               onChanged: RestBubble.instance.setContainer,
-                            ),
-                      ),
-                      const SizedBox(height: 12),
-                      ListenableBuilder(
-                        listenable: Notes.instance.allowed,
-                        builder: (BuildContext context, Widget? _) =>
-                            SwitchLine(
-                              label: 'Notification counts on icons',
-                              value: Notes.instance.allowed.value,
-                              // Android decides this too, on its own screen.
-                              onChanged: (bool _) => Notes.instance.ask(),
                             ),
                       ),
                       const SizedBox(height: 12),

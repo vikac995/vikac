@@ -3,8 +3,6 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'apps.dart';
-
 /// The workout, floating over other apps: a small glass lens with the timer, which opens
 /// into a panel for logging the set. It appears when Prism leaves the screen during a workout. It is drawn by Android itself,
 /// not by Flutter, so it costs nothing in Prism and works over any app.
@@ -54,8 +52,6 @@ class RestBubble with WidgetsBindingObserver {
     try {
       allowed.value =
           await _device.invokeMethod<bool>('overlayAllowed') ?? false;
-      // The person may also just have allowed Prism to be told of notifications.
-      await Notes.instance.refresh();
     } catch (_) {
       // Not on Android.
     }

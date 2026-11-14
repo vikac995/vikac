@@ -1,8 +1,28 @@
 # Lumen changelog
 
+## Prism, build 68 (14 November 2026)
+
+**File:** `releases/prism-build-68.apk`
+
+**Build 67 could not be installed.** It asked Android for leave to read notifications, for the counts on icons. Google Play Protect blocks any app installed from a file that asks for that ("App blocked to protect your device"). So the counts are taken out again, all of them: the request, the switch in settings, and the numbers on tiles, blobs and the lens. This build asks for nothing new, and installs like the ones before 67. Counts on icons are only possible for an app installed from a store.
+
+Everything else from build 67 is here (tap, drag and hold on the blobs; Prism's pages among the choices; the timer as its own control; the usage permission removed), plus:
+
+- **The blobs that are left close ranks.** Drag a blob clear of the others and the rest move over at once, evenly around the middle; bring it back and they make room again. While a blob floats as the lens it is out of the menu, which then holds four. When the lens is dropped on the cross, the blob is back among them. The lens's own menu does the same, and shows only the blobs that are not in the lens.
+
+**What to look for:**
+- That it installs.
+- Drag a blob out slowly: the others should move over as it leaves, not when you let go.
+- Open the blobs while one is floating: four, with no gap.
+
+**Checked:** it compiles, and the file asks only for vibration and drawing over other apps. In my preview: the others closing ranks during a drag, and four blobs afterwards.
+**Not checked:** on a phone, including whether Play Protect now lets it through. The request it objected to is gone, which is the only thing that changed between 66 (installed) and 67 (blocked) in what the app asks for.
+
 ## Prism, build 67 (14 November 2026)
 
 **File:** `releases/prism-build-67.apk`
+
+**Cannot be installed:** Google Play Protect blocks it, because of the notification counts. Build 68 is this build without them.
 
 **The blobs: three gestures, each with one meaning.**
 - **Tap** a blob: use it.

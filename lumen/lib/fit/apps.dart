@@ -602,65 +602,6 @@ class IconEngine {
   }
 }
 
-/// How many notifications each app has. Android tells Prism whenever that changes, once the
-/// person has allowed it on Android's own screen. Prism never goes looking.
-class Notes {
-  Notes._();
-  static final Notes instance = Notes._();
-  static const MethodChannel _device = MethodChannel('lumen/device');
-  final ValueNotifier<Map<String, int>> counts =
-      ValueNotifier<Map<String, int>>(const <String, int>{});
-  final ValueNotifier<bool> allowed = ValueNotifier<bool>(false);
-
-  int of(String package) => counts.value[package] ?? 0;
-
-  /// What Android has just said: a number for each app that has any.
-  void take(Object? told) {
-    if (told is Map) {
-      counts.value = <String, int>{
-        for (final MapEntry<Object?, Object?> e in told.entries)
-          e.key! as String: (e.value! as num).toInt(),
-      };
-    }
-  }
-
-  Future<void> refresh() async {
-    try {
-      allowed.value = await _device.invokeMethod<bool>('notesAllowed') ?? false;
-      take(await _device.invokeMethod<Object?>('notes'));
-    } catch (_) {
-      // Not on Android.
-    }
-  }
-
-  /// Opens Android's own screen for it. Only the person can allow it.
-  Future<void> ask() async {
-    try {
-      await _device.invokeMethod<void>('askNotes');
-    } catch (_) {
-      // Not on Android.
-    }
-  }
-
-  /// The colour of the small number on an app: the one opposite the app's own colour, brought
-  /// into Prism's palette, so the number stands out against its own icon and a white figure
-  /// reads on it. An app with no colour of its own takes [accent].
-  static Color colourFor(Color icon, Color accent) {
-    final HSLColor h = HSLColor.fromColor(icon);
-    if (h.saturation < 0.18) {
-      return accent;
-    }
-    return BlobApps.tame(
-      h
-          .withHue((h.hue + 180) % 360)
-          .withSaturation(0.8)
-          .withLightness(0.5)
-          .toColor(),
-      vivid: 1.3,
-    );
-  }
-}
-
 /// What is in each of the five places of the blob menu, where that has been changed from what
 /// Prism starts with: one of Prism's own actions ('action:2') or an app ('app:com.whatsapp').
 /// Null means unchanged. Kept in a small file.
@@ -936,13 +877,5 @@ class Apps extends ChangeNotifier {
           ),
     ];
     summary = 'pretend apps';
-    // And made-up notifications, so the numbers can be looked at.
-    Notes.instance.counts.value = const <String, int>{
-      'pretend.Bank': 3,
-      'pretend.Chat': 12,
-      'pretend.Camera': 1,
-      'pretend.Mail': 128,
-      'pretend.Games': 7,
-    };
   }
 }
