@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 
+import 'recorder.dart';
+
 import '../core/glass.dart';
 import '../core/settings.dart';
 
@@ -104,7 +106,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 111';
+  static const String build = 'Prism build 112';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -280,6 +282,7 @@ class Diag {
       ..actionName = what
       ..actionAt = _nowOnFrameClock;
     _events.add('${(now / 1000).toStringAsFixed(1)}s $what');
+    Recorder.instance.add(what);
     if (_events.length > 60) {
       _events.removeAt(0);
     }
@@ -481,6 +484,12 @@ class Diag {
 
   /// One extra line for the top of the report, supplied by whoever knows it.
   String Function()? extraLine;
+
+  /// The settings as they are now, for the flight recorder's report. Set by the shell.
+  List<String> Function()? settingsLines;
+
+  /// How long one refresh is, in milliseconds.
+  double get budgetMs => 1000 / _refresh;
 
   /// Called with true when a test starts and false when it ends, so the
   /// blob menu can show Prism's own actions while the robot is tapping it.

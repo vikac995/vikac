@@ -26,6 +26,7 @@ import 'apps.dart';
 import 'bubble.dart';
 import 'drawer.dart';
 import 'progress_page.dart';
+import 'recorder.dart';
 import 'robot.dart';
 import 'state.dart';
 import 'still_glass.dart';
@@ -83,6 +84,21 @@ class _ShellState extends State<Shell>
         state == AppLifecycleState.hidden) {
       _freeLater = Timer(const Duration(minutes: 2), _freeMemory);
     }
+  }
+
+  /// Every setting as it is now, a few lines, for reports.
+  List<String> _settingsNow() {
+    final RestBubble b = RestBubble.instance;
+    String onOff(bool v) => v ? 'on' : 'off';
+    return <String>[
+      '  colour ${Look.instance.hue.round()}  ·  background ${Look.vibes[Look.instance.vibe]}${Look.instance.vibe != 0 ? ' ${Look.instance.pattern}' : ''}  ·  theme ${settings.themeMode.name}',
+      '  frame-rate readout ${onOff(settings.showFps)}  ·  haptics ${onOff(settings.haptics)}  ·  reduce transparency ${onOff(settings.reduceTransparency)}  ·  background lights ${onOff(Diag.instance.wallpaperOn.value)}',
+      '  glass style ${const <String>['Orig.', 'One', 'Frost', 'Event', 'Auto'][Diag.instance.glassMode.value.clamp(0, 4)]}${Diag.instance.glassMode.value == 4 ? ' (now ${const <String>['Orig.', 'One', 'Frost', 'Event'][Diag.instance.autoLevel.value.clamp(0, 3)]})' : ''}  ·  glass quality ${settings.quality.name}  ·  Prism icons ${onOff(Apps.instance.prismIcons)}',
+      '  floats over other apps ${onOff(b.allowed.value)}  ·  lens is a container ${onOff(b.container.value)}  ·  notification counts ${onOff(Notes.instance.allowed.value)}  ·  blobs open real apps ${onOff(BlobApps.instance.on.value)}',
+      '  blob: in Prism ${onOff(b.floatIn.value)}  ·  over other apps ${onOff(b.floatOut.value)}  ·  launch and follow ${onOff(b.follow.value)}  ·  labels ${onOff(BlobSlots.instance.names)}  ·  floating ${b.pinned.value ?? 'nothing'}',
+      '  blobs: ${<String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(', ')}',
+      '  swipes: ${<String>[for (int g = 0; g < 4; g++) '${GestureSlots.names[g]} ${GestureSlots.instance.keys[g]}'].join(', ')}',
+    ];
   }
 
   /// What Prism's side holds in pictures, in bytes: the picture cache, and the apps' icons.
@@ -1639,6 +1655,10 @@ class _ShellState extends State<Shell>
     WidgetsBinding.instance.addObserver(this);
     Diag.instance.autoScript = _robot;
     Diag.instance.longTest = _longTest;
+    Diag.instance.settingsLines = () => <String>[
+      'SETTINGS:',
+      ..._settingsNow(),
+    ];
     Diag.instance.drainTest = () => _longTest(
       rounds: 0,
       still: 150,
@@ -2061,16 +2081,9 @@ class _ShellState extends State<Shell>
     // What the test set differently for itself.
     final List<String> adjusted = <String>[];
     // Every setting as it was when the test began, for the top of the report.
-    String onOff(bool v) => v ? 'on' : 'off';
     final List<String> settingsWere = <String>[
       'SETTINGS when the test began:',
-      '  colour ${Look.instance.hue.round()}  ·  background ${Look.vibes[Look.instance.vibe]}${Look.instance.vibe != 0 ? ' ${Look.instance.pattern}' : ''}  ·  theme ${settings.themeMode.name}',
-      '  frame-rate readout ${onOff(settings.showFps)}  ·  haptics ${onOff(settings.haptics)}  ·  reduce transparency ${onOff(settings.reduceTransparency)}  ·  background lights ${onOff(Diag.instance.wallpaperOn.value)}',
-      '  glass style ${const <String>['Orig.', 'One', 'Frost', 'Event', 'Auto'][Diag.instance.glassMode.value.clamp(0, 4)]}${Diag.instance.glassMode.value == 4 ? ' (now ${const <String>['Orig.', 'One', 'Frost', 'Event'][Diag.instance.autoLevel.value.clamp(0, 3)]})' : ''}  ·  glass quality ${settings.quality.name}',
-      '  floats over other apps ${onOff(lensOf.allowed.value)}  ·  lens is a container ${onOff(lensOf.container.value)}  ·  notification counts ${onOff(Notes.instance.allowed.value)}  ·  blobs open real apps ${onOff(BlobApps.instance.on.value)}',
-      '  blob: in Prism ${onOff(inWas)}  ·  over other apps ${onOff(outWas)}  ·  launch and follow ${onOff(followWas)}  ·  labels ${onOff(BlobSlots.instance.names)}  ·  floating ${pinWas ?? 'nothing'}',
-      '  blobs: ${<String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(', ')}',
-      '  swipes: ${<String>[for (int g = 0; g < 4; g++) '${GestureSlots.names[g]} ${GestureSlots.instance.keys[g]}'].join(', ')}',
+      ..._settingsNow(),
     ];
     String build = Diag.build;
     try {
@@ -3546,6 +3559,20 @@ class _ShellState extends State<Shell>
         }
       }
 
+      if (rounds > 0) {
+        // The flight recorder keeps what is done, and gives it back when asked.
+        await Robot.tap(_home, after: 600);
+        await Robot.tap(_home, after: 600);
+        final String rec = await Recorder.instance.export('a test note');
+        t.check(
+          'recorder: it kept what was just done, and gives it back with the note',
+          rec.contains('blobs open') &&
+              rec.contains('blobs close') &&
+              rec.contains('YOUR NOTE: a test note') &&
+              rec.contains('SETTINGS:'),
+          '${rec.split('\n').length} lines',
+        );
+      }
       for (int n = 1; n <= rounds; n++) {
         lap = rounds > 1 ? ', round $n of $rounds' : '';
         try {
@@ -6355,6 +6382,33 @@ void showPrismSettings(BuildContext context) {
                         labels: const <String>['Auto', 'Full', 'Medium', 'Low'],
                         value: settings.quality,
                         onChanged: (GlassQuality v) => settings.quality = v,
+                      ),
+                      const SizedBox(height: 18),
+                      // The flight recorder: what just happened, to send with a video or without.
+                      Pressable(
+                        key: Robot.key('recorder'),
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Haptics.settle();
+                          showRecorderExport(context);
+                        },
+                        child: Container(
+                          height: 52,
+                          alignment: Alignment.center,
+                          decoration: ShapeDecoration(
+                            color: c.accent,
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Text(
+                            'Send what just happened',
+                            style: LumenType.text(
+                              15,
+                              weight: 700,
+                              color: c.onAccent,
+                              height: 1,
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 18),
                       // (With which build this is, so there is never a doubt which one is installed.)

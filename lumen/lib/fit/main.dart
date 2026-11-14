@@ -13,6 +13,7 @@ import 'look.dart';
 import 'bubble.dart';
 import 'diag.dart';
 import 'journal.dart';
+import 'recorder.dart';
 import 'robot.dart';
 import 'shell.dart';
 
@@ -44,6 +45,8 @@ Future<void> main() async {
   await Diag.instance.start();
   // The diary: every stretch of use, the battery, and anything that goes wrong.
   Journal.instance.start();
+  // The flight recorder: quietly keeps the last few hundred things that happened.
+  Recorder.instance.start();
   RestBubble.instance.start();
   Diag.instance.tail = Journal.instance.report;
   runApp(const PrismApp());

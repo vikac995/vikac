@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'diag.dart';
+import 'recorder.dart';
 
 /// A diary Prism keeps by itself, so every day of ordinary use leaves
 /// something to learn from. It is written to disk each time Prism leaves the
@@ -68,6 +69,7 @@ class Journal with WidgetsBindingObserver {
     final String key =
         '${first.length > 160 ? first.substring(0, 160) : first}  @ ${where.isEmpty ? 'unknown' : where}  [${Diag.build}, ${Diag.instance.scene}]';
     _errors[key] = (_errors[key] ?? 0) + 1;
+    Recorder.instance.add('ERROR $key');
   }
 
   @override

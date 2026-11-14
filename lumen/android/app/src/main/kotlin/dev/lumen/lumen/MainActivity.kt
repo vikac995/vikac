@@ -19,6 +19,8 @@ import io.flutter.plugin.common.EventChannel
 class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Trail.start(applicationContext)
+        Trail.add("Prism's screen made")
         requestHighestRefreshRate()
     }
 
@@ -43,7 +45,14 @@ class MainActivity : FlutterActivity() {
     }
 
     // Prism has left the screen: if a rest is running, its countdown floats over whatever comes next.
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        Trail.add("Android asked for memory back (level $level)")
+    }
+
     override fun onStop() {
+        Trail.add("Prism out of sight")
+        Trail.save()
         super.onStop()
         RestBubble.closeMenu()
         for (b in Floaters) {
@@ -56,6 +65,7 @@ class MainActivity : FlutterActivity() {
         super.onStart()
         for (b in Floaters) b.foreground = true
         Floater.activity = java.lang.ref.WeakReference(this)
+        Trail.add("Prism in front")
         // Prism itself is in front: no other app is.
         for (b in Floaters) b.frontApp = ""
         // A blob that only came along with an app gives way to whatever was floating before.
@@ -346,6 +356,11 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Throwable) {
                     false
                 })
+            } else if (call.method == "trail") {
+                result.success(Trail.all())
+            } else if (call.method == "phone") {
+                // Which phone this is, in one line, for the flight recorder.
+                result.success("${Build.MANUFACTURER} ${Build.MODEL}  ·  Android ${Build.VERSION.RELEASE}  ·  ${try { (display?.refreshRate ?: 0f).toInt() } catch (e: Exception) { 0 }} Hz")
             } else if (call.method == "usageAllowed") {
                 // Whether the person has given Prism usage access, for screen time.
                 val ops = getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
@@ -649,6 +664,53 @@ class Notes : android.service.notification.NotificationListenerService() {
     }
 }
 
+/**
+ * Android's half of the flight recorder: the last few hundred things the floating blob and
+ * timer did, and Prism's own comings and goings. In memory; written to a file when Prism
+ * leaves the screen and when it crashes, so that it survives both.
+ */
+object Trail {
+    private const val KEEP = 400
+    private val lines = ArrayDeque<Pair<Long, String>>()
+    private var file: java.io.File? = null
+
+    fun start(context: Context) {
+        if (file != null) return
+        val f = java.io.File(context.filesDir, "prism_trail.txt")
+        file = f
+        try {
+            for (l in f.readLines()) {
+                val tab = l.indexOf('\t')
+                if (tab > 0) l.substring(0, tab).toLongOrNull()?.let { synchronized(lines) { lines.addLast(it to l.substring(tab + 1)) } }
+            }
+        } catch (e: Exception) {}
+        // A crash is written down before Prism goes.
+        val before = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            add("CRASH ${e.javaClass.simpleName}: ${e.message?.take(200)} at ${e.stackTrace.firstOrNull { it.className.contains("lumen") } ?: e.stackTrace.firstOrNull()}")
+            save()
+            before?.uncaughtException(t, e)
+        }
+    }
+
+    fun add(what: String) {
+        synchronized(lines) {
+            lines.addLast(System.currentTimeMillis() to what)
+            while (lines.size > KEEP) lines.removeFirst()
+        }
+    }
+
+    fun save() {
+        val f = file ?: return
+        try {
+            val text = synchronized(lines) { lines.joinToString("\n") { "${it.first}\t${it.second}" } }
+            f.writeText(text)
+        } catch (e: Exception) {}
+    }
+
+    fun all(): List<Map<String, Any>> = synchronized(lines) { lines.map { mapOf("at" to it.first, "what" to it.second) } }
+}
+
 /** The blob that floats, with its menu. */
 val RestBubble = Floater(false)
 
@@ -695,6 +757,7 @@ class Floater(val timer: Boolean) {
      * screen. 1 pause: it stands, or goes on again. 2 count up: it counts up from nothing.
      */
     private fun timerDo(context: Context, what: Int) {
+        Trail.add("timer: ${arrayOf("closed and stopped", "paused or going on", "counting up")[what.coerceIn(0, 2)]}")
         when (what) {
             1 -> channel?.invokeMethod("timerPause", null)
             2 -> channel?.invokeMethod("timerUp", null)
@@ -1003,6 +1066,7 @@ class Floater(val timer: Boolean) {
     }
 
     fun followTo(context: Context, blob: Pin) {
+        if (follow) Trail.add("launch and follow: ${blob.key} comes along")
         if (!follow || !floatOut || !container || blob.kind != "app") return
         // Already the one in the lens: it stays as it is.
         if (pin?.key == blob.key) return
@@ -1463,6 +1527,7 @@ class Floater(val timer: Boolean) {
                 i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
                 val how = launch(context, i)
                 lastTouch += "; ${b.pkg} opened $how"
+                Trail.add("$who menu: ${b.pkg} opened $how")
                 if (!how.startsWith("could")) {
                     frontApp = b.pkg
                     // Opened from the lens's own menu: with following on, this one is in the lens now.
@@ -1485,6 +1550,7 @@ class Floater(val timer: Boolean) {
     }
 
     private fun openMenu(context: Context) {
+        Trail.add("blob menu opened")
         val v = view ?: return
         if (menu != null || blobs.isEmpty()) return
         v.rest()
@@ -2032,11 +2098,13 @@ class Floater(val timer: Boolean) {
         lastTouch += "; Prism in front ${foreground}, thinks ${if (frontApp.isEmpty()) "nothing" else frontApp} is in front"
         if (there && container && blobs.isNotEmpty()) {
             lastTouch += "; so it opens the menu"
+        Trail.add("$who tapped in its own app: opens the menu")
             haptic(context, "click")
             openMenu(context)
             if (menu == null) lastTouch += ", which did not open"
         } else {
             lastTouch += "; so it opens ${p.key}"
+            Trail.add("$who tapped: opens ${p.key} (thinks ${if (frontApp.isEmpty()) "nothing" else frontApp} is in front)")
             usePinned(context)
         }
     }
@@ -2072,6 +2140,7 @@ class Floater(val timer: Boolean) {
                 // the one in front, and a tap on the lens is for its menu.
                 val how = launch(context, i)
                 lastTouch += "; opened $how"
+                Trail.add("$who: ${p.pkg} opened $how")
                 if (!how.startsWith("could")) frontApp = p.pkg
             } else {
                 haptic(context, "thud")
@@ -2122,7 +2191,11 @@ class Floater(val timer: Boolean) {
         refresh(context)
     }
 
+    // Which of the two this is, for the flight recorder.
+    private val who get() = if (timer) "timer" else "blob"
+
     private fun add(context: Context) {
+        Trail.add("$who shown${if (pin != null && !timer) " (${pin?.key})" else ""}")
         try {
             val d = context.resources.displayMetrics
             val dp = d.density
@@ -2196,6 +2269,7 @@ class Floater(val timer: Boolean) {
     }
 
     private fun remove(context: Context) {
+        if (view != null) Trail.add("$who taken off the screen")
         closeTray(context)
         removeMenu(context)
         closeReach(context)
@@ -3799,6 +3873,7 @@ class Floater(val timer: Boolean) {
 
         /** Pushed into a side of the screen and let go: it goes away there, leaving a sliver to see it by. */
         private fun tuckIn(right: Boolean) {
+            Trail.add("$who tucked into the ${if (right) "right" else "left"} side")
             val screen = resources.displayMetrics
             tucked = true
             tuckRight = right
@@ -4299,6 +4374,7 @@ class Floater(val timer: Boolean) {
          * then stays away until the workout page is opened; a pinned thing is unpinned.
          */
         private fun close() {
+            Trail.add("$who dropped on the cross")
             haptic(context, "thud")
             val c = context
             val wasWorkout = mode() == 1

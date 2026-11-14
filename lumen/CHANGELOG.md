@@ -1,5 +1,24 @@
 # Lumen changelog
 
+## Prism, build 112 (14 November 2026)
+
+**File:** `releases/prism-build-112.apk`
+
+Needs Play Protect paused to install. Can be installed over build 111.
+
+**The flight recorder.** Prism now quietly keeps the last few hundred things that happened, on its own side and on Android's:
+- what was done (pages, the blobs, the app list, the glass, the swipes, sheets, the workout);
+- the floating blob and timer: shown, taken away, tapped and what it decided, apps opened and which way, the menu, tucked, dropped on the cross, the timer paused, counting up, closed, launch and follow;
+- slow frames: how many, the worst, and what was on the screen;
+- Prism in front and out of sight, Android asking for memory back, errors in the code, a crash, and Prism being started again (so a close by Android shows).
+
+**"Send what just happened"**, at the top of the test tools in Prism's settings: an optional "What happened?" and Copy. What is copied: your note, the build, the phone, every setting, the memory and battery now, and everything noted in the last 15 minutes, in time order. Paste it here, with a video or without.
+
+**What it costs:** a line in memory for each thing; it is written to a file only when Prism leaves the screen, or crashes. Slow frames are found in the frame times Flutter hands over anyway, only while something is drawn. Idle, it does nothing. Nothing leaves the phone unless you copy it.
+
+**Checked:** both sides compile; in my preview, a copied report.
+**Not checked:** on a phone.
+
 ## Prism, build 111 (14 November 2026)
 
 **File:** `releases/prism-build-111.apk`
