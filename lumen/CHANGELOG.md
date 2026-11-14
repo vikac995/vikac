@@ -1,5 +1,33 @@
 # Lumen changelog
 
+## Prism, build 60 (14 November 2026)
+
+**File:** `releases/prism-build-60.apk`
+
+From your two screenshots of the sheet over another app. Includes builds 58 and 59 below.
+
+**How to fold the sheet back into the lens is now on screen.**
+
+- **The lens no longer disappears when the sheet opens.** It moves to the sheet's top right corner and shows an arrow pointing down, in your colour. Tap it and the sheet folds away; the lens goes back to where it was.
+- So it is one thing with one rule: tap the lens to open, tap the lens to close. Pulling the sheet down and touching outside it still work.
+- If the sheet grows, shrinks or moves, the lens follows its corner.
+
+**It is clearer that the small sheet can be pulled up.**
+
+- The grey bar at the top is now a shallow arrow in your colour: pointing up on the small sheet (there is more above), pointing down on the tall one.
+- When the small sheet arrives, the arrow lifts once.
+- Tapping the arrow still changes size.
+
+**The sheet and the keyboard (an attempt).** In your second screenshot the sheet lay on top of the keyboard. I have asked Android to treat the sheet as something a keyboard belongs above, and to keep the sheet clear of it, so that with a keyboard up the sheet should sit on top of the keyboard and not over it.
+
+**What to look for**
+1. Open the sheet: is the lens on its corner with a down arrow, and does a tap on it fold the sheet?
+2. Is the up arrow on the small sheet enough of a cue?
+3. Open a keyboard in any app, then open the sheet. Where does it go?
+
+**Checked:** it compiles, the Android code included.
+**Not checked:** on a phone, any of it. The keyboard change in particular is from Android's documentation and I am not sure of it: if it works, the sheet rides above the keyboard; if it half works, the keyboard may cover the sheet. Either way you can type, which you could not before. Tell me what you see.
+
 ## Prism, build 59 (14 November 2026)
 
 **File:** `releases/prism-build-59.apk`
