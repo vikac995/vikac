@@ -195,6 +195,68 @@ class TestRun {
     );
   }
 
+  // Round by round: where each round's scenes begin, and how things stood at its end.
+  int _roundFrom = 0;
+  final List<(int, int, int, Map<String, Object?>, int)> rounds =
+      <(int, int, int, Map<String, Object?>, int)>[];
+
+  void roundStart() => _roundFrom = scenes.length;
+
+  void roundEnd(int n, Map<String, Object?> state) => rounds.add((
+    n,
+    _roundFrom,
+    scenes.length,
+    state,
+    clock.elapsed.inMinutes,
+  ));
+
+  /// How smooth a set of frames was: frames a second while things moved (the time between
+  /// frames that came one after another, pauses left out), the share that were late, and the
+  /// slowest frame's work.
+  (double fps, double latePct, double worst, int n) _smooth(
+    Iterable<(String, List<FrameTiming>, int)> of,
+  ) {
+    int n = 0, late = 0, gaps = 0;
+    double gapSum = 0, worst = 0;
+    for (final (String _, List<FrameTiming> fs, int _) in of) {
+      final List<FrameTiming> f = <FrameTiming>[...fs]
+        ..sort(
+          (FrameTiming a, FrameTiming b) => a
+              .timestampInMicroseconds(FramePhase.vsyncStart)
+              .compareTo(b.timestampInMicroseconds(FramePhase.vsyncStart)),
+        );
+      n += f.length;
+      for (int i = 0; i < f.length; i++) {
+        worst = math.max(
+          worst,
+          (f[i].buildDuration.inMicroseconds +
+                  f[i].rasterDuration.inMicroseconds) /
+              1000,
+        );
+        if (i == 0) {
+          continue;
+        }
+        final double gap =
+            (f[i].timestampInMicroseconds(FramePhase.vsyncStart) -
+                f[i - 1].timestampInMicroseconds(FramePhase.vsyncStart)) /
+            1000;
+        if (gap < 120) {
+          gapSum += gap;
+          gaps++;
+          if (gap > budget * 1.6) {
+            late++;
+          }
+        }
+      }
+    }
+    return (
+      gaps == 0 ? 0 : 1000 * gaps / gapSum,
+      n == 0 ? 0 : late * 100 / n,
+      worst,
+      n,
+    );
+  }
+
   /// A few numbers that sum the whole run up, to set beside another phone's or another build's.
   void _summary(StringBuffer o) {
     final List<FrameTiming> all = <FrameTiming>[
@@ -221,6 +283,10 @@ class TestRun {
         }
       }
       double pct(double q) => work[((work.length - 1) * q).round()];
+      final (double fps, double _, double _, int _) = _smooth(scenes);
+      o.writeln(
+        '  frames a second while things moved: ${_f(fps)} (the screen can do ${_f(1000 / budget, 0)})',
+      );
       final int over = work.where((double w) => w > budget).length;
       o.writeln(
         '  Prism while moving: ${all.length} frames, ${_f(late * 100 / all.length)}% late, ${_f(over * 100 / all.length)}% over a refresh  ·  work per frame: usual ${_f(pct(0.5))} ms, 1 in 20 over ${_f(pct(0.95))} ms, 1 in 100 over ${_f(pct(0.99))} ms, worst ${_f(work.last)} ms',
@@ -259,6 +325,26 @@ class TestRun {
       o.writeln(
         '  Prism at rest, nothing floating: ${_f(cpu.reduce((double a, double b) => a + b) / cpu.length, 2)}% of a core on average',
       );
+    }
+    // Round by round, when there is more than one: does anything drift as time goes on?
+    if (rounds.length > 1) {
+      o
+        ..writeln()
+        ..writeln(
+          'ROUND BY ROUND. If smoothness falls, or memory or heat keeps rising, it shows here.',
+        )
+        ..writeln(
+          '${'round'.padRight(6)} ${'min in'.padLeft(6)} ${'frames'.padLeft(7)} ${'fps'.padLeft(6)} ${'late %'.padLeft(7)} ${'worst ms'.padLeft(9)} ${'memory MB'.padLeft(10)} ${'battery %'.padLeft(10)} ${'°C'.padLeft(5)}',
+        );
+      for (final (int n, int from, int to, Map<String, Object?> st, int mins)
+          in rounds) {
+        final (double fps, double late, double worst, int frames) = _smooth(
+          scenes.sublist(from, to),
+        );
+        o.writeln(
+          '${'$n'.padRight(6)} ${'$mins'.padLeft(6)} ${'$frames'.padLeft(7)} ${_f(fps).padLeft(6)} ${_f(late).padLeft(7)} ${_f(worst).padLeft(9)} ${(_num(st['pss']) / 1024).round().toString().padLeft(10)} ${'${st['level'] ?? '?'}'.padLeft(10)} ${_f(_num(st['temp']) / 10).padLeft(5)}',
+        );
+      }
     }
     o.writeln();
   }

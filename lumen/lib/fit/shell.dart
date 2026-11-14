@@ -1604,6 +1604,14 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       title: 'chat-head battery test',
     );
     // The same, four rounds and longer stretches of sitting still: about an hour, and quiet.
+    // The same again and again for about two and a half hours: whether smoothness, memory and
+    // heat hold up over a long session.
+    Diag.instance.soakTest = () => _longTest(
+      rounds: 15,
+      still: 120,
+      quiet: true,
+      title: '2½-hour stability test',
+    );
     Diag.instance.hourTest = () =>
         _longTest(rounds: 4, still: 180, quiet: true, title: 'hour-long test');
     // The pinned thing: what its sheets ask of Prism, and keeping Android told.
@@ -3498,6 +3506,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       for (int n = 1; n <= rounds; n++) {
         lap = rounds > 1 ? ', round $n of $rounds' : '';
         try {
+          t.roundStart();
           await round();
         } catch (e, where) {
           if (e is TestStopped) {
@@ -3527,9 +3536,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
         if (_tab != 0) {
           _go(0);
         }
-        t.note(
-          'after round $n: Prism was using ${(((here['pss'] as num?) ?? 0) / 1024).toStringAsFixed(0)} MB, ${t.clock.elapsed.inMinutes} min in',
-        );
+        t.roundEnd(n, here);
+        if (rounds <= 4) {
+          t.note(
+            'after round $n: Prism was using ${(((here['pss'] as num?) ?? 0) / 1024).toStringAsFixed(0)} MB, ${t.clock.elapsed.inMinutes} min in',
+          );
+        }
         TestRun.keep(
           t.report(<String>[
             '${Diag.build}  ·  $title  ·  UNFINISHED: this is as far as it had got after round $n of $rounds',
@@ -6458,6 +6470,31 @@ void showPrismSettings(BuildContext context) {
                           ),
                           child: Text(
                             'Run the hour-long test (overnight, silent)',
+                            style: LumenType.text(
+                              15,
+                              weight: 700,
+                              color: c.ink,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Pressable(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Haptics.settle();
+                          Diag.instance.soakTest?.call();
+                        },
+                        child: Container(
+                          height: 52,
+                          alignment: Alignment.center,
+                          decoration: ShapeDecoration(
+                            color: c.ink.withValues(alpha: 0.08),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Text(
+                            'Run the 2½-hour stability test (silent)',
                             style: LumenType.text(
                               15,
                               weight: 700,

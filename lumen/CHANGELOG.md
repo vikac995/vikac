@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 108 (14 November 2026)
+
+**File:** `releases/prism-build-108.apk`
+
+Needs Play Protect paused to install. Can be installed over build 107.
+
+**The 2½-hour stability test.** A new button: "Run the 2½-hour stability test (silent)". The long test fifteen times over, then the still stretches at two minutes each. Silent, like the hour-long one. What it is for: whether smoothness, memory and heat hold up over a long session. It uses roughly a third of a battery, with the screen on throughout; start it full.
+
+**In every report:**
+- **Frames a second while things moved**, beside what the screen can do (120 on both your phones). Pauses between movements are left out, so it is the rate of the movement itself.
+- **Round by round** (when there is more than one round): for each round, minutes in, frames, frames a second, the share late, the slowest frame, Prism's memory, the battery and the phone's temperature. If anything drifts as time goes on, it shows there.
+
+**Checked:** it compiles; in my preview a two-round run writes the round-by-round table.
+**Not checked:** on a phone.
+
 ## Prism, build 107 (14 November 2026)
 
 **File:** `releases/prism-build-107.apk`

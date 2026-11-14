@@ -1537,10 +1537,15 @@ class Floater(val timer: Boolean) {
         m["now"] = System.currentTimeMillis()
         m["fg"] = foreground
         m["front"] = frontApp
-        m["plugged"] = try {
-            (context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
-                ?.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
-        } catch (e: Exception) { false }
+        try {
+            val sticky = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+            m["plugged"] = (sticky?.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
+            m["temp"] = sticky?.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
+            m["level"] = (context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager)
+                .getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        } catch (e: Exception) {
+            m["plugged"] = false
+        }
         return m
     }
 

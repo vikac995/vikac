@@ -104,7 +104,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 107';
+  static const String build = 'Prism build 108';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -475,6 +475,9 @@ class Diag {
   /// The chat-head battery test: nothing floating, a blob, the timer, and both, each three
   /// times in turn with another app in front.
   Future<void> Function()? drainTest;
+
+  /// About two and a half hours of the same, round after round: does it hold up.
+  Future<void> Function()? soakTest;
 
   /// One extra line for the top of the report, supplied by whoever knows it.
   String Function()? extraLine;
