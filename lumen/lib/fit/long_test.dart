@@ -110,6 +110,14 @@ class TestRun {
     }
   }
 
+  /// The app put in front for the stretches "with another app in front". Not Android's own
+  /// Settings: Settings hides every floating window of other apps, so nothing of Prism's
+  /// would be on the screen over it.
+  String? other;
+
+  /// The chat-head battery test: its four states, for the summary at the end.
+  List<String>? drainStates;
+
   /// A stretch of nothing being touched, in Prism or with another app in front.
   Future<void> phase(String name, int seconds, {bool away = false}) async {
     await _settle();
@@ -117,15 +125,74 @@ class TestRun {
     final Map<String, Object?> told = await lens(<String, Object?>{
       'op': away ? 'away' : 'measure',
       'ms': seconds * 1000,
+      'pkg': ?other,
     }, extraMs: seconds * 1000 + 15000);
     await _settle();
     phases.add((name, told, _frames.length - from, away));
     if (told['ok'] != true) {
       check('$name: measured', false, '${told['note']}');
     } else if (away) {
-      check('$name: Settings came to the front', told['away'] == true);
+      check('$name: the other app came to the front', told['away'] == true);
       check('$name: Prism came back afterwards', told['back'] == true);
     }
+  }
+
+  /// The chat-head battery test, summed up: each state's stretches taken together.
+  void _drain(StringBuffer o, List<String> states) {
+    final Map<String, List<double>> amps = <String, List<double>>{};
+    final Map<String, List<double>> cpu = <String, List<double>>{};
+    final Map<String, List<double>> draws = <String, List<double>>{};
+    final Map<String, List<bool>> seen = <String, List<bool>>{};
+    for (final (String name, Map<String, Object?> m, int _, bool _) in phases) {
+      for (final String st in states) {
+        if (!name.endsWith(': $st')) {
+          continue;
+        }
+        final double secs = math.max(1, _num(m['ms']) / 1000);
+        amps
+            .putIfAbsent(st, () => <double>[])
+            .add(_meanSd(_milliamps(m['current'])).$1);
+        cpu.putIfAbsent(st, () => <double>[]).add(_num(m['cpuMs']) / secs / 10);
+        draws
+            .putIfAbsent(st, () => <double>[])
+            .add(_num(m['lensDraws']) / secs);
+        seen
+            .putIfAbsent(st, () => <bool>[])
+            .add(
+              (!st.contains('blob') || m['blobShown'] == true) &&
+                  (!st.contains('timer') || m['timerShown'] == true),
+            );
+      }
+    }
+    (double, double) avg(List<double> v) {
+      if (v.isEmpty) {
+        return (0, 0);
+      }
+      final (double mean, double sd) = _meanSd(v);
+      return (mean, v.length > 1 ? sd / math.sqrt(v.length) : sd);
+    }
+
+    final (double base, double baseErr) = avg(amps[states.first] ?? <double>[]);
+    o
+      ..writeln()
+      ..writeln(
+        'CHAT HEADS AND THE BATTERY. Each state measured ${amps[states.first]?.length ?? 0} times, taken in turn, with ${other ?? 'another app'} in front. The current is the whole phone\'s with the screen on; "±" is how sure the average is. A difference smaller than about twice its "±" is not a difference.',
+      )
+      ..writeln(
+        '${'state'.padRight(26)} current mA (±)   vs nothing (±)   Prism processor   drawn/s   on the screen',
+      );
+    for (final String st in states) {
+      final (double mean, double err) = avg(amps[st] ?? <double>[]);
+      final double diff = mean - base;
+      final double diffErr = math.sqrt(err * err + baseErr * baseErr);
+      final List<bool> shown = seen[st] ?? <bool>[];
+      o.writeln(
+        '${st.padRight(26)} ${'${_f(mean, 0)} (±${_f(err, 0)})'.padLeft(14)}   ${st == states.first ? '-'.padLeft(14) : '${diff >= 0 ? '+' : ''}${_f(diff, 0)} (±${_f(diffErr, 0)})'.padLeft(14)}   ${'${_f(avg(cpu[st] ?? <double>[]).$1, 2)}% of a core'.padLeft(15)}   ${_f(avg(draws[st] ?? <double>[]).$1, 2).padLeft(7)}   ${st == states.first ? '-' : (shown.every((bool b) => b) ? 'yes' : '${shown.where((bool b) => b).length} of ${shown.length}')}',
+      );
+    }
+    o.writeln(
+      'The timer was measured with a rest running, its busiest: between sets it is drawn once a second, not three times.',
+    );
   }
 
   static double _num(Object? v) => v is num ? v.toDouble() : 0;
@@ -327,6 +394,10 @@ class TestRun {
       o.writeln(
         'battery ${last['level']}%  ·  ${_f(_num(last['temp']) / 10)} °C  ·  brightness setting ${last['bright']}',
       );
+      final List<String>? states = drainStates;
+      if (states != null) {
+        _drain(o, states);
+      }
     }
     if (notes.isNotEmpty) {
       o

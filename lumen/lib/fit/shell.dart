@@ -1597,6 +1597,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Diag.instance.finished.addListener(_showReport);
     Diag.instance.autoScript = _robot;
     Diag.instance.longTest = _longTest;
+    Diag.instance.drainTest = () => _longTest(
+      rounds: 0,
+      still: 150,
+      drain: true,
+      title: 'chat-head battery test',
+    );
     // The same, four rounds and longer stretches of sitting still: about an hour, and quiet.
     Diag.instance.hourTest = () =>
         _longTest(rounds: 4, still: 180, quiet: true, title: 'hour-long test');
@@ -1913,6 +1919,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     int rounds = 1,
     int still = 60,
     bool quiet = false,
+    bool drain = false,
     String title = 'long test',
   }) async {
     if (_testing || !mounted) {
@@ -1944,6 +1951,34 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     final Offset beside = Offset(sc.width / 2, sc.height * 0.56);
     List<double> px(Offset o) => <double>[o.dx * dpr, o.dy * dpr];
     int shown() => _others(-1).length;
+    // The app put in front when the test needs "another app": one that is on the phone and
+    // that leaves floating windows alone (Android's Settings hides them).
+    String standIn() {
+      for (final String p in const <String>[
+        'com.sec.android.app.popupcalculator',
+        'com.google.android.calculator',
+        'com.sec.android.app.clockpackage',
+        'com.google.android.deskclock',
+        'com.android.chrome',
+        'com.sec.android.app.sbrowser',
+        'com.android.calculator2',
+      ]) {
+        if (Apps.instance.all.any((AppTile a) => a.package == p)) {
+          return p;
+        }
+      }
+      return 'com.android.settings';
+    }
+
+    final String otherPkg = standIn();
+    t.other = otherPkg == 'com.android.settings' ? null : otherPkg;
+    if (t.other == null) {
+      t.note(
+        'none of the usual apps (Calculator, Clock, Chrome) was found, so Android\'s Settings stood in for "another app": Settings hides floating windows, so whatever floated was not on the screen',
+      );
+    } else {
+      t.note('"another app" in this test is $otherPkg');
+    }
     const List<String> five = <String>[
       'action:0',
       'action:1',
@@ -2963,20 +2998,20 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             '${shown()}',
           );
 
-          // An app from a blob, and the lens over that app. Android's own Settings stands in
+          // An app from a blob, and the lens over that app. An app that is on every phone stands in
           // for "an app": it is on every phone and nothing in it is touched.
           AppTile? other;
           for (final AppTile a in Apps.instance.all) {
-            if (a.package == 'com.android.settings') {
+            if (a.package == otherPkg) {
               other = a;
             }
           }
           if (other == null) {
             t.note(
-              'Android\'s Settings is not among the apps Prism knows of, so opening an app from a blob, and the lens over that app, were not tested.',
+              '$otherPkg is not among the apps Prism knows of, so opening an app from a blob, and the lens over that app, were not tested.',
             );
           } else {
-            BlobSlots.instance.put(4, 'app:com.android.settings');
+            BlobSlots.instance.put(4, 'app:$otherPkg');
             BlobSlots.instance.put(3, 'screen:0');
             await Robot.wait(1200);
             await Robot.tap(tab(2), after: 800);
@@ -2996,7 +3031,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             );
             t.check(
               'app as the lens: the app\'s blob is floating',
-              lensOf.pinned.value == 'app:com.android.settings',
+              lensOf.pinned.value == 'app:$otherPkg',
               '${lensOf.pinned.value}',
             );
             await press(
@@ -3123,11 +3158,9 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
           // ---------------------------------------------------------------- launch and follow
           say('launch and follow');
-          if (Apps.instance.all.any(
-            (AppTile a) => a.package == 'com.android.settings',
-          )) {
+          if (Apps.instance.all.any((AppTile a) => a.package == otherPkg)) {
             lensOf.setFloating(followApps: true);
-            BlobSlots.instance.put(4, 'app:com.android.settings');
+            BlobSlots.instance.put(4, 'app:$otherPkg');
             await Robot.wait(700);
             if (!_open) {
               await Robot.tap(_home, after: 800);
@@ -3137,7 +3170,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             t.check(
               'follow: an app opened from Prism brings its blob along as a guest, tucked at the side',
               s['fg'] == false &&
-                  s['pin'] == 'app:com.android.settings' &&
+                  s['pin'] == 'app:$otherPkg' &&
                   s['guest'] == true &&
                   s['tucked'] == true,
               'in front ${s['fg']}, in the lens ${s['pin']}, guest ${s['guest']}, tucked ${s['tucked']}',
@@ -3160,7 +3193,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             await Robot.wait(500);
           } else {
             t.note(
-              'Android\'s Settings is not among the apps, so following was not tested',
+              '$otherPkg is not among the apps, so following was not tested',
             );
           }
 
@@ -3439,108 +3472,143 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       }
       lap = '';
 
-      // ---------------------------------------------------------------- power
-      final int brief = (still * 0.75).round();
-      say(
-        'sitting still to measure power, about ${((floats ? 7 * still + 3 * brief : still + 2 * brief) / 60).ceil()} minutes',
-      );
-      await calm();
-      if (_tab != 0) {
-        _go(0);
-        await Robot.wait(900);
-      }
-      await t.phase('Home, nothing open', still);
-      await Robot.tap(_home, after: 1500);
-      await t.phase('blobs out', brief);
-      await calm();
-      await Robot.drag(
-        <Offset>[_home, _home - const Offset(0, 90)],
-        legMs: 90,
-        flick: true,
-        after: 1500,
-      );
-      await t.phase('app list open', brief);
-      await calm();
-      if (floats) {
-        await t.phase('Settings in front, nothing floating', still, away: true);
-        await Robot.tap(_home, after: 800);
-        await Robot.drag(
-          <Offset>[seat(1), Offset(sc.width + 30, sc.height * 0.3)],
-          legMs: 500,
-          dwell: 250,
-          after: 1700,
-        );
-        await t.phase('a blob floating, in Prism', still);
-        await t.phase('Settings in front, a blob floating', still, away: true);
-        // What a blob left floating costs: four times Settings in front with nothing
-        // floating, then with the blob, one after the other, so that the battery's own drift
-        // falls on both alike.
-        final int pair = (still * 1.5).round();
-        final String? kept = lensOf.pinned.value;
-        for (int k = 1; k <= 4; k++) {
-          lensOf.setPin(null);
-          _sendPin();
-          await Robot.wait(1200);
-          await t.phase(
-            'cost $k of 4: nothing floating, Settings in front',
-            pair,
-            away: true,
+      // ---------------------------------------------------------------- chat heads and the battery
+      if (drain) {
+        if (!floats) {
+          t.note(
+            'Prism is not allowed over other apps, so nothing could float and nothing was measured',
           );
-          lensOf.setPin(kept ?? 'action:1');
-          _sendPin();
-          await Robot.wait(1500);
-          await t.phase(
-            'cost $k of 4: a blob floating, Settings in front',
-            pair,
-            away: true,
-          );
-        }
-        final void Function(int)? rest = lensOf.testRest;
-        if (rest != null) {
-          // The timer was dropped on the cross earlier: a visit to the workout page brings it back.
-          _go(1);
-          await Robot.wait(800);
-          _go(0);
-          await Robot.wait(800);
-          t.timer = true;
-          rest(still + 120);
-          await Robot.wait(1500);
-          await t.phase('rest running in the floating timer, in Prism', still);
-          rest(still + 120);
-          await t.phase(
-            'Settings in front, rest running in the floating timer',
-            still,
-            away: true,
-          );
-          rest(2);
-          await Robot.wait(6500);
-          await t.phase(
-            'Settings in front, timer between sets',
-            still,
-            away: true,
-          );
-          final Map<String, Object?> m = await press(
-            'timer tapped for the power reading',
-            <Offset>[],
-            holdMs: 40,
-            settleMs: 1300,
-          );
-          if (m['sheet'] == true) {
-            await t.phase('the timer\'s sheet open, in Prism', brief);
-            await t.lens(<String, Object?>{'op': 'sheet', 'what': 'back'});
+        } else {
+          final void Function(int)? rest = lensOf.testRest;
+          const List<String> states = <String>[
+            'nothing floating',
+            'a blob',
+            'the timer',
+            'a blob and the timer',
+          ];
+          // Three times each, in a turning order, so that the battery's own drift falls on all alike.
+          for (int r = 1; r <= 3; r++) {
+            for (int k = 0; k < 4; k++) {
+              final int i = (k + r - 1) % 4;
+              final bool blob = i == 1 || i == 3, timer = i >= 2;
+              say(
+                'measuring the battery, ${(r - 1) * 4 + k + 1} of 12: ${states[i]}, about ${((12 - (r - 1) * 4 - k) * (still + 12) / 60).ceil()} min left',
+              );
+              lensOf.setPin(blob ? 'action:1' : null);
+              _sendPin();
+              if (timer && rest != null) {
+                // A visit to the workout page brings back a timer that was closed.
+                _go(1);
+                await Robot.wait(700);
+                _go(0);
+                await Robot.wait(700);
+                rest(still + 90);
+              } else {
+                lensOf.onStop?.call();
+              }
+              await Robot.wait(1500);
+              await t.phase('round $r: ${states[i]}', still, away: true);
+            }
           }
           lensOf.onStop?.call();
-          t.timer = false;
+          lensOf.setPin(null);
+          _sendPin();
+          t.drainStates = states;
+        }
+      } else {
+        // ---------------------------------------------------------------- power
+        final int brief = (still * 0.75).round();
+        say(
+          'sitting still to measure power, about ${((floats ? 7 * still + 3 * brief : still + 2 * brief) / 60).ceil()} minutes',
+        );
+        await calm();
+        if (_tab != 0) {
+          _go(0);
+          await Robot.wait(900);
+        }
+        await t.phase('Home, nothing open', still);
+        await Robot.tap(_home, after: 1500);
+        await t.phase('blobs out', brief);
+        await calm();
+        await Robot.drag(
+          <Offset>[_home, _home - const Offset(0, 90)],
+          legMs: 90,
+          flick: true,
+          after: 1500,
+        );
+        await t.phase('app list open', brief);
+        await calm();
+        if (floats) {
+          await t.phase(
+            'another app in front, nothing floating',
+            still,
+            away: true,
+          );
+          await Robot.tap(_home, after: 800);
+          await Robot.drag(
+            <Offset>[seat(1), Offset(sc.width + 30, sc.height * 0.3)],
+            legMs: 500,
+            dwell: 250,
+            after: 1700,
+          );
+          await t.phase('a blob floating, in Prism', still);
+          await t.phase(
+            'another app in front, a blob floating',
+            still,
+            away: true,
+          );
+          final void Function(int)? rest = lensOf.testRest;
+          if (rest != null) {
+            // The timer was dropped on the cross earlier: a visit to the workout page brings it back.
+            _go(1);
+            await Robot.wait(800);
+            _go(0);
+            await Robot.wait(800);
+            t.timer = true;
+            rest(still + 120);
+            await Robot.wait(1500);
+            await t.phase(
+              'rest running in the floating timer, in Prism',
+              still,
+            );
+            rest(still + 120);
+            await t.phase(
+              'another app in front, rest running in the floating timer',
+              still,
+              away: true,
+            );
+            rest(2);
+            await Robot.wait(6500);
+            await t.phase(
+              'another app in front, timer between sets',
+              still,
+              away: true,
+            );
+            final Map<String, Object?> m = await press(
+              'timer tapped for the power reading',
+              <Offset>[],
+              holdMs: 40,
+              settleMs: 1300,
+            );
+            if (m['sheet'] == true) {
+              await t.phase('the timer\'s sheet open, in Prism', brief);
+              await t.lens(<String, Object?>{'op': 'sheet', 'what': 'back'});
+            }
+            lensOf.onStop?.call();
+            t.timer = false;
+          }
         }
       }
       final Map<String, Object?> last = await t.lens(<String, Object?>{
         'op': 'end',
       });
-      t.note(
-        'the rest in the timer readings was ${still + 120} s long; each still stretch was $still s ($brief s for the shorter ones)',
-      );
+      if (!drain) {
+        t.note(
+          'the rest in the timer readings was ${still + 120} s long; each still stretch was $still s (${(still * 0.75).round()} s for the shorter ones)',
+        );
+      }
       build =
-          '${Diag.build}  ·  $title, $rounds round${rounds == 1 ? '' : 's'}  ·  ${DateTime.now().toString().substring(0, 16)}\nscreen ${w.round()}x${h.round()} at ${dp}x  ·  allowed over other apps: ${floats ? 'yes' : 'NO'}  ·  ${last['blobs']} blobs known to Android';
+          '${Diag.build}  ·  $title${drain ? '' : ', $rounds round${rounds == 1 ? '' : 's'}'}  ·  ${DateTime.now().toString().substring(0, 16)}\nscreen ${w.round()}x${h.round()} at ${dp}x  ·  allowed over other apps: ${floats ? 'yes' : 'NO'}  ·  ${last['blobs']} blobs known to Android';
     } catch (e, where) {
       if (e is TestStopped) {
         stoppedAt = Robot.stoppedWhile
@@ -6259,6 +6327,31 @@ void showPrismSettings(BuildContext context) {
                           ),
                           child: Text(
                             'Run the long test (about 20 min, hands off)',
+                            style: LumenType.text(
+                              15,
+                              weight: 700,
+                              color: c.ink,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Pressable(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Haptics.settle();
+                          Diag.instance.drainTest?.call();
+                        },
+                        child: Container(
+                          height: 52,
+                          alignment: Alignment.center,
+                          decoration: ShapeDecoration(
+                            color: c.ink.withValues(alpha: 0.08),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Text(
+                            'Run the chat-head battery test (about 35 min)',
                             style: LumenType.text(
                               15,
                               weight: 700,

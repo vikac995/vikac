@@ -1804,16 +1804,24 @@ class Floater(val timer: Boolean) {
                         wm(context).addView(speck, slp)
                         awake = speck
                     } catch (e: Exception) {}
+                    // The app it is asked for, or else Settings. (Settings hides every floating
+                    // window of other apps, so over it nothing of Prism's is on the screen.)
+                    val pkg = a["pkg"] as? String
+                    val open = pkg?.let { context.packageManager.getLaunchIntentForPackage(it) }
                     activity.startActivity(
-                        android.content.Intent(android.provider.Settings.ACTION_SETTINGS).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK),
+                        (open ?: android.content.Intent(android.provider.Settings.ACTION_SETTINGS))
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED),
                     )
-                    frontApp = "com.android.settings"
+                    for (b in Floaters) b.frontApp = if (open != null) pkg!! else "com.android.settings"
                     watcher.postDelayed({
                         val away = !foreground
                         measure(context, num("ms", 60000)) { told ->
                             val m = HashMap(told)
                             m["away"] = away
                             m["lensAway"] = view != null
+                            // Whether each floating thing was on the screen over the other app, as Android has it.
+                            m["blobShown"] = RestBubble.view?.let { it.windowVisibility == android.view.View.VISIBLE && it.isShown } ?: false
+                            m["timerShown"] = TimerBubble.view?.let { it.windowVisibility == android.view.View.VISIBLE && it.isShown } ?: false
                             try {
                                 context.startActivity(
                                     android.content.Intent(context, MainActivity::class.java)

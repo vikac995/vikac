@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 102 (14 November 2026)
+
+**File:** `releases/prism-build-102.apk`
+
+Needs Play Protect paused to install.
+
+**Why the blob was never seen over another app in the tests.** The tests used Android's own Settings as "another app", and Settings hides every floating window of every other app, so that nothing can cover its switches. The blob was there, and hidden. So the earlier readings of "a blob floating, Settings in front" measured a blob that was not on the screen, and the steps with "the lens holding an app" were done over Settings too. The tests now use an ordinary app that is on the phone: Calculator, Clock or Chrome, the first of those found. The report says which.
+
+**The chat-head battery test.** A new button in the test tools: "Run the chat-head battery test (about 35 min)". With that app in front it measures four states: nothing floating, a blob, the timer, and a blob and the timer together. Each is measured three times for two and a half minutes, the four taken in turn, so that the battery's own drift falls on all alike. The report sums it up in one table: the phone's current for each, the difference from nothing floating with how sure that difference is, Prism's share of the processor, how often the floating things were drawn, and whether Android had them on the screen. The timer is measured with a rest running, its busiest.
+
+- The four pairs added to the long test in build 101 move here; the long test is back to about 20 minutes.
+
+**Checked:** it compiles; in my preview the long test's Prism half. The battery test cannot run in my preview (nothing can float there).
+**Not checked:** on a phone. Whether Android reports a window hidden by Settings as hidden: I believe so and have not seen it.
+
 ## Prism, build 101 (14 November 2026)
 
 **File:** `releases/prism-build-101.apk`
