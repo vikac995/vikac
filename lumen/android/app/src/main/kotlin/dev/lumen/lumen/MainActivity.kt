@@ -73,7 +73,7 @@ class MainActivity : FlutterActivity() {
                     bmp = android.graphics.Bitmap.createBitmap(surface.width, surface.height, android.graphics.Bitmap.Config.ARGB_8888)
                     lastFrame = bmp
                 }
-                val target = bmp!!
+                val target = bmp
                 android.view.PixelCopy.request(surface, target, { result ->
                     if (result == android.view.PixelCopy.SUCCESS) {
                         window.setBackgroundDrawable(android.graphics.drawable.BitmapDrawable(resources, target))
@@ -345,6 +345,13 @@ class MainActivity : FlutterActivity() {
                 } catch (e: Throwable) {
                     false
                 })
+            } else if (call.method == "shadeClose") {
+                // Puts the notifications away again. Only the test asks for this.
+                try {
+                    val bar = getSystemService("statusbar")
+                    Class.forName("android.app.StatusBarManager").getMethod("collapsePanels").invoke(bar)
+                } catch (e: Throwable) {}
+                result.success(null)
             } else if (call.method == "notesAllowed") {
                 result.success(RestBubble.notesAllowed(this))
             } else if (call.method == "askNotes") {
@@ -699,7 +706,7 @@ class Floater(val timer: Boolean) {
         if (!timer) return
         val v = view
         val want = v != null && mode() == 1 && !tucked && !docked && sheet == null && !swallowing && big(context)
-        if (!want || v == null) {
+        if (v == null || !want) {
             closeTray(context)
             return
         }
@@ -714,7 +721,7 @@ class Floater(val timer: Boolean) {
         val dp = d.density
         val w = (176 * dp).toInt(); val h = (56 * dp).toInt()
         val size = v.ownSize()
-        val x = (v.lensLeft() + size / 2 - w / 2).toInt().coerceIn((8 * dp).toInt(), Math.max((8 * dp).toInt(), d.widthPixels - w - (8 * dp).toInt()))
+        val x = (v.lensLeft() + size / 2 - w / 2).coerceIn((8 * dp).toInt(), Math.max((8 * dp).toInt(), d.widthPixels - w - (8 * dp).toInt()))
         // Under it; where there is no room under it, over it.
         val under = (v.lensTop() + size + 6 * dp).toInt()
         val y = if (under + h < d.heightPixels - 24 * dp) under else (v.lensTop() - h - 6 * dp).toInt()
@@ -1512,6 +1519,11 @@ class Floater(val timer: Boolean) {
             m["seen"] = v.alpha.toDouble()
         }
         m["tucked"] = tucked
+        m["guest"] = guest
+        m["paused"] = pausedAt > 0
+        m["off"] = timerOff
+        m["closed"] = dismissed
+        m["tray"] = tray != null
         m["docked"] = docked
         m["pin"] = pin?.key
         m["menu"] = menu != null
@@ -1673,6 +1685,21 @@ class Floater(val timer: Boolean) {
                     watcher.postDelayed({ done(state(context)) }, num("settleMs", 2500))
                 }
                 "state" -> done(state(context))
+                // It is given a size, as two fingers would give it, within what it allows.
+                "size" -> {
+                    lensSize = (num("dp", 84) * context.resources.displayMetrics.density).toInt()
+                    remove(context)
+                    refresh(context)
+                    watcher.postDelayed({ done(state(context)) }, num("settleMs", 900))
+                }
+                // A tap on one of the timer's controls under it: 0 pause, 1 the cross, 2 count up.
+                "tray" -> {
+                    val t = tray ?: return fail("the timer has no controls under it")
+                    val l = t.layoutParams as android.view.WindowManager.LayoutParams
+                    val i = num("i", 0).toInt().coerceIn(0, 2)
+                    val at = floatArrayOf(l.x + t.width / 6f + i * t.width / 3f, l.y + t.height / 2f)
+                    finger(t, listOf(at), false, 60, 0, 0, false, num("settleMs", 900), { true }) { done(state(context)) }
+                }
                 // A finger on the lens.
                 "press" -> {
                     val v = view ?: return fail("there is no lens")

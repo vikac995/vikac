@@ -2086,6 +2086,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           await Robot.hold(seat(2), after: 500);
         });
         t.check('changing: holding a blob starts it', _editing && _open);
+        t.check(
+          'sign: while the blobs are being changed it is the cog',
+          _cog.target == 1,
+        );
         await Robot.tap(beside, after: 500);
         t.check(
           'changing: a tap beside the blobs ends it and leaves the blobs out',
@@ -2124,6 +2128,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           await Robot.tap(seat(2) + const Offset(-21, -21), after: 900);
         });
         t.check('minus: the third place is empty', _isEmpty(2));
+        t.check(
+          'minus: the one empty place stands in the middle',
+          _midX[2].target == 0,
+          '${_midX[2].target}',
+        );
         t.check('minus: four blobs are left', shown() == 4, '${shown()}');
         await t.scene('an empty place opens the list', () async {
           await Robot.tap(spare(2), after: 1300);
@@ -2400,6 +2409,18 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
           'swipes: one that was given nothing does nothing',
           !_sheetOpen && !_drawerOpen && !_open && _tab == tabWas,
         );
+        if (Platform.isAndroid) {
+          // Whether this phone lets the notifications be pulled down at all. They are put
+          // away again at once.
+          final bool down = await GestureSlots.shade();
+          await Robot.wait(1300);
+          await GestureSlots.shadeClose();
+          await Robot.wait(900);
+          t.check(
+            'swipes: this phone lets the notifications be pulled down',
+            down,
+          );
+        }
         for (int g = 0; g < 4; g++) {
           GestureSlots.instance.put(g, swipes[g]);
         }
@@ -2415,6 +2436,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
         // ---------------------------------------------------------------- app list
         say('3 of 9, the app list');
+        // (Whether the magnifying glass, or a card under it, wakes at any moment of the flick.)
+        bool woke = false;
+        void waking() => woke = woke || LensBus.instance.pos.value != null;
+        LensBus.instance.pos.addListener(waking);
+        _glass.addListener(waking);
+        void lifting() => woke = woke || _carrying;
+        _glass.addListener(lifting);
         await t.scene('app list opening', () async {
           await Robot.drag(
             <Offset>[_home, _home - const Offset(0, 90)],
@@ -2423,7 +2451,18 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             after: 1000,
           );
         });
+        LensBus.instance.pos.removeListener(waking);
+        _glass.removeListener(waking);
+        _glass.removeListener(lifting);
         t.check('app list: a flick up from the button opens it', _drawerOpen);
+        t.check(
+          'app list: the flick wakes neither the magnifying glass nor a card',
+          !woke,
+        );
+        t.check(
+          'sign: with the app list up it is not the cog',
+          _cog.target == 0,
+        );
         if (_drawerOpen) {
           final Offset mid = Offset(sc.width / 2, sc.height * 0.55);
           await t.scene('app list turning pages', () async {
@@ -3086,6 +3125,49 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             await Robot.tap(tab(0), after: 800);
           }
 
+          // ---------------------------------------------------------------- launch and follow
+          say('launch and follow');
+          if (Apps.instance.all.any(
+            (AppTile a) => a.package == 'com.android.settings',
+          )) {
+            lensOf.setFloating(followApps: true);
+            BlobSlots.instance.put(4, 'app:com.android.settings');
+            await Robot.wait(700);
+            if (!_open) {
+              await Robot.tap(_home, after: 800);
+            }
+            await Robot.tap(seat(4), after: 3200);
+            s = await where();
+            t.check(
+              'follow: an app opened from Prism brings its blob along as a guest, tucked at the side',
+              s['fg'] == false &&
+                  s['pin'] == 'app:com.android.settings' &&
+                  s['guest'] == true &&
+                  s['tucked'] == true,
+              'in front ${s['fg']}, in the lens ${s['pin']}, guest ${s['guest']}, tucked ${s['tucked']}',
+            );
+            t.check(
+              'follow: Prism still has nothing of its own floating',
+              lensOf.pinned.value == null,
+              '${lensOf.pinned.value}',
+            );
+            s = await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
+            await calm();
+            s = await where();
+            t.check(
+              'follow: back in Prism the guest is gone',
+              s['guest'] != true && s['pin'] == null && s['lens'] != true,
+              'guest ${s['guest']}, in the lens ${s['pin']}',
+            );
+            lensOf.setFloating(followApps: false);
+            BlobSlots.instance.putAll(five);
+            await Robot.wait(500);
+          } else {
+            t.note(
+              'Android\'s Settings is not among the apps, so following was not tested',
+            );
+          }
+
           // ---------------------------------------------------------------- the workout's timer
           say('8 of 9, the floating timer');
           // (From here what is asked of Android's side is asked of the timer, not the blob.)
@@ -3152,7 +3234,129 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                 );
               }
             }
-            // With the timer closed on the cross there is no lens; the buzz must still come.
+            // The blob and the timer are two: both can be there.
+            lensOf.setPin('action:1');
+            _sendPin();
+            await Robot.wait(1500);
+            t.timer = false;
+            Map<String, Object?> b = await where();
+            t.timer = true;
+            s = await where();
+            t.check(
+              'two: a blob and the timer float at once, each its own',
+              b['lens'] == true &&
+                  b['mode'] == 2 &&
+                  s['lens'] == true &&
+                  s['mode'] == 1,
+              'blob ${b['lens']} mode ${b['mode']}, timer ${s['lens']} mode ${s['mode']}',
+            );
+            // A blob gives a tenth and no more, however large it is asked to be.
+            t.timer = false;
+            b = await t.lens(<String, Object?>{'op': 'size', 'dp': 300});
+            t.timer = true;
+            final double most = 84 * 1.1 * dp + 2;
+            t.check(
+              'size: a blob asked to be very large is a tenth over its own size at most',
+              b['lens'] == true &&
+                  ((b['size'] as num?)?.toDouble() ?? 1e9) <= most,
+              '${b['size']} px, at most ${most.round()}',
+            );
+            lensOf.setPin(null);
+            _sendPin();
+            await Robot.wait(900);
+
+            // The small timer's three places at the foot.
+            s = await t.lens(<String, Object?>{'op': 'size', 'dp': 84});
+            final double x0 = (s['x'] as num?)?.toDouble() ?? 0,
+                y0 = (s['y'] as num?)?.toDouble() ?? 0;
+            s = await press(
+              'timer dropped on pause',
+              <Offset>[cross - const Offset(104, 0)],
+              legMs: 650,
+              endMs: 300,
+              settleMs: 1600,
+            );
+            await Robot.wait(500);
+            s = await where();
+            t.check(
+              'places: dropped on pause, the timer stands',
+              s['paused'] == true && s['lens'] == true,
+              'paused ${s['paused']}',
+            );
+            t.check(
+              'places: and it is back where it was picked up from',
+              (((s['x'] as num?)?.toDouble() ?? 1e9) - x0).abs() < 14 * dp &&
+                  (((s['y'] as num?)?.toDouble() ?? 1e9) - y0).abs() < 14 * dp,
+              'now ${s['x']}, ${s['y']}; was ${x0.round()}, ${y0.round()}',
+            );
+            await press(
+              'timer dropped on pause again',
+              <Offset>[cross - const Offset(104, 0)],
+              legMs: 650,
+              endMs: 300,
+              settleMs: 1600,
+            );
+            await Robot.wait(500);
+            s = await where();
+            t.check(
+              'places: dropped there again, it goes on',
+              s['paused'] != true,
+              'paused ${s['paused']}',
+            );
+            final bool wasUp = lensOf.countUp.value;
+            if (wasUp) {
+              lensOf.toggleMode();
+              await Robot.wait(400);
+            }
+            await press(
+              'timer dropped on count up',
+              <Offset>[cross + const Offset(104, 0)],
+              legMs: 650,
+              endMs: 300,
+              settleMs: 1600,
+            );
+            await Robot.wait(500);
+            s = await where();
+            t.check(
+              'places: dropped on count up, it counts up, and is still there',
+              lensOf.countUp.value && s['lens'] == true,
+              'counting up ${lensOf.countUp.value}',
+            );
+            if (lensOf.countUp.value != wasUp) {
+              lensOf.toggleMode();
+              await Robot.wait(400);
+            }
+            // Large, it carries its controls under it.
+            s = await t.lens(<String, Object?>{'op': 'size', 'dp': 230});
+            await Robot.wait(1500);
+            s = await where();
+            t.check(
+              'controls: made large, the timer has its three under it',
+              s['tray'] == true,
+              'size ${s['size']} px',
+            );
+            if (s['tray'] == true) {
+              s = await t.lens(<String, Object?>{'op': 'tray', 'i': 0});
+              t.check(
+                'controls: a tap on pause, and it stands',
+                s['paused'] == true,
+                'paused ${s['paused']}',
+              );
+              s = await t.lens(<String, Object?>{'op': 'tray', 'i': 0});
+              t.check(
+                'controls: a tap again, and it goes on',
+                s['paused'] != true,
+                'paused ${s['paused']}',
+              );
+            }
+            s = await t.lens(<String, Object?>{'op': 'size', 'dp': 84});
+            await Robot.wait(1200);
+            s = await where();
+            t.check(
+              'controls: made small again, they are gone',
+              s['tray'] != true,
+            );
+            // The cross stops the timer and takes it off the screen; a new rest brings it back.
             s = await press(
               'timer dropped on the cross',
               <Offset>[cross],
@@ -3166,14 +3370,26 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
               'timer: dropped on the cross, it is closed',
               s['lens'] != true,
             );
+            t.check(
+              'timer: and it is stopped, not running out of sight',
+              s['off'] == true,
+              'off ${s['off']}',
+            );
             rest(5);
-            await Robot.wait(6800);
+            await Robot.wait(1500);
+            s = await where();
+            t.check(
+              'timer: a new rest brings it back',
+              s['lens'] == true && s['mode'] == 1,
+              'mode ${s['mode']}',
+            );
+            await Robot.wait(5300);
             s = await where();
             final double off =
                 ((s['buzzAt'] as num?)?.toDouble() ?? 0) -
                 ((s['endsAt'] as num?)?.toDouble() ?? 0);
             t.check(
-              'buzz: given when the rest ends, with no lens on the screen',
+              'buzz: given when the rest ends',
               off.abs() < 500,
               'off by ${off.round()} ms',
             );
@@ -3542,11 +3758,12 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     }
     final Offset travel = last - down;
     final int ms = _held.elapsedMilliseconds;
+    // Fast, it is a flick for a quarter of a second. Slower but still on its way up, it may
+    // yet be a slow flick, for a little less long. Resting, or barely moving, it is a carry.
     return travel.dy < 0 &&
         travel.dx.abs() < -travel.dy * 0.8 &&
-        _pace > 0.9 &&
-        ms - _paceMs < 45 &&
-        ms < 260;
+        ms - _paceMs < 80 &&
+        (_pace > 0.7 ? ms < 260 : (_pace > 0.25 && ms < 220));
   }
 
   /// A finger that moved and then stopped sends no more movement, so the lift is also timed.
@@ -3573,7 +3790,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     final int nowMs = _held.elapsedMilliseconds;
     if (_paceFrom != null && nowMs > _paceMs) {
       final double v = (e.position - _paceFrom!).distance / (nowMs - _paceMs);
-      _pace = _pace * 0.4 + v * 0.6;
+      _pace = _pace == 0 ? v : _pace * 0.4 + v * 0.6;
     }
     if (_paceFrom == null || nowMs > _paceMs) {
       _paceFrom = e.position;

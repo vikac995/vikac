@@ -35,7 +35,6 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
     for (int i = 0; i < 4; i++)
       SpringValue(this, value: 1, spring: Motions.expressiveFast),
   ];
-  late final SpringValue _rest = SpringValue(this, spring: Motions.expressive);
   late final SpringValue _next = SpringValue(this, spring: Motions.expressive);
   int _elapsed = 14 * 60 + 32;
   int _restLeft = 0, _restOf = _restTotal;
@@ -107,7 +106,6 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           }
         });
         if (_timerOff) {
-          _rest.animateTo(0, spring: Motions.spatial);
           Diag.instance.extra = '';
         }
         Haptics.settle();
@@ -136,7 +134,6 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
 
   void _skipRest() {
     setState(() => _setRest(null));
-    _rest.animateTo(0, spring: Motions.spatial);
     Diag.instance.extra = '';
     Haptics.tick();
   }
@@ -162,7 +159,6 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           if (!Platform.isAndroid) {
             Haptics.thud();
           }
-          _rest.animateTo(0, spring: Motions.spatial);
           Diag.instance.extra = '';
         }
       }
@@ -257,7 +253,6 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           // floating and nothing of it is left running. What was logged stays logged.
           _started = false;
           setState(() => _setRest(null));
-          _rest.animateTo(0, spring: Motions.spatial);
           Diag.instance
             ..extra = ''
             ..event('workout stopped');
@@ -287,7 +282,7 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
       ..onRest = null
       ..countUp.removeListener(_modeChanged);
     _clock?.cancel();
-    for (final SpringValue s in <SpringValue>[..._pop, _rest, _next]) {
+    for (final SpringValue s in <SpringValue>[..._pop, _next]) {
       s.dispose();
     }
     super.dispose();
@@ -316,12 +311,10 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
         _restOf = _restTotal;
         _setRest(DateTime.now().add(const Duration(seconds: _restTotal)));
       });
-      _rest.animateTo(1);
       Diag.instance.extra = '+rest';
     } else {
       all ? Haptics.thud() : Haptics.tick();
       setState(() => _setRest(null));
-      _rest.animateTo(0, spring: Motions.spatial);
       Diag.instance.extra = '';
     }
   }

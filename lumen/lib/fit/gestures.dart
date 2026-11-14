@@ -53,6 +53,16 @@ class GestureSlots extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Puts the notifications away again. Only the test needs this.
+  static Future<void> shadeClose() async {
+    try {
+      await const MethodChannel('lumen/device')
+          .invokeMethod<void>('shadeClose');
+    } catch (_) {
+      // Not on Android.
+    }
+  }
+
   /// Pulls Android's notifications down. False where that cannot be done.
   static Future<bool> shade() async {
     try {

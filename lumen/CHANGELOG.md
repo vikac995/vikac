@@ -1,5 +1,32 @@
 # Lumen changelog
 
+## Prism, build 99 (14 November 2026)
+
+**File:** `releases/prism-build-99.apk`
+
+Needs Play Protect paused to install. **This is the build to test.**
+
+**Tidied**
+- The spring that moved the rest bar, which is gone, was still being run each time a rest began or ended. Removed.
+- The three things Android's compiler pointed at in Prism's own code are put right. It now compiles with none.
+- Nothing else was found left over: Prism's side has no unused code by its own checker.
+
+**The flick, again**
+- A slow flick up could still wake the magnifying glass. A finger still on its way up, even slowly, is now given a little longer (to a fifth of a second) before it is taken for a carry; one that has stopped is a carry at once, as before.
+
+**The tests now also check**
+- *Prism's side:* the button's sign is the cog while the blobs are being changed and not otherwise; one empty place stands in the middle; a flick for the app list wakes neither the glass nor a card at any moment.
+- *On a phone only:* whether this phone lets the notifications be pulled down (they are put away again at once).
+- *Launch and follow:* an app opened from Prism brings its blob along as a guest, tucked; Prism's own floating blob is untouched; back in Prism the guest is gone.
+- *Two floating things:* a blob and the timer on the screen at once, each its own.
+- *The blob's size:* asked to be very large, it is a tenth over at most.
+- *The timer's places:* dropped on pause it stands and is back where it was picked up; dropped there again it goes on; dropped on count up it counts up and is still there.
+- *The timer's controls:* made large it has them under it; a tap on pause and it stands, again and it goes on; made small they are gone.
+- *The cross:* the timer is closed and stopped; a new rest brings it back; the buzz still comes.
+
+**Checked:** it compiles with no warnings of Prism's own. In my preview the Prism half ran: 54 or 55 of 59. Three cannot be right there (power). The check on the flick is wrong there and I measured why: my preview draws nothing for a tenth of a second in the middle of the robot's flick, so Prism sees a finger that has stopped. On a phone the finger is reported every 8 ms. "A slower flick" was wrong in one run of three for the same reason, as it has been before.
+**Not checked:** on a phone, anything. Every new check on Android's side has never run; some will be wrong because the check is, not Prism.
+
 ## Prism, build 98 (14 November 2026)
 
 **File:** `releases/prism-build-98.apk`
