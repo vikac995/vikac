@@ -9,10 +9,15 @@ import '../widgets/tag.dart';
 import 'common.dart';
 import 'diag.dart';
 import 'state.dart';
+import 'gestures.dart';
 import '../rooms/details/small_things.dart';
 
 /// Room 46. A complete food day: what is left, the three macros, meals you
 /// add to with one tap, and water.
+
+// (Tracked, so a two-finger swipe can put it back where it was: see ScrollMemory.)
+final ScrollController _scroll = ScrollMemory.track(ScrollController());
+
 class FoodPage extends StatefulWidget {
   const FoodPage({super.key});
 
@@ -136,6 +141,7 @@ class _FoodPageState extends State<FoodPage> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: ListView(
+        controller: _scroll,
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),

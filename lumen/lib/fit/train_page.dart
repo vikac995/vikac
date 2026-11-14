@@ -14,11 +14,16 @@ import '../widgets/pressable.dart';
 import '../widgets/tag.dart';
 import 'common.dart';
 import 'diag.dart';
+import 'gestures.dart';
 import '../rooms/patterns/inputs_room.dart';
 
 /// Room 39. A complete "workout in progress" screen: where you are, the
 /// sets as thumb dials, one tap to finish a set, and a rest timer that
 /// starts by itself and stays out of the way.
+
+// (Tracked, so a two-finger swipe can put it back where it was: see ScrollMemory.)
+final ScrollController _scroll = ScrollMemory.track(ScrollController());
+
 class TrainPage extends StatefulWidget {
   const TrainPage({super.key});
 
@@ -330,6 +335,7 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
       body: Stack(
         children: <Widget>[
           ListView(
+            controller: _scroll,
             physics: const BouncingScrollPhysics(
               parent: AlwaysScrollableScrollPhysics(),
             ),

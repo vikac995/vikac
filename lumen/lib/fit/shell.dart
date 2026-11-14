@@ -4970,6 +4970,30 @@ class _ShellState extends State<Shell>
                     ),
                   ),
                 ),
+                // And under the bar at the foot: the same shade, deep enough to reach under
+                // Android's own buttons where the phone has them, so nothing shows through there.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: safe.bottom + 14 + _barH * 0.6,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: <Color>[
+                            c.bg.withValues(alpha: 0),
+                            c.bg.withValues(alpha: 0.85),
+                            c.bg.withValues(alpha: 0.96),
+                          ],
+                          stops: const <double>[0, 0.55, 1],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 // Content scrolls away under the status bar instead of colliding with the clock.
                 Positioned(
                   left: 0,

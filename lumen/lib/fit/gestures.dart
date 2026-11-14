@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/widgets.dart' show ScrollController;
 import 'package:flutter/services.dart';
 
 /// What the two-finger swipes do. Four of them: down, up, left, right. Each holds the same
@@ -65,6 +66,36 @@ class GestureSlots extends ChangeNotifier {
   }
 }
 
+/// Where each page's list was when a finger came down. One finger always lands a moment before
+/// the other, and in that moment it starts to scroll; when the second lands and it is a
+/// two-finger swipe, every list is put back where it was, so that only the swipe happens.
+class ScrollMemory {
+  static final List<ScrollController> _all = <ScrollController>[];
+  static final Map<ScrollController, double> _at = <ScrollController, double>{};
+
+  static ScrollController track(ScrollController c) {
+    _all.add(c);
+    return c;
+  }
+
+  static void remember() {
+    for (final ScrollController c in _all) {
+      if (c.hasClients) {
+        _at[c] = c.offset;
+      }
+    }
+  }
+
+  static void restore() {
+    for (final ScrollController c in _all) {
+      final double? was = _at[c];
+      if (was != null && c.hasClients && (c.offset - was).abs() > 0.5) {
+        c.jumpTo(was);
+      }
+    }
+  }
+}
+
 /// Two fingers down and moved. With one finger it takes no part at all: it only notes that a
 /// finger is down, so taps, drags and scrolling go on exactly as if it were not there. When a
 /// second finger comes down, and [wanted] says a swipe would mean something just now, the
@@ -86,6 +117,7 @@ class TwoFingerSwipe extends OneSequenceGestureRecognizer {
       // The first finger: only watched, to know when it leaves.
       _first = event.pointer;
       GestureBinding.instance.pointerRouter.addRoute(event.pointer, _watch);
+      ScrollMemory.remember();
       return;
     }
     if (_first != null && _second == null && wanted()) {
@@ -95,6 +127,8 @@ class TwoFingerSwipe extends OneSequenceGestureRecognizer {
       _done = false;
       resolve(GestureDisposition.accepted);
       GestureBinding.instance.cancelPointer(_first!);
+      // Whatever the first finger had begun to scroll goes back.
+      ScrollMemory.restore();
     }
   }
 

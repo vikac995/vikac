@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 115 (14 November 2026)
+
+**File:** `releases/prism-build-115.apk`
+
+Needs Play Protect paused to install. Can be installed over build 114.
+
+- **A two-finger swipe moves nothing but itself.** One finger always lands a moment before the other, and in that moment it began to scroll the page, so Home was pulled down as the notifications came. Prism now notes where every page's list is when a finger comes down; when a second lands and it is a two-finger swipe, each list is put back exactly where it was, at once.
+- **With Android's buttons at the foot of the screen**, the page no longer shows through, clear, below the bar and behind the buttons. The same shade that lets content fade under the clock at the top now does the same at the foot, deep enough to reach under the buttons. It is a plain shade, not a blur: it costs nothing.
+
+**Checked:** it compiles; in my preview the long test.
+**Not checked:** on a phone, with buttons or without.
+
 ## Prism, build 114 (14 November 2026)
 
 **File:** `releases/prism-build-114.apk`

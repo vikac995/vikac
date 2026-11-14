@@ -8,6 +8,7 @@ import '../core/springs.dart';
 import '../core/theme.dart';
 import '../widgets/controls.dart';
 import '../widgets/tag.dart';
+import 'gestures.dart';
 import 'common.dart';
 
 // Each lift's bests. The estimated best above comes from the heaviest set: 80 × 8 is about 100 kg for one rep.
@@ -38,6 +39,10 @@ const Map<String, List<String>> _labels = <String, List<String>>{
 
 /// Room 45. A complete progress screen: one headline number, a chart you
 /// can run a finger along, and the bests underneath.
+
+// (Tracked, so a two-finger swipe can put it back where it was: see ScrollMemory.)
+final ScrollController _scroll = ScrollMemory.track(ScrollController());
+
 class ProgressPage extends StatefulWidget {
   const ProgressPage({super.key});
 
@@ -119,6 +124,7 @@ class _ProgressPageState extends State<ProgressPage>
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: ListView(
+        controller: _scroll,
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),

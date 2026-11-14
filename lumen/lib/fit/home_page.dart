@@ -12,6 +12,7 @@ import 'lens.dart';
 import 'shell.dart';
 import 'state.dart';
 import 'look.dart';
+import 'gestures.dart';
 import 'screen_time.dart';
 
 const List<String> _plan = <String>[
@@ -23,6 +24,10 @@ const List<String> _plan = <String>[
 ];
 
 /// Prism's first page: what today asks of you, at a glance.
+
+// (Tracked, so a two-finger swipe can put it back where it was: see ScrollMemory.)
+final ScrollController _scroll = ScrollMemory.track(ScrollController());
+
 class HomePage extends StatelessWidget {
   const HomePage({
     super.key,
@@ -49,6 +54,7 @@ class HomePage extends StatelessWidget {
             .where(((String, bool?) h) => h.$2 != null)
             .length;
         return ListView(
+          controller: _scroll,
           // Cards must be redrawn as they scroll, so their glass shows what is behind them now.
           addRepaintBoundaries: false,
           physics: const BouncingScrollPhysics(
