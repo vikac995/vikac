@@ -236,6 +236,15 @@ class MainActivity : FlutterActivity() {
                 RestBubble.pin = if (a == null) null else RestBubble.blobOf(a)
                 RestBubble.refresh(applicationContext)
                 result.success(null)
+            } else if (call.method == "land") {
+                // A blob has been shot out of Prism's button to become the lens. The lens is put in
+                // its place, unseen if it was not there, and Prism is told where that is.
+                val a = call.arguments as? Map<*, *>
+                if (a != null) RestBubble.pin = RestBubble.blobOf(a)
+                RestBubble.incoming(applicationContext) { spot -> result.success(spot) }
+            } else if (call.method == "landed") {
+                RestBubble.landed()
+                result.success(null)
             } else if (call.method == "blobs") {
                 // What the blobs in the menu are, in order, so the floating lens can open the same menu.
                 val list = call.arguments as? List<*>
@@ -450,6 +459,54 @@ object RestBubble {
     /** What the blobs in the menu are, in order: the same blobs Prism's own button shows. */
     var blobs: List<Pin> = emptyList()
     private var menu: Menu? = null
+
+    // A lens put in place for a blob that is still on its way to it is not seen until the blob lands.
+    private var unseen = false
+
+    /**
+     * A blob is on its way from Prism's button to become the lens, or to go into it. The lens is
+     * put in its place (unseen, if there was none) and [done] is told where that is on the
+     * screen: its corner and its size, in pixels. Nothing, if the lens cannot float here.
+     */
+    fun incoming(context: Context, done: (Map<String, Int>?) -> Unit) {
+        returned(context)
+        if (view == null) unseen = true
+        refresh(context)
+        val v = view
+        if (v == null) {
+            unseen = false
+            done(null)
+            return
+        }
+        // What is in the lens, or its dot on the rim, is not drawn until the blob arrives.
+        v.hideInner = true
+        v.invalidate()
+        var tries = 0
+        val answer = object : Runnable {
+            override fun run() {
+                if (!v.isLaidOut && tries++ < 20) {
+                    v.postDelayed(this, 16)
+                    return
+                }
+                val at = IntArray(2)
+                v.getLocationOnScreen(at)
+                done(mapOf("x" to at[0], "y" to at[1], "size" to v.width))
+            }
+        }
+        v.post(answer)
+        // Should the blob never arrive, the lens is not left there unseen.
+        watcher.postDelayed({ if (view === v && (unseen || v.hideInner)) landed() }, 2500)
+    }
+
+    /** The blob has landed: the lens shows itself and what is in it, with the give of something just caught. */
+    fun landed() {
+        unseen = false
+        val v = view ?: return
+        v.hideInner = false
+        v.alpha = 1f
+        v.invalidate()
+        v.thump()
+    }
 
     fun blobOf(a: Map<*, *>): Pin {
         val bytes = a["icon"] as? ByteArray
@@ -1519,11 +1576,7 @@ object RestBubble {
      */
     private class Reach(context: Context) : android.view.View(context) {
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
-            val v = view ?: return true
-            when (e.actionMasked) {
-                android.view.MotionEvent.ACTION_DOWN, android.view.MotionEvent.ACTION_MOVE -> v.second(true, e.rawX, e.rawY)
-                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> v.second(false, 0f, 0f)
-            }
+            view?.reach(e)
             return true
         }
     }
@@ -1768,6 +1821,10 @@ object RestBubble {
         private var startDist = 1f
         private var startSize = 0f
         private var midX = 0f; private var midY = 0f
+        // The finger elsewhere on the screen is down; and, once the one on the lens has lifted,
+        // that finger is the one dragging the lens.
+        private var reachDown = false
+        private var adopted = false
         // Held until its menu opened: the rest of that touch belongs to the menu.
         private var menuTouch = false
         // The blob in a container hangs back a little when the container moves, and comes to rest in its middle.
@@ -1779,8 +1836,28 @@ object RestBubble {
 
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()
+            if (unseen) {
+                // In place for a blob that is on its way: it shows itself when the blob lands.
+                alpha = 0f
+                return
+            }
             scaleX = 0.8f; scaleY = 0.8f; alpha = 0f
             animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(220).setInterpolator(EASE).start()
+        }
+
+        /** Something has just landed in it: it gives a little, wider then taller, and is still again. */
+        fun thump() {
+            animate().cancel()
+            val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
+            a.duration = 420
+            a.interpolator = android.view.animation.LinearInterpolator()
+            a.addUpdateListener {
+                val t = it.animatedValue as Float
+                val w = if (t >= 1f) 0f else 0.13f * Math.exp(-5.5 * t).toFloat() * Math.cos(2 * Math.PI * 2.6 * t).toFloat()
+                scaleX = 1f + w
+                scaleY = 1f - w
+            }
+            a.start()
         }
 
         /** Filled with the pinned thing's colour: only the lens as it was before, showing a pinned thing. */
@@ -2069,13 +2146,13 @@ object RestBubble {
             var x = startX + (p1x - downX) + catchX * catchUp
             var y = startY + (p1y - downY) + catchY * catchUp
             // Near the cross the lens is pulled onto it, and lets go again if dragged clear.
-            val cx = x + width / 2f; val cy = y + height / 2f
+            val cx = x + lp.width / 2f; val cy = y + lp.height / 2f
             val dist = Math.hypot((cx - crossX()).toDouble(), (cy - crossY()).toDouble()).toFloat()
             val was = snapped
             snapped = dist < (if (snapped) 118 else 92) * dp
             if (snapped) {
-                x = crossX() - width / 2f + (cx - crossX()) * 0.18f
-                y = crossY() - height / 2f + (cy - crossY()) * 0.18f
+                x = crossX() - lp.width / 2f + (cx - crossX()) * 0.18f
+                y = crossY() - lp.height / 2f + (cy - crossY()) * 0.18f
             }
             if (snapped != was) {
                 haptic(context, if (snapped) "click" else "tick")
@@ -2204,16 +2281,8 @@ object RestBubble {
             }
         }
 
-        /** The fingers are off: the lens keeps the size it was given, and settles at the nearer side. */
-        private fun endStretch() {
-            pressed = false
-            sizing = false
-            sized = false
-            catching?.cancel()
-            closeReach(context)
-            closeGrip(context)
-            tracker?.recycle()
-            tracker = null
+        /** After a resize the window goes back to being exactly the lens, at the size it now is, and that size is kept. */
+        private fun fit() {
             if (!stretching) return
             stretching = false
             val size = Math.round(wantSize)
@@ -2224,7 +2293,106 @@ object RestBubble {
             try {
                 context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).edit().putFloat("size", size / dp).apply()
             } catch (ex: Exception) {}
-            throwIt(0f, 0f)
+        }
+
+        /** Both fingers are off: the lens keeps the size it was given, and settles at the nearer side. */
+        private fun endStretch() {
+            pressed = false
+            sizing = false
+            sized = false
+            adopted = false
+            reachDown = false
+            catching?.cancel()
+            closeReach(context)
+            closeGrip(context)
+            tracker?.recycle()
+            tracker = null
+            val was = stretching
+            fit()
+            if (was) throwIt(0f, 0f)
+        }
+
+        /**
+         * Resizing is over and one finger is still down, at this place on the screen: the lens
+         * keeps its new size and goes on with that finger, as a lens being dragged.
+         */
+        private fun resumeDrag(x: Float, y: Float) {
+            sizing = false
+            sized = false
+            fit()
+            p1x = x; p1y = y
+            downX = x; downY = y; startX = lp.x; startY = lp.y
+            dragged = true
+            snapped = false
+            wouldTuck = false
+            catching?.cancel()
+            catchX = 0f; catchY = 0f; catchUp = 0f
+            tracker?.recycle()
+            tracker = android.view.VelocityTracker.obtain()
+            target?.animate()?.alpha(1f)?.setDuration(160)?.start()
+        }
+
+        private fun track(e: android.view.MotionEvent) {
+            // Positions on the screen, not in a window, which may be moving under the finger.
+            val copy = android.view.MotionEvent.obtain(e)
+            copy.setLocation(e.rawX, e.rawY)
+            tracker?.addMovement(copy)
+            copy.recycle()
+        }
+
+        /** A touch on the rest of the screen while a finger is, or has just been, on the lens. */
+        fun reach(e: android.view.MotionEvent) {
+            when (e.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    reachDown = true
+                    second(true, e.rawX, e.rawY)
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    if (adopted) {
+                        p1x = e.rawX; p1y = e.rawY
+                        follow()
+                        track(e)
+                    } else {
+                        second(true, e.rawX, e.rawY)
+                    }
+                }
+                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    reachDown = false
+                    if (adopted) {
+                        letGo(e.actionMasked == android.view.MotionEvent.ACTION_UP)
+                    } else if (sized && pressed) {
+                        // This finger lifted; the one on the lens carries on dragging it.
+                        resumeDrag(p1x, p1y)
+                    } else {
+                        second(false, 0f, 0f)
+                    }
+                }
+            }
+        }
+
+        /** The finger dragging the lens has lifted: into a side, onto the cross, or thrown to rest. */
+        private fun letGo(up: Boolean) {
+            pressed = false
+            adopted = false
+            removeCallbacks(holder)
+            catching?.cancel()
+            closeReach(context)
+            // The handle of a lens that was pulled out of a side has done its work.
+            closeGrip(context)
+            animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
+            if (up && wouldTuck) {
+                tuckIn(lp.x + lp.width / 2f > resources.displayMetrics.widthPixels / 2f)
+            } else {
+                var velX = 0f; var velY = 0f
+                val t = tracker
+                if (t != null) {
+                    t.computeCurrentVelocity(1000)
+                    velX = t.xVelocity; velY = t.yVelocity
+                }
+                throwIt(velX, velY)
+            }
+            tracker?.recycle()
+            tracker = null
         }
 
         private fun place() {
@@ -2366,7 +2534,9 @@ object RestBubble {
                     return true
                 }
                 android.view.MotionEvent.ACTION_POINTER_UP -> {
-                    second(false, 0f, 0f)
+                    // One of two fingers that are both the lens's own has lifted: the other carries on dragging it.
+                    val keep = if (e.actionIndex == 0) 1 else 0
+                    if (sized && e.pointerCount >= 2) resumeDrag(rawX(e, keep), rawY(e, keep)) else second(false, 0f, 0f)
                     return true
                 }
             }
@@ -2379,7 +2549,16 @@ object RestBubble {
                         }
                         stretch()
                     }
-                    android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> endStretch()
+                    android.view.MotionEvent.ACTION_UP -> {
+                        if (reachDown) {
+                            // The finger on the lens lifted first; the other one carries on dragging it.
+                            adopted = true
+                            resumeDrag(p2x, p2y)
+                        } else {
+                            endStretch()
+                        }
+                    }
+                    android.view.MotionEvent.ACTION_CANCEL -> endStretch()
                 }
                 return true
             }
@@ -2404,6 +2583,8 @@ object RestBubble {
                     sizing = false
                     atEnd = false
                     menuTouch = false
+                    adopted = false
+                    reachDown = false
                     if (container) {
                         postDelayed(holder, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L))
                     }
@@ -2432,37 +2613,24 @@ object RestBubble {
                     if (dragged) follow()
                 }
                 android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
-                    pressed = false
-                    removeCallbacks(holder)
-                    catching?.cancel()
-                    closeReach(context)
-                    // The handle of a lens that was pulled out of a side has done its work.
-                    closeGrip(context)
-                    animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
                     if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !dragged) {
+                        pressed = false
+                        removeCallbacks(holder)
+                        closeReach(context)
+                        closeGrip(context)
+                        animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
                         haptic(context, "tick")
                         // Tapped. A workout opens its sheet; a pinned thing does what it is.
                         if (mode() == 1) openSheet(context) else tapPinned(context)
-                    } else if (e.actionMasked == android.view.MotionEvent.ACTION_UP && wouldTuck) {
-                        tuckIn(lp.x + lp.width / 2f > resources.displayMetrics.widthPixels / 2f)
+                        tracker?.recycle()
+                        tracker = null
                     } else {
-                        var velX = 0f; var velY = 0f
-                        val t = tracker
-                        if (t != null) {
-                            t.computeCurrentVelocity(1000)
-                            velX = t.xVelocity; velY = t.yVelocity
-                        }
-                        throwIt(velX, velY)
+                        letGo(e.actionMasked == android.view.MotionEvent.ACTION_UP)
                     }
-                    tracker?.recycle()
-                    tracker = null
+                    return true
                 }
             }
-            // Positions on the screen, not in the lens, which moves under the finger.
-            val copy = android.view.MotionEvent.obtain(e)
-            copy.setLocation(e.rawX, e.rawY)
-            tracker?.addMovement(copy)
-            copy.recycle()
+            track(e)
             return true
         }
     }
@@ -2784,11 +2952,11 @@ object RestBubble {
         protected val card = android.widget.LinearLayout(context)
         protected val grab = Grab(context)
         private val grabBox = android.widget.FrameLayout(context)
-        // Nearly solid, with a lit edge. It cannot blur what is underneath, and text showing
-        // through unblurred only got in the way of reading the sheet.
+        // Solid, with a lit edge. It cannot blur what is underneath, and anything showing through
+        // unblurred, however faintly, only gets in the way of reading the sheet.
         private val glass = android.graphics.drawable.GradientDrawable(
             android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
-            if (light) intArrayOf(0xFBFFFDF8.toInt(), 0xFAF3EEE4.toInt()) else intArrayOf(0xF81C1F27.toInt(), 0xFA0E0F13.toInt()),
+            if (light) intArrayOf(0xFFFFFDF8.toInt(), 0xFFF3EEE4.toInt()) else intArrayOf(0xFF1C1F27.toInt(), 0xFF0E0F13.toInt()),
         )
         // How far below the top of [body] the glass starts: nothing, except while the sheet is changing size.
         private var edge = 0
@@ -3148,6 +3316,13 @@ object RestBubble {
         private val rows = android.widget.LinearLayout(context)
         private val rowViews = ArrayList<Row>()
         private val done = label(context, 16.5f, onAccent, true)
+        private val stop = label(context, 13f, muted(), true)
+        private val stopRow = android.widget.LinearLayout(context)
+        private var stopArmed = false
+        private val disarm = Runnable {
+            stopArmed = false
+            stopLook()
+        }
 
         private val ticker = object : Runnable {
             override fun run() {
@@ -3199,9 +3374,32 @@ object RestBubble {
             controls.addView(skip, gapLp())
             controls.addView(open, gapLp())
 
+            // Stopping the workout: only in the tall sheet, and it takes two taps, so a thumb
+            // cannot do it by passing over it.
+            stop.setPadding(px(14f), px(9f), px(14f), px(9f))
+            stop.setOnClickListener {
+                if (stopArmed) {
+                    removeCallbacks(disarm)
+                    stopArmed = false
+                    // Prism ends the workout and gives the thud for it. With no workout on, the
+                    // timer stops floating and nothing of it is left running.
+                    channel?.invokeMethod("stop", null)
+                    closeSheet(context)
+                } else {
+                    haptic(context, "click")
+                    stopArmed = true
+                    stopLook()
+                    postDelayed(disarm, 3000)
+                }
+            }
+            stopLook()
+            stopRow.gravity = android.view.Gravity.CENTER
+            stopRow.addView(stop, android.widget.LinearLayout.LayoutParams(wrap, wrap))
+
             header.addView(clock)
             header.addView(info)
             header.addView(controls)
+            header.addView(stopRow)
             card.addView(header, android.widget.LinearLayout.LayoutParams(fill, wrap))
 
             // The small sheet shows one set; this bar says which one it is, out of how many.
@@ -3239,6 +3437,29 @@ object RestBubble {
                     grab.animate().translationY(0f).setStartDelay(0).setDuration(420)
                         .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator()).start()
                 }.start()
+            }
+        }
+
+        private fun stopLook() {
+            val warn = 0xFFE5484D.toInt()
+            stop.text = if (stopArmed) "Tap again to stop the workout" else "Stop workout"
+            stop.setTextColor(if (stopArmed) warn else muted())
+            stop.background = rounded(if (stopArmed) tint(warn, 0x30) else tint(ink(), 0x12), 100 * dp)
+        }
+
+        // Where there is no room for the tall sheet (a keyboard is up, say), it is the small one.
+        override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+            super.onLayout(changed, l, t, r, b)
+            if (!fullMode || changing || closing) return
+            val at = IntArray(2)
+            getLocationOnScreen(at)
+            if (at[1] < px(60f)) {
+                post {
+                    if (fullMode && !changing && !closing) {
+                        fullMode = false
+                        applyMode()
+                    }
+                }
             }
         }
 
@@ -3326,6 +3547,10 @@ object RestBubble {
             val ctlLp = android.widget.LinearLayout.LayoutParams(wrap, wrap)
             if (full) ctlLp.topMargin = px(12f)
             controls.layoutParams = ctlLp
+            val stopLp = android.widget.LinearLayout.LayoutParams(wrap, wrap)
+            stopLp.topMargin = px(10f)
+            stopRow.layoutParams = stopLp
+            stopRow.visibility = if (full) android.view.View.VISIBLE else android.view.View.GONE
             // The tall sheet lists every set. The small one shows one, so it says which: the line
             // under the name is written to be read, and the bar below shows it out of how many.
             pips.visibility = if (full) android.view.View.GONE else android.view.View.VISIBLE

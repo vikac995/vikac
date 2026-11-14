@@ -1,5 +1,25 @@
 # Lumen changelog
 
+## Prism, build 66 (14 November 2026)
+
+**File:** `releases/prism-build-66.apk`
+
+- **The bar shows what passes under it, in the cheap glass style too.** On a phone where "Auto" had settled on the cheap style, the bar painted a picture of the background and so hid everything that scrolled under it (the water drops on Food went behind it and were gone). The cheap style is now clear glass: a tint over whatever is really behind it, with the rim and the light of glass. Things pass under it and are seen passing. It costs nothing: it is one see-through shape. Real glass (Auto when the phone keeps up, and Orig.) still softens and bends what is behind; the cheap style shows it sharp and dimmed.
+- **Flick a blob to make it float.** With the blobs out, drag one onto the button in the middle and let go, or flick it at the button. The button takes it in, holds it for a moment and shoots it out to the side on a thread, where it lands as the floating lens (and the lens gives a little as it catches it). Let go anywhere else and the blob goes back to its place. Holding a blob still puts it in the lens as before.
+- **Hold the X to change the blobs.** With the blobs out, hold the X: each blob gets a small mark and a line says "Tap a blob to change it". Tap one and the app drawer comes up as "Replace ...", with Prism's own five actions along the top and every app below. Tap what you want: it takes that place, and you are back at the blobs, still editing. The X or back ends it. Any place can now hold an action or an app, and the choice is kept.
+- **After resizing the lens, the finger that stays down keeps dragging it.** Whichever of the two that is.
+- **"Stop workout" in the tall sheet,** under the timer. It takes two taps (the second within three seconds), so a passing thumb cannot do it. With the workout stopped its timer stops floating and nothing of it is left running.
+- **The tall sheet only where it fits.** With a keyboard up there is no room for it, so it becomes the small one.
+- **Sheets are fully solid.** Faint traces of the app behind showed through them.
+
+**What to look for:**
+- Food: scroll the water drops under the bar. You should see them through it, in either glass style.
+- The flick: whether the blob lands exactly on the lens or beside it, and whether the catch feels right or too much.
+- Holding the X: whether 0.45 s feels right.
+
+**Checked:** it compiles. In my preview: the clear bar, dragging a blob onto the button, and the whole editing flow (hold the X, tap a blob, choose a replacement, back at the blobs).
+**Not checked:** on a phone. The hand-over from the flying blob to the floating lens, dragging on after a resize, and "Stop workout" are written blind.
+
 ## Prism, build 65 (14 November 2026)
 
 **File:** `releases/prism-build-65.apk`

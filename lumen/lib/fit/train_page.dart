@@ -141,6 +141,19 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
           add ? _addRest() : _skipRest();
         }
       }
+      ..onStop = () {
+        if (mounted) {
+          // Stopped from the floating sheet. The workout is no longer on, so its timer stops
+          // floating and nothing of it is left running. What was logged stays logged.
+          _started = false;
+          setState(() => _setRest(null));
+          _rest.animateTo(0, spring: Motions.spatial);
+          Diag.instance
+            ..extra = ''
+            ..event('workout stopped');
+          Haptics.thud();
+        }
+      }
       ..countUp.addListener(_modeChanged);
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       // Keep time always, but only redraw while this page is the one on screen:

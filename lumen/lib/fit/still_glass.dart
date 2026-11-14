@@ -27,19 +27,22 @@ void paintStillGlass(
   required Color rim,
   double magnify = 1,
   bool sharp = false,
-  bool soft = false,
+  bool clear = false,
   double edge = 0,
   Color? flat,
 }) {
   final Look look = Look.instance;
-  final ui.Image? picture = sharp
-      ? look.crisp
-      : (soft ? look.soft ?? look.frost : look.frost);
+  final ui.Image? picture = sharp ? look.crisp : look.frost;
   final Size screen = look.frostScreen;
   canvas
     ..save()
     ..clipPath(shape);
-  if (picture == null || screen.width <= 0) {
+  if (clear) {
+    // Clear glass paints no picture of its own. It is a tint over whatever is really behind
+    // it, so everything that passes underneath shows through, moving, and it costs nothing:
+    // one see-through shape, which the phone lays over a frame in any case.
+    canvas.drawRect(box, Paint()..color = tint);
+  } else if (picture == null || screen.width <= 0) {
     // No background to show (lights off, or not made yet): a plain surface.
     canvas.drawRect(box, Paint()..color = flat ?? tint.withValues(alpha: 1));
   } else {
@@ -125,7 +128,7 @@ class StillGlass extends SingleChildRenderObjectWidget {
     required this.stamp,
     this.magnify = 1,
     this.sharp = false,
-    this.soft = false,
+    this.clear = false,
     this.edge = 0,
     super.child,
   });
@@ -138,9 +141,9 @@ class StillGlass extends SingleChildRenderObjectWidget {
   /// Shows the background as it is, not the blurred copy: clear glass, not frosted.
   final bool sharp;
 
-  /// Shows the background softened only a little: clear glass, through which the lights
-  /// behind it keep their shape.
-  final bool soft;
+  /// Paints no picture: a tint over whatever is really behind it, so content passing
+  /// underneath shows through.
+  final bool clear;
 
   /// How wide the bent band inside the rim is. 0 for none.
   final double edge;
@@ -165,7 +168,7 @@ class StillGlass extends SingleChildRenderObjectWidget {
         old.stamp != stamp ||
         old.magnify != magnify ||
         old.sharp != sharp ||
-        old.soft != soft ||
+        old.clear != clear ||
         old.edge != edge) {
       renderObject.markNeedsPaint();
     }
@@ -189,7 +192,7 @@ class RenderStillGlass extends RenderProxyBox {
       rim: spec.rim,
       magnify: spec.magnify,
       sharp: spec.sharp,
-      soft: spec.soft,
+      clear: spec.clear,
       edge: spec.edge,
     );
     super.paint(context, offset);

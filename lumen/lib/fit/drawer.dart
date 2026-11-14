@@ -23,11 +23,21 @@ class AppDrawer extends StatefulWidget {
     required this.origin,
     required this.button,
     required this.onClose,
+    this.pick,
+    this.actions = const <(String, IconData, Color)>[],
+    this.onPick,
   });
   final bool open;
   final Offset origin;
   final double button;
   final VoidCallback onClose;
+
+  /// When the drawer is up to choose what takes a blob's place: that blob's name. The drawer
+  /// then says so, offers Prism's own [actions] above the apps, and a tap on anything calls
+  /// [onPick] with 'action:2' or 'app:com.whatsapp' and opens nothing.
+  final String? pick;
+  final List<(String, IconData, Color)> actions;
+  final void Function(String key)? onPick;
 
   @override
   State<AppDrawer> createState() => _AppDrawerState();
@@ -217,7 +227,13 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       widget.origin.dy - widget.button / 2 - 16,
     );
     // As many rows as fit, so tiles are always the same generous size.
-    _rows = math.max(3, ((panel.height - 92) / 114).floor());
+    _rows = math.max(
+      3,
+      ((panel.height - 92 - (widget.pick == null ? 0 : 80)) / 114).floor(),
+    );
+    // Fewer rows fit while Prism's own actions are offered above the apps.
+    _page = _page.clamp(0, _pages - 1);
+    _toward = _toward.clamp(0, _pages - 1);
     return ListenableBuilder(
       listenable: _rise,
       builder: (BuildContext context, Widget? child) {
@@ -301,11 +317,17 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                 padding: const EdgeInsets.fromLTRB(24, 20, 20, 6),
                 child: Row(
                   children: <Widget>[
-                    Text('Apps', style: LumenType.display(26, color: c.ink)),
+                    Text(
+                      widget.pick == null ? 'Apps' : 'Replace',
+                      style: LumenType.display(26, color: c.ink),
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        _range,
+                        widget.pick ?? _range,
+                        maxLines: 1,
+                        overflow: TextOverflow.fade,
+                        softWrap: false,
                         style: LumenType.text(
                           14,
                           weight: 560,
@@ -344,6 +366,58 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                   ],
                 ),
               ),
+              if (widget.pick != null)
+                // Prism's own actions, offered as round blobs above the apps.
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: <Widget>[
+                      for (int i = 0; i < widget.actions.length; i++)
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            Haptics.tick();
+                            widget.onPick?.call('action:$i');
+                          },
+                          child: SizedBox(
+                            width: 68,
+                            child: Column(
+                              children: <Widget>[
+                                Container(
+                                  width: 46,
+                                  height: 46,
+                                  decoration: ShapeDecoration(
+                                    color: widget.actions[i].$3,
+                                    shape: const CircleBorder(),
+                                  ),
+                                  child: Icon(
+                                    widget.actions[i].$2,
+                                    color: Colors.white,
+                                    size: 21,
+                                  ),
+                                ),
+                                const SizedBox(height: 5),
+                                Text(
+                                  widget.actions[i].$1,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  overflow: TextOverflow.fade,
+                                  textScaler: TextScaler.noScaling,
+                                  style: LumenType.text(
+                                    11.5,
+                                    weight: 600,
+                                    color: c.ink.withValues(alpha: 0.84),
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               Expanded(
                 child: LayoutBuilder(
                   builder: (BuildContext context, BoxConstraints box) =>
@@ -394,7 +468,14 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                     .floor()
                                     .clamp(0, _rows - 1);
                             final int i = _page * _perPage + row * _cols + col;
-                            if (i < Apps.instance.all.length) {
+                            if (i < Apps.instance.all.length &&
+                                widget.onPick != null &&
+                                widget.pick != null) {
+                              // Up to choose a blob's replacement: this one is it.
+                              widget.onPick!(
+                                'app:${Apps.instance.all[i].package}',
+                              );
+                            } else if (i < Apps.instance.all.length) {
                               Diag.instance.event('drawer open app');
                               // Where the tile is on the glass, in real pixels: the app opens out of it.
                               final double dpr = MediaQuery.devicePixelRatioOf(

@@ -157,6 +157,26 @@ class RestBubble with WidgetsBindingObserver {
     _device.invokeMethod<void>('blobs', blobs).catchError((Object _) {});
   }
 
+  /// A blob has been shot out of Prism's button to become the floating lens. Android puts the
+  /// lens in its place, unseen if it was not there already, and answers with where that is on
+  /// the screen in real pixels (x, y of its corner, and its size), so the blob can land on it.
+  /// Null if the lens cannot float here.
+  Future<Map<Object?, Object?>?> land(Map<String, Object> blob) async {
+    try {
+      return await _device.invokeMethod<Map<Object?, Object?>>('land', blob);
+    } catch (_) {
+      return null; // Not on Android.
+    }
+  }
+
+  /// The blob has landed: the lens shows itself, with the give of something just caught.
+  void landed() {
+    _device.invokeMethod<void>('landed').catchError((Object _) {});
+  }
+
+  /// The workout was stopped from the floating sheet. Set by the workout page.
+  VoidCallback? onStop;
+
   /// A blob was put in the floating lens from its own menu (or taken out: null). Set by the shell.
   void Function(String? key)? onPinned;
 
@@ -195,6 +215,8 @@ class RestBubble with WidgetsBindingObserver {
         toggleMode();
       case 'unpinned':
         setPin(null);
+      case 'stop':
+        onStop?.call();
       case 'pinned':
         onPinned?.call(call.arguments as String?);
       case 'weigh':

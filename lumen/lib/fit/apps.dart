@@ -602,6 +602,54 @@ class IconEngine {
   }
 }
 
+/// What is in each of the five places of the blob menu, where that has been changed from what
+/// Prism starts with: one of Prism's own actions ('action:2') or an app ('app:com.whatsapp').
+/// Null means unchanged. Kept in a small file.
+class BlobSlots extends ChangeNotifier {
+  BlobSlots._();
+  static final BlobSlots instance = BlobSlots._();
+  final List<String?> keys = List<String?>.filled(5, null);
+
+  /// During the automatic test the menu is as Prism starts with: the test taps the blobs, and
+  /// must not open other apps.
+  bool paused = false;
+
+  /// What place [i] has been given, if anything.
+  String? at(int i) => paused ? null : keys[i];
+
+  File get _file {
+    final Directory files = Directory(
+      '${Directory.systemTemp.parent.path}/files',
+    );
+    return File(
+      '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_blobs_v1',
+    );
+  }
+
+  void load() {
+    try {
+      final List<String> lines = _file.readAsLinesSync();
+      for (int i = 0; i < keys.length && i < lines.length; i++) {
+        keys[i] = lines[i].trim().isEmpty ? null : lines[i].trim();
+      }
+    } catch (_) {
+      // Nothing has been changed yet.
+    }
+  }
+
+  void put(int i, String? key) {
+    keys[i] = key;
+    try {
+      _file.writeAsStringSync(
+        <String>[for (final String? k in keys) k ?? ''].join('\n'),
+      );
+    } catch (_) {
+      // Not saved: the menu is as Prism starts with next time.
+    }
+    notifyListeners();
+  }
+}
+
 /// One app in the drawer.
 class AppTile {
   AppTile(this.label, this.package, this.updated);
