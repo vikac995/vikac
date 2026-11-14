@@ -141,8 +141,48 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
     Haptics.tick();
   }
 
+  void _tick(Timer _) {
+    // While a workout is on, keep time, but only redraw while this page is the one on
+    // screen: a clock nobody can see should not wake the screen once a second.
+    void Function(void Function()) apply = Diag.instance.page == 'train'
+        ? setState
+        : (void Function() f) => f();
+    apply(() {
+      _elapsed++;
+      // Paused, the rest stands where it was.
+      if (_restEnds != null && _pausedAt == null) {
+        _restLeft =
+            (_restEnds!.difference(DateTime.now()).inMilliseconds / 1000)
+                .ceil()
+                .clamp(0, 86400);
+        if (_restLeft == 0) {
+          _restEnds = null;
+          // One buzz when a rest ends, never two. The floating lens gives it wherever it is on
+          // screen, which is everywhere; this page gives it only if the lens is not allowed to float.
+          if (!RestBubble.instance.allowed.value) {
+            Haptics.thud();
+          }
+          _rest.animateTo(0, spring: Motions.spatial);
+          Diag.instance.extra = '';
+        }
+      }
+    });
+  }
+
+  /// Starts the clock when a workout begins or a rest starts, and stops it when both are over.
+  void _clockSync() {
+    final bool wanted = _started || _restEnds != null;
+    if (wanted && _clock == null) {
+      _clock = Timer.periodic(const Duration(seconds: 1), _tick);
+    } else if (!wanted && _clock != null) {
+      _clock!.cancel();
+      _clock = null;
+    }
+  }
+
   /// Tells the floating workout what it should show.
   void _sync() {
+    _clockSync();
     final int i = _current;
     if (!_started || i < 0) {
       RestBubble.instance.tell(null);
@@ -176,7 +216,9 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
     });
   }
 
-  late final Timer _clock;
+  // The clock exists only while a workout is on or a rest is running. With neither, nothing
+  // here wakes up at all.
+  Timer? _clock;
 
   @override
   void initState() {
@@ -223,33 +265,6 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
         }
       }
       ..countUp.addListener(_modeChanged);
-    _clock = Timer.periodic(const Duration(seconds: 1), (_) {
-      // Keep time always, but only redraw while this page is the one on screen:
-      // a clock nobody can see should not wake the screen once a second.
-      void Function(void Function()) apply = Diag.instance.page == 'train'
-          ? setState
-          : (void Function() f) => f();
-      apply(() {
-        _elapsed++;
-        // Paused, the rest stands where it was.
-        if (_restEnds != null && _pausedAt == null) {
-          _restLeft =
-              (_restEnds!.difference(DateTime.now()).inMilliseconds / 1000)
-                  .ceil()
-                  .clamp(0, 86400);
-          if (_restLeft == 0) {
-            _restEnds = null;
-            // One buzz when a rest ends, never two. The floating lens gives it wherever it is on
-            // screen, which is everywhere; this page gives it only if the lens is not allowed to float.
-            if (!RestBubble.instance.allowed.value) {
-              Haptics.thud();
-            }
-            _rest.animateTo(0, spring: Motions.spatial);
-            Diag.instance.extra = '';
-          }
-        }
-      });
-    });
   }
 
   @override
@@ -259,7 +274,7 @@ class _TrainPageState extends State<TrainPage> with TickerProviderStateMixin {
       ..onValue = null
       ..onRest = null
       ..countUp.removeListener(_modeChanged);
-    _clock.cancel();
+    _clock?.cancel();
     for (final SpringValue s in <SpringValue>[..._pop, _rest, _next]) {
       s.dispose();
     }

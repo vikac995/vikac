@@ -1,5 +1,34 @@
 # Lumen changelog
 
+## Prism, build 71 (14 November 2026)
+
+**File:** `releases/prism-build-71.apk`
+
+**This build needs Play Protect paused to install**, because the counts on icons are back and they need Android's leave to read notifications. Build 70 is the one without them.
+
+From your recordings and messages after build 70.
+
+- **A carried blob stops at the side of the screen.** It goes no further than the place the lens rests, however far the finger goes, with a small tick when it gets there. Let go there, it is the lens at once: nothing appears half off the screen and nothing travels back in.
+- **Putting a blob down no longer swaps pictures.** Before, the full-size blob was replaced in one frame by the smaller one inside the lens, squashed for a moment. Now the lens first draws exactly the blob you put down, the same size in the same place, and tells Prism when it is on the screen. Only then does Prism take its own away. After that the glass comes in around it and the blob comes down to its size inside. If it was put down away from a side it then goes straight to the nearer one, with no spring.
+- **A thrown lens comes to rest without going past its place.** The spring was set a little loose, so it overshot the side slightly and came back. It is now set exactly so that it cannot.
+- **Putting the chat head back among the blobs is a hand-over too.** Prism draws the blob where the lens is, at the size it had in the lens, says so, and only then does the lens go. The blob grows to its own size on the way to its seat.
+- **The chat head's own menu closes when you leave.** It held the screen's focus, so going to the recent apps did not close it. It now listens, only while it is open, for Android's announcement that you are heading for the home screen or the recent apps, and it closes when Prism is left.
+- **Drag to reorder in the chat head's own menu.** The same rule as in Prism: carried over the others they make room and letting go seats it; carried clear of them it goes into the lens. The order is kept in Prism.
+- **"Hide names" while changing the blobs.** After holding a blob, a white button above the blobs hides or shows the names under them. Without names the blobs sit a little nearer the button (156 instead of 178). The chat head's own menu follows. The choice is kept.
+- **The bar is the same bar under the app list.** In the real glass style the bar was swapped for a flat stand-in while the app list was open, an old saving of mine, and swapped back half a second after it closed. That was the remaining difference. It keeps its glass now.
+- **Counts on icons are back**, as in build 67: on tiles in the app list, on blobs, and on the lens. Switch them on in Prism's settings ("Notification counts on icons"), which opens Android's screen for it. New: however many notifications come and go, Prism counts once, 0.4 s later, and it does not look at all at ones that only report progress (a download, music playing), which can change many times a second.
+- **The workout clock runs only during a workout.** The Train page counted seconds from the moment it was first shown, for as long as Prism lived, workout or not. It now starts with the first set and stops when the workout is stopped. The time shown before a workout starts therefore stands still.
+
+**What to look for:**
+- Carry a blob to the side and past it: it should stop at the side. Let go: no movement, no squash.
+- Put a blob down in the middle of the screen: one picture throughout, the glass arriving around it, then a straight slide to the side.
+- Open the chat head's menu and go to the recent apps: the menu should be gone.
+- Counts: after allowing them, an app with notifications should show a number on its tile and blob. If Android says the setting is restricted, open Prism's page in Android's app settings, tap the three dots at the top right and choose "Allow restricted settings", then try again.
+- Blobs, app list, blobs: the bar should not change.
+
+**Checked:** it compiles. In my preview: the blob stopping at the side; the "Hide names" button, the blobs moving in, and that surviving a close and reopen; counts drawn on tiles (made-up numbers); the bar identical, pixel for pixel, under blobs and app list in both glass styles. Measured there, processor use with nothing touched: none on Home, with the blobs out, while changing them, with the app list open, and on the Train page (which was using some every second before this build).
+**Not checked:** anything on a phone. All of the Android side is unseen: the hand-overs in both directions, the menu closing on leaving, reordering in the chat head's menu, and the counts, which have never run on a phone at all (build 67 never installed). Whether Play Protect, switched back on later, objects to an app already installed, I do not know.
+
 ## Prism, build 70 (14 November 2026)
 
 **File:** `releases/prism-build-70.apk`

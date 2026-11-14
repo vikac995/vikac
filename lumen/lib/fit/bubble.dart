@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'apps.dart';
+
 /// The workout, floating over other apps: a small glass lens with the timer, which opens
 /// into a panel for logging the set. It appears when Prism leaves the screen during a workout. It is drawn by Android itself,
 /// not by Flutter, so it costs nothing in Prism and works over any app.
@@ -52,6 +54,8 @@ class RestBubble with WidgetsBindingObserver {
     try {
       allowed.value =
           await _device.invokeMethod<bool>('overlayAllowed') ?? false;
+      // The person may also just have allowed Prism to be told of notifications.
+      await Notes.instance.refresh();
     } catch (_) {
       // Not on Android.
     }
@@ -147,12 +151,18 @@ class RestBubble with WidgetsBindingObserver {
   /// The lens is being carried over Prism's blobs (where, in real pixels; null once it is not).
   void Function(Offset? at)? onLensAt;
 
-  /// The lens was let go among Prism's blobs, there: it is one of them again.
-  void Function(Offset at)? onReturned;
+  /// The lens was let go among Prism's blobs, there: it is one of them again. [inner] is how
+  /// large the blob was drawn inside the lens, in real pixels.
+  void Function(Offset at, double inner)? onReturned;
 
   /// Tells Android what the blobs in the menu are, so the floating lens can open the same menu.
   void tellBlobs(List<Map<String, Object>> blobs) {
     _device.invokeMethod<void>('blobs', blobs).catchError((Object _) {});
+  }
+
+  /// Tells Android whether the blobs show their names, so the lens's own menu does the same.
+  void tellNames(bool names) {
+    _device.invokeMethod<void>('blobNames', names).catchError((Object _) {});
   }
 
   /// A blob is on its way to become the floating lens: shot out of Prism's button, or put down
@@ -182,8 +192,30 @@ class RestBubble with WidgetsBindingObserver {
   }
 
   /// The blob has landed: the lens shows itself, with the give of something just caught.
-  void landed() {
-    _device.invokeMethod<void>('landed').catchError((Object _) {});
+  /// Finishes once the lens has been drawn, so the blob can be taken away then and not before.
+  /// (Never waits long: if nothing answers, it finishes anyway.)
+  Future<void> landed() async {
+    try {
+      await _device
+          .invokeMethod<void>('landed')
+          .timeout(const Duration(milliseconds: 400));
+    } catch (_) {
+      // Not on Android, or no answer in time.
+    }
+  }
+
+  /// The blob that was let go among Prism's own has been drawn there: the lens can go.
+  void taken() {
+    _device.invokeMethod<void>('taken').catchError((Object _) {});
+  }
+
+  /// How large the lens is, in real pixels. Null away from a phone.
+  Future<double?> lensSize() async {
+    try {
+      return (await _device.invokeMethod<num>('lensSize'))?.toDouble();
+    } catch (_) {
+      return null;
+    }
   }
 
   /// The timer in the floating sheet was tapped ('pause'), or one of the things it offers when
@@ -246,8 +278,9 @@ class RestBubble with WidgetsBindingObserver {
         );
         if (onReturned == null) {
           setPin(null);
+          taken();
         } else {
-          onReturned!(where);
+          onReturned!(where, at.length > 2 ? (at[2]! as num).toDouble() : 0);
         }
       case 'stop':
         onStop?.call();

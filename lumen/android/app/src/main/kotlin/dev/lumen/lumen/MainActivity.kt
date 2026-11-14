@@ -45,6 +45,7 @@ class MainActivity : FlutterActivity() {
     // Prism has left the screen: if a rest is running, its countdown floats over whatever comes next.
     override fun onStop() {
         super.onStop()
+        RestBubble.closeMenu()
         RestBubble.foreground = false
         RestBubble.refresh(applicationContext)
     }
@@ -57,6 +58,8 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onPause() {
+        // Prism is being left (for the recent apps, say): the lens's own menu does not stay open over what comes next.
+        RestBubble.closeMenu()
         try {
             val surface = surfaceIn(window.decorView)
             if (surface != null && surface.width > 0 && surface.height > 0 && surface.holder.surface.isValid) {
@@ -248,7 +251,17 @@ class MainActivity : FlutterActivity() {
                 val fling = floatArrayOf(((a?.get("vx")) as? Number)?.toFloat() ?: 0f, ((a?.get("vy")) as? Number)?.toFloat() ?: 0f)
                 RestBubble.incoming(applicationContext, if (a != null) RestBubble.blobOf(a) else null, at, fling) { spot -> result.success(spot) }
             } else if (call.method == "landed") {
-                RestBubble.landed()
+                // Answered once the lens has been drawn, so Prism can take its own blob away then and not before.
+                RestBubble.landed { result.success(null) }
+            } else if (call.method == "taken") {
+                // Prism has drawn the blob that was let go among its own: the lens can go.
+                RestBubble.taken()
+                result.success(null)
+            } else if (call.method == "lensSize") {
+                result.success(RestBubble.lensSizeNow(applicationContext))
+            } else if (call.method == "blobNames") {
+                // Whether the blobs show their names under them.
+                RestBubble.blobNames = (call.arguments as? Boolean) ?: true
                 result.success(null)
             } else if (call.method == "fan") {
                 // Where Prism's own blobs sit while they are out, or nothing when they are not.
@@ -281,6 +294,15 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
             } else if (call.method == "overlayAllowed") {
                 result.success(android.provider.Settings.canDrawOverlays(this))
+            } else if (call.method == "notesAllowed") {
+                result.success(RestBubble.notesAllowed(this))
+            } else if (call.method == "askNotes") {
+                try {
+                    startActivity(android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                } catch (e: Exception) {}
+                result.success(null)
+            } else if (call.method == "notes") {
+                result.success(RestBubble.notes)
             } else if (call.method == "askOverlay") {
                 try {
                     startActivity(android.content.Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:$packageName")))
@@ -417,7 +439,84 @@ class MainActivity : FlutterActivity() {
  * to fold it back into the lens. Everything is drawn by Android itself, and nothing exists
  * when no workout is on.
  */
+/**
+ * Android tells this whenever a notification appears or goes, once the person has allowed it
+ * (on Android's own screen). It keeps one number for each app: how many notifications that app
+ * has that can be swiped away. Nothing here runs by itself; it only answers when told, and
+ * however many notifications come and go at once it counts once, a moment later.
+ */
+class Notes : android.service.notification.NotificationListenerService() {
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var due = false
+    private val counting = Runnable {
+        due = false
+        count()
+    }
+
+    private fun soon() {
+        if (due) return
+        due = true
+        handler.postDelayed(counting, 400)
+    }
+
+    override fun onListenerConnected() = soon()
+
+    override fun onNotificationPosted(sbn: android.service.notification.StatusBarNotification?) {
+        // Things that only say something is running (a download's progress, music playing) are
+        // not counted, and they can change many times a second: they are not looked at at all.
+        if (sbn != null && (!sbn.isClearable || sbn.notification.flags and android.app.Notification.FLAG_ONGOING_EVENT != 0)) return
+        soon()
+    }
+
+    override fun onNotificationRemoved(sbn: android.service.notification.StatusBarNotification?) = soon()
+
+    override fun onListenerDisconnected() {
+        handler.removeCallbacks(counting)
+        due = false
+        RestBubble.setNotes(applicationContext, emptyMap())
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(counting)
+        super.onDestroy()
+    }
+
+    private fun count() {
+        val next = HashMap<String, Int>()
+        try {
+            for (n in activeNotifications ?: emptyArray()) {
+                val flags = n.notification.flags
+                // Not the heading of a bundle, and not things that only say something is running.
+                if (flags and android.app.Notification.FLAG_GROUP_SUMMARY != 0) continue
+                if (flags and android.app.Notification.FLAG_ONGOING_EVENT != 0) continue
+                if (!n.isClearable) continue
+                next[n.packageName] = (next[n.packageName] ?: 0) + 1
+            }
+        } catch (e: Exception) {
+            return
+        }
+        RestBubble.setNotes(applicationContext, next)
+    }
+}
+
 object RestBubble {
+    /** How many notifications each app has, by package. Empty until the person allows Prism to be told. */
+    var notes: Map<String, Int> = emptyMap()
+        private set
+
+    fun setNotes(context: Context, next: Map<String, Int>) {
+        if (next == notes) return
+        notes = next
+        try { channel?.invokeMethod("notes", next) } catch (e: Exception) {}
+        view?.invalidate()
+        menu?.invalidate()
+    }
+
+    fun notesAllowed(context: Context): Boolean {
+        val listed = android.provider.Settings.Secure.getString(context.contentResolver, "enabled_notification_listeners") ?: return false
+        return listed.split(":").any { android.content.ComponentName.unflattenFromString(it)?.packageName == context.packageName }
+    }
+
     const val OPEN_TRAIN = "dev.lumen.OPEN_TRAIN"
 
     class SetRow(var kg: Double, var reps: Int, var done: Boolean)
@@ -452,9 +551,15 @@ object RestBubble {
     class Pin(
         val key: String, val kind: String, val index: Int, val pkg: String, val name: String, val color: Int,
         val icon: android.graphics.Bitmap?, val picture: Boolean,
+        // The colour of the small number on it (the one opposite its own, which Prism works
+        // out), and the package its notifications come under.
+        val badge: Int, val notesFor: String,
         // Which of the menu's five places it is in, where that is known.
         val slot: Int,
-    )
+    ) {
+        /** The same thing, in another of the menu's places. */
+        fun inPlace(place: Int) = Pin(key, kind, index, pkg, name, color, icon, picture, badge, notesFor, place)
+    }
 
     class Meal(val index: Int, val name: String, val what: String, val kcal: Int)
 
@@ -475,6 +580,10 @@ object RestBubble {
     // Where Prism's own blobs sit while they are out: the middle of its button, and how near
     // and how far from it counts as among them. A lens let go among them is put back with them.
     var fan: List<Float>? = null
+
+    // Whether the blobs show their names under them, as chosen in Prism. Without them the
+    // blobs sit a little nearer.
+    var blobNames = true
 
     // A lens has been dropped on the cross and is being closed. Until that is done no new lens is made.
     private var swallowing = false
@@ -551,14 +660,52 @@ object RestBubble {
     }
 
     /** The blob has landed: the lens shows itself and what is in it, with the give of something just caught. */
-    fun landed() {
+    /** How large the lens is, in real pixels: as it is now, or as it was last left. */
+    fun lensSizeNow(context: Context): Int {
+        if (lensSize > 0) return lensSize
+        val dp = context.resources.displayMetrics.density
+        val saved = try { context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).getFloat("size", 84f) } catch (e: Exception) { 84f }
+        return (saved * dp).toInt()
+    }
+
+    // A lens let go among Prism's own blobs waits here until Prism has drawn the blob in its place.
+    private var handBack: Runnable? = null
+
+    fun taken() {
+        val go = handBack ?: return
+        handBack = null
+        watcher.removeCallbacks(go)
+        go.run()
+    }
+
+    /**
+     * The blob has arrived where the lens is. [done] is called once the lens can be seen, so
+     * that Prism takes its own blob away then and not before.
+     */
+    fun landed(done: (() -> Unit)? = null) {
         unseen = false
-        val v = view ?: return
-        if (!v.hideInner && v.alpha == 1f) return
+        val v = view
+        if (v == null || (!v.hideInner && v.alpha == 1f)) {
+            done?.invoke()
+            return
+        }
+        if (placedDown && container && mode() == 2) {
+            // Put down somewhere. The lens is first drawn as exactly the blob that was put down,
+            // the same size in the same place; then the glass comes in around it. Nothing
+            // jumps. If it is not at a side already it then goes to the nearer one, carrying
+            // on with a flick if it was flicked.
+            placedDown = false
+            val fx = flingX
+            val fy = flingY
+            v.arrive(done) { if (view === v) v.letFly(fx, fy) }
+            return
+        }
         v.hideInner = false
         v.alpha = 1f
         v.invalidate()
         v.thump()
+        // Prism is told once the lens has had time to be drawn.
+        if (done != null) watcher.postDelayed({ done() }, 70)
         if (placedDown) {
             // Put down somewhere: it is seen there first, where it was put. A moment later it
             // goes to the nearer side, carrying on with a flick if it was flicked.
@@ -575,8 +722,33 @@ object RestBubble {
         return Pin(
             a["key"] as String, a["kind"] as String, (a["index"] as Number).toInt(), a["package"] as String,
             a["name"] as String, (a["color"] as Number).toInt(), bmp, a["picture"] as Boolean,
+            (a["badge"] as? Number)?.toInt() ?: 0xFFE5484D.toInt(), (a["notesFor"] as? String) ?: (a["package"] as String),
             (a["slot"] as? Number)?.toInt() ?: -1,
         )
+    }
+
+    private val badgePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+
+    /** The small number on an app: how many notifications it has. Drawn with its middle at the given place. */
+    private fun paintBadge(canvas: android.graphics.Canvas, b: Pin, cx: Float, cy: Float, dp: Float, scale: Float = 1f) {
+        val count = if (b.kind == "app") notes[b.notesFor] ?: 0 else 0
+        if (count <= 0) return
+        val text = if (count > 99) "99+" else count.toString()
+        val p = badgePaint
+        p.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+        p.textSize = 11.5f * dp * scale
+        p.textAlign = android.graphics.Paint.Align.CENTER
+        val r = 10.5f * dp * scale
+        val half = Math.max(r, (p.measureText(text) + 9 * dp * scale) / 2f)
+        val edge = 1.8f * dp * scale
+        p.style = android.graphics.Paint.Style.FILL
+        // A dark edge, so it stands clear of whatever it lies on.
+        p.color = 0xEB101216.toInt()
+        canvas.drawRoundRect(cx - half - edge, cy - r - edge, cx + half + edge, cy + r + edge, r + edge, r + edge, p)
+        p.color = b.badge
+        canvas.drawRoundRect(cx - half, cy - r, cx + half, cy + r, r, r, p)
+        p.color = 0xFFFFFFFF.toInt()
+        canvas.drawText(text, cx, cy - (p.descent() + p.ascent()) / 2f, p)
     }
     var weight = 80.0
     var kcalLeft = 0
@@ -812,6 +984,7 @@ object RestBubble {
             }
             wm(context).addView(m, lp)
             menu = m
+            listenForMenu(context)
         } catch (e: Exception) {
             menu = null
         }
@@ -821,6 +994,37 @@ object RestBubble {
         val m = menu ?: return
         menu = null
         try { wm(context).removeView(m) } catch (e: Exception) {}
+        val r = menuListener
+        menuListener = null
+        if (r != null) try { context.applicationContext.unregisterReceiver(r) } catch (e: Exception) {}
+    }
+
+    /** Closes the lens's own menu, if it is open. */
+    fun closeMenu() {
+        menu?.close()
+    }
+
+    // While the lens's own menu is open, and only then, this hears Android announce that the
+    // person is heading for the home screen or the recent apps, and closes the menu. The menu
+    // holds the focus, so it is not told any other way.
+    private var menuListener: android.content.BroadcastReceiver? = null
+
+    private fun listenForMenu(context: Context) {
+        if (menuListener != null) return
+        val app = context.applicationContext
+        val r = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: Context, i: android.content.Intent) {
+                menu?.close()
+            }
+        }
+        try {
+            @Suppress("DEPRECATION")
+            val filter = android.content.IntentFilter(android.content.Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+            if (Build.VERSION.SDK_INT >= 33) app.registerReceiver(r, filter, Context.RECEIVER_EXPORTED) else app.registerReceiver(r, filter)
+            menuListener = r
+        } catch (e: Exception) {
+            menuListener = null
+        }
     }
 
     private val watcher = android.os.Handler(android.os.Looper.getMainLooper())
@@ -1126,7 +1330,7 @@ object RestBubble {
      */
     private class Menu(context: Context, val ox: Float, val oy: Float, val lensR: Float) : android.view.View(context) {
         private val dp = resources.displayMetrics.density
-        private val items = blobs
+        private var items = blobs
         private val n = items.size
         // Where each blob is at rest now and where its seat is, and the lens's own middle, in this
         // view. The two differ only while the blobs are moving over: when one is dragged clear
@@ -1137,8 +1341,9 @@ object RestBubble {
         private val seatY = FloatArray(n)
         private var axis = 0.0
         private var reach = 0f
-        // The blob that has been dragged clear of the others, if one has.
-        private var gap = -1
+        // The seat kept open among the others for the blob being carried: where it would sit if
+        // let go now. None (-1) while it is clear of them, and then the others close ranks.
+        private var room = -1
         private var cx = 0f
         private var cy = 0f
         private var laid = false
@@ -1253,7 +1458,7 @@ object RestBubble {
         private fun fan() {
             val w = width.toFloat()
             val h = height.toFloat()
-            reach = Math.max(178 * dp, lensR + 75 * dp)
+            reach = if (blobNames) Math.max(178 * dp, lensR + 75 * dp) else Math.max(156 * dp, lensR + 58 * dp)
             val left = 45 * dp
             val right = Math.max(left, w - 45 * dp)
             val top = 78 * dp
@@ -1291,21 +1496,79 @@ object RestBubble {
             }
         }
 
-        /** Gives every blob but [without] its seat: the ones left sit evenly around the middle of the fan. */
-        private fun seats(without: Int) {
+        /**
+         * Gives every blob but [without] its seat: the ones left sit evenly around the middle of
+         * the fan, with the seat [open] among them left empty if there is one.
+         */
+        private fun seats(without: Int, open: Int = -1) {
             val left = 45 * dp
             val right = Math.max(left, width - 45 * dp)
             val top = 78 * dp
             val bottom = Math.max(top, height - 100 * dp)
-            val count = if (without in 0 until n) n - 1 else n
+            val count = (if (without in 0 until n) n - 1 else n) + (if (open >= 0) 1 else 0)
             var j = 0
             for (i in 0 until n) {
                 if (i == without) continue
-                val a = angle(axis, j - (count - 1) / 2f)
+                val a = angle(axis, (if (open >= 0 && j >= open) j + 1 else j) - (count - 1) / 2f)
                 seatX[i] = (cx + reach * Math.cos(a).toFloat()).coerceIn(left, right)
                 seatY[i] = (cy + reach * Math.sin(a).toFloat()).coerceIn(top, bottom)
                 j++
             }
+        }
+
+        /**
+         * Which seat a blob carried to this place would take among the others, or none (-1) if
+         * the place is not among them. [now] is the seat it has at the moment: it keeps that one
+         * until it is clearly over another. The same rule as in Prism.
+         */
+        private fun seatFor(x: Float, y: Float, now: Int): Int {
+            val vx = x - cx
+            val vy = y - cy
+            val d = Math.hypot(vx.toDouble(), vy.toDouble()).toFloat()
+            val slack = if (now >= 0) 14 * dp else 0f
+            if (d < reach - 58 * dp - slack || d > reach + 62 * dp + slack) return -1
+            var turn = Math.atan2(vy.toDouble(), vx.toDouble()) - axis
+            while (turn > Math.PI) turn -= 2 * Math.PI
+            while (turn < -Math.PI) turn += 2 * Math.PI
+            val seat = (turn / (Math.PI * 0.155)).toFloat()
+            if (Math.abs(seat) > (n - 1) / 2f + 0.75f + (if (now >= 0) 0.1f else 0f)) return -1
+            val place = seat + (n - 1) / 2f
+            if (now >= 0 && Math.abs(place - now) < 0.62f) return now
+            return Math.round(place).coerceIn(0, n - 1)
+        }
+
+        /**
+         * Blob [d] was let go among the others, in seat [g]: it sits there. If that is not the
+         * seat it had, the order changes, here at once and in Prism, where it is kept.
+         */
+        private fun settle(d: Int, g: Int) {
+            var at = d
+            if (g != d && items.all { it.slot >= 0 }) {
+                val order = (0 until n).filter { it != d }.toMutableList()
+                order.add(g.coerceIn(0, order.size), d)
+                // The places these blobs are in, as Prism knows them, are handed out again in the new order.
+                val places = items.map { it.slot }.sorted()
+                val next = order.mapIndexed { j, k -> items[k].inPlace(places[j]) }
+                val rx = FloatArray(n) { restX[order[it]] }
+                val ry = FloatArray(n) { restY[order[it]] }
+                val o = FloatArray(n) { out[order[it]] }
+                val sp = FloatArray(n) { speed[order[it]] }
+                for (i in 0 until n) {
+                    restX[i] = rx[i]; restY[i] = ry[i]; out[i] = o[i]; speed[i] = sp[i]
+                }
+                channel?.invokeMethod("blobOrder", order.map { items[it].slot })
+                items = next
+                blobs = next
+                at = order.indexOf(d)
+                haptic(context, "click")
+            } else {
+                haptic(context, "tick")
+            }
+            // It goes from where it was let go to its seat.
+            restX[at] = dragX
+            restY[at] = dragY
+            seats(-1)
+            run()
         }
 
         private fun run() {
@@ -1481,9 +1744,11 @@ object RestBubble {
                     canvas.restore()
                 }
                 canvas.restore()
+                // Once it is out: how many notifications it has. Not while the blobs are being changed.
+                if (!editing && p >= 0.9f && i != flying && i != dragging) paintBadge(canvas, items[i], bx + 22 * dp, by - 22 * dp, dp)
                 // The name appears once the blob is nearly there, not while it is a speck.
                 val show = if (i == dragging) 0f else if (i == flying) 1f - fly * 3f else (p - 0.6f) / 0.4f
-                if (show > 0f) {
+                if (show > 0f && blobNames) {
                     names.alpha = (show.coerceIn(0f, 1f) * 255).toInt()
                     canvas.drawText(items[i].name, bx, by + 50 * dp, names)
                 }
@@ -1497,7 +1762,7 @@ object RestBubble {
                 val dx = x - restX[i]
                 val dy = y - restY[i]
                 if (dx * dx + dy * dy < (40 * dp) * (40 * dp)) return i
-                if (Math.abs(dx) < 40 * dp && dy > 0 && dy < 62 * dp) return i
+                if (blobNames && Math.abs(dx) < 40 * dp && dy > 0 && dy < 62 * dp) return i
             }
             return -1
         }
@@ -1533,6 +1798,8 @@ object RestBubble {
                         removeCallbacks(keep)
                         if (pressedAt >= 0 && !kept && !editing) {
                             dragging = pressedAt
+                            // Picked up, its own seat is kept open for it.
+                            room = dragging
                             haptic(context, "tick")
                         }
                         pressedAt = -1
@@ -1540,13 +1807,11 @@ object RestBubble {
                     if (dragging >= 0) {
                         dragX = seatX[dragging] + (e.x - downX)
                         dragY = seatY[dragging] + (e.y - downY)
-                        // Clear of its place, it has left the others: they close ranks at once.
-                        // Brought back, they make room for it again.
-                        val away = Math.hypot((dragX - seatX[dragging]).toDouble(), (dragY - seatY[dragging]).toDouble())
-                        val clear = away > (if (gap == dragging) 52 else 64) * dp
-                        if (clear != (gap == dragging)) {
-                            gap = if (clear) dragging else -1
-                            seats(gap)
+                        // Over the others they make room where it would sit; clear of them, they close ranks.
+                        val g = seatFor(dragX, dragY, room)
+                        if (g != room) {
+                            room = g
+                            seats(dragging, g)
                             haptic(context, "tick")
                             run()
                         }
@@ -1560,14 +1825,10 @@ object RestBubble {
                     pressedAt = -1
                     dragging = -1
                     if (d >= 0) {
-                        // Let go clear of its place, it goes into the lens. Let go near it, it stays.
-                        if (gap == d) {
-                            put(d, dragX, dragY)
-                        } else {
-                            gap = -1
-                            seats(-1)
-                            run()
-                        }
+                        // Let go among the others, it sits in the seat they made for it. Let go clear of them, it goes into the lens.
+                        val g = room
+                        room = -1
+                        if (g < 0) put(d, dragX, dragY) else settle(d, g)
                     } else if (kept) {
                         // Already being changed, by the hold.
                     } else if (i >= 0) {
@@ -1581,7 +1842,7 @@ object RestBubble {
                     removeCallbacks(keep)
                     pressedAt = -1
                     dragging = -1
-                    gap = -1
+                    room = -1
                     seats(-1)
                     run()
                     invalidate()
@@ -2013,7 +2274,57 @@ object RestBubble {
         fun letFly(velX: Float, velY: Float) {
             if (docked || tucked) return
             snapped = false
-            throwIt(velX, velY)
+            if (velX == 0f && velY == 0f) toSide() else throwIt(velX, velY)
+        }
+
+        /** Let go with no speed: straight to the nearer side, with nothing springing. At a side already, it stays. */
+        private fun toSide() {
+            val screen = resources.displayMetrics
+            val margin = 8 * dp
+            val w = lp.width; val h = lp.height
+            val tx = if (lp.x + w / 2f < screen.widthPixels / 2f) margin else screen.widthPixels - w - margin
+            val ty = lp.y.toFloat().coerceIn(48 * dp, Math.max(48 * dp, screen.heightPixels - h - 48 * dp))
+            if (Math.abs(tx - lp.x) < 1.5f && Math.abs(ty - lp.y) < 1.5f) return
+            glideTo(tx, ty, 220)
+        }
+
+        // How far a blob that was put down has become the lens: 0 it is just that blob, 1 it is the lens.
+        private var come = 1f
+
+        /**
+         * A blob was put down here and this lens takes over from it. It is drawn as that blob
+         * first. Two frames later it is on the screen and [shown] is called; then the glass
+         * comes in around it and the blob comes down to the size it has inside, and [then] runs.
+         */
+        fun arrive(shown: (() -> Unit)?, then: () -> Unit) {
+            animate().cancel()
+            scaleX = 1f; scaleY = 1f
+            come = 0f
+            hideInner = false
+            alpha = 1f
+            invalidate()
+            val frames = android.view.Choreographer.getInstance()
+            frames.postFrameCallback {
+                frames.postFrameCallback {
+                    shown?.invoke()
+                    val a = android.animation.ValueAnimator.ofFloat(0f, 1f)
+                    a.startDelay = 30
+                    a.duration = 240
+                    a.interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+                    a.addUpdateListener {
+                        come = it.animatedValue as Float
+                        invalidate()
+                    }
+                    a.addListener(object : android.animation.AnimatorListenerAdapter() {
+                        override fun onAnimationEnd(animation: android.animation.Animator) {
+                            come = 1f
+                            invalidate()
+                        }
+                    })
+                    a.start()
+                    postDelayed({ then() }, 160)
+                }
+            }
         }
 
         /** Something has just landed in it: it gives a little, wider then taller, and is still again. */
@@ -2081,11 +2392,25 @@ object RestBubble {
             canvas.save()
             canvas.translate((width - size) / 2f, (height - size) / 2f)
             canvas.scale(k, k)
-            paintLens(canvas, k)
+            val arriving = pin
+            if (come < 1f && arriving != null && container && mode() == 2) {
+                // Taking over from a blob that was put down: the glass comes in around it, and
+                // it comes down from the size it was put down at to the size it has inside.
+                val mid = base / 2f
+                val layer = canvas.saveLayerAlpha(0f, 0f, base, base + 2 * dp, (come * 255).toInt().coerceIn(0, 255))
+                val grown = 0.84f + 0.16f * come
+                canvas.scale(grown, grown, mid, mid)
+                paintLens(canvas, k, false)
+                canvas.restoreToCount(layer)
+                val full = Math.min(31 * dp, size / 2f) / k
+                paintBlob(canvas, arriving, mid, mid, full + (22.5f * dp - full) * come, dp, false)
+            } else {
+                paintLens(canvas, k)
+            }
             canvas.restore()
         }
 
-        private fun paintLens(canvas: android.graphics.Canvas, k: Float) {
+        private fun paintLens(canvas: android.graphics.Canvas, k: Float, inner: Boolean = true) {
             if (shadersFor != lensColor() || shadersPinned != filled()) shaders()
             val colour = lensColor()
             val w = base; val r = w / 2f
@@ -2148,7 +2473,10 @@ object RestBubble {
             if (t == null && container) {
                 // The container: what was put in it sits inside as the blob it is, with the glass around it.
                 val inside = pin
-                if (inside != null && !hideInner) paintBlob(canvas, inside, r + lagX / k, r + lagY / k, 22.5f * dp, dp, false)
+                if (inside != null && !hideInner && inner) {
+                    paintBlob(canvas, inside, r + lagX / k, r + lagY / k, 22.5f * dp, dp, false)
+                    paintBadge(canvas, inside, r + disc * 0.66f, r - disc * 0.66f, dp, 0.9f)
+                }
                 return
             }
             if (t == null) {
@@ -2590,11 +2918,13 @@ object RestBubble {
             target?.fall()
             val at = listOf((lp.x + lp.width / 2f).toDouble(), (lp.y + lp.height / 2f).toDouble())
             if (mode() != 2) {
-                channel?.invokeMethod("returnedAt", at)
+                channel?.invokeMethod("returnedAt", at + listOf(62.0 * dp))
                 throwIt(0f, 0f)
                 return
             }
-            // From this moment it takes no touch, and fades as Prism's blob takes over.
+            // From this moment it takes no touch. Prism draws the blob where the lens is, at the
+            // size it has in the lens, and says when it has. Then what is inside the lens goes,
+            // the glass fades from around where it was, and Prism's blob travels to its seat.
             swallowing = true
             lp.flags = lp.flags or android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
             try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, lp) } catch (ex: Exception) {}
@@ -2611,9 +2941,24 @@ object RestBubble {
                 }
             }
             afterSwallow = finish
-            channel?.invokeMethod("returnedAt", at)
-            animate().alpha(0f).scaleX(0.74f).scaleY(0.74f).setDuration(110).setInterpolator(EASE)
-                .withEndAction { dropLens(c); finish() }.start()
+            var gone = false
+            val go = Runnable {
+                if (!gone) {
+                    gone = true
+                    handBack = null
+                    if (view === this && swallowing) {
+                        hideInner = true
+                        invalidate()
+                        animate().alpha(0f).setDuration(120).setInterpolator(EASE).withEndAction { dropLens(c); finish() }.start()
+                    } else {
+                        finish()
+                    }
+                }
+            }
+            handBack = go
+            // Should Prism never answer, the lens still goes.
+            watcher.postDelayed(go, 400)
+            channel?.invokeMethod("returnedAt", at + listOf((if (container) 45.0 * dp * lp.width / base else 62.0 * dp)))
         }
 
         /** The finger dragging the lens has lifted: into a side, onto the cross, back among Prism's blobs, or thrown to rest. */
@@ -2671,7 +3016,7 @@ object RestBubble {
                 if (!springing || !isAttachedToWindow) { springing = false; return }
                 val dt = if (lastFrame == 0L) 1f / 120f else ((nanos - lastFrame) / 1e9f).coerceIn(0.001f, 0.032f)
                 lastFrame = nanos
-                val k = if (leaving) 320f else 240f; val c = if (leaving) 30f else 28f
+                val k = if (leaving) 320f else 240f; val c = if (leaving) 30f else 31f
                 vx += (-k * (px - tx) - c * vx) * dt; px += vx * dt
                 vy += (-k * (py - ty) - c * vy) * dt; py += vy * dt
                 lp.x = px.toInt(); lp.y = py.toInt()

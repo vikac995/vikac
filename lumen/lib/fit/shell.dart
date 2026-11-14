@@ -120,6 +120,25 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
             ? LumenColors.of(context).accent
             : _actions[_actionAt(i)].$3);
 
+  /// The package an app's notifications come under. One known only by the name on the home
+  /// screen has them under its real package.
+  String _notesPackage(String package) {
+    if (package.startsWith('label:')) {
+      final String name = package.substring(6).toLowerCase();
+      for (final AppTile t in Apps.instance.all) {
+        if (t.label.toLowerCase() == name) {
+          return t.package;
+        }
+      }
+      return '';
+    }
+    return package;
+  }
+
+  /// How many notifications the app in place [i] has. Nothing for actions and pages.
+  int _blobNotes(int i) =>
+      _isApp(i) ? Notes.instance.of(_notesPackage(_pinKey(i).substring(4))) : 0;
+
   // Changing the blobs: hold any one of them. Every blob then wears an edit mark, and a tap on
   // one brings up the app drawer to choose what takes its place. The X, a tap elsewhere, or
   // back ends it.
@@ -151,6 +170,14 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       Diag.instance.event('blob replaced');
     }
     _setDrawer(false);
+  }
+
+  /// A notification came or went. Only blobs that are out need drawing again; Android's own
+  /// lens reads the numbers for itself, so nothing is sent anywhere.
+  void _notesChanged() {
+    if (mounted && _open) {
+      setState(() {});
+    }
   }
 
   void _appsChanged() {
@@ -204,6 +231,47 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   final Set<int> _seated = <int>{0, 1, 2, 3, 4};
   // The blob that has been picked up out of the others, if one has.
   int? _awayI;
+  // How far from the button the blobs sit. With their names switched off they sit a little
+  // nearer: there is nothing under them to make room for.
+  static const double _reachBare = 156;
+  late final SpringValue _far = SpringValue(
+    this,
+    value: _reach,
+    spring: Motions.spatialFast,
+  );
+
+  /// Shows or hides the names under the blobs. The blobs move in or out to suit.
+  void _setNames(bool v) {
+    Haptics.tick();
+    Diag.instance.event(v ? 'blob names on' : 'blob names off');
+    BlobSlots.instance.setNames(v);
+    _far.animateTo(v ? _reach : _reachBare);
+    _tellFan();
+    setState(() {});
+  }
+
+  /// While the blobs are out Android knows where they sit, so a lens let go among them is put back.
+  void _tellFan() {
+    final double dpr = MediaQuery.devicePixelRatioOf(context);
+    RestBubble.instance.tellFan(
+      _open
+          ? <double>[
+              _home.dx * dpr,
+              _home.dy * dpr,
+              (_far.target - 58) * dpr,
+              (_far.target + 62) * dpr,
+            ]
+          : null,
+    );
+  }
+
+  // The blob being carried is held against a side of the screen, where the lens rests.
+  bool _stuck = false;
+  // How large the lens is, as Android last said, so a blob stops where the lens would rest.
+  double _floatSize = 84;
+  // How large a thing coming back to its seat starts out, against its own size: a blob let go
+  // by the finger is its own size; one handed back by the lens starts the size it was in there.
+  double _backScale = 1;
   // The seat kept open among the others for the thing being carried over them (a blob that was
   // picked up, or the floating lens): where it would sit if let go now. Null while it is clear
   // of them, and then the others close ranks.
@@ -250,7 +318,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   int? _seatFor(Offset at, int others, int? now) {
     final Offset v = at - _home;
     final double d = v.distance, slack = now == null ? 0 : 14;
-    if (d < _reach - 58 - slack || d > _reach + 62 + slack) {
+    if (d < _far.value - 58 - slack || d > _far.value + 62 + slack) {
       return null;
     }
     final int count = others + 1;
@@ -268,7 +336,14 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   /// The thing in place [i] is put down among the blobs at seat [gap], coming from [from]. If
   /// that is a different seat from the one it had, the places change order to match, and that
   /// is how they stay.
-  void _settle(int i, int gap, Offset from) {
+  void _settle(
+    int i,
+    int gap,
+    Offset from, {
+    bool hold = false,
+    double scale = 1,
+  }) {
+    _backScale = scale;
     final List<int> others = _others(i);
     final List<int> order = <int>[
       for (int k = 0; k < _n; k++)
@@ -325,9 +400,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _gapAt = null;
     });
     _reseat();
-    _dragBack
-      ..jumpTo(1)
-      ..animateTo(0);
+    _dragBack.jumpTo(1);
+    if (!hold) {
+      _dragBack.animateTo(0);
+    }
     Haptics.settle();
     if (!same) {
       _sendBlobs();
@@ -362,32 +438,43 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
   }
 
   /// The floating lens was let go among the blobs: it is one of them again, in that seat.
-  void _lensBack(Offset at) {
+  void _lensBack(Offset at, double inner) {
     final int? f = _floatingI;
-    if (!mounted || f == null) {
-      RestBubble.instance.setPin(null);
-      _sendPin();
-      return;
-    }
-    if (!_open) {
+    if (!mounted || f == null || !_open) {
       _gapAt = null;
       RestBubble.instance.setPin(null);
       _sendPin();
+      RestBubble.instance.taken();
       return;
     }
     final double dpr = MediaQuery.devicePixelRatioOf(context);
     final int n = _others(f).length;
     final int gap = _seatFor(at / dpr, n, _gapAt) ?? _gapAt ?? (n + 1) ~/ 2;
     Diag.instance.event('lens put back with the blobs');
-    // It is drawn where it was let go, at once, and from there goes to its seat.
-    _dropAt = at / dpr;
+    // It is drawn where the lens is, the size it was in the lens, and held there. Two frames
+    // on it is on the screen: Android is told, the lens goes, and it travels to its seat,
+    // coming up to its own size on the way.
     _awayI = f;
     _backI = f;
-    _dragBack.jumpTo(1);
     _out[f].jumpTo(1);
     RestBubble.instance.setPin(null);
     _sendPin();
-    _settle(f, gap, at / dpr);
+    _settle(
+      f,
+      gap,
+      at / dpr,
+      hold: true,
+      scale: inner > 0 ? (inner / dpr / _blob).clamp(0.4, 2.0) : 1,
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        RestBubble.instance.taken();
+        if (mounted) {
+          _dragBack.animateTo(0);
+        }
+      });
+      WidgetsBinding.instance.scheduleFrame();
+    });
   }
 
   /// How far round the fan a seat is: straight up in the middle, about 28 degrees for each place.
@@ -469,6 +556,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
 
   /// Tells Android what all the blobs in the menu are, in order.
   Future<void> _sendBlobs() async {
+    RestBubble.instance.tellNames(BlobSlots.instance.names);
     final List<Map<String, Object>> all = <Map<String, Object>>[];
     for (int i = 0; i < _n; i++) {
       if (_floating(i)) {
@@ -542,11 +630,42 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       'kind': key.substring(0, key.indexOf(':')),
       'index': index,
       'package': package,
+      // The package its notifications come under, where it is known only by its name.
+      'notesFor': _notesPackage(package),
       'name': name,
       'color': color.toARGB32(),
+      // The colour of the small number on it: the one opposite its own.
+      'badge': Notes.colourFor(color, accent).toARGB32(),
       'picture': picture,
       'icon': ?icon,
     };
+  }
+
+  /// The small number on an app's blob: how many notifications it has, on the colour opposite
+  /// the app's own, with a dark edge that cuts it clear of the blob.
+  Widget _noteBadge(int i) {
+    final int n = _blobNotes(i);
+    return Container(
+      constraints: const BoxConstraints(minWidth: 25, minHeight: 25),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      alignment: Alignment.center,
+      decoration: ShapeDecoration(
+        color: Notes.colourFor(_blobColor(i), LumenColors.of(context).accent),
+        shape: const StadiumBorder(
+          side: BorderSide(color: Color(0xEB101216), width: 2),
+        ),
+      ),
+      child: Text(
+        n > 99 ? '99+' : '$n',
+        textScaler: TextScaler.noScaling,
+        style: LumenType.text(
+          11.5,
+          weight: 720,
+          color: Colors.white,
+          height: 1,
+        ),
+      ),
+    );
   }
 
   /// The disc of a blob: its colour, lighter at the top, and its mark.
@@ -580,6 +699,21 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _armed = near;
       near ? Haptics.settle() : Haptics.tick();
       _kick.animateTo(near ? 1.2 : 1);
+    }
+    // At a side of the screen it stops where the lens rests, and goes no further however far
+    // the finger does: let go there, it is the lens at once, with nowhere left to travel.
+    final Size screen = MediaQuery.sizeOf(context);
+    final double half = _floatSize / 2, side = 8 + half;
+    final bool stuck = !near && (at.dx <= side || at.dx >= screen.width - side);
+    if (stuck) {
+      at = Offset(
+        at.dx <= side ? side : screen.width - side,
+        at.dy.clamp(48 + half, math.max(48 + half, screen.height - 48 - half)),
+      );
+    }
+    if (stuck != _stuck) {
+      _stuck = stuck;
+      stuck ? Haptics.settle() : Haptics.tick();
     }
     _dragAt.value = near ? button + (at - button) * 0.22 : at;
     final int? gap = near ? null : _seatFor(at, _others(i).length, _gapAt);
@@ -616,9 +750,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _settle(i, gap, _dragAt.value);
       return;
     }
-    // Put down anywhere else, or flicked away: it floats there.
+    // Put down anywhere else, or flicked away: it floats there. Held against a side, it is
+    // already where it will stay, so nothing carries it on.
     _gapAt = null;
-    _place(i, _dragAt.value, velocity);
+    _place(i, _dragAt.value, _stuck ? Offset.zero : velocity);
+    _stuck = false;
   }
 
   /// Put down somewhere on the screen. It becomes the floating lens right there, and from there
@@ -672,13 +808,13 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     RestBubble.instance.setPin(key);
     _setOpen(false);
     Haptics.settle();
-    RestBubble.instance.landed();
-    Future<void>.delayed(const Duration(milliseconds: 90), () {
-      if (mounted) {
-        setState(() => _shotI = null);
-        _reseat();
-      }
-    });
+    // The lens first shows itself as this same blob, the same size in the same place, and
+    // says when it is on the screen. Only then is this one taken away, so nothing is seen to change.
+    await RestBubble.instance.landed();
+    if (mounted) {
+      setState(() => _shotI = null);
+      _reseat();
+    }
   }
 
   /// Dropped on the button. The button takes the blob in, holds it for a moment and shoots it
@@ -1007,54 +1143,79 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       _sendBlobs();
     });
     // Pressing the home button while Prism is the home screen: everything closes and Home shows.
-    const MethodChannel('lumen/device')
-        .setMethodCallHandler((MethodCall call) async {
-          if (call.method == 'editSlot' && mounted) {
-            // A blob was held in the floating lens's own menu: Prism has come to the front to
-            // choose what takes its place.
-            if (_sheetOpen) {
-              _closeSheet();
-            }
-            // Afterwards Prism's own blobs are out, being changed, as they would be here.
-            _editing = true;
-            _pickFor((call.arguments as num).toInt().clamp(0, _n - 1));
-            return;
-          }
-          if (RestBubble.instance.handle(call)) {
-            Diag.instance.event('floating workout: ${call.method}');
-            return;
-          }
-          if (call.method == 'train' && mounted) {
-            // The floating rest timer was tapped: straight to the workout, nothing in the way.
-            Diag.instance.event('timer bubble tapped');
-            if (_drawerOpen) {
-              _setDrawer(false);
-            }
-            if (_sheetOpen) {
-              _closeSheet();
-            }
-            _setOpen(false);
-            if (_tab != 1) {
-              _go(1);
-            }
-          }
-          if (call.method == 'home' && mounted) {
-            Diag.instance.event('home button');
-            if (_drawerOpen) {
-              _setDrawer(false);
-            }
-            if (_sheetOpen) {
-              _closeSheet();
-            }
-            if (_parked || _carrying) {
-              _lensHome();
-            }
-            _setOpen(false);
-            if (_tab != 0) {
-              _go(0);
-            }
-          }
-        });
+    const MethodChannel('lumen/device').setMethodCallHandler((
+      MethodCall call,
+    ) async {
+      if (call.method == 'editSlot' && mounted) {
+        // A blob was held in the floating lens's own menu: Prism has come to the front to
+        // choose what takes its place.
+        if (_sheetOpen) {
+          _closeSheet();
+        }
+        // Afterwards Prism's own blobs are out, being changed, as they would be here.
+        _editing = true;
+        _pickFor((call.arguments as num).toInt().clamp(0, _n - 1));
+        return;
+      }
+      if (call.method == 'notes') {
+        // Android says how many notifications each app has.
+        Notes.instance.take(call.arguments);
+        return;
+      }
+      if (call.method == 'blobOrder' && mounted) {
+        // The blobs were put in a new order in the floating lens's own menu: the places
+        // those blobs are in, as they now stand. What floats keeps its place.
+        final List<int> order = <int>[
+          for (final Object? o in call.arguments as List<Object?>)
+            (o! as num).toInt().clamp(0, _n - 1),
+        ];
+        final List<int> places = <int>[...order]..sort();
+        final List<String> keys = <String>[
+          for (int k = 0; k < _n; k++) _pinKey(k),
+        ];
+        final List<String> next = <String>[...keys];
+        for (int j = 0; j < order.length; j++) {
+          next[places[j]] = keys[order[j]];
+        }
+        Diag.instance.event('blobs reordered from the lens');
+        BlobSlots.instance.putAll(next);
+        return;
+      }
+      if (RestBubble.instance.handle(call)) {
+        Diag.instance.event('floating workout: ${call.method}');
+        return;
+      }
+      if (call.method == 'train' && mounted) {
+        // The floating rest timer was tapped: straight to the workout, nothing in the way.
+        Diag.instance.event('timer bubble tapped');
+        if (_drawerOpen) {
+          _setDrawer(false);
+        }
+        if (_sheetOpen) {
+          _closeSheet();
+        }
+        _setOpen(false);
+        if (_tab != 1) {
+          _go(1);
+        }
+      }
+      if (call.method == 'home' && mounted) {
+        Diag.instance.event('home button');
+        if (_drawerOpen) {
+          _setDrawer(false);
+        }
+        if (_sheetOpen) {
+          _closeSheet();
+        }
+        if (_parked || _carrying) {
+          _lensHome();
+        }
+        _setOpen(false);
+        if (_tab != 0) {
+          _go(0);
+        }
+      }
+    });
     Diag.instance.extraLine = () =>
         'icon engine: ${Apps.instance.summary}\napp blobs: ${BlobApps.instance.apps.map((BlobApp a) => '${a.name} ${a.installed ? a.made : 'not found'} #${a.color.toARGB32().toRadixString(16).substring(2)}').join(', ')}';
     bool appsBefore = true;
@@ -1074,7 +1235,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       ..load()
       ..addListener(_blobsChanged);
     _reseat(jump: true);
+    _far.jumpTo(BlobSlots.instance.names ? _reach : _reachBare);
     Apps.instance.addListener(_appsChanged);
+    // The numbers on the blobs follow the notifications.
+    Notes.instance.counts.addListener(_notesChanged);
+    Notes.instance.refresh();
     if (BlobSlots.instance.keys.any(
       (String? k) => k != null && k.startsWith('app:'),
     )) {
@@ -1098,7 +1263,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     Offset tab(int i) => Offset(14 + _centre(i), b.dy);
     Offset blob(int i) {
       final double a = math.pi * (0.19 + 0.62 * i / (_n - 1));
-      return b + Offset(-math.cos(a), -math.sin(a)) * _reach;
+      return b + Offset(-math.cos(a), -math.sin(a)) * _far.value;
     }
 
     final Offset mid = Offset(sc.width / 2, sc.height * 0.12);
@@ -1530,7 +1695,6 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     // The drawer may have been up to choose what takes a blob's place.
     final bool choosing = !v && _editSlot != null;
     _setOpen(false);
-    _cover(v);
     setState(() {
       _drawerOpen = v;
       if (choosing) {
@@ -1638,19 +1802,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       ..overlay = v ? '+blobs' : ''
       ..event(v ? 'blobs open' : 'blobs close');
     _gapAt = null;
-    // While they are out Android knows where they sit, so a lens let go among them is put back.
-    final double dpr = MediaQuery.devicePixelRatioOf(context);
-    RestBubble.instance.tellFan(
-      v
-          ? <double>[
-              _home.dx * dpr,
-              _home.dy * dpr,
-              (_reach - 58) * dpr,
-              (_reach + 62) * dpr,
-            ]
-          : null,
-    );
+    _stuck = false;
+    _backScale = 1;
     _t.animateTo(v ? 1 : 0);
+    _tellFan();
     for (final Timer t in _fuses) {
       t.cancel();
     }
@@ -1701,7 +1856,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
       final double dpr = MediaQuery.devicePixelRatioOf(context);
       final double angle = _seatAngle(_seat[i].value);
       final Offset at =
-          _home + Offset(-math.cos(angle), -math.sin(angle)) * _reach;
+          _home + Offset(-math.cos(angle), -math.sin(angle)) * _far.value;
       final Rect from = Rect.fromCenter(
         center: at * dpr,
         width: _blob * dpr,
@@ -1765,7 +1920,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
     _home = bc;
     Offset rest(int i) {
       final double a = _seatAngle(_seat[i].value);
-      return bc + Offset(-math.cos(a), -math.sin(a)) * _reach;
+      return bc + Offset(-math.cos(a), -math.sin(a)) * _far.value;
     }
 
     // The system back button undoes the last thing that opened, one step at a time,
@@ -1957,11 +2112,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                               (_lensX.value - _lensX.target).abs() > 0.5 ||
                               _lift.value > 0.01;
                           // The bar itself, and the small lens that rides in it.
-                          // While the drawer or a sheet is up, the bar sits dimmed underneath it. Glass there
-                          // is blurred again on every frame for something nobody is looking at: measured, it
-                          // was most of the cost of turning pages in the drawer. So it goes solid meanwhile.
-                          final bool covered =
-                              _drawerOpen || _sheetOpen || _coverHold;
+                          // While a sheet is up the bar sits dimmed underneath it, and glass there is
+                          // blurred again on every frame for something nobody is looking at. So it
+                          // goes solid meanwhile. Under the app drawer it does not: there the bar is
+                          // in plain sight, and must be the same bar it is under the blobs.
+                          final bool covered = _sheetOpen || _coverHold;
                           final bool barSolid =
                               off ||
                               covered ||
@@ -2201,6 +2356,7 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                   _seat[i],
                   _dragAt,
                   _dragBack,
+                  _far,
                 ]),
                 builder: (BuildContext context, Widget? _) {
                   final double p = _out[i].value;
@@ -2225,6 +2381,10 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                           0.14 +
                           0.86 * math.pow(p.clamp(0.0, 1.0), 1.5) +
                           (p > 1 ? (p - 1) * 0.35 : 0);
+                  // Handed back by the lens, it starts the size it was in there.
+                  final double back = _backI == i
+                      ? 1 + (_backScale - 1) * _dragBack.value.clamp(0.0, 1.0)
+                      : 1.0;
                   return Positioned(
                     left: b.dx - _blob / 2 - 20,
                     top: b.dy - _blob / 2,
@@ -2249,6 +2409,17 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                   _dragGrab = d.globalPosition - rest(i);
                                   _dragAt.value = rest(i);
                                   _armed = false;
+                                  _stuck = false;
+                                  // How large the lens is now, for where a side stops it.
+                                  final double dpr =
+                                      MediaQuery.devicePixelRatioOf(context);
+                                  RestBubble.instance.lensSize().then((
+                                    double? px,
+                                  ) {
+                                    if (px != null && px > 0) {
+                                      _floatSize = px / dpr;
+                                    }
+                                  });
                                   // Picked up, its seat is kept open for it.
                                   final List<int> others = _others(i);
                                   setState(() {
@@ -2285,8 +2456,11 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                 alignment: Alignment.center,
                                 transform: Matrix4.rotationZ(ang)
                                   ..scaleByDouble(
-                                    s * (1 + st) * (held ? 1.08 : 1),
-                                    s * (1 - st * 0.5) * (held ? 1.08 : 1),
+                                    s * back * (1 + st) * (held ? 1.08 : 1),
+                                    s *
+                                        back *
+                                        (1 - st * 0.5) *
+                                        (held ? 1.08 : 1),
                                     1,
                                     1,
                                   )
@@ -2323,14 +2497,30 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
                                           ),
                                         ],
                                       )
-                                    : _blobDisc(i),
+                                    : (_blobNotes(i) > 0 && p > 0.9
+                                          // An app with notifications wears their number.
+                                          ? Stack(
+                                              clipBehavior: Clip.none,
+                                              children: <Widget>[
+                                                _blobDisc(i),
+                                                Positioned(
+                                                  right: -4,
+                                                  top: -4,
+                                                  child: _noteBadge(i),
+                                                ),
+                                              ],
+                                            )
+                                          : _blobDisc(i)),
                               ),
                               const SizedBox(height: 7),
                               // The name appears once the blob is nearly there, not while it is a speck.
                               Opacity(
                                 opacity: held
                                     ? 0
-                                    : ((p - 0.6) / 0.4).clamp(0.0, 1.0),
+                                    : ((p - 0.6) / 0.4).clamp(0.0, 1.0) *
+                                          ((_far.value - _reachBare) /
+                                                  (_reach - _reachBare))
+                                              .clamp(0.0, 1.0),
                                 child: Text(
                                   _blobName(i),
                                   maxLines: 1,
@@ -2357,35 +2547,93 @@ class _ShellState extends State<Shell> with TickerProviderStateMixin {
               Positioned(
                 left: 0,
                 right: 0,
-                top: bc.dy - _reach - _blob / 2 - 62,
-                child: IgnorePointer(
-                  child: ListenableBuilder(
-                    listenable: _t,
-                    builder: (BuildContext context, Widget? _) => Opacity(
-                      opacity: _t.value.clamp(0.0, 1.0),
-                      child: Center(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: const ShapeDecoration(
-                            color: Color(0xA6000000),
-                            shape: StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Tap a blob to change it',
-                            textAlign: TextAlign.center,
-                            textScaler: TextScaler.noScaling,
-                            style: LumenType.text(
-                              15,
-                              weight: 620,
-                              color: Colors.white.withValues(alpha: 0.92),
-                              height: 1.2,
+                bottom: screen.height - (bc.dy - _reach - _blob / 2 - 22),
+                child: ListenableBuilder(
+                  listenable: _t,
+                  builder: (BuildContext context, Widget? _) => Opacity(
+                    opacity: _t.value.clamp(0.0, 1.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        // Names under the blobs, on or off. White, like the marks on the
+                        // blobs: the things that can be tapped while changing.
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => _setNames(!BlobSlots.instance.names),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: const ShapeDecoration(
+                                color: Colors.white,
+                                shape: StadiumBorder(),
+                                shadows: <BoxShadow>[
+                                  BoxShadow(
+                                    color: Color(0x55000000),
+                                    blurRadius: 6,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  Icon(
+                                    BlobSlots.instance.names
+                                        ? Icons.label_off_rounded
+                                        : Icons.label_rounded,
+                                    size: 16,
+                                    color: const Color(0xFF15171C),
+                                  ),
+                                  const SizedBox(width: 7),
+                                  Text(
+                                    BlobSlots.instance.names
+                                        ? 'Hide names'
+                                        : 'Show names',
+                                    textScaler: TextScaler.noScaling,
+                                    style: LumenType.text(
+                                      14,
+                                      weight: 650,
+                                      color: const Color(0xFF15171C),
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 4),
+                        IgnorePointer(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: const ShapeDecoration(
+                              color: Color(0xA6000000),
+                              shape: StadiumBorder(),
+                            ),
+                            child: Text(
+                              'Tap a blob to change it',
+                              textAlign: TextAlign.center,
+                              textScaler: TextScaler.noScaling,
+                              style: LumenType.text(
+                                15,
+                                weight: 620,
+                                color: Colors.white.withValues(alpha: 0.92),
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -3175,6 +3423,17 @@ void showPrismSettings(BuildContext context) {
                               label: 'The lens is a container (new)',
                               value: RestBubble.instance.container.value,
                               onChanged: RestBubble.instance.setContainer,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      ListenableBuilder(
+                        listenable: Notes.instance.allowed,
+                        builder: (BuildContext context, Widget? _) =>
+                            SwitchLine(
+                              label: 'Notification counts on icons',
+                              value: Notes.instance.allowed.value,
+                              // Android decides this too, on its own screen.
+                              onChanged: (bool _) => Notes.instance.ask(),
                             ),
                       ),
                       const SizedBox(height: 12),
