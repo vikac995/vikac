@@ -46,6 +46,10 @@ report in `reviews/` that is reviewed before the owner relies on the work. The p
   shipping"). Be direct and short. Always say what was checked and what was not. Never claim something
   feels smooth: it is only ever checked in the preview, on a computer, or on their phone by them.
 - Keep `CHANGELOG.md` up to date for every build: what changed, what to look for, what was checked and not.
+- **Design first, then build** (the owner's rule). Anything the owner will see or touch starts as a
+  quick visual mock-up (an HTML artifact made by the review chat). The owner decides on it, and only then
+  is a brief written and built. The mock-up's link goes into the brief. A build that changes what the
+  owner sees without an approved mock-up is out of process.
 - The owner's review chat (another Claude session) briefs each step and reviews each report. Every report
   has a short **"Where I could be wrong"** section: the 2–3 places most likely to fail on the phone, and
   why. Every few builds, or after a phone run that surprises, each checks the other's way of working;
@@ -153,6 +157,18 @@ on the owner's phone; extend its Sidekick half as you go.
   their corners are (`BlobSign.triangleNudge`). Window, Petals keep their colours still while they turn.
 - The triangle turns a sixth with the blobs out, half for the app list and the settings, on
   `Motions.spatial`, no overshoot.
+
+## The roadmap (the owner's, agreed 15 November 2026)
+
+1. Finish the Sidekick: steps 2, 3 and 4 of THE PLAN. Step 4 also deletes the old modes and the fusion.
+2. Memory: the remaining ~500 MB of graphics, measured by state, then reduced.
+3. Prism's basics polished: the button, the magnifying glass, the app list.
+4. Tests on 2–3 other phones (one cheaper, one not a Samsung).
+5. A Play Store policy check for the overlay and notification-access permissions.
+6. The home screen.
+7. Apps and widgets on it.
+8. The workout flow reworked (the rest timer stays exactly as it is until then).
+9. Onboarding and installation, last.
 
 ## Open questions waiting for the owner's answer (do not build before they answer)
 

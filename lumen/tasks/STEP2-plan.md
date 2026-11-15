@@ -333,11 +333,14 @@ What it checks:
 **Not in step 2:** the Sidekick's own app list for Change and Add (step 3). Until then, Change and Add
 still go to Prism's app list, as today.
 
-## Questions for the owner, before building
+## The owner's answers (15 November 2026)
 
-1. **The way back** when both switches are off: the "Bring back the Sidekick" line in Prism's settings
-   page, or a panel that won't let both be off? (§2)
-2. **Back:** agree that the measurement decides between A and B as in §5? Or choose one now?
-3. **The timer:** keep it following the Sidekick's two switches until step 4? (§2)
-4. **The panel beside the Sidekick** (narrower than Prism's, three looks to a row), rather than above or
-   below it? (§3)
+1. **The way back:** the "Bring back the Sidekick" line in Prism's settings page, shown only while both
+   switches are off. (§2)
+2. **Back:** measured in 2a (build 176's keyboard probe), then A or B as in §5.
+3. **The timer:** unchanged, until the owner reworks the workout flow. (§2)
+4. **The panel:** beside the Sidekick, on the side away from it, nearly full height, as in §3. The
+   owner chose it from a mock-up of beside, centred and bottom.
+
+Before 2b is built, the review chat makes a detailed mock-up of the panel's contents and motion, and
+the owner approves it (design first: see LESSONS.md). Its link goes into 2b's brief.
