@@ -1,5 +1,9 @@
 # Lumen changelog
 
+## Not in a build yet (goes into the next one)
+
+- **The font guard made complete:** along with the boldness (175), the two other font settings Prism uses, optical size and width, are now drawn in steps (half a point; 1). Nothing you see changes: every size and width in Prism is already on those steps. Only the app list's names, whose size follows how dense the list is, use the nearest half point for their optical size.
+
 ## Prism, build 175 (15 November 2026)
 
 **File:** `releases/prism-build-175.apk`

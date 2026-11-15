@@ -100,15 +100,19 @@ class LumenColors extends ThemeExtension<LumenColors> {
 /// Type. Bricolage Grotesque for display (weight and width are continuous
 /// axes), Inter for text and controls.
 abstract final class LumenType {
-  /// Every weight is drawn in steps of 10.
+  /// Every font variation is drawn in steps: the weight in steps of 10, the optical size in
+  /// steps of 0.5, the width in steps of 1.
   ///
-  /// (Each weight a text is drawn at becomes a font of its own, which the text engine makes on
-  /// first use and keeps for as long as Prism runs, never giving it back: about 50 to 160 KB
-  /// each, in the preview. A weight that moves with an animation, as the labels of the two-way
-  /// pickers and of the tab bar do, made a new one on every frame of the move: megabytes a
-  /// change, all day. In steps of 10 there are at most a few dozen, each made once. Every
-  /// weight written in Prism is already a multiple of 10, so only moving ones are changed.)
+  /// (Each set of variations a text is drawn at becomes a font of its own, which the text engine
+  /// makes on first use and keeps for as long as Prism runs, never giving it back: about 125 KB
+  /// each on the phone. A weight that moved with an animation, as the labels of the two-way
+  /// pickers and of the tab bar did, made a new one on every frame of the move: megabytes a
+  /// change, all day, until build 175. In steps there are at most a few dozen per size, each
+  /// made once. Every weight, size and width written in Prism is already on these steps, so
+  /// only moving ones are changed. Never let any of them follow an animation all the same.)
   static double steady(double weight) => (weight / 10).roundToDouble() * 10;
+  static double _opsz(double size) => (size * 2).roundToDouble() / 2;
+  static double _wdth(double width) => width.roundToDouble();
 
   static TextStyle display(
     double size, {
@@ -125,8 +129,8 @@ abstract final class LumenType {
       color: color,
       fontVariations: <FontVariation>[
         FontVariation('wght', steady(weight)),
-        FontVariation('wdth', width),
-        FontVariation('opsz', size.clamp(12, 96)),
+        FontVariation('wdth', _wdth(width)),
+        FontVariation('opsz', _opsz(size.clamp(12, 96))),
       ],
     );
   }
@@ -146,7 +150,7 @@ abstract final class LumenType {
       color: color,
       fontVariations: <FontVariation>[
         FontVariation('wght', steady(weight)),
-        FontVariation('opsz', size.clamp(14, 32)),
+        FontVariation('opsz', _opsz(size.clamp(14, 32))),
       ],
       fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
     );

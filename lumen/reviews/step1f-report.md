@@ -231,3 +231,66 @@ downloaded file has the same sha256 as the one built.
    now changes in small steps; say if you can see it.
 4. If you can, use Prism as usual for a day without restarting it, then run the button test and send its
    report. Its first memory reading shows how much Prism holds after a day of use.
+
+## After the phone run (added later, with the commit after the build)
+
+**The owner's phone run of 175, as the review read it:**
+- **h, the old way:** +4.11 MB a repeat at 33 frames a repeat. That is about 125 KB per new weight on the
+  phone.
+- **h in steps of 10:** flat.
+- **b, c and g:** flat.
+- **i to vi, and b and c with the Sidekick off:** all +0.00 a repeat.
+- **Native memory** stayed between about 89 and 176 MB the whole run. Its only growth was h's old way
+  (81 MB, on purpose).
+- **The cause is proven on the phone, and the fix holds.**
+- **Graphics memory** is flat at about 500 MB. That's the next memory target, after the Sidekick work.
+
+**Completed with this commit:** `LumenType` now steps the optical size by 0.5 and the width by 1, as well
+as the weight by 10.
+- An animated size or width can't bring the leak back.
+- Every size and width written in Prism is already on those steps, so nothing fixed changes.
+- Only the app list's names (`16 * f`, `14.2 * f`) move, to the nearest 0.5 of optical size. The font
+  size itself is unchanged.
+
+## Where I could be wrong (as sent before the phone run)
+
+1. **The mechanism might differ on the phone.** If h's old way were flat there, the cause would be
+   elsewhere. I asked for h's frames column to be read first: near 0 would have meant the probe text
+   never drew. The run answered this: 33 frames, +4.11 MB a repeat.
+2. **Steps of 10 still allow a few dozen fonts per size.** b's and c's first five repeats could grow
+   once. Only the second number counts.
+3. **g visits the Train page,** which can bring back the rest timer's window. If g had grown, the flight
+   recorder should have been checked before blaming fonts. It didn't grow.
+
+## My notes on the review's briefs so far
+
+What worked:
+- **1e and 1f were the best briefs.** Each had one goal and a clear way to read the result. 1f's
+  permission to fix a cause seen in the code made the bisect run double as proof, which saved a phone
+  round trip.
+- **"Don't trust a clean preview"** (174) was right, and it is now a lesson.
+
+Where the briefs were too big or unclear:
+- **1b had seven items** (A–G): behaviour fixes, test changes, an investigation and the progress bar,
+  all in one build. 1c and 1d each mixed a fix with an investigation. When a phone run came back, it was
+  harder to tell which change did what. We now have "one kind of change per build". I'd add: at most one
+  behaviour change and one investigation per build.
+- **Some bisect variants assumed a cause.** 1f's (vi), "a static open panel", didn't match the code (the
+  panel is already still while open). The brief allowed other variants, so I changed it and said why.
+  Stating what a variant must split, rather than how to build it, works better.
+- **One request arrived after its build** was built and pushed: LESSONS.md, meant for 175. Nothing broke,
+  but the brief and the build crossed.
+
+Where the review missed something or slowed me down:
+- **The review of 171 passed code that failed on the phone** (two engines). The review has said so, and
+  it is the first lesson.
+- **The "one full-screen surface" hint for the 9 MB** (174) pointed at the GPU, which was a wrong lead.
+  It was labelled a hint, so it didn't cost a build.
+- **Briefs live only in chat messages.** My context has been summarised twice in this work, and the
+  briefs' exact words survive only in those summaries. A new session couldn't find them at all.
+
+Proposed rules (for the next workflow check; not in LESSONS.md until agreed):
+1. **Each brief is saved as a file in `tasks/`** before work starts. The agent copies it from the message,
+   as `STEP1-separate-menus.md` was.
+2. **What is asked while a build is under way goes into the next commit,** and the reply says so.
+3. **At most one behaviour change and one investigation per build.**

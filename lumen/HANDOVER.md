@@ -1,7 +1,8 @@
-# Handover: Prism, after build 171 (15 November 2026)
+# Handover: Prism, after build 175 (15 November 2026)
 
 Read this first in a new chat. Then **`DESIGN.md` (the design rules: every agent follows them)**,
-`PRISM.md` (the product), the top of `CHANGELOG.md` (what each build did), and only then the code.
+**`LESSONS.md` (what went wrong, and the rule that prevents it)**, `PRISM.md` (the product), the top of
+`CHANGELOG.md` (what each build did), and only then the code.
 Everything below was agreed with the owner of the project.
 
 **Where the work stands:** step 1 of THE PLAN (below) is **done** and accepted in review: build 170, report
@@ -23,7 +24,10 @@ Build 175 ("step 1f", `reviews/step1f-report.md`) draws every weight in steps of
 again as a bisect. **Never let a font's weight, or any other font variation, follow an animation: use
 `LumenType` (it rounds weights with `LumenType.steady`) and never build a `TextStyle` with `fontVariations`
 by hand. `LumenType`'s `opsz` follows the size, so don't animate a `LumenType` size either; scale the text
-with a `Transform` instead.** Next: 175's phone results, then step 2. Tasks are in `tasks/`; each ends with a
+with a `Transform` instead.** (`LumenType` also steps the optical size by 0.5 and the width by 1.) 175's
+phone run proved it: the old way kept about 125 KB per new weight, and every step of the panel, the
+pickers and the tab bar stayed flat. Graphics memory (about 500 MB) is the next memory target, after the
+Sidekick work. Next: step 2, **plan first** (`tasks/STEP2-plan.md`), no code until the owner agrees. Tasks are in `tasks/`; each ends with a
 report in `reviews/` that is reviewed before the owner relies on the work. The preview scripts are in
 `tools/preview/` (see its README).
 
@@ -35,6 +39,10 @@ report in `reviews/` that is reviewed before the owner relies on the work. The p
   shipping"). Be direct and short. Always say what was checked and what was not. Never claim something
   feels smooth: it is only ever checked in the preview, on a computer, or on their phone by them.
 - Keep `CHANGELOG.md` up to date for every build: what changed, what to look for, what was checked and not.
+- The owner's review chat (another Claude session) briefs each step and reviews each report. Every report
+  has a short **"Where I could be wrong"** section: the 2–3 places most likely to fail on the phone, and
+  why. Every few builds, or after a phone run that surprises, each checks the other's way of working;
+  agreed rules go into `LESSONS.md`.
 - **Be very careful with the code; keep backups** of a file before a large edit (the scratchpad is fine).
 - If they write STOP, stop, and answer before building anything. When they ask to "explain before
   implementing", do exactly that.
