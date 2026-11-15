@@ -303,8 +303,8 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "lensSize") {
                 result.success(RestBubble.lensSizeNow(applicationContext))
             } else if (call.method == "blobLook") {
-                // Which look the Blob's sign has: the fan, pearls, rays or petals.
-                RestBubble.look = ((call.arguments as? Number)?.toInt() ?: 1).coerceIn(1, 4)
+                // Which look the Blob's sign has, by its id (see BlobLooks.kt).
+                RestBubble.look = (call.arguments as? String) ?: ""
                 result.success(null)
             } else if (call.method == "blobNames") {
                 // Whether the blobs show their names under them.
@@ -1205,8 +1205,8 @@ class Floater(val timer: Boolean) {
     // blobs sit a little nearer.
     var blobNames = true
 
-    /** Which look the Blob's sign has: 1 pearls, 2 rays, 3 petals, 4 lotus. The same as in Prism. */
-    var look = 1
+    /** Which look the Blob's sign has, by its id. The same as in Prism; see BlobLooks.kt. */
+    var look = ""
         set(v) { if (field != v) { field = v; view?.postInvalidate() } }
 
     // A lens has been dropped on the cross and is being closed. Until that is done no new lens is made.
@@ -1606,184 +1606,6 @@ class Floater(val timer: Boolean) {
         // itself in front again, so "Prism in front and this app noted" can only mean that.)
         val arriving = p.kind == "app" && foreground && frontApp == p.pkg
         return mode() != 1 && container && blobs.isNotEmpty() && (arriving || here(p))
-    }
-
-    /**
-     * The Blob sign: a stem for each blob with a dot in its colour, as on Prism's button, turned
-     * to [toward] (radians), the way the blobs will come out. [u] is the size of one of the
-     * button sign's 38 units.
-     */
-    private fun paintFanSign(canvas: android.graphics.Canvas, cx: Float, cy: Float, u: Float, toward: Double, paint: android.graphics.Paint) {
-        when (look) {
-            1 -> paintPearls(canvas, cx, cy, u, toward, paint)
-            2 -> paintRays(canvas, cx, cy, u, toward, paint)
-            3 -> paintPetals(canvas, cx, cy, u, toward, paint)
-            4 -> paintLotus(canvas, cx, cy, u, toward, paint)
-            else -> paintStems(canvas, cx, cy, u, toward, paint)
-        }
-        paint.shader = null
-        paint.alpha = 255
-        paint.style = android.graphics.Paint.Style.FILL
-    }
-
-    private fun lighter(c: Int, t: Float): Int {
-        val r = (c shr 16) and 255; val g = (c shr 8) and 255; val b = c and 255
-        return (0xFF shl 24) or ((r + ((255 - r) * t).toInt()) shl 16) or ((g + ((255 - g) * t).toInt()) shl 8) or (b + ((255 - b) * t).toInt())
-    }
-
-    /** Pearls: a white point, Prism, and the blobs around it as small lit pearls. The same numbers as BlobSign in Prism. */
-    private fun paintPearls(canvas: android.graphics.Canvas, cx: Float, cy: Float, u: Float, a: Double, paint: android.graphics.Paint) {
-        val n = blobs.size.coerceIn(1, 5)
-        val back = (if (n == 1) 6f else 10f) * u
-        val reach = (if (n == 1) 14f else 21f) * u
-        val r = floatArrayOf(6.0f, 5.4f, 4.8f, 4.3f, 3.9f)[n - 1] * u
-        val step = doubleArrayOf(0.0, 52.0, 40.0, 31.0, 26.0)[n - 1] * Math.PI / 180.0
-        val kx = cx - back * Math.cos(a).toFloat(); val ky = cy - back * Math.sin(a).toFloat()
-        paint.style = android.graphics.Paint.Style.FILL
-        val xs = FloatArray(n); val ys = FloatArray(n)
-        for (k in 0 until n) {
-            val t = a + (k - (n - 1) / 2.0) * step
-            xs[k] = kx + reach * Math.cos(t).toFloat(); ys[k] = ky + reach * Math.sin(t).toFloat()
-            val c = blobs[k].color and 0x00FFFFFF
-            paint.shader = android.graphics.RadialGradient(xs[k], ys[k], r * 2.3f, c or (0x80 shl 24), c, android.graphics.Shader.TileMode.CLAMP)
-            canvas.drawCircle(xs[k], ys[k], r * 2.3f, paint)
-        }
-        paint.shader = android.graphics.RadialGradient(kx, ky, 10 * u, 0x73FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP)
-        canvas.drawCircle(kx, ky, 10 * u, paint)
-        paint.shader = null
-        paint.color = WHITE
-        canvas.drawCircle(kx, ky, (if (n == 1) 3.4f else 3.0f) * u, paint)
-        for (k in 0 until n) {
-            val c = blobs[k].color or 0xFF000000.toInt()
-            paint.shader = android.graphics.RadialGradient(
-                xs[k] - r * 0.3f, ys[k] - r * 0.4f, r * 1.5f,
-                intArrayOf(lighter(c, 0.55f), c, c), floatArrayOf(0f, 0.6f, 1f), android.graphics.Shader.TileMode.CLAMP,
-            )
-            canvas.drawCircle(xs[k], ys[k], r, paint)
-        }
-    }
-
-    /** Rays: white light into a prism, and out of it a ray in each blob's colour. */
-    private fun paintRays(canvas: android.graphics.Canvas, cx: Float, cy: Float, u: Float, a: Double, paint: android.graphics.Paint) {
-        val n = blobs.size.coerceIn(1, 5)
-        // The light and the rays turn to where they point; the prism itself stays upright.
-        canvas.save()
-        canvas.translate(cx, cy)
-        canvas.save()
-        canvas.rotate(Math.toDegrees(a).toFloat())
-        paint.shader = null
-        paint.style = android.graphics.Paint.Style.STROKE
-        paint.strokeCap = android.graphics.Paint.Cap.ROUND
-        paint.strokeJoin = android.graphics.Paint.Join.ROUND
-        paint.color = WHITE
-        paint.strokeWidth = 2.6f * u
-        canvas.drawLine(-16 * u, 2 * u, -5 * u, 0.5f * u, paint)
-        val gap = (if (n == 1) 0f else if (n <= 3) 5.4f else 4.1f) * u
-        paint.strokeWidth = (if (n <= 3) 2.8f else 2.3f) * u
-        for (k in 0 until n) {
-            paint.color = blobs[k].color or 0xFF000000.toInt()
-            canvas.drawLine(3 * u, 0f, 16 * u, (k - (n - 1) / 2f) * gap, paint)
-        }
-        canvas.restore()
-        val tri = android.graphics.Path()
-        tri.moveTo(-6.5f * u, 6 * u); tri.lineTo(0f, -7 * u); tri.lineTo(6.5f * u, 6 * u); tri.close()
-        paint.style = android.graphics.Paint.Style.FILL
-        paint.color = 0xFF14181C.toInt()
-        canvas.drawPath(tri, paint)
-        paint.style = android.graphics.Paint.Style.STROKE
-        paint.color = WHITE
-        paint.strokeWidth = 2.2f * u
-        canvas.drawPath(tri, paint)
-        canvas.restore()
-    }
-
-    /**
-     * Petals: the blobs' colours as petals round a quiet white point in the very middle of the
-     * glass, nearly filling it. The same numbers as BlobSign in Prism.
-     */
-    private fun paintPetals(canvas: android.graphics.Canvas, cx: Float, cy: Float, u: Float, a: Double, paint: android.graphics.Paint) {
-        val n = blobs.size.coerceIn(1, 5)
-        val step = if (n == 1) 0.0 else 360.0 / n
-        paint.shader = null
-        paint.style = android.graphics.Paint.Style.FILL
-        for (k in 0 until n) {
-            canvas.save()
-            canvas.translate(cx, cy)
-            canvas.rotate((Math.toDegrees(a) + (k - (n - 1) / 2.0) * step).toFloat())
-            // A little softer than the blob's own colour, and seen through.
-            paint.color = (lighter(blobs[k].color, 0.14f) and 0x00FFFFFF) or (0xC2 shl 24)
-            canvas.drawOval(1f * u, -9.5f * u, 25f * u, 9.5f * u, paint)
-            canvas.restore()
-        }
-        paint.shader = android.graphics.RadialGradient(cx, cy, 6.5f * u, 0x59FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP)
-        canvas.drawCircle(cx, cy, 6.5f * u, paint)
-        paint.shader = null
-        paint.color = 0xD9FFFFFF.toInt()
-        canvas.drawCircle(cx, cy, 2.4f * u, paint)
-    }
-
-    /**
-     * Lotus: pointed petals in the blobs' colours, opening from one foot the way the blobs do,
-     * the middle one tallest and in front. The same numbers as BlobSign in Prism.
-     */
-    private fun paintLotus(canvas: android.graphics.Canvas, cx: Float, cy: Float, u: Float, a: Double, paint: android.graphics.Paint) {
-        val n = blobs.size.coerceIn(1, 5)
-        val step = if (n <= 3) 38.0 else 29.0
-        val fx = cx - 18 * u * Math.cos(a).toFloat(); val fy = cy - 18 * u * Math.sin(a).toFloat()
-        paint.shader = null
-        paint.style = android.graphics.Paint.Style.FILL
-        val path = android.graphics.Path()
-        // From the outside in, so the middle petal lies over its neighbours.
-        for (k in (0 until n).sortedByDescending { Math.abs(it - (n - 1) / 2f) }) {
-            val off = k - (n - 1) / 2f
-            val len = (39f - 4f * Math.abs(off)) * u; val w = 9.6f * u
-            canvas.save()
-            canvas.translate(fx, fy)
-            canvas.rotate((Math.toDegrees(a) + off * step).toFloat())
-            path.reset()
-            path.moveTo(0f, 0f)
-            path.cubicTo(len * 0.22f, -w * 1.5f, len * 0.72f, -w * 1.05f, len, 0f)
-            path.cubicTo(len * 0.72f, w * 1.05f, len * 0.22f, w * 1.5f, 0f, 0f)
-            path.close()
-            paint.color = (lighter(blobs[k].color, 0.14f) and 0x00FFFFFF) or (0xCC shl 24)
-            canvas.drawPath(path, paint)
-            canvas.restore()
-        }
-        val gx = fx + 4 * u * Math.cos(a).toFloat(); val gy = fy + 4 * u * Math.sin(a).toFloat()
-        paint.shader = android.graphics.RadialGradient(gx, gy, 7f * u, 0x80FFFFFF.toInt(), 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP)
-        canvas.drawCircle(gx, gy, 7f * u, paint)
-        paint.shader = null
-    }
-
-    /** The fan: a stem for each blob with a dot in its colour. */
-    private fun paintStems(canvas: android.graphics.Canvas, cx: Float, cy: Float, u: Float, toward: Double, paint: android.graphics.Paint) {
-        val n = blobs.size.coerceIn(1, 5)
-        val dot = floatArrayOf(6.4f, 5.8f, 5.1f, 4.4f, 3.9f)[n - 1] * u
-        val step = doubleArrayOf(0.0, 52.0, 40.0, 32.0, 28.0)[n - 1] * Math.PI / 180.0
-        val reach = (if (n == 1) 17f else 21f) * u
-        // The foot sits back from the middle, opposite the way the sign points, so the whole sign is centred.
-        val back = (if (n == 1) 10f else 12f) * u
-        val fx = cx - back * Math.cos(toward).toFloat()
-        val fy = cy - back * Math.sin(toward).toFloat()
-        val path = android.graphics.Path()
-        paint.style = android.graphics.Paint.Style.FILL
-        paint.shader = null
-        for (k in 0 until n) {
-            val a = toward + (k - (n - 1) / 2.0) * step
-            val wx = Math.cos(a).toFloat(); val wy = Math.sin(a).toFloat()
-            val sx = -wy; val sy = wx
-            val tx = fx + wx * reach; val ty = fy + wy * reach
-            val nx = tx - wx * dot * 0.7f; val ny = ty - wy * dot * 0.7f
-            path.reset()
-            path.moveTo(fx, fy)
-            path.lineTo(nx - sx * dot * 0.5f, ny - sy * dot * 0.5f)
-            path.lineTo(nx + sx * dot * 0.5f, ny + sy * dot * 0.5f)
-            path.close()
-            paint.color = WHITE
-            canvas.drawPath(path, paint)
-            paint.color = blobs[k].color or 0xFF000000.toInt()
-            canvas.drawCircle(tx, ty, dot, paint)
-        }
     }
 
     private fun paintBlob(
@@ -4104,7 +3926,8 @@ class Floater(val timer: Boolean) {
             paint.style = android.graphics.Paint.Style.FILL
             if (t == null && atHome()) {
                 // Already where it leads: the Blob sign, pointing the way the blobs will come out.
-                paintFanSign(canvas, r, r, 1.05f * dp, signAngle(), paint)
+                // In the look that was chosen in Prism, filling the glass. (All of them live in BlobLooks.kt.)
+                BlobLooks.paint(look, canvas, r, r, disc - 1.3f * dp, signAngle(), IntArray(blobs.size) { blobs[it].color }, paint)
                 return
             }
             if (t == null && container) {

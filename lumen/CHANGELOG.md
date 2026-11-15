@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Prism, build 131 (15 November 2026)
+
+**File:** `releases/prism-build-131.apk`
+
+Needs Play Protect paused to install. Can be installed over build 130.
+
+**The light looks, built: Beam, Bands, Halo, Triangle.**
+
+- **Beam**, as you asked: the prism is drawn low in the glass, the white beam into it is short, and the colours have the rest of the glass, wide, out to the edge, melting into one another.
+- **Bands**, your concept: the same light through the same prism, cut clean. Each colour is a flat band with a dark line between it and the next, the bands are seen paler through the prism, and the prism is drawn bold. (Ours is its own drawing: in round glass, in your blobs' colours, and it turns. It is not a copy of the album cover.)
+- **Halo:** white light in the middle, the rim of the glass split into a piece for each blob, a small white prism in the centre.
+- **Triangle:** the prism as large as the glass allows, made of light: white at the corner the light comes in by, the colours fanned across the far side.
+- In these four the blobs' colours are put in rainbow order, so they read as light.
+- **Rays is gone:** these replace it. The Look row is now seven, on two lines: Pearls, Petals, Lotus, Beam, Bands, Halo, Triangle.
+- All seven now fill the glass in the same proportion on Prism's button and on the floating blob (before, the floating blob drew them a little small).
+
+**Easy to take out, as you asked.** Each look is now one drawing and one line in a list, in a file of its own: `lib/fit/blob_sign.dart` for Prism's button and `android/.../BlobLooks.kt` for the floating blob. To remove a look, delete its line and its drawing in each of the two files; nothing else in Prism knows the looks by name, and a phone that had the removed one chosen falls back to the first. The steps are written at the top of both files. Moving them out took 179 lines from the large Android file, and the old fan's drawing is deleted from Prism's side too.
+
+**Checked:** it compiles; in my preview: all seven in the Look row, and Beam, Bands, Halo, Triangle and Pearls on Prism's button; the automatic test in the preview, 56 of 60, the usual 4 misses.
+**Not checked:** on a phone, and the floating blob's drawing not at all (it only exists on Android, and it was written a second time there): compare it with the button's. A choice made in build 126 to 130 is not carried over; it starts at Pearls.
+
 ## Prism, build 130 (15 November 2026)
 
 **File:** `releases/prism-build-130.apk`

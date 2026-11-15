@@ -225,7 +225,7 @@ class RestBubble with WidgetsBindingObserver {
   }
 
   /// Tells Android which look the Blob's sign has, so the floating blob wears the same one.
-  void tellLook(int look) {
+  void tellLook(String look) {
     _device.invokeMethod<void>('blobLook', look).catchError((Object _) {});
   }
 

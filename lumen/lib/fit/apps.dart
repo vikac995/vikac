@@ -806,15 +806,16 @@ class Apps extends ChangeNotifier {
     }
   }
 
-  /// Which look the Blob's sign has: 1 pearls, 2 rays, 3 petals, 4 lotus.
-  int blobLook = 1;
+  /// Which look the Blob's sign has, by the look's id (see blob_sign.dart). One that is not
+  /// known there, or none, is drawn as the first of the looks.
+  String blobLook = '';
   File get _lookFile => File('${_iconsFile.parent.path}/prism_blob_look');
-  void setBlobLook(int v) {
-    blobLook = v.clamp(1, 4);
+  void setBlobLook(String id) {
+    blobLook = id;
     try {
-      _lookFile.writeAsStringSync('$blobLook');
+      _lookFile.writeAsStringSync(id);
     } catch (_) {
-      // Not saved: pearls next time.
+      // Not saved: the first look next time.
     }
     notifyListeners();
   }
@@ -868,12 +869,9 @@ class Apps extends ChangeNotifier {
       // Never changed: pages.
     }
     try {
-      blobLook = (int.tryParse(_lookFile.readAsStringSync().trim()) ?? 1).clamp(
-        1,
-        4,
-      );
+      blobLook = _lookFile.readAsStringSync().trim();
     } catch (_) {
-      // Never chosen: pearls.
+      // Never chosen: the first look.
     }
     try {
       cogShown = int.tryParse(_cogFile.readAsStringSync().trim()) ?? 0;

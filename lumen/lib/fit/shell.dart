@@ -640,72 +640,87 @@ class _ShellState extends State<Shell>
                         style: LumenType.text(15, weight: 560, color: c.ink),
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 10,
+                        runSpacing: 12,
                         children: <Widget>[
-                          for (int i = 1; i < BlobSign.names.length; i++)
+                          for (final BlobLook look in BlobSign.looks)
                             GestureDetector(
-                              key: Robot.key('blobLook$i'),
+                              key: Robot.key('blobLook-${look.id}'),
                               behavior: HitTestBehavior.opaque,
                               onTap: () {
                                 Haptics.tick();
-                                Apps.instance.setBlobLook(i);
-                                RestBubble.instance.tellLook(i);
-                                Diag.instance.event(
-                                  'blob look: ${BlobSign.names[i]}',
-                                );
+                                Apps.instance.setBlobLook(look.id);
+                                RestBubble.instance.tellLook(look.id);
+                                Diag.instance.event('blob look: ${look.name}');
                                 setState(() {});
                               },
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 160),
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: ShapeDecoration(
-                                      shape: CircleBorder(
-                                        side: BorderSide(
-                                          width: 2.5,
-                                          color: c.accent.withValues(
-                                            alpha: Apps.instance.blobLook == i
-                                                ? 1
-                                                : 0,
+                              child: SizedBox(
+                                width: 70,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 160,
+                                      ),
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: ShapeDecoration(
+                                        shape: CircleBorder(
+                                          side: BorderSide(
+                                            width: 2.5,
+                                            color: c.accent.withValues(
+                                              alpha:
+                                                  BlobSign.of(
+                                                        Apps.instance.blobLook,
+                                                      ) ==
+                                                      look
+                                                  ? 1
+                                                  : 0,
+                                            ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    child: SizedBox(
-                                      width: 56,
-                                      height: 56,
-                                      child: CustomPaint(
-                                        painter: _LensDisc(c.accent),
-                                        child: Center(
-                                          child: CustomPaint(
-                                            size: const Size(38, 38),
-                                            painter: BlobSignPreview(i, <Color>[
+                                      child: SizedBox(
+                                        width: 56,
+                                        height: 56,
+                                        child: CustomPaint(
+                                          painter: _LensDisc(c.accent),
+                                          foregroundPainter: BlobSignPreview(
+                                            look.id,
+                                            <Color>[
                                               for (final (double, Color) b
                                                   in _fanBlobs)
                                                 b.$2,
-                                            ]),
+                                            ],
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    BlobSign.names[i],
-                                    style: LumenType.text(
-                                      12.5,
-                                      weight: Apps.instance.blobLook == i
-                                          ? 650
-                                          : 500,
-                                      color: Apps.instance.blobLook == i
-                                          ? c.ink
-                                          : c.inkMuted,
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      look.name,
+                                      style: LumenType.text(
+                                        12.5,
+                                        weight:
+                                            BlobSign.of(
+                                                  Apps.instance.blobLook,
+                                                ) ==
+                                                look
+                                            ? 650
+                                            : 500,
+                                        color:
+                                            BlobSign.of(
+                                                  Apps.instance.blobLook,
+                                                ) ==
+                                                look
+                                            ? c.ink
+                                            : c.inkMuted,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                         ],
@@ -7512,7 +7527,17 @@ class _BlobPainter extends CustomPainter {
           Paint()..color = ink.withValues(alpha: a),
         )
         ..translate(at.dx - 19, at.dy - 19);
-      _FanMark(sign).paint(canvas, const Size(38, 38));
+      if (sign.isEmpty) {
+        const _PlusMark().paint(canvas, const Size(38, 38));
+      } else {
+        BlobSign.paint(
+          canvas,
+          const Size(38, 38),
+          Apps.instance.blobLook,
+          <Color>[for (final (double, Color) b in sign) b.$2],
+          radius: 21,
+        );
+      }
       canvas.restore();
     }
   }
@@ -7570,104 +7595,50 @@ class _ThreadPainter extends CustomPainter {
       old.colors.first != colors.first;
 }
 
-/// The button's own sign: a small picture of the menu it opens. One stem for each blob that
-/// would come out, from one point at the foot, thin there and thickening on the way, each
-/// ending in a dot of that blob's colour, standing where that blob will stand.
-class _FanMark extends CustomPainter {
-  const _FanMark(this.blobs, {this.fold = 0});
-
-  /// How far it has folded away into its foot: 0 open, 1 gone. As it folds the foot rises to
-  /// the middle of the button, the stems shorten, and the dots shrink and pale toward white.
+/// The button's sign when there is nothing to come out: a plain plus, to add something.
+/// [fold] is how far it has folded away as the button opens: gone by half way.
+class _PlusMark {
+  const _PlusMark({this.fold = 0});
   final double fold;
 
-  /// For each blob: the angle of its seat as the menu has it, and its colour.
-  final List<(double, Color)> blobs;
-
-  @override
   void paint(Canvas canvas, Size size) {
-    final double u = size.width / 38;
-    final Offset foot = Offset(19 * u, (31 - 12 * fold) * u);
-    final Paint ink = Paint()..color = Colors.white;
-    if (blobs.isEmpty) {
-      if (fold > 0.5) {
-        return;
-      }
-      // Nothing to come out: a plain plus, to add something.
-      final Paint line = Paint()
-        ..color = Colors.white
-        ..strokeWidth = 3.3 * u
-        ..strokeCap = StrokeCap.round;
-      canvas
-        ..drawLine(Offset(19 * u, 9 * u), Offset(19 * u, 29 * u), line)
-        ..drawLine(Offset(9 * u, 19 * u), Offset(29 * u, 19 * u), line);
+    if (fold > 0.5) {
       return;
     }
-    // The order and the colours are the menu's. The spread is the sign's own: with few
-    // blobs the stems open wider and the dots are larger, so it is never a thin bunch; with
-    // five they stand as the five do, clear of one another.
-    final int n = blobs.length;
-    final double
-    dot =
-        const <double>[6.4, 5.8, 5.1, 4.4, 3.9][n.clamp(1, 5) - 1] *
-        u *
-        (1 - 0.72 * fold),
-    step = const <double>[0, 52, 40, 32, 28][n.clamp(1, 5) - 1] * math.pi / 180,
-    reach = (n == 1 ? 17.0 : 21.0) * u * (1 - fold);
-    final Offset from = n == 1 ? Offset(19 * u, (29 - 10 * fold) * u) : foot;
-    final double seen = (1 - fold * fold).clamp(0.0, 1.0);
-    ink.color = Colors.white.withValues(alpha: seen);
-    for (int k = 0; k < n; k++) {
-      final double a = math.pi / 2 + (k - (n - 1) / 2) * step;
-      final Offset way = Offset(-math.cos(a), -math.sin(a)),
-          side = Offset(-way.dy, way.dx),
-          tip = from + way * reach;
-      // The stem: a point at the foot, half the dot's width where it meets the dot.
-      final Offset neck = tip - way * dot * 0.7;
-      canvas.drawPath(
-        Path()
-          ..moveTo(from.dx, from.dy)
-          ..lineTo((neck - side * dot * 0.5).dx, (neck - side * dot * 0.5).dy)
-          ..lineTo((neck + side * dot * 0.5).dx, (neck + side * dot * 0.5).dy)
-          ..close(),
-        ink,
-      );
-      canvas.drawCircle(
-        tip,
-        dot,
-        Paint()
-          ..color = Color.lerp(
-            blobs[k].$2,
-            Colors.white,
-            fold,
-          )!.withValues(alpha: seen),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(_FanMark old) {
-    if (old.blobs.length != blobs.length) {
-      return true;
-    }
-    for (int i = 0; i < blobs.length; i++) {
-      if (old.blobs[i] != blobs[i]) {
-        return true;
-      }
-    }
-    return false;
+    final double u = size.width / 38;
+    final Paint line = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 3.3 * u
+      ..strokeCap = StrokeCap.round;
+    canvas
+      ..drawLine(Offset(19 * u, 9 * u), Offset(19 * u, 29 * u), line)
+      ..drawLine(Offset(9 * u, 19 * u), Offset(29 * u, 19 * u), line);
   }
 }
 
+/// Whether two lists of blobs (where each sits, and its colour) are the same.
+bool _sameBlobs(List<(double, Color)> a, List<(double, Color)> b) {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (int i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 /// The button's sign in all its states, as one drawing. [open] is how far the blobs are out:
-/// at 0 it is the fan (see [_FanMark]); as it rises the fan folds into its own foot, which
-/// rises to the middle, and out of that point the X unfolds, turning as it comes. [cog] is how
+/// at 0 it is the Blob's sign in the look that was chosen (see blob_sign.dart); as it rises
+/// that folds away into the middle, and out of that point the X unfolds, turning as it comes. [cog] is how
 /// far the X has become the cog: the X turns on and shrinks away as the cog turns in.
 class _ButtonSign extends CustomPainter {
   const _ButtonSign({
     required this.blobs,
     required this.open,
     required this.cog,
-    this.look = 0,
+    this.look = '',
     this.hint = 1,
     this.rim = 0,
     this.glint = Colors.white,
@@ -7676,7 +7647,7 @@ class _ButtonSign extends CustomPainter {
   final double open, cog;
 
   /// Which look the sign has while the blobs are in: the fan, or one of [BlobSign]'s.
-  final int look;
+  final String look;
 
   /// The cog showing itself off: 0 just begun, 1 over (and nothing more is drawn for it).
   /// [rim] is the radius of the button's edge, where the glint runs; [glint] its colour.
@@ -7704,12 +7675,22 @@ class _ButtonSign extends CustomPainter {
     // The fan folds away over the first half of the way.
     final double a = Curves.easeInOut.transform((open / 0.5).clamp(0.0, 1.0));
     if (a < 0.999) {
-      if (look == 0 || blobs.isEmpty) {
-        _FanMark(blobs, fold: a).paint(canvas, size);
+      if (blobs.isEmpty) {
+        _PlusMark(fold: a).paint(canvas, size);
       } else {
-        BlobSign.paint(canvas, size, look, <Color>[
-          for (final (double, Color) b in blobs) b.$2,
-        ], fold: a);
+        // In the button's glass: the sign's square sits in its middle.
+        canvas
+          ..save()
+          ..translate(mid.dx - size.width / 2, mid.dy - size.height / 2);
+        BlobSign.paint(
+          canvas,
+          size,
+          look,
+          <Color>[for (final (double, Color) b in blobs) b.$2],
+          radius: rim > 0 ? rim : size.width / 2,
+          fold: a,
+        );
+        canvas.restore();
       }
     }
     // The X unfolds over the second half, and may swing a little past its size.
@@ -7786,7 +7767,7 @@ class _ButtonSign extends CustomPainter {
       old.cog != cog ||
       old.look != look ||
       old.hint != hint ||
-      _FanMark(old.blobs).shouldRepaint(_FanMark(blobs));
+      !_sameBlobs(old.blobs, blobs);
 }
 
 /// The small round mark things wear while the blobs are being changed: white with a dark sign
