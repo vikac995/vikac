@@ -23,6 +23,7 @@ import 'lens.dart';
 import 'long_test.dart';
 import 'look.dart';
 import 'apps.dart';
+import 'blob_sign.dart';
 import 'bubble.dart';
 import 'drawer.dart';
 import 'progress_page.dart';
@@ -631,6 +632,90 @@ class _ShellState extends State<Shell>
                           Apps.instance.setPrismIcons(v, blobs: true);
                         },
                       ),
+                      const SizedBox(height: 16),
+                      // The Blob's sign, on the button here and on the floating blob over other
+                      // apps: each look drawn as it will be, with these blobs' own colours.
+                      Text(
+                        'Look',
+                        style: LumenType.text(15, weight: 560, color: c.ink),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: <Widget>[
+                          for (int i = 0; i < BlobSign.names.length; i++)
+                            GestureDetector(
+                              key: Robot.key('blobLook$i'),
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                Haptics.tick();
+                                Apps.instance.setBlobLook(i);
+                                RestBubble.instance.tellLook(i);
+                                Diag.instance.event(
+                                  'blob look: ${BlobSign.names[i]}',
+                                );
+                                setState(() {});
+                              },
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 160),
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: ShapeDecoration(
+                                      shape: CircleBorder(
+                                        side: BorderSide(
+                                          width: 2.5,
+                                          color: c.accent.withValues(
+                                            alpha: Apps.instance.blobLook == i
+                                                ? 1
+                                                : 0,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    child: SizedBox(
+                                      width: 56,
+                                      height: 56,
+                                      child: CustomPaint(
+                                        painter: _LensDisc(c.accent),
+                                        child: Center(
+                                          child: CustomPaint(
+                                            size: const Size(38, 38),
+                                            painter: BlobSignPreview(
+                                              i,
+                                              <Color>[
+                                                for (final (double, Color) b
+                                                    in _fanBlobs)
+                                                  b.$2,
+                                              ],
+                                              (Canvas canvas, Size size) =>
+                                                  _FanMark(_fanBlobs)
+                                                      .paint(canvas, size),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    BlobSign.names[i],
+                                    style: LumenType.text(
+                                      12.5,
+                                      weight: Apps.instance.blobLook == i
+                                          ? 650
+                                          : 500,
+                                      color: Apps.instance.blobLook == i
+                                          ? c.ink
+                                          : c.inkMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -1015,6 +1100,7 @@ class _ShellState extends State<Shell>
   /// Tells Android what all the blobs in the menu are, in order.
   Future<void> _sendBlobs() async {
     RestBubble.instance.tellNames(BlobSlots.instance.names);
+    RestBubble.instance.tellLook(Apps.instance.blobLook);
     final List<Map<String, Object>> all = <Map<String, Object>>[];
     for (int i = 0; i < _n; i++) {
       if (_floating(i)) {
@@ -5851,6 +5937,7 @@ class _ShellState extends State<Shell>
                                                 blobs: _fanBlobs,
                                                 open: _t.value,
                                                 cog: _cog.value,
+                                                look: Apps.instance.blobLook,
                                                 hint: _cogHint.value,
                                                 rim: _button / 2 - 2,
                                                 glint: c.accent,
@@ -7586,12 +7673,16 @@ class _ButtonSign extends CustomPainter {
     required this.blobs,
     required this.open,
     required this.cog,
+    this.look = 0,
     this.hint = 1,
     this.rim = 0,
     this.glint = Colors.white,
   });
   final List<(double, Color)> blobs;
   final double open, cog;
+
+  /// Which look the sign has while the blobs are in: the fan, or one of [BlobSign]'s.
+  final int look;
 
   /// The cog showing itself off: 0 just begun, 1 over (and nothing more is drawn for it).
   /// [rim] is the radius of the button's edge, where the glint runs; [glint] its colour.
@@ -7619,7 +7710,13 @@ class _ButtonSign extends CustomPainter {
     // The fan folds away over the first half of the way.
     final double a = Curves.easeInOut.transform((open / 0.5).clamp(0.0, 1.0));
     if (a < 0.999) {
-      _FanMark(blobs, fold: a).paint(canvas, size);
+      if (look == 0 || blobs.isEmpty) {
+        _FanMark(blobs, fold: a).paint(canvas, size);
+      } else {
+        BlobSign.paint(canvas, size, look, <Color>[
+          for (final (double, Color) b in blobs) b.$2,
+        ], fold: a);
+      }
     }
     // The X unfolds over the second half, and may swing a little past its size.
     final double b = ((open - 0.5) / 0.5).clamp(0.0, 1.25);
@@ -7693,6 +7790,7 @@ class _ButtonSign extends CustomPainter {
   bool shouldRepaint(_ButtonSign old) =>
       old.open != open ||
       old.cog != cog ||
+      old.look != look ||
       old.hint != hint ||
       _FanMark(old.blobs).shouldRepaint(_FanMark(blobs));
 }

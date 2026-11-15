@@ -806,6 +806,19 @@ class Apps extends ChangeNotifier {
     }
   }
 
+  /// Which look the Blob's sign has: 0 the fan, 1 pearls, 2 rays, 3 petals.
+  int blobLook = 0;
+  File get _lookFile => File('${_iconsFile.parent.path}/prism_blob_look');
+  void setBlobLook(int v) {
+    blobLook = v.clamp(0, 3);
+    try {
+      _lookFile.writeAsStringSync('$blobLook');
+    } catch (_) {
+      // Not saved: the fan next time.
+    }
+    notifyListeners();
+  }
+
   /// How many times the cog on the button has shown itself off. It does so the first three
   /// times the blobs are changed, and after that comes in quietly.
   int cogShown = 0;
@@ -853,6 +866,14 @@ class Apps extends ChangeNotifier {
       scrolling = _scrollFile.readAsStringSync().trim() == '1';
     } catch (_) {
       // Never changed: pages.
+    }
+    try {
+      blobLook = (int.tryParse(_lookFile.readAsStringSync().trim()) ?? 0).clamp(
+        0,
+        3,
+      );
+    } catch (_) {
+      // Never chosen: the fan.
     }
     try {
       cogShown = int.tryParse(_cogFile.readAsStringSync().trim()) ?? 0;

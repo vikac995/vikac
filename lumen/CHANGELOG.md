@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 126 (15 November 2026)
+
+**File:** `releases/prism-build-126.apk`
+
+Needs Play Protect paused to install. Can be installed over build 125.
+
+**The Blob's sign: four looks to choose from, step 1 of 2.**
+
+- **A "Look" row in the Blob panel** (the cog while the blobs are being changed). Four small previews, each drawn as it will really be, in your own blobs' colours: **Fan** (today's stems and dots, still where it starts), **Pearls** (a white point, Prism, with your blobs around it as small lit pearls that throw their colour into the glass), **Rays** (white light into a prism, a ray out in each blob's colour), **Petals** (the colours laid over one another). A tap chooses one, at once.
+- **The look is worn in both places:** on Prism's button, and on the floating blob while it is in its own app. Both are drawn from the same numbers.
+- **The floating blob's sign moves less, and more slowly.** It no longer points exactly at where the blobs open. It leans that way: at most about 38 degrees at the very top or foot of the screen, hardly at all through the middle, and it drifts round after the blob has moved (about two and a half times slower than build 125). Still drawn only while it turns.
+- Each look adapts to 1 to 5 blobs. With no blobs the button shows the plus, as before.
+
+**Step 2, once you have chosen:** for the chosen look, the ring on a blob that has news, the hollow mark for the app you are in, and the pearls (or rays, or petals) becoming the blobs as they open.
+
+**Checked:** it compiles; in my preview: each of the three new looks on Prism's button, the Look row with its four previews and the choice marked; the automatic test in the preview, 56 of 60, the usual 4 misses.
+**Not checked:** on a phone. The floating blob's looks I could not see at all (it only exists on Android): they are the same drawing written a second time, so look for any difference between the button's sign and the floating blob's. How the slower turning feels is yours to judge.
+
 ## Prism, build 125 (15 November 2026)
 
 **File:** `releases/prism-build-125.apk`

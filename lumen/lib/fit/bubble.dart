@@ -224,6 +224,11 @@ class RestBubble with WidgetsBindingObserver {
     _device.invokeMethod<void>('blobs', blobs).catchError((Object _) {});
   }
 
+  /// Tells Android which look the Blob's sign has, so the floating blob wears the same one.
+  void tellLook(int look) {
+    _device.invokeMethod<void>('blobLook', look).catchError((Object _) {});
+  }
+
   /// Tells Android whether the blobs show their names, so the lens's own menu does the same.
   void tellNames(bool names) {
     _device.invokeMethod<void>('blobNames', names).catchError((Object _) {});
