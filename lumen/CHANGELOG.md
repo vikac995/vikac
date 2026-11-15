@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 146 (15 November 2026)
+
+**File:** `releases/prism-build-146.apk`
+
+Needs Play Protect paused to install. Can be installed over build 145.
+
+- **Black under the glass.** While the magnifying glass rests on the prism (Triangle and Window), the prism is set in black: the glass's own darkness. As the glass is lifted away the black goes with it, fading out over the first moment of the lift, and the triangle is left alone; as the glass comes back, the black comes back with it.
+- **The triangle sits in the middle, and a little larger.** An inscribed triangle's tip touches the edge of its circle, so it looked as if it sat on the bar's bottom border. It is now drawn lifted away from its tip and about 6% larger. The lift follows the way it points, so it stays in the middle when it turns. Becoming the cog, it lets the lift go as the cog forms.
+
+**Checked:** it compiles; in my preview: Window mellow and vivid at rest, turned with the blobs out, a moment into the glass being lifted, and lifted; the automatic test in the preview.
+**Not checked:** on a phone, and the fade in motion. The floating blob is drawn as before (its triangle is not lifted yet).
+
 ## Prism, build 145 (15 November 2026)
 
 **File:** `releases/prism-build-145.apk`

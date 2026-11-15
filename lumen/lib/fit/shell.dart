@@ -5369,6 +5369,11 @@ class _ShellState extends State<Shell>
                                           turn: _signTurn.value,
                                           vivid: Apps.instance.blobVivid,
                                           glass: false,
+                                          // (Coming back, the black comes back with the glass.)
+                                          dark: (1 - _glass.value * 4).clamp(
+                                            0.0,
+                                            1.0,
+                                          ),
                                           cog: _cog.value,
                                           look: Apps.instance.blobLook,
                                           rim: _button / 2 - 2,
@@ -5407,6 +5412,8 @@ class _ShellState extends State<Shell>
                                                 turn: _signTurn.value,
                                                 shot: _signShot.value,
                                                 vivid: Apps.instance.blobVivid,
+                                                dark: (1 - _glass.value * 4)
+                                                    .clamp(0.0, 1.0),
                                                 cog: _cog.value,
                                                 look: Apps.instance.blobLook,
                                                 hint: _cogHint.value,
@@ -7188,6 +7195,7 @@ class _ButtonSign extends CustomPainter {
     this.shot = 0,
     this.vivid = false,
     this.glass = true,
+    this.dark = 0,
     this.look = '',
     this.hint = 1,
     this.rim = 0,
@@ -7204,6 +7212,9 @@ class _ButtonSign extends CustomPainter {
 
   /// The magnifying glass lies over the blob. Off while it is lifted away.
   final bool glass;
+
+  /// How much of the black the glass lays behind a triangle (1 resting on it, 0 lifted).
+  final double dark;
 
   /// How much larger the glass is drawn than its place in the bar.
   static const double grow = 1.25;
@@ -7250,6 +7261,15 @@ class _ButtonSign extends CustomPainter {
         _PlusMark(fold: c * 0.6).paint(canvas, size);
         canvas.restore();
       } else {
+        if (dark > 0.001 && BlobSign.of(look).triangle) {
+          // Under the glass, the triangle is set in black: the glass's own darkness. It goes
+          // with the glass, in the first moment it is lifted, and the triangle is left alone.
+          canvas.drawCircle(
+            mid,
+            (rim > 0 ? rim : size.width / 2) * _blob,
+            Paint()..color = Colors.black.withValues(alpha: 0.92 * dark),
+          );
+        }
         // The shot: up out of its place, a little larger, and back.
         canvas
           ..save()
@@ -7364,6 +7384,7 @@ class _ButtonSign extends CustomPainter {
       old.shot != shot ||
       old.vivid != vivid ||
       old.glass != glass ||
+      old.dark != dark ||
       old.cog != cog ||
       old.look != look ||
       old.hint != hint ||

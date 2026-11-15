@@ -74,6 +74,16 @@ abstract final class BlobSign {
   /// The blob's own dark ground when the look is not vivid, under the magnifying glass.
   static const Color ground = Color(0xE6121519);
 
+  /// A triangle's tip would sit on the very edge of its glass, as an inscribed triangle's does;
+  /// it is drawn lifted away from its tip, so that it sits in the middle to the eye, and a
+  /// little larger. [k] is how much (1 the triangle, 0 the cog it becomes).
+  static void _settleTriangle(Canvas c, double r, double angle, double k) {
+    final Offset lift = Offset(math.cos(angle), math.sin(angle)) * r * 0.12 * k;
+    c
+      ..translate(lift.dx, lift.dy)
+      ..scale(1 + 0.06 * k);
+  }
+
   /// Where a phone starts, with nothing chosen yet: the glass and the coloured triangle are the
   /// heart of Prism. (An id no longer known falls back to it too.)
   static const String first = 'window';
@@ -159,8 +169,17 @@ abstract final class BlobSign {
       ..save()
       ..translate(size.width / 2, size.height / 2)
       ..clipPath(
-        Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: r)),
+        Path()..addOval(
+          Rect.fromCircle(
+            center: Offset.zero,
+            radius: look.triangle ? r * 1.25 : r,
+          ),
+        ),
       );
+    if (look.triangle) {
+      // Lifted and larger as the triangle is, letting that go as it becomes the cog.
+      _settleTriangle(canvas, r, angle, 1 - e);
+    }
     // Inside the cog, the look itself, as it is drawn everywhere: the cog is a window cut in
     // the shape of a cog onto the same picture, on the same ground (black when vivid).
     canvas
@@ -268,8 +287,17 @@ abstract final class BlobSign {
       );
     }
     canvas.clipPath(
-      Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: radius)),
+      Path()..addOval(
+        Rect.fromCircle(
+          center: Offset.zero,
+          // (A triangle, a little larger and lifted, may reach past the circle: it is its own edge.)
+          radius: look.triangle ? radius * 1.25 : radius,
+        ),
+      ),
     );
+    if (look.triangle) {
+      _settleTriangle(canvas, radius, angle, 1);
+    }
     // Its own ground: black when vivid; otherwise the colour asked for, if any. Not under a
     // triangle: the triangle is the blob, and a disc behind it would be a second shape.
     if (look.triangle) {
