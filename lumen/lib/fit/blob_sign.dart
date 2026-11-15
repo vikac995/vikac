@@ -24,6 +24,7 @@ class BlobLook {
     this._draw, {
     this.spectrum = false,
     this.triangle = false,
+    this.turns = false,
   });
 
   /// What is saved and what Android is told. Never shown.
@@ -36,12 +37,16 @@ class BlobLook {
 
   /// Its outline is the large triangle: it can reshape into the cog (see [BlobSign.paintCog]).
   final bool triangle;
+
+  /// On Prism's button it turns to say what is open: a sixth of a turn with the blobs out,
+  /// half a turn with the app list up. The others stay pointing up, and give a bouncy shot.
+  final bool turns;
 }
 
 abstract final class BlobSign {
   static const List<BlobLook> looks = <BlobLook>[
     BlobLook('pearls', 'Pearls', _pearls),
-    BlobLook('petals', 'Petals', _petals),
+    BlobLook('petals', 'Petals', _petals, turns: true),
     BlobLook('lotus', 'Lotus', _lotus),
     BlobLook('beam', 'Beam', _beam, spectrum: true),
     BlobLook('bands', 'Bands', _bands, spectrum: true),
@@ -49,8 +54,36 @@ abstract final class BlobSign {
     BlobLook('bandswhite', 'Lined', _bandsWhite, spectrum: true),
     BlobLook('vivid', 'Vivid', _vivid),
     BlobLook('halo', 'Halo', _halo, spectrum: true),
-    BlobLook('triangle', 'Triangle', _triangle, spectrum: true, triangle: true),
-    BlobLook('window', 'Window', _window, spectrum: true, triangle: true),
+    BlobLook(
+      'triangle',
+      'Triangle',
+      _triangle,
+      spectrum: true,
+      triangle: true,
+      turns: true,
+    ),
+    BlobLook(
+      'vividtriangle',
+      'Vivid Triangle',
+      _vividTriangle,
+      triangle: true,
+      turns: true,
+    ),
+    BlobLook(
+      'window',
+      'Window',
+      _window,
+      spectrum: true,
+      triangle: true,
+      turns: true,
+    ),
+    BlobLook(
+      'vividwindow',
+      'Vivid Window',
+      _vividWindow,
+      triangle: true,
+      turns: true,
+    ),
   ];
 
   static BlobLook of(String id) =>
@@ -428,7 +461,7 @@ void _lotus(Canvas c, double r, List<Color> cs, double a) {
 /// Beam: a short white beam into a prism set low in the glass, and out of it the colours,
 /// melting into one another, wide across the rest of the glass to its edge.
 void _beam(Canvas c, double r, List<Color> cs, double a) {
-  final Offset at = -_dir(a) * r * 0.42;
+  final Offset at = -_dir(a) * r * 0.6;
   final double half = (cs.length == 1 ? 24 : 52) * math.pi / 180;
   _fan(c, at, r * 2.2, cs, a, half);
   c.drawCircle(
@@ -457,13 +490,13 @@ void _beam(Canvas c, double r, List<Color> cs, double a) {
         ..color = Colors.white
         ..strokeWidth = r * 0.08,
     );
-  final Path prism = _upright(at + Offset(0, r * 0.02), r * 0.3);
+  final Path prism = _upright(at, r * 0.45);
   c
     ..drawPath(
       prism,
       Paint()
         ..shader = ui.Gradient.linear(
-          at - Offset(0, r * 0.3),
+          at - Offset(0, r * 0.45),
           at + Offset(0, r * 0.2),
           const <Color>[Color(0xFF39424C), Color(0xFF161B20)],
         ),
@@ -491,27 +524,38 @@ void _bandsClear(Canvas c, double r, List<Color> cs, double a) =>
 void _bandsWhite(Canvas c, double r, List<Color> cs, double a) =>
     _cutBands(c, r, cs, a, Colors.white, 0.018);
 
+/// The light's own colours, at full strength, for the Vivid looks.
+const List<Color> _vividColours = <Color>[
+  Color(0xFFF2334B),
+  Color(0xFFFF7A2B),
+  Color(0xFFFFD21F),
+  Color(0xFF34C94A),
+  Color(0xFF1F7BF2),
+  Color(0xFF8A3FF0),
+];
+
+/// Black glass under a Vivid look.
+void _black(Canvas c, double r) =>
+    c.drawCircle(Offset.zero, r, Paint()..color = const Color(0xF2000000));
+
+/// Vivid Triangle: Triangle on black glass, in the light's own colours.
+void _vividTriangle(Canvas c, double r, List<Color> cs, double a) {
+  _black(c, r);
+  _triangle(c, r, _vividColours, a);
+}
+
+/// Vivid Window: Window on black glass, in the light's own colours.
+void _vividWindow(Canvas c, double r, List<Color> cs, double a) {
+  _black(c, r);
+  _window(c, r, _vividColours, a);
+}
+
 /// Vivid: black glass and the full rainbow at full strength, cut clean. The colours are the
 /// light's own here, not the blobs': always these six, however many blobs there are.
 void _vivid(Canvas c, double r, List<Color> cs, double a) {
-  c.drawCircle(Offset.zero, r, Paint()..color = const Color(0xF2000000));
-  _cutBands(
-    c,
-    r,
-    const <Color>[
-      Color(0xFFF2334B),
-      Color(0xFFFF7A2B),
-      Color(0xFFFFD21F),
-      Color(0xFF34C94A),
-      Color(0xFF1F7BF2),
-      Color(0xFF8A3FF0),
-    ],
-    a,
-    null,
-    0,
-    // (No white shine: it would grey the black.)
-    shine: 0,
-  );
+  _black(c, r);
+  // (No white shine: it would grey the black.)
+  _cutBands(c, r, _vividColours, a, null, 0, shine: 0);
 }
 
 /// The flat bands of the looks above. [line] is drawn between the colours, [width] of
@@ -527,7 +571,7 @@ void _cutBands(
   double shine = 0.6,
 }) {
   final int n = cs.length;
-  final Offset at = -_dir(a) * r * 0.42;
+  final Offset at = -_dir(a) * r * 0.6;
   final double half = (n == 1 ? 24 : 54) * math.pi / 180, each = 2 * half / n;
   const Color dark = Color(0xFF0B0E11);
   Path band(int k, double reach) => Path()
@@ -577,7 +621,7 @@ void _cutBands(
         ..color = Colors.white
         ..strokeWidth = r * 0.13,
     );
-  final Path prism = _upright(at + Offset(0, r * 0.02), r * 0.34);
+  final Path prism = _upright(at, r * 0.45);
   // The bands again inside the prism, paler: the light seen through the glass.
   c
     ..drawPath(prism, Paint()..color = dark)

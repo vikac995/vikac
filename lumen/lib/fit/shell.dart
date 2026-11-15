@@ -191,9 +191,29 @@ class _ShellState extends State<Shell>
   // How far the button's sign has turned, in radians: see [_ButtonSign].
   late final SpringValue _signTurn = SpringValue(this, spring: Motions.snappy);
 
+  // The bouncy shot of a sign that does not turn: how far it has jumped up out of its place
+  // (it starts with a kick and springs back, a little past). At rest 0, and nothing runs.
+  late final SpringValue _signShot = SpringValue(
+    this,
+    spring: Motions.expressiveFast,
+  );
+
+  // What was open when the sign was last told: 0 nothing, 1 the blobs, 2 the app list.
+  int _signWas = 0;
+
   /// The cog is the button's sign only while the blobs are out and being changed.
   void _signSync() {
-    _signTurn.animateTo(_drawerOpen ? math.pi : (_open ? math.pi / 3 : 0));
+    final int now = _drawerOpen ? 2 : (_open ? 1 : 0);
+    if (BlobSign.of(Apps.instance.blobLook).turns) {
+      _signTurn.animateTo(now == 2 ? math.pi : (now == 1 ? math.pi / 3 : 0));
+    } else {
+      // The others stay pointing up, and shoot out a little as something opens.
+      _signTurn.animateTo(0);
+      if (now != 0 && now != _signWas) {
+        _signShot.animateTo(0, velocity: 14);
+      }
+    }
+    _signWas = now;
     final bool want = _editing && _open;
     if (want && _cog.target != 1 && Apps.instance.takeCogHint()) {
       _cogHint.forward(from: 0);
@@ -664,6 +684,8 @@ class _ShellState extends State<Shell>
                                 Apps.instance.setBlobLook(look.id);
                                 RestBubble.instance.tellLook(look.id);
                                 Diag.instance.event('blob look: ${look.name}');
+                                // (A look that turns, or does not: the sign takes it up at once.)
+                                _signSync();
                                 setState(() {});
                               },
                               child: SizedBox(
@@ -711,6 +733,8 @@ class _ShellState extends State<Shell>
                                     const SizedBox(height: 6),
                                     Text(
                                       look.name,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
                                       style: LumenType.text(
                                         12.5,
                                         weight:
@@ -4124,6 +4148,7 @@ class _ShellState extends State<Shell>
   void dispose() {
     _cogHint.dispose();
     _signTurn.dispose();
+    _signShot.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _freeLater?.cancel();
     for (final Timer t in _fuses) {
@@ -5288,6 +5313,7 @@ class _ShellState extends State<Shell>
                           _cog,
                           _cogHint,
                           _signTurn,
+                          _signShot,
                         ]),
                         builder: (BuildContext context, Widget? _) =>
                             Transform.scale(
@@ -5342,6 +5368,7 @@ class _ShellState extends State<Shell>
                                               painter: _ButtonSign(
                                                 blobs: _fanBlobs,
                                                 turn: _signTurn.value,
+                                                shot: _signShot.value,
                                                 cog: _cog.value,
                                                 look: Apps.instance.blobLook,
                                                 hint: _cogHint.value,
@@ -7036,6 +7063,7 @@ class _ButtonSign extends CustomPainter {
     required this.blobs,
     required this.turn,
     required this.cog,
+    this.shot = 0,
     this.look = '',
     this.hint = 1,
     this.rim = 0,
@@ -7043,6 +7071,9 @@ class _ButtonSign extends CustomPainter {
   });
   final List<(double, Color)> blobs;
   final double turn, cog;
+
+  /// The bouncy shot (see the shell's _signShot): how far the sign is out of its place.
+  final double shot;
 
   /// Which look the sign has: one of [BlobSign]'s.
   final String look;
@@ -7082,6 +7113,12 @@ class _ButtonSign extends CustomPainter {
         _PlusMark(fold: c * 0.6).paint(canvas, size);
         canvas.restore();
       } else {
+        // The shot: up out of its place, a little larger, and back.
+        canvas
+          ..save()
+          ..translate(mid.dx, mid.dy - 6 * u * shot)
+          ..scale(1 + 0.12 * shot)
+          ..translate(-mid.dx, -mid.dy);
         BlobSign.paint(
           canvas,
           size,
@@ -7094,6 +7131,7 @@ class _ButtonSign extends CustomPainter {
           // (A triangle only fades: the cog reshapes out of that very outline.)
           shrink: !BlobSign.of(look).triangle,
         );
+        canvas.restore();
       }
     }
     if (c > 0.001) {
@@ -7162,6 +7200,7 @@ class _ButtonSign extends CustomPainter {
   @override
   bool shouldRepaint(_ButtonSign old) =>
       old.turn != turn ||
+      old.shot != shot ||
       old.cog != cog ||
       old.look != look ||
       old.hint != hint ||

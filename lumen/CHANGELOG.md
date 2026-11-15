@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 138 (15 November 2026)
+
+**File:** `releases/prism-build-138.apk`
+
+Needs Play Protect paused to install. Can be installed over build 137.
+
+- **Two new looks: Vivid Triangle and Vivid Window.** Triangle and Window on black glass, in the light's own six colours at full strength (the same as Vivid's), not your blobs'. The Look row is thirteen; the longer names take two lines.
+- **Only the triangles and Petals turn.** Triangle, Vivid Triangle, Window, Vivid Window and Petals turn on Prism's button as before: a sixth of a turn with the blobs out, half a turn with the app list up. All the others stay pointing up, and as the blobs or the app list open they give a bouncy shot: the sign jumps up a little out of its place, a little larger, and springs back past it once. (A first try at your idea: easy to change.) Choosing a look while something is open takes it up at once.
+- **The prism larger and set back**, in Beam, Bands, Clear, Lined and Vivid: half as large again, and further down in the glass, so its two lower corners nearly touch the rim. The white beam into it is shorter, and the colours have more of the glass.
+- On the floating blob every look still leans toward where the blobs will come out, as before.
+
+**Checked:** it compiles; in my preview: Beam, Bands, Vivid, Vivid Triangle and Vivid Window on Prism's button, Vivid Window turned with the blobs out (the colours where they were), the Look row with all thirteen; the automatic test in the preview.
+**Not checked:** on a phone. The shot is over in a fraction of a second and my preview takes still pictures, so I have not seen it in motion.
+
 ## Prism, build 137 (15 November 2026)
 
 **File:** `releases/prism-build-137.apk`

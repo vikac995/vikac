@@ -35,7 +35,9 @@ object BlobLooks {
         "vivid" to Look(false, ::vivid),
         "halo" to Look(true, ::halo),
         "triangle" to Look(true, ::triangle),
+        "vividtriangle" to Look(false, ::vividTriangle),
         "window" to Look(true, ::window),
+        "vividwindow" to Look(false, ::vividWindow),
     )
 
     private val clip = Path()
@@ -195,7 +197,7 @@ object BlobLooks {
 
     /** Beam: a short white beam into a prism set low in the glass, the colours wide across the rest. */
     private fun beam(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
-        val x = -cos(a) * r * 0.42f; val y = -sin(a) * r * 0.42f
+        val x = -cos(a) * r * 0.6f; val y = -sin(a) * r * 0.6f
         fan(c, x, y, r * 2.2f, cs, a, (if (cs.size == 1) 24.0 else 52.0) * Math.PI / 180.0, p)
         glow(c, x, y, r * 0.95f, Color.WHITE, 0.6f, p)
         p.style = Paint.Style.STROKE
@@ -203,9 +205,9 @@ object BlobLooks {
         c.drawLine(-cos(a) * r * 1.1f, -sin(a) * r * 1.1f, x, y, p)
         p.color = Color.WHITE; p.strokeWidth = r * 0.08f
         c.drawLine(-cos(a) * r * 1.1f, -sin(a) * r * 1.1f, x, y, p)
-        val prism = upright(x, y + r * 0.02f, r * 0.3f)
+        val prism = upright(x, y, r * 0.45f)
         p.style = Paint.Style.FILL
-        p.shader = LinearGradient(x, y - r * 0.3f, x, y + r * 0.2f, 0xFF39424C.toInt(), 0xFF161B20.toInt(), Shader.TileMode.CLAMP)
+        p.shader = LinearGradient(x, y - r * 0.45f, x, y + r * 0.25f, 0xFF39424C.toInt(), 0xFF161B20.toInt(), Shader.TileMode.CLAMP)
         c.drawPath(prism, p)
         p.shader = null
         p.style = Paint.Style.STROKE
@@ -222,21 +224,36 @@ object BlobLooks {
     /** Lined: the bands with a very thin white line between them. */
     private fun bandsWhite(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) = cutBands(c, r, cs, a, Color.WHITE, 0.018f, p)
 
-    /**
-     * Vivid: black glass and the full rainbow at full strength, cut clean. The colours are the
-     * light's own here, not the blobs': always these six, however many blobs there are.
-     */
-    private fun vivid(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
+    /** The light's own colours, at full strength, for the Vivid looks. */
+    private val vividColours = intArrayOf(
+        0xFFF2334B.toInt(), 0xFFFF7A2B.toInt(), 0xFFFFD21F.toInt(), 0xFF34C94A.toInt(), 0xFF1F7BF2.toInt(), 0xFF8A3FF0.toInt(),
+    )
+
+    /** Black glass under a Vivid look. */
+    private fun black(c: Canvas, r: Float, p: Paint) {
         p.style = Paint.Style.FILL
         p.shader = null
         p.color = 0xF2000000.toInt()
         c.drawCircle(0f, 0f, r, p)
-        cutBands(
-            c, r,
-            intArrayOf(0xFFF2334B.toInt(), 0xFFFF7A2B.toInt(), 0xFFFFD21F.toInt(), 0xFF34C94A.toInt(), 0xFF1F7BF2.toInt(), 0xFF8A3FF0.toInt()),
-            // (No white shine: it would grey the black.)
-            a, 0, 0f, p, 0f,
-        )
+    }
+
+    /** Vivid: black glass and the full rainbow at full strength, cut clean. */
+    private fun vivid(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
+        black(c, r, p)
+        // (No white shine: it would grey the black.)
+        cutBands(c, r, vividColours, a, 0, 0f, p, 0f)
+    }
+
+    /** Vivid Triangle: Triangle on black glass, in the light's own colours. */
+    private fun vividTriangle(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
+        black(c, r, p)
+        triangle(c, r, vividColours, a, p)
+    }
+
+    /** Vivid Window: Window on black glass, in the light's own colours. */
+    private fun vividWindow(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
+        black(c, r, p)
+        window(c, r, vividColours, a, p)
     }
 
     /**
@@ -246,7 +263,7 @@ object BlobLooks {
      */
     private fun cutBands(c: Canvas, r: Float, cs: IntArray, a: Double, line: Int, width: Float, p: Paint, shine: Float = 0.6f) {
         val n = cs.size
-        val x = -cos(a) * r * 0.42f; val y = -sin(a) * r * 0.42f
+        val x = -cos(a) * r * 0.6f; val y = -sin(a) * r * 0.6f
         val half = (if (n == 1) 24.0 else 54.0) * Math.PI / 180.0
         val each = 2 * half / n
         val dark = 0xFF0B0E11.toInt()
@@ -273,7 +290,7 @@ object BlobLooks {
         p.strokeCap = Paint.Cap.BUTT
         p.color = Color.WHITE; p.strokeWidth = r * 0.13f
         c.drawLine(-cos(a) * r * 1.1f, -sin(a) * r * 1.1f, x, y, p)
-        val prism = Path(upright(x, y + r * 0.02f, r * 0.34f))
+        val prism = Path(upright(x, y, r * 0.45f))
         p.style = Paint.Style.FILL
         p.color = dark
         c.drawPath(prism, p)
