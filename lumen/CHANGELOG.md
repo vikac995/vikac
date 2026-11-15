@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 157 (15 November 2026)
+
+**File:** `releases/prism-build-157.apk`
+
+Needs Play Protect paused to install. Can be installed over build 156.
+
+**Hold a blob to change it. Everywhere, one move.**
+
+- **In Prism:** hold a finger still on a blob and its app list comes up at once, to choose what goes in its place. Close the list without choosing and the blobs are back out as they were; choose, and they come back out with the new one.
+- **On the Sidekick:** hold a finger still on one of its blobs and Prism comes forward with the app list for that blob, in the Sidekick's own menu. Choose (or close the list) and Prism steps back to the app you were in. Before, a hold only put the blobs in edit mode, and a second tap opened Prism on the shared edit screen.
+- **The same wait in both:** Prism now uses Android's own hold time, the one the Sidekick has always used (the one you said is right), instead of Flutter's.
+- **When it does not trigger:** a finger that moves before the wait is a drag, never a hold, however long it then stays. A finger that only trembles a pixel or two still counts as held. Not while the blobs are flying out or back in, not while the app list is already up, not while a blob is being dragged.
+- **Removing, reordering, setting the two-finger swipes, names on or off:** still there, one step away. Hold the centre button while the blobs are out, as before.
+
+**Checked:** it compiles, both sides; the automatic test in my preview, 60 of 64 with the usual 4 misses. It has 4 new checks, all right: a hold opens that blob's list; closing it leaves the blobs out as they were; a trembling finger still counts as a hold on the right blob; a blob moved at once is a drag with no list.
+**Changed in the test:** the checks that used a hold on a blob to start edit mode now hold the centre button, which still starts it. The check "held and then dragged, the first is now the last" tested the old hold-then-drag and is replaced by the new checks above; dragging while in edit mode is still checked, both ways.
+**Not checked:** on a phone. The Sidekick side (Prism coming forward, then stepping back to the app you were in) is Android only and cannot run in my preview.
+
 ## Prism, build 156 (15 November 2026)
 
 **File:** `releases/prism-build-156.apk`

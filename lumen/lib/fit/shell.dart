@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart' show LongPressGestureRecognizer;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -338,6 +339,24 @@ class _ShellState extends State<Shell>
   // back ends it.
   bool _editing = false;
   int? _editSlot;
+
+  /// The place being changed is the Sidekick's (its own menu, not Prism's), and Prism came
+  /// forward only for it: once chosen, it steps back to the app that was in front.
+  bool _pickSide = false, _pickBack = false;
+
+  /// How long a finger held still on a blob counts as a hold: Android's own, as on the Sidekick.
+  int _holdMs = 450;
+
+  /// Held still on blob [i]: that blob is changed, straight away.
+  void _heldBlob(int i) {
+    if (!_open || _drawerOpen || _dragI != null || !mounted) {
+      return;
+    }
+    Haptics.settle();
+    Diag.instance.event('blob: held, change');
+    setState(() => _editSlot = i);
+    _setDrawer(true);
+  }
 
   void _setEditing(bool v) {
     if (v == _editing) {
@@ -1692,8 +1711,6 @@ class _ShellState extends State<Shell>
   int? _dragI;
   final ValueNotifier<Offset> _dragAt = ValueNotifier<Offset>(Offset.zero);
   Offset _dragGrab = Offset.zero;
-  // Where the finger was when a hold on a blob was recognised.
-  Offset _holdFrom = Offset.zero;
 
   bool _armed = false;
   // Let go anywhere else, it goes back to its place: 1 is where it was let go, 0 is home.
@@ -1805,6 +1822,15 @@ class _ShellState extends State<Shell>
   @override
   void initState() {
     super.initState();
+    // How long a hold is on this phone, the same as the Sidekick's. (Not on a phone: 450 ms.)
+    const MethodChannel('lumen/device')
+        .invokeMethod<int>('holdMs')
+        .then((int? ms) {
+          if (ms != null && mounted) {
+            setState(() => _holdMs = ms);
+          }
+        })
+        .catchError((Object _) {});
     Diag.instance.finished.addListener(_showReport);
     WidgetsBinding.instance.addObserver(this);
     Diag.instance.autoScript = _robot;
@@ -1906,16 +1932,24 @@ class _ShellState extends State<Shell>
       MethodCall call,
     ) async {
       if (call.method == 'editSlot' && mounted) {
-        // A blob was tapped in the floating lens's own menu while its blobs were being
-        // changed: Prism has come to the front to choose what takes its place.
+        // A blob was held in the Sidekick's menu: Prism has come to the front to choose what
+        // takes its place, in the Sidekick's own menu.
         if (_sheetOpen) {
           _closeSheet();
         }
-        // Afterwards Prism's own blobs are out, being changed, as they would be here: showing
-        // the side Blob's menu, which is the one the blob was tapped in.
-        _editing = true;
-        _showMenu(side: true);
-        _pickFor((call.arguments as num).toInt().clamp(0, _n - 1));
+        final Object? a = call.arguments;
+        final int slot = ((a is Map ? a['slot'] : a) as num).toInt().clamp(
+          0,
+          _n - 1,
+        );
+        if (_editing) {
+          _setEditing(false);
+        }
+        _pickSide = true;
+        _pickBack = a is Map && a['back'] == true;
+        BlobSlots.instance.show(side: true);
+        setState(() => _editSlot = slot);
+        _setDrawer(true);
         return;
       }
       if (call.method == 'notes') {
@@ -2411,10 +2445,21 @@ class _ShellState extends State<Shell>
         t.check('blobs: closed after opening and closing three times', !_open);
         await Robot.tap(_home, after: 800);
         t.check('blobs: a tap on the button opens them', _open && shown() == 5);
+        // Held still, a blob is changed at once: its own app list comes up.
         await t.scene('holding a blob', () async {
-          await Robot.hold(seat(2), after: 500);
+          await Robot.hold(seat(2), after: 900);
         });
-        t.check('changing: holding a blob starts it', _editing && _open);
+        t.check(
+          'hold: holding a blob opens the app list for that blob',
+          _drawerOpen && _editSlot == 2 && !_editing,
+        );
+        await Robot.tap(_home, after: 900);
+        t.check(
+          'hold: closed without choosing, the blobs are back out as they were',
+          _open && !_drawerOpen && !_editing && shown() == 5,
+        );
+        await Robot.hold(_home, ms: 650, after: 500);
+        t.check('changing: holding the button starts it', _editing && _open);
         t.check(
           'sign: while the blobs are being changed it is the cog',
           _cog.target == 1,
@@ -2431,7 +2476,7 @@ class _ShellState extends State<Shell>
           'changing: a tap beside the blobs ends it first',
           !_editing && _open,
         );
-        await Robot.hold(seat(2), after: 500);
+        await Robot.hold(_home, ms: 650, after: 500);
         final Offset? names = Robot.spot('names');
         t.check('names: the switch is there while changing', names != null);
         if (names != null) {
@@ -2568,41 +2613,68 @@ class _ShellState extends State<Shell>
           lensOf.pinned.value == null,
           '${lensOf.pinned.value}',
         );
-        // The same while the blobs are being changed. First held, then dragged in one touch.
+        // A finger held on a blob that trembles a pixel or two is still held: that blob is
+        // changed, and nothing is moved.
         if (!_open) {
           await Robot.tap(_home, after: 800);
         }
         String order() =>
             <String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(' ');
-        await t.scene(
-          'holding a blob, then dragging it without letting go',
-          () async {
-            await Robot.drag(
-              <Offset>[
-                seat(0),
-                seat(0) + const Offset(0, 1),
-                seat(0) + const Offset(0, 2),
-                seat(0) + const Offset(0, 1),
-                seat(1),
-                seat(2),
-                seat(3),
-                seat(4),
-              ],
-              legMs: 220,
-              dwell: 160,
-              after: 900,
-            );
-          },
-        );
+        final String before = order();
+        await t.scene('a blob held with a trembling finger', () async {
+          await Robot.drag(
+            <Offset>[
+              seat(0),
+              seat(0) + const Offset(0, 1),
+              seat(0) + const Offset(0, 2),
+              seat(0) + const Offset(0, 1),
+            ],
+            legMs: 220,
+            dwell: 160,
+            after: 900,
+          );
+        });
         t.check(
-          'changing: held and then dragged, the blobs can be changed and the first is now the last',
+          'hold: a trembling finger still holds, and that blob is the one changed',
+          _drawerOpen && _editSlot == 0 && order() == before,
+          '${_drawerOpen ? 'list up for ${_editSlot ?? '-'}' : 'no list'}; ${order()}',
+        );
+        if (_drawerOpen) {
+          await Robot.tap(_home, after: 900);
+        }
+        // Moved at once, it is a drag: no app list, however long it then takes.
+        await t.scene('a blob dragged away at once and let go', () async {
+          await Robot.drag(
+            <Offset>[seat(0), seat(0) - const Offset(0, 120), seat(0)],
+            legMs: 260,
+            after: 900,
+          );
+        });
+        t.check(
+          'hold: a blob moved at once is a drag, and no app list comes up',
+          !_drawerOpen && order() == before,
+          '${_drawerOpen ? 'list up' : 'no list'}; ${order()}',
+        );
+        if (!_open) {
+          await Robot.tap(_home, after: 800);
+        }
+        if (!_editing) {
+          await Robot.hold(_home, ms: 650, after: 600);
+        }
+        await t.scene('dragging a blob while they are being changed', () async {
+          await Robot.drag(
+            <Offset>[seat(0), seat(1), seat(2), seat(3), seat(4)],
+            legMs: 220,
+            dwell: 160,
+            after: 900,
+          );
+        });
+        t.check(
+          'changing: dragged, it goes to another seat, and they can still be changed',
           _editing && _pinKey(4) == 'action:0',
           '${_editing ? 'changing' : 'not changing'}; ${order()}',
         );
-        if (!_editing) {
-          await Robot.hold(seat(2), after: 600);
-        }
-        await t.scene('dragging a blob while they are being changed', () async {
+        await t.scene('and dragged back', () async {
           await Robot.drag(
             <Offset>[seat(4), seat(3), seat(2), seat(1), seat(0)],
             legMs: 220,
@@ -2611,7 +2683,7 @@ class _ShellState extends State<Shell>
           );
         });
         t.check(
-          'changing: dragged, it goes to another seat, and they can still be changed',
+          'changing: dragged back, it is where it was, and they can still be changed',
           _editing && _pinKey(0) == 'action:0' && _pinKey(4) == 'action:4',
           '${_editing ? 'changing' : 'not changing'}; ${order()}',
         );
@@ -2643,7 +2715,7 @@ class _ShellState extends State<Shell>
         if (!_open) {
           await Robot.tap(_home, after: 800);
         }
-        await Robot.hold(seat(2), after: 600);
+        await Robot.hold(_home, ms: 650, after: 600);
         final Offset? side = Robot.spot('gesture2');
         t.check(
           'swipes: their places are shown while the blobs are being changed',
@@ -4229,8 +4301,21 @@ class _ShellState extends State<Shell>
       ..event(v ? 'drawer open' : 'drawer close');
     Haptics.settle();
     if (choosing) {
-      // Chosen or not, the blobs come back out, still being changed.
-      _setOpen(true);
+      final bool side = _pickSide, back = _pickBack;
+      _pickSide = _pickBack = false;
+      if (side) {
+        // The Sidekick's place was changed: Prism's own menu is the one shown again.
+        _showMenu(side: false);
+      }
+      if (back) {
+        // Prism came forward only for this: back to the app you were in.
+        const MethodChannel('lumen/device')
+            .invokeMethod<void>('toBack')
+            .catchError((Object _) {});
+      } else {
+        // Chosen or not, the blobs come back out, showing what is there now.
+        _setOpen(true);
+      }
     }
   }
 
@@ -4386,7 +4471,7 @@ class _ShellState extends State<Shell>
         _editing = false;
       }
     });
-    if (!_editing) {
+    if (!_editing && !_pickSide) {
       _showMenu(side: false);
     }
     _signSync();
@@ -5159,153 +5244,155 @@ class _ShellState extends State<Shell>
                           ignoring: !_open,
                           child: Opacity(
                             opacity: (p * 12).clamp(0.0, 1.0),
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              // A tap uses it. Picked up and put down somewhere, it floats
-                              // there; on the button, or flicked at it, the button shoots it out
-                              // to the side. Held, all the blobs can be changed: each wears an
-                              // edit mark, and a tap on one then changes that one.
-                              // While the blobs are being changed, a tap on the red minus
-                              // takes this one away and a tap anywhere else on it changes it.
-                              // (The minus hangs over the blob's corner; where the tap landed
-                              // is worked out here so that every part of it answers.)
-                              onTapUp: (TapUpDetails d) {
-                                if (!_editing) {
-                                  _blobTap(i);
-                                  return;
-                                }
-                                final Offset from =
-                                    d.localPosition -
-                                    const Offset(
-                                      (_blob + 40) / 2,
-                                      8 + _blob / 2,
-                                    );
-                                if (!empty &&
-                                    (from - const Offset(-21, -21)).distance <
-                                        21) {
-                                  _removeBlob(i);
-                                } else {
-                                  _pickFor(i);
-                                }
+                            // Held still: this blob is changed, straight away, after the same
+                            // wait as on the Sidekick. Moved first, it is a drag and never a hold.
+                            child: RawGestureDetector(
+                              gestures: <Type, GestureRecognizerFactory>{
+                                LongPressGestureRecognizer:
+                                    GestureRecognizerFactoryWithHandlers<
+                                      LongPressGestureRecognizer
+                                    >(
+                                      () => LongPressGestureRecognizer(
+                                        duration: Duration(
+                                          milliseconds: _holdMs,
+                                        ),
+                                      ),
+                                      (LongPressGestureRecognizer r) =>
+                                          r.onLongPress = () => _heldBlob(i),
+                                    ),
                               },
-                              // Held: the blobs can be changed. Held and then moved without
-                              // letting go, it comes along, as on any drag.
-                              onLongPressStart: (LongPressStartDetails d) {
-                                _holdFrom = d.globalPosition;
-                                _setEditing(true);
-                              },
-                              onLongPressMoveUpdate:
-                                  (LongPressMoveUpdateDetails d) {
-                                    if (_dragI != i) {
-                                      if ((d.globalPosition - _holdFrom)
-                                              .distance <
-                                          10) {
-                                        return;
-                                      }
-                                      grab(i, d.globalPosition);
-                                    }
-                                    _blobDrag(
-                                      i,
-                                      d.globalPosition - _dragGrab,
-                                      bc,
-                                    );
-                                  },
-                              onLongPressEnd: (LongPressEndDetails d) =>
-                                  _blobDrop(i, bc, d.velocity.pixelsPerSecond),
-                              // Dragged. While the blobs are being changed that only puts them
-                              // in another order.
-                              onPanStart: (DragStartDetails d) =>
-                                  grab(i, d.globalPosition),
-                              onPanUpdate: (DragUpdateDetails d) => _blobDrag(
-                                i,
-                                d.globalPosition - _dragGrab,
-                                bc,
-                              ),
-                              onPanEnd: (DragEndDetails d) =>
-                                  _blobDrop(i, bc, d.velocity.pixelsPerSecond),
-                              onPanCancel: () => _blobDrop(i, bc, Offset.zero),
-                              child: Column(
-                                children: <Widget>[
-                                  const SizedBox(height: 8),
-                                  Transform(
-                                    alignment: Alignment.center,
-                                    transform: Matrix4.rotationZ(ang)
-                                      ..scaleByDouble(
-                                        s * back * (1 + st) * (held ? 1.08 : 1),
-                                        s *
-                                            back *
-                                            (1 - st * 0.5) *
-                                            (held ? 1.08 : 1),
-                                        1,
-                                        1,
-                                      )
-                                      ..rotateZ(-ang),
-                                    // While the blobs are being changed each one wears its marks:
-                                    // the pencil on the right, to change it, and the red minus
-                                    // on the left, to take it away.
-                                    child: _editing
-                                        ? Stack(
-                                            clipBehavior: Clip.none,
-                                            children: <Widget>[
-                                              _blobDisc(i),
-                                              const Positioned(
-                                                right: -4,
-                                                top: -4,
-                                                child: _EditMark(
-                                                  icon: Icons.edit_rounded,
-                                                ),
-                                              ),
-                                              if (!empty)
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                // A tap uses it. Picked up and put down somewhere, it floats
+                                // there; on the button, or flicked at it, the button shoots it out
+                                // to the side. Held, all the blobs can be changed: each wears an
+                                // edit mark, and a tap on one then changes that one.
+                                // While the blobs are being changed, a tap on the red minus
+                                // takes this one away and a tap anywhere else on it changes it.
+                                // (The minus hangs over the blob's corner; where the tap landed
+                                // is worked out here so that every part of it answers.)
+                                onTapUp: (TapUpDetails d) {
+                                  if (!_editing) {
+                                    _blobTap(i);
+                                    return;
+                                  }
+                                  final Offset from =
+                                      d.localPosition -
+                                      const Offset(
+                                        (_blob + 40) / 2,
+                                        8 + _blob / 2,
+                                      );
+                                  if (!empty &&
+                                      (from - const Offset(-21, -21)).distance <
+                                          21) {
+                                    _removeBlob(i);
+                                  } else {
+                                    _pickFor(i);
+                                  }
+                                },
+                                // Dragged. While the blobs are being changed that only puts them
+                                // in another order.
+                                onPanStart: (DragStartDetails d) =>
+                                    grab(i, d.globalPosition),
+                                onPanUpdate: (DragUpdateDetails d) => _blobDrag(
+                                  i,
+                                  d.globalPosition - _dragGrab,
+                                  bc,
+                                ),
+                                onPanEnd: (DragEndDetails d) => _blobDrop(
+                                  i,
+                                  bc,
+                                  d.velocity.pixelsPerSecond,
+                                ),
+                                onPanCancel: () =>
+                                    _blobDrop(i, bc, Offset.zero),
+                                child: Column(
+                                  children: <Widget>[
+                                    const SizedBox(height: 8),
+                                    Transform(
+                                      alignment: Alignment.center,
+                                      transform: Matrix4.rotationZ(ang)
+                                        ..scaleByDouble(
+                                          s *
+                                              back *
+                                              (1 + st) *
+                                              (held ? 1.08 : 1),
+                                          s *
+                                              back *
+                                              (1 - st * 0.5) *
+                                              (held ? 1.08 : 1),
+                                          1,
+                                          1,
+                                        )
+                                        ..rotateZ(-ang),
+                                      // While the blobs are being changed each one wears its marks:
+                                      // the pencil on the right, to change it, and the red minus
+                                      // on the left, to take it away.
+                                      child: _editing
+                                          ? Stack(
+                                              clipBehavior: Clip.none,
+                                              children: <Widget>[
+                                                _blobDisc(i),
                                                 const Positioned(
-                                                  left: -4,
+                                                  right: -4,
                                                   top: -4,
                                                   child: _EditMark(
-                                                    icon: Icons.remove_rounded,
-                                                    color: Color(0xFFE5484D),
-                                                    ink: Colors.white,
+                                                    icon: Icons.edit_rounded,
                                                   ),
                                                 ),
-                                            ],
-                                          )
-                                        : (_blobNotes(i) > 0 && p > 0.9
-                                              // An app with notifications wears their number.
-                                              ? Stack(
-                                                  clipBehavior: Clip.none,
-                                                  children: <Widget>[
-                                                    _blobDisc(i),
-                                                    Positioned(
-                                                      right: -4,
-                                                      top: -4,
-                                                      child: _noteBadge(i),
+                                                if (!empty)
+                                                  const Positioned(
+                                                    left: -4,
+                                                    top: -4,
+                                                    child: _EditMark(
+                                                      icon:
+                                                          Icons.remove_rounded,
+                                                      color: Color(0xFFE5484D),
+                                                      ink: Colors.white,
                                                     ),
-                                                  ],
-                                                )
-                                              : _blobDisc(i)),
-                                  ),
-                                  const SizedBox(height: 7),
-                                  // The name appears once the blob is nearly there, not while it is a speck.
-                                  Opacity(
-                                    opacity: held
-                                        ? 0
-                                        : ((p - 0.6) / 0.4).clamp(0.0, 1.0) *
-                                              (1 - gone) *
-                                              ((_far.value - _reachBare) /
-                                                      (_reach - _reachBare))
-                                                  .clamp(0.0, 1.0),
-                                    child: Text(
-                                      _blobName(i),
-                                      maxLines: 1,
-                                      softWrap: false,
-                                      textScaler: TextScaler.noScaling,
-                                      style: LumenType.text(
-                                        13.5,
-                                        weight: 650,
-                                        color: Colors.white,
-                                        height: 1.1,
+                                                  ),
+                                              ],
+                                            )
+                                          : (_blobNotes(i) > 0 && p > 0.9
+                                                // An app with notifications wears their number.
+                                                ? Stack(
+                                                    clipBehavior: Clip.none,
+                                                    children: <Widget>[
+                                                      _blobDisc(i),
+                                                      Positioned(
+                                                        right: -4,
+                                                        top: -4,
+                                                        child: _noteBadge(i),
+                                                      ),
+                                                    ],
+                                                  )
+                                                : _blobDisc(i)),
+                                    ),
+                                    const SizedBox(height: 7),
+                                    // The name appears once the blob is nearly there, not while it is a speck.
+                                    Opacity(
+                                      opacity: held
+                                          ? 0
+                                          : ((p - 0.6) / 0.4).clamp(0.0, 1.0) *
+                                                (1 - gone) *
+                                                ((_far.value - _reachBare) /
+                                                        (_reach - _reachBare))
+                                                    .clamp(0.0, 1.0),
+                                      child: Text(
+                                        _blobName(i),
+                                        maxLines: 1,
+                                        softWrap: false,
+                                        textScaler: TextScaler.noScaling,
+                                        style: LumenType.text(
+                                          13.5,
+                                          weight: 650,
+                                          color: Colors.white,
+                                          height: 1.1,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),
@@ -5592,7 +5679,7 @@ class _ShellState extends State<Shell>
                         _holdTimer?.cancel();
                         if (_open && !_editing && !_drawerOpen) {
                           _holdTimer = Timer(
-                            const Duration(milliseconds: 450),
+                            Duration(milliseconds: _holdMs),
                             () {
                               if (_downAt != null &&
                                   !_moved &&

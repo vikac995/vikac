@@ -341,6 +341,13 @@ class MainActivity : FlutterActivity() {
                 val can = android.provider.Settings.canDrawOverlays(applicationContext)
                 if (can) RestBubble.showSide(applicationContext, true, out = true)
                 result.success(can)
+            } else if (call.method == "holdMs") {
+                // How long a finger held still counts as a hold, the same in Prism as on the Sidekick.
+                result.success(android.view.ViewConfiguration.getLongPressTimeout().coerceIn(300, 600))
+            } else if (call.method == "toBack") {
+                // Prism came forward only to change a Sidekick blob: it steps back to the app you were in.
+                moveTaskToBack(true)
+                result.success(null)
             } else if (call.method == "covered") {
                 // A panel is open in Prism, or none is: the side Blob steps aside meanwhile.
                 RestBubble.covered = (call.arguments as? Boolean) ?: false
@@ -3193,17 +3200,14 @@ class Floater(val timer: Boolean) {
             return -1
         }
 
-        // Held still on any blob: all of them can now be changed, and each wears an edit mark.
-        // The blob stays under the finger: moved from here without letting go, it comes along.
+        // Held still on a blob: that blob is changed, at once. Prism comes forward with the apps
+        // to choose from, for this menu's own place. (Moved first, it is a drag, never a hold.)
         private val keep = Runnable {
             val i = pressedAt
-            if (i >= 0 && !kept && opening) {
+            if (i >= 0 && !kept && !moved && dragging < 0 && opening && flying < 0) {
                 kept = true
-                if (!editing) {
-                    editing = true
-                    haptic(context, "click")
-                    invalidate()
-                }
+                pressedAt = -1
+                change(i)
             }
         }
 
@@ -3322,15 +3326,17 @@ class Floater(val timer: Boolean) {
             watcher.postDelayed({ use(c, b) }, 110)
         }
 
-        /** Tapped while the blobs are being changed: Prism comes to the front with its apps to choose from. */
+        /** Held: Prism comes to the front with its apps to choose from, for this blob's place. */
         private fun change(i: Int) {
             val c = context
             haptic(c, "click")
             val slot = if (items[i].slot >= 0) items[i].slot else i
+            // Brought forward only for this: once chosen, Prism steps back to where you were.
+            val back = !this@Floater.foreground
             close()
             openPrism(c)
             // Once Prism is in front.
-            watcher.postDelayed({ channel?.invokeMethod("editSlot", slot) }, 220)
+            watcher.postDelayed({ channel?.invokeMethod("editSlot", mapOf("slot" to slot, "back" to back)) }, 220)
         }
 
         /** Dragged out of its place and let go, at this spot: it goes into the lens. */
