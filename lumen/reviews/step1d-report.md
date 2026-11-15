@@ -1,7 +1,8 @@
 # Step 1d report: one Prism, and counting what memory holds (build 173)
 
 Asked for by the review of build 172's phone run (485 of 485). Branch
-`claude/flutter-ui-showcase-ngzfru`, based on `2d28c13`. Step 2 not started. No look or motion changed.
+`claude/flutter-ui-showcase-ngzfru`, based on `2d28c13`. Two commits: `6725ea9` (the code, the APK, the
+changelog, the handover, this report) and the one after it, which only adds the checked link here. Step 2 not started. No look or motion changed.
 
 **What has only run in the preview:** everything. Nothing in this build has run on a phone. All of
 A is Android code (only compiled), and the memory counts on Android's side read nothing in the
@@ -162,7 +163,9 @@ long test:    CHECKS: 65 right, 4 wrong, of 69
 
 **Build 173:** `Prism build 173`, `0.134.0+201`, built from the final code. NAME-OK.
 `PrismLauncher` is in its `classes.dex`. sha256
-`ff59727821f24ef9bb84f91c27309b03711ddd11fdc56942b510d3392553d657`, 18,583,802 bytes. Link: LINK_RESULT
+`ff59727821f24ef9bb84f91c27309b03711ddd11fdc56942b510d3392553d657`, 18,583,802 bytes. Link: https://github.com/vikac995/vikac/raw/6725ea9acf98d69b390d7c7ff2d944a5899cd183/lumen/releases/prism-build-173.apk
+(pinned to `6725ea9`, the commit that added the APK). Checked after the push: it answers 200, and the
+downloaded file has the same sha256 as the one built.
 
 ## For the owner on the phone
 
