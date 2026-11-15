@@ -114,17 +114,97 @@ class PrismApp extends StatelessWidget {
                                     color: Color(0xF02E7BFF),
                                     shape: StadiumBorder(),
                                   ),
-                                  child: Text(
-                                    text,
-                                    textAlign: TextAlign.center,
-                                    textScaler: TextScaler.noScaling,
-                                    style: const TextStyle(
-                                      fontFamily: 'Inter',
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                      height: 1.2,
-                                    ),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Text(
+                                        text,
+                                        textAlign: TextAlign.center,
+                                        textScaler: TextScaler.noScaling,
+                                        style: const TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                          height: 1.2,
+                                        ),
+                                      ),
+                                      // The long test and the button test: the round, the part,
+                                      // about how long is left, and a thin bar that fills.
+                                      ValueListenableBuilder<(String, double)?>(
+                                        valueListenable: Diag.instance.progress,
+                                        builder:
+                                            (
+                                              BuildContext context,
+                                              (String, double)? p,
+                                              Widget? _,
+                                            ) => p == null
+                                            ? const SizedBox.shrink()
+                                            : Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 4,
+                                                ),
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: <Widget>[
+                                                    Text(
+                                                      p.$1,
+                                                      textAlign:
+                                                          TextAlign.center,
+                                                      textScaler:
+                                                          TextScaler.noScaling,
+                                                      style: const TextStyle(
+                                                        fontFamily: 'Inter',
+                                                        fontSize: 10.5,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                        color: Color(
+                                                          0xE6FFFFFF,
+                                                        ),
+                                                        height: 1.2,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4),
+                                                    SizedBox(
+                                                      width: 180,
+                                                      height: 3,
+                                                      child: ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              1.5,
+                                                            ),
+                                                        child: Stack(
+                                                          children: <Widget>[
+                                                            const ColoredBox(
+                                                              color: Color(
+                                                                0x40FFFFFF,
+                                                              ),
+                                                              child:
+                                                                  SizedBox.expand(),
+                                                            ),
+                                                            FractionallySizedBox(
+                                                              widthFactor: p.$2
+                                                                  .clamp(
+                                                                    0.0,
+                                                                    1.0,
+                                                                  ),
+                                                              heightFactor: 1,
+                                                              child:
+                                                                  const ColoredBox(
+                                                                    color: Colors
+                                                                        .white,
+                                                                  ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
@@ -133,15 +213,21 @@ class PrismApp extends StatelessWidget {
                   ),
                   // While a test runs: Stop, at the top left, clear of everything the test touches.
                   // Only a real finger presses it; the test's own touches pass it by.
-                  ValueListenableBuilder<bool>(
-                    valueListenable: Robot.running,
-                    builder: (BuildContext context, bool on, Widget? _) => !on
+                  ListenableBuilder(
+                    listenable: Listenable.merge(<Listenable>[
+                      Robot.running,
+                      Diag.instance.progress,
+                    ]),
+                    builder: (BuildContext context, Widget? _) =>
+                        !Robot.running.value
                         ? const SizedBox.shrink()
                         : Positioned(
                             top:
                                 MediaQuery.paddingOf(context).top +
                                 (settings.showFps ? 38 : 4) +
-                                44,
+                                44 +
+                                // (Lower while the banner has its progress line.)
+                                (Diag.instance.progress.value == null ? 0 : 40),
                             left: 12,
                             child: Listener(
                               // (Translucent: the test's own touches go on to what is beneath.)
@@ -157,37 +243,43 @@ class PrismApp extends StatelessWidget {
                                     'Stopping the test, putting things back…';
                                 Robot.stop();
                               },
-                              child: Container(
-                                height: 40,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                alignment: Alignment.center,
-                                decoration: const ShapeDecoration(
-                                  color: Color(0xF0E5484D),
-                                  shape: StadiumBorder(),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    Icon(
-                                      Icons.stop_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: 6),
-                                    Text(
-                                      'Stop test',
-                                      textScaler: TextScaler.noScaling,
-                                      style: TextStyle(
-                                        fontFamily: 'Inter',
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
+                              // (The button itself takes no touch, so that the test's own touches
+                              // really do pass it by, on to whatever is under it: its coloured box
+                              // used to stop them there. On a phone, where the status bar puts it
+                              // lower, it lay over the settings' Prism | Sidekick picker.)
+                              child: IgnorePointer(
+                                child: Container(
+                                  height: 40,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  alignment: Alignment.center,
+                                  decoration: const ShapeDecoration(
+                                    color: Color(0xF0E5484D),
+                                    shape: StadiumBorder(),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Icon(
+                                        Icons.stop_rounded,
                                         color: Colors.white,
-                                        height: 1,
+                                        size: 20,
                                       ),
-                                    ),
-                                  ],
+                                      SizedBox(width: 6),
+                                      Text(
+                                        'Stop test',
+                                        textScaler: TextScaler.noScaling,
+                                        style: TextStyle(
+                                          fontFamily: 'Inter',
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.white,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),

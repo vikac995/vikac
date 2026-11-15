@@ -50,6 +50,15 @@ class TestRun {
 
   void note(String what) => notes.add(what);
 
+  /// Checks that were not made, and why: a step they depend on went wrong (and was reported
+  /// as wrong once), so making them would only report the same miss again.
+  final List<(String, String)> skipped = <(String, String)>[];
+
+  void skip(String what, String why) {
+    skipped.add((what, why));
+    Diag.instance.event('test skipped: $what ($why)');
+  }
+
   /// Asks Android's side of the test for one thing. It never throws: with no answer, the
   /// answer says so.
   ///
@@ -316,6 +325,11 @@ class TestRun {
 
   void roundStart() => _roundFrom = scenes.length;
 
+  /// Memory at the start of each part of the button test, round by round: where it grows.
+  /// (Android's readings where there are any; the whole process as Prism sees it everywhere.)
+  final List<(String, Map<String, Object?>)> memoryAt =
+      <(String, Map<String, Object?>)>[];
+
   void roundEnd(int n, Map<String, Object?> state) => rounds.add((
     n,
     _roundFrom,
@@ -462,6 +476,23 @@ class TestRun {
         );
       }
     }
+    // Part by part (the button test): where memory grows, if it does.
+    if (memoryAt.isNotEmpty) {
+      o
+        ..writeln()
+        ..writeln(
+          'MEMORY BY PART, MB, at the start of each part. "native" is what Prism and Android\'s side hold outside Java and the graphics chip; "process" is all of Prism as it sees itself.',
+        )
+        ..writeln(
+          '${'when'.padRight(40)} ${'native'.padLeft(7)} ${'graphics'.padLeft(9)} ${'java'.padLeft(5)} ${'total'.padLeft(6)} ${'process'.padLeft(8)} ${'pictures'.padLeft(9)}',
+        );
+      String mb(Object? kb) => kb is num ? (kb / 1024).round().toString() : '-';
+      for (final (String at, Map<String, Object?> m) in memoryAt) {
+        o.writeln(
+          '${at.padRight(40)} ${mb(m['mem_native']).padLeft(7)} ${mb(m['mem_graphics']).padLeft(9)} ${mb(m['mem_java']).padLeft(5)} ${mb(m['pss']).padLeft(6)} ${mb(m['rssKb']).padLeft(8)} ${mb(m['picturesKb']).padLeft(9)}',
+        );
+      }
+    }
     o.writeln();
   }
 
@@ -503,6 +534,7 @@ class TestRun {
       o.writeln(h);
     }
     final int wrong = checks.where(((String, bool, String) c) => !c.$2).length;
+    final int skips = skipped.length;
     o
       ..writeln(
         'took ${clock.elapsed.inMinutes} min ${clock.elapsed.inSeconds % 60} s  ·  one refresh is ${_f(budget)} ms',
@@ -510,7 +542,7 @@ class TestRun {
       ..writeln();
     _summary(o);
     o.writeln(
-      'CHECKS: ${checks.length - wrong} right, $wrong wrong, of ${checks.length}',
+      'CHECKS: ${checks.length - wrong} right, $wrong wrong${skips == 0 ? '' : ', $skips skipped'}, of ${checks.length + skips}',
     );
     // The same check made in several rounds is one line: how many times it was right, and
     // what was said when it was not.
@@ -530,9 +562,25 @@ class TestRun {
         );
       }
     }
+    // Skipped: how many times, and why the first time.
+    final Map<String, (int, String)> skippedByName = <String, (int, String)>{};
+    for (final (String what, String why) in skipped) {
+      final (int n, String said) = skippedByName[what] ?? (0, why);
+      skippedByName[what] = (n + 1, said);
+    }
+    for (final MapEntry<String, (int, String)> e in skippedByName.entries) {
+      final int made = (byName[e.key]?.$1 ?? 0) + (byName[e.key]?.$2 ?? 0);
+      o.writeln(
+        '  SKIPPED  ${e.key}${made > 0
+            ? '  (${e.value.$1} of ${e.value.$1 + made} times)'
+            : e.value.$1 > 1
+            ? '  (${e.value.$1} times)'
+            : ''}  [${e.value.$2}]',
+      );
+    }
     for (final MapEntry<String, (int, int, String)> e in byName.entries) {
       final (int right, int bad, String said) = e.value;
-      if (bad == 0) {
+      if (bad == 0 && !skippedByName.containsKey(e.key)) {
         o.writeln(
           '  ok     ${e.key}${right > 1 ? '  (all $right times)' : ''}${said.isEmpty ? '' : '  [$said]'}',
         );

@@ -1,10 +1,12 @@
-# Handover: Prism, after build 169 (15 November 2026)
+# Handover: Prism, after build 171 (15 November 2026)
 
 Read this first in a new chat. Then **`DESIGN.md` (the design rules: every agent follows them)**,
 `PRISM.md` (the product), the top of `CHANGELOG.md` (what each build did), and only then the code.
 Everything below was agreed with the owner of the project.
 
-**The current task** is in `tasks/` (start with `tasks/STEP1-separate-menus.md`). Each task ends with a
+**Where the work stands:** step 1 of THE PLAN (below) is **done** and accepted in review: build 170, report
+`reviews/step1-report.md`. Build 171 ("step 1b") then fixed what the first phone run of the button test
+showed (report `reviews/step1b-report.md`). Step 2 has not started. Tasks are in `tasks/`; each ends with a
 report in `reviews/` that is reviewed before the owner relies on the work. The preview scripts are in
 `tools/preview/` (see its README).
 
@@ -47,7 +49,7 @@ report in `reviews/` that is reviewed before the owner relies on the work. The p
 - **Blobs**: the round buttons that come out of either.
 - **Glass**: the magnifying glass you lift off Prism's button.
 
-## THE PLAN: separate the Sidekick from Prism (agreed, not started)
+## THE PLAN: separate the Sidekick from Prism (agreed; step 1 done in build 170)
 
 The owner's words: "Editing Sidekick menu should make the user feel like they are not editing the Prism."
 "They now work as separate entities, right?" They do not yet. This is the next work, in four builds, each
@@ -88,7 +90,8 @@ self-contained, each tested, each leaving everything working.
 
 ### The four builds
 
-1. **Separate the menus.** The Sidekick's list moves to Android (saved there); `BlobSlots` keeps only
+1. **Separate the menus. DONE in build 170** (`SidekickMenu.kt`; report `reviews/step1-report.md`). The
+   Sidekick's list moves to Android (saved there); `BlobSlots` keeps only
    Prism's; the `show(side:)` switching, `_sideKey`, `_pickSide`, `putSideAll`, `sideAsMain` go. Migrate the
    saved side list (`prism_blobs_side`) once. The Add/Remove mix-ups stop here.
 2. **The Sidekick's own settings panel**, drawn by Android over the current app: look (the six looks are
@@ -174,8 +177,8 @@ pgrep Xvfb || (Xvfb :99 -screen 0 824x1830x24 &)
 PRISM_LONG_TEST=1 timeout 590 build/linux/x64/release/bundle/lumen > long.log &
 # size the window: xdotool search --onlyvisible --name lumen | head -1 -> windowmove 0 0 windowsize 824 1830
 # then wait for "CHECKS:" in long.log.
-# The button test, one round (expect 62 of 63; the miss is an Android-only measurement); its report is
-# written to /tmp/prism_long_test.txt, not to the log:
+# The button test, one round (expect 68 of 69; the miss is an Android-only measurement); its report is
+# written to /tmp/prism_long_test.txt, not to the log. (PRISM_BUTTON_TEST=3 runs three rounds.)
 PRISM_BUTTON_TEST=1 timeout 420 build/linux/x64/release/bundle/lumen &
 ```
 

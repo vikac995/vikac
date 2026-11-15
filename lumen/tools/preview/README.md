@@ -9,9 +9,10 @@ export PATH=/opt/sdk/flutter/bin:$PATH
 cd lumen
 flutter build linux --release -t lib/fit/main.dart
 tools/preview/test.sh long      # expect 65 of 69 (3 Android-only measurements, 1 flick timing check)
-tools/preview/test.sh buttons   # expect 62 of 63 (1 Android-only measurement)
+tools/preview/test.sh buttons   # expect 68 of 69 (1 Android-only measurement)
 NOBUILD=1 tools/preview/shot.sh /tmp/a.png "xdotool mousemove 412 1738 click 1; sleep 1.2"
 ```
 
-The preview's saved state is in `/tmp/prism_*` files (blobs, look, density...). A "hold, then carry"
+A check that could not be made because a step before it went wrong is listed as SKIPPED, with why,
+and is not counted as wrong. The preview's saved state is in `/tmp/prism_*` files (blobs, look, density...). A "hold, then carry"
 check sometimes misses once from timing in this slow preview: run again before believing it.

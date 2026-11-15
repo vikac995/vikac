@@ -447,6 +447,13 @@ class _ShellState extends State<Shell>
     if (!_open || _drawerOpen || _menuFor != null || _dragI != null) {
       return;
     }
+    // A finger on a blob's place is holding that blob, not the empty space. (It can be found
+    // on the empty space there only when it came down while that blob was still flying out to
+    // its place: then the hold is neither, and nothing comes up.)
+    if (_onABlob(at)) {
+      Diag.instance.event('space held on a blob\'s place: nothing');
+      return;
+    }
     Haptics.settle();
     Diag.instance.event('space held: its menu');
     setState(() => _spaceAt = at);
@@ -965,6 +972,10 @@ class _ShellState extends State<Shell>
                           // Whose settings these are: the button in the middle, or the one at the side.
                           Segmented<bool>(
                             key: Robot.key('blobDesignFor'),
+                            segmentKeys: <Key>[
+                              Robot.key('designPrism'),
+                              Robot.key('designSidekick'),
+                            ],
                             values: const <bool>[false, true],
                             labels: const <String>['Prism', 'Sidekick'],
                             value: _designSide.value,
@@ -1430,6 +1441,23 @@ class _ShellState extends State<Shell>
       (_isEmpty(i) && !(i == 0 && _allEmpty));
 
   bool get _allEmpty => <int>[for (int k = 0; k < _n; k++) k].every(_isEmpty);
+
+  /// Where blob [i] sits once it is out: its seat round the button.
+  Offset _restAt(int i) {
+    final double a = _seatAngle(_seat[i].value);
+    return _home + Offset(-math.cos(a), -math.sin(a)) * _far.value;
+  }
+
+  /// Whether [at] is on the place of one of the blobs that are out (or of the plus), as far as
+  /// a finger on it reaches.
+  bool _onABlob(Offset at) {
+    for (int i = 0; i < _n; i++) {
+      if (!_leftOut(i) && (at - _restAt(i)).distance < _blob / 2 + 14) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   /// Gives every blob left in the menu its seat. One that was out and is back takes its seat
   /// at once; the others move over to theirs.
@@ -2513,8 +2541,11 @@ class _ShellState extends State<Shell>
     } else if (Platform.environment['PRISM_BUTTON_TEST'] != null) {
       Future<void>.delayed(
         const Duration(seconds: 9),
-        () =>
-            _longTest(rounds: 1, buttons: true, title: 'button test, dry run'),
+        () => _longTest(
+          rounds: int.tryParse(Platform.environment['PRISM_BUTTON_TEST']!) ?? 1,
+          buttons: true,
+          title: 'button test, dry run',
+        ),
       );
     } else if (Platform.environment['PRISM_LONG_TEST'] != null) {
       Future<void>.delayed(
@@ -2828,8 +2859,41 @@ class _ShellState extends State<Shell>
     final double dpr = MediaQuery.devicePixelRatioOf(context);
     final double top = MediaQuery.paddingOf(context).top;
     final RestBubble lensOf = RestBubble.instance;
-    void say(String what) =>
-        Diag.instance.banner.value = 'Test$lap: $what. Hands off, please.';
+    // Which round is running (0 while getting ready; past [rounds] afterwards), and how long
+    // the rounds have taken so far: for the progress line under the banner.
+    int roundNow = 0;
+    final Stopwatch roundsTook = Stopwatch();
+    void progress(String what) {
+      final RegExpMatch? part = RegExp(r'^(\d+) of (\d+), ').firstMatch(what);
+      final String name = what.replaceFirst(RegExp(r'^\d+ of \d+, '), '');
+      final RegExpMatch? said = RegExp(r'about (\d+) min').firstMatch(what);
+      final double was = Diag.instance.progress.value?.$2 ?? 0;
+      if (roundNow == 0) {
+        Diag.instance.progress.value = ('Getting ready', 0);
+      } else if (roundNow <= rounds && part != null) {
+        final int k = int.parse(part.group(1)!), of = int.parse(part.group(2)!);
+        final double done = ((roundNow - 1) + (k - 1) / of) / rounds;
+        final int took = roundsTook.elapsed.inSeconds;
+        final String left = done < 0.04 || took < 20
+            ? 'working out how long'
+            : 'about ${math.max(1, (took * (1 - done) / done / 60).ceil())} min left';
+        Diag.instance.progress.value = (
+          'Round $roundNow of $rounds  ·  part $k of $of  ·  $left',
+          done,
+        );
+      } else {
+        Diag.instance.progress.value = (
+          '${roundNow > rounds ? 'After the rounds' : 'Round $roundNow of $rounds'}  ·  ${said == null ? name : 'about ${said.group(1)} min left'}',
+          roundNow > rounds ? 1 : was,
+        );
+      }
+    }
+
+    void say(String what) {
+      Diag.instance.banner.value = 'Test$lap: $what. Hands off, please.';
+      progress(what);
+    }
+
     Offset tab(int i) => Offset(14 + _centre(i), _home.dy);
     Offset seat(int i) {
       final double a = _seatAngle(_seat[i].value);
@@ -3008,9 +3072,11 @@ class _ShellState extends State<Shell>
         bool flick = false,
         int settleMs = 1600,
         bool fromLens = true,
+        bool cancel = false,
       }) async {
         final Map<String, Object?> m = await t.lens(<String, Object?>{
           'op': 'press',
+          'cancel': cancel,
           'path': <List<double>>[for (final Offset o in path) px(o)],
           'fromLens': fromLens,
           'legMs': legMs,
@@ -4046,6 +4112,23 @@ class _ShellState extends State<Shell>
         }
       }
 
+      // Memory at the start of a part of the button test: Android's readings (where there are
+      // any), the whole process as Prism sees it, and Prism's own pictures.
+      Future<void> memoryAt(String part) async {
+        final Map<String, Object?> m = await t.lens(<String, Object?>{
+          'op': 'memory',
+        });
+        final (int cache, int icons) = _pictureBytes();
+        t.memoryAt.add((
+          'round $roundNow, $part',
+          <String, Object?>{
+            if (m['ok'] != false) ...m,
+            'rssKb': ProcessInfo.currentRss ~/ 1024,
+            'picturesKb': (cache + icons) ~/ 1024,
+          },
+        ));
+      }
+
       // ================================================================ the button test
       // Prism's button and the Sidekick, and every way of touching them that has gone wrong
       // before or could: holds that are not quite holds, holds that turn into drags, taps that
@@ -4095,6 +4178,7 @@ class _ShellState extends State<Shell>
       Future<void> buttonRound() async {
         // ------------------------------------------------ the button: taps
         say('1 of 6, the button: taps');
+        await memoryAt('part 1 of 6');
         await calm();
         BlobSlots.instance.putAll(five);
         await Robot.wait(500);
@@ -4126,6 +4210,7 @@ class _ShellState extends State<Shell>
 
         // ------------------------------------------------ the button: holds
         say('2 of 6, the button: holds and drags');
+        await memoryAt('part 2 of 6');
         await t.scene('holding the closed button', () async {
           await holdButton();
         });
@@ -4245,6 +4330,7 @@ class _ShellState extends State<Shell>
 
         // ------------------------------------------------ the blobs: the small menu
         say('3 of 6, a blob\'s small menu');
+        await memoryAt('part 3 of 6');
         await Robot.tap(_home, after: 900);
         await Robot.hold(seat(2), ms: _holdMs + 260, after: 600);
         t.check('menu: holding a blob brings its small menu', _menuFor == 2);
@@ -4254,81 +4340,183 @@ class _ShellState extends State<Shell>
           !_open && _menuFor == null,
           'blobs ${_open ? 'out' : 'in'}, menu $_menuFor',
         );
-        // Held while the blobs are still on their way out.
-        await Robot.tap(_home, after: 60);
+        // Held where a blob is still on its way to. (On a phone that is a moment after the tap.
+        // Where frames come slowly, as in the preview, a moment is not enough: the test waits
+        // until blob 1 has been drawn part of the way out, so that it is the same on any screen.)
+        // (Tried again, up to five times, until the finger comes down while blob 1 is drawn
+        // between a tenth and three quarters of the way out.)
+        double outAt = 1;
+        for (int tries = 0; tries < 5; tries++) {
+          if (_open) {
+            _setOpen(false);
+            await Robot.wait(900);
+          }
+          await Robot.tap(_home, after: 0);
+          for (int k = 0; k < 90 && _out[1].value < 0.1; k++) {
+            await WidgetsBinding.instance.endOfFrame;
+          }
+          outAt = _out[1].value;
+          if (outAt < 0.75 || tries == 4) {
+            break;
+          }
+        }
         await Robot.hold(seat(1), ms: _holdMs + 260, after: 700);
         t.check(
           'menu: held as the blobs come out, it is that blob\'s menu or none',
-          _menuFor == null || _menuFor == 1,
-          'menu $_menuFor',
+          (_menuFor == null || _menuFor == 1) && _spaceAt == null,
+          'blob 1 was ${(outAt * 100).round()}% of the way out; menu $_menuFor, the empty space\'s menu ${_spaceAt == null ? 'not up' : 'UP'}',
         );
-        if (_menuFor != null) {
+        if (_menuFor != null || _spaceAt != null) {
           await Robot.tap(beside, after: 500);
         }
         t.check(
           'menu: put away, the blobs stay out',
-          _open && _menuFor == null,
+          _open && _menuFor == null && _spaceAt == null,
         );
+        // From here each step starts from a known state: should the step before have gone wrong,
+        // Prism is put back as this step needs it first, so that one miss is not counted again
+        // in every step after it. Where a step's first move does not happen (no small menu, no
+        // list), that is reported once, as wrong, and the checks that depend on it are skipped.
+        Future<void> ready({List<String> want = five}) async {
+          if (_drawerOpen) {
+            _setDrawer(false);
+            await Robot.wait(900);
+          }
+          if (_menuFor != null || _spaceAt != null) {
+            _menuAway();
+            _spaceAway();
+            await Robot.wait(400);
+          }
+          if (keys().join(' ') != want.join(' ')) {
+            BlobSlots.instance.putAll(want);
+            await Robot.wait(700);
+          }
+          if (!_open) {
+            _setOpen(true);
+            await Robot.wait(900);
+          }
+        }
+
+        // Held still on blob [i]: its small menu, which the step [before] needs.
+        Future<bool> menuOf(int i, String before) async {
+          await Robot.hold(seat(i), ms: _holdMs + 260, after: 600);
+          t.check(
+            'menu: holding a blob brings its small menu',
+            _menuFor == i,
+            'before $before: menu $_menuFor',
+          );
+          return _menuFor == i;
+        }
+
+        void skip(List<String> names, String why) {
+          for (final String n in names) {
+            t.skip(n, why);
+          }
+        }
+
         // A second hold while a menu is up puts the first away, and opens nothing else.
-        await Robot.hold(seat(1), ms: _holdMs + 260, after: 600);
-        await Robot.hold(seat(3), ms: _holdMs + 260, after: 600);
-        t.check(
-          'menu: a hold elsewhere while one is up only puts it away',
-          _menuFor == null && !_drawerOpen && _open,
-          'menu $_menuFor',
-        );
+        await ready();
+        if (await menuOf(1, 'a hold elsewhere')) {
+          await Robot.hold(seat(3), ms: _holdMs + 260, after: 600);
+          t.check(
+            'menu: a hold elsewhere while one is up only puts it away',
+            _menuFor == null && _spaceAt == null && !_drawerOpen && _open,
+            'menu $_menuFor, the empty space\'s menu ${_spaceAt == null ? 'not up' : 'UP'}',
+          );
+        } else {
+          skip(<String>[
+            'menu: a hold elsewhere while one is up only puts it away',
+          ], 'the first small menu did not come up');
+        }
         // Change, and closing the list without choosing.
+        await ready();
         final List<String> before = keys();
-        await Robot.hold(seat(2), ms: _holdMs + 260, after: 600);
-        final Offset? change = Robot.spot('menuChange');
-        if (change != null) {
-          await Robot.tap(change, after: 1300);
-        }
-        t.check(
+        const List<String> changing = <String>[
           'change: the list comes up for that blob, and the button becomes it',
-          _drawerOpen && _editSlot == 2 && _face.target == 1,
-        );
-        await Robot.tap(_home, after: 1200);
-        t.check(
           'change: closed without choosing, nothing changed and the button is the sign again',
-          !_drawerOpen &&
-              _open &&
-              _face.target == 0 &&
-              keys().join(' ') == before.join(' '),
-          keys().join(' '),
-        );
-        signIs('back at the blobs, turned a sixth', math.pi / 3);
-        // Add, and closing the list without choosing.
-        await Robot.hold(seat(1), ms: _holdMs + 260, after: 600);
-        t.check(
+          'sign: back at the blobs, turned a sixth',
+        ];
+        final Offset? change = await menuOf(2, 'Change')
+            ? Robot.spot('menuChange')
+            : null;
+        if (change == null) {
+          skip(changing, 'the small menu with Change did not come up');
+        } else {
+          await Robot.tap(change, after: 1300);
+          final bool up = _drawerOpen && _editSlot == 2 && _face.target == 1;
+          t.check(changing[0], up);
+          if (!up) {
+            skip(changing.sublist(1), 'the list did not come up for it');
+          } else {
+            await Robot.tap(_home, after: 1200);
+            t.check(
+              changing[1],
+              !_drawerOpen &&
+                  _open &&
+                  _face.target == 0 &&
+                  keys().join(' ') == before.join(' '),
+              keys().join(' '),
+            );
+            signIs('back at the blobs, turned a sixth', math.pi / 3);
+          }
+        }
+        // Remove: with five there is no Add, and Remove leaves four, together in the middle.
+        await ready();
+        const List<String> removing = <String>[
           'menu: with five blobs there is no Add',
-          Robot.spot('menuAdd') == null,
-        );
-        final Offset? remove = Robot.spot('menuRemove');
-        if (remove != null) {
-          await Robot.tap(remove, after: 900);
-        }
-        t.check(
           'remove: four left, together in the middle',
-          shown() == 4 && packed(),
-          keys().join(' '),
-        );
-        await Robot.hold(seat(0), ms: _holdMs + 260, after: 600);
-        final Offset? add = Robot.spot('menuAdd');
-        if (add != null) {
-          await Robot.tap(add, after: 1300);
+        ];
+        if (!await menuOf(1, 'Remove')) {
+          skip(removing, 'the small menu did not come up');
+        } else {
+          t.check(removing[0], Robot.spot('menuAdd') == null);
+          final Offset? remove = Robot.spot('menuRemove');
+          if (remove != null) {
+            await Robot.tap(remove, after: 900);
+          }
+          t.check(removing[1], shown() == 4 && packed(), keys().join(' '));
         }
-        t.check(
+        // Add, and closing the list without choosing. (Four, as Remove left them.)
+        const List<String> four = <String>[
+          'action:0',
+          'action:2',
+          'action:3',
+          'action:4',
+          'empty:',
+        ];
+        await ready(want: four);
+        const List<String> adding = <String>[
           'add: the list comes up for the place right after it',
-          _drawerOpen && _editSlot == 1,
-        );
-        await Robot.tap(_home, after: 1200);
-        t.check(
           'add: closed without choosing, still four, together, and nothing chosen',
-          !_drawerOpen && shown() == 4 && packed() && _editSlot == null,
-          keys().join(' '),
-        );
+        ];
+        if (!await menuOf(0, 'Add')) {
+          skip(<String>[
+            'menu: with room, Add is there',
+            ...adding,
+          ], 'the small menu did not come up');
+        } else {
+          final Offset? add = Robot.spot('menuAdd');
+          t.check('menu: with room, Add is there', add != null);
+          if (add == null) {
+            skip(adding, 'there was no Add');
+          } else {
+            await Robot.tap(add, after: 1300);
+            final bool up = _drawerOpen && _editSlot == 1;
+            t.check(adding[0], up, 'list $_drawerOpen, place $_editSlot');
+            if (!up) {
+              skip(<String>[adding[1]], 'the list did not come up');
+            } else {
+              await Robot.tap(_home, after: 1200);
+              t.check(
+                adding[1],
+                !_drawerOpen && shown() == 4 && packed() && _editSlot == null,
+                keys().join(' '),
+              );
+            }
+          }
+        }
         // Removed one after another, quickly, down to none: a plus is left.
+        await ready(want: four);
         await t.scene('removing every blob', () async {
           for (int n = 0; n < 4; n++) {
             await Robot.hold(seat(0), ms: _holdMs + 220, after: 450);
@@ -4344,25 +4532,46 @@ class _ShellState extends State<Shell>
           keys().join(' '),
         );
         signIs('with only the plus, it still turns', math.pi / 3);
+        // The plus, alone.
+        await ready(want: List<String>.filled(_n, 'empty:'));
         await Robot.hold(seat(0), ms: _holdMs + 260, after: 600);
-        t.check('plus: holding it brings no menu', _menuFor == null);
-        if (_menuFor != null) {
+        t.check(
+          'plus: holding it brings no menu',
+          _menuFor == null && _spaceAt == null,
+          'menu $_menuFor, the empty space\'s menu ${_spaceAt == null ? 'not up' : 'UP'}',
+        );
+        if (_menuFor != null || _spaceAt != null) {
           await Robot.tap(beside, after: 500);
         }
         final Offset? plus = Robot.spot('plus0');
         if (plus != null) {
           await Robot.tap(plus, after: 1300);
         }
-        t.check('plus: a tap opens the list', _drawerOpen && _editSlot == 0);
-        final Offset? pick = Robot.spot('choice0');
-        if (pick != null) {
+        final bool listUp = _drawerOpen && _editSlot == 0;
+        t.check('plus: a tap opens the list', listUp);
+        final Offset? pick = listUp ? Robot.spot('choice0') : null;
+        if (pick == null) {
+          skip(<String>[
+            'plus: choosing gives the menu one blob',
+          ], 'the list did not come up for the plus');
+        } else {
           await Robot.tap(pick, after: 1700);
+          t.check(
+            'plus: choosing gives the menu one blob',
+            shown() == 1 && _pinKey(0) == 'action:0',
+            keys().join(' '),
+          );
         }
+        // (Held where a blob's place is, the empty space's menu does not come up: the case
+        // above, where the finger came down while the blob was still flying there, asked of
+        // what the empty space does with such a hold.)
+        await ready();
+        _heldSpace(seat(1));
         t.check(
-          'plus: choosing gives the menu one blob',
-          shown() == 1 && _pinKey(0) == 'action:0',
-          keys().join(' '),
+          'space: a hold on a blob\'s place is not a hold on the empty space',
+          _spaceAt == null,
         );
+        _spaceAway();
         if (_drawerOpen) {
           _setDrawer(false);
           await Robot.wait(800);
@@ -4451,6 +4660,7 @@ class _ShellState extends State<Shell>
 
         // ------------------------------------------------ the settings' own parts
         say('4 of 6, the settings');
+        await memoryAt('part 4 of 6');
         await holdButton();
         final Offset? names = Robot.spot('names');
         if (names != null) {
@@ -4476,22 +4686,29 @@ class _ShellState extends State<Shell>
             _panelOpen && !_drawerOpen,
           );
         }
-        final Offset? whose = Robot.spot('blobDesignFor');
-        if (whose != null) {
-          await Robot.tap(whose + const Offset(80, 0), after: 800);
+        // (Each half is found by its own key: the panel changes size and place when the
+        // Sidekick's switches come into it, and on a phone it may not be where it is here.)
+        final Offset? toSide = Robot.spot('designSidekick');
+        if (toSide != null) {
+          await Robot.tap(toSide, after: 800);
           t.check(
             'settings: Sidekick chosen, its own switches show',
             _designSide.value && Robot.spot('floatIn') != null,
           );
-          // (Found again: the panel grows upward when the Sidekick's switches are in it.)
-          await Robot.tap(
-            (Robot.spot('blobDesignFor') ?? whose) - const Offset(80, 0),
-            after: 800,
-          );
-          t.check(
-            'settings: Prism chosen again, the Sidekick\'s switches go',
-            !_designSide.value && Robot.spot('floatIn') == null,
-          );
+          final Offset? toPrism = Robot.spot('designPrism');
+          if (toPrism == null) {
+            t.skip(
+              'settings: Prism chosen again, the Sidekick\'s switches go',
+              'the Prism half of the picker was not found',
+            );
+          } else {
+            await Robot.tap(toPrism, after: 800);
+            t.check(
+              'settings: Prism chosen again, the Sidekick\'s switches go',
+              !_designSide.value && Robot.spot('floatIn') == null,
+              'tapped at ${toPrism.dx.round()},${toPrism.dy.round()}; now ${_designSide.value ? 'Sidekick' : 'Prism'}, panel ${_panelOpen ? 'open' : 'closed'}',
+            );
+          }
         }
         await closePanel();
         clean('after the settings\' own parts');
@@ -4504,6 +4721,7 @@ class _ShellState extends State<Shell>
           return;
         }
         say('5 of 6, the Sidekick');
+        await memoryAt('part 5 of 6');
         await t.lens(<String, Object?>{'op': 'side', 'on': true});
         await Robot.wait(1200);
         Map<String, Object?> s = await where();
@@ -4564,6 +4782,7 @@ class _ShellState extends State<Shell>
           String what, {
           int i = 0,
           int which = 0,
+          int to = 0,
           int settleMs = 900,
         }) async {
           final Map<String, Object?> m = await t.lens(<String, Object?>{
@@ -4571,6 +4790,7 @@ class _ShellState extends State<Shell>
             'what': what,
             'i': i,
             'which': which,
+            'to': to,
             'settleMs': settleMs,
           }, extraMs: 2000);
           t.lensRun('menu $what', m);
@@ -4622,6 +4842,23 @@ class _ShellState extends State<Shell>
             s['pop'] == -1 && s['menu'] == true,
             'small menu ${s['pop']}, blobs ${s['menu']}',
           );
+          // Down on Remove, slid onto Change, let go there: what is under the finger as it
+          // lifts is not what it came down on, so nothing is done, and the small menu stays.
+          final List<String> beforeSlide = stored(await where());
+          final int asksSlide = _sideAsks;
+          await menu('hold', i: 1);
+          s = await menu('popSlide', which: 1, to: 0, settleMs: 900);
+          await Robot.wait(600);
+          t.check(
+            'sidekick: pressed on Remove and let go on Change, nothing is done and the small menu stays',
+            s['pop'] == 1 &&
+                s['menu'] == true &&
+                stored(s).join(' ') == beforeSlide.join(' ') &&
+                _sideAsks == asksSlide &&
+                !_drawerOpen,
+            'small menu ${s['pop']}, its menu ${stored(s).join(' ')}, Prism asked ${_sideAsks - asksSlide} times',
+          );
+          await menu('outside', settleMs: 700);
           // Remove: done by Android alone. Over another app where there is one, so that it can be
           // seen that Prism is not brought forward for it.
           final int asksBefore = _sideAsks;
@@ -4773,6 +5010,149 @@ class _ShellState extends State<Shell>
             );
             clean('after adding a Sidekick blob');
           }
+          // The whole way round, over another app: Change and Add bring Prism forward with its
+          // list; chosen, or the list closed without choosing, Prism steps back to that app, and
+          // the Sidekick has what was chosen (or what it had).
+          const List<String> roundTrip = <String>[
+            'sidekick: over another app, Change brings Prism forward with its list',
+            'sidekick: over another app, Change chosen: back in that app, and the Sidekick has it',
+            'sidekick: over another app, Change closed without choosing: back in that app, nothing changed',
+            'sidekick: over another app, Add brings Prism forward with its list',
+            'sidekick: over another app, Add chosen: back in that app, and the Sidekick has it after the held blob',
+            'sidekick: over another app, Add closed without choosing: back in that app, nothing changed',
+          ];
+          if (t.other == null) {
+            skip(
+              roundTrip,
+              'none of the usual apps was found to be "another app"',
+            );
+          } else {
+            await t.lens(<String, Object?>{
+              'op': 'sidekick',
+              'keys': <String>[
+                'action:4',
+                'action:3',
+                'screen:0',
+                'empty:',
+                'empty:',
+              ],
+            });
+            // One trip: over the other app, the held blob's part [which] (0 Change, 2 Add),
+            // then [choose] or close the list. Answers what Android keeps afterwards, or null if
+            // the trip could not be made.
+            Future<List<String>?> trip(
+              int which,
+              bool choose,
+              String forward,
+              String back,
+            ) async {
+              Map<String, Object?> m = await t.lens(<String, Object?>{
+                'op': 'leave',
+                'pkg': otherPkg,
+              }, extraMs: 3000);
+              if (m['ok'] == false || m['fg'] != false || !await openMenu()) {
+                skip(
+                  <String>[forward, back],
+                  'the other app did not come to the front, or the Sidekick\'s blobs did not open over it',
+                );
+                if (m['ok'] != false) {
+                  await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
+                }
+                return null;
+              }
+              await menu('hold', i: 0);
+              await menu('pop', which: which, settleMs: 1200);
+              await Robot.wait(1500);
+              m = await where();
+              final bool up =
+                  m['fg'] == true &&
+                  _drawerOpen &&
+                  _editSlot == _sideSlot &&
+                  _sideAsk?.add == (which == 2) &&
+                  _pickBack;
+              t.check(
+                forward,
+                up,
+                'Prism in front ${m['fg']}, list $_drawerOpen, for the Sidekick ${_editSlot == _sideSlot}, steps back after $_pickBack',
+              );
+              if (!up) {
+                skip(<String>[back], 'Prism\'s list did not come up for it');
+                await calm();
+                await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
+                return null;
+              }
+              final Offset? first = choose ? Robot.spot('choice0') : null;
+              if (choose && first != null) {
+                await Robot.tap(first, after: 2000);
+              } else {
+                await Robot.tap(_home, after: 2000);
+              }
+              m = await where();
+              return <String>[
+                if (m['fg'] == false) 'away',
+                for (final Object? k
+                    in (m['sidekickKeys'] as List<Object?>?) ??
+                        const <Object?>[])
+                  '$k',
+                '|',
+                ...'${m['sideKeys']}'.split(','),
+              ];
+            }
+
+            // (What a trip answers: 'away' first if Prism stepped back, then the five keys kept,
+            // then '|' and the keys shown.)
+            bool away(List<String> r) => r.isNotEmpty && r.first == 'away';
+            List<String> kept(List<String> r) => r
+                .skipWhile((String k) => k == 'away')
+                .takeWhile((String k) => k != '|')
+                .toList();
+            List<String> shownOf(List<String> r) =>
+                r.skipWhile((String k) => k != '|').skip(1).toList();
+            List<String>? r = await trip(0, true, roundTrip[0], roundTrip[1]);
+            if (r != null) {
+              t.check(
+                roundTrip[1],
+                away(r) &&
+                    kept(r).first == 'action:0' &&
+                    shownOf(r).contains('action:0'),
+                'Prism stepped back ${away(r)}; kept ${kept(r).join(' ')}; shown ${shownOf(r).join(',')}',
+              );
+            }
+            List<String> was = stored(await where());
+            r = await trip(0, false, roundTrip[0], roundTrip[2]);
+            if (r != null) {
+              t.check(
+                roundTrip[2],
+                away(r) && kept(r).join(' ') == was.join(' '),
+                'Prism stepped back ${away(r)}; kept ${kept(r).join(' ')} (was ${was.join(' ')})',
+              );
+            }
+            was = stored(await where());
+            r = await trip(2, true, roundTrip[3], roundTrip[4]);
+            if (r != null) {
+              final List<String> want = together(
+                <String>[...filled(was)]..insert(1, 'action:0'),
+              );
+              t.check(
+                roundTrip[4],
+                away(r) &&
+                    kept(r).join(' ') == want.join(' ') &&
+                    shownOf(r).length == filled(want).length,
+                'Prism stepped back ${away(r)}; kept ${kept(r).join(' ')} (want ${want.join(' ')}); shown ${shownOf(r).join(',')}',
+              );
+            }
+            was = stored(await where());
+            r = await trip(2, false, roundTrip[3], roundTrip[5]);
+            if (r != null) {
+              t.check(
+                roundTrip[5],
+                away(r) && kept(r).join(' ') == was.join(' '),
+                'Prism stepped back ${away(r)}; kept ${kept(r).join(' ')} (was ${was.join(' ')})',
+              );
+            }
+            await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
+            await calm();
+          }
         }
         // Held, closed: its settings, for the Sidekick.
         s = await press(
@@ -4847,12 +5227,9 @@ class _ShellState extends State<Shell>
           'clear ${_panelClear.value}, hidden ${s['covered']}',
         );
         // Prism chosen in the same panel: the Sidekick steps aside, as under any panel.
-        final Offset? whose2 = Robot.spot('blobDesignFor');
-        if (whose2 != null) {
-          await Robot.tap(
-            (Robot.spot('blobDesignFor') ?? whose2) - const Offset(80, 0),
-            after: 900,
-          );
+        final Offset? toPrism = Robot.spot('designPrism');
+        if (toPrism != null) {
+          await Robot.tap(toPrism, after: 900);
           s = await where();
           t.check(
             'sidekick: under Prism\'s own settings it is hidden',
@@ -4915,6 +5292,28 @@ class _ShellState extends State<Shell>
           s['lens'] == true && s['guest'] == true,
           'shown ${s['lens']}',
         );
+        // Carried down to the middle at the bottom, and the touch taken away there by Android
+        // (a cancel, not a finger let go): it is not dismissed, and goes back where it began.
+        s = await where();
+        final double fromX = (s['x'] as num?)?.toDouble() ?? -1,
+            fromY = (s['y'] as num?)?.toDouble() ?? -1;
+        s = await press(
+          'sidekick carried to the bottom, the touch cancelled',
+          <Offset>[cross],
+          legMs: 700,
+          endMs: 300,
+          settleMs: 1500,
+          cancel: true,
+        );
+        await Robot.wait(900);
+        s = await where();
+        t.check(
+          'sidekick: carried to the bottom and the touch cancelled, it is not dismissed and goes back where it began',
+          s['lens'] == true &&
+              (((s['x'] as num?)?.toDouble() ?? -99) - fromX).abs() < 6 &&
+              (((s['y'] as num?)?.toDouble() ?? -99) - fromY).abs() < 6,
+          'shown ${s['lens']}, at ${s['x']},${s['y']} (began at ${fromX.round()},${fromY.round()})',
+        );
         // Carried right down to the middle at the bottom: it is dismissed.
         s = await press(
           'sidekick carried to the bottom',
@@ -4963,6 +5362,7 @@ class _ShellState extends State<Shell>
 
         // ------------------------------------------------ everything at once
         say('6 of 6, everything in a row');
+        await memoryAt('part 6 of 6');
         await t.scene('a bit of everything, quickly', () async {
           await Robot.tap(_home, after: 300);
           await Robot.hold(seat(2), ms: _holdMs + 200, after: 300);
@@ -4997,8 +5397,10 @@ class _ShellState extends State<Shell>
           '${rec.split('\n').length} lines',
         );
       }
+      roundsTook.start();
       for (int n = 1; n <= rounds; n++) {
         lap = rounds > 1 ? ', round $n of $rounds' : '';
+        roundNow = n;
         try {
           t.roundStart();
           await (buttons ? buttonRound() : round());
@@ -5046,6 +5448,7 @@ class _ShellState extends State<Shell>
         await Robot.wait(800);
       }
       lap = '';
+      roundNow = rounds + 1;
 
       // ---------------------------------------------------------------- the glass settings
       if (glass) {
@@ -5423,6 +5826,7 @@ class _ShellState extends State<Shell>
       Haptics.enabled = hapticsWere;
       t.close();
       Diag.instance.banner.value = null;
+      Diag.instance.progress.value = null;
       _testing = false;
       final String text = t.report(<String>[
         ...build.split('\n'),

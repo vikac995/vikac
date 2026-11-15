@@ -2103,7 +2103,7 @@ class Floater(val timer: Boolean) {
      */
     private fun finger(
         v: android.view.View, path: List<FloatArray>, local: Boolean, holdMs: Long, legMs: Long, endMs: Long, flick: Boolean,
-        settleMs: Long, settled: () -> Boolean, done: () -> Unit,
+        settleMs: Long, settled: () -> Boolean, done: () -> Unit, cancel: Boolean = false,
     ) {
         val frames = android.view.Choreographer.getInstance()
         val down = android.os.SystemClock.uptimeMillis()
@@ -2141,7 +2141,8 @@ class Floater(val timer: Boolean) {
                     frames.postFrameCallback(this)
                     return
                 }
-                touch(v, android.view.MotionEvent.ACTION_UP, x, y, down, local)
+                // (With [cancel], the touch is taken away instead of let go, as Android sometimes does.)
+                touch(v, if (cancel) android.view.MotionEvent.ACTION_CANCEL else android.view.MotionEvent.ACTION_UP, x, y, down, local)
                 val until = now + settleMs
                 val wait = object : Runnable {
                     override fun run() {
@@ -2291,7 +2292,7 @@ class Floater(val timer: Boolean) {
                     val i = num("i", 0).toInt().coerceIn(0, 2)
                     // (Given in the controls' own place: where their window is on the screen does not come into it.)
                     val at = floatArrayOf(t.width / 6f + i * t.width / 3f, t.height / 2f)
-                    finger(t, listOf(at), true, 60, 0, 0, false, num("settleMs", 900), { true }) { done(state(context)) }
+                    finger(t, listOf(at), true, 60, 0, 0, false, num("settleMs", 900), { true }, { done(state(context)) })
                 }
                 // A finger on the lens.
                 "press" -> {
@@ -2305,12 +2306,12 @@ class Floater(val timer: Boolean) {
                     val kept = ArrayList<Long>()
                     stamps = kept
                     finger(v, path, false, num("holdMs", 60), num("legMs", 300), num("endMs", 0), a["flick"] == true, num("settleMs", 1600),
-                        { val now = view; now == null || (!now.movingNow() && !swallowing) }) {
+                        { val now = view; now == null || (!now.movingNow() && !swallowing) }, {
                         stamps = null
                         val m = state(context)
                         paced(m, kept)
                         done(m)
-                    }
+                    }, cancel = a["cancel"] == true)
                 }
                 // A finger in the lens's own menu.
                 "menu" -> {
@@ -2338,6 +2339,12 @@ class Floater(val timer: Boolean) {
                         "middle" -> finger(m, listOf(m.testMiddle()), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)
                         // Held on the Sidekick itself in the middle of its blobs: its settings.
                         "middleHold" -> finger(m, listOf(m.testMiddle()), true, 50, 0, holdTime() + 250, false, num("settleMs", 900), { true }, after)
+                        // Down on one part of the held blob's small menu, slid onto another ("to"), let go there.
+                        "popSlide" -> {
+                            val from = m.testPopSpot(num("which", 0).toInt()) ?: return fail("no small menu, or not that part of it")
+                            val to = m.testPopSpot(num("to", 0).toInt()) ?: return fail("no small menu, or not that part of it")
+                            finger(m, listOf(from, to), true, 50, 250, 60, false, num("settleMs", 900), { true }, after)
+                        }
                         // A tap on one part of the held blob's small menu.
                         "pop" -> {
                             val at = m.testPopSpot(num("which", 0).toInt()) ?: return fail("no small menu, or not that part of it")
@@ -2375,7 +2382,7 @@ class Floater(val timer: Boolean) {
                             val t = all.firstOrNull { it.text.toString().startsWith(want) } ?: return fail("nothing on the sheet says \"$want\"")
                             val at = IntArray(2)
                             t.getLocationOnScreen(at)
-                            finger(sh, listOf(floatArrayOf(at[0] + t.width / 2f, at[1] + t.height / 2f)), false, 60, 0, 0, false, num("settleMs", 900), { true }) { done(state(context)) }
+                            finger(sh, listOf(floatArrayOf(at[0] + t.width / 2f, at[1] + t.height / 2f)), false, 60, 0, 0, false, num("settleMs", 900), { true }, { done(state(context)) })
                         }
                         "back" -> {
                             sh.testBack()
@@ -2718,7 +2725,36 @@ class Floater(val timer: Boolean) {
         haptic(context, "click")
         val back = !foreground
         openPrism(context, false)
-        watcher.postDelayed({ channel?.invokeMethod("sideSettings", mapOf("back" to back)) }, 220)
+        watcher.postDelayed({ askPrism("sideSettings", mapOf("back" to back)) }, 220)
+    }
+
+    /**
+     * Asks Prism for something once it has come to the front: Change or Add on a Sidekick blob,
+     * or the Sidekick's settings. Until Prism answers, it is asked again a little later, for up
+     * to about three seconds. (Brought forward while Android was making its screen again, as it
+     * does after taking memory back, Prism is not listening yet the first time, and the ask was
+     * lost: Prism came forward and nothing else happened.)
+     */
+    private fun askPrism(method: String, args: Any?, tries: Int = 12) {
+        val again = Runnable { askPrism(method, args, tries - 1) }
+        val ch = channel
+        if (ch == null) {
+            if (tries > 0) watcher.postDelayed(again, 250)
+            return
+        }
+        try {
+            ch.invokeMethod(method, args, object : MethodChannel.Result {
+                override fun success(result: Any?) {}
+                override fun error(code: String, message: String?, details: Any?) {
+                    if (tries > 0) watcher.postDelayed(again, 250)
+                }
+                override fun notImplemented() {
+                    if (tries > 0) watcher.postDelayed(again, 250) else Trail.add("$who: Prism did not answer $method")
+                }
+            })
+        } catch (e: Exception) {
+            if (tries > 0) watcher.postDelayed(again, 250)
+        }
     }
 
     /** Brings Prism to the front. [train]: on the workout (for the timer); otherwise as it was. */
@@ -3526,23 +3562,33 @@ class Floater(val timer: Boolean) {
                     removeCallbacks(lensHold)
                     removeCallbacks(spaceHold)
                     if (popHit >= 0) {
-                        // Let go on the small menu, or beside it.
+                        // Let go on the small menu, or beside it. What is done is decided now, by
+                        // what is under the finger as it lifts, and only if that is what it came
+                        // down on: pressed on Remove and slid onto Change, nothing is done, and
+                        // the small menu stays. (Down beside it and up beside it: it goes.)
                         val which = popHit
                         val of = menuFor
                         popHit = -1
+                        popAt(of)
+                        val parts = labels().size
+                        val under = if (!popBox.contains(e.x, e.y)) 9 else ((e.x - popBox.left) / (popBox.width() / parts)).toInt().coerceIn(0, parts - 1)
+                        if (under != which) {
+                            invalidate()
+                            return true
+                        }
                         menuFor = -1
-                        if (of == -2 && !moved && which == 0) {
+                        if (of == -2 && which == 0) {
                             // "Edit Sidekick": its settings.
                             val c = context
                             close()
                             sideSettings(c)
-                        } else if (of == -2 && !moved && which == 1) {
+                        } else if (of == -2 && which == 1) {
                             // "Add Blob": a new one at the end, after the last there is.
                             val last = items.indexOfLast { it.kind != "empty" }
                             if (last >= 0) change(last, true) else change(0)
-                        } else if (of >= 0 && !moved && which == 0) change(of)
-                        else if (of >= 0 && !moved && which == 1) remove(of)
-                        else if (of >= 0 && !moved && which == 2) change(of, true)
+                        } else if (of >= 0 && which == 0) change(of)
+                        else if (of >= 0 && which == 1) remove(of)
+                        else if (of >= 0 && which == 2) change(of, true)
                         invalidate()
                         return true
                     }
@@ -3638,7 +3684,7 @@ class Floater(val timer: Boolean) {
             close()
             openPrism(c, false)
             // Once Prism is in front.
-            watcher.postDelayed({ channel?.invokeMethod("sidekickChoose", mapOf("slot" to slot, "back" to back, "add" to adding, "key" to key)) }, 220)
+            watcher.postDelayed({ askPrism("sidekickChoose", mapOf("slot" to slot, "back" to back, "add" to adding, "key" to key)) }, 220)
         }
 
         /** Dragged out of its place and let go, at this spot: it goes into the lens. */
@@ -4599,9 +4645,22 @@ class Floater(val timer: Boolean) {
         /** How far from the edge it rests. */
         private fun edgeGap(): Float = (if (guest) restGap else 8f) * dp
 
+        // A place asked for before this window was on the screen: the latest one, kept for then.
+        private var spotLater: Boolean? = null
+
         /** Goes to its resting place or its tucked one, at the side it is on, while that is being chosen. */
         fun showSpot(tuck: Boolean) {
-            if (pressed || !isAttachedToWindow) return
+            if (pressed) return
+            if (!isAttachedToWindow) {
+                // Hidden under Prism's panel, the lens is taken off the screen, and a slider held
+                // brings it back as a new window. What the slider asks for at once comes before
+                // that window is on the screen: it is done as soon as it is, not dropped.
+                // (The smallest tuck was lost this way: it is the first value a held slider sends.)
+                val first = spotLater == null
+                spotLater = tuck
+                if (first) post { spotLater?.let { spotLater = null; showSpot(it) } }
+                return
+            }
             val screen = resources.displayMetrics
             val right = if (tucked) tuckRight else lp.x + lp.width / 2 > screen.widthPixels / 2
             glide?.cancel()
@@ -5065,8 +5124,20 @@ class Floater(val timer: Boolean) {
             }
             animate().scaleX(1f).scaleY(1f).setDuration(200).setInterpolator(EASE).start()
             trayAfter(450)
-            // (A touch that was taken away while on pause or count up does neither, and is no throw at the cross.)
-            if (!up && spot != 0) { snapped = false; spot = 0; target?.held = false }
+            if (!up) {
+                // The touch was taken away by Android (a cancel), not let go by a finger: nothing
+                // is done with it. It is not dismissed, no timer place is used, it is not tucked
+                // and not thrown: it glides back to where the drag began (into its side again,
+                // if it was pulled out of one).
+                Trail.add("$who: its drag was cancelled, back to where it began")
+                snapped = false
+                spot = 0
+                wouldTuck = false
+                target?.held = false
+                target?.fall()
+                if (homeTucked) tuckIn(tuckRight) else glideTo(startX.toFloat(), startY.toFloat(), 260)
+                return
+            }
             if (up && snapped && spot != 0) {
                 // Let go on pause or on count up: that is done, and the timer goes back to
                 // where it was picked up from.
@@ -6111,7 +6182,10 @@ class Floater(val timer: Boolean) {
                     }
                     tracker?.recycle()
                     tracker = null
-                    if (pulling) {
+                    if (pulling && e.actionMasked == android.view.MotionEvent.ACTION_CANCEL) {
+                        // Taken away by Android, not let go: nothing is done; it settles back.
+                        settle()
+                    } else if (pulling) {
                         val dy = e.rawY - downY
                         when {
                             dy > 70 * dp || vy > 1100 -> {

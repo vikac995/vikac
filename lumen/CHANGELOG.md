@@ -1,5 +1,39 @@
 # Lumen changelog
 
+## Prism, build 171 (15 November 2026)
+
+**File:** `releases/prism-build-171.apk`
+
+Needs Play Protect paused to install. Can be installed over build 170.
+
+**What the first phone run of the button test found, fixed.** Nothing should look or move differently.
+
+- **Holding a blob while the blobs are still flying out.** If your finger landed on a blob's place a moment before the blob got there, Prism took it as a hold on the empty space round the blobs and opened **Edit Prism | Add Blob**. Now a hold on a blob's place never opens that menu. That one moment is what made 12 of the 13 misses in your report: the test didn't notice the menu, and every step after it was one step out.
+- **The Sidekick at its smallest tuck (8 points)** didn't tuck. When you hold one of its sliders, the Sidekick appears again as a new window. The first place the slider asked for came before that window was on the screen, and was dropped. It is now done as soon as the window is there. A person holding the slider without moving it saw the same.
+- **Editing the Sidekick over another app.** Change and Add bring Prism forward and then ask it for its list. If Prism's screen was still being made (which happens after Android has taken memory back), that ask was lost: Prism came forward and nothing else happened. The Sidekick now asks again until Prism answers, for up to about three seconds. The same goes for holding the Sidekick for its settings. This may be what you saw ("takes me back to Prism"), but I can't be sure.
+- **The Sidekick's small menu** now acts on the part under your finger when you let go, and only if that's where you pressed. Pressing Remove and sliding onto Change does nothing now.
+- **A drag that Android cancels** (rather than your finger letting go) no longer dismisses the Sidekick, tucks it or acts on the timer. It goes back to where the drag began. The workout sheet does the same.
+
+**The tests.**
+- **The button test now recovers.** Each part starts from a known state. If one step goes wrong, the checks that depend on it are listed as SKIPPED, with why, instead of failing one after another.
+- **"Prism chosen again"** missed on the phone because the red Stop button sat over the Prism half of the picker (the status bar pushes it lower) and caught the test's tap. Its own label said the test's touches pass it by; now they really do.
+- **New checks:**
+  - Over another app: Change and Add, once choosing and once closing the list. Each time Prism must step back to that app, and the Sidekick must show what was chosen.
+  - The small menu: pressed on one part, let go on another.
+  - A cancelled drag to the cross.
+  - The hold on a blob's place.
+- **Memory by part:** the report has a new table with memory at the start of each part of each round, so we can see where the native memory grows.
+- **Progress:** while the long test or the button test runs, the banner shows the round, the part and about how many minutes are left, with a thin bar. It changes only when a new part starts; nothing ticks in between.
+
+**Native memory (186 → 279 MB in your report):**
+- **Not found yet, nothing changed blind.**
+- **170's new picture path is not the cause:** nothing is decoded again.
+- **In my preview, Prism's own side stays flat over three rounds.** That covers the parts that run there, which is everything but the Sidekick.
+- **The new table** will show which part it grows in on the phone.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 68 of 69, the one miss being the Android-only measurement (69 checks now: each step checks its own first move, and there are new checks); the long test, 65 of 69 with the usual 4 misses (a first run also missed the three "hold, then carry" timing checks, the run after did not); the button test with a step made to go wrong on purpose (1 wrong and 3 skipped, and every step after it right); three rounds of the button test (202 of 203).
+**Not checked:** on a phone. The tuck, the round trip over another app, the small menu, the cancelled drag and the Sidekick's checks all run only on Android. The phone's moment of a blob still flying out can't be reproduced in my preview, whose first drawn frame already has the blobs in place.
+
 ## Prism, build 170 (15 November 2026)
 
 **File:** `releases/prism-build-170.apk`

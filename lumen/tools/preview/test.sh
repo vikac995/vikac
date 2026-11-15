@@ -26,4 +26,4 @@ for i in $(seq 1 120); do
   pgrep -f bundle/lumen >/dev/null || break
 done
 pkill -f bundle/lumen
-if [ "$1" = "buttons" ]; then grep -n "CHECKS\|WRONG" /tmp/prism_long_test.txt; else grep -a "CHECKS:\|WRONG" /tmp/prism_test.log; fi
+if [ "$1" = "buttons" ]; then grep -n "CHECKS\|WRONG\|SKIPPED" /tmp/prism_long_test.txt; else grep -a "CHECKS:\|WRONG\|SKIPPED" /tmp/prism_test.log; fi

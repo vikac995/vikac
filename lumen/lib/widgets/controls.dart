@@ -171,6 +171,7 @@ class Segmented<T> extends StatefulWidget {
     required this.onChanged,
     this.ink,
     this.onGlass = false,
+    this.segmentKeys,
   });
   final List<T> values;
   final List<String> labels;
@@ -178,6 +179,10 @@ class Segmented<T> extends StatefulWidget {
   final ValueChanged<T> onChanged;
   final Color? ink;
   final bool onGlass;
+
+  /// A key for each part, so that an automatic test can find exactly that part. (Nothing else
+  /// uses them, and nothing looks or behaves differently with them.)
+  final List<Key>? segmentKeys;
 
   @override
   State<Segmented<T>> createState() => _SegmentedState<T>();
@@ -269,6 +274,7 @@ class _SegmentedState<T> extends State<Segmented<T>>
                       for (int i = 0; i < n; i++)
                         Expanded(
                           child: GestureDetector(
+                            key: widget.segmentKeys?[i],
                             behavior: HitTestBehavior.opaque,
                             onTap: () => widget.onChanged(widget.values[i]),
                             child: Center(

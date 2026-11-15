@@ -106,7 +106,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 170';
+  static const String build = 'Prism build 171';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -414,6 +414,12 @@ class Diag {
 
   /// What the banner says while a test runs; null when none is running.
   final ValueNotifier<String?> banner = ValueNotifier<String?>(null);
+
+  /// Under the banner, while the long test or the button test runs: a line (the round, the
+  /// part, about how long is left) and how far it has got, 0 to 1. Null otherwise. It changes
+  /// only when the test moves on to a new part: nothing ticks in between.
+  final ValueNotifier<(String, double)?> progress =
+      ValueNotifier<(String, double)?>(null);
 
   /// Becomes the finished report when a guided test ends.
   final ValueNotifier<String?> finished = ValueNotifier<String?>(null);
