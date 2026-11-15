@@ -53,6 +53,7 @@ class Look extends ChangeNotifier {
     'Contours',
     'Arcs',
     'Weave',
+    'Vivid',
   ];
   int get pattern => _pattern;
 

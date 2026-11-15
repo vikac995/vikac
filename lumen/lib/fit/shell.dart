@@ -6123,7 +6123,7 @@ void showPrismSettings(BuildContext context) {
                       if (Look.instance.vibe != 0) ...<Widget>[
                         const SizedBox(height: 10),
                         Segmented<int>(
-                          values: const <int>[0, 1, 2, 3],
+                          values: const <int>[0, 1, 2, 3, 4],
                           labels: Look.patterns,
                           value: Look.instance.pattern,
                           onChanged: (int v) =>
@@ -6616,6 +6616,10 @@ class _Wallpaper extends CustomPainter {
     Paint fill(Color col, double a) =>
         Paint()..color = col.withValues(alpha: (a * strong).clamp(0.0, 1.0));
 
+    if (pattern && look.pattern == 4) {
+      _vivid(canvas, size);
+      return;
+    }
     // The glows come first: they are the light every pattern is drawn in.
     for (final (Offset at, double r) in places) {
       glow(at, r * 2.3, look.mid, dark ? 0.26 : 0.20);
@@ -6771,6 +6775,86 @@ class _Wallpaper extends CustomPainter {
       Offset.zero & size,
       Paint()..color = ground.withValues(alpha: flow ? 0.30 : 0.12),
     );
+  }
+
+  /// Vivid: black (white by day), and the light's own colours at full strength, in blocks,
+  /// circles and dots. Where things go is as in the other patterns: low down, where the glass
+  /// bar sits over them, and off the top corner, clear of titles and of numbers people read.
+  void _vivid(Canvas canvas, Size size) {
+    final double w = size.width, h = size.height;
+    final Color ground = dark
+        ? const Color(0xFF0A0A0B)
+        : const Color(0xFFF6F4EF);
+    final Color ink = dark ? Colors.white : Colors.black;
+    const List<Color> hues = <Color>[
+      Color(0xFFF2334B),
+      Color(0xFFFF7A2B),
+      Color(0xFFFFD21F),
+      Color(0xFF34C94A),
+      Color(0xFF1F7BF2),
+      Color(0xFF8A3FF0),
+    ];
+    Paint fill(Color c, [double a = 1]) =>
+        Paint()..color = c.withValues(alpha: a);
+    canvas.drawRect(Offset.zero & size, fill(ground));
+
+    // Blocks: six upright bands rising from the foot on the left, each stopping a step lower
+    // than the last, like a staircase of light.
+    final double band = w * 0.62 / 6;
+    for (int i = 0; i < 6; i++) {
+      canvas.drawRect(
+        Rect.fromLTWH(i * band, h * (0.70 + 0.03 * i), band + 0.5, h),
+        fill(hues[i]),
+      );
+    }
+    // A thin line of the ink colour across them, where the staircase begins.
+    canvas.drawRect(
+      Rect.fromLTWH(0, h * 0.70 - w * 0.03, w * 0.62, w * 0.008),
+      fill(ink, 0.8),
+    );
+
+    // Circles: a target of the six colours off the top right corner, ring inside ring.
+    final Offset corner = Offset(w * 1.06, -h * 0.02);
+    final double step = w * 0.046;
+    for (int i = 0; i < 6; i++) {
+      canvas.drawCircle(
+        corner,
+        w * 0.36 - i * step - step / 2,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = step * 0.74
+          ..color = hues[i],
+      );
+    }
+    // And a half disc rising from the foot on the right, with its own small dot.
+    canvas
+      ..drawCircle(Offset(w * 0.84, h * 1.0), w * 0.17, fill(hues[4]))
+      ..drawCircle(Offset(w * 0.84, h * 0.95), w * 0.035, fill(ground));
+
+    // Dots: a halftone field on the right, the dots growing toward its middle and shrinking
+    // away from it, in the ink colour, faint enough to read over.
+    final Offset middle = Offset(w * 0.86, h * 0.50);
+    final double gap = w / 26;
+    for (double y = h * 0.36; y < h * 0.66; y += gap) {
+      for (double x = w * 0.58; x < w + gap; x += gap) {
+        final double d = (Offset(x, y) - middle).distance / (w * 0.36);
+        if (d < 1) {
+          canvas.drawCircle(
+            Offset(x, y),
+            gap * 0.42 * (1 - d),
+            fill(ink, dark ? 0.22 : 0.18),
+          );
+        }
+      }
+    }
+    // A few solid dots of colour, as if fallen from the bands, to their right, behind the cards.
+    canvas
+      ..drawCircle(Offset(w * 0.70, h * 0.80), w * 0.022, fill(hues[2]))
+      ..drawCircle(Offset(w * 0.66, h * 0.845), w * 0.013, fill(hues[0]))
+      ..drawCircle(Offset(w * 0.75, h * 0.855), w * 0.009, fill(hues[5]));
+
+    // Text sits straight on this picture on some pages, so it is held back a little.
+    canvas.drawRect(Offset.zero & size, fill(ground, 0.10));
   }
 
   @override

@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 142 (15 November 2026)
+
+**File:** `releases/prism-build-142.apk`
+
+Needs Play Protect paused to install. Can be installed over build 141.
+
+- **A new background pattern: Vivid.** In Prism's settings, under Background, choose Pattern or Both, and then Vivid (after Ripples, Contours, Arcs and Weave). Black by night, white by day, and the light's own six colours at full strength:
+  - **blocks:** six upright bands rising from the foot on the left, each a step lower than the last, with a thin line where the staircase begins;
+  - **circles:** a target of the six colours, ring inside ring, off the top right corner, and a blue half disc rising from the foot on the right;
+  - **dots:** a halftone field on the right, the dots growing toward its middle and shrinking away from it, and three small colour dots beside the bands.
+  Like the other patterns it keeps low down and to the corner, clear of titles and of the numbers on the cards, and it is drawn once into a picture, so it costs no more than they do. With "Both", the glowing orbs are left out: they do not belong to this one. It pairs with the Blob's Vivid colours.
+
+**Checked:** it compiles; in my preview: Home in dark and light, and Train in dark, with Vivid; the automatic test in the preview.
+**Not checked:** on a phone, and how it sits behind every page and sheet. Tell me what is too loud or in the way.
+
 ## Prism, build 141 (15 November 2026)
 
 **File:** `releases/prism-build-141.apk`
