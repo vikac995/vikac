@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
-import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:material_ui/material_ui.dart';
 
 import 'dart:typed_data';
@@ -193,26 +192,22 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     spring: Motions.snappy,
   );
 
-  /// The grid as it was just before the density changed: one picture, laid over the new grid and
-  /// faded away, so the change is a zoom and not a jump. Thrown away when the fade ends.
-  ui.Image? _ghost;
-  double _ghostRatio = 1;
-  late final AnimationController _ghostFade =
+  /// While the density changes, every app travels from where it was to where it now is, and
+  /// takes its new size on the way: one icon, one movement, nothing drawn twice. These are the
+  /// two arrangements; between them the grid is drawn by [_FlowPainter], and only for that
+  /// third of a second. At rest there is nothing here.
+  _Lay? _flowFrom, _flowTo;
+  late final AnimationController _flow =
       AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 190),
+        duration: const Duration(milliseconds: 340),
       )..addStatusListener((AnimationStatus s) {
-        if (s == AnimationStatus.completed) {
-          _dropGhost();
+        if (s == AnimationStatus.completed && mounted) {
+          setState(() => _flowFrom = _flowTo = null);
         }
       });
-  final GlobalKey _gridKey = GlobalKey();
   late int _densityWas = Apps.instance.density;
-
-  void _dropGhost() {
-    _ghost?.dispose();
-    _ghost = null;
-  }
+  static const List<double> _ks = <double>[1.12, 1, 0.86, 0.74];
 
   // The fingers on the grid, and the pinch they make.
   final Map<int, Offset> _fingers = <int, Offset>{};
@@ -311,93 +306,115 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     }
   }
 
-  /// The density changed, by pinch or by slider: the grid as it was is kept as a picture and
-  /// faded away over the new one, both stretched so their columns meet, and the app that was
-  /// first in view is still in view.
+  /// The density changed, by pinch or by slider. The app that was first in view stays in view,
+  /// and every app travels from its old place to its new one.
   void _regrid(int was, int now) {
     final int oldCols = Apps.columns[was], newCols = Apps.columns[now];
-    final double ratio = newCols / oldCols;
+    final int oldRows = _rowsFor(was), newRows = _rowsFor(now);
     final bool scrolling = Apps.instance.scrolling;
-    final int first = scrolling
-        ? (_list.hasClients && _rowH > 0
-              ? (_list.offset / _rowH + 0.3).floor().clamp(0, 1 << 20) * oldCols
-              : 0)
-        : _page * _rowsFor(was) * oldCols;
+    // Where the grid was: its first row, and in the list how far that row was scrolled past.
+    int firstRow = 0;
+    double top = 0;
+    if (scrolling) {
+      if (_list.hasClients && _rowH > 0) {
+        firstRow = (_list.offset / _rowH).floor().clamp(0, 1 << 20);
+        top = firstRow * _rowH - _list.offset;
+      }
+    } else {
+      firstRow = _page * oldRows;
+    }
+    final int first = firstRow * oldCols;
+    final int newFirstRow = scrolling
+        ? first ~/ newCols
+        : (first ~/ (newRows * newCols)) * newRows;
+    // A pinch is followed by the grid's stretch, which starts again from the new size: the old
+    // arrangement is drawn at the stretch it had, so nothing jumps.
+    double s0 = 1;
+    if (_pinching) {
+      final double before = _zoom.value;
+      _pinchBase *= newCols / oldCols;
+      final double after = _pinchShown();
+      _zoom.jumpTo(after);
+      s0 = before / after;
+    }
     if (widget.open && _rise.value > 0.9) {
-      try {
-        final RenderObject? o = _gridKey.currentContext?.findRenderObject();
-        if (o is RenderRepaintBoundary) {
-          final ui.Image picture = o.toImageSync(
-            pixelRatio: math.min(2.0, MediaQuery.devicePixelRatioOf(context)),
-          );
-          _dropGhost();
-          _ghost = picture;
-          _ghostRatio = 1 / ratio;
-          _ghostFade.forward(from: 0);
-        }
-      } catch (_) {
-        // No picture of the old grid: the new one is simply stretched into place.
-      }
-      if (_pinching) {
-        _pinchBase *= ratio;
-        _zoom.jumpTo(_pinchShown());
-      } else {
-        _zoom
-          ..jumpTo(_zoom.value * ratio)
-          ..animateTo(1, spring: Motions.snappy);
-      }
+      final int extra = scrolling ? 1 : 0;
+      // (Begun again before the last had ended: it goes on from where that one was going.)
+      _flowFrom = _flow.isAnimating && _flowTo != null
+          ? _flowTo
+          : _Lay(oldCols, oldRows, _ks[was], first, top, s0, extra);
+      _flowTo = _Lay(
+        newCols,
+        newRows,
+        _ks[now],
+        newFirstRow * newCols,
+        0,
+        1,
+        extra,
+      );
+      _flow.forward(from: 0);
     }
     if (scrolling) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _list.hasClients && _rowH > 0) {
           _list.jumpTo(
-            ((first ~/ newCols) * _rowH).clamp(
-              0.0,
-              _list.position.maxScrollExtent,
-            ),
+            (newFirstRow * _rowH).clamp(0.0, _list.position.maxScrollExtent),
           );
         }
       });
     } else {
       _turn.value = 0;
       _pull = 0;
-      _page = first ~/ (_rowsFor(now) * newCols);
+      _page = newFirstRow ~/ newRows;
       _toward = _page;
     }
   }
 
-  /// The grid, stretched by [_zoom], with the picture of the old grid fading over it while the
-  /// density changes. At rest it is the grid alone.
+  /// The grid, stretched by [_zoom] while fingers pinch it. While the density changes the apps
+  /// are drawn travelling to their new places in its stead. At rest it is the grid alone.
   Widget _zoomed(Widget grid) => ClipRect(
     child: ListenableBuilder(
-      listenable: Listenable.merge(<Listenable>[_zoom, _ghostFade]),
+      listenable: _zoom,
       child: grid,
       builder: (BuildContext context, Widget? child) {
-        final double z = _zoom.value;
-        final ui.Image? ghost = _ghost;
-        return Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            Transform.scale(
-              scale: z,
-              alignment: Alignment.topCenter,
-              child: child,
-            ),
-            if (ghost != null)
-              IgnorePointer(
-                child: Transform.scale(
-                  scale: z * _ghostRatio,
-                  alignment: Alignment.topCenter,
-                  child: RawImage(
-                    image: ghost,
-                    fit: BoxFit.fill,
-                    opacity: AlwaysStoppedAnimation<double>(
-                      1 - Curves.easeOut.transform(_ghostFade.value),
+        final _Lay? from = _flowFrom, to = _flowTo;
+        final LumenColors c = LumenColors.of(context);
+        return Transform.scale(
+          scale: _zoom.value,
+          alignment: Alignment.topCenter,
+          child: from == null || to == null
+              ? child
+              : Stack(
+                  fit: StackFit.expand,
+                  children: <Widget>[
+                    // (Kept, not drawn: its scroll position and pages stay as they are.)
+                    Opacity(opacity: 0, child: child),
+                    IgnorePointer(
+                      child: CustomPaint(
+                        painter: _FlowPainter(
+                          grid: _GridPainter(
+                            apps: Apps.instance.all,
+                            from: 0,
+                            to: 0,
+                            dir: 0,
+                            rows: to.rows,
+                            cols: to.cols,
+                            k: to.k,
+                            turn: kAlwaysDismissedAnimation,
+                            ink: c.ink.withValues(alpha: 0.84),
+                            accent: c.accent,
+                            surface: c.surface,
+                            counts: Notes.instance.counts.value,
+                            pressed: -1,
+                          ),
+                          a: from,
+                          b: to,
+                          t: _flow,
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
-              ),
-          ],
         );
       },
     ),
@@ -535,7 +552,6 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
           // (No scrollbar: it ran down over the letters, and the letters are the scrollbar.)
           child: _zoomed(
             RepaintBoundary(
-              key: _gridKey,
               child: ScrollConfiguration(
                 behavior: ScrollConfiguration.of(context)
                     .copyWith(scrollbars: false),
@@ -997,8 +1013,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     _railY.dispose();
     _bounce.dispose();
     _zoom.dispose();
-    _ghostFade.dispose();
-    _dropGhost();
+    _flow.dispose();
     _turn.dispose();
     super.dispose();
   }
@@ -1500,7 +1515,6 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                 },
                                 // Its own layer: opening, closing and the ring never make the grid redraw.
                                 child: RepaintBoundary(
-                                  key: _gridKey,
                                   child: CustomPaint(
                                     size: Size(box.maxWidth, box.maxHeight),
                                     painter: _GridPainter(
@@ -2092,4 +2106,123 @@ class _DensitySliderState extends State<_DensitySlider>
       },
     );
   }
+}
+
+/// One arrangement of the app list: how many across and down, the tiles' size, the first app
+/// shown, how far its row is scrolled past the top, the stretch of a pinch, and the rows below
+/// the last whole one that can show (the list shows part of one more).
+class _Lay {
+  const _Lay(
+    this.cols,
+    this.rows,
+    this.k,
+    this.start,
+    this.top,
+    this.s,
+    this.extra,
+  );
+  final int cols, rows, start, extra;
+  final double k, top, s;
+
+  int get end => start + (rows + extra) * cols;
+  bool shows(int i) => i >= start && i < end;
+
+  /// Where app [i]'s tile has its middle, in a grid of [size].
+  Offset at(int i, Size size) {
+    final double cw = size.width / cols, ch = size.height / rows;
+    final int r = ((i - start) / cols).floor(), col = i - start - r * cols;
+    final Offset p = Offset(
+      cw * (col + 0.5),
+      top + ch * r + (8 + _GridPainter._tile / 2) * k,
+    );
+    // A pinch stretches about the top middle, as the grid itself is stretched.
+    return Offset(size.width / 2 + (p.dx - size.width / 2) * s, p.dy * s);
+  }
+}
+
+/// The app list while its density changes: each app goes from its place in [a] to its place in
+/// [b], growing or shrinking on the way. An app only in one of them fades in or out as it goes.
+/// Drawn only for the third of a second the change takes.
+class _FlowPainter extends CustomPainter {
+  _FlowPainter({
+    required this.grid,
+    required this.a,
+    required this.b,
+    required this.t,
+  }) : super(repaint: t);
+
+  final _GridPainter grid;
+  final _Lay a, b;
+  final Animation<double> t;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double e = Curves.easeInOutCubic.transform(t.value);
+    final List<AppTile> apps = grid.apps;
+    final int lo = math.max(0, math.min(a.start, b.start));
+    final int hi = math.min(apps.length, math.max(a.end, b.end));
+    const double half = _GridPainter._tile / 2;
+    const Rect box = Rect.fromLTRB(-half, -half, half, half);
+    final double cw = size.width / b.cols;
+    final Paint fill = Paint();
+    for (int i = lo; i < hi; i++) {
+      final bool inA = a.shows(i), inB = b.shows(i);
+      if (!inA && !inB) {
+        continue;
+      }
+      // Going or coming: it fades with the first part of the way, or the last.
+      final double alpha = inA && inB
+          ? 1
+          : (inB
+                ? Curves.easeIn.transform(t.value)
+                : 1 - Curves.easeOut.transform(t.value));
+      if (alpha <= 0.01) {
+        continue;
+      }
+      final Offset p = Offset.lerp(a.at(i, size), b.at(i, size), e)!;
+      final double k = ui.lerpDouble(a.k * a.s, b.k * b.s, e)!;
+      final AppTile tile = apps[i];
+      canvas
+        ..save()
+        ..translate(p.dx, p.dy)
+        ..scale(k);
+      final bool own = _GridPainter._own(tile) != null;
+      if (!own) {
+        fill.color = tile.color.withValues(alpha: tile.color.a * alpha);
+        canvas.drawPath(_GridPainter._rest, fill);
+      }
+      if (tile.picture != null || own) {
+        canvas.clipPath(_GridPainter._rest);
+      }
+      grid._mark(canvas, tile, box, alpha, 1);
+      canvas.restore();
+      canvas
+        ..save()
+        ..translate(p.dx, p.dy)
+        ..scale(k);
+      grid._badge(canvas, tile, alpha);
+      canvas.restore();
+      // Its name, as it will be, carried along under it at the tile's size of the moment.
+      final TextPainter tp = grid._label(i, cw, b.k);
+      final double f = k / b.k;
+      canvas
+        ..save()
+        ..translate(p.dx, p.dy + (half + 5) * k + 3 * f)
+        ..scale(f);
+      if (alpha < 0.999) {
+        canvas.saveLayer(
+          Rect.fromLTWH(-tp.width / 2 - 2, -2, tp.width + 4, tp.height + 4),
+          Paint()..color = Colors.white.withValues(alpha: alpha),
+        );
+      }
+      tp.paint(canvas, Offset(-tp.width / 2, 0));
+      if (alpha < 0.999) {
+        canvas.restore();
+      }
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(_FlowPainter old) => old.a != a || old.b != b;
 }

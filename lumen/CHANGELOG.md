@@ -1,5 +1,21 @@
 # Lumen changelog
 
+## Prism, build 156 (15 November 2026)
+
+**File:** `releases/prism-build-156.apk`
+
+Needs Play Protect paused to install. Can be installed over build 155.
+
+**A calmer change of density.** In your recordings, each change of size laid the old grid over the new one and faded it away. For a moment every icon was there twice, in two places, which is what was hard on the eyes.
+
+- **Now each app travels.** When the size changes, by pinch or by the Density slider, every app glides from its old place to its new one and grows or shrinks on the way. Its name goes with it. Nothing is ever drawn twice. It takes about a third of a second and eases in and out.
+- Apps that come into view fade in as they arrive; apps that leave the view fade out as they go.
+- During a pinch, the grid still follows your fingers as before; the gliding happens at each tick, from where the grid was under your fingers.
+- For the battery: the gliding is drawn only while it runs. Before and after, the grid is the same single picture it always was. The picture of the old grid that build 153 kept is gone.
+
+**Checked:** it compiles, both sides; in my preview: a frame caught mid-change shows each app once, between its old and new place; the automatic test, 56 of 60 with the usual 4 misses, the three pinch checks right.
+**Not checked:** on a phone, and how it feels at 120 Hz. My preview draws slowly, so I saw single frames, not the motion.
+
 ## Prism, build 155 (15 November 2026)
 
 **File:** `releases/prism-build-155.apk`
