@@ -52,6 +52,9 @@ class TestRun {
     }
   }
 
+  /// How many frames Prism has drawn since the test began (counted, not kept).
+  int get framesCounted => _counted;
+
   /// How many frames' timings the test is holding (those of its scenes): for the report.
   int get framesKept =>
       _frames.length +
@@ -653,13 +656,24 @@ class TestRun {
         return '${f((five - a) / 1024)} | ${f((last - five) / 1024 / n)}';
       }
 
+      // How many frames each repeat drew, from 5 to 20: what moves on the screen, and how fast
+      // the screen refreshes, show here.
+      String frames(List<(String, int, Map<String, Object?>)> rows) {
+        final double? five = rows.length > 1 ? kb(rows[1].$3, 'frames') : null;
+        final double? last = kb(rows.last.$3, 'frames');
+        final int n = rows.last.$2 - (rows.length > 1 ? rows[1].$2 : 0);
+        return five == null || last == null || n <= 0
+            ? '-'
+            : ((last - five) / n).round().toString();
+      }
+
       o
         ..writeln()
         ..writeln(
-          'LEAK TEST: each step done 20 times, memory read before and after every 5 (after a garbage collection of Android\'s side). For each measure: MB added by the first 5 repeats | MB per repeat after that (repeats 5 to 20: a leak shows here). native, native after the collection, graphics, all of Prism as it sees itself (process).',
+          'LEAK TEST: each step done 20 times, memory read before and after every 5 (after a garbage collection of Android\'s side). For each measure: MB added by the first 5 repeats | MB per repeat after that (repeats 5 to 20: a leak shows here). native, native after the collection, graphics, all of Prism as it sees itself (process). Last: how many frames Prism drew per repeat, 5 to 20.',
         )
         ..writeln(
-          '${'step'.padRight(50)} ${'native'.padLeft(14)} ${'after gc'.padLeft(14)} ${'graphics'.padLeft(14)} ${'process'.padLeft(14)}',
+          '${'step'.padRight(50)} ${'native'.padLeft(14)} ${'after gc'.padLeft(14)} ${'graphics'.padLeft(14)} ${'process'.padLeft(14)} ${'frames'.padLeft(7)}',
         );
       final List<String> steps = <String>[];
       for (final (String step, int _, Map<String, Object?> _) in leakRows) {
@@ -674,7 +688,7 @@ class TestRun {
                 if (r.$1 == step) r,
             ];
         o.writeln(
-          '${step.padRight(50)} ${two(rows, 'mem_native').padLeft(14)} ${two(rows, 'mem_native_gc').padLeft(14)} ${two(rows, 'mem_graphics').padLeft(14)} ${two(rows, 'rssKb').padLeft(14)}',
+          '${step.padRight(50)} ${two(rows, 'mem_native').padLeft(14)} ${two(rows, 'mem_native_gc').padLeft(14)} ${two(rows, 'mem_graphics').padLeft(14)} ${two(rows, 'rssKb').padLeft(14)} ${frames(rows).padLeft(7)}',
         );
       }
       o.writeln(

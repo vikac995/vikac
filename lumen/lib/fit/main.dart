@@ -204,6 +204,46 @@ class PrismApp extends StatelessWidget {
                                                 ),
                                               ),
                                       ),
+                                      // The leak test's text that changes weight (see Diag.probe).
+                                      ValueListenableBuilder<(double, bool)?>(
+                                        valueListenable: Diag.instance.probe,
+                                        builder:
+                                            (
+                                              BuildContext context,
+                                              (double, bool)? p,
+                                              Widget? _,
+                                            ) => p == null
+                                            ? const SizedBox.shrink()
+                                            : Text(
+                                                'Show  Hide',
+                                                textScaler:
+                                                    TextScaler.noScaling,
+                                                style: p.$2
+                                                    // (Exactly as LumenType.text drew a moving
+                                                    // weight before build 175.)
+                                                    ? TextStyle(
+                                                        fontFamily: 'Inter',
+                                                        fontSize: 13,
+                                                        color: Colors.white,
+                                                        fontVariations:
+                                                            <FontVariation>[
+                                                              FontVariation(
+                                                                'wght',
+                                                                p.$1,
+                                                              ),
+                                                              const FontVariation(
+                                                                'opsz',
+                                                                14,
+                                                              ),
+                                                            ],
+                                                      )
+                                                    : LumenType.text(
+                                                        13,
+                                                        weight: p.$1,
+                                                        color: Colors.white,
+                                                      ),
+                                              ),
+                                      ),
                                     ],
                                   ),
                                 ),

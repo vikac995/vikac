@@ -184,6 +184,10 @@ class Segmented<T> extends StatefulWidget {
   /// uses them, and nothing looks or behaves differently with them.)
   final List<Key>? segmentKeys;
 
+  /// For Prism's leak test only, and only while it runs: every picker jumps to its new place
+  /// instead of moving there, to see whether the move itself keeps memory.
+  static bool testJump = false;
+
   @override
   State<Segmented<T>> createState() => _SegmentedState<T>();
 }
@@ -202,6 +206,10 @@ class _SegmentedState<T> extends State<Segmented<T>>
   void didUpdateWidget(Segmented<T> old) {
     super.didUpdateWidget(old);
     if (old.value != widget.value) {
+      if (Segmented.testJump) {
+        _pos.jumpTo(widget.values.indexOf(widget.value).toDouble());
+        return;
+      }
       _pos.onSettle = Haptics.tick;
       _pos.animateTo(widget.values.indexOf(widget.value).toDouble());
     }

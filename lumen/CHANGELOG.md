@@ -1,5 +1,30 @@
 # Lumen changelog
 
+## Prism, build 175 (15 November 2026)
+
+**File:** `releases/prism-build-175.apk`
+
+Needs Play Protect paused to install. Can be installed over build 174.
+
+**Your leak test on 174 found it.** Labels Hide/Show and Prism | Sidekick each kept about 15–17 MB a time, for good. Opening and closing things kept nothing.
+
+- **The cause:** a word whose boldness changes while it moves.
+  - **Where:** the two-way pickers' labels (Show | Hide, Prism | Sidekick, and every other two-way choice) get bolder or lighter as the thumb slides under them. So do the tab bar's labels as the light slides from one page to another.
+  - **Why that costs memory:** every boldness Prism draws a word at becomes a font of its own. The phone's text engine makes it the first time and keeps it as long as Prism runs. A boldness that changes on every frame made a new font on every frame: dozens a move on a phone that redraws its screen 90 or 120 times a second, each one kept.
+  - **How bad in real use:** every change of page did it, however you got there: a tab, sliding along the tab bar, a blob or a swipe that opens a page, the timer, Back to Home. That alone could add up to the 1 GB you saw, and Android closing Prism in the background.
+- **The fix:** every boldness is now drawn in steps of 10. There are at most a few dozen, each made once and kept.
+  - **What might look different:** the labels' boldness now changes in about 15 small steps during the slide instead of smoothly. The colour still changes smoothly. I don't expect you can see it, but please look at Show | Hide in Prism's settings and at the tab bar while changing page.
+  - **Nothing else changes:** every other boldness in Prism was already a step of 10.
+- **The leak test, again, to prove it on the phone** ("Run the leak test (about 11 min, hands off)"):
+  - Labels and Prism | Sidekick again, which should now keep nothing, and Home to Train and back.
+  - A word drawn at a new boldness 30 times, the old way, on purpose, so the phone shows what each one cost. Then the same the new way, which should keep nothing.
+  - Labels and Prism | Sidekick with one part left out each time: Prism's messages to Android, the Sidekick's "covered" message, the six look previews, the pickers' slide. Also Labels with the settings closed, the settings redrawn with nothing changed, and both with the Sidekick switched off. If anything still grows, one of these names it.
+  - The report now also says how many frames each repeat drew. In my preview a Labels change draws about 3 frames, on your phone about 30, which is why my preview never showed this.
+  - Not in it any more: the app list, the blobs, the Sidekick's blobs and the solid glass, which 174 showed keep nothing.
+
+**Checked:** in my preview: the leak test runs; the old-way word grows about 2.9 MB a repeat and keeps it, the new way and every other step keep nothing; the button test, 68 of 69 (the miss is the Android-only measurement); the long test, 65 of 69 with the usual 4 misses.
+**Not checked:** on a phone. How many frames a move draws there, what each font costs there, and whether Labels, Prism | Sidekick and changing page now stay flat: only your run can say.
+
 ## Prism, build 174 (15 November 2026)
 
 **File:** `releases/prism-build-174.apk`

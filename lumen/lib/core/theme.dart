@@ -100,6 +100,16 @@ class LumenColors extends ThemeExtension<LumenColors> {
 /// Type. Bricolage Grotesque for display (weight and width are continuous
 /// axes), Inter for text and controls.
 abstract final class LumenType {
+  /// Every weight is drawn in steps of 10.
+  ///
+  /// (Each weight a text is drawn at becomes a font of its own, which the text engine makes on
+  /// first use and keeps for as long as Prism runs, never giving it back: about 50 to 160 KB
+  /// each, in the preview. A weight that moves with an animation, as the labels of the two-way
+  /// pickers and of the tab bar do, made a new one on every frame of the move: megabytes a
+  /// change, all day. In steps of 10 there are at most a few dozen, each made once. Every
+  /// weight written in Prism is already a multiple of 10, so only moving ones are changed.)
+  static double steady(double weight) => (weight / 10).roundToDouble() * 10;
+
   static TextStyle display(
     double size, {
     double weight = 700,
@@ -114,7 +124,7 @@ abstract final class LumenType {
       letterSpacing: -0.02 * size,
       color: color,
       fontVariations: <FontVariation>[
-        FontVariation('wght', weight),
+        FontVariation('wght', steady(weight)),
         FontVariation('wdth', width),
         FontVariation('opsz', size.clamp(12, 96)),
       ],
@@ -135,7 +145,7 @@ abstract final class LumenType {
       letterSpacing: spacing ?? (size < 13 ? 0.01 * size : -0.006 * size),
       color: color,
       fontVariations: <FontVariation>[
-        FontVariation('wght', weight),
+        FontVariation('wght', steady(weight)),
         FontVariation('opsz', size.clamp(14, 32)),
       ],
       fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],

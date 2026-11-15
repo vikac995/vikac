@@ -507,6 +507,15 @@ class _ShellState extends State<Shell>
   /// clear meanwhile, so that what the slider moves can be watched.
   final ValueNotifier<String?> _panelClear = ValueNotifier<String?>(null);
 
+  // For the leak test only: parts of Prism it leaves out for a while, to see which one keeps
+  // memory. All off outside the test, which puts them back in its `finally`.
+  // [_leakNoSends]: Prism's messages to Android when its blobs change (the pin, the Sidekick's
+  // pictures, where the blobs sit). [_leakNoCover]: the "covered" message while the Sidekick's
+  // own settings are open. [_leakNoLooks]: the six look previews drawn as empty boxes.
+  // [_leakBump]: rebuilds the settings' content with nothing changed.
+  bool _leakNoSends = false, _leakNoCover = false, _leakNoLooks = false;
+  final ValueNotifier<int> _leakBump = ValueNotifier<int>(0);
+
   /// One of the Sidekick's distances is being dragged ([which]: 'rest' or 'tuck'), or let go.
   void _spotHold(String which, bool on) {
     _panelClear.value = on ? which : null;
@@ -522,7 +531,7 @@ class _ShellState extends State<Shell>
   /// While its own settings are open the Sidekick stays in sight, to be seen as it changes.
   /// (Other panels hide it, so that a tap meant for them cannot reach it.)
   void _sideInSight() {
-    if (_panelOpen && _panelClear.value == null) {
+    if (_panelOpen && _panelClear.value == null && !_leakNoCover) {
       RestBubble.instance.tellCovered(true);
     }
   }
@@ -760,8 +769,10 @@ class _ShellState extends State<Shell>
       setState(() {});
       // The apps' pictures have arrived or the menu changed: the pinned lens may need its picture,
       // and the Sidekick's pictures may have changed with the apps' (its menu is Android's own).
-      _sendPin();
-      _sendSidekick();
+      if (!_leakNoSends) {
+        _sendPin();
+        _sendSidekick();
+      }
       _reseat();
       _recentre();
     }
@@ -811,7 +822,9 @@ class _ShellState extends State<Shell>
     Diag.instance.event(v ? 'blob names on' : 'blob names off');
     BlobSlots.instance.setNames(v);
     _far.animateTo(v ? _reach : _reachBare);
-    _tellFan();
+    if (!_leakNoSends) {
+      _tellFan();
+    }
     setState(() {});
   }
 
@@ -917,6 +930,7 @@ class _ShellState extends State<Shell>
                     BlobSlots.instance,
                     _designSide,
                     _panelClear,
+                    _leakBump,
                   ]),
                   builder: (BuildContext context, Widget? _) => ConstrainedBox(
                     constraints: BoxConstraints(
@@ -1303,24 +1317,30 @@ class _ShellState extends State<Shell>
                                             width: 56,
                                             height: 56,
                                             child: CustomPaint(
-                                              painter: _LensDisc(c.accent),
-                                              foregroundPainter:
-                                                  BlobSignPreview(
-                                                    look.id,
-                                                    <Color>[
-                                                      for (final (double, Color)
-                                                          b
-                                                          in _signBlobs)
-                                                        b.$2,
-                                                    ],
-                                                    vivid: _designSide.value
-                                                        ? Apps
-                                                              .instance
-                                                              .sideVivid
-                                                        : Apps
-                                                              .instance
-                                                              .blobVivid,
-                                                  ),
+                                              painter: _leakNoLooks
+                                                  ? null
+                                                  : _LensDisc(c.accent),
+                                              foregroundPainter: _leakNoLooks
+                                                  ? null
+                                                  : BlobSignPreview(
+                                                      look.id,
+                                                      <Color>[
+                                                        for (final (
+                                                              double,
+                                                              Color,
+                                                            )
+                                                            b
+                                                            in _signBlobs)
+                                                          b.$2,
+                                                      ],
+                                                      vivid: _designSide.value
+                                                          ? Apps
+                                                                .instance
+                                                                .sideVivid
+                                                          : Apps
+                                                                .instance
+                                                                .blobVivid,
+                                                    ),
                                             ),
                                           ),
                                         ),
@@ -5774,6 +5794,7 @@ class _ShellState extends State<Shell>
             <String, Object?>{
               if (m['ok'] != false) ...m,
               'rssKb': ProcessInfo.currentRss ~/ 1024,
+              'frames': t.framesCounted,
             },
           ));
         }
@@ -5860,19 +5881,6 @@ class _ShellState extends State<Shell>
           }
         }
 
-        final bool solidNow = settings.reduceTransparency;
-        Future<void> solid() async {
-          settings.reduceTransparency = true;
-          await Robot.wait(600);
-          await holdButton();
-        }
-
-        Future<void> unsolid() async {
-          await closePanel();
-          settings.reduceTransparency = solidNow;
-          await Robot.wait(600);
-        }
-
         Future<void> noSidekick() async {
           lensOf.setFloating(inPrism: false, overApps: false);
           await Robot.wait(800);
@@ -5884,6 +5892,40 @@ class _ShellState extends State<Shell>
           lensOf.setFloating(inPrism: true, overApps: true);
           await Robot.wait(800);
         }
+
+        // A short text under the banner, drawn for 30 frames at a weight it was never drawn at
+        // before ([old]: exactly as a moving weight was drawn before build 175), or in Prism's
+        // steps of 10 (as now).
+        int probed = 0;
+        Future<void> probe(bool old) async {
+          for (int f = 0; f < 30; f++) {
+            probed++;
+            Diag.instance.probe.value = (500 + (probed * 0.731) % 150, old);
+            WidgetsBinding.instance.scheduleFrame();
+            await Future.any(<Future<void>>[
+              WidgetsBinding.instance.endOfFrame,
+              Future<void>.delayed(const Duration(milliseconds: 100)),
+            ]);
+          }
+          Diag.instance.probe.value = null;
+          await Robot.wait(300);
+        }
+
+        // Open the settings with one part left out, and put it back once closed.
+        Future<void> Function() without(void Function(bool) part) => () async {
+          part(true);
+          await Robot.wait(300);
+          await holdButton();
+        };
+        Future<void> Function() back(void Function(bool) part) => () async {
+          await closePanel();
+          part(false);
+          await Robot.wait(300);
+        };
+        void sends(bool off) => _leakNoSends = off;
+        void cover(bool off) => _leakNoCover = off;
+        void looks(bool off) => setState(() => _leakNoLooks = off);
+        void jump(bool on) => Segmented.testJump = on;
 
         steps.addAll(<
           (
@@ -5915,68 +5957,77 @@ class _ShellState extends State<Shell>
             closePanel,
           ),
           (
-            'd. the app list opened and closed',
+            'g. Home to Train and back, by the tab bar',
             null,
             () async {
-              await Robot.drag(
-                <Offset>[_home, _home - const Offset(0, 320)],
-                legMs: 120,
-                flick: true,
-                after: 1100,
-              );
-              if (!_drawerOpen) {
-                _setDrawer(true);
-                await Robot.wait(1000);
-              }
-              await Robot.tap(_home, after: 1000);
-              if (_drawerOpen) {
-                _setDrawer(false);
-                await Robot.wait(800);
-              }
+              _go(1);
+              await Robot.wait(700);
+              _go(0);
+              await Robot.wait(700);
             },
             null,
           ),
           (
-            'e. the blobs opened and closed',
+            'h. a new weight 30 times, as before 175',
+            null,
+            () => probe(true),
+            null,
+          ),
+          (
+            'h, the same in steps of 10, as now',
+            null,
+            () => probe(false),
+            null,
+          ),
+          (
+            'i. Labels Hide and Show, the settings closed',
             null,
             () async {
-              await Robot.tap(_home, after: 800);
-              await Robot.tap(_home, after: 800);
+              _setNames(!BlobSlots.instance.names);
+              await Robot.wait(500);
+              _setNames(!BlobSlots.instance.names);
+              await Robot.wait(500);
             },
             null,
           ),
-          if (floats)
-            (
-              'f. the Sidekick\'s blobs opened and closed, over Prism',
-              () async {
-                await t.lens(<String, Object?>{'op': 'side', 'on': true});
-                await Robot.wait(800);
-              },
-              () async {
-                await press(
-                  'sidekick tapped (leak test)',
-                  <Offset>[],
-                  holdMs: 60,
-                  settleMs: 1100,
-                );
-                await t.lens(<String, Object?>{
-                  'op': 'menu',
-                  'what': 'outside',
-                  'settleMs': 700,
-                });
-              },
-              null,
-            ),
-          ('b, the glass solid (reduce transparency)', solid, labels, unsolid),
-          ('c, the glass solid (reduce transparency)', solid, whose, unsolid),
+          (
+            'ii. the settings rebuilt twice, nothing changed',
+            holdButton,
+            () async {
+              _leakBump.value++;
+              await Robot.wait(500);
+              _leakBump.value++;
+              await Robot.wait(500);
+            },
+            closePanel,
+          ),
+          (
+            'iii. b, without Prism\'s messages to Android',
+            without(sends),
+            labels,
+            back(sends),
+          ),
+          (
+            'iv. c, without the Sidekick\'s "covered" message',
+            without(cover),
+            whose,
+            back(cover),
+          ),
+          (
+            'v. b, the six look previews as empty boxes',
+            without(looks),
+            labels,
+            back(looks),
+          ),
+          (
+            'vi. b, the pickers jumping instead of moving',
+            without(jump),
+            labels,
+            back(jump),
+          ),
           ('b, the Sidekick switched off', noSidekick, labels, sidekickBack),
           ('c, the Sidekick switched off', noSidekick, whose, sidekickBack),
         ]);
-        if (!floats) {
-          t.note(
-            'the leak test\'s step f (the Sidekick\'s blobs) was not done: Prism is not allowed over other apps',
-          );
-        }
         for (int k = 0; k < steps.length; k++) {
           await run(k, steps.length);
         }
@@ -6152,6 +6203,10 @@ class _ShellState extends State<Shell>
         Look.instance.choose(vibe: vibeWas);
       }
       settings.reduceTransparency = solidWas;
+      // (The leak test's parts left out, all back; its text that changes weight, gone.)
+      _leakNoSends = _leakNoCover = _leakNoLooks = false;
+      Segmented.testJump = false;
+      Diag.instance.probe.value = null;
       lensOf.setPin(pinWas);
       _sendPin();
       final List<String>? sideBack = sideWere;
@@ -6825,6 +6880,7 @@ class _ShellState extends State<Shell>
     _signTurn.dispose();
     _signShot.dispose();
     _designSide.dispose();
+    _leakBump.dispose();
     _dark.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _freeLater?.cancel();
@@ -9373,7 +9429,7 @@ void showPrismSettings(BuildContext context) {
                             shape: const StadiumBorder(),
                           ),
                           child: Text(
-                            'Run the leak test (about 8 min, hands off)',
+                            'Run the leak test (about 11 min, hands off)',
                             style: LumenType.text(
                               15,
                               weight: 700,

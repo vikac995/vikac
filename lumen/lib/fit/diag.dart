@@ -106,7 +106,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 174';
+  static const String build = 'Prism build 175';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -420,6 +420,13 @@ class Diag {
   /// only when the test moves on to a new part: nothing ticks in between.
   final ValueNotifier<(String, double)?> progress =
       ValueNotifier<(String, double)?>(null);
+
+  /// The leak test only: a short text under the banner drawn at this weight, and whether the
+  /// weight is used exactly as given (true: as every moving weight was before build 175) or
+  /// in Prism's steps of 10 (false: as now). Null otherwise.
+  final ValueNotifier<(double, bool)?> probe = ValueNotifier<(double, bool)?>(
+    null,
+  );
 
   /// Becomes the finished report when a guided test ends.
   final ValueNotifier<String?> finished = ValueNotifier<String?>(null);

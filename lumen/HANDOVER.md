@@ -17,7 +17,13 @@ start `MainActivity` by name anywhere else.** It also counts every cache in the 
 the native memory growth (about 57 MB a round). Build 173 passed 485 of 485 on the phone with one
 engine; step 1 is closed. Build 174 ("step 1e", test only, `reviews/step1e-report.md`) adds the **leak
 test** (testing panel: everyday steps done 20 times, memory read every 5; `tools/preview/test.sh
-leak`). Next: its phone results, then step 2. Tasks are in `tasks/`; each ends with a
+leak`). Its phone run found the growth: a font weight that moves with an animation (the two-way
+pickers' labels, the tab bar's labels) makes a new font in the text engine on every frame, kept for good.
+Build 175 ("step 1f", `reviews/step1f-report.md`) draws every weight in steps of 10 and runs the leak test
+again as a bisect. **Never let a font's weight, or any other font variation, follow an animation: use
+`LumenType` (it rounds weights with `LumenType.steady`) and never build a `TextStyle` with `fontVariations`
+by hand. `LumenType`'s `opsz` follows the size, so don't animate a `LumenType` size either; scale the text
+with a `Transform` instead.** Next: 175's phone results, then step 2. Tasks are in `tasks/`; each ends with a
 report in `reviews/` that is reviewed before the owner relies on the work. The preview scripts are in
 `tools/preview/` (see its README).
 
