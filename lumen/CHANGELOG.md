@@ -1,5 +1,21 @@
 # Lumen changelog
 
+## Prism, build 162 (15 November 2026)
+
+**File:** `releases/prism-build-162.apk`
+
+Needs Play Protect paused to install. Can be installed over build 161.
+
+**Triangle and Petals now work the way Window does: the colours stand still, the shape turns over them.**
+
+- **Triangle:** its light now always comes in from below the glass and fans upward, and stays there. The triangle turns over that fan, so its left is always the warm end and its right the cool end, whichever way it points. At rest it points down into the white light, as before.
+- **Petals:** each petal is now a window onto Window's upright bands. The petals turn; the bands do not. Where petals overlap the colour is deeper, which keeps them readable.
+- **Both on the Sidekick as well.**
+- **The other looks** (Pearls, Lotus, Beam, Bands, Clear, Lined, Halo) do not turn in Prism, so their colours were already still there. On the Sidekick every look leans toward the middle of the screen, the way the blobs open. I left that lean as it is. If you want those looks to keep their colours still on the Sidekick too, say so and I will do the same for each.
+
+**Checked:** it compiles, both sides; in my preview, Triangle and Petals at rest, with the blobs out and with the app list open (the colours hold their places in all three); the automatic test, 62 of 66 with the usual 4 misses.
+**Not checked:** on a phone; the Sidekick's versions (Android only).
+
 ## Prism, build 161 (15 November 2026)
 
 **File:** `releases/prism-build-161.apk`

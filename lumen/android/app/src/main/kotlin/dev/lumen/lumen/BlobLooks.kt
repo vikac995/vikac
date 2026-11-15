@@ -177,19 +177,53 @@ object BlobLooks {
 
     /** Petals: the blobs' colours as petals round a quiet white point in the very middle. */
     private fun petals(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
+        // As Window does: each petal is a window onto the same upright bands, which stand still
+        // while the petals turn. Where two lie over each other the colour is deeper.
         val n = cs.size
         val u = r / 29f
         val step = if (n == 1) 0.0 else 360.0 / n
         for (k in 0 until n) {
+            val turn = (Math.toDegrees(a) + (k - (n - 1) / 2.0) * step).toFloat()
             c.save()
-            c.rotate((Math.toDegrees(a) + (k - (n - 1) / 2.0) * step).toFloat())
-            p.color = seen(lighter(cs[k], 0.14f), 0.76f)
-            c.drawOval(1f * u, -9.5f * u, 25f * u, 9.5f * u, p)
+            c.rotate(turn)
+            path.reset(); path.addOval(1f * u, -9.5f * u, 25f * u, 9.5f * u, Path.Direction.CW)
+            c.clipPath(path)
+            c.rotate(-turn)
+            c.saveLayerAlpha(-r, -r, r, r, 194)
+            windowField(c, r, cs, p)
+            p.style = Paint.Style.FILL
+            p.shader = null
+            p.color = seen(Color.WHITE, 0.14f)
+            c.drawRect(-r, -r, r, r, p)
+            c.restore()
             c.restore()
         }
         glow(c, 0f, 0f, 6.5f * u, Color.WHITE, 0.35f, p)
+        p.style = Paint.Style.FILL
         p.color = seen(Color.WHITE, 0.85f)
         c.drawCircle(0f, 0f, 2.4f * u, p)
+    }
+
+    /** What Window looks onto: upright bands of the colours, standing still, with light from above. */
+    private fun windowField(c: Canvas, r: Float, cs: IntArray, p: Paint) {
+        val n = cs.size
+        p.style = Paint.Style.FILL
+        if (n == 1) {
+            p.shader = null
+            p.color = cs[0]
+        } else {
+            val colours = IntArray(2 * n) { cs[it / 2] }
+            val at = FloatArray(2 * n) { ((it / 2) + (if (it % 2 == 0) 0.25f else 0.75f)) / n }
+            p.shader = LinearGradient(-r, 0f, r, 0f, colours, at, Shader.TileMode.CLAMP)
+        }
+        c.drawRect(-r, -r, r, r, p)
+        p.shader = LinearGradient(
+            0f, -r, 0f, r,
+            intArrayOf(seen(Color.WHITE, 0.32f), clear(Color.WHITE), seen(Color.BLACK, 0.12f)),
+            floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP,
+        )
+        c.drawRect(-r, -r, r, r, p)
+        p.shader = null
     }
 
     /** Lotus: pointed petals opening from one foot, the middle one tallest and in front. */
@@ -358,14 +392,17 @@ object BlobLooks {
         shape.close()
         c.save()
         c.clipPath(shape)
-        fan(c, ax, ay, r * 2.2f, cs, a, Math.PI / 6, p)
+        // As Window does: the colours stand still and the triangle turns over them. The light
+        // comes in from below the glass, always from there, and fans upward.
+        val ly = s * 1.7f
+        fan(c, 0f, ly, r * 3.4f, cs, -Math.PI / 2, 0.66, p)
         p.style = Paint.Style.FILL
         p.shader = RadialGradient(
-            ax, ay, s * 1.75f,
-            intArrayOf(Color.WHITE, seen(Color.WHITE, 0.75f), seen(Color.WHITE, 0.1f), clear(Color.WHITE)),
-            floatArrayOf(0f, 0.3f, 0.62f, 1f), Shader.TileMode.CLAMP,
+            0f, ly, s * 2.1f,
+            intArrayOf(Color.WHITE, seen(Color.WHITE, 0.75f), seen(Color.WHITE, 0.12f), clear(Color.WHITE)),
+            floatArrayOf(0f, 0.42f, 0.7f, 1f), Shader.TileMode.CLAMP,
         )
-        c.drawCircle(ax, ay, s * 1.75f, p)
+        c.drawCircle(0f, ly, s * 2.1f, p)
         p.shader = null
         c.restore()
         p.style = Paint.Style.STROKE

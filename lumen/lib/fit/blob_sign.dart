@@ -485,21 +485,24 @@ void _pearls(Canvas c, double r, List<Color> cs, double a) {
 /// Petals: the blobs' colours as petals round a quiet white point in the very middle of the
 /// glass, nearly filling it.
 void _petals(Canvas c, double r, List<Color> cs, double a) {
+  // As Window does: each petal is a window onto the same upright bands, which stand still while
+  // the petals turn. Where two lie over each other the colour is deeper, which draws them.
   final int n = cs.length;
   final double u = r / 29, step = n == 1 ? 0 : 2 * math.pi / n;
+  final Rect field = Rect.fromCircle(center: Offset.zero, radius: r);
   for (int k = 0; k < n; k++) {
+    final double turn = a + (k - (n - 1) / 2) * step;
+    final Path petal = Path()
+      ..addOval(Rect.fromLTRB(1 * u, -9.5 * u, 25 * u, 9.5 * u));
+    final Path there = petal.transform(Matrix4.rotationZ(turn).storage);
     c
       ..save()
-      ..rotate(a + (k - (n - 1) / 2) * step)
-      ..drawOval(
-        Rect.fromLTRB(1 * u, -9.5 * u, 25 * u, 9.5 * u),
-        Paint()
-          ..color = Color.lerp(
-            cs[k],
-            Colors.white,
-            0.14,
-          )!.withValues(alpha: 0.76),
-      )
+      ..clipPath(there)
+      ..saveLayer(field, Paint()..color = Colors.white.withValues(alpha: 0.76));
+    _windowField(c, r, cs);
+    c
+      ..drawRect(field, Paint()..color = Colors.white.withValues(alpha: 0.14))
+      ..restore()
       ..restore();
   }
   c
@@ -838,30 +841,26 @@ void _triangle(Canvas c, double r, List<Color> cs, double a) {
 /// What Triangle is filled with: the colours fanned from the corner the light comes in by, white
 /// there. [open] widens the fan, from just the triangle (0) to all round (1), for the cog.
 void _triangleField(Canvas c, double r, List<Color> cs, double a, double open) {
+  // As Window does: the colours stand still and the triangle turns over them. The light comes in
+  // from below the glass, always from there, and fans upward; [a] is not used for it.
   final double s = r * 0.94;
-  final Offset apex = -_dir(a) * s;
-  _fan(
-    c,
-    apex,
-    r * 2.4,
-    cs,
-    a,
-    math.pi / 6 + (math.pi / 2.1 - math.pi / 6) * open,
-  );
+  final Offset light = Offset(0, s * 1.7);
+  final double half = 0.66 + (math.pi / 2.1 - 0.66) * open;
+  _fan(c, light, r * 3.4, cs, -math.pi / 2, half);
   c.drawCircle(
-    apex,
-    s * 1.75,
+    light,
+    s * 2.1,
     Paint()
       ..shader = ui.Gradient.radial(
-        apex,
-        s * 1.75,
+        light,
+        s * 2.1,
         <Color>[
           Colors.white,
           Colors.white.withValues(alpha: 0.75),
-          Colors.white.withValues(alpha: 0.1),
+          Colors.white.withValues(alpha: 0.12),
           Colors.white.withValues(alpha: 0),
         ],
-        const <double>[0, 0.3, 0.62, 1],
+        const <double>[0, 0.42, 0.7, 1],
       ),
   );
 }
