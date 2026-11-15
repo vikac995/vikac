@@ -1,7 +1,9 @@
 # Step 1f report: the leak found, and the bisect run (build 175)
 
 Asked for by the review of build 174's phone leak test (b and c kept about 15–17 MB a repeat). Branch
-`claude/flutter-ui-showcase-ngzfru`, based on `2bc345b`. Step 2 not started.
+`claude/flutter-ui-showcase-ngzfru`, based on `2bc345b`. Two commits: `0005166` (the code, the APK, the
+changelog, the handover, this report) and the one after it, which only adds the checked link here. Step 2
+not started.
 
 **What has only run in the preview:** everything. Nothing in this build has run on a phone. In the
 preview the leak test has only its "process" column (no Android), and it draws in software: a picker's
@@ -216,7 +218,9 @@ c, the Sidekick switched off                       +13  | -0.10      7
 
 **Build 175:** `Prism build 175`, `0.136.0+203`, built from the final code. NAME-OK. "about 11 min, hands off"
 and the new step names are in its `libapp.so`. sha256
-`29498c4a3bcd1a8a9f147135aade81c4dd2481bb5721f8293876dbde572e7a5d`, 18,583,802 bytes. Link: LINK_RESULT
+`29498c4a3bcd1a8a9f147135aade81c4dd2481bb5721f8293876dbde572e7a5d`, 18,583,802 bytes. Link: https://github.com/vikac995/vikac/raw/000516665b3c072cc0068e1965e261ff98b03055/lumen/releases/prism-build-175.apk
+(pinned to `0005166`, the commit that added the APK). Checked after the push: it answers 200, and the
+downloaded file has the same sha256 as the one built.
 
 ## For the owner on the phone
 
