@@ -2,7 +2,9 @@
 
 Brief: `tasks/STEP2b.md` (the review chat's brief, word for word, and what the approved mock-up adds).
 Mock-up: https://claude.ai/artifact/URMobjt1XEiqh2kTSFJmLv (version 5, approved by the owner). Branch
-`claude/flutter-ui-showcase-ngzfru`, based on `c3b6857`. Step 3 (the Sidekick's own app list) not started.
+`claude/flutter-ui-showcase-ngzfru`, based on `c3b6857`. Two commits: `0f2cb17` (the code, the APK, the
+docs, this report) and the one after it, which only adds the checked link here. Step 3 (the Sidekick's own
+app list) not started.
 
 **What has only run in the preview:** Prism's side. Prism's settings panel without its Sidekick part, the
 long and button tests' Prism parts, and the leak test with its shorter list ran there.
@@ -223,7 +225,9 @@ leak test:    runs all its 11 steps to the end
 **Build 178:** `Prism build 178`, `0.139.0+206`, built from the final code. NAME-OK. "Where it rests, in points",
 "Hovering" and "Tucked in" are in its `classes.dex`, and "Bring back the Sidekick" is in its `libapp.so`.
 sha256 `69978fc12aef5c55e1c45a67e0f114545e6d5e70adf88036be82628b91d928bb`, 18,665,722 bytes. Link:
-LINK_RESULT
+https://github.com/vikac995/vikac/raw/0f2cb17141a8f23aa5d283613b063055c0d556ae/lumen/releases/prism-build-178.apk
+(pinned to `0f2cb17`, the commit that added the APK). Checked after the push: it answers 200, and the
+downloaded file has the same sha256 as the one built.
 
 ## For the owner on the phone
 
