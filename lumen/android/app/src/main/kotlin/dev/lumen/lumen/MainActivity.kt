@@ -1887,11 +1887,14 @@ class Floater(val timer: Boolean) {
             v.getLocationOnScreen(at)
             // The lens is still pressed in a little; its middle is found from the size it is drawn at.
             val m = Menu(context, at[0] + v.width * v.scaleX / 2f, at[1] + v.height * v.scaleY / 2f, v.width / 2f - 5 * dp)
-            // It can be given the back button, so it takes the focus while it is open.
+            // (It never takes the focus: see the flags.)
             val lp = android.view.WindowManager.LayoutParams(
                 android.view.WindowManager.LayoutParams.MATCH_PARENT, android.view.WindowManager.LayoutParams.MATCH_PARENT,
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                // Never takes the keyboard's focus: a keyboard open in the app underneath stays open.
+                // (A tap beside the blobs closes them; back goes to the app underneath.)
+                android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 android.graphics.PixelFormat.TRANSLUCENT,
             )
             if (Build.VERSION.SDK_INT >= 28) {
@@ -1996,6 +1999,14 @@ class Floater(val timer: Boolean) {
         m["menu"] = menu != null
         m["menuCount"] = menu?.testCount() ?: 0
         m["menuEditing"] = menu?.testEditing() ?: false
+        // (For the button test: the held blob's small menu, the Sidekick's two distances, and
+        // whether a panel in Prism has it hidden.)
+        m["pop"] = menu?.testPop() ?: -1
+        m["gap"] = restGap.toDouble()
+        m["tuck"] = tuckOut.toDouble()
+        m["covered"] = covered
+        m["gone"] = sideGone
+        m["sideKeys"] = blobs.joinToString(",") { it.key }
         m["sheet"] = sheet != null
         m["closing"] = swallowing
         m["blobs"] = blobs.size
@@ -2259,6 +2270,13 @@ class Floater(val timer: Boolean) {
                         }
                         "tap" -> finger(m, listOf(spot), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)
                         "middle" -> finger(m, listOf(m.testMiddle()), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)
+                        // Held on the Sidekick itself in the middle of its blobs: its settings.
+                        "middleHold" -> finger(m, listOf(m.testMiddle()), true, 50, 0, holdTime() + 250, false, num("settleMs", 900), { true }, after)
+                        // A tap on one part of the held blob's small menu.
+                        "pop" -> {
+                            val at = m.testPopSpot(num("which", 0).toInt()) ?: return fail("no small menu, or not that part of it")
+                            finger(m, listOf(at), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)
+                        }
                         "hold" -> finger(m, listOf(spot), true, 50, 0, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L) + 200, false, 500, { true }, after)
                         "drag" -> {
                             val to = points(a["to"])
@@ -3107,6 +3125,17 @@ class Floater(val timer: Boolean) {
         fun testEditing() = editing
         fun testBack() = backPressed()
         fun testKey(i: Int): String = items[i.coerceIn(0, n - 1)].key
+        fun testPop(): Int = menuFor
+
+        /** Where one part of the held blob's small menu is: 0 Change, 1 Remove, 2 Add. */
+        fun testPopSpot(which: Int): FloatArray? {
+            if (menuFor < 0) return null
+            popAt(menuFor)
+            val parts = if (room()) 3 else 2
+            if (which >= parts) return null
+            val w = popBox.width() / parts
+            return floatArrayOf(popBox.left + w * (which + 0.5f), popBox.centerY())
+        }
         fun testMiddle(): FloatArray = floatArrayOf(cx, cy)
 
         override fun onDraw(canvas: android.graphics.Canvas) {

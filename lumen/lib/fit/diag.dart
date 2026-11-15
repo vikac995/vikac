@@ -106,7 +106,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 166';
+  static const String build = 'Prism build 167';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -474,6 +474,9 @@ class Diag {
   /// The same test, several times over and with longer stretches of sitting still: about an
   /// hour, for leaving the phone to it.
   Future<void> Function()? hourTest;
+
+  /// The button test: Prism's button and the Sidekick, every way of touching them.
+  Future<void> Function()? buttonTest;
 
   /// The chat-head battery test: nothing floating, a blob, the timer, and both, each three
   /// times in turn with another app in front.

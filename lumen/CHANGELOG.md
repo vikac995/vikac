@@ -1,5 +1,30 @@
 # Lumen changelog
 
+## Prism, build 167 (15 November 2026)
+
+**File:** `releases/prism-build-167.apk`
+
+Needs Play Protect paused to install. Can be installed over build 166.
+
+**The button test.** A hands-off test of Prism's button and the Sidekick, about 7 minutes (four rounds, then a minute of nothing being touched).
+- **How to start it:** hold any blob, tap Change (or Add), and the first thing in the list is **Button test**. Tapping it starts the test and puts nothing in the blob's place. It is also in the frame-rate panel's list of tests.
+- **What it does:** taps, quick taps, presses just short of a hold, holds, trembling holds, a finger that moves first, flicks; the settings opened and closed every way (button, X, back, five times quickly); a blob's small menu, Change, Add and Remove, every blob removed and the plus, a blob dragged at once. On the Sidekick: its menu, its small menu (Change, Remove, Add), held for its settings (closed and with its blobs out), moved first, let go low at the side, carried to the bottom, its two distances at their ends, an emptied menu. After each part it checks that nothing was left behind: no panel, no small menu, no list, no glass out, the sign turned the right way.
+- At the end, "Copy report" and paste it here.
+
+**Found by the test, and fixed:** removing the last blob left its "+" inside the button until the blobs were next opened. It now comes out at once.
+
+**From your recordings:**
+- **The bar's rim at either end:** touching near an end made the tab glass swell past the end of the bar, so its magnifying edge lay over the bar's rim and bent it. The tab glass now always stays inside the bar's ends.
+- **The triangle opening and closing the app list:** it was turning half way in about a tenth of a second, which read as a jump. It now takes about a fifth, and still stops without swinging past.
+- **The settings now grow out of the button and go back into it**, on the same spring as the app list, instead of sliding up from the bottom.
+- **The Sidekick under its own settings:** in 163 I kept it in sight while its settings were open; your recording shows it then lay over the panel's switches and could take their taps. It is hidden again under any panel, and shown only while you hold one of its two sliders (the panel clears then).
+- **The keyboard in WhatsApp:** opening the Sidekick's blobs took the keyboard's focus and closed it. The blobs' window no longer takes focus, so a keyboard stays open. (The back button, while its blobs are out, now goes to the app underneath; a tap beside the blobs still closes them.)
+
+**Checked:** it compiles, both sides; the button test's Prism half in my preview, 55 of 56 (the one miss is a measurement only Android can make); the long test, 65 of 69 with the usual 4 misses.
+**Not checked:** on a phone. The button test's Sidekick half runs only on Android, so this is the first time it will run at all: some of its checks may be wrong about what is right, and I will read them with that in mind.
+
+**Still to do:** the Sidekick's settings shown over whatever app you are in (Android drawing its own panel).
+
 ## Prism, build 166 (15 November 2026)
 
 **File:** `releases/prism-build-166.apk`

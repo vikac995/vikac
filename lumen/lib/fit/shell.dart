@@ -221,7 +221,8 @@ class _ShellState extends State<Shell>
       // (Settling without overshoot: it turns and stops, and never spins past.)
       _signTurn.animateTo(
         now == 2 || _panelOpen ? math.pi : (now == 1 ? math.pi / 3 : 0),
-        spring: Motions.spatialFast,
+        // (Unhurried: half a turn in about a fifth of a second, read as a turn and not a jump.)
+        spring: Motions.spatial,
       );
     } else {
       // The others stay pointing up, and shoot out a little as something opens.
@@ -275,6 +276,10 @@ class _ShellState extends State<Shell>
     Diag.instance.event('blob removed');
     // The others close up round the middle at once.
     _rearrange(_packed(without: i), empty: i);
+    if (_allEmpty && _open) {
+      // The last one gone: the plus comes out in its place at once (it was left in the button).
+      _out[0].animateTo(1, spring: _shoot);
+    }
   }
 
   /// Whether place [i] holds something that is neither an app nor one of Prism's sheets or
@@ -410,6 +415,9 @@ class _ShellState extends State<Shell>
   /// One of the Sidekick's distances is being dragged ([which]: 'rest' or 'tuck'), or let go.
   void _spotHold(String which, bool on) {
     _panelClear.value = on ? which : null;
+    // (Under the panel it is hidden, so that it never lies over the panel and takes its taps.
+    // Only while its place is being chosen, with the panel clear, is it shown.)
+    RestBubble.instance.tellCovered(!on);
     if (on) {
       RestBubble.instance.setSpots(show: which);
     }
@@ -418,8 +426,8 @@ class _ShellState extends State<Shell>
   /// While its own settings are open the Sidekick stays in sight, to be seen as it changes.
   /// (Other panels hide it, so that a tap meant for them cannot reach it.)
   void _sideInSight() {
-    if (_panelOpen) {
-      RestBubble.instance.tellCovered(!_designSide.value);
+    if (_panelOpen && _panelClear.value == null) {
+      RestBubble.instance.tellCovered(true);
     }
   }
 
@@ -611,6 +619,18 @@ class _ShellState extends State<Shell>
 
   /// Something was chosen in the drawer for the place being changed.
   void _picked(String key) {
+    if (key == 'test:buttons') {
+      // Not a blob: the button test, which needs the list closed and the menu as it was.
+      _setDrawer(false);
+      if (_pickSide || _editSlot == null) {
+        _rearrange(_packed());
+      }
+      Future<void>.delayed(
+        const Duration(milliseconds: 900),
+        () => Diag.instance.buttonTest?.call(),
+      );
+      return;
+    }
     final int? i = _editSlot;
     if (i != null && i >= 100) {
       GestureSlots.instance.put(i - 100, key);
@@ -759,7 +779,7 @@ class _ShellState extends State<Shell>
       barrierLabel: 'Close',
       // (Its own shade, below, so that it can clear with the panel.)
       barrierColor: Colors.transparent,
-      transitionDuration: panelTime,
+      transitionDuration: growTime,
       transitionBuilder: panelNoFade,
       pageBuilder: (BuildContext context, Animation<double> rise, _) {
         final LumenColors c = LumenColors.of(context);
@@ -789,7 +809,8 @@ class _ShellState extends State<Shell>
                 ),
               ),
             ),
-            PanelRise(
+            PanelGrow(
+              from: _home,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(10, 0, 10, above + 8),
                 child: Material(
@@ -2295,6 +2316,11 @@ class _ShellState extends State<Shell>
       quiet: true,
       title: '2½-hour stability test',
     );
+    Diag.instance.buttonTest = () => _longTest(
+      rounds: 4,
+      buttons: true,
+      title: 'button test (Prism and the Sidekick)',
+    );
     Diag.instance.hourTest = () =>
         _longTest(rounds: 4, still: 180, quiet: true, title: 'hour-long test');
     // The pinned thing: what its sheets ask of Prism, and keeping Android told.
@@ -2346,6 +2372,12 @@ class _ShellState extends State<Shell>
       Future<void>.delayed(
         const Duration(seconds: 9),
         () => Diag.instance.glassTest?.call(),
+      );
+    } else if (Platform.environment['PRISM_BUTTON_TEST'] != null) {
+      Future<void>.delayed(
+        const Duration(seconds: 9),
+        () =>
+            _longTest(rounds: 1, buttons: true, title: 'button test, dry run'),
       );
     } else if (Platform.environment['PRISM_LONG_TEST'] != null) {
       Future<void>.delayed(
@@ -2682,6 +2714,7 @@ class _ShellState extends State<Shell>
     bool quiet = false,
     bool drain = false,
     bool glass = false,
+    bool buttons = false,
     String title = 'long test',
   }) async {
     if (_testing || !mounted) {
@@ -3914,6 +3947,705 @@ class _ShellState extends State<Shell>
         }
       }
 
+      // ================================================================ the button test
+      // Prism's button and the Sidekick, and every way of touching them that has gone wrong
+      // before or could: holds that are not quite holds, holds that turn into drags, taps that
+      // land while something is still moving, panels left behind, and menus emptied and refilled.
+      final bool turns = BlobSign.of(Apps.instance.blobLook).turns;
+      // Whether the sign has turned the way it should for what is open, and is not the cog.
+      void signIs(String when, double want) => t.check(
+        'sign: $when',
+        _cog.target == 0 && (!turns || (_signTurn.target - want).abs() < 0.01),
+        'turned ${_signTurn.target.toStringAsFixed(2)} (want ${turns ? want.toStringAsFixed(2) : 'any'}), cog ${_cog.target}',
+      );
+      // Nothing left behind: no panel, no small menu, no list, no blob being chosen for.
+      void clean(String when) => t.check(
+        'clean: $when',
+        !_panelOpen &&
+            !PanelWatch.instance.anyOpen &&
+            _menuFor == null &&
+            !_drawerOpen &&
+            _editSlot == null &&
+            !_pickSide &&
+            !_carrying &&
+            !_parked,
+        'panel $_panelOpen/${PanelWatch.instance.anyOpen}, menu $_menuFor, list $_drawerOpen, place $_editSlot, side $_pickSide, glass $_carrying/$_parked',
+      );
+      Future<void> closePanel() async {
+        final Offset? x = Robot.spot('floatClose');
+        if (x != null) {
+          await Robot.tap(x, after: 900);
+        }
+      }
+
+      Future<void> holdButton({int extra = 260}) =>
+          Robot.hold(_home, ms: _holdMs + extra, after: 900);
+      List<String> keys() => <String>[for (int k = 0; k < _n; k++) _pinKey(k)];
+      List<String> sideKeys() => <String>[
+        for (int k = 0; k < _n; k++)
+          if (!_sideKey(k).startsWith('empty:')) _sideKey(k),
+      ];
+      bool packed() {
+        bool seenEmpty = false;
+        for (int k = 0; k < _n; k++) {
+          if (_isEmpty(k)) {
+            seenEmpty = true;
+          } else if (seenEmpty) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      Future<void> buttonRound() async {
+        // ------------------------------------------------ the button: taps
+        say('1 of 6, the button: taps');
+        await calm();
+        BlobSlots.instance.putAll(five);
+        await Robot.wait(500);
+        await t.scene('six quick taps on the button', () async {
+          for (int n = 0; n < 6; n++) {
+            await Robot.tap(_home, after: 120);
+          }
+          await Robot.wait(900);
+        });
+        t.check(
+          'button: six quick taps leave the blobs closed',
+          !_open && !_panelOpen,
+        );
+        signIs('closed after quick taps, it points as at rest', 0);
+        await Robot.tap(_home, after: 900);
+        t.check('button: a tap opens the blobs', _open && shown() == 5);
+        signIs('with the blobs out it has turned a sixth', math.pi / 3);
+        await Robot.tap(_home, after: 900);
+        t.check('button: a tap closes them', !_open);
+        // A press a little shorter than a hold is a tap, not the settings.
+        await Robot.hold(_home, ms: (_holdMs * 0.55).round(), after: 900);
+        t.check(
+          'button: a press shorter than a hold is a tap: the blobs, not the settings',
+          _open && !_panelOpen,
+          'blobs ${_open ? 'out' : 'in'}, settings ${_panelOpen ? 'open' : 'closed'}',
+        );
+        await Robot.tap(_home, after: 900);
+        clean('after the taps');
+
+        // ------------------------------------------------ the button: holds
+        say('2 of 6, the button: holds and drags');
+        await t.scene('holding the closed button', () async {
+          await holdButton();
+        });
+        t.check(
+          'hold: the closed button held opens its settings, for Prism',
+          _panelOpen && !_designSide.value,
+        );
+        t.check(
+          'hold: and neither the glass nor the blobs came out',
+          !_carrying && !_parked && !_open && !_drawerOpen,
+        );
+        signIs('with the settings open it has turned half way', math.pi);
+        final Offset? closeAt = Robot.spot('floatClose');
+        t.check(
+          'settings: they sit above the button',
+          closeAt != null && closeAt.dy < _home.dy - _button,
+        );
+        await Robot.tap(_home, after: 900);
+        t.check('settings: a tap on the button closes them', !_panelOpen);
+        signIs('settings closed, it has turned back', 0);
+        clean('after the settings, closed by the button');
+        // The same, five times quickly, closed each way in turn: nothing may be left behind.
+        await t.scene('settings opened and closed five times', () async {
+          for (int n = 0; n < 5; n++) {
+            await holdButton(extra: 200);
+            if (n.isEven) {
+              await closePanel();
+            } else {
+              await Robot.tap(_home, after: 900);
+            }
+          }
+        });
+        clean('after the settings five times');
+        signIs('after the settings five times, at rest', 0);
+        // Closed as the phone's back gesture would.
+        await holdButton();
+        await Navigator.of(context).maybePop();
+        await Robot.wait(900);
+        t.check(
+          'settings: back closes them',
+          !_panelOpen && !PanelWatch.instance.anyOpen,
+        );
+        signIs('closed by back, it has turned back', 0);
+        // Held with the blobs out: the blobs go in and the settings come up.
+        await Robot.tap(_home, after: 900);
+        await holdButton();
+        t.check(
+          'hold: with the blobs out, the settings come up and the blobs go in',
+          _panelOpen && !_open,
+        );
+        await closePanel();
+        t.check(
+          'hold: and closing the settings leaves the blobs closed',
+          !_open && !_panelOpen,
+        );
+        // A finger that trembles a few points is still a hold.
+        await Robot.drag(
+          <Offset>[
+            _home,
+            _home + const Offset(0, 3),
+            _home + const Offset(3, 5),
+            _home + const Offset(2, 3),
+          ],
+          legMs: 120,
+          dwell: (_holdMs / 3).round() + 40,
+          after: 900,
+        );
+        t.check(
+          'hold: a finger that trembles a few points is still a hold',
+          _panelOpen && !_carrying,
+          'settings ${_panelOpen ? 'open' : 'closed'}, glass ${_carrying ? 'lifted' : 'in place'}',
+        );
+        await closePanel();
+        // A finger that moves first is the glass, however long it then stays.
+        await t.scene('moving off the button, then staying', () async {
+          await Robot.drag(
+            <Offset>[_home, _home + const Offset(-60, -40)],
+            legMs: 200,
+            dwell: _holdMs + 400,
+            after: 900,
+          );
+        });
+        t.check(
+          'hold: a finger that moves first lifts the glass, and never opens the settings',
+          !_panelOpen,
+        );
+        await calm();
+        clean('after moving off the button');
+        // A flick up is the app list, and nothing else.
+        await Robot.drag(
+          <Offset>[_home, _home - const Offset(0, 320)],
+          legMs: 120,
+          flick: true,
+          after: 1000,
+        );
+        t.check(
+          'flick: a flick up opens the app list, and not the settings',
+          _drawerOpen && !_panelOpen,
+        );
+        signIs('with the app list up it has turned half way', math.pi);
+        // Held with the app list up: the button only closes it.
+        await holdButton();
+        t.check(
+          'hold: with the app list up, holding the button closes it and opens nothing',
+          !_drawerOpen && !_panelOpen,
+          'list ${_drawerOpen ? 'up' : 'down'}, settings ${_panelOpen ? 'open' : 'closed'}',
+        );
+        await calm();
+        signIs('after the app list, at rest', 0);
+        clean('after the app list');
+
+        // ------------------------------------------------ the blobs: the small menu
+        say('3 of 6, a blob\'s small menu');
+        await Robot.tap(_home, after: 900);
+        await Robot.hold(seat(2), ms: _holdMs + 260, after: 600);
+        t.check('menu: holding a blob brings its small menu', _menuFor == 2);
+        await Robot.tap(_home, after: 900);
+        t.check(
+          'menu: a tap on the button with the menu up closes the blobs, and the menu with them',
+          !_open && _menuFor == null,
+          'blobs ${_open ? 'out' : 'in'}, menu $_menuFor',
+        );
+        // Held while the blobs are still on their way out.
+        await Robot.tap(_home, after: 60);
+        await Robot.hold(seat(1), ms: _holdMs + 260, after: 700);
+        t.check(
+          'menu: held as the blobs come out, it is that blob\'s menu or none',
+          _menuFor == null || _menuFor == 1,
+          'menu $_menuFor',
+        );
+        if (_menuFor != null) {
+          await Robot.tap(beside, after: 500);
+        }
+        t.check(
+          'menu: put away, the blobs stay out',
+          _open && _menuFor == null,
+        );
+        // A second hold while a menu is up puts the first away, and opens nothing else.
+        await Robot.hold(seat(1), ms: _holdMs + 260, after: 600);
+        await Robot.hold(seat(3), ms: _holdMs + 260, after: 600);
+        t.check(
+          'menu: a hold elsewhere while one is up only puts it away',
+          _menuFor == null && !_drawerOpen && _open,
+          'menu $_menuFor',
+        );
+        // Change, and closing the list without choosing.
+        final List<String> before = keys();
+        await Robot.hold(seat(2), ms: _holdMs + 260, after: 600);
+        final Offset? change = Robot.spot('menuChange');
+        if (change != null) {
+          await Robot.tap(change, after: 1300);
+        }
+        t.check(
+          'change: the list comes up for that blob, and the button becomes it',
+          _drawerOpen && _editSlot == 2 && _face.target == 1,
+        );
+        await Robot.tap(_home, after: 1200);
+        t.check(
+          'change: closed without choosing, nothing changed and the button is the sign again',
+          !_drawerOpen &&
+              _open &&
+              _face.target == 0 &&
+              keys().join(' ') == before.join(' '),
+          keys().join(' '),
+        );
+        signIs('back at the blobs, turned a sixth', math.pi / 3);
+        // Add, and closing the list without choosing.
+        await Robot.hold(seat(1), ms: _holdMs + 260, after: 600);
+        t.check(
+          'menu: with five blobs there is no Add',
+          Robot.spot('menuAdd') == null,
+        );
+        final Offset? remove = Robot.spot('menuRemove');
+        if (remove != null) {
+          await Robot.tap(remove, after: 900);
+        }
+        t.check(
+          'remove: four left, together in the middle',
+          shown() == 4 && packed(),
+          keys().join(' '),
+        );
+        await Robot.hold(seat(0), ms: _holdMs + 260, after: 600);
+        final Offset? add = Robot.spot('menuAdd');
+        if (add != null) {
+          await Robot.tap(add, after: 1300);
+        }
+        t.check(
+          'add: the list comes up for the place right after it',
+          _drawerOpen && _editSlot == 1,
+        );
+        await Robot.tap(_home, after: 1200);
+        t.check(
+          'add: closed without choosing, still four, together, and nothing chosen',
+          !_drawerOpen && shown() == 4 && packed() && _editSlot == null,
+          keys().join(' '),
+        );
+        // Removed one after another, quickly, down to none: a plus is left.
+        await t.scene('removing every blob', () async {
+          for (int n = 0; n < 4; n++) {
+            await Robot.hold(seat(0), ms: _holdMs + 220, after: 450);
+            final Offset? r = Robot.spot('menuRemove');
+            if (r != null) {
+              await Robot.tap(r, after: 500);
+            }
+          }
+        });
+        t.check(
+          'remove: with every blob taken away, a plus is left',
+          _allEmpty && Robot.spot('plus0') != null,
+          keys().join(' '),
+        );
+        signIs('with only the plus, it still turns', math.pi / 3);
+        await Robot.hold(seat(0), ms: _holdMs + 260, after: 600);
+        t.check('plus: holding it brings no menu', _menuFor == null);
+        if (_menuFor != null) {
+          await Robot.tap(beside, after: 500);
+        }
+        final Offset? plus = Robot.spot('plus0');
+        if (plus != null) {
+          await Robot.tap(plus, after: 1300);
+        }
+        t.check('plus: a tap opens the list', _drawerOpen && _editSlot == 0);
+        final Offset? pick = Robot.spot('choice0');
+        if (pick != null) {
+          await Robot.tap(pick, after: 1700);
+        }
+        t.check(
+          'plus: choosing gives the menu one blob',
+          shown() == 1 && _pinKey(0) == 'action:0',
+          keys().join(' '),
+        );
+        if (_drawerOpen) {
+          _setDrawer(false);
+          await Robot.wait(800);
+        }
+        BlobSlots.instance.putAll(five);
+        await Robot.wait(600);
+        // A blob dragged at once is never held, however long the drag.
+        if (!_open) {
+          await Robot.tap(_home, after: 900);
+        }
+        await Robot.drag(
+          <Offset>[seat(4), seat(4) - const Offset(0, 140), seat(4)],
+          legMs: 420,
+          after: 900,
+        );
+        t.check(
+          'drag: a blob moved at once never brings its menu',
+          _menuFor == null && keys().join(' ') == five.join(' '),
+        );
+        await calm();
+        if (_open) {
+          await Robot.tap(_home, after: 900);
+        }
+        clean('after the blobs');
+
+        // ------------------------------------------------ the settings' own parts
+        say('4 of 6, the settings');
+        await holdButton();
+        final Offset? names = Robot.spot('names');
+        if (names != null) {
+          await Robot.tap(names + const Offset(88, 0), after: 900);
+          t.check('labels: Hide hides them', !BlobSlots.instance.names);
+          await Robot.tap(
+            (Robot.spot('names') ?? names) - const Offset(88, 0),
+            after: 900,
+          );
+          t.check('labels: Show shows them', BlobSlots.instance.names);
+        }
+        // A swipe set from the settings, the list closed without choosing: the settings come back.
+        final Offset? swipe = Robot.spot('gesture3');
+        if (swipe != null) {
+          await Robot.tap(swipe, after: 1500);
+          t.check(
+            'swipes: a tap on one opens the list for it',
+            _drawerOpen && _editSlot == 103,
+          );
+          await Robot.tap(_home, after: 1500);
+          t.check(
+            'swipes: the list closed without choosing, the settings are back',
+            _panelOpen && !_drawerOpen,
+          );
+        }
+        final Offset? whose = Robot.spot('blobDesignFor');
+        if (whose != null) {
+          await Robot.tap(whose + const Offset(80, 0), after: 800);
+          t.check(
+            'settings: Sidekick chosen, its own switches show',
+            _designSide.value && Robot.spot('floatIn') != null,
+          );
+          // (Found again: the panel grows upward when the Sidekick's switches are in it.)
+          await Robot.tap(
+            (Robot.spot('blobDesignFor') ?? whose) - const Offset(80, 0),
+            after: 800,
+          );
+          t.check(
+            'settings: Prism chosen again, the Sidekick\'s switches go',
+            !_designSide.value && Robot.spot('floatIn') == null,
+          );
+        }
+        await closePanel();
+        clean('after the settings\' own parts');
+
+        // ------------------------------------------------ the Sidekick
+        if (!floats) {
+          t.note(
+            'the Sidekick was not tested: Prism is not allowed over other apps',
+          );
+          return;
+        }
+        say('5 of 6, the Sidekick');
+        BlobSlots.instance.sideAsMain();
+        await _sendBlobs();
+        await t.lens(<String, Object?>{'op': 'side', 'on': true});
+        await Robot.wait(1200);
+        Map<String, Object?> s = await where();
+        t.check(
+          'sidekick: it is there',
+          s['lens'] == true && s['guest'] == true,
+          'shown ${s['lens']}, ${s['pin']}',
+        );
+        Future<Map<String, Object?>> menu(
+          String what, {
+          int i = 0,
+          int which = 0,
+          int settleMs = 900,
+        }) async {
+          final Map<String, Object?> m = await t.lens(<String, Object?>{
+            'op': 'menu',
+            'what': what,
+            'i': i,
+            'which': which,
+            'settleMs': settleMs,
+          }, extraMs: 2000);
+          t.lensRun('menu $what', m);
+          return m;
+        }
+
+        Future<bool> openMenu() async {
+          final Map<String, Object?> m = await press(
+            'sidekick tapped',
+            <Offset>[],
+            holdMs: 60,
+            settleMs: 1100,
+          );
+          return m['menu'] == true;
+        }
+
+        t.check('sidekick: a tap opens its blobs', await openMenu());
+        s = await where();
+        t.check(
+          'sidekick: as many blobs as its menu has',
+          s['menuCount'] == sideKeys().length,
+          '${s['menuCount']} shown, ${sideKeys().length} in its menu',
+        );
+        s = await menu('hold', i: 1);
+        t.check(
+          'sidekick: holding a blob brings its small menu',
+          s['pop'] == 1,
+          'small menu ${s['pop']}',
+        );
+        s = await menu('outside', settleMs: 700);
+        t.check(
+          'sidekick: a tap beside it puts the small menu away, the blobs stay',
+          s['pop'] == -1 && s['menu'] == true,
+          'small menu ${s['pop']}, blobs ${s['menu']}',
+        );
+        // Remove: the Sidekick's own menu loses that one, Prism's keeps it.
+        final List<String> mainBefore = keys();
+        final int sideBefore = sideKeys().length;
+        await menu('hold', i: 1);
+        s = await menu('pop', which: 1, settleMs: 1200);
+        await Robot.wait(900);
+        t.check(
+          'sidekick: Remove takes one from its own menu, together, and Prism\'s is untouched',
+          sideKeys().length == sideBefore - 1 &&
+              keys().join(' ') == mainBefore.join(' '),
+          '${sideKeys().length} left of $sideBefore; Prism ${keys().join(' ')}',
+        );
+        // Add, closed without choosing.
+        if (await openMenu()) {
+          await menu('hold', i: 0);
+          s = await menu('pop', which: 2, settleMs: 1200);
+          await Robot.wait(1200);
+          t.check(
+            'sidekick: Add brings Prism\'s list, for the place after it, in the Sidekick\'s menu',
+            _drawerOpen && _pickSide && _editSlot == 1,
+            'list $_drawerOpen, side $_pickSide, place $_editSlot',
+          );
+          await Robot.tap(_home, after: 1300);
+          t.check(
+            'sidekick: closed without choosing, its menu is as it was and Prism\'s is shown again',
+            !_drawerOpen &&
+                !_pickSide &&
+                !BlobSlots.instance.side &&
+                sideKeys().length == sideBefore - 1,
+            'side ${BlobSlots.instance.side}, ${sideKeys().length} in its menu',
+          );
+        }
+        // Change, choosing the first thing.
+        if (await openMenu()) {
+          await menu('hold', i: 0);
+          s = await menu('pop', which: 0, settleMs: 1200);
+          await Robot.wait(1200);
+          t.check(
+            'sidekick: Change brings Prism\'s list for that blob',
+            _drawerOpen && _pickSide && _editSlot == 0,
+          );
+          final Offset? first = Robot.spot('choice0');
+          if (first != null) {
+            await Robot.tap(first, after: 1700);
+          }
+          t.check(
+            'sidekick: what was chosen is in the Sidekick\'s menu, and only there',
+            _sideKey(0) == 'action:0' &&
+                keys().join(' ') == mainBefore.join(' '),
+            'side ${_sideKey(0)}; Prism ${keys().join(' ')}',
+          );
+          clean('after changing a Sidekick blob');
+        }
+        // Held, closed: its settings, for the Sidekick.
+        s = await press(
+          'sidekick held',
+          <Offset>[],
+          holdMs: _holdMs + 300,
+          settleMs: 1500,
+        );
+        await Robot.wait(900);
+        t.check(
+          'sidekick: held, its settings come up, for the Sidekick',
+          _panelOpen && _designSide.value,
+        );
+        s = await where();
+        t.check(
+          'sidekick: under its own settings it is hidden, so it cannot take their taps',
+          s['covered'] == true,
+          'hidden ${s['covered']}',
+        );
+        // The two distances, at their ends: it goes there to be seen.
+        final double gapWas = lensOf.sideGap, tuckWas = lensOf.sideTuck;
+        final double wPx = (s['w'] as num?)?.toDouble() ?? w;
+        // (As a finger on the slider: while it is held the panel clears and the Sidekick shows.)
+        _spotHold('rest', true);
+        await Robot.wait(700);
+        s = await where();
+        t.check(
+          'sidekick: a slider held, the panel clears and it is shown',
+          _panelClear.value == 'rest' && s['covered'] != true,
+          'clear ${_panelClear.value}, hidden ${s['covered']}',
+        );
+        for (final double g in <double>[RestBubble.gapMin, RestBubble.gapMax]) {
+          lensOf.setSpots(gap: g, show: 'rest');
+          await Robot.wait(900);
+          s = await where();
+          final double x = (s['x'] as num?)?.toDouble() ?? -1;
+          final double size = (s['size'] as num?)?.toDouble() ?? 0;
+          final double fromEdge = math.min(x, wPx - x - size) / dp;
+          t.check(
+            'sidekick: distance from the edge ${g.round()}, it rests there',
+            (fromEdge - g).abs() < 6 && s['tucked'] != true,
+            '${fromEdge.toStringAsFixed(1)} points from the edge',
+          );
+        }
+        _spotHold('rest', false);
+        _spotHold('tuck', true);
+        for (final double k in <double>[
+          RestBubble.tuckMin,
+          RestBubble.tuckMax,
+        ]) {
+          lensOf.setSpots(tuck: k, show: 'tuck');
+          await Robot.wait(1100);
+          s = await where();
+          final double x = (s['x'] as num?)?.toDouble() ?? -1;
+          final double size = (s['size'] as num?)?.toDouble() ?? 0;
+          final double showing =
+              (x < 0 ? x + size : wPx - x).clamp(0, size) / dp;
+          t.check(
+            'sidekick: tucked, ${k.round()} points showing',
+            s['tucked'] == true && (showing - k).abs() < 8,
+            '${showing.toStringAsFixed(1)} points showing, tucked ${s['tucked']}',
+          );
+        }
+        lensOf.setSpots(gap: gapWas, tuck: tuckWas, show: 'rest', save: true);
+        await Robot.wait(900);
+        _spotHold('tuck', false);
+        await Robot.wait(700);
+        s = await where();
+        t.check(
+          'sidekick: the slider let go, the panel is back and it is hidden again',
+          _panelClear.value == null && s['covered'] == true,
+          'clear ${_panelClear.value}, hidden ${s['covered']}',
+        );
+        // Prism chosen in the same panel: the Sidekick steps aside, as under any panel.
+        final Offset? whose2 = Robot.spot('blobDesignFor');
+        if (whose2 != null) {
+          await Robot.tap(
+            (Robot.spot('blobDesignFor') ?? whose2) - const Offset(80, 0),
+            after: 900,
+          );
+          s = await where();
+          t.check(
+            'sidekick: under Prism\'s own settings it is hidden',
+            s['covered'] == true,
+            'hidden ${s['covered']}',
+          );
+        }
+        await closePanel();
+        await Robot.wait(600);
+        s = await where();
+        t.check(
+          'sidekick: settings closed, it is back in sight, out at its place',
+          s['lens'] == true && s['covered'] != true,
+          'shown ${s['lens']}, hidden ${s['covered']}, tucked ${s['tucked']}',
+        );
+        clean('after the Sidekick\'s settings');
+        // Held in the middle of its own blobs: its settings too.
+        if (await openMenu()) {
+          s = await menu('middleHold', settleMs: 1500);
+          await Robot.wait(900);
+          t.check(
+            'sidekick: held in the middle of its blobs, its settings come up',
+            _panelOpen && _designSide.value && s['menu'] != true,
+          );
+          await closePanel();
+        }
+        // Moved first, then still: never the settings.
+        final double sx = (s['x'] as num?)?.toDouble() ?? w / 2;
+        s = await where();
+        final Offset mid = Offset(
+          (((s['x'] as num?)?.toDouble() ?? sx) +
+                  ((s['size'] as num?)?.toDouble() ?? 0) / 2) /
+              dpr,
+          (((s['y'] as num?)?.toDouble() ?? h / 2) +
+                  ((s['size'] as num?)?.toDouble() ?? 0) / 2) /
+              dpr,
+        );
+        s = await press(
+          'sidekick moved, then held still',
+          <Offset>[mid - const Offset(70, 40)],
+          legMs: 250,
+          endMs: _holdMs + 500,
+        );
+        await Robot.wait(900);
+        t.check(
+          'sidekick: moved first and then held still, it is a move: no settings',
+          !_panelOpen && s['lens'] == true,
+        );
+        // Let go low on the screen but away from the middle: it stays.
+        s = await press(
+          'sidekick let go low, at the side',
+          <Offset>[Offset(sc.width * 0.18, sc.height * 0.8)],
+          legMs: 600,
+          endMs: 200,
+        );
+        await Robot.wait(900);
+        s = await where();
+        t.check(
+          'sidekick: let go low at the side, it is not dismissed',
+          s['lens'] == true && s['guest'] == true,
+          'shown ${s['lens']}',
+        );
+        // Carried right down to the middle at the bottom: it is dismissed.
+        s = await press(
+          'sidekick carried to the bottom',
+          <Offset>[cross],
+          legMs: 700,
+          endMs: 300,
+          settleMs: 1500,
+        );
+        await Robot.wait(900);
+        s = await where();
+        t.check(
+          'sidekick: carried to the bottom middle and let go, it is dismissed',
+          s['lens'] != true,
+          'shown ${s['lens']}',
+        );
+        await t.lens(<String, Object?>{'op': 'side', 'on': true});
+        await Robot.wait(1200);
+        // An emptied Sidekick menu: one plus.
+        BlobSlots.instance.putSideAll(List<String>.filled(_n, 'empty:'));
+        await _sendBlobs();
+        await Robot.wait(900);
+        s = await where();
+        t.check(
+          'sidekick: with nothing in its menu, it holds one plus',
+          s['blobs'] == 1 && '${s['sideKeys']}'.startsWith('empty:'),
+          '${s['blobs']} blobs: ${s['sideKeys']}',
+        );
+        BlobSlots.instance.sideAsMain();
+        await _sendBlobs();
+        await Robot.wait(600);
+        clean('after the Sidekick');
+
+        // ------------------------------------------------ everything at once
+        say('6 of 6, everything in a row');
+        await t.scene('a bit of everything, quickly', () async {
+          await Robot.tap(_home, after: 300);
+          await Robot.hold(seat(2), ms: _holdMs + 200, after: 300);
+          await Robot.tap(beside, after: 300);
+          await Robot.tap(_home, after: 300);
+          await holdButton(extra: 150);
+          await Robot.tap(_home, after: 300);
+          await Robot.drag(
+            <Offset>[_home, _home - const Offset(0, 320)],
+            legMs: 110,
+            flick: true,
+            after: 500,
+          );
+          await Robot.tap(_home, after: 600);
+        });
+        await Robot.wait(900);
+        clean('after everything in a row');
+        signIs('after everything in a row, at rest', 0);
+      }
+
       if (rounds > 0) {
         // The flight recorder keeps what is done, and gives it back when asked.
         await Robot.tap(_home, after: 600);
@@ -3932,7 +4664,7 @@ class _ShellState extends State<Shell>
         lap = rounds > 1 ? ', round $n of $rounds' : '';
         try {
           t.roundStart();
-          await round();
+          await (buttons ? buttonRound() : round());
         } catch (e, where) {
           if (e is TestStopped) {
             rethrow;
@@ -4170,6 +4902,10 @@ class _ShellState extends State<Shell>
         base();
         await Apps.instance.setPrismIcons(listIconsWere);
         await Apps.instance.setPrismIcons(blobIconsWere, blobs: true);
+      } else if (buttons) {
+        // A little while of nothing being touched, to see that the buttons leave nothing running.
+        say('sitting still for a minute');
+        await t.phase('Home, nothing open, after the button test', 60);
       } else
       // ---------------------------------------------------------------- chat heads and the battery
       if (drain) {
@@ -5448,9 +6184,22 @@ class _ShellState extends State<Shell>
                               final double grow = 1 + 0.14 * _lift.value;
                               final double w = (_slot - 8) * grow + stretch,
                                   h = (_barH - 12) * grow * (1 - stretch / 220);
+                              // Never past the bar's own ends: grown or stretched, it would lie over
+                              // the bar's rim there and bend it, which read as the rim breaking.
+                              final double inset = 4;
+                              final double lw = math.min(w, _barW - 2 * inset);
                               final Rect lens = Rect.fromCenter(
-                                center: Offset(_lensX.value, _barH / 2),
-                                width: w,
+                                center: Offset(
+                                  _lensX.value.clamp(
+                                    inset + lw / 2,
+                                    math.max(
+                                      inset + lw / 2,
+                                      _barW - inset - lw / 2,
+                                    ),
+                                  ),
+                                  _barH / 2,
+                                ),
+                                width: lw,
                                 height: h,
                               );
                               final RRect shape = RRect.fromRectAndRadius(
@@ -5722,6 +6471,15 @@ class _ShellState extends State<Shell>
                           )
                         : null,
                     choices: <(String, String, IconData, Color)>[
+                      // The button test, first, while choosing for a blob: chosen, it runs and
+                      // nothing is put in the place.
+                      if (_editSlot != null && _editSlot! < 100 && !_testing)
+                        (
+                          'test:buttons',
+                          'Button test',
+                          Icons.science_rounded,
+                          const Color(0xFF2E3440),
+                        ),
                       // A swipe can also pull the phone's notifications down.
                       if (_editSlot != null && _editSlot! >= 100)
                         (
@@ -7549,6 +8307,31 @@ void showPrismSettings(BuildContext context) {
                           ),
                           child: Text(
                             'Run the chat-head battery test (about 35 min)',
+                            style: LumenType.text(
+                              15,
+                              weight: 700,
+                              color: c.ink,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Pressable(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Haptics.settle();
+                          Diag.instance.buttonTest?.call();
+                        },
+                        child: Container(
+                          height: 52,
+                          alignment: Alignment.center,
+                          decoration: ShapeDecoration(
+                            color: c.ink.withValues(alpha: 0.08),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Text(
+                            'Run the button test (about 8 min, hands off)',
                             style: LumenType.text(
                               15,
                               weight: 700,

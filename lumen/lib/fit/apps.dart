@@ -741,8 +741,7 @@ class BlobSlots extends ChangeNotifier {
   /// The same for the Sidekick's blobs: its own choice.
   bool sideNames = true;
 
-  File get _sideNamesFile =>
-      File('${_file.parent.path}/prism_blob_names_side');
+  File get _sideNamesFile => File('${_file.parent.path}/prism_blob_names_side');
 
   void setNames(bool v, {bool side = false}) {
     if (side) {

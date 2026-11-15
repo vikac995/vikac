@@ -1413,7 +1413,13 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                           },
                           child: SizedBox(
                             // (The test's robot finds the first of them by this.)
-                            key: key == widget.choices.first.$1
+                            key:
+                                key ==
+                                    widget.choices
+                                        .firstWhere(
+                                          (c) => !c.$1.startsWith('test:'),
+                                        )
+                                        .$1
                                 ? Robot.key('choice0')
                                 : null,
                             width: 70,
