@@ -36,6 +36,16 @@ class RestBubble with WidgetsBindingObserver {
     } catch (_) {
       // Never chosen: both.
     }
+    try {
+      final List<String> spots = _spotsFile.readAsStringSync().trim().split(
+        ' ',
+      );
+      sideGap = int.parse(spots[0]).clamp(0, 40);
+      sideTuck = int.parse(spots[1]).clamp(6, 40);
+    } catch (_) {
+      // Never chosen: as it has always been.
+    }
+    setSpots();
     refresh();
   }
 
@@ -154,6 +164,35 @@ class RestBubble with WidgetsBindingObserver {
   bool get canFloat => floatIn.value || floatOut.value;
 
   File get _floatFile => File('${_styleFile.parent.path}/prism_floating');
+
+  /// The Sidekick's two places at a side of the screen, in points: how far from the edge it
+  /// rests, and how much of it shows when it is tucked in.
+  static const List<int> gaps = <int>[0, 4, 8, 12, 16, 20, 24, 28, 32];
+  static const List<int> tucks = <int>[8, 12, 16, 20, 22, 26, 30, 34, 38];
+  int sideGap = 8, sideTuck = 22;
+
+  File get _spotsFile => File('${_styleFile.parent.path}/prism_side_spots');
+
+  /// Sets them, tells Android, and keeps them if [save]. [show]: 'rest' or 'tuck' puts the
+  /// Sidekick in that place now, so it can be seen while it is being chosen.
+  void setSpots({int? gap, int? tuck, String? show, bool save = false}) {
+    sideGap = gap ?? sideGap;
+    sideTuck = tuck ?? sideTuck;
+    _device
+        .invokeMethod<void>('sideSpots', <String, Object?>{
+          'gap': sideGap,
+          'tuck': sideTuck,
+          'show': show,
+        })
+        .catchError((Object _) {});
+    if (save) {
+      try {
+        _spotsFile.writeAsStringSync('$sideGap $sideTuck');
+      } catch (_) {
+        // Not saved: as it was, next time.
+      }
+    }
+  }
 
   void setFloating({bool? inPrism, bool? overApps}) {
     floatIn.value = inPrism ?? floatIn.value;

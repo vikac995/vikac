@@ -992,7 +992,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                       ),
                                     ),
                                     const SizedBox(height: 4),
-                                    _DensitySlider(
+                                    StopSlider(
                                       key: Robot.key('appsDensity'),
                                       value: Apps.instance.density,
                                       stops: Apps.columns.length,
@@ -2008,8 +2008,8 @@ class _RingPainter extends CustomPainter {
 
 /// The app list's density: a track with a stop for each choice, and a thumb that goes from stop to
 /// stop with the finger, with a tick at each. While it is held, [onHold] says so.
-class _DensitySlider extends StatefulWidget {
-  const _DensitySlider({
+class StopSlider extends StatefulWidget {
+  const StopSlider({
     super.key,
     required this.value,
     required this.stops,
@@ -2022,11 +2022,10 @@ class _DensitySlider extends StatefulWidget {
   final ValueChanged<bool> onHold;
 
   @override
-  State<_DensitySlider> createState() => _DensitySliderState();
+  State<StopSlider> createState() => _StopSliderState();
 }
 
-class _DensitySliderState extends State<_DensitySlider>
-    with TickerProviderStateMixin {
+class _StopSliderState extends State<StopSlider> with TickerProviderStateMixin {
   late final SpringValue _pos = SpringValue(
     this,
     value: widget.value.toDouble(),

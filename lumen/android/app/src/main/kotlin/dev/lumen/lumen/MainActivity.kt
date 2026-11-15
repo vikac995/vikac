@@ -341,6 +341,20 @@ class MainActivity : FlutterActivity() {
                 val can = android.provider.Settings.canDrawOverlays(applicationContext)
                 if (can) RestBubble.showSide(applicationContext, true, out = true)
                 result.success(can)
+            } else if (call.method == "sideSpots") {
+                // The Sidekick's two places at a side of the screen, as chosen in Prism: how far
+                // from the edge it rests, and how much of it shows when it is tucked in. With
+                // "show", it goes to that place now, to be seen while it is being chosen.
+                val a = call.arguments as? Map<*, *>
+                val gap = (a?.get("gap") as? Number)?.toFloat() ?: 8f
+                val tuck = (a?.get("tuck") as? Number)?.toFloat() ?: 22f
+                val show = a?.get("show") as? String
+                for (b in Floaters) {
+                    b.restGap = gap.coerceIn(0f, 40f)
+                    b.tuckOut = tuck.coerceIn(6f, 40f)
+                    if (show != null) b.showSpot(show == "tuck")
+                }
+                result.success(null)
             } else if (call.method == "holdMs") {
                 // How long a finger held still counts as a hold, the same in Prism as on the Sidekick.
                 result.success(android.view.ViewConfiguration.getLongPressTimeout().coerceIn(300, 600))
@@ -1320,6 +1334,17 @@ class Floater(val timer: Boolean) {
      * Shows the side Blob, if it has not been sent away. [again]: an app has just been opened
      * from Prism (or from the Blob's own menu), which brings back one that was sent away.
      */
+    // The Sidekick's own distances, in dp: from the edge when it rests, and how much of it
+    // shows when tucked in. (The timer keeps its own, as it always had.)
+    var restGap = 8f
+    var tuckOut = 22f
+
+    /** Puts the Sidekick in its resting place, or its tucked one, at the side it is on: to be seen while that is chosen. */
+    fun showSpot(tuck: Boolean) {
+        if (!guest) return
+        view?.showSpot(tuck)
+    }
+
     fun showSide(context: Context, again: Boolean, out: Boolean = false) {
         if (timer) return
         if (again && sideGone) {
@@ -3673,7 +3698,23 @@ class Floater(val timer: Boolean) {
             try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, l) } catch (e: Exception) {}
         }
 
-        /** A lens has been picked up: the cross shows. */
+        /** The Sidekick (not the timer) is dismissed quietly: nothing shows until it is carried low. */
+        private fun quiet() = !timer && guest
+
+        /** How near the bottom the Sidekick is being carried: 0 not yet, 1 down there. It fades in with it. */
+        var near = 0f
+            set(v) {
+                val n = v.coerceIn(0f, 1f)
+                if (field == n) return
+                field = n
+                if (quiet() && up && gulp < 0f) {
+                    animate().cancel()
+                    alpha = n
+                    invalidate()
+                }
+            }
+
+        /** A lens has been picked up: the cross shows. (The Sidekick's only as it comes near.) */
         fun rise() {
             if (!up) {
                 up = true
@@ -3681,7 +3722,12 @@ class Floater(val timer: Boolean) {
                 translationY = 0f
                 window(1f)
             }
-            animate().alpha(1f).setDuration(160).start()
+            if (quiet()) {
+                animate().cancel()
+                alpha = near
+            } else {
+                animate().alpha(1f).setDuration(160).start()
+            }
         }
 
         /** The lens was let go somewhere else: the cross goes, and its window counts for nothing again. */
@@ -3692,6 +3738,7 @@ class Floater(val timer: Boolean) {
 
         private fun rest() {
             up = false
+            near = 0f
             window(0f)
         }
 
@@ -3745,6 +3792,29 @@ class Floater(val timer: Boolean) {
                     canvas.drawCircle(x, cy, r2 - paint.strokeWidth / 2, paint)
                     paintSign(canvas, k, x, cy, dp, paint)
                 }
+            }
+            if (quiet()) {
+                // A thin ring with a small cross, no disc. Over it, the ring opens out round the
+                // Sidekick and takes Prism's colour: let go here, and it goes.
+                val on = this.held && which == 0
+                val sw = if (gulp >= 0f) Math.max(0f, 1f - gulp / 0.6f) else 0f
+                val rr = (if (on) 38 else 22) * dp
+                paint.style = android.graphics.Paint.Style.FILL
+                paint.color = if (sw > 0f) mix.evaluate(sw, 0x00000000, tint(taken, 0x80)) as Int else (if (on) 0x33000000 else 0x22000000)
+                canvas.drawCircle(c, cy, rr, paint)
+                paint.style = android.graphics.Paint.Style.STROKE
+                paint.strokeWidth = (if (on) 2f else 1.3f) * dp
+                paint.color = if (on || gulp >= 0f) accent else 0x8CFFFFFF.toInt()
+                canvas.drawCircle(c, cy, rr - paint.strokeWidth / 2, paint)
+                val q = (if (on) 0f else 5.5f * dp) * (if (gulp >= 0f) 0f else 1f)
+                if (q > 0.5f) {
+                    paint.strokeWidth = 1.8f * dp
+                    paint.strokeCap = android.graphics.Paint.Cap.ROUND
+                    paint.color = 0xD9FFFFFF.toInt()
+                    canvas.drawLine(c - q, cy - q, c + q, cy + q, paint)
+                    canvas.drawLine(c - q, cy + q, c + q, cy - q, paint)
+                }
+                return
             }
             val r = 40 * dp
             val held = this.held && which == 0
@@ -4338,7 +4408,23 @@ class Floater(val timer: Boolean) {
         /** Where the lens sits when it is tucked into a side: past the edge, with a sliver of it left showing. */
         private fun parkedX(right: Boolean): Float {
             val k = lp.width / base
-            return if (right) resources.displayMetrics.widthPixels - 22 * dp * k else -(lp.width - 22 * dp * k)
+            val out = (if (guest) tuckOut else 22f) * dp * k
+            return if (right) resources.displayMetrics.widthPixels - out else -(lp.width - out)
+        }
+
+        /** How far from the edge it rests. */
+        private fun edgeGap(): Float = (if (guest) restGap else 8f) * dp
+
+        /** Goes to its resting place or its tucked one, at the side it is on, while that is being chosen. */
+        fun showSpot(tuck: Boolean) {
+            if (pressed || !isAttachedToWindow) return
+            val screen = resources.displayMetrics
+            val right = if (tucked) tuckRight else lp.x + lp.width / 2 > screen.widthPixels / 2
+            glide?.cancel()
+            if (tuck && !tucked) { tuckIn(right); return }
+            if (!tuck && tucked) { untuck(); return }
+            lp.x = (if (tuck) parkedX(right) else if (right) screen.widthPixels - lp.width - edgeGap() else edgeGap()).toInt()
+            place()
         }
 
         /** Pushed into a side of the screen and let go: it goes away there, leaving a sliver to see it by. */
@@ -4370,7 +4456,7 @@ class Floater(val timer: Boolean) {
             val screen = resources.displayMetrics
             haptic(context, "tick")
             tucked = false
-            glideTo(if (tuckRight) screen.widthPixels - lp.width - 8 * dp else 8 * dp, lp.y.toFloat(), 260)
+            glideTo(if (tuckRight) screen.widthPixels - lp.width - edgeGap() else edgeGap(), lp.y.toFloat(), 260)
         }
 
         /**
@@ -4431,8 +4517,15 @@ class Floater(val timer: Boolean) {
             }
             val was = snapped
             val wasSpot = spot
+            // The Sidekick's way out shows only once it is carried into the bottom quarter, more
+            // the lower it goes; and only there does it pull.
+            val quiet = !timer && guest
+            if (quiet) {
+                val h = resources.displayMetrics.heightPixels
+                target?.near = ((cy - h * 0.74f) / (h * 0.12f))
+            }
             // (With three side by side each one's pull reaches less far, so that they do not fight.)
-            val reach = if (three) (if (snapped && spot == near) 66 else 52) else (if (snapped) 118 else 92)
+            val reach = if (three) (if (snapped && spot == near) 66 else 52) else if (quiet) (if (snapped) 84 else 60) else (if (snapped) 118 else 92)
             snapped = dist < reach * dp
             if (snapped) {
                 spot = near
@@ -4915,7 +5008,7 @@ class Floater(val timer: Boolean) {
 
         private fun throwIt(velX: Float, velY: Float) {
             val screen = resources.displayMetrics
-            val margin = 8 * dp
+            val margin = edgeGap()
             glide?.cancel()
             rest()
             px = lp.x.toFloat(); py = lp.y.toFloat(); vx = velX; vy = velY

@@ -1,5 +1,29 @@
 # Lumen changelog
 
+## Prism, build 160 (15 November 2026)
+
+**File:** `releases/prism-build-160.apk`
+
+Needs Play Protect paused to install. Can be installed over build 159.
+
+**The Sidekick's two places, chosen with sliders.**
+
+- In the Sidekick's settings (hold the Sidekick, or hold Prism and choose Sidekick) there are two new sliders: **Distance from the edge** (how far it rests from the side of the screen, from touching it to 32 points away; it was 8) and **Tucked in, how much shows** (from a sliver of 8 points to 38; it was 22).
+- **While you drag either slider, the panel goes clear** (only that slider stays) and the Sidekick goes to the place you are choosing, at the side it is on: out at its resting place, or tucked in. It moves with each step. Let go and the panel comes back; the choice is kept.
+- The same stop slider as the app list's Density.
+
+**A quieter way to dismiss the Sidekick.**
+
+- Picking the Sidekick up no longer brings up the big X at the bottom. Nothing shows while you move it around.
+- Only once you carry it into the bottom quarter of the screen does a small, thin ring with a little × fade in, clearer the lower you go. Over it, the ring opens out round the Sidekick and takes Prism's colour; let go there and it is dismissed, as before.
+- It also pulls less far than the big X did, so a Sidekick put low on the screen is not caught by accident.
+- The workout timer keeps its X and its two places beside it, unchanged.
+
+**Checked:** it compiles, both sides; in my preview: the two sliders in the Sidekick's settings and the panel clearing while one is dragged; the automatic test, 62 of 66 with the usual 4 misses. (A first run had 3 more misses, all from the robot's "hold, then carry" being a hair too quick for the hold; the run after it had none. That check depends on timing in my slow preview.)
+**Not checked:** on a phone. The Sidekick moving with the sliders, and the new way out at the bottom, are Android only and have not run anywhere yet.
+
+**Not done yet, from your earlier message:** every look keeping its colours still as Window does.
+
 ## Prism, build 159 (15 November 2026)
 
 **File:** `releases/prism-build-159.apk`
