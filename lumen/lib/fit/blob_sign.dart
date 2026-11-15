@@ -249,8 +249,11 @@ abstract final class BlobSign {
     canvas.clipPath(
       Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: radius)),
     );
-    // Its own ground: black when vivid; otherwise the colour asked for, if any.
-    if (vivid) {
+    // Its own ground: black when vivid; otherwise the colour asked for, if any. Not under a
+    // triangle: the triangle is the blob, and a disc behind it would be a second shape.
+    if (look.triangle) {
+      // (Nothing.)
+    } else if (vivid) {
       _black(canvas, radius);
     } else if (ground != null) {
       canvas.drawCircle(Offset.zero, radius, Paint()..color = ground);
@@ -727,17 +730,8 @@ void _halo(Canvas c, double r, List<Color> cs, double a) {
 /// corner the light comes in by, the colours fanned across the far side.
 void _triangle(Canvas c, double r, List<Color> cs, double a) {
   final double s = r * 0.94;
-  final Offset apex = -_dir(a) * s, glow = _dir(a) * r * 0.5;
-  final Color mid = cs[cs.length ~/ 2];
-  c.drawCircle(
-    glow,
-    r * 1.1,
-    Paint()
-      ..shader = ui.Gradient.radial(glow, r * 1.1, <Color>[
-        mid.withValues(alpha: 0.4),
-        mid.withValues(alpha: 0),
-      ]),
-  );
+  final Offset apex = -_dir(a) * s;
+  // (No coloured glow behind it: lifted from under the glass, it would show as a disc.)
   final Offset p1 = _dir(a + math.pi / 3) * s, p2 = _dir(a - math.pi / 3) * s;
   final Path shape = Path()
     ..moveTo(apex.dx, apex.dy)

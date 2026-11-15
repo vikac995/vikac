@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 140 (15 November 2026)
+
+**File:** `releases/prism-build-140.apk`
+
+Needs Play Protect paused to install. Can be installed over build 139.
+
+- **No black disc behind the triangles**, from your screenshot. In Triangle and Window the triangle is the blob, so nothing is drawn behind it now: not the black of Vivid, not the dark ground of Mellow. Vivid changes only their colours. Lifted from under the glass, they are the triangle alone, as Triangle always was. (The other looks keep their disc: there it is what the blob is.)
+- **Triangle no longer has a coloured glow behind it.** It tinted the glass a little, and lifted from under the glass it showed as a pale green disc.
+- The same on the floating blob.
+
+**Checked:** it compiles, both sides; in my preview: Triangle mellow and vivid, under the glass and lifted, Window vivid under the glass and lifted; the automatic test in the preview.
+**Not checked:** on a phone.
+
 ## Prism, build 139 (15 November 2026)
 
 **File:** `releases/prism-build-139.apk`

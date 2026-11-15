@@ -73,7 +73,8 @@ object BlobLooks {
         paint.style = Paint.Style.FILL
         paint.strokeCap = Paint.Cap.ROUND
         paint.strokeJoin = Paint.Join.ROUND
-        if (vivid) black(canvas, r, paint)
+        // (Not under a triangle: the triangle is the blob, and a disc behind it would be a second shape.)
+        if (vivid && id != "triangle" && id != "window") black(canvas, r, paint)
         vividNow = vivid
         look.draw(canvas, r, cs, a, paint)
         vividNow = false
@@ -341,7 +342,7 @@ object BlobLooks {
     private fun triangle(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
         val s = r * 0.94f
         val ax = -cos(a) * s; val ay = -sin(a) * s
-        glow(c, cos(a) * r * 0.5f, sin(a) * r * 0.5f, r * 1.1f, cs[cs.size / 2], 0.4f, p)
+        // (No coloured glow behind it: lifted from under the glass, it would show as a disc.)
         val shape = Path()
         shape.moveTo(ax, ay)
         shape.lineTo(cos(a + Math.PI / 3) * s, sin(a + Math.PI / 3) * s)
