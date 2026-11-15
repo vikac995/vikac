@@ -726,10 +726,11 @@ void _triangle(Canvas c, double r, List<Color> cs, double a) {
     );
 }
 
-/// Window: the same triangle, turning the same way, but as a window: the colours behind it
-/// stand still, a field of their own that fills the glass, and the triangle turning shows
-/// another part of it. (The field is lit from the foot of the glass, whichever way the
-/// triangle points.)
+/// Window: the same triangle, turning the same way, but as a window onto a field of colour of
+/// its own that stands still behind it: upright bands, one for each blob, from the left of the
+/// glass to the right. Whichever way the triangle points, the left of it shows the same colour,
+/// and so does the right. (A field lit from one point read as turning when the triangle did:
+/// what showed through each corner changed as the corners moved. Upright bands do not.)
 void _window(Canvas c, double r, List<Color> cs, double a) {
   final double s = r * 0.94;
   final Offset p0 = -_dir(a) * s,
@@ -740,27 +741,38 @@ void _window(Canvas c, double r, List<Color> cs, double a) {
     ..lineTo(p1.dx, p1.dy)
     ..lineTo(p2.dx, p2.dy)
     ..close();
-  // Where the field's light comes from: the foot of the glass. It does not turn.
-  final Offset foot = Offset(0, r * 0.98);
+  final int n = cs.length;
+  final Paint field = Paint()..color = cs.first;
+  if (n > 1) {
+    // Each colour holds across the middle of its band and melts into the next.
+    field.shader = ui.Gradient.linear(
+      Offset(-r, 0),
+      Offset(r, 0),
+      <Color>[
+        for (final Color k in cs) ...<Color>[k, k],
+      ],
+      <double>[
+        for (int k = 0; k < n; k++) ...<double>[(k + 0.25) / n, (k + 0.75) / n],
+      ],
+    );
+  }
   c
     ..save()
-    ..clipPath(shape);
-  _fan(c, foot, r * 2.4, cs, -math.pi / 2, 80 * math.pi / 180);
-  c
-    ..drawCircle(
-      foot,
-      r * 1.7,
+    ..clipPath(shape)
+    ..drawRect(Rect.fromCircle(center: Offset.zero, radius: r), field)
+    // Light from above, the same across the whole field: it does not turn either.
+    ..drawRect(
+      Rect.fromCircle(center: Offset.zero, radius: r),
       Paint()
-        ..shader = ui.Gradient.radial(
-          foot,
-          r * 1.7,
+        ..shader = ui.Gradient.linear(
+          Offset(0, -r),
+          Offset(0, r),
           <Color>[
-            Colors.white,
-            Colors.white.withValues(alpha: 0.7),
-            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0.32),
             Colors.white.withValues(alpha: 0),
+            Colors.black.withValues(alpha: 0.12),
           ],
-          const <double>[0, 0.22, 0.55, 1],
+          const <double>[0, 0.55, 1],
         ),
     )
     ..restore()

@@ -353,8 +353,9 @@ object BlobLooks {
     }
 
     /**
-     * Window: the same triangle, turning the same way, but as a window: the colours behind it stand
-     * still, a field of their own that fills the glass, lit from the foot of the glass.
+     * Window: the same triangle, turning the same way, but as a window onto a field of colour of its
+     * own that stands still behind it: upright bands, one for each blob, from the left of the glass
+     * to the right. Whichever way the triangle points, its left shows the same colour, and its right.
      */
     private fun window(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
         val s = r * 0.94f
@@ -363,18 +364,27 @@ object BlobLooks {
         shape.lineTo(cos(a + Math.PI / 3) * s, sin(a + Math.PI / 3) * s)
         shape.lineTo(cos(a - Math.PI / 3) * s, sin(a - Math.PI / 3) * s)
         shape.close()
-        // Where the field's light comes from: the foot of the glass. It does not turn.
-        val fy = r * 0.98f
+        val n = cs.size
         c.save()
         c.clipPath(shape)
-        fan(c, 0f, fy, r * 2.4f, cs, -Math.PI / 2, 80.0 * Math.PI / 180.0, p)
         p.style = Paint.Style.FILL
-        p.shader = RadialGradient(
-            0f, fy, r * 1.7f,
-            intArrayOf(Color.WHITE, seen(Color.WHITE, 0.7f), seen(Color.WHITE, 0.1f), clear(Color.WHITE)),
-            floatArrayOf(0f, 0.22f, 0.55f, 1f), Shader.TileMode.CLAMP,
+        if (n == 1) {
+            p.shader = null
+            p.color = cs[0]
+        } else {
+            // Each colour holds across the middle of its band and melts into the next.
+            val colours = IntArray(2 * n) { cs[it / 2] }
+            val at = FloatArray(2 * n) { ((it / 2) + (if (it % 2 == 0) 0.25f else 0.75f)) / n }
+            p.shader = LinearGradient(-r, 0f, r, 0f, colours, at, Shader.TileMode.CLAMP)
+        }
+        c.drawRect(-r, -r, r, r, p)
+        // Light from above, the same across the whole field: it does not turn either.
+        p.shader = LinearGradient(
+            0f, -r, 0f, r,
+            intArrayOf(seen(Color.WHITE, 0.32f), clear(Color.WHITE), seen(Color.BLACK, 0.12f)),
+            floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP,
         )
-        c.drawCircle(0f, fy, r * 1.7f, p)
+        c.drawRect(-r, -r, r, r, p)
         p.shader = null
         c.restore()
         p.style = Paint.Style.STROKE

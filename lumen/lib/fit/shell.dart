@@ -5295,22 +5295,12 @@ class _ShellState extends State<Shell>
                               scaleY: _kick.value * (1 - _wob.value),
                               child: _glass.value > 0.5 || _returning
                                   // While the glass is lifted away, the prism stays: only the glass
-                                  // went. A ring marks where the glass belongs, and the sign is in it
-                                  // as it always is.
+                                  // went, as a magnifying glass picked up off what it lay on. No ring:
+                                  // the sign alone, where it always is.
                                   ? Container(
                                       width: _button,
                                       height: _button,
                                       alignment: Alignment.center,
-                                      decoration: ShapeDecoration(
-                                        shape: CircleBorder(
-                                          side: BorderSide(
-                                            color: c.glassInk.withValues(
-                                              alpha: 0.35,
-                                            ),
-                                            width: 1.5,
-                                          ),
-                                        ),
-                                      ),
                                       child: CustomPaint(
                                         size: const Size(38, 38),
                                         painter: _ButtonSign(

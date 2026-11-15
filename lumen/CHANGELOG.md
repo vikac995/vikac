@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 137 (15 November 2026)
+
+**File:** `releases/prism-build-137.apk`
+
+Needs Play Protect paused to install. Can be installed over build 136.
+
+- **Window's colours really stand still now.** In build 135 the field behind the triangle was lit from one point at the foot of the glass and fanned out from there. It did not move, but as the triangle turned, its corners came over different parts of the fan (red at the top left before, red at the bottom left after), and that read as the colours turning with it. Now the field is upright bands, one for each blob, from the left of the glass to the right, with an even light from above. Whichever way the triangle points, its left shows the same colour and its right the same colour.
+- **No ring when the glass is lifted.** While the magnifying glass is carried away, the button's place shows the sign alone, as if the glass had been picked up off it, with no circle around it.
+
+**Checked:** it compiles; in my preview: Window at rest, with the blobs out, with the app list up, and with the glass lifted (the colours in the same place in all four); the automatic test in the preview.
+**Not checked:** on a phone, and the turn in motion.
+
 ## Prism, build 136 (15 November 2026)
 
 **File:** `releases/prism-build-136.apk`
