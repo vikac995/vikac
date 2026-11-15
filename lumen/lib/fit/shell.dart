@@ -970,9 +970,20 @@ class _ShellState extends State<Shell>
                                 const SizedBox(height: 4),
                               ],
                               // Names under its blobs: each has its own choice.
-                              SwitchLine(
+                              Text(
+                                'Labels',
+                                style: LumenType.text(
+                                  15,
+                                  weight: 560,
+                                  color: c.ink,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              // The glass two-way picker, as every two-way choice here.
+                              Segmented<bool>(
                                 key: Robot.key('names'),
-                                label: 'Show labels',
+                                values: const <bool>[true, false],
+                                labels: const <String>['Show', 'Hide'],
                                 value: _designSide.value
                                     ? BlobSlots.instance.sideNames
                                     : BlobSlots.instance.names,
@@ -3087,14 +3098,15 @@ class _ShellState extends State<Shell>
         final Offset? names = Robot.spot('names');
         t.check('names: the switch is in the settings', names != null);
         if (names != null) {
-          await Robot.tap(names + const Offset(120, 0), after: 900);
+          // (Hide is the right half of the picker, Show the left.)
+          await Robot.tap(names + const Offset(88, 0), after: 900);
           t.check(
             'names: off, and the blobs are nearer the button',
             !BlobSlots.instance.names && (_far.value - _reachBare).abs() < 1,
             'at ${_far.value.round()}',
           );
           await Robot.tap(
-            (Robot.spot('names') ?? names) + const Offset(120, 0),
+            (Robot.spot('names') ?? names) - const Offset(88, 0),
             after: 900,
           );
           t.check(

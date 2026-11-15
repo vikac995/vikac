@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 166 (15 November 2026)
+
+**File:** `releases/prism-build-166.apk`
+
+Needs Play Protect paused to install. Can be installed over build 165.
+
+- **Labels is a glass picker now**, like every other two-way choice in the settings: "Labels", then Show | Hide. One for Prism and one for the Sidekick, as before.
+
+**Looked into, not fixed yet:** the bar's left rim going faint while the tab glass is pulled to the right. Measured frame by frame in your recording, nothing changes on the bar except the touch dot; in your screenshots the difference is clear. The bar itself does not move or stretch, and its glass settings do not switch during a drag in Original mode. I could not make it happen in my preview (which is in the light theme).
+
+**Checked:** it compiles; the automatic test, 64 of 69: the usual 4 misses and "a slower flick up is still the app list", a timing check in my slow preview that has missed now and then before. The labels checks pass with the new picker.
+**Not checked:** on a phone.
+
 ## Prism, build 165 (15 November 2026)
 
 **File:** `releases/prism-build-165.apk`
