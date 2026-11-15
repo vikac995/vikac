@@ -1,7 +1,8 @@
 # Step 1b report: what the first phone run of the button test found (build 171)
 
 Asked for by the review of step 1 (build 170, accepted): items A to G. Branch
-`claude/flutter-ui-showcase-ngzfru`, based on `511605b`. Step 2 not started. No look or motion changed.
+`claude/flutter-ui-showcase-ngzfru`, based on `511605b`. Two commits: `8a69e49` (the code, the APK, the
+changelog, the handover, this report) and the one after it, which only adds the checked link here. Step 2 not started. No look or motion changed.
 
 **What has only run in the preview:** everything. Nothing in this build has run on a phone. Every item
 that is Android code (C, D's re-asking, E) has only been compiled. Its checks are in the button test's
@@ -225,7 +226,9 @@ long test, second run:  CHECKS: 65 right, 4 wrong, of 69
 source change) with `ORG_GRADLE_PROJECT_fit=1 flutter build apk --release --target-platform android-arm64
 -t lib/fit/main.dart`. NAME-OK. Its Android code has the new `askPrism` (its "did not answer" line is
 found in `classes.dex`). sha256 `a196de270b22f1c8f339d19f7916967a26f3db17356109227f5b7f5203206f98`,
-18,583,722 bytes. Link: LINK_RESULT
+18,583,722 bytes. Link: https://github.com/vikac995/vikac/raw/8a69e49c75126c9df82496fc459892a2163ffb29/lumen/releases/prism-build-171.apk
+(pinned to `8a69e49`, the commit that added the APK). Checked after the push: it answers 200,
+18,583,722 bytes, and the downloaded file has the same sha256 as the one built.
 
 ## For the owner to try on the phone
 
