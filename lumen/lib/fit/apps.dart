@@ -667,7 +667,64 @@ class Notes {
 class BlobSlots extends ChangeNotifier {
   BlobSlots._();
   static final BlobSlots instance = BlobSlots._();
-  final List<String?> keys = List<String?>.filled(5, null);
+
+  // There are two menus: the main button's, and the side Blob's. The side Blob's is the main
+  // one's (null here) until something in it is changed; from then it is a set of its own.
+  final List<String?> _main = List<String?>.filled(5, null);
+  List<String?>? _side;
+
+  /// Which of the two Prism is showing and changing just now: the side Blob's (true) or the
+  /// main button's. Only ever the side Blob's while the blobs are being changed.
+  bool get side => _showSide;
+  bool _showSide = false;
+
+  /// Whether the side Blob has a set of its own.
+  bool get sideOwn => _side != null;
+
+  /// The places of the menu being shown and changed.
+  List<String?> get keys => _showSide && _side != null ? _side! : _main;
+
+  /// What the side Blob's menu has in place [i], whichever menu is being shown.
+  String? sideAt(int i) => paused ? null : (_side ?? _main)[i];
+
+  /// Shows and changes the side Blob's menu, or the main button's.
+  void show({required bool side}) {
+    if (side != _showSide) {
+      _showSide = side;
+      notifyListeners();
+    }
+  }
+
+  /// The side Blob's menu is the main button's again.
+  void sideAsMain() {
+    _side = null;
+    try {
+      _sideFile.deleteSync();
+    } catch (_) {
+      // There was none.
+    }
+    notifyListeners();
+  }
+
+  /// Every place of the side Blob's menu at once, whichever menu is being shown: it is a set
+  /// of its own from then.
+  void putSideAll(List<String> all) {
+    final List<String?> side = _side ?? <String?>[..._main];
+    for (int i = 0; i < side.length && i < all.length; i++) {
+      side[i] = all[i];
+    }
+    _side = side;
+    try {
+      _sideFile.writeAsStringSync(
+        <String>[for (final String? k in side) k ?? ''].join('\n'),
+      );
+    } catch (_) {
+      // Not saved: as it was next time.
+    }
+    notifyListeners();
+  }
+
+  File get _sideFile => File('${_file.parent.path}/prism_blobs_side');
 
   /// During the automatic test the menu is as Prism starts with: the test taps the blobs, and
   /// must not open other apps.
@@ -703,11 +760,21 @@ class BlobSlots extends ChangeNotifier {
   void load() {
     try {
       final List<String> lines = _file.readAsLinesSync();
-      for (int i = 0; i < keys.length && i < lines.length; i++) {
-        keys[i] = lines[i].trim().isEmpty ? null : lines[i].trim();
+      for (int i = 0; i < _main.length && i < lines.length; i++) {
+        _main[i] = lines[i].trim().isEmpty ? null : lines[i].trim();
       }
     } catch (_) {
       // Nothing has been changed yet.
+    }
+    try {
+      final List<String> lines = _sideFile.readAsLinesSync();
+      final List<String?> side = List<String?>.filled(5, null);
+      for (int i = 0; i < side.length && i < lines.length; i++) {
+        side[i] = lines[i].trim().isEmpty ? null : lines[i].trim();
+      }
+      _side = side;
+    } catch (_) {
+      // The side Blob has no set of its own: it has the main button's.
     }
     try {
       names = _namesFile.readAsStringSync().trim() != '0';
@@ -718,6 +785,9 @@ class BlobSlots extends ChangeNotifier {
 
   /// Every place at once, in a new order.
   void putAll(List<String> all) {
+    if (_showSide) {
+      _side ??= <String?>[..._main];
+    }
     for (int i = 0; i < keys.length && i < all.length; i++) {
       keys[i] = all[i];
     }
@@ -725,9 +795,13 @@ class BlobSlots extends ChangeNotifier {
   }
 
   void put(int i, String? key) {
+    if (_showSide) {
+      // The first change to the side Blob's menu makes it a set of its own, from the main one.
+      _side ??= <String?>[..._main];
+    }
     keys[i] = key;
     try {
-      _file.writeAsStringSync(
+      (_showSide ? _sideFile : _file).writeAsStringSync(
         <String>[for (final String? k in keys) k ?? ''].join('\n'),
       );
     } catch (_) {

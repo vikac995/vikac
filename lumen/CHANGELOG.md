@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 150 (15 November 2026)
+
+**File:** `releases/prism-build-150.apk`
+
+Needs Play Protect paused to install. Can be installed over build 149.
+
+**The side Blob's menu can be its own.**
+
+- **It starts as the main button's menu, and costs nothing until you want it.** Change the main menu and both change. The first time you change something in the side Blob's menu, it becomes a set of its own.
+- **One place to change both.** While the blobs are being changed in Prism, a new picker above them, **Main button | Side blob**, says whose menu is out. Everything works as before on the one that is chosen: tap a blob to change it, the red minus to take it out, drag to reorder, an empty place to add. Done changing, the blobs out of the button are the main button's again.
+- **"Same as main"** appears beside the picker once the side Blob has a set of its own: a tap makes its menu the main button's again.
+- **From the side Blob itself:** hold a blob in its menu and they wear their edit marks, as before; a tap on one now brings Prism up changing the side Blob's menu (not the main one's), with the app list open to choose for that place. Dragging them into a new order in the side Blob's menu reorders the side Blob's menu only.
+- The two-finger swipes are still one set: they belong to Prism, not to either menu.
+- The flight recorder's settings now say what the side menu holds and which design each of the two wears.
+
+**Checked:** it compiles; in my preview: the picker on the edit screen; with Side blob chosen, a blob taken out left the side menu with four and an empty place, the main menu still had its five, "Same as main" appeared, and the side menu was still its own after Prism was started again; the automatic test in the preview.
+**Not checked:** on a phone. The side Blob's menu showing its own set, and the two ways in from it (tap while changing, drag to reorder), cannot run in my preview: they use the same messages to and from Android as before, now carrying the side menu.
+
 ## Prism, build 149 (15 November 2026)
 
 **File:** `releases/prism-build-149.apk`

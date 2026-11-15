@@ -98,6 +98,7 @@ class _ShellState extends State<Shell>
       '  floats over other apps ${onOff(b.allowed.value)}  ·  lens is a container ${onOff(b.container.value)}  ·  notification counts ${onOff(Notes.instance.allowed.value)}  ·  blobs open real apps ${onOff(BlobApps.instance.on.value)}',
       '  blob: in Prism ${onOff(b.floatIn.value)}  ·  over other apps ${onOff(b.floatOut.value)}  ·  labels ${onOff(BlobSlots.instance.names)}  ·  floating ${b.pinned.value ?? 'nothing'}',
       '  blobs: ${<String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(', ')}',
+      '  side menu: ${BlobSlots.instance.sideOwn ? <String>[for (int i = 0; i < _n; i++) _sideKey(i)].join(', ') : 'the same as the main one'}  ·  side design: ${Apps.instance.sideLook.isEmpty ? 'window' : Apps.instance.sideLook}${Apps.instance.sideVivid ? ', vivid' : ''}  ·  main design: ${Apps.instance.blobLook.isEmpty ? 'window' : Apps.instance.blobLook}${Apps.instance.blobVivid ? ', vivid' : ''}',
       '  swipes: ${<String>[for (int g = 0; g < 4; g++) '${GestureSlots.names[g]} ${GestureSlots.instance.keys[g]}'].join(', ')}',
     ];
   }
@@ -333,9 +334,30 @@ class _ShellState extends State<Shell>
       _blobDrop(_dragI!, _home, Offset.zero);
     }
     setState(() => _editing = v);
+    if (!v) {
+      // Done changing: the blobs out of the button are the main button's again.
+      _showMenu(side: false);
+    }
     _signSync();
     v ? Haptics.settle() : Haptics.tick();
     Diag.instance.event(v ? 'blobs: editing' : 'blobs: done editing');
+  }
+
+  /// While the blobs are being changed: shows the side Blob's menu to be changed, or the main
+  /// button's. The blobs that are out become that menu's, each place empty or not as it is there.
+  void _showMenu({required bool side}) {
+    if (BlobSlots.instance.side == side) {
+      return;
+    }
+    BlobSlots.instance.show(side: side);
+    for (int i = 0; i < _n; i++) {
+      _gone[i].animateTo(_isEmpty(i) ? 1 : 0, spring: Motions.spatialFast);
+    }
+    _reseat();
+    _recentre();
+    Diag.instance.event(
+      side ? 'changing the side menu' : 'changing the main menu',
+    );
   }
 
   /// While editing, a blob was tapped: the drawer comes up to choose what takes its place.
@@ -1089,6 +1111,11 @@ class _ShellState extends State<Shell>
                 ? 'app:${BlobApps.instance.apps[i].package}'
                 : 'action:$i');
 
+  /// What the side Blob's menu has in place [i], whichever menu Prism is showing.
+  String _sideKey(int i) =>
+      BlobSlots.instance.sideAt(i) ??
+      (_appBlobs ? 'app:${BlobApps.instance.apps[i].package}' : 'action:$i');
+
   void _sendPinData() {
     // The colours as they are now, not as the last drawn frame had them: this also runs at the
     // moment the theme or the look changes, before anything has been redrawn.
@@ -1201,12 +1228,14 @@ class _ShellState extends State<Shell>
     // (Android draws the side Blob, so it is told the side Blob's look and colours.)
     RestBubble.instance.tellLook(Apps.instance.sideLook);
     RestBubble.instance.tellVivid(Apps.instance.sideVivid);
+    // (Android's menu is the side Blob's: it is told the side Blob's blobs, which are the main
+    // button's until the side Blob has a set of its own.)
+    final List<String> keys = <String>[
+      for (int i = 0; i < _n; i++) _sideKey(i),
+    ];
     final List<Map<String, Object>> all = <Map<String, Object>>[];
     for (int i = 0; i < _n; i++) {
-      if (_floating(i)) {
-        continue; // It is in the lens, not in the menu.
-      }
-      final Map<String, Object>? blob = await _blobMap(_pinKey(i));
+      final Map<String, Object>? blob = await _blobMap(keys[i]);
       if (blob != null) {
         // Which place it is in, so the floating lens's menu can ask for that place to be changed.
         all.add(<String, Object>{...blob, 'slot': i});
@@ -1866,8 +1895,10 @@ class _ShellState extends State<Shell>
         if (_sheetOpen) {
           _closeSheet();
         }
-        // Afterwards Prism's own blobs are out, being changed, as they would be here.
+        // Afterwards Prism's own blobs are out, being changed, as they would be here: showing
+        // the side Blob's menu, which is the one the blob was tapped in.
         _editing = true;
+        _showMenu(side: true);
         _pickFor((call.arguments as num).toInt().clamp(0, _n - 1));
         return;
       }
@@ -1885,14 +1916,15 @@ class _ShellState extends State<Shell>
         ];
         final List<int> places = <int>[...order]..sort();
         final List<String> keys = <String>[
-          for (int k = 0; k < _n; k++) _pinKey(k),
+          for (int k = 0; k < _n; k++) _sideKey(k),
         ];
         final List<String> next = <String>[...keys];
         for (int j = 0; j < order.length; j++) {
           next[places[j]] = keys[order[j]];
         }
-        Diag.instance.event('blobs reordered from the lens');
-        BlobSlots.instance.putAll(next);
+        Diag.instance.event('side menu: blobs reordered');
+        // (It was the side Blob's menu they were moved in: that is the one that changes.)
+        BlobSlots.instance.putSideAll(next);
         return;
       }
       if (RestBubble.instance.handle(call)) {
@@ -4317,6 +4349,9 @@ class _ShellState extends State<Shell>
         _editing = false;
       }
     });
+    if (!_editing) {
+      _showMenu(side: false);
+    }
     _signSync();
     Diag.instance
       ..overlay = v ? '+blobs' : ''
@@ -5236,6 +5271,128 @@ class _ShellState extends State<Shell>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
+                            // Which menu is being changed: the main button's, or the side Blob's.
+                            // (And, where the side Blob has a set of its own, the way back.)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Container(
+                                  padding: const EdgeInsets.all(3),
+                                  decoration: const ShapeDecoration(
+                                    color: Colors.white,
+                                    shape: StadiumBorder(),
+                                    shadows: <BoxShadow>[
+                                      BoxShadow(
+                                        color: Color(0x55000000),
+                                        blurRadius: 6,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      for (final bool side in const <bool>[
+                                        false,
+                                        true,
+                                      ])
+                                        GestureDetector(
+                                          key: Robot.key(
+                                            side ? 'menuSide' : 'menuMain',
+                                          ),
+                                          behavior: HitTestBehavior.opaque,
+                                          onTap: () {
+                                            Haptics.tick();
+                                            _showMenu(side: side);
+                                          },
+                                          child: AnimatedContainer(
+                                            duration: const Duration(
+                                              milliseconds: 160,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 7,
+                                            ),
+                                            decoration: ShapeDecoration(
+                                              color:
+                                                  BlobSlots.instance.side ==
+                                                      side
+                                                  ? const Color(0xFF15171C)
+                                                  : const Color(0x0015171C),
+                                              shape: const StadiumBorder(),
+                                            ),
+                                            child: Text(
+                                              side
+                                                  ? 'Side blob'
+                                                  : 'Main button',
+                                              textScaler: TextScaler.noScaling,
+                                              style: LumenType.text(
+                                                14,
+                                                weight: 650,
+                                                color:
+                                                    BlobSlots.instance.side ==
+                                                        side
+                                                    ? Colors.white
+                                                    : const Color(0xFF15171C),
+                                                height: 1.2,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                if (BlobSlots.instance.side &&
+                                    BlobSlots.instance.sideOwn) ...<Widget>[
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    key: Robot.key('menuSame'),
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: () {
+                                      Haptics.tick();
+                                      BlobSlots.instance.sideAsMain();
+                                      for (int i = 0; i < _n; i++) {
+                                        _gone[i].animateTo(
+                                          _isEmpty(i) ? 1 : 0,
+                                          spring: Motions.spatialFast,
+                                        );
+                                      }
+                                      Diag.instance.event(
+                                        'side menu: same as main again',
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 10,
+                                      ),
+                                      decoration: const ShapeDecoration(
+                                        color: Colors.white,
+                                        shape: StadiumBorder(),
+                                        shadows: <BoxShadow>[
+                                          BoxShadow(
+                                            color: Color(0x55000000),
+                                            blurRadius: 6,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Text(
+                                        'Same as main',
+                                        textScaler: TextScaler.noScaling,
+                                        style: LumenType.text(
+                                          14,
+                                          weight: 650,
+                                          color: const Color(0xFF15171C),
+                                          height: 1.2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 4),
                             // Names under the blobs, on or off. White, like the marks on the
                             // blobs: the things that can be tapped while changing.
                             GestureDetector(
