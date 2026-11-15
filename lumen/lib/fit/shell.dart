@@ -7206,7 +7206,7 @@ class _ButtonSign extends CustomPainter {
   final bool glass;
 
   /// How much larger the glass is drawn than its place in the bar.
-  static const double grow = 1.14;
+  static const double grow = 1.25;
 
   /// How large the blob is against its glass: it keeps the size it always had, and the glass,
   /// drawn larger (see [grow]), lies over it with a little room all round.

@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 145 (15 November 2026)
+
+**File:** `releases/prism-build-145.apk`
+
+Needs Play Protect paused to install. Can be installed over build 144.
+
+- **The glass is larger than the bar is tall.** The bar is 66 points high; the glass was 64 across, and in build 144 73, which only just cleared it. Now it is 80 across, plainly larger, rising past the bar at the top and at the foot. The blob under it keeps its size.
+
+**Checked:** it compiles; in my preview: the bar with the larger glass; the automatic test in the preview.
+**Not checked:** on a phone. The button's place for touches is still its old 64 points; the glass outside that does not take touches.
+
 ## Prism, build 144 (15 November 2026)
 
 **File:** `releases/prism-build-144.apk`
