@@ -53,11 +53,13 @@ surface and corners), and only the following is taken from the mock-up:
   above them, Hovering and Tucked in.
 - **Ranges:** Hovering 0–36, Tucked in 8–40, whole points.
 - **Touching a ruler:** the Sidekick goes to that state at once: hovering at that distance, or tucked in.
-- **Letting go of Tucked in:** the Sidekick comes back out to hovering about half a second later.
+- **Letting go of either ruler** (the review chat's correction: the mock-up's half-second untuck was a
+  shortcut): the Sidekick returns to the state it was in before the panel opened. If it was out, it goes
+  back out at the new Hovering distance; if it was tucked, it goes back tucked at the new amount. The same
+  when the panel closes.
 - **Both switches off:** the panel closes, after about a third of a second, and the Sidekick goes. Prism's
   settings page then shows "Bring back the Sidekick" ("shown only while it's off everywhere", with a
   "Bring back" button), which switches both back on.
 
-**One word to confirm before building:** the mock-up and the brief say **"In Prism"** for the first switch.
-Prism's panel says "In this app" today, and DESIGN.md §7 names it so. The build will use "In Prism" and
-change DESIGN.md with it, unless the review chat says otherwise.
+**Confirmed by the review chat:** the first switch is **"In Prism"** (it was "In this app"). DESIGN.md §7
+changes with it.
