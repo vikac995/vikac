@@ -8341,10 +8341,23 @@ class _ButtonSign extends CustomPainter {
         if (dark > 0.001) {
           // Under the glass, the triangle is set in black: the glass's own darkness. It goes
           // with the glass, in the first moment it is lifted, and the triangle is left alone.
+          // (Out almost to the glass's edge, and melting away there: no hard inner circle, and
+          // no thick tinted band between it and the rim. Only the rim's own thin light is left.)
+          final double full = rim > 0 ? rim : size.width / 2;
           canvas.drawCircle(
             mid,
-            (rim > 0 ? rim : size.width / 2) * _blob,
-            Paint()..color = Colors.black.withValues(alpha: 0.92 * dark),
+            full,
+            Paint()
+              ..shader = ui.Gradient.radial(
+                mid,
+                full,
+                <Color>[
+                  Colors.black.withValues(alpha: 0.92 * dark),
+                  Colors.black.withValues(alpha: 0.92 * dark),
+                  Colors.black.withValues(alpha: 0),
+                ],
+                const <double>[0, 0.84, 1],
+              ),
           );
         }
         // The shot: up out of its place, a little larger, and back.

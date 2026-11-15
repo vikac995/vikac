@@ -29,11 +29,7 @@ object BlobLooks {
         "petals" to Look(false, ::petals),
         "lotus" to Look(false, ::lotus),
         "beam" to Look(true, ::beam),
-        "bands" to Look(true, ::bands),
-        "bandsclear" to Look(true, ::bandsClear),
-        "bandswhite" to Look(true, ::bandsWhite),
         "halo" to Look(true, ::halo),
-        "triangle" to Look(true, ::triangle),
         "window" to Look(true, ::window),
     )
 
@@ -42,8 +38,6 @@ object BlobLooks {
     private val box = RectF()
     private val hsv = FloatArray(3)
 
-    // Whether the look being drawn is vivid: then nothing greys the black (see [cutBands]).
-    private var vividNow = false
 
     /**
      * Draws look [id] with its middle at ([cx], [cy]) in glass of radius [r]. [vivid]: on black, a
@@ -75,9 +69,8 @@ object BlobLooks {
         paint.strokeCap = Paint.Cap.ROUND
         paint.strokeJoin = Paint.Join.ROUND
         // (Not under a triangle: the triangle is the blob, and a disc behind it would be a second shape.)
-        if (vivid && id != "triangle" && id != "window") black(canvas, r, paint)
-        vividNow = vivid
-        if (id == "triangle" || id == "window" || looks[id] == null) {
+        if (vivid && id != "window") black(canvas, r, paint)
+        if (id == "window" || looks[id] == null) {
             // Centred by where its corners are on the screen, whichever way it points, as in Prism.
             val sz = r * 0.94f
             val xs = floatArrayOf((-cos(a) * sz).toFloat(), (cos(a + Math.PI / 3) * sz).toFloat(), (cos(a - Math.PI / 3) * sz).toFloat())
@@ -85,7 +78,6 @@ object BlobLooks {
             canvas.translate(-(xs.min() + xs.max()) / 2f * 0.75f, -(ys.min() + ys.max()) / 2f * 0.75f)
         }
         look.draw(canvas, r, cs, a, paint)
-        vividNow = false
         canvas.restore()
         paint.shader = null
         paint.alpha = 255
@@ -149,31 +141,40 @@ object BlobLooks {
 
     /** Pearls: a white point, Prism, and the blobs around it as small lit pearls. */
     private fun pearls(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
+        // The blobs as lit pearls in an arc above the white point, filling the glass, as in Prism.
         val n = cs.size
         val u = r / 29f
-        val back = (if (n == 1) 6f else 10f) * u
-        val reach = (if (n == 1) 14f else 21f) * u
-        val pr = floatArrayOf(6.0f, 5.4f, 4.8f, 4.3f, 3.9f)[n - 1] * u
-        val step = doubleArrayOf(0.0, 52.0, 40.0, 31.0, 26.0)[n - 1] * Math.PI / 180.0
+        val back = (if (n == 1) 7f else 8f) * u
+        val reach = (if (n == 1) 15f else 19f) * u
+        val pr = floatArrayOf(9.0f, 8.4f, 7.6f, 6.9f, 6.2f)[n - 1] * u
+        val step = doubleArrayOf(0.0, 62.0, 50.0, 41.0, 34.0)[n - 1] * Math.PI / 180.0
         val kx = -back * cos(a); val ky = -back * sin(a)
         val xs = FloatArray(n); val ys = FloatArray(n)
         for (k in 0 until n) {
             val t = a + (k - (n - 1) / 2.0) * step
             xs[k] = kx + reach * cos(t); ys[k] = ky + reach * sin(t)
-            glow(c, xs[k], ys[k], pr * 2.3f, cs[k], 0.5f, p)
+            glow(c, xs[k], ys[k], pr * 2.1f, cs[k], 0.42f, p)
         }
-        glow(c, kx, ky, 10 * u, Color.WHITE, 0.45f, p)
+        glow(c, kx, ky, 11 * u, Color.WHITE, 0.5f, p)
+        p.style = Paint.Style.FILL
         p.color = Color.WHITE
-        c.drawCircle(kx, ky, (if (n == 1) 3.4f else 3.0f) * u, p)
+        c.drawCircle(kx, ky, (if (n == 1) 4.0f else 3.6f) * u, p)
         for (k in 0 until n) {
             p.shader = RadialGradient(
-                xs[k] - pr * 0.3f, ys[k] - pr * 0.4f, pr * 1.5f,
-                intArrayOf(lighter(cs[k], 0.55f), cs[k], cs[k]), floatArrayOf(0f, 0.6f, 1f), Shader.TileMode.CLAMP,
+                xs[k] - pr * 0.32f, ys[k] - pr * 0.42f, pr * 1.6f,
+                intArrayOf(lighter(cs[k], 0.6f), cs[k], darker(cs[k], 0.28f)), floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP,
             )
             c.drawCircle(xs[k], ys[k], pr, p)
+            p.shader = null
+            p.color = seen(Color.WHITE, 0.7f)
+            c.drawCircle(xs[k] - pr * 0.34f, ys[k] - pr * 0.4f, pr * 0.22f, p)
         }
         p.shader = null
     }
+
+    private fun darker(c: Int, t: Float): Int = Color.rgb(
+        (Color.red(c) * (1 - t)).toInt(), (Color.green(c) * (1 - t)).toInt(), (Color.blue(c) * (1 - t)).toInt(),
+    )
 
     /** Petals: the blobs' colours as petals round a quiet white point in the very middle. */
     private fun petals(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
@@ -271,15 +272,6 @@ object BlobLooks {
         c.drawPath(prism, p)
     }
 
-    /** Bands: the same light through the same prism, cut clean, with a dark line between the colours. */
-    private fun bands(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) = cutBands(c, r, cs, a, 0xFF0B0E11.toInt(), 0.05f, p)
-
-    /** Clear: the bands with nothing between them, colour straight against colour. */
-    private fun bandsClear(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) = cutBands(c, r, cs, a, 0, 0f, p)
-
-    /** Lined: the bands with a very thin white line between them. */
-    private fun bandsWhite(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) = cutBands(c, r, cs, a, Color.WHITE, 0.018f, p)
-
     /** The light's own colours, at full strength, for the Vivid looks. */
     private val vividColours = intArrayOf(
         0xFFF2334B.toInt(), 0xFFFF7A2B.toInt(), 0xFFFFD21F.toInt(), 0xFF34C94A.toInt(), 0xFF1F7BF2.toInt(), 0xFF8A3FF0.toInt(),
@@ -287,67 +279,16 @@ object BlobLooks {
 
     /** Black glass under a Vivid look. */
     private fun black(c: Canvas, r: Float, p: Paint) {
+        // Not flat: a touch lighter in the middle and deepest at the rim, as in Prism.
         p.style = Paint.Style.FILL
-        p.shader = null
-        p.color = 0xF2000000.toInt()
+        p.shader = RadialGradient(
+            0f, -r * 0.15f, r * 1.1f,
+            intArrayOf(0xFF1A1B20.toInt(), 0xFF0B0B0E.toInt(), 0xFF020203.toInt()), floatArrayOf(0f, 0.6f, 1f), Shader.TileMode.CLAMP,
+        )
         c.drawCircle(0f, 0f, r, p)
+        p.shader = null
     }
 
-
-    /**
-     * The flat bands of the looks above. [line] is drawn between the colours, [width] of the
-     * glass's radius wide; 0 for none. (Used only by Bands, Clear, Lined and Vivid: when the last of them is removed,
-     * this goes with it.)
-     */
-    private fun cutBands(c: Canvas, r: Float, cs: IntArray, a: Double, line: Int, width: Float, p: Paint, shine: Float = 0.6f) {
-        val n = cs.size
-        val x = -cos(a) * r * 0.6f; val y = -sin(a) * r * 0.6f
-        val half = (if (n == 1) 24.0 else 54.0) * Math.PI / 180.0
-        val each = 2 * half / n
-        val dark = 0xFF0B0E11.toInt()
-        c.save()
-        c.translate(x, y)
-        c.rotate(deg(a - half))
-        p.style = Paint.Style.FILL
-        box.set(-r * 2.2f, -r * 2.2f, r * 2.2f, r * 2.2f)
-        for (k in 0 until n) {
-            p.color = cs[k]
-            c.drawArc(box, deg(k * each), deg(each), true, p)
-        }
-        p.style = Paint.Style.STROKE
-        p.strokeCap = Paint.Cap.BUTT
-        if (line != 0) {
-            // Between the colours only, but for the dark one: the fan's two outer edges lie against the dark glass.
-            p.color = line; p.strokeWidth = Math.max(1f, r * width)
-            for (k in (if (line == dark) 0 else 1)..(if (line == dark) n else n - 1)) c.drawLine(0f, 0f, cos(k * each) * r * 2.2f, sin(k * each) * r * 2.2f, p)
-        }
-        c.restore()
-        // The same white shine round the prism as Beam has.
-        if (shine > 0f && !vividNow) glow(c, x, y, r * 0.95f, Color.WHITE, shine, p)
-        p.style = Paint.Style.STROKE
-        p.strokeCap = Paint.Cap.BUTT
-        p.color = Color.WHITE; p.strokeWidth = r * 0.13f
-        c.drawLine(-cos(a) * r * 1.1f, -sin(a) * r * 1.1f, x, y, p)
-        val prism = Path(upright(x, y, r * 0.45f))
-        p.style = Paint.Style.FILL
-        p.color = dark
-        c.drawPath(prism, p)
-        // The bands again inside the prism, paler: the light seen through the glass.
-        c.save()
-        c.clipPath(prism)
-        c.translate(x, y)
-        c.rotate(deg(a - half))
-        box.set(-r, -r, r, r)
-        for (k in 0 until n) {
-            p.color = lighter(cs[k], 0.45f)
-            c.drawArc(box, deg(k * each), deg(each), true, p)
-        }
-        c.restore()
-        p.style = Paint.Style.STROKE
-        p.strokeCap = Paint.Cap.ROUND
-        p.color = Color.WHITE; p.strokeWidth = r * 0.08f
-        c.drawPath(prism, p)
-    }
 
     /** Halo: white light in the middle, split by the rim of the glass; each blob owns a piece of the rim. */
     private fun halo(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
@@ -378,36 +319,6 @@ object BlobLooks {
         p.shader = null
         p.color = Color.WHITE
         c.drawPath(upright(0f, r * 0.03f, r * 0.27f), p)
-    }
-
-    /** Triangle: the prism itself, made of light: white at the corner the light comes in by. */
-    private fun triangle(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
-        val s = r * 0.94f
-        val ax = -cos(a) * s; val ay = -sin(a) * s
-        // (No coloured glow behind it: lifted from under the glass, it would show as a disc.)
-        val shape = Path()
-        shape.moveTo(ax, ay)
-        shape.lineTo(cos(a + Math.PI / 3) * s, sin(a + Math.PI / 3) * s)
-        shape.lineTo(cos(a - Math.PI / 3) * s, sin(a - Math.PI / 3) * s)
-        shape.close()
-        c.save()
-        c.clipPath(shape)
-        // As Window does: the colours stand still and the triangle turns over them. The light
-        // comes in from below the glass, always from there, and fans upward.
-        val ly = s * 1.7f
-        fan(c, 0f, ly, r * 3.4f, cs, -Math.PI / 2, 0.66, p)
-        p.style = Paint.Style.FILL
-        p.shader = RadialGradient(
-            0f, ly, s * 2.1f,
-            intArrayOf(Color.WHITE, seen(Color.WHITE, 0.75f), seen(Color.WHITE, 0.12f), clear(Color.WHITE)),
-            floatArrayOf(0f, 0.42f, 0.7f, 1f), Shader.TileMode.CLAMP,
-        )
-        c.drawCircle(0f, ly, s * 2.1f, p)
-        p.shader = null
-        c.restore()
-        p.style = Paint.Style.STROKE
-        p.color = seen(Color.WHITE, 0.7f); p.strokeWidth = Math.max(1f, r * 0.03f)
-        c.drawPath(shape, p)
     }
 
     /**

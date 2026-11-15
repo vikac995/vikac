@@ -49,18 +49,7 @@ abstract final class BlobSign {
     BlobLook('petals', 'Petals', _petals, turns: true),
     BlobLook('lotus', 'Lotus', _lotus),
     BlobLook('beam', 'Beam', _beam, spectrum: true),
-    BlobLook('bands', 'Bands', _bands, spectrum: true),
-    BlobLook('bandsclear', 'Clear', _bandsClear, spectrum: true),
-    BlobLook('bandswhite', 'Lined', _bandsWhite, spectrum: true),
     BlobLook('halo', 'Halo', _halo, spectrum: true),
-    BlobLook(
-      'triangle',
-      'Triangle',
-      _triangle,
-      spectrum: true,
-      triangle: true,
-      turns: true,
-    ),
     BlobLook(
       'window',
       'Window',
@@ -223,15 +212,11 @@ abstract final class BlobSign {
         Paint()..color = Colors.white.withValues(alpha: e),
       );
     }
-    _vividNow = vivid;
     if (look.id == 'window') {
       _windowField(canvas, r, cs);
-    } else if (look.id == 'triangle') {
-      _triangleField(canvas, r, cs, angle, e);
     } else {
       look._draw(canvas, r, cs, angle);
     }
-    _vividNow = false;
     if (!look.triangle) {
       canvas.restore();
     }
@@ -331,9 +316,7 @@ abstract final class BlobSign {
     } else if (ground != null) {
       canvas.drawCircle(Offset.zero, radius, Paint()..color = ground);
     }
-    _vividNow = vivid;
     look._draw(canvas, radius, cs, angle);
-    _vividNow = false;
     if (fold > 0) {
       canvas.restore();
     }
@@ -431,15 +414,16 @@ void _fan(
 
 // ---- The looks.
 
-/// Pearls: a white point, Prism, and the blobs around it as small lit pearls on the side they
-/// come out from. Each throws a little of its colour into the glass.
+/// Pearls: a white point, Prism, and the blobs as lit pearls in an arc above it, the way they
+/// come out of the button. Large enough to fill the glass, and balanced in it; each pearl
+/// throws a little of its colour into the glass round it.
 void _pearls(Canvas c, double r, List<Color> cs, double a) {
   final int n = cs.length;
   final double u = r / 29;
-  final double back = (n == 1 ? 6.0 : 10.0) * u,
-      reach = (n == 1 ? 14.0 : 21.0) * u,
-      pr = const <double>[6.0, 5.4, 4.8, 4.3, 3.9][n - 1] * u,
-      step = const <double>[0, 52, 40, 31, 26][n - 1] * math.pi / 180;
+  final double back = (n == 1 ? 7.0 : 8.0) * u,
+      reach = (n == 1 ? 15.0 : 19.0) * u,
+      pr = const <double>[9.0, 8.4, 7.6, 6.9, 6.2][n - 1] * u,
+      step = const <double>[0, 62, 50, 41, 34][n - 1] * math.pi / 180;
   final Offset core = -_dir(a) * back;
   final List<Offset> at = <Offset>[
     for (int k = 0; k < n; k++)
@@ -448,10 +432,10 @@ void _pearls(Canvas c, double r, List<Color> cs, double a) {
   for (int k = 0; k < n; k++) {
     c.drawCircle(
       at[k],
-      pr * 2.3,
+      pr * 2.1,
       Paint()
-        ..shader = ui.Gradient.radial(at[k], pr * 2.3, <Color>[
-          cs[k].withValues(alpha: 0.5),
+        ..shader = ui.Gradient.radial(at[k], pr * 2.1, <Color>[
+          cs[k].withValues(alpha: 0.42),
           cs[k].withValues(alpha: 0),
         ]),
     );
@@ -459,25 +443,35 @@ void _pearls(Canvas c, double r, List<Color> cs, double a) {
   c
     ..drawCircle(
       core,
-      10 * u,
+      11 * u,
       Paint()
-        ..shader = ui.Gradient.radial(core, 10 * u, <Color>[
-          Colors.white.withValues(alpha: 0.45),
+        ..shader = ui.Gradient.radial(core, 11 * u, <Color>[
+          Colors.white.withValues(alpha: 0.5),
           Colors.white.withValues(alpha: 0),
         ]),
     )
-    ..drawCircle(core, (n == 1 ? 3.4 : 3.0) * u, Paint()..color = Colors.white);
+    ..drawCircle(core, (n == 1 ? 4.0 : 3.6) * u, Paint()..color = Colors.white);
   for (int k = 0; k < n; k++) {
+    // Lit from above: a bright cap, the colour, and a little shade under it.
     c.drawCircle(
       at[k],
       pr,
       Paint()
         ..shader = ui.Gradient.radial(
-          at[k] - Offset(pr * 0.3, pr * 0.4),
-          pr * 1.5,
-          <Color>[Color.lerp(cs[k], Colors.white, 0.55)!, cs[k], cs[k]],
-          const <double>[0, 0.6, 1],
+          at[k] - Offset(pr * 0.32, pr * 0.42),
+          pr * 1.6,
+          <Color>[
+            Color.lerp(cs[k], Colors.white, 0.6)!,
+            cs[k],
+            Color.lerp(cs[k], Colors.black, 0.28)!,
+          ],
+          const <double>[0, 0.55, 1],
         ),
+    );
+    c.drawCircle(
+      at[k] - Offset(pr * 0.34, pr * 0.4),
+      pr * 0.22,
+      Paint()..color = Colors.white.withValues(alpha: 0.7),
     );
   }
 }
@@ -621,22 +615,6 @@ void _beam(Canvas c, double r, List<Color> cs, double a) {
     );
 }
 
-/// Bands: the same light through the same prism, but cut clean: each colour a flat band with
-/// a dark line between it and the next, seen paler through the prism, which is drawn bold.
-void _bands(Canvas c, double r, List<Color> cs, double a) =>
-    _cutBands(c, r, cs, a, const Color(0xFF0B0E11), 0.05);
-
-/// Clear: the bands with nothing between them, colour straight against colour.
-void _bandsClear(Canvas c, double r, List<Color> cs, double a) =>
-    _cutBands(c, r, cs, a, null, 0);
-
-/// Lined: the bands with a very thin white line between them.
-void _bandsWhite(Canvas c, double r, List<Color> cs, double a) =>
-    _cutBands(c, r, cs, a, Colors.white, 0.018);
-
-/// Whether the look being drawn is vivid: then nothing greys the black (see [_cutBands]).
-bool _vividNow = false;
-
 /// The light's own colours, at full strength, for the Vivid looks.
 const List<Color> _vividColours = <Color>[
   Color(0xFFF2334B),
@@ -648,100 +626,20 @@ const List<Color> _vividColours = <Color>[
 ];
 
 /// Black glass under a Vivid look.
-void _black(Canvas c, double r) =>
-    c.drawCircle(Offset.zero, r, Paint()..color = const Color(0xF2000000));
+/// (Not flat: a touch lighter in the middle and deepest at the rim, so the glass has depth.)
+void _black(Canvas c, double r) => c.drawCircle(
+  Offset.zero,
+  r,
+  Paint()
+    ..shader = ui.Gradient.radial(
+      Offset(0, -r * 0.15),
+      r * 1.1,
+      const <Color>[Color(0xFF1A1B20), Color(0xFF0B0B0E), Color(0xFF020203)],
+      const <double>[0, 0.6, 1],
+    ),
+);
 
-/// The flat bands of the looks above. [line] is drawn between the colours, [width] of
-/// the glass's radius wide; with no line there is none. (Used only by Bands, Clear, Lined and
-/// Vivid: when the last of them is removed, this goes with it.)
-void _cutBands(
-  Canvas c,
-  double r,
-  List<Color> cs,
-  double a,
-  Color? line,
-  double width, {
-  double shine = 0.6,
-}) {
-  final int n = cs.length;
-  final Offset at = -_dir(a) * r * 0.6;
-  final double half = (n == 1 ? 24 : 54) * math.pi / 180, each = 2 * half / n;
-  const Color dark = Color(0xFF0B0E11);
-  Path band(int k, double reach) => Path()
-    ..moveTo(0, 0)
-    ..arcTo(
-      Rect.fromCircle(center: Offset.zero, radius: reach),
-      k * each,
-      each,
-      false,
-    )
-    ..close();
-  c
-    ..save()
-    ..translate(at.dx, at.dy)
-    ..rotate(a - half);
-  for (int k = 0; k < n; k++) {
-    c.drawPath(band(k, r * 2.2), Paint()..color = cs[k]);
-  }
-  if (line != null) {
-    // Between the colours only: the fan's two outer edges lie against the dark glass.
-    for (int k = line == dark ? 0 : 1; k <= (line == dark ? n : n - 1); k++) {
-      c.drawLine(
-        Offset.zero,
-        _dir(k * each) * r * 2.2,
-        Paint()
-          ..color = line
-          ..strokeWidth = math.max(1, r * width),
-      );
-    }
-  }
-  c
-    ..restore()
-    // The same white shine round the prism as Beam has.
-    ..drawCircle(
-      at,
-      r * 0.95,
-      Paint()
-        ..shader = ui.Gradient.radial(at, r * 0.95, <Color>[
-          Colors.white.withValues(alpha: _vividNow ? 0 : shine),
-          Colors.white.withValues(alpha: 0),
-        ]),
-    )
-    ..drawLine(
-      -_dir(a) * r * 1.1,
-      at,
-      Paint()
-        ..color = Colors.white
-        ..strokeWidth = r * 0.13,
-    );
-  final Path prism = _upright(at, r * 0.45);
-  // The bands again inside the prism, paler: the light seen through the glass.
-  c
-    ..drawPath(prism, Paint()..color = dark)
-    ..save()
-    ..clipPath(prism)
-    ..translate(at.dx, at.dy)
-    ..rotate(a - half);
-  for (int k = 0; k < n; k++) {
-    c.drawPath(
-      band(k, r),
-      Paint()..color = Color.lerp(cs[k], Colors.white, 0.45)!,
-    );
-  }
-  c
-    ..restore()
-    ..drawPath(
-      prism,
-      Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.stroke
-        ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = r * 0.08,
-    );
-}
-
-/// Halo: white light in the middle, and the rim of the glass splits it, as the edge of a lens
-/// does. Each blob owns one piece of the rim. A small white prism marks the middle.
+/// Halo: a ring of the colours round a small white prism in the middle.
 void _halo(Canvas c, double r, List<Color> cs, double a) {
   final int n = cs.length;
   final double each = 2 * math.pi / n, gap = n == 1 ? 0 : 0.07;
@@ -808,61 +706,6 @@ void _halo(Canvas c, double r, List<Color> cs, double a) {
       _upright(Offset(0, r * 0.03), r * 0.27),
       Paint()..color = Colors.white,
     );
-}
-
-/// Triangle: the prism itself, as large as the glass allows, made of light: white at the
-/// corner the light comes in by, the colours fanned across the far side.
-void _triangle(Canvas c, double r, List<Color> cs, double a) {
-  final double s = r * 0.94;
-  final Offset apex = -_dir(a) * s;
-  // (No coloured glow behind it: lifted from under the glass, it would show as a disc.)
-  final Offset p1 = _dir(a + math.pi / 3) * s, p2 = _dir(a - math.pi / 3) * s;
-  final Path shape = Path()
-    ..moveTo(apex.dx, apex.dy)
-    ..lineTo(p1.dx, p1.dy)
-    ..lineTo(p2.dx, p2.dy)
-    ..close();
-  c
-    ..save()
-    ..clipPath(shape);
-  _triangleField(c, r, cs, a, 0);
-  c
-    ..restore()
-    ..drawPath(
-      shape,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.7)
-        ..style = PaintingStyle.stroke
-        ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = math.max(1, r * 0.03),
-    );
-}
-
-/// What Triangle is filled with: the colours fanned from the corner the light comes in by, white
-/// there. [open] widens the fan, from just the triangle (0) to all round (1), for the cog.
-void _triangleField(Canvas c, double r, List<Color> cs, double a, double open) {
-  // As Window does: the colours stand still and the triangle turns over them. The light comes in
-  // from below the glass, always from there, and fans upward; [a] is not used for it.
-  final double s = r * 0.94;
-  final Offset light = Offset(0, s * 1.7);
-  final double half = 0.66 + (math.pi / 2.1 - 0.66) * open;
-  _fan(c, light, r * 3.4, cs, -math.pi / 2, half);
-  c.drawCircle(
-    light,
-    s * 2.1,
-    Paint()
-      ..shader = ui.Gradient.radial(
-        light,
-        s * 2.1,
-        <Color>[
-          Colors.white,
-          Colors.white.withValues(alpha: 0.75),
-          Colors.white.withValues(alpha: 0.12),
-          Colors.white.withValues(alpha: 0),
-        ],
-        const <double>[0, 0.42, 0.7, 1],
-      ),
-  );
 }
 
 /// What Window looks onto: upright bands of the colours, standing still, with light from above.

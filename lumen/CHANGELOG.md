@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Prism, build 165 (15 November 2026)
+
+**File:** `releases/prism-build-165.apk`
+
+Needs Play Protect paused to install. Can be installed over build 164.
+
+**The looks, tidied.**
+
+- **Triangle is gone; Window stays.** Since build 162 the two worked the same way. Window is the simpler of the two in the code and is the look a new phone starts with. If you had Triangle chosen, you now have Window.
+- **Bands, Clear and Lined are gone.** If one of them was chosen, you now have Window.
+- All four are removed completely, on both sides: their drawing, the band-cutting they shared, and the cog's special case for Triangle. Nothing of them is left in the code. Six looks remain: Pearls, Petals, Lotus, Beam, Halo, Window.
+- **Pearls, reworked.** The pearls are about half as large again and stand in a wider arc above the white point, so the look fills the glass and sits in its middle, as the others do. Each pearl is lit from above, with a small highlight and a little shade underneath.
+- **The black ground under a Vivid look** is no longer a flat black disc: it is a touch lighter in the middle and deepest at the rim, so the glass has depth. This is for every look that has it, Pearls included.
+
+**The thick tinted rim on the button.**
+
+- The black under the glass used to stop four fifths of the way out, with a hard edge. Between it and the glass's rim was a wide tinted band, and the hard inner circle gave the eye a second circle to judge the triangle against. The black now runs out almost to the rim and melts away there. Only the rim's own thin light is left, and there is no inner circle.
+
+**Checked:** it compiles, both sides; in my preview: the six looks in the settings, Pearls on the button, the button without its inner circle; the automatic test, 65 of 69 with the usual 4 misses.
+**Not checked:** on a phone; the Sidekick's Pearls (Android only).
+
 ## Prism, build 164 (15 November 2026)
 
 **File:** `releases/prism-build-164.apk`

@@ -1003,8 +1003,8 @@ class Apps extends ChangeNotifier {
     }
     // The Vivid looks of builds 134 to 138 are the switch now: what was chosen stays as it was.
     const Map<String, String> was = <String, String>{
-      'vivid': 'clear',
-      'vividtriangle': 'triangle',
+      'vivid': 'window',
+      'vividtriangle': 'window',
       'vividwindow': 'window',
     };
     if (was.containsKey(blobLook)) {
