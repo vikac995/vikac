@@ -299,7 +299,7 @@ class _ShellState extends State<Shell>
   String _blobName(int i) => _isEmpty(i)
       ? ''
       : _isPhone(i)
-      ? (_isSide(i) ? 'Prism' : 'Notifications')
+      ? (_isSide(i) ? 'Sidekick' : 'Notifications')
       : _isApp(i)
       ? (_blobApp(i)?.name ?? _tile(i)?.label ?? '')
       : (_isScreen(i) ? _tabs[_screenAt(i)].$2 : _actions[_actionAt(i)].$1);
@@ -721,7 +721,7 @@ class _ShellState extends State<Shell>
                       Segmented<bool>(
                         key: Robot.key('blobDesignFor'),
                         values: const <bool>[false, true],
-                        labels: const <String>['Glass', 'Prism'],
+                        labels: const <String>['Prism', 'Sidekick'],
                         value: _designSide.value,
                         onChanged: (bool v) => _designSide.value = v,
                       ),
@@ -5053,7 +5053,7 @@ class _ShellState extends State<Shell>
                       // (After Prism's own actions, which are used most.)
                       (
                         'phone:side',
-                        'Prism',
+                        'Sidekick',
                         Icons.bubble_chart_rounded,
                         const Color(0xFF5A6373),
                       ),
@@ -5378,7 +5378,7 @@ class _ShellState extends State<Shell>
                                               shape: const StadiumBorder(),
                                             ),
                                             child: Text(
-                                              side ? 'Prism' : 'Glass',
+                                              side ? 'Sidekick' : 'Prism',
                                               textScaler: TextScaler.noScaling,
                                               style: LumenType.text(
                                                 14,
@@ -5432,7 +5432,7 @@ class _ShellState extends State<Shell>
                                         ],
                                       ),
                                       child: Text(
-                                        'Same as Glass',
+                                        'Same as Prism',
                                         textScaler: TextScaler.noScaling,
                                         style: LumenType.text(
                                           14,

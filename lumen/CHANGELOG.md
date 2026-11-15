@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 155 (15 November 2026)
+
+**File:** `releases/prism-build-155.apk`
+
+Needs Play Protect paused to install. Can be installed over build 154.
+
+- **Names, again.** The centre button is **Prism**. The side one is **Sidekick**. In the Blob panel, Design is Prism | Sidekick; while changing the menus the picker is Prism | Sidekick and the reset is "Same as Prism"; the action you can give to a swipe or a place in the menu is "Sidekick".
+- **The Sidekick action pulls it out when it is tucked in.** If the Sidekick is already on screen but tucked into the side, using the action brings it out to where it rests at that side, with a tick, as a tap on it would. Brought out for the very first time by the action, it also starts out, not tucked. When it comes back by itself in the next app you open, it stays as you left it.
+
+**Checked:** it compiles, both sides.
+**Not checked:** on a phone. The Sidekick coming out is Android only and cannot run in my preview. The automatic test was not run again: only labels changed on the side it covers.
+
 ## Prism, build 154 (15 November 2026)
 
 **File:** `releases/prism-build-154.apk`

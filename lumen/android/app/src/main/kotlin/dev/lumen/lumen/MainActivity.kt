@@ -339,7 +339,7 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "side") {
                 // Asked for from Prism (a blob or a swipe given "Side blob"): it comes out, even if it had been sent away.
                 val can = android.provider.Settings.canDrawOverlays(applicationContext)
-                if (can) RestBubble.showSide(applicationContext, true)
+                if (can) RestBubble.showSide(applicationContext, true, out = true)
                 result.success(can)
             } else if (call.method == "covered") {
                 // A panel is open in Prism, or none is: the side Blob steps aside meanwhile.
@@ -1313,7 +1313,7 @@ class Floater(val timer: Boolean) {
      * Shows the side Blob, if it has not been sent away. [again]: an app has just been opened
      * from Prism (or from the Blob's own menu), which brings back one that was sent away.
      */
-    fun showSide(context: Context, again: Boolean) {
+    fun showSide(context: Context, again: Boolean, out: Boolean = false) {
         if (timer) return
         if (again && sideGone) {
             sideGone = false
@@ -1329,8 +1329,10 @@ class Floater(val timer: Boolean) {
         val fresh = view == null && !placed
         refresh(context)
         // The very first time, it starts tucked into the side. After that it is where it was left.
+        // Asked for by hand (the action in Prism): it comes out from the side, never stays tucked in.
         val v = view
-        if (fresh && v != null) v.post { v.tuckNow() }
+        if (out && v != null) v.post { v.comeOut() }
+        else if (fresh && v != null) v.post { v.tuckNow() }
     }
 
     // A panel is open in Prism. The side Blob is drawn over everything, panels too, and a tap meant
@@ -4257,6 +4259,11 @@ class Floater(val timer: Boolean) {
         fun tuckNow() {
             if (tucked || pressed) return
             tuckIn(lp.x + lp.width / 2 > resources.displayMetrics.widthPixels / 2)
+        }
+
+        /** Asked for while tucked away: it comes out, as if tapped. */
+        fun comeOut() {
+            if (tucked && !pressed) untuck()
         }
 
         /** Tapped while tucked away: it comes back out to where a lens rests at that side. */
