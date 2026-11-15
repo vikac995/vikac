@@ -113,10 +113,12 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   (In Prism, Over other apps).
 - **Continuous values are smooth sliders** (`LumenSlider`). Stops only where the steps mean
   something (app list density: 3, 4, 5 or 6 across).
-- **A panel steps aside while a control is held only when it hides what that control changes;
-  otherwise only the shade lifts.** The app list's Density (its grid is behind its panel) clears the
-  panel, so the grid can be watched; the Sidekick's dials leave its panel exactly as it is and lift
-  only the shade, since the Sidekick is beside it and above it. A tap changes nothing of this.
+- **Seeing what you change** (the owner's words): "The rule is the best, most logical experience. When
+  someone is visibly resizing or repositioning something, they must see what they are changing, in real
+  time. If a panel hides it, the panel makes way while the control is held. If it's already in sight
+  (like the Sidekick beside its panel), nothing extra happens: no added animation." So the app list's
+  Density (its grid is behind its panel) makes the panel step aside while it is held; the Sidekick's
+  dials leave its panel exactly as it is, and only the shade lifts.
 - **Panels opened from the button sit above it**; the button stays in sight, and a tap on it, beside
   the panel, the X or back closes the panel, all at the same speed.
 - Back undoes the most recent thing opened, one step per press (the table in `PRISM.md`). Every new

@@ -174,6 +174,13 @@ on the owner's phone; extend its Sidekick half as you go.
 
 1. Finish the Sidekick: steps 2, 3 and 4 of THE PLAN. Step 4 also deletes the old modes and the fusion.
 2. Memory: the remaining ~500 MB of graphics, measured by state, then reduced.
+   - **About 200 MB of it is the phone's GPU driver, not Prism's own drawing alone** (build 177, same
+     1080×2340 screen, same build and test):
+     - Galaxy S25 (Snapdragon / Adreno): graphics 274–353 MB, total 599–661 MB.
+     - Galaxy S26 (Exynos / Xclipse): graphics 484–567 MB, total 846–870 MB.
+   - **So measure on both phones,** and in Prism's settings in everyday use, not only in the test.
+   - **Noted, not chased yet:** "sidekick tapped x40" had 24 late frames on the S25 (worst 26.5 ms),
+     against about 1 on the S26.
 3. Prism's basics polished: the button, the magnifying glass, the app list.
    - **Idea to mock up (the owner's, 15 November 2026):** the app list's Density control (now a slider
      with four stops, 3/4/5/6 across, beside the pinch in the list itself) as a dial.
