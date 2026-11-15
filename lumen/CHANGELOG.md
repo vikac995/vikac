@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 135 (15 November 2026)
+
+**File:** `releases/prism-build-135.apk`
+
+Needs Play Protect paused to install. Can be installed over build 134.
+
+- **A new look: Window.** The same triangle as Triangle, turning the same way, but as a window: the colours behind it stand still, a field of their own that fills the glass and is lit from its foot. The triangle turning shows another part of the same field. (In Triangle, the colours are part of the triangle and turn with it.) The Look row is eleven.
+
+**Checked:** it compiles; in my preview: Window on Prism's button at rest, with the blobs out, and with the app list up: the colours are in the same place in all three.
+**Not checked:** on a phone, and the floating blob's drawing of it not at all. One thing you will see, which follows from the idea: a triangle turned a sixth of the way and one turned half way are the same shape, so with the colours standing still, "blobs out" and "app list up" look alike in this look. In Triangle they differ because the colours turn too.
+
 ## Prism, build 134 (15 November 2026)
 
 **File:** `releases/prism-build-134.apk`

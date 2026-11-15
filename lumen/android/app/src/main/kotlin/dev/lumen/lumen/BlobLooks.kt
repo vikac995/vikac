@@ -35,6 +35,7 @@ object BlobLooks {
         "vivid" to Look(false, ::vivid),
         "halo" to Look(true, ::halo),
         "triangle" to Look(true, ::triangle),
+        "window" to Look(true, ::window),
     )
 
     private val clip = Path()
@@ -348,6 +349,36 @@ object BlobLooks {
         c.restore()
         p.style = Paint.Style.STROKE
         p.color = seen(Color.WHITE, 0.7f); p.strokeWidth = Math.max(1f, r * 0.03f)
+        c.drawPath(shape, p)
+    }
+
+    /**
+     * Window: the same triangle, turning the same way, but as a window: the colours behind it stand
+     * still, a field of their own that fills the glass, lit from the foot of the glass.
+     */
+    private fun window(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
+        val s = r * 0.94f
+        val shape = Path()
+        shape.moveTo(-cos(a) * s, -sin(a) * s)
+        shape.lineTo(cos(a + Math.PI / 3) * s, sin(a + Math.PI / 3) * s)
+        shape.lineTo(cos(a - Math.PI / 3) * s, sin(a - Math.PI / 3) * s)
+        shape.close()
+        // Where the field's light comes from: the foot of the glass. It does not turn.
+        val fy = r * 0.98f
+        c.save()
+        c.clipPath(shape)
+        fan(c, 0f, fy, r * 2.4f, cs, -Math.PI / 2, 80.0 * Math.PI / 180.0, p)
+        p.style = Paint.Style.FILL
+        p.shader = RadialGradient(
+            0f, fy, r * 1.7f,
+            intArrayOf(Color.WHITE, seen(Color.WHITE, 0.7f), seen(Color.WHITE, 0.1f), clear(Color.WHITE)),
+            floatArrayOf(0f, 0.22f, 0.55f, 1f), Shader.TileMode.CLAMP,
+        )
+        c.drawCircle(0f, fy, r * 1.7f, p)
+        p.shader = null
+        c.restore()
+        p.style = Paint.Style.STROKE
+        p.color = seen(Color.WHITE, 0.75f); p.strokeWidth = Math.max(1f, r * 0.035f)
         c.drawPath(shape, p)
     }
 }

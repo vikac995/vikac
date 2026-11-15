@@ -41,6 +41,7 @@ abstract final class BlobSign {
     BlobLook('vivid', 'Vivid', _vivid),
     BlobLook('halo', 'Halo', _halo, spectrum: true),
     BlobLook('triangle', 'Triangle', _triangle, spectrum: true),
+    BlobLook('window', 'Window', _window, spectrum: true),
   ];
 
   static BlobLook of(String id) =>
@@ -596,5 +597,53 @@ void _triangle(Canvas c, double r, List<Color> cs, double a) {
         ..style = PaintingStyle.stroke
         ..strokeJoin = StrokeJoin.round
         ..strokeWidth = math.max(1, r * 0.03),
+    );
+}
+
+/// Window: the same triangle, turning the same way, but as a window: the colours behind it
+/// stand still, a field of their own that fills the glass, and the triangle turning shows
+/// another part of it. (The field is lit from the foot of the glass, whichever way the
+/// triangle points.)
+void _window(Canvas c, double r, List<Color> cs, double a) {
+  final double s = r * 0.94;
+  final Offset p0 = -_dir(a) * s,
+      p1 = _dir(a + math.pi / 3) * s,
+      p2 = _dir(a - math.pi / 3) * s;
+  final Path shape = Path()
+    ..moveTo(p0.dx, p0.dy)
+    ..lineTo(p1.dx, p1.dy)
+    ..lineTo(p2.dx, p2.dy)
+    ..close();
+  // Where the field's light comes from: the foot of the glass. It does not turn.
+  final Offset foot = Offset(0, r * 0.98);
+  c
+    ..save()
+    ..clipPath(shape);
+  _fan(c, foot, r * 2.4, cs, -math.pi / 2, 80 * math.pi / 180);
+  c
+    ..drawCircle(
+      foot,
+      r * 1.7,
+      Paint()
+        ..shader = ui.Gradient.radial(
+          foot,
+          r * 1.7,
+          <Color>[
+            Colors.white,
+            Colors.white.withValues(alpha: 0.7),
+            Colors.white.withValues(alpha: 0.1),
+            Colors.white.withValues(alpha: 0),
+          ],
+          const <double>[0, 0.22, 0.55, 1],
+        ),
+    )
+    ..restore()
+    ..drawPath(
+      shape,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.75)
+        ..style = PaintingStyle.stroke
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = math.max(1, r * 0.035),
     );
 }
