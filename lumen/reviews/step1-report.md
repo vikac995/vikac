@@ -1,7 +1,8 @@
 # Step 1 report: the Sidekick's own menu (build 170)
 
 Task: `tasks/STEP1-separate-menus.md`. Branch `claude/flutter-ui-showcase-ngzfru`, based on
-`origin/claude/flutter-ui-showcase-ngzfru` at `b6d8734`.
+`origin/claude/flutter-ui-showcase-ngzfru` at `b6d8734`. Two commits: `e93946d` (the code, the APK, the
+changelog, this report) and the one after it, which only adds the checked download link to this report.
 
 In one paragraph: the Sidekick's list of blobs now lives on Android, in a new object
 `SidekickMenu` (`android/.../SidekickMenu.kt`), saved in SharedPreferences. Remove and
@@ -243,7 +244,9 @@ instead of `!_pickSide`. No check was loosened or deleted.
 - **NAME-OK:** `unzip -p releases/prism-build-170.apk lib/arm64-v8a/libapp.so | strings | grep -c 'Prism
   build 170'` is 1 or more: NAME-OK. Its Android code has the new messages (`sidekickPictures` found
   in its `classes.dex`). sha256 `87edd236c307449270bf874587c83337dd2e652ecb2f3bdef3282026f0e992ea`.
-- **Link:** LINK_RESULT
+- **Link:** https://github.com/vikac995/vikac/raw/e93946dc3f25771cbc297bbcd98fb03352f3c294/lumen/releases/prism-build-170.apk
+  (pinned to commit `e93946d`, the commit that added the APK). Checked after the push: it answers
+  200, 18,452,650 bytes, and the downloaded file has the same sha256 as the one built.
 - **Changelog:** the build 170 entry at the top of `CHANGELOG.md`.
 
 ## 5. Not checked, and what to try on the phone
