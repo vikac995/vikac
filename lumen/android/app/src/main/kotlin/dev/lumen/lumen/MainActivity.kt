@@ -227,7 +227,8 @@ class MainActivity : FlutterActivity() {
                         // Prism has just opened this app: it is the one in front.
                         for (b in Floaters) b.frontApp = pkg
                         // Prism is told, so that the app's blob can go along if that is switched on.
-                        if (RestBubble.follow) RestBubble.channel?.invokeMethod("launched", pkg)
+                        // (Not for Prism itself, opened from its own app list: it has nowhere to follow to.)
+                        if (RestBubble.follow && pkg != packageName) RestBubble.channel?.invokeMethod("launched", pkg)
                     }
                     result.success(i != null)
                 }

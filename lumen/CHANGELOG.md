@@ -1,5 +1,21 @@
 # Lumen changelog
 
+## Prism, build 129 (15 November 2026)
+
+**File:** `releases/prism-build-129.apk`
+
+Needs Play Protect paused to install. Can be installed over build 128.
+
+- **The flight recorder's report ends with your note.** "YOUR NOTE:" is now the last line, and is there even when left empty, so more can be typed after it once pasted.
+- **Opening Prism from its own app list no longer makes a blob of Prism.** Your report shows it three times at 01:20 ("follow dev.lumen.prism"). Launch and follow now leaves Prism itself out.
+
+**Checked:** it compiles.
+**Not checked:** on a phone.
+
+**What your report (build 127) showed, with nothing changed for it yet:**
+- **Both kinds of restart happen.** 01:21:13, after 42 seconds in Claude: "all of Prism started afresh": Android closed Prism entirely. 01:22:27, after 37 seconds away: "Prism's screen made again: Prism itself had kept running": Android took only the screen. No crash either time. Prism was at 867 MB, 572 MB of it graphics. This is the memory problem, and it is the first thing to fix.
+- **Frames:** in most stretches 3 to 10 of every 100 frames were late on the S26, the worst usually 20 to 30 ms (one refresh is 8.3 ms at 120 Hz). Steady, not getting worse, but not clean.
+
 ## Prism, build 128 (15 November 2026)
 
 **File:** `releases/prism-build-128.apk`

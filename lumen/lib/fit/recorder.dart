@@ -153,9 +153,6 @@ class Recorder with WidgetsBindingObserver {
       ..writeln(
         'WHAT HAPPENED, from Prism\'s flight recorder  ·  ${Diag.build}  ·  ${DateTime.now().toString().substring(0, 16)}',
       );
-    if (note.trim().isNotEmpty) {
-      o.writeln('YOUR NOTE: ${note.trim()}');
-    }
     if (phone.isNotEmpty) {
       o.writeln(phone);
     }
@@ -172,6 +169,10 @@ class Recorder with WidgetsBindingObserver {
     for (final (DateTime at, String what) in all) {
       o.writeln('${_clock(at)}  $what');
     }
+    // The note comes last, and is always there, so more can be written after it once pasted.
+    o
+      ..writeln()
+      ..write('YOUR NOTE: ${note.trim()}');
     return o.toString();
   }
 }
