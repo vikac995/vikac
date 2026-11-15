@@ -1398,6 +1398,9 @@ class _ShellState extends State<Shell>
       _panelOpen = false;
       _closePanel = null;
       _designSide.removeListener(_sideInSight);
+      // (Closed: the Sidekick is hidden only if another panel is still open. Whatever was said
+      // while this one was open, a closed panel never leaves it hidden.)
+      RestBubble.instance.tellCovered(PanelWatch.instance.anyOpen);
       if (mounted) {
         _signSync();
       }
@@ -4287,10 +4290,33 @@ class _ShellState extends State<Shell>
             !_parked,
         'panel $_panelOpen/${PanelWatch.instance.anyOpen}, menu $_menuFor, list $_drawerOpen, place $_editSlot, for the Sidekick ${_sideAsk != null}, glass $_carrying/$_parked',
       );
+      // The settings closed by their X. The X is brought into sight first (the panel scrolls, and
+      // a tap where the X was scrolled away to lands on the panel itself). Should the panel still
+      // be open, that is WRONG, and it is closed all the same, so that what follows starts with
+      // nothing open (build 176's phone run: one panel left open spoiled every check after it).
       Future<void> closePanel() async {
+        if (!_panelOpen) {
+          return;
+        }
+        final BuildContext? at = Robot.key('floatClose').currentContext;
+        if (at != null && at.mounted) {
+          await Scrollable.ensureVisible(at);
+          await Robot.wait(250);
+        }
         final Offset? x = Robot.spot('floatClose');
         if (x != null) {
           await Robot.tap(x, after: 900);
+        }
+        if (_panelOpen) {
+          t.check(
+            'settings: their X closes them',
+            false,
+            x == null
+                ? 'no X found'
+                : 'tapped at ${x.dx.round()},${x.dy.round()}, still open',
+          );
+          _closePanel?.call();
+          await Robot.wait(900);
         }
       }
 
@@ -4992,7 +5018,7 @@ class _ShellState extends State<Shell>
           t.check(
             'sidekick: holding a blob brings its small menu',
             s['pop'] == 1,
-            'small menu ${s['pop']}',
+            'small menu ${s['pop']}; the Sidekick at ${(((s['y'] as num?) ?? 0) / dpr).round()} points from the top; blobs ${s['layout'] ?? '?'}',
           );
           s = await menu('outside', settleMs: 700);
           t.check(
@@ -5544,6 +5570,13 @@ class _ShellState extends State<Shell>
           ((numAt(kept(await where()), 'palette') ?? 0)) >= 16,
           '${kept(await where())?['palette']} colours kept',
         );
+        // (Back to the top of the panel: the checks above scrolled it down to the looks, which put
+        // Prism | Sidekick and the X out of sight, and a tap there would land on the panel itself.)
+        final BuildContext? top = Robot.key('blobDesignFor').currentContext;
+        if (panelUp && top != null && top.mounted) {
+          await Scrollable.ensureVisible(top);
+          await Robot.wait(400);
+        }
         // Prism chosen in the same panel: the Sidekick steps aside, as under any panel.
         final Offset? toPrism = panelUp ? Robot.spot('designPrism') : null;
         if (!panelUp) {

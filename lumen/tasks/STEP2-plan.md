@@ -337,7 +337,12 @@ still go to Prism's app list, as today.
 
 1. **The way back:** the "Bring back the Sidekick" line in Prism's settings page, shown only while both
    switches are off. (§2)
-2. **Back:** measured in 2a (build 176's keyboard probe), then A or B as in §5.
+2. **Back:** measured in 2a (build 176's keyboard probe), then A or B as in §5. **Decided: A.**
+   - **The measurement:** on the owner's phone, in all 4 rounds, B kept the keyboard while its window
+     was there, but the keyboard went down about 300 ms after the window went.
+   - **What that means:** a panel of kind B would close the other app's keyboard every time it closes.
+   - **So the panel never takes the focus.** Back goes to the app underneath. The panel closes with the
+     ✕, a tap on the shade, a tap on the Sidekick, or Home / Recents.
 3. **The timer:** unchanged, until the owner reworks the workout flow. (§2)
 4. **The panel:** beside the Sidekick, on the side away from it, nearly full height, as in §3. The
    owner chose it from a mock-up of beside, centred and bottom.

@@ -1,5 +1,28 @@
 # Lumen changelog
 
+## Prism, build 177 (15 November 2026)
+
+**File:** `releases/prism-build-177.apk`
+
+Needs Play Protect paused to install. Can be installed over build 176.
+
+**Your phone run of 176:** the Sidekick took over its settings correctly, and all 11 of their new checks passed. The keyboard measurement decided Back: the Sidekick's own panel will never take the focus, so another app's keyboard is never closed by it. Back goes to that app, as with the Sidekick's blobs today. But 68 checks went wrong in the Sidekick half. This build fixes the two causes, and nothing else.
+
+- **Holding one of the Sidekick's blobs could bring up its neighbour's menu.** (A real fault, not only the test's.)
+  - **When:** the Sidekick rests near the top or the bottom of the screen, so its fan of blobs doesn't fit and is pressed against the edge. The blobs then come close together.
+  - **Why:** a touch was given to the first blob near enough, not the nearest one. Change, Remove or Add then went to the wrong blob.
+  - **Now:** the nearest blob (or the nearest name) wins.
+  - **Checked** on a copy of the layout, for every height on both sides, with labels on and off: every blob's middle now picks that blob. Before, about 50 heights on each side went wrong.
+  - **Still to design, not changed:** near the corners the blobs can sit almost on top of each other. How the fan should look there changes what you see, so it waits for a mock-up.
+- **The button test left Prism's settings open,** and everything after it failed.
+  - **Why:** my new checks in 176 scrolled the settings down to the looks. The ✕ and Prism | Sidekick were then out of sight, and the test's taps landed on the panel itself.
+  - **Now:** the test scrolls back up first. Closing always brings the ✕ into sight. If the settings still don't close, that counts as WRONG, and the test closes them anyway, so the checks after it start with nothing open.
+- **A safety net:** whenever Prism's settings close, the Sidekick is shown again unless another panel is still open.
+- **The test report** now says, at the blob-hold check, where the Sidekick was and where each of its blobs sat.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 68 of 69 (the miss is the Android-only measurement); the long test, 65 of 69 with the usual 4 misses; the blob fix on a copy of the layout at every height.
+**Not checked:** on a phone: the fix to the blobs and the test's Sidekick half both run only there.
+
 ## Prism, build 176 (15 November 2026)
 
 **File:** `releases/prism-build-176.apk`

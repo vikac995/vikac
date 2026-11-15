@@ -34,7 +34,11 @@ copy (`RestBubble.side*`, `floatIn`, `floatOut`), asks for it at start (`sidekic
 through Android (`sidekickSet`, answered with all of them); never write them in Prism again. Icons is
 each one's own. The button test measures whether a focusable window that can't type keeps another app's
 keyboard (part 5, "KEYBOARD PROBE" notes): that decides how the Sidekick's panel hears Back. Next: 176's
-phone run, then 2b once the owner has chosen where the panel sits and the way back. Tasks are in `tasks/`; each ends with a
+phone run, then 2b once the owner has chosen where the panel sits and the way back. 176's run: the move
+worked; Back is decided (A: the Sidekick's panel never takes the focus). Build 177 (`tasks/STEP2a-fix.md`,
+`reviews/step2a-fix-report.md`) fixes the Sidekick's menu picking a neighbour when its fan is pressed
+against the top or bottom of the screen, and the test leaving Prism's settings open. 2b waits for the
+owner's approved mock-up. Tasks are in `tasks/`; each ends with a
 report in `reviews/` that is reviewed before the owner relies on the work. The preview scripts are in
 `tools/preview/` (see its README).
 
@@ -135,7 +139,9 @@ self-contained, each tested, each leaving everything working.
    apps, the two distance sliders (smooth, the Sidekick moves live as they are dragged, the panel clears
    while one is held). Glass-switch style, like Prism's.
 3. **The Sidekick's own app list** for Change and Add, over the current app.
-4. **Split the Sidekick from the timer** and delete the dead code.
+4. **Split the Sidekick from the timer** and delete the dead code. Still live in the owner's own use
+   (seen after build 176): the Sidekick dragged onto Prism's button "fuses" with it. That old path goes
+   here.
 
 Risk: this is Android code the preview cannot run. The **button test** (below) is how each step is checked
 on the owner's phone; extend its Sidekick half as you go.

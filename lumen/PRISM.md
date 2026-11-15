@@ -66,6 +66,7 @@ Back undoes the most recent thing that opened, one step per press:
 | The blobs | Closes them |
 | Train, Food or Progress, nothing open | Goes to Home |
 | Home, nothing open | Leaves the app |
+| The Sidekick's blobs, or its own settings (step 2b), over any app | Goes to the app underneath: they never take the focus, so that app's keyboard is never taken away (measured in build 176). They close with the ✕, a tap beside them, a tap on the Sidekick, or Home / Recents. |
 
 Every new element must say where it sits in this table before it is built.
 

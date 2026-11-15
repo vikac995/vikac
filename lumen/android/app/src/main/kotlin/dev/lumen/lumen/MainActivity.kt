@@ -2556,7 +2556,17 @@ class Floater(val timer: Boolean) {
                             val at = m.testPopSpot(num("which", 0).toInt()) ?: return fail("no small menu, or not that part of it")
                             finger(m, listOf(at), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)
                         }
-                        "hold" -> finger(m, listOf(spot), true, 50, 0, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L) + 200, false, 500, { true }, after)
+                        "hold" -> {
+                            // (Where the blobs are and which one each spot gets, written into the check.)
+                            val layout = m.testLayout()
+                            finger(m, listOf(spot), true, 50, 0, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L) + 200, false, 500, { true }, {
+                                stamps = null
+                                val st = state(context)
+                                paced(st, kept)
+                                st["layout"] = layout
+                                done(st)
+                            })
+                        }
                         "drag" -> {
                             val to = points(a["to"])
                             finger(m, listOf(spot) + to, true, 60, num("legMs", 450), num("endMs", 150), false, num("settleMs", 900), { true }, after)
@@ -3576,15 +3586,39 @@ class Floater(val timer: Boolean) {
         }
 
         /** Which blob is at this place in the view, or none. A blob's name counts as the blob. */
+        /**
+         * The blob a finger at [x], [y] is on: on the blob itself, or on its name under it. Where
+         * two are that close, the nearer one (its middle, or its name's) wins. (Near the top or
+         * the bottom of the screen the fan is pressed against the edge and the blobs come close
+         * together; the first one that was near enough used to win, so a hold on the middle of
+         * one could bring up its neighbour's small menu: build 176's phone run.)
+         */
         private fun at(x: Float, y: Float): Int {
+            var best = -1
+            var nearest = Float.MAX_VALUE
             for (i in 0 until n) {
                 if (out[i] < 0.5f) continue
                 val dx = x - restX[i]
                 val dy = y - restY[i]
-                if (dx * dx + dy * dy < (40 * dp) * (40 * dp)) return i
-                if (blobNames && Math.abs(dx) < 40 * dp && dy > 0 && dy < 62 * dp) return i
+                val d = if (dx * dx + dy * dy < (40 * dp) * (40 * dp)) {
+                    Math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
+                } else if (blobNames && Math.abs(dx) < 40 * dp && dy > 0 && dy < 62 * dp) {
+                    // (On its name: measured from where the name is drawn.)
+                    Math.hypot(dx.toDouble(), (dy - 50 * dp).toDouble()).toFloat()
+                } else {
+                    continue
+                }
+                if (d < nearest) {
+                    nearest = d
+                    best = i
+                }
             }
-            return -1
+            return best
+        }
+
+        /** For the test report: where every blob is, in points, and which one a finger on each would get. */
+        fun testLayout(): String = (0 until n).joinToString(" ") {
+            "${it}@${(restX[it] / dp).toInt()},${(restY[it] / dp).toInt()}->${at(restX[it], restY[it])}"
         }
 
         // Held still on a blob: that blob is changed, at once. Prism comes forward with the apps
