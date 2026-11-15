@@ -1,5 +1,37 @@
 # Lumen changelog
 
+## Prism, build 158 (15 November 2026)
+
+**File:** `releases/prism-build-158.apk`
+
+Needs Play Protect paused to install. Can be installed over build 157.
+
+**The new way to change things, the same for Prism and the Sidekick.**
+
+*Holding a blob*
+- **A small menu comes up beside it: Change and Remove.** The blob lifts a little and the others stand back. You can let go; the menu stays. A tap anywhere else puts it away.
+- **Keep holding and move:** the menu goes and the blob comes along, to be put in another place.
+- **Change** opens the list titled "Change" with the blob's name. While it is up, the centre button is that blob: the sign draws in and the blob grows out of it, and goes back when you have chosen. The list also has a red **Remove**.
+- **Remove** leaves a **plus** in the blob's own seat; the others do not move over. A tap on the plus opens the same list, titled "Add".
+- **On the Sidekick** it is the same menu, beside the blob, over whatever app you are in. Change brings Prism forward on the list and steps back afterwards. A removed blob shows as a plus there too, and a tap on it adds one. (After Remove the Sidekick's menu closes; the plus is there the next time it opens.)
+
+*Holding the button itself*
+- **Hold the closed Prism button:** its settings, with Prism chosen. **Hold the Sidekick:** the same settings with Sidekick chosen (Prism comes forward for it and steps back when you close them). **A tap on the Sidekick** still opens its blobs.
+- The panel is titled Prism or Sidekick. New in it: **Show labels**, a switch, one for each of the two. "In this app" and "Over other apps" show only for the Sidekick. Prism's **two-finger swipes** are a row of four: tap one to say what it does; the list it opens has Remove to clear it, and then the settings come back.
+- While the settings are open the button is the cog.
+
+*Gone*
+- The old edit screen (red minuses and pencils, the floating Prism | Sidekick picker, the swipes across the top) can no longer be reached. Its code is still in the app, unused; I will take it out in a build of its own once you are happy with the new way.
+
+*Hold or glass*
+- A finger still for Android's hold time is a hold, and nothing after that turns it into the glass. A finger that moves first is the glass or a flick, as before. The glass now starts a little sooner (after 8 points of movement, was 10; sideways or down it lifts after 16, was 22). The flick up for the app list is judged as before.
+
+**Checked:** it compiles, both sides; in my preview: the small menu, the plus left in the seat, the Change list with the button as the blob, the new settings panel; the automatic test, 62 of 66 with the usual 4 misses.
+**Changed in the test:** the checks for the old edit screen are replaced by checks of the new way: the menu on a hold, Change, Remove, the plus in its seat, Add, Remove from the list, a trembling finger, a blob moved at once, held-then-carried, settings on holding the closed button (and that neither the glass nor the blobs came out), labels, the Sidekick's switches, the swipes set from the settings. The check for making a two-finger swipe on the old edit screen is gone with that screen.
+**Not checked:** on a phone. Everything on the Sidekick (its small menu, the plus, hold for settings, Prism stepping back) is Android only and has not run anywhere yet. Whether the hold and the glass ever get confused under a real thumb can only be judged on the phone.
+
+**Still to come, from your last message:** all looks keeping their colours still as Window does, and a calmer pinch (List mode first).
+
 ## Prism, build 157 (15 November 2026)
 
 **File:** `releases/prism-build-157.apk`

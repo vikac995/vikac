@@ -221,7 +221,8 @@ class _ShellState extends State<Shell>
       }
     }
     _signWas = now;
-    final bool want = _editing && _open;
+    // The cog is the button's sign while its settings are open.
+    final bool want = _panelOpen;
     if (want && _cog.target != 1 && Apps.instance.takeCogHint()) {
       _cogHint.forward(from: 0);
     }
@@ -231,10 +232,8 @@ class _ShellState extends State<Shell>
   void _removeBlob(int i) {
     Haptics.thud();
     Diag.instance.event('blob removed');
-    _gone[i].animateTo(1);
+    // (It keeps its seat: a plus stands where it was.)
     BlobSlots.instance.put(i, 'empty:');
-    _reseat();
-    _recentre();
   }
 
   /// Whether place [i] holds something that is neither an app nor one of Prism's sheets or
@@ -347,15 +346,60 @@ class _ShellState extends State<Shell>
   /// How long a finger held still on a blob counts as a hold: Android's own, as on the Sidekick.
   int _holdMs = 450;
 
-  /// Held still on blob [i]: that blob is changed, straight away.
+  /// The blob whose small menu (Change, Remove) is showing, if any.
+  int? _menuFor;
+
+  /// While a blob is being changed, the button is that blob: the sign draws in and the blob
+  /// grows out of it, and back again once it is chosen. 0 the sign, 1 the blob.
+  late final SpringValue _face = SpringValue(
+    this,
+    value: 0,
+    spring: Motions.spatial,
+  );
+  Widget? _faceOf;
+
+  /// The settings panel (Prism's or the Sidekick's) is open. [_panelBack]: Prism came forward
+  /// only for it, from the Sidekick over another app, and steps back when it is closed.
+  bool _panelOpen = false, _panelBack = false;
+
+  /// Where the finger was when a hold on a blob was recognised.
+  Offset _holdFrom = Offset.zero;
+
+  /// Held still on blob [i]: its small menu comes up beside it, with Change and Remove. The
+  /// others dim. Moved on from here without letting go, the blob comes along instead.
   void _heldBlob(int i) {
-    if (!_open || _drawerOpen || _dragI != null || !mounted) {
+    if (!_open || _drawerOpen || _dragI != null || !mounted || _isEmpty(i)) {
       return;
     }
     Haptics.settle();
-    Diag.instance.event('blob: held, change');
-    setState(() => _editSlot = i);
-    _setDrawer(true);
+    Diag.instance.event('blob: held, its menu');
+    setState(() => _menuFor = i);
+  }
+
+  void _menuAway() {
+    if (_menuFor != null && mounted) {
+      setState(() => _menuFor = null);
+    }
+  }
+
+  /// "Change" in a blob's small menu: the list to choose what takes its place.
+  void _menuChange() {
+    final int? i = _menuFor;
+    if (i == null) {
+      return;
+    }
+    _menuFor = null;
+    _pickFor(i);
+  }
+
+  /// "Remove" in a blob's small menu: a plus stands where it was.
+  void _menuRemove() {
+    final int? i = _menuFor;
+    if (i == null) {
+      return;
+    }
+    setState(() => _menuFor = null);
+    _removeBlob(i);
   }
 
   void _setEditing(bool v) {
@@ -383,11 +427,7 @@ class _ShellState extends State<Shell>
       return;
     }
     BlobSlots.instance.show(side: side);
-    for (int i = 0; i < _n; i++) {
-      _gone[i].animateTo(_isEmpty(i) ? 1 : 0, spring: Motions.spatialFast);
-    }
     _reseat();
-    _recentre();
     Diag.instance.event(
       side ? 'changing the side menu' : 'changing the main menu',
     );
@@ -619,7 +659,11 @@ class _ShellState extends State<Shell>
   /// Where the floating elements may be seen. Opened from the cog on the button.
   void _showFloating() {
     Haptics.tick();
-    Diag.instance.event('floating elements: settings');
+    Diag.instance.event(
+      _designSide.value ? 'settings: Sidekick' : 'settings: Prism',
+    );
+    _panelOpen = true;
+    _signSync();
     showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -654,242 +698,382 @@ class _ShellState extends State<Shell>
                     b.floatIn,
                     b.floatOut,
                     Apps.instance,
+                    BlobSlots.instance,
                     _designSide,
                   ]),
-                  builder: (BuildContext context, Widget? _) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      // Its name, and a plain way out: the round X in the corner.
-                      Row(
+                  builder: (BuildContext context, Widget? _) => ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight:
+                          MediaQuery.sizeOf(context).height -
+                          MediaQuery.paddingOf(context).vertical -
+                          70,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              'Blob',
-                              style: LumenType.display(
-                                22,
-                                weight: 700,
+                          // Its name, and a plain way out: the round X in the corner.
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  _designSide.value ? 'Sidekick' : 'Prism',
+                                  style: LumenType.display(
+                                    22,
+                                    weight: 700,
+                                    color: c.ink,
+                                  ),
+                                ),
+                              ),
+                              Semantics(
+                                button: true,
+                                label: 'Close',
+                                child: GestureDetector(
+                                  key: Robot.key('floatClose'),
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    Haptics.tick();
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: ShapeDecoration(
+                                      color: c.ink.withValues(alpha: 0.1),
+                                      shape: const CircleBorder(),
+                                    ),
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      size: 24,
+                                      color: c.ink,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          // Whose settings these are: the button in the middle, or the one at the side.
+                          Segmented<bool>(
+                            key: Robot.key('blobDesignFor'),
+                            values: const <bool>[false, true],
+                            labels: const <String>['Prism', 'Sidekick'],
+                            value: _designSide.value,
+                            onChanged: (bool v) => _designSide.value = v,
+                          ),
+                          const SizedBox(height: 16),
+                          // Where the Sidekick shows. (Prism is always in its place.)
+                          if (_designSide.value) ...<Widget>[
+                            SwitchLine(
+                              key: Robot.key('floatIn'),
+                              label: 'In this app',
+                              value: b.floatIn.value,
+                              onChanged: (bool v) => _setFloating(inPrism: v),
+                            ),
+                            const SizedBox(height: 12),
+                            SwitchLine(
+                              key: Robot.key('floatOut'),
+                              label: 'Over other apps',
+                              value: b.floatOut.value,
+                              onChanged: (bool v) => _setFloating(overApps: v),
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          // Names under its blobs: each has its own choice.
+                          SwitchLine(
+                            key: Robot.key('names'),
+                            label: 'Show labels',
+                            value: _designSide.value
+                                ? BlobSlots.instance.sideNames
+                                : BlobSlots.instance.names,
+                            onChanged: (bool v) {
+                              if (_designSide.value) {
+                                Haptics.tick();
+                                Diag.instance.event(
+                                  v
+                                      ? 'Sidekick names on'
+                                      : 'Sidekick names off',
+                                );
+                                BlobSlots.instance.setNames(v, side: true);
+                                RestBubble.instance.tellNames(v);
+                              } else {
+                                _setNames(v);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          // The blobs' own choice; the app list has its own, behind its cog.
+                          Text(
+                            'Icons',
+                            style: LumenType.text(
+                              15,
+                              weight: 560,
+                              color: c.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Segmented<bool>(
+                            values: const <bool>[true, false],
+                            labels: const <String>['Prism', 'Regular'],
+                            value: Apps.instance.blobPrismIcons,
+                            onChanged: (bool v) =>
+                                Apps.instance.setPrismIcons(v, blobs: true),
+                          ),
+                          const SizedBox(height: 16),
+                          // Prism's two-finger swipes: what each of the four does. A tap on one
+                          // asks what it should do.
+                          if (!_designSide.value) ...<Widget>[
+                            Text(
+                              'Two-finger swipes',
+                              style: LumenType.text(
+                                15,
+                                weight: 560,
                                 color: c.ink,
                               ),
                             ),
-                          ),
-                          Semantics(
-                            button: true,
-                            label: 'Close',
-                            child: GestureDetector(
-                              key: Robot.key('floatClose'),
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                Haptics.tick();
-                                Navigator.of(context).pop();
-                              },
-                              child: Container(
-                                width: 44,
-                                height: 44,
-                                decoration: ShapeDecoration(
-                                  color: c.ink.withValues(alpha: 0.1),
-                                  shape: const CircleBorder(),
-                                ),
-                                child: Icon(
-                                  Icons.close_rounded,
-                                  size: 24,
-                                  color: c.ink,
-                                ),
+                            const SizedBox(height: 8),
+                            ListenableBuilder(
+                              listenable: GestureSlots.instance,
+                              builder: (BuildContext context, Widget? _) => Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: <Widget>[
+                                  for (int g = 0; g < 4; g++)
+                                    GestureDetector(
+                                      key: Robot.key('gesture$g'),
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        Navigator.of(context).pop();
+                                        _pickGesture(g);
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                        ),
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: <Widget>[
+                                            SizedBox(
+                                              width: 46,
+                                              height: 46,
+                                              // (Given nothing: a plus in a ring, in the panel's own ink.)
+                                              child: _isEmpty(100 + g)
+                                                  ? DecoratedBox(
+                                                      decoration:
+                                                          ShapeDecoration(
+                                                            shape: CircleBorder(
+                                                              side: BorderSide(
+                                                                color:
+                                                                    c.inkFaint,
+                                                                width: 1.5,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                      child: Icon(
+                                                        Icons.add_rounded,
+                                                        size: 22,
+                                                        color: c.inkMuted,
+                                                      ),
+                                                    )
+                                                  : FittedBox(
+                                                      child: _blobDisc(100 + g),
+                                                    ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            // Two arrows: two fingers, and which way.
+                                            Icon(
+                                              const <IconData>[
+                                                Icons
+                                                    .keyboard_double_arrow_down_rounded,
+                                                Icons
+                                                    .keyboard_double_arrow_up_rounded,
+                                                Icons
+                                                    .keyboard_double_arrow_left_rounded,
+                                                Icons
+                                                    .keyboard_double_arrow_right_rounded,
+                                              ][g],
+                                              size: 20,
+                                              color: c.inkMuted,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
+                            const SizedBox(height: 14),
+                          ],
+                          // Vivid: black glass and colours at full strength. Mellow: as before.
+                          Text(
+                            'Colours',
+                            style: LumenType.text(
+                              15,
+                              weight: 560,
+                              color: c.ink,
+                            ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      SwitchLine(
-                        key: Robot.key('floatIn'),
-                        label: 'In this app',
-                        value: b.floatIn.value,
-                        onChanged: (bool v) => _setFloating(inPrism: v),
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchLine(
-                        key: Robot.key('floatOut'),
-                        label: 'Over other apps',
-                        value: b.floatOut.value,
-                        onChanged: (bool v) => _setFloating(overApps: v),
-                      ),
-                      const SizedBox(height: 12),
-                      // The blobs' own choice; the app list has its own, behind its cog.
-                      // Two choices of two each: the glass segmented picker, as everywhere.
-                      Text(
-                        'Icons',
-                        style: LumenType.text(15, weight: 560, color: c.ink),
-                      ),
-                      const SizedBox(height: 8),
-                      Segmented<bool>(
-                        values: const <bool>[true, false],
-                        labels: const <String>['Prism', 'Regular'],
-                        value: Apps.instance.blobPrismIcons,
-                        onChanged: (bool v) =>
-                            Apps.instance.setPrismIcons(v, blobs: true),
-                      ),
-                      const SizedBox(height: 16),
-                      // The main button and the side Blob each have a design of their own. This
-                      // says which of the two the colours and the look below are being chosen for.
-                      Text(
-                        'Design',
-                        style: LumenType.text(15, weight: 560, color: c.ink),
-                      ),
-                      const SizedBox(height: 8),
-                      Segmented<bool>(
-                        key: Robot.key('blobDesignFor'),
-                        values: const <bool>[false, true],
-                        labels: const <String>['Prism', 'Sidekick'],
-                        value: _designSide.value,
-                        onChanged: (bool v) => _designSide.value = v,
-                      ),
-                      const SizedBox(height: 16),
-                      // Vivid: black glass and colours at full strength. Mellow: as before.
-                      Text(
-                        'Colours',
-                        style: LumenType.text(15, weight: 560, color: c.ink),
-                      ),
-                      const SizedBox(height: 8),
-                      Segmented<bool>(
-                        key: Robot.key('blobVivid'),
-                        values: const <bool>[false, true],
-                        labels: const <String>['Mellow', 'Vivid'],
-                        value: _designSide.value
-                            ? Apps.instance.sideVivid
-                            : Apps.instance.blobVivid,
-                        onChanged: (bool v) {
-                          Apps.instance.setBlobVivid(
-                            v,
-                            side: _designSide.value,
-                          );
-                          RestBubble.instance.tellVivid(
-                            Apps.instance.sideVivid,
-                          );
-                          Diag.instance.event(
-                            '${_designSide.value ? 'side blob' : 'main button'} ${v ? 'vivid' : 'mellow'}',
-                          );
-                          setState(() {});
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      // The Blob's sign, on the button here and on the floating blob over other
-                      // apps: each look drawn as it will be, with these blobs' own colours.
-                      Text(
-                        'Look',
-                        style: LumenType.text(15, weight: 560, color: c.ink),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 10,
-                        runSpacing: 12,
-                        children: <Widget>[
-                          for (final BlobLook look in BlobSign.looks)
-                            GestureDetector(
-                              key: Robot.key('blobLook-${look.id}'),
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                Haptics.tick();
-                                Apps.instance.setBlobLook(
-                                  look.id,
-                                  side: _designSide.value,
-                                );
-                                RestBubble.instance.tellLook(
-                                  Apps.instance.sideLook,
-                                );
-                                Diag.instance.event(
-                                  '${_designSide.value ? 'side blob' : 'main button'} look: ${look.name}',
-                                );
-                                // (A look that turns, or does not: the sign takes it up at once.)
-                                _signSync();
-                                setState(() {});
-                              },
-                              child: SizedBox(
-                                width: 70,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 160,
-                                      ),
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: ShapeDecoration(
-                                        shape: CircleBorder(
-                                          side: BorderSide(
-                                            width: 2.5,
-                                            color: c.accent.withValues(
-                                              alpha:
-                                                  BlobSign.of(
-                                                        _designSide.value
-                                                            ? Apps
-                                                                  .instance
-                                                                  .sideLook
-                                                            : Apps
-                                                                  .instance
-                                                                  .blobLook,
-                                                      ) ==
-                                                      look
-                                                  ? 1
-                                                  : 0,
+                          const SizedBox(height: 8),
+                          Segmented<bool>(
+                            key: Robot.key('blobVivid'),
+                            values: const <bool>[false, true],
+                            labels: const <String>['Mellow', 'Vivid'],
+                            value: _designSide.value
+                                ? Apps.instance.sideVivid
+                                : Apps.instance.blobVivid,
+                            onChanged: (bool v) {
+                              Apps.instance.setBlobVivid(
+                                v,
+                                side: _designSide.value,
+                              );
+                              RestBubble.instance.tellVivid(
+                                Apps.instance.sideVivid,
+                              );
+                              Diag.instance.event(
+                                '${_designSide.value ? 'side blob' : 'main button'} ${v ? 'vivid' : 'mellow'}',
+                              );
+                              setState(() {});
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          // The Blob's sign, on the button here and on the floating blob over other
+                          // apps: each look drawn as it will be, with these blobs' own colours.
+                          Text(
+                            'Look',
+                            style: LumenType.text(
+                              15,
+                              weight: 560,
+                              color: c.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 10,
+                            runSpacing: 12,
+                            children: <Widget>[
+                              for (final BlobLook look in BlobSign.looks)
+                                GestureDetector(
+                                  key: Robot.key('blobLook-${look.id}'),
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    Haptics.tick();
+                                    Apps.instance.setBlobLook(
+                                      look.id,
+                                      side: _designSide.value,
+                                    );
+                                    RestBubble.instance.tellLook(
+                                      Apps.instance.sideLook,
+                                    );
+                                    Diag.instance.event(
+                                      '${_designSide.value ? 'side blob' : 'main button'} look: ${look.name}',
+                                    );
+                                    // (A look that turns, or does not: the sign takes it up at once.)
+                                    _signSync();
+                                    setState(() {});
+                                  },
+                                  child: SizedBox(
+                                    width: 70,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        AnimatedContainer(
+                                          duration: const Duration(
+                                            milliseconds: 160,
+                                          ),
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: ShapeDecoration(
+                                            shape: CircleBorder(
+                                              side: BorderSide(
+                                                width: 2.5,
+                                                color: c.accent.withValues(
+                                                  alpha:
+                                                      BlobSign.of(
+                                                            _designSide.value
+                                                                ? Apps
+                                                                      .instance
+                                                                      .sideLook
+                                                                : Apps
+                                                                      .instance
+                                                                      .blobLook,
+                                                          ) ==
+                                                          look
+                                                      ? 1
+                                                      : 0,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          child: SizedBox(
+                                            width: 56,
+                                            height: 56,
+                                            child: CustomPaint(
+                                              painter: _LensDisc(c.accent),
+                                              foregroundPainter:
+                                                  BlobSignPreview(
+                                                    look.id,
+                                                    <Color>[
+                                                      for (final (double, Color)
+                                                          b
+                                                          in _fanBlobs)
+                                                        b.$2,
+                                                    ],
+                                                    vivid: _designSide.value
+                                                        ? Apps
+                                                              .instance
+                                                              .sideVivid
+                                                        : Apps
+                                                              .instance
+                                                              .blobVivid,
+                                                  ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      child: SizedBox(
-                                        width: 56,
-                                        height: 56,
-                                        child: CustomPaint(
-                                          painter: _LensDisc(c.accent),
-                                          foregroundPainter: BlobSignPreview(
-                                            look.id,
-                                            <Color>[
-                                              for (final (double, Color) b
-                                                  in _fanBlobs)
-                                                b.$2,
-                                            ],
-                                            vivid: _designSide.value
-                                                ? Apps.instance.sideVivid
-                                                : Apps.instance.blobVivid,
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          look.name,
+                                          textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                          style: LumenType.text(
+                                            12.5,
+                                            weight:
+                                                BlobSign.of(
+                                                      _designSide.value
+                                                          ? Apps
+                                                                .instance
+                                                                .sideLook
+                                                          : Apps
+                                                                .instance
+                                                                .blobLook,
+                                                    ) ==
+                                                    look
+                                                ? 650
+                                                : 500,
+                                            color:
+                                                BlobSign.of(
+                                                      _designSide.value
+                                                          ? Apps
+                                                                .instance
+                                                                .sideLook
+                                                          : Apps
+                                                                .instance
+                                                                .blobLook,
+                                                    ) ==
+                                                    look
+                                                ? c.ink
+                                                : c.inkMuted,
                                           ),
                                         ),
-                                      ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      look.name,
-                                      textAlign: TextAlign.center,
-                                      maxLines: 2,
-                                      style: LumenType.text(
-                                        12.5,
-                                        weight:
-                                            BlobSign.of(
-                                                  _designSide.value
-                                                      ? Apps.instance.sideLook
-                                                      : Apps.instance.blobLook,
-                                                ) ==
-                                                look
-                                            ? 650
-                                            : 500,
-                                        color:
-                                            BlobSign.of(
-                                                  _designSide.value
-                                                      ? Apps.instance.sideLook
-                                                      : Apps.instance.blobLook,
-                                                ) ==
-                                                look
-                                            ? c.ink
-                                            : c.inkMuted,
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -897,7 +1081,19 @@ class _ShellState extends State<Shell>
           ),
         );
       },
-    );
+    ).whenComplete(() {
+      _panelOpen = false;
+      if (mounted) {
+        _signSync();
+      }
+      if (_panelBack) {
+        // Prism came forward only for this: back to the app you were in.
+        _panelBack = false;
+        const MethodChannel('lumen/device')
+            .invokeMethod<void>('toBack')
+            .catchError((Object _) {});
+      }
+    });
   }
 
   void _setFloating({bool? inPrism, bool? overApps}) {
@@ -927,8 +1123,8 @@ class _ShellState extends State<Shell>
   bool _floating(int i) => RestBubble.instance.pinned.value == _pinKey(i);
 
   /// Whether place [i] is, for now, not one of the blobs in the menu.
-  bool _leftOut(int i) =>
-      _floating(i) || i == _awayI || i == _shotI || _isEmpty(i);
+  /// (An empty place is not left out: it keeps its seat, and shows there as a plus.)
+  bool _leftOut(int i) => _floating(i) || i == _awayI || i == _shotI;
 
   /// Gives every blob left in the menu its seat. One that was out and is back takes its seat
   /// at once; the others move over to theirs.
@@ -956,7 +1152,7 @@ class _ShellState extends State<Shell>
   /// The places still in the menu other than [i]: not floating, not on their way out.
   List<int> _others(int i) => <int>[
     for (int k = 0; k < _n; k++)
-      if (k != i && !_floating(k) && k != _shotI && !_isEmpty(k)) k,
+      if (k != i && !_floating(k) && k != _shotI) k,
   ];
 
   /// Which seat among [others] other blobs something at [at] would take, or null if that is
@@ -1034,7 +1230,7 @@ class _ShellState extends State<Shell>
         _seat[k].jumpTo(seats[k]);
         _gone[k].jumpTo(gones[k]);
         _out[k].jumpTo(_floating(k) ? 0 : (k == to ? 1 : outs[k]));
-        if (!_floating(k) && !_isEmpty(k) && _open && outs[k] < 1) {
+        if (!_floating(k) && _open && outs[k] < 1) {
           _out[k].animateTo(1, spring: Motions.spatialFast);
         }
         if (k != to && was.contains(order[k])) {
@@ -1259,7 +1455,7 @@ class _ShellState extends State<Shell>
 
   /// Tells Android what all the blobs in the menu are, in order.
   Future<void> _sendBlobs() async {
-    RestBubble.instance.tellNames(BlobSlots.instance.names);
+    RestBubble.instance.tellNames(BlobSlots.instance.sideNames);
     // (Android draws the side Blob, so it is told the side Blob's look and colours.)
     RestBubble.instance.tellLook(Apps.instance.sideLook);
     RestBubble.instance.tellVivid(Apps.instance.sideVivid);
@@ -1270,6 +1466,22 @@ class _ShellState extends State<Shell>
     ];
     final List<Map<String, Object>> all = <Map<String, Object>>[];
     for (int i = 0; i < _n; i++) {
+      if (keys[i].startsWith('empty:')) {
+        // An empty place keeps its seat on the Sidekick too: a plus, to give it something.
+        all.add(<String, Object>{
+          'key': 'empty:$i',
+          'kind': 'empty',
+          'index': 0,
+          'package': '',
+          'notesFor': '',
+          'name': '',
+          'color': 0x00FFFFFF,
+          'badge': 0,
+          'picture': false,
+          'slot': i,
+        });
+        continue;
+      }
       final Map<String, Object>? blob = await _blobMap(keys[i]);
       if (blob != null) {
         // Which place it is in, so the floating lens's menu can ask for that place to be changed.
@@ -1952,6 +2164,35 @@ class _ShellState extends State<Shell>
         _setDrawer(true);
         return;
       }
+      if (call.method == 'sideSettings' && mounted) {
+        // The Sidekick was held: its settings, here. Prism steps back afterwards if it came
+        // forward only for this.
+        if (_sheetOpen) {
+          _closeSheet();
+        }
+        if (_drawerOpen) {
+          _setDrawer(false);
+        }
+        _setOpen(false);
+        final Object? a = call.arguments;
+        if (!_panelOpen) {
+          _panelBack = a is Map && a['back'] == true;
+          _designSide.value = true;
+          _showFloating();
+        }
+        return;
+      }
+      if (call.method == 'sideRemove' && mounted) {
+        // "Remove" in the small menu of one of the Sidekick's blobs: a plus stands in its place,
+        // in the Sidekick's own menu.
+        final int slot = (call.arguments as num).toInt().clamp(0, _n - 1);
+        final bool was = BlobSlots.instance.side;
+        BlobSlots.instance.show(side: true);
+        BlobSlots.instance.put(slot, 'empty:');
+        BlobSlots.instance.show(side: was);
+        Diag.instance.event('Sidekick blob removed');
+        return;
+      }
       if (call.method == 'notes') {
         // Android says how many notifications each app has.
         Notes.instance.take(call.arguments);
@@ -2034,10 +2275,7 @@ class _ShellState extends State<Shell>
     Apps.instance.loadIconChoice();
     _reseat(jump: true);
     _far.jumpTo(BlobSlots.instance.names ? _reach : _reachBare);
-    for (int i = 0; i < _n; i++) {
-      _gone[i].jumpTo(_isEmpty(i) ? 1 : 0);
-    }
-    _recentre(jump: true);
+
     Apps.instance.addListener(_appsChanged);
     // The numbers on the blobs follow the notifications.
     Notes.instance.counts.addListener(_notesChanged);
@@ -2216,13 +2454,14 @@ class _ShellState extends State<Shell>
       return _home + Offset(-math.cos(a), -math.sin(a)) * _far.value;
     }
 
-    Offset spare(int i) =>
-        Offset(sc.width / 2 + (i - 2) * 74.0, sc.height * 0.42);
     // A place on the page that is beside everything the test opens.
     // (Clear of the swipes' places at the top and of the empty places in the middle.)
     final Offset beside = Offset(sc.width / 2, sc.height * 0.56);
     List<double> px(Offset o) => <double>[o.dx * dpr, o.dy * dpr];
-    int shown() => _others(-1).length;
+    int shown() => <int>[
+      for (int i = 0; i < _n; i++)
+        if (!_isEmpty(i)) i,
+    ].length;
     // The app put in front when the test needs "another app": one that is on the phone and
     // that leaves floating windows alone (Android's Settings hides them).
     String standIn() {
@@ -2445,138 +2684,189 @@ class _ShellState extends State<Shell>
         t.check('blobs: closed after opening and closing three times', !_open);
         await Robot.tap(_home, after: 800);
         t.check('blobs: a tap on the button opens them', _open && shown() == 5);
-        // Held still, a blob is changed at once: its own app list comes up.
+        // Held still, a blob's small menu comes up beside it: Change and Remove.
         await t.scene('holding a blob', () async {
-          await Robot.hold(seat(2), after: 900);
+          await Robot.hold(seat(2), after: 700);
         });
         t.check(
-          'hold: holding a blob opens the app list for that blob',
-          _drawerOpen && _editSlot == 2 && !_editing,
+          'hold: holding a blob brings up its small menu, and nothing else',
+          _menuFor == 2 && _open && !_drawerOpen,
+          'menu for ${_menuFor ?? '-'}',
         );
-        await Robot.tap(_home, after: 900);
+        await Robot.tap(beside, after: 500);
         t.check(
-          'hold: closed without choosing, the blobs are back out as they were',
-          _open && !_drawerOpen && !_editing && shown() == 5,
+          'hold: a tap beside it puts the menu away and leaves the blobs out',
+          _menuFor == null && _open && shown() == 5,
         );
-        await Robot.hold(_home, ms: 650, after: 500);
-        t.check('changing: holding the button starts it', _editing && _open);
+        // Change.
+        await Robot.hold(seat(1), after: 700);
+        final Offset? change = Robot.spot('menuChange');
+        t.check('menu: "Change" is there', change != null);
+        if (change != null) {
+          await t.scene('Change, and the list comes up', () async {
+            await Robot.tap(change, after: 1300);
+          });
+        }
         t.check(
-          'sign: while the blobs are being changed it is the cog',
+          'menu: "Change" opens the list for that blob',
+          _drawerOpen && _editSlot == 1,
+        );
+        t.check(
+          'picker: the button is the blob being changed',
+          _face.target == 1,
+        );
+        Offset? first = Robot.spot('choice0');
+        t.check('picker: the first choice can be found', first != null);
+        if (first != null) {
+          await t.scene('choosing', () async {
+            await Robot.tap(first!, after: 1700);
+          });
+        }
+        t.check(
+          'change: the second place is what was chosen',
+          _pinKey(1) == 'action:0',
+          _pinKey(1),
+        );
+        t.check(
+          'change: back at the blobs, and the button is the sign again',
+          _open && !_drawerOpen && _face.target == 0,
+        );
+        if (_drawerOpen) {
+          _setDrawer(false);
+          await Robot.wait(700);
+        }
+        // Remove: a plus stands where the blob was.
+        await Robot.hold(seat(2), after: 700);
+        final Offset? remove = Robot.spot('menuRemove');
+        if (remove != null) {
+          await t.scene('Remove, and a plus is left', () async {
+            await Robot.tap(remove, after: 900);
+          });
+        }
+        t.check('remove: the third place is empty', _isEmpty(2));
+        t.check(
+          'remove: four blobs are left, and the others have not moved over',
+          shown() == 4 && _seat[2].target == 0 && _seat[0].target == -2,
+          '${shown()} left; seats ${_seat[0].target} ${_seat[2].target}',
+        );
+        final Offset? plus = Robot.spot('plus2');
+        t.check(
+          'plus: it stands where the blob was',
+          plus != null && (plus - seat(2)).distance < 24,
+          plus == null
+              ? 'not found'
+              : '${(plus - seat(2)).distance.round()} away',
+        );
+        if (plus != null) {
+          await t.scene('the plus opens the list', () async {
+            await Robot.tap(plus, after: 1300);
+          });
+        }
+        t.check('plus: a tap opens "Add"', _drawerOpen && _editSlot == 2);
+        first = Robot.spot('choice0');
+        if (first != null) {
+          await t.scene('choosing, and the new blob is there', () async {
+            await Robot.tap(first!, after: 1700);
+          });
+        }
+        t.check('add: the third place holds something again', !_isEmpty(2));
+        if (_drawerOpen) {
+          _setDrawer(false);
+          await Robot.wait(700);
+        }
+        // Removing from the list itself.
+        await Robot.hold(seat(3), after: 700);
+        final Offset? change3 = Robot.spot('menuChange');
+        if (change3 != null) {
+          await Robot.tap(change3, after: 1300);
+        }
+        final Offset? pickRemove = Robot.spot('pickRemove');
+        t.check('picker: "Remove" is there', pickRemove != null);
+        if (pickRemove != null) {
+          await Robot.tap(pickRemove, after: 1300);
+        }
+        t.check(
+          'picker: "Remove" takes it away and closes the list',
+          _isEmpty(3) && !_drawerOpen && _open,
+        );
+        if (_drawerOpen) {
+          _setDrawer(false);
+          await Robot.wait(700);
+        }
+        BlobSlots.instance.putAll(five);
+        await Robot.wait(400);
+        // Holding the button itself: Prism's settings.
+        if (_open) {
+          await Robot.tap(_home, after: 800);
+        }
+        await t.scene('holding the closed button', () async {
+          await Robot.hold(_home, ms: 650, after: 900);
+        });
+        t.check(
+          'settings: holding the closed button opens them, for Prism',
+          _panelOpen &&
+              !_designSide.value &&
+              Robot.spot('blobDesignFor') != null,
+        );
+        t.check(
+          'settings: the hold brought out neither the glass nor the blobs',
+          !_carrying && !_open && !_drawerOpen,
+        );
+        t.check(
+          'sign: while its settings are open it is the cog',
           _cog.target == 1,
         );
-        await Robot.tap(beside, after: 500);
         t.check(
-          'changing: a tap beside the blobs ends it and leaves the blobs out',
-          !_editing && _open,
+          'settings: Prism has no "In this app" switch',
+          Robot.spot('floatIn') == null,
         );
-        await Robot.hold(_home, ms: 650, after: 500);
-        t.check('changing: holding the X starts it', _editing && _open);
-        await Robot.tap(beside, after: 500);
-        t.check(
-          'changing: a tap beside the blobs ends it first',
-          !_editing && _open,
-        );
-        await Robot.hold(_home, ms: 650, after: 500);
         final Offset? names = Robot.spot('names');
-        t.check('names: the switch is there while changing', names != null);
+        t.check('names: the switch is in the settings', names != null);
         if (names != null) {
-          await t.scene('names off, blobs move in', () async {
-            await Robot.tap(names, after: 900);
-          });
+          await Robot.tap(names + const Offset(120, 0), after: 900);
           t.check(
             'names: off, and the blobs are nearer the button',
             !BlobSlots.instance.names && (_far.value - _reachBare).abs() < 1,
             'at ${_far.value.round()}',
           );
-          await t.scene('names on, blobs move out', () async {
-            await Robot.tap(Robot.spot('names') ?? names, after: 900);
-          });
+          await Robot.tap(
+            (Robot.spot('names') ?? names) + const Offset(120, 0),
+            after: 900,
+          );
           t.check(
             'names: on again, and the blobs are back out',
             BlobSlots.instance.names && (_far.value - _reach).abs() < 1,
             'at ${_far.value.round()}',
           );
         }
-        // Taking a blob away and giving the place something again.
-        await t.scene('taking a blob away', () async {
-          await Robot.tap(seat(2) + const Offset(-21, -21), after: 900);
-        });
-        t.check('minus: the third place is empty', _isEmpty(2));
-        t.check(
-          'minus: the one empty place stands in the middle',
-          _midX[2].target == 0,
-          '${_midX[2].target}',
-        );
-        t.check('minus: four blobs are left', shown() == 4, '${shown()}');
-        await t.scene('an empty place opens the list', () async {
-          await Robot.tap(spare(2), after: 1300);
-        });
-        t.check(
-          'empty place: a tap opens "Add a blob"',
-          _drawerOpen && _editSlot == 2,
-        );
-        Offset? first = Robot.spot('choice0');
-        t.check('picker: the first choice can be found', first != null);
-        if (first != null) {
-          await t.scene('choosing, and the new blob joins', () async {
-            await Robot.tap(first!, after: 1700);
-          });
+        final Offset? whose = Robot.spot('blobDesignFor');
+        if (whose != null) {
+          await Robot.tap(whose + const Offset(80, 0), after: 700);
         }
-        t.check('add: the third place holds something again', !_isEmpty(2));
-        t.check(
-          'add: back at the blobs, still being changed',
-          _open && _editing && !_drawerOpen,
-        );
-        if (_drawerOpen) {
-          _setDrawer(false);
-          await Robot.wait(700);
-        }
-        // The pencil.
-        await Robot.tap(seat(1), after: 1300);
-        t.check(
-          'pencil: a tap on a blob opens "Replace"',
-          _drawerOpen && _editSlot == 1,
-        );
-        first = Robot.spot('choice0');
-        if (first != null) {
-          await Robot.tap(first, after: 1600);
-        }
-        t.check(
-          'replace: the second place is what was chosen',
-          _pinKey(1) == 'action:0',
-          _pinKey(1),
-        );
-        if (_drawerOpen) {
-          _setDrawer(false);
-          await Robot.wait(700);
-        }
-        // The cog.
-        await Robot.tap(_home, after: 900);
         final Offset? inPrism = Robot.spot('floatIn');
-        t.check('cog: a tap on it opens its panel', inPrism != null);
+        t.check(
+          'settings: the Sidekick\'s has "In this app"',
+          _designSide.value && inPrism != null,
+        );
+        if (inPrism != null) {
+          await Robot.tap(inPrism + const Offset(120, 0), after: 500);
+          t.check(
+            'floating: "In this app" switches off',
+            !lensOf.floatIn.value,
+          );
+          await Robot.tap(inPrism + const Offset(120, 0), after: 500);
+          t.check('floating: and on again', lensOf.floatIn.value);
+        }
         final Offset? shut = Robot.spot('floatClose');
         if (shut != null) {
-          await Robot.tap(shut, after: 700);
-          t.check(
-            'cog: the X in the panel closes it',
-            Robot.spot('floatIn') == null,
-          );
-          await Robot.tap(_home, after: 900);
+          await Robot.tap(shut, after: 900);
         }
-        if (inPrism != null) {
-          await Robot.tap(inPrism, after: 500);
-          t.check('floating: "In Prism" switches off', !lensOf.floatIn.value);
-          await Robot.tap(inPrism, after: 500);
-          t.check('floating: and on again', lensOf.floatIn.value);
-          await Robot.tap(Offset(sc.width / 2, top + 60), after: 800);
-          t.check(
-            'floating: a tap outside closes the panel',
-            Robot.spot('floatIn') == null,
-          );
-        }
-        if (_editing) {
-          await Robot.tap(beside, after: 500);
-        }
+        t.check(
+          'settings: the X closes them, and the button is the sign again',
+          !_panelOpen &&
+              Robot.spot('blobDesignFor') == null &&
+              _cog.target == 0,
+        );
         BlobSlots.instance.putAll(five);
         await Robot.wait(500);
         // Putting them in another order.
@@ -2613,8 +2903,8 @@ class _ShellState extends State<Shell>
           lensOf.pinned.value == null,
           '${lensOf.pinned.value}',
         );
-        // A finger held on a blob that trembles a pixel or two is still held: that blob is
-        // changed, and nothing is moved.
+        // A finger held on a blob that trembles a pixel or two is still held: that blob's menu
+        // comes up, and nothing is moved.
         if (!_open) {
           await Robot.tap(_home, after: 800);
         }
@@ -2631,18 +2921,18 @@ class _ShellState extends State<Shell>
             ],
             legMs: 220,
             dwell: 160,
-            after: 900,
+            after: 700,
           );
         });
         t.check(
-          'hold: a trembling finger still holds, and that blob is the one changed',
-          _drawerOpen && _editSlot == 0 && order() == before,
-          '${_drawerOpen ? 'list up for ${_editSlot ?? '-'}' : 'no list'}; ${order()}',
+          'hold: a trembling finger still holds, and that blob is the one whose menu is up',
+          _menuFor == 0 && !_drawerOpen && order() == before,
+          'menu for ${_menuFor ?? '-'}; ${order()}',
         );
-        if (_drawerOpen) {
-          await Robot.tap(_home, after: 900);
+        if (_menuFor != null) {
+          await Robot.tap(beside, after: 500);
         }
-        // Moved at once, it is a drag: no app list, however long it then takes.
+        // Moved at once, it is a drag: no menu, however long it then takes.
         await t.scene('a blob dragged away at once and let go', () async {
           await Robot.drag(
             <Offset>[seat(0), seat(0) - const Offset(0, 120), seat(0)],
@@ -2651,41 +2941,46 @@ class _ShellState extends State<Shell>
           );
         });
         t.check(
-          'hold: a blob moved at once is a drag, and no app list comes up',
-          !_drawerOpen && order() == before,
-          '${_drawerOpen ? 'list up' : 'no list'}; ${order()}',
+          'hold: a blob moved at once is a drag, and no menu comes up',
+          _menuFor == null && !_drawerOpen && order() == before,
+          'menu for ${_menuFor ?? '-'}; ${order()}',
         );
         if (!_open) {
           await Robot.tap(_home, after: 800);
         }
-        if (!_editing) {
-          await Robot.hold(_home, ms: 650, after: 600);
-        }
-        await t.scene('dragging a blob while they are being changed', () async {
+        // Held, and then moved on without letting go: the menu goes and the blob comes along.
+        await t.scene('holding a blob, then carrying it', () async {
           await Robot.drag(
-            <Offset>[seat(0), seat(1), seat(2), seat(3), seat(4)],
+            <Offset>[
+              seat(0),
+              seat(0) + const Offset(0, 1),
+              seat(0) + const Offset(0, 2),
+              seat(0) + const Offset(0, 1),
+              seat(1),
+              seat(2),
+              seat(3),
+              seat(4),
+            ],
             legMs: 220,
             dwell: 160,
             after: 900,
           );
         });
         t.check(
-          'changing: dragged, it goes to another seat, and they can still be changed',
-          _editing && _pinKey(4) == 'action:0',
-          '${_editing ? 'changing' : 'not changing'}; ${order()}',
+          'hold: held and then carried, the menu goes and the first blob is now the last',
+          _menuFor == null && _pinKey(4) == 'action:0',
+          'menu for ${_menuFor ?? '-'}; ${order()}',
         );
-        await t.scene('and dragged back', () async {
-          await Robot.drag(
-            <Offset>[seat(4), seat(3), seat(2), seat(1), seat(0)],
-            legMs: 220,
-            dwell: 160,
-            after: 900,
-          );
-        });
+        await Robot.drag(
+          <Offset>[seat(4), seat(3), seat(2), seat(1), seat(0)],
+          legMs: 220,
+          dwell: 160,
+          after: 900,
+        );
         t.check(
-          'changing: dragged back, it is where it was, and they can still be changed',
-          _editing && _pinKey(0) == 'action:0' && _pinKey(4) == 'action:4',
-          '${_editing ? 'changing' : 'not changing'}; ${order()}',
+          'hold: and carried back, it is where it was',
+          _pinKey(0) == 'action:0' && _pinKey(4) == 'action:4',
+          order(),
         );
         // Dragged right away from the others and let go: it goes back among them.
         await Robot.drag(
@@ -2695,7 +2990,7 @@ class _ShellState extends State<Shell>
           after: 1000,
         );
         t.check(
-          'changing: dragged away and let go, it goes back to its seat and nothing floats',
+          'order: dragged away and let go, it goes back to its seat and nothing floats',
           _dragI == null &&
               lensOf.pinned.value == null &&
               _pinKey(2) == 'action:2' &&
@@ -2706,68 +3001,55 @@ class _ShellState extends State<Shell>
           lensOf.setPin(null);
           _sendPin();
         }
-        if (_editing) {
-          await Robot.tap(beside, after: 500);
-        }
-        // The two-finger swipes.
+        // The two-finger swipes: set in Prism's settings.
         final List<String> swipes = <String>[...GestureSlots.instance.keys];
         final bool wasOut = _open;
-        if (!_open) {
+        if (_open) {
           await Robot.tap(_home, after: 800);
         }
-        await Robot.hold(_home, ms: 650, after: 600);
+        await Robot.hold(_home, ms: 650, after: 900);
         final Offset? side = Robot.spot('gesture2');
-        t.check(
-          'swipes: their places are shown while the blobs are being changed',
-          side != null,
-        );
+        t.check('swipes: their places are in Prism\'s settings', side != null);
         if (side != null) {
-          await Robot.tap(side, after: 1300);
+          await Robot.tap(side, after: 1500);
           t.check(
             'swipes: a tap on a place asks what that swipe should do',
-            _drawerOpen && _editSlot == 102,
+            _drawerOpen && _editSlot == 102 && !_panelOpen,
           );
           final Offset? pick = Robot.spot('choice0');
           if (pick != null) {
-            await Robot.tap(pick, after: 1600);
+            await Robot.tap(pick, after: 1800);
           }
           t.check(
             'swipes: what was chosen is what it does',
             GestureSlots.instance.keys[2] == 'phone:shade',
             GestureSlots.instance.keys[2],
           );
-          if (_drawerOpen) {
-            _setDrawer(false);
-            await Robot.wait(700);
+          t.check(
+            'swipes: once chosen, the settings are back',
+            _panelOpen && !_drawerOpen && !_open,
+          );
+          final Offset? again = Robot.spot('gesture2');
+          if (again != null) {
+            await Robot.tap(again, after: 1500);
           }
-          final Offset? off = Robot.spot('gestureOff2');
+          final Offset? off = Robot.spot('pickRemove');
           if (off != null) {
-            await Robot.tap(off, after: 600);
+            await Robot.tap(off, after: 1500);
           }
           t.check(
-            'swipes: the minus leaves that swipe doing nothing',
+            'swipes: "Remove" leaves that swipe doing nothing',
             GestureSlots.instance.keys[2] == 'empty:',
             GestureSlots.instance.keys[2],
           );
-        }
-        if (_open && _editing) {
-          await Robot.swipe2(
-            Offset(sc.width / 2, sc.height * 0.5),
-            const Offset(0, -150),
-            after: 1300,
-          );
-          t.check(
-            'swipes: made while the blobs are being changed, the swipe asks what it should do',
-            _drawerOpen && _editSlot == 101,
-            '$_editSlot',
-          );
           if (_drawerOpen) {
             _setDrawer(false);
-            await Robot.wait(700);
+            await Robot.wait(900);
           }
         }
-        if (_editing) {
-          await Robot.tap(beside, after: 500);
+        final Offset? shut2 = Robot.spot('floatClose');
+        if (shut2 != null) {
+          await Robot.tap(shut2, after: 900);
         }
         if (_open) {
           await Robot.tap(_home, after: 800);
@@ -4117,7 +4399,8 @@ class _ShellState extends State<Shell>
     final Size screen = MediaQuery.sizeOf(context);
     final Offset travel = e.position - _downAt!;
     if (!_moved) {
-      if (travel.distance < 10) {
+      // (As little as the Sidekick allows: past this it is a movement, and never a hold.)
+      if (travel.distance < 8) {
         return;
       }
       _moved = true;
@@ -4146,7 +4429,7 @@ class _ShellState extends State<Shell>
       final bool carry =
           !_flicking() &&
           (ms >= 140 ||
-              (!upward && travel.distance > 22) ||
+              (!upward && travel.distance > 16) ||
               (upward && travel.distance > 24 && moving >= 24 && pace < 0.6));
       if (_drawerOpen || !carry) {
         return;
@@ -4285,8 +4568,16 @@ class _ShellState extends State<Shell>
     if (v && _parked) {
       _lensHome();
     }
+    // Up to change a blob: the button becomes that blob for as long as it is being chosen.
+    if (v && _editSlot != null && _editSlot! < 100) {
+      _faceOf = _blobDisc(_editSlot!);
+      _face.animateTo(1);
+    } else {
+      _face.animateTo(0);
+    }
     // The drawer may have been up to choose what takes a blob's place.
     final bool choosing = !v && _editSlot != null;
+    final bool swipe = choosing && _editSlot! >= 100;
     _setOpen(false);
     setState(() {
       _drawerOpen = v;
@@ -4312,6 +4603,10 @@ class _ShellState extends State<Shell>
         const MethodChannel('lumen/device')
             .invokeMethod<void>('toBack')
             .catchError((Object _) {});
+      } else if (swipe) {
+        // A two-finger swipe was being set, from Prism's settings: back to them.
+        _designSide.value = false;
+        _showFloating();
       } else {
         // Chosen or not, the blobs come back out, showing what is there now.
         _setOpen(true);
@@ -4463,6 +4758,7 @@ class _ShellState extends State<Shell>
     }
     setState(() {
       _open = v;
+      _menuFor = null;
       // No blob is left picked up, or on its way back, from the last time.
       _dragI = null;
       _backI = null;
@@ -4496,20 +4792,13 @@ class _ShellState extends State<Shell>
       final int? join = _joinI;
       _joinI = null;
       for (int i = 0; i < _n; i++) {
-        _gone[i].jumpTo(_isEmpty(i) || i == join ? 1 : 0);
-        if (_floating(i) || _isEmpty(i)) {
+        _gone[i].jumpTo(0);
+        if (_floating(i)) {
           continue;
         }
         if (i == join) {
-          // Just given something: it is out in the middle, as itself, and then comes down to
-          // its seat among the others.
+          // Just given something: it is already in its seat, where the plus was.
           _out[i].jumpTo(1);
-          _fuses.add(
-            Timer(
-              const Duration(milliseconds: 240),
-              () => _gone[i].animateTo(0, spring: Motions.spatial),
-            ),
-          );
           continue;
         }
         _fuses.add(
@@ -5112,6 +5401,28 @@ class _ShellState extends State<Shell>
                     // Up to choose what takes a blob's place: it says so, offers Prism's own
                     // actions as well as the apps, and a tap chooses.
                     pick: _editSlot == null ? null : _blobName(_editSlot!),
+                    // Taking it away, from the same place it is changed.
+                    onRemove:
+                        _editSlot != null &&
+                            (_editSlot! >= 100
+                                ? GestureSlots.instance.keys[_editSlot! -
+                                          100] !=
+                                      'empty:'
+                                : !_isEmpty(_editSlot!))
+                        ? () {
+                            final int i = _editSlot!;
+                            if (i >= 100) {
+                              Haptics.thud();
+                              Diag.instance.event(
+                                'gesture ${GestureSlots.names[i - 100]} cleared',
+                              );
+                              GestureSlots.instance.put(i - 100, 'empty:');
+                            } else {
+                              _removeBlob(i);
+                            }
+                            _setDrawer(false);
+                          }
+                        : null,
                     pickTitle: _editSlot != null && _editSlot! >= 100
                         ? (
                             'Swipe ${GestureSlots.names[_editSlot! - 100]}',
@@ -5182,22 +5493,30 @@ class _ShellState extends State<Shell>
                       if (_shotI == i) {
                         return const SizedBox.shrink();
                       }
-                      if (empty && gone > 0.995) {
-                        // An empty place, out in the middle. It is there only while the blobs are
-                        // being changed: an outline with the edit mark, and a tap gives it something.
-                        if (!_editing || !_open) {
+                      if (empty) {
+                        // An empty place: a plus, in the seat the blob had. A tap gives it something.
+                        if (p <= 0.001) {
                           return const SizedBox.shrink();
                         }
-                        final Offset m = mid(i);
+                        final Offset m = bc + (rest(i) - bc) * p;
                         return Positioned(
                           left: m.dx - _blob / 2 - 6,
                           top: m.dy - _blob / 2 - 6,
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => _pickFor(i),
-                            child: Padding(
-                              padding: const EdgeInsets.all(6),
-                              child: _blobDisc(i),
+                          child: IgnorePointer(
+                            ignoring: !_open || _menuFor != null,
+                            child: Opacity(
+                              opacity:
+                                  (p * 12).clamp(0.0, 1.0) *
+                                  (_menuFor != null ? 0.3 : 0.75),
+                              child: GestureDetector(
+                                key: Robot.key('plus$i'),
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _pickFor(i),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(6),
+                                  child: _blobDisc(i),
+                                ),
+                              ),
                             ),
                           ),
                         );
@@ -5243,7 +5562,9 @@ class _ShellState extends State<Shell>
                         child: IgnorePointer(
                           ignoring: !_open,
                           child: Opacity(
-                            opacity: (p * 12).clamp(0.0, 1.0),
+                            opacity:
+                                (p * 12).clamp(0.0, 1.0) *
+                                (_menuFor != null && _menuFor != i ? 0.3 : 1),
                             // Held still: this blob is changed, straight away, after the same
                             // wait as on the Sidekick. Moved first, it is a drag and never a hold.
                             child: RawGestureDetector(
@@ -5257,8 +5578,43 @@ class _ShellState extends State<Shell>
                                           milliseconds: _holdMs,
                                         ),
                                       ),
-                                      (LongPressGestureRecognizer r) =>
-                                          r.onLongPress = () => _heldBlob(i),
+                                      (LongPressGestureRecognizer r) => r
+                                        ..onLongPressStart =
+                                            (LongPressStartDetails d) {
+                                              _holdFrom = d.globalPosition;
+                                              _heldBlob(i);
+                                            }
+                                        // Held and then moved without letting go: the menu
+                                        // goes, and the blob comes along, as on any drag.
+                                        ..onLongPressMoveUpdate =
+                                            (LongPressMoveUpdateDetails d) {
+                                              if (_dragI != i) {
+                                                if (_menuFor != i ||
+                                                    (d.globalPosition -
+                                                                _holdFrom)
+                                                            .distance <
+                                                        12) {
+                                                  return;
+                                                }
+                                                _menuAway();
+                                                grab(i, d.globalPosition);
+                                              }
+                                              _blobDrag(
+                                                i,
+                                                d.globalPosition - _dragGrab,
+                                                bc,
+                                              );
+                                            }
+                                        ..onLongPressEnd =
+                                            (LongPressEndDetails d) {
+                                              if (_dragI == i) {
+                                                _blobDrop(
+                                                  i,
+                                                  bc,
+                                                  d.velocity.pixelsPerSecond,
+                                                );
+                                              }
+                                            },
                                     ),
                               },
                               child: GestureDetector(
@@ -5316,11 +5672,15 @@ class _ShellState extends State<Shell>
                                           s *
                                               back *
                                               (1 + st) *
-                                              (held ? 1.08 : 1),
+                                              (held || _menuFor == i
+                                                  ? 1.08
+                                                  : 1),
                                           s *
                                               back *
                                               (1 - st * 0.5) *
-                                              (held ? 1.08 : 1),
+                                              (held || _menuFor == i
+                                                  ? 1.08
+                                                  : 1),
                                           1,
                                           1,
                                         )
@@ -5400,6 +5760,30 @@ class _ShellState extends State<Shell>
                       );
                     },
                   ),
+                // A held blob's small menu: Change and Remove, beside it. A tap anywhere else
+                // puts it away and leaves the blobs out.
+                if (_menuFor != null && _open) ...<Widget>[
+                  Positioned.fill(
+                    child: GestureDetector(
+                      key: Robot.key('menuAway'),
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _menuAway,
+                    ),
+                  ),
+                  Positioned(
+                    left: (rest(_menuFor!).dx - 104).clamp(
+                      10.0,
+                      screen.width - 218,
+                    ),
+                    top: rest(_menuFor!).dy - _blob / 2 - 66,
+                    width: 208,
+                    height: 50,
+                    child: _BlobMenu(
+                      onChange: _menuChange,
+                      onRemove: _menuRemove,
+                    ),
+                  ),
+                ],
                 // While the blobs are being changed: the switch for their names, above them. (The
                 // marks on the blobs say the rest.)
                 if (_editing && _open)
@@ -5677,17 +6061,29 @@ class _ShellState extends State<Shell>
                         // Held still while the blobs are out: the same as holding a blob.
                         _heldEdit = false;
                         _holdTimer?.cancel();
-                        if (_open && !_editing && !_drawerOpen) {
+                        // Held still, closed or with the blobs out: Prism's settings. A finger
+                        // that moves before the wait is over is the glass or a flick, never this.
+                        if (!_drawerOpen &&
+                            !_sheetOpen &&
+                            !_parked &&
+                            !_carrying &&
+                            !_panelOpen) {
                           _holdTimer = Timer(
                             Duration(milliseconds: _holdMs),
                             () {
                               if (_downAt != null &&
                                   !_moved &&
-                                  _open &&
-                                  !_editing &&
+                                  !_lifted &&
+                                  !_drawerOpen &&
+                                  !_panelOpen &&
                                   mounted) {
                                 _heldEdit = true;
-                                _setEditing(true);
+                                _liftTimer?.cancel();
+                                _kick.animateTo(1);
+                                _menuAway();
+                                _designSide.value = false;
+                                Haptics.settle();
+                                _showFloating();
                               }
                             },
                           );
@@ -5717,6 +6113,7 @@ class _ShellState extends State<Shell>
                           _signTurn,
                           _signShot,
                           _dark,
+                          _face,
                         ]),
                         builder: (BuildContext context, Widget? _) =>
                             Transform.scale(
@@ -5778,21 +6175,55 @@ class _ShellState extends State<Shell>
                                           children: <Widget>[
                                             // The button's sign: always the Blob's sign, turned to say what is open,
                                             // and drawn in to the cog while the blobs are being changed.
-                                            CustomPaint(
-                                              size: const Size(38, 38),
-                                              painter: _ButtonSign(
-                                                blobs: _fanBlobs,
-                                                turn: _signTurn.value,
-                                                shot: _signShot.value,
-                                                vivid: Apps.instance.blobVivid,
-                                                dark: _dark.value,
-                                                cog: _cog.value,
-                                                look: Apps.instance.blobLook,
-                                                hint: _cogHint.value,
-                                                rim: _button / 2 - 2,
-                                                glint: c.accent,
+                                            Opacity(
+                                              opacity: (1 - _face.value * 1.6)
+                                                  .clamp(0.0, 1.0),
+                                              child: Transform.scale(
+                                                scale:
+                                                    1 -
+                                                    0.45 *
+                                                        _face.value.clamp(
+                                                          0.0,
+                                                          1.0,
+                                                        ),
+                                                child: CustomPaint(
+                                                  size: const Size(38, 38),
+                                                  painter: _ButtonSign(
+                                                    blobs: _fanBlobs,
+                                                    turn: _signTurn.value,
+                                                    shot: _signShot.value,
+                                                    vivid:
+                                                        Apps.instance.blobVivid,
+                                                    dark: _dark.value,
+                                                    cog: _cog.value,
+                                                    look:
+                                                        Apps.instance.blobLook,
+                                                    hint: _cogHint.value,
+                                                    rim: _button / 2 - 2,
+                                                    glint: c.accent,
+                                                  ),
+                                                ),
                                               ),
                                             ),
+                                            // The blob being changed, grown out of the sign.
+                                            if (_face.value > 0.02 &&
+                                                _faceOf != null)
+                                              Opacity(
+                                                opacity:
+                                                    ((_face.value - 0.25) / 0.6)
+                                                        .clamp(0.0, 1.0),
+                                                child: Transform.scale(
+                                                  scale:
+                                                      0.45 + 0.55 * _face.value,
+                                                  child: SizedBox(
+                                                    width: 44,
+                                                    height: 44,
+                                                    child: FittedBox(
+                                                      child: _faceOf,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
                                           ],
                                         ),
                                       ),
@@ -7881,4 +8312,72 @@ class _LensDisc extends CustomPainter {
 
   @override
   bool shouldRepaint(_LensDisc old) => old.accent != accent;
+}
+
+/// The small menu beside a held blob: Change, and Remove in red. Dark glass, as the panels are.
+class _BlobMenu extends StatelessWidget {
+  const _BlobMenu({required this.onChange, required this.onRemove});
+
+  final VoidCallback onChange, onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget half(String label, Color ink, VoidCallback onTap, String key) =>
+        Expanded(
+          child: GestureDetector(
+            key: Robot.key(key),
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              Haptics.tick();
+              onTap();
+            },
+            child: Center(
+              child: Text(
+                label,
+                textScaler: TextScaler.noScaling,
+                style: LumenType.text(15.5, weight: 650, color: ink),
+              ),
+            ),
+          ),
+        );
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
+      builder: (BuildContext context, double t, Widget? child) => Opacity(
+        opacity: t,
+        child: Transform.scale(
+          scale: 0.9 + 0.1 * t,
+          alignment: Alignment.bottomCenter,
+          child: child,
+        ),
+      ),
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: const Color(0xF2202228),
+          shape: StadiumBorder(
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+          ),
+          shadows: const <BoxShadow>[
+            BoxShadow(
+              color: Color(0x66000000),
+              blurRadius: 16,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: <Widget>[
+            half('Change', Colors.white, onChange, 'menuChange'),
+            Container(
+              width: 1,
+              height: 22,
+              color: Colors.white.withValues(alpha: 0.16),
+            ),
+            half('Remove', const Color(0xFFFF6B6F), onRemove, 'menuRemove'),
+          ],
+        ),
+      ),
+    );
+  }
 }

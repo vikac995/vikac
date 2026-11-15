@@ -738,10 +738,20 @@ class BlobSlots extends ChangeNotifier {
 
   File get _namesFile => File('${_file.parent.path}/prism_blob_names');
 
-  void setNames(bool v) {
-    names = v;
+  /// The same for the Sidekick's blobs: its own choice.
+  bool sideNames = true;
+
+  File get _sideNamesFile =>
+      File('${_file.parent.path}/prism_blob_names_side');
+
+  void setNames(bool v, {bool side = false}) {
+    if (side) {
+      sideNames = v;
+    } else {
+      names = v;
+    }
     try {
-      _namesFile.writeAsStringSync(v ? '1' : '0');
+      (side ? _sideNamesFile : _namesFile).writeAsStringSync(v ? '1' : '0');
     } catch (_) {
       // Not saved: the names are back next time.
     }
@@ -780,6 +790,12 @@ class BlobSlots extends ChangeNotifier {
       names = _namesFile.readAsStringSync().trim() != '0';
     } catch (_) {
       // Never switched off.
+    }
+    try {
+      sideNames = _sideNamesFile.readAsStringSync().trim() != '0';
+    } catch (_) {
+      // Never chosen for the Sidekick: as Prism's are.
+      sideNames = names;
     }
   }
 

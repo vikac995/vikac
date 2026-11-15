@@ -3150,7 +3150,22 @@ class Floater(val timer: Boolean) {
                 canvas.rotate(turn)
                 canvas.scale(size * (1 + stretch), size * (1 - stretch * 0.5f))
                 canvas.rotate(-turn)
-                paintBlob(canvas, items[i], 0f, 0f, 31 * dp, dp, true, (alpha * 255).toInt())
+                // (While one blob's small menu is up, the others stand back.)
+                if (menuFor >= 0 && i != menuFor) alpha *= 0.3f
+                if (items[i].kind == "empty") {
+                    // An empty place: a plain ring with a plus, where the blob was.
+                    val a = (alpha * 0.75f * 255).toInt().coerceIn(0, 255)
+                    mark.style = android.graphics.Paint.Style.STROKE
+                    mark.strokeWidth = 1.6f * dp
+                    mark.strokeCap = android.graphics.Paint.Cap.ROUND
+                    mark.color = 0xFFFFFF or (a shl 24)
+                    canvas.drawCircle(0f, 0f, 30 * dp, mark)
+                    canvas.drawLine(-9 * dp, 0f, 9 * dp, 0f, mark)
+                    canvas.drawLine(0f, -9 * dp, 0f, 9 * dp, mark)
+                    mark.style = android.graphics.Paint.Style.FILL
+                } else {
+                    paintBlob(canvas, items[i], 0f, 0f, 31 * dp, dp, true, (alpha * 255).toInt())
+                }
                 if (editing) {
                     // The edit mark: a small white disc with a pencil, at the blob's upper right.
                     // The same size and place as the marks in Prism.
@@ -3178,14 +3193,16 @@ class Floater(val timer: Boolean) {
                 }
                 canvas.restore()
                 // Once it is out: how many notifications it has. Not while the blobs are being changed.
-                if (!editing && p >= 0.9f && i != flying && i != dragging) paintBadge(canvas, items[i], bx + 22 * dp, by - 22 * dp, dp)
+                if (!editing && menuFor < 0 && p >= 0.9f && i != flying && i != dragging && items[i].kind != "empty") paintBadge(canvas, items[i], bx + 22 * dp, by - 22 * dp, dp)
                 // The name appears once the blob is nearly there, not while it is a speck.
                 val show = if (i == dragging) 0f else if (i == flying) 1f - fly * 3f else (p - 0.6f) / 0.4f
                 if (show > 0f && blobNames) {
-                    names.alpha = (show.coerceIn(0f, 1f) * 255).toInt()
+                    names.alpha = (show.coerceIn(0f, 1f) * (if (menuFor >= 0 && i != menuFor) 0.3f else 1f) * 255).toInt()
                     canvas.drawText(items[i].name, bx, by + 50 * dp, names)
                 }
             }
+            // A held blob's small menu, over everything.
+            paintPop(canvas)
         }
 
         /** Which blob is at this place in the view, or none. A blob's name counts as the blob. */
@@ -3202,13 +3219,65 @@ class Floater(val timer: Boolean) {
 
         // Held still on a blob: that blob is changed, at once. Prism comes forward with the apps
         // to choose from, for this menu's own place. (Moved first, it is a drag, never a hold.)
+        // Held still on a blob: its small menu comes up beside it, Change and Remove, as in Prism.
+        // (Moved first, it is a drag, never a hold. Moved on after the hold without letting go,
+        // the menu goes and the blob comes along.)
         private val keep = Runnable {
             val i = pressedAt
-            if (i >= 0 && !kept && !moved && dragging < 0 && opening && flying < 0) {
+            if (i >= 0 && !kept && !moved && dragging < 0 && opening && flying < 0 && items[i].kind != "empty") {
                 kept = true
-                pressedAt = -1
-                change(i)
+                menuFor = i
+                haptic(context, "click")
+                invalidate()
             }
+        }
+
+        // The blob whose small menu is showing, or none; and which half of it a finger came down on.
+        private var menuFor = -1
+        private var popHit = -1
+        private val pop = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        private val popBox = android.graphics.RectF()
+
+        /** Where the small menu of blob [i] is: above it, kept on the screen. */
+        private fun popAt(i: Int) {
+            val w = 204 * dp
+            val h = 46 * dp
+            val x = restX[i].coerceIn(w / 2 + 8 * dp, Math.max(w / 2 + 8 * dp, width - w / 2 - 8 * dp))
+            val top = Math.max(8 * dp, restY[i] - 31 * dp - 14 * dp - h)
+            popBox.set(x - w / 2, top, x + w / 2, top + h)
+        }
+
+        private fun paintPop(canvas: android.graphics.Canvas) {
+            if (menuFor < 0 || menuFor >= n) return
+            popAt(menuFor)
+            pop.shader = null
+            pop.style = android.graphics.Paint.Style.FILL
+            pop.color = 0xF2202228.toInt()
+            canvas.drawRoundRect(popBox, popBox.height() / 2, popBox.height() / 2, pop)
+            pop.style = android.graphics.Paint.Style.STROKE
+            pop.strokeWidth = 1 * dp
+            pop.color = 0x24FFFFFF
+            canvas.drawRoundRect(popBox, popBox.height() / 2, popBox.height() / 2, pop)
+            pop.color = 0x29FFFFFF
+            canvas.drawLine(popBox.centerX(), popBox.centerY() - 11 * dp, popBox.centerX(), popBox.centerY() + 11 * dp, pop)
+            pop.style = android.graphics.Paint.Style.FILL
+            pop.textAlign = android.graphics.Paint.Align.CENTER
+            pop.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+            pop.textSize = 15.5f * dp
+            val base = popBox.centerY() - (pop.descent() + pop.ascent()) / 2f
+            pop.color = WHITE
+            canvas.drawText("Change", popBox.left + popBox.width() / 4, base, pop)
+            pop.color = 0xFFFF6B6F.toInt()
+            canvas.drawText("Remove", popBox.right - popBox.width() / 4, base, pop)
+        }
+
+        /** "Remove" in a blob's small menu: Prism takes it out of the Sidekick's menu, and a plus stands there. */
+        private fun remove(i: Int) {
+            val c = context
+            haptic(c, "thud")
+            val slot = if (items[i].slot >= 0) items[i].slot else i
+            close()
+            channel?.invokeMethod("sideRemove", slot)
         }
 
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
@@ -3219,6 +3288,14 @@ class Floater(val timer: Boolean) {
                     kept = false
                     moved = false
                     dragging = -1
+                    if (menuFor >= 0) {
+                        // A blob's small menu is up: this finger is for it, or puts it away.
+                        popAt(menuFor)
+                        popHit = if (!popBox.contains(e.x, e.y)) 2 else if (e.x < popBox.centerX()) 0 else 1
+                        pressedAt = -1
+                        return true
+                    }
+                    popHit = -1
                     pressedAt = at(e.x, e.y)
                     if (pressedAt >= 0) postDelayed(keep, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L))
                     invalidate()
@@ -3228,7 +3305,9 @@ class Floater(val timer: Boolean) {
                         // Moved: neither a tap nor a hold. If it began on a blob, the blob comes along.
                         moved = true
                         removeCallbacks(keep)
-                        if (pressedAt >= 0) {
+                        // (Held and then moved on: the small menu goes, and the blob comes along.)
+                        if (popHit < 0) menuFor = -1
+                        if (pressedAt >= 0 && popHit < 0 && items[pressedAt].kind != "empty") {
                             dragging = pressedAt
                             // Picked up, its own seat is kept open for it.
                             room = dragging
@@ -3255,6 +3334,17 @@ class Floater(val timer: Boolean) {
                 }
                 android.view.MotionEvent.ACTION_UP -> {
                     removeCallbacks(keep)
+                    if (popHit >= 0) {
+                        // Let go on the small menu, or beside it.
+                        val which = popHit
+                        val of = menuFor
+                        popHit = -1
+                        menuFor = -1
+                        if (of >= 0 && !moved && which == 0) change(of)
+                        else if (of >= 0 && !moved && which == 1) remove(of)
+                        invalidate()
+                        return true
+                    }
                     val i = pressedAt
                     val d = dragging
                     pressedAt = -1
@@ -3268,9 +3358,10 @@ class Floater(val timer: Boolean) {
                         // into the lens, as that app's own floating blob: nothing goes in the lens now.)
                         settle(d, if (g < 0) d else g)
                     } else if (kept) {
-                        // Already being changed, by the hold.
+                        // Held: its small menu is up, and stays up.
                     } else if (i >= 0) {
-                        if (editing) change(i) else choose(i)
+                        // (A plus is given something; a blob is used.)
+                        if (editing || items[i].kind == "empty") change(i) else choose(i)
                     } else if (!moved) {
                         // A tap beside the blobs closes the menu. A tap on the lens itself, in
                         // the middle of its own menu, closes it and goes to what is in the lens.
@@ -3286,6 +3377,8 @@ class Floater(val timer: Boolean) {
                     removeCallbacks(keep)
                     pressedAt = -1
                     dragging = -1
+                    popHit = -1
+                    menuFor = -1
                     room = -1
                     seats(-1)
                     run()
@@ -3313,7 +3406,7 @@ class Floater(val timer: Boolean) {
             hover(sx, sy)
             val i = hot
             hot = -1
-            if (i >= 0) choose(i) else invalidate()
+            if (i >= 0 && items[i].kind != "empty") choose(i) else invalidate()
         }
 
         /** Tapped: it is done once. The lens stays as it is. */
@@ -4115,7 +4208,7 @@ class Floater(val timer: Boolean) {
             if (t == null && atHome()) {
                 // Already where it leads: the Blob sign, pointing the way the blobs will come out.
                 // In the look that was chosen in Prism, filling the glass. (All of them live in BlobLooks.kt.)
-                BlobLooks.paint(look, canvas, r, r, disc - 1.3f * dp, signAngle(), IntArray(blobs.size) { blobs[it].color }, paint, vivid)
+                BlobLooks.paint(look, canvas, r, r, disc - 1.3f * dp, signAngle(), blobs.filter { it.kind != "empty" }.map { it.color }.toIntArray(), paint, vivid)
                 return
             }
             if (t == null && container) {
@@ -4397,8 +4490,20 @@ class Floater(val timer: Boolean) {
         }
 
         // Held still for as long as the phone counts as a hold: the blob menu opens out of the container.
+        // (The Sidekick held: its settings, in Prism, which steps back afterwards if it came forward
+        // only for this. A tap opens its blobs.)
+        private var settingsHeld = false
         private val holder = Runnable {
-            if (pressed && !dragged && !sized && !docked && !tucked && container && menu == null && isAttachedToWindow && blobs.isNotEmpty()) {
+            if (guest && pressed && !dragged && !sized && !docked && !tucked && container && menu == null && isAttachedToWindow) {
+                settingsHeld = true
+                closeReach(context)
+                animate().scaleX(1f).scaleY(1f).setDuration(160).setInterpolator(EASE).start()
+                haptic(context, "click")
+                val back = !this@Floater.foreground
+                val c = context
+                openPrism(c)
+                watcher.postDelayed({ channel?.invokeMethod("sideSettings", mapOf("back" to back)) }, 220)
+            } else if (pressed && !dragged && !sized && !docked && !tucked && container && menu == null && isAttachedToWindow && blobs.isNotEmpty()) {
                 menuTouch = true
                 closeReach(context)
                 animate().scaleX(1f).scaleY(1f).setDuration(160).setInterpolator(EASE).start()
@@ -4970,6 +5075,7 @@ class Floater(val timer: Boolean) {
                     sizing = false
                     atEnd = false
                     menuTouch = false
+                    settingsHeld = false
                     adopted = false
                     reachDown = false
                     if (container) {
@@ -4990,6 +5096,8 @@ class Floater(val timer: Boolean) {
                     animate().scaleX(0.9f).scaleY(0.9f).setDuration(90).start()
                 }
                 android.view.MotionEvent.ACTION_MOVE -> {
+                    // (The hold has done its work: moving on does not pick the Sidekick up.)
+                    if (settingsHeld) return true
                     val dx = e.rawX - downX; val dy = e.rawY - downY
                     val slop = 10 * dp
                     if (!dragged && dx * dx + dy * dy > slop * slop) {
@@ -5001,6 +5109,17 @@ class Floater(val timer: Boolean) {
                     if (dragged) follow()
                 }
                 android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                    if (settingsHeld) {
+                        // Held for its settings: letting go does nothing more.
+                        settingsHeld = false
+                        pressed = false
+                        removeCallbacks(holder)
+                        closeReach(context)
+                        closeGrip(context)
+                        tracker?.recycle()
+                        tracker = null
+                        return true
+                    }
                     if (e.actionMasked == android.view.MotionEvent.ACTION_UP && !dragged) {
                         pressed = false
                         removeCallbacks(holder)

@@ -33,7 +33,11 @@ class AppDrawer extends StatefulWidget {
     this.pickTitle,
     this.choices = const <(String, String, IconData, Color)>[],
     this.onPick,
+    this.onRemove,
   });
+
+  /// While choosing: takes away what is in the place being changed. Null when it is empty.
+  final VoidCallback? onRemove;
   final bool open;
   final Offset origin;
   final double button;
@@ -1243,7 +1247,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                       widget.pick == null
                           ? 'Apps'
                           : (widget.pickTitle?.$1 ??
-                                (widget.pick!.isEmpty ? 'Add' : 'Replace')),
+                                (widget.pick!.isEmpty ? 'Add' : 'Change')),
                       style: LumenType.display(26, color: c.ink),
                     ),
                     const SizedBox(width: 12),
@@ -1265,6 +1269,33 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                         ),
                       ),
                     ),
+                    if (widget.pick != null && widget.onRemove != null)
+                      GestureDetector(
+                        key: Robot.key('pickRemove'),
+                        behavior: HitTestBehavior.opaque,
+                        onTap: widget.onRemove,
+                        child: Container(
+                          margin: const EdgeInsets.only(right: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
+                          decoration: const ShapeDecoration(
+                            color: Color(0x33E5484D),
+                            shape: StadiumBorder(),
+                          ),
+                          child: Text(
+                            'Remove',
+                            textScaler: TextScaler.noScaling,
+                            style: LumenType.text(
+                              14.5,
+                              weight: 650,
+                              color: const Color(0xFFFF6B6F),
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
+                      ),
                     // How far through the apps you are: the same ring the rest of Prism uses.
                     GestureDetector(
                       key: Robot.key('drawerCog'),
