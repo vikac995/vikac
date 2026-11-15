@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 149 (15 November 2026)
+
+**File:** `releases/prism-build-149.apk`
+
+Needs Play Protect paused to install. Can be installed over build 148.
+
+- **A design each for the main button and the side Blob.** In the Blob panel, a new picker, **Design: Main button | Side blob**, says which of the two you are choosing for. The Colours (Mellow, Vivid) and the Look below it then show and change that one's. Until something is chosen for the side Blob, it wears what the main button wears. (Icons, Prism or Regular, is still one choice for both: it is about the blobs in the menu, not the sign.)
+
+**Checked:** it compiles; in my preview: the panel with the new picker; with Side blob chosen it showed the side Blob's own colours and look, a look chosen there was saved for the side Blob only, and the main button kept its own; the automatic test in the preview.
+**Not checked:** on a phone. The side Blob itself wearing its own design I could not see (it only exists on Android): the same two messages tell it as before, now with the side Blob's values.
+
 ## Prism, build 148 (15 November 2026)
 
 **File:** `releases/prism-build-148.apk`

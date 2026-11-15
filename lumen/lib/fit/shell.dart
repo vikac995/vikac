@@ -188,6 +188,10 @@ class _ShellState extends State<Shell>
     value: 1,
   );
 
+  // In the Blob panel: whether the design being chosen is the side Blob's (true) or the main
+  // button's (false).
+  final ValueNotifier<bool> _designSide = ValueNotifier<bool>(false);
+
   // How far the button's sign has turned, in radians: see [_ButtonSign].
   late final SpringValue _signTurn = SpringValue(this, spring: Motions.snappy);
 
@@ -593,6 +597,7 @@ class _ShellState extends State<Shell>
                     b.floatIn,
                     b.floatOut,
                     Apps.instance,
+                    _designSide,
                   ]),
                   builder: (BuildContext context, Widget? _) => Column(
                     mainAxisSize: MainAxisSize.min,
@@ -668,6 +673,21 @@ class _ShellState extends State<Shell>
                             Apps.instance.setPrismIcons(v, blobs: true),
                       ),
                       const SizedBox(height: 16),
+                      // The main button and the side Blob each have a design of their own. This
+                      // says which of the two the colours and the look below are being chosen for.
+                      Text(
+                        'Design',
+                        style: LumenType.text(15, weight: 560, color: c.ink),
+                      ),
+                      const SizedBox(height: 8),
+                      Segmented<bool>(
+                        key: Robot.key('blobDesignFor'),
+                        values: const <bool>[false, true],
+                        labels: const <String>['Main button', 'Side blob'],
+                        value: _designSide.value,
+                        onChanged: (bool v) => _designSide.value = v,
+                      ),
+                      const SizedBox(height: 16),
                       // Vivid: black glass and colours at full strength. Mellow: as before.
                       Text(
                         'Colours',
@@ -678,11 +698,20 @@ class _ShellState extends State<Shell>
                         key: Robot.key('blobVivid'),
                         values: const <bool>[false, true],
                         labels: const <String>['Mellow', 'Vivid'],
-                        value: Apps.instance.blobVivid,
+                        value: _designSide.value
+                            ? Apps.instance.sideVivid
+                            : Apps.instance.blobVivid,
                         onChanged: (bool v) {
-                          Apps.instance.setBlobVivid(v);
-                          RestBubble.instance.tellVivid(v);
-                          Diag.instance.event(v ? 'blob vivid' : 'blob mellow');
+                          Apps.instance.setBlobVivid(
+                            v,
+                            side: _designSide.value,
+                          );
+                          RestBubble.instance.tellVivid(
+                            Apps.instance.sideVivid,
+                          );
+                          Diag.instance.event(
+                            '${_designSide.value ? 'side blob' : 'main button'} ${v ? 'vivid' : 'mellow'}',
+                          );
                           setState(() {});
                         },
                       ),
@@ -705,9 +734,16 @@ class _ShellState extends State<Shell>
                               behavior: HitTestBehavior.opaque,
                               onTap: () {
                                 Haptics.tick();
-                                Apps.instance.setBlobLook(look.id);
-                                RestBubble.instance.tellLook(look.id);
-                                Diag.instance.event('blob look: ${look.name}');
+                                Apps.instance.setBlobLook(
+                                  look.id,
+                                  side: _designSide.value,
+                                );
+                                RestBubble.instance.tellLook(
+                                  Apps.instance.sideLook,
+                                );
+                                Diag.instance.event(
+                                  '${_designSide.value ? 'side blob' : 'main button'} look: ${look.name}',
+                                );
                                 // (A look that turns, or does not: the sign takes it up at once.)
                                 _signSync();
                                 setState(() {});
@@ -729,7 +765,13 @@ class _ShellState extends State<Shell>
                                             color: c.accent.withValues(
                                               alpha:
                                                   BlobSign.of(
-                                                        Apps.instance.blobLook,
+                                                        _designSide.value
+                                                            ? Apps
+                                                                  .instance
+                                                                  .sideLook
+                                                            : Apps
+                                                                  .instance
+                                                                  .blobLook,
                                                       ) ==
                                                       look
                                                   ? 1
@@ -750,7 +792,9 @@ class _ShellState extends State<Shell>
                                                   in _fanBlobs)
                                                 b.$2,
                                             ],
-                                            vivid: Apps.instance.blobVivid,
+                                            vivid: _designSide.value
+                                                ? Apps.instance.sideVivid
+                                                : Apps.instance.blobVivid,
                                           ),
                                         ),
                                       ),
@@ -764,14 +808,18 @@ class _ShellState extends State<Shell>
                                         12.5,
                                         weight:
                                             BlobSign.of(
-                                                  Apps.instance.blobLook,
+                                                  _designSide.value
+                                                      ? Apps.instance.sideLook
+                                                      : Apps.instance.blobLook,
                                                 ) ==
                                                 look
                                             ? 650
                                             : 500,
                                         color:
                                             BlobSign.of(
-                                                  Apps.instance.blobLook,
+                                                  _designSide.value
+                                                      ? Apps.instance.sideLook
+                                                      : Apps.instance.blobLook,
                                                 ) ==
                                                 look
                                             ? c.ink
@@ -1150,8 +1198,9 @@ class _ShellState extends State<Shell>
   /// Tells Android what all the blobs in the menu are, in order.
   Future<void> _sendBlobs() async {
     RestBubble.instance.tellNames(BlobSlots.instance.names);
-    RestBubble.instance.tellLook(Apps.instance.blobLook);
-    RestBubble.instance.tellVivid(Apps.instance.blobVivid);
+    // (Android draws the side Blob, so it is told the side Blob's look and colours.)
+    RestBubble.instance.tellLook(Apps.instance.sideLook);
+    RestBubble.instance.tellVivid(Apps.instance.sideVivid);
     final List<Map<String, Object>> all = <Map<String, Object>>[];
     for (int i = 0; i < _n; i++) {
       if (_floating(i)) {
@@ -4202,6 +4251,7 @@ class _ShellState extends State<Shell>
     _cogHint.dispose();
     _signTurn.dispose();
     _signShot.dispose();
+    _designSide.dispose();
     _dark.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _freeLater?.cancel();

@@ -814,22 +814,41 @@ class Apps extends ChangeNotifier {
   /// The Blob's sign vivid (black glass, colours at full strength) or mellow.
   bool blobVivid = false;
   File get _vividFile => File('${_iconsFile.parent.path}/prism_blob_vivid');
-  void setBlobVivid(bool v) {
-    blobVivid = v;
+  // The side Blob's own look and colours, where they have been chosen for it. Until then
+  // (null) it wears what the main button wears.
+  String? _sideLook;
+  bool? _sideVivid;
+  String get sideLook => _sideLook ?? blobLook;
+  bool get sideVivid => _sideVivid ?? blobVivid;
+  File get _sideLookFile => File('${_iconsFile.parent.path}/prism_side_look');
+  File get _sideVividFile => File('${_iconsFile.parent.path}/prism_side_vivid');
+
+  /// Vivid or mellow, for the main button, or with [side] for the side Blob.
+  void setBlobVivid(bool v, {bool side = false}) {
+    if (side) {
+      _sideVivid = v;
+    } else {
+      blobVivid = v;
+    }
     try {
-      _vividFile.writeAsStringSync(v ? '1' : '0');
+      (side ? _sideVividFile : _vividFile).writeAsStringSync(v ? '1' : '0');
     } catch (_) {
-      // Not saved: mellow next time.
+      // Not saved: as it was next time.
     }
     notifyListeners();
   }
 
-  void setBlobLook(String id) {
-    blobLook = id;
+  /// The look, for the main button, or with [side] for the side Blob.
+  void setBlobLook(String id, {bool side = false}) {
+    if (side) {
+      _sideLook = id;
+    } else {
+      blobLook = id;
+    }
     try {
-      _lookFile.writeAsStringSync(id);
+      (side ? _sideLookFile : _lookFile).writeAsStringSync(id);
     } catch (_) {
-      // Not saved: the first look next time.
+      // Not saved: as it was next time.
     }
     notifyListeners();
   }
@@ -901,6 +920,17 @@ class Apps extends ChangeNotifier {
     if (was.containsKey(blobLook)) {
       blobLook = was[blobLook]!;
       blobVivid = true;
+    }
+    try {
+      final String side = _sideLookFile.readAsStringSync().trim();
+      _sideLook = side.isEmpty ? null : side;
+    } catch (_) {
+      // Never chosen for the side Blob: it wears the main button's.
+    }
+    try {
+      _sideVivid = _sideVividFile.readAsStringSync().trim() == '1';
+    } catch (_) {
+      // Never chosen for the side Blob: as the main button.
     }
     try {
       cogShown = int.tryParse(_cogFile.readAsStringSync().trim()) ?? 0;
