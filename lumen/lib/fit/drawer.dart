@@ -204,7 +204,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   late final AnimationController _flow =
       AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 340),
+        duration: const Duration(milliseconds: 300),
       )..addStatusListener((AnimationStatus s) {
         if (s == AnimationStatus.completed && mounted) {
           setState(() => _flowFrom = _flowTo = null);
@@ -235,13 +235,15 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   double _pinchShown() {
     final double live = _pinchLive;
     final int d = Apps.instance.density;
+    // The grid only leans with the fingers, a third of the way: enough to feel held, not so
+    // much that the whole screen swells and shrinks. The change itself is the apps moving over.
     if (live > 1 && d == 0) {
-      return 1 + 0.16 * (1 - math.exp(-(live - 1) * 1.6));
+      return 1 + 0.07 * (1 - math.exp(-(live - 1) * 1.6));
     }
     if (live < 1 && d == Apps.columns.length - 1) {
-      return 1 - 0.12 * (1 - math.exp(-(1 - live) * 2.2));
+      return 1 - 0.06 * (1 - math.exp(-(1 - live) * 2.2));
     }
-    return live;
+    return 1 + (live - 1) * 0.34;
   }
 
   void _fingerDown(PointerDownEvent e) {
@@ -296,7 +298,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     }
     if (_pinching && _fingers.length < 2) {
       _pinching = false;
-      _zoom.animateTo(1, spring: Motions.snappy);
+      // (No bounce: it comes to rest and stays.)
+      _zoom.animateTo(1, spring: Motions.effects);
       Apps.instance.setDensity(Apps.instance.density, save: true);
     }
     if (_fingers.isEmpty && _pinchLock) {
@@ -328,9 +331,23 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       firstRow = _page * oldRows;
     }
     final int first = firstRow * oldCols;
-    final int newFirstRow = scrolling
+    int newFirstRow = scrolling
         ? first ~/ newCols
         : (first ~/ (newRows * newCols)) * newRows;
+    // In the list, near its end, the new list cannot be scrolled as far as that: it is shown
+    // as far as it goes, and the apps are sent to where they will truly be, so nothing jumps
+    // when they arrive.
+    double newTop = 0, newOffset = 0;
+    if (scrolling && _rowH > 0) {
+      final double gridH = _rowH * oldRows, rowH = gridH / newRows;
+      final int rowsAll = (Apps.instance.all.length / newCols).ceil();
+      newOffset = (newFirstRow * rowH).clamp(
+        0.0,
+        math.max(0.0, rowsAll * rowH - gridH),
+      );
+      newFirstRow = (newOffset / rowH).floor();
+      newTop = newFirstRow * rowH - newOffset;
+    }
     // A pinch is followed by the grid's stretch, which starts again from the new size: the old
     // arrangement is drawn at the stretch it had, so nothing jumps.
     double s0 = 1;
@@ -352,7 +369,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
         newRows,
         _ks[now],
         newFirstRow * newCols,
-        0,
+        newTop,
         1,
         extra,
       );
@@ -361,9 +378,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     if (scrolling) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _list.hasClients && _rowH > 0) {
-          _list.jumpTo(
-            (newFirstRow * _rowH).clamp(0.0, _list.position.maxScrollExtent),
-          );
+          _list.jumpTo(newOffset.clamp(0.0, _list.position.maxScrollExtent));
         }
       });
     } else {
@@ -2188,7 +2203,8 @@ class _FlowPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double e = Curves.easeInOutCubic.transform(t.value);
+    // Quick off the mark and soft at the end.
+    final double e = Curves.easeOutCubic.transform(t.value);
     final List<AppTile> apps = grid.apps;
     final int lo = math.max(0, math.min(a.start, b.start));
     final int hi = math.min(apps.length, math.max(a.end, b.end));
@@ -2196,44 +2212,34 @@ class _FlowPainter extends CustomPainter {
     const Rect box = Rect.fromLTRB(-half, -half, half, half);
     final double cw = size.width / b.cols;
     final Paint fill = Paint();
-    for (int i = lo; i < hi; i++) {
-      final bool inA = a.shows(i), inB = b.shows(i);
-      if (!inA && !inB) {
-        continue;
-      }
-      // Going or coming: it fades with the first part of the way, or the last.
-      final double alpha = inA && inB
-          ? 1
-          : (inB
-                ? Curves.easeIn.transform(t.value)
-                : 1 - Curves.easeOut.transform(t.value));
+
+    // One app, at [p], [k] times its usual size, [alpha] there.
+    void tile(int i, Offset p, double k, double alpha) {
       if (alpha <= 0.01) {
-        continue;
+        return;
       }
-      final Offset p = Offset.lerp(a.at(i, size), b.at(i, size), e)!;
-      final double k = ui.lerpDouble(a.k * a.s, b.k * b.s, e)!;
-      final AppTile tile = apps[i];
+      final AppTile app = apps[i];
       canvas
         ..save()
         ..translate(p.dx, p.dy)
         ..scale(k);
-      final bool own = _GridPainter._own(tile) != null;
+      final bool own = _GridPainter._own(app) != null;
       if (!own) {
-        fill.color = tile.color.withValues(alpha: tile.color.a * alpha);
+        fill.color = app.color.withValues(alpha: app.color.a * alpha);
         canvas.drawPath(_GridPainter._rest, fill);
       }
-      if (tile.picture != null || own) {
+      if (app.picture != null || own) {
         canvas.clipPath(_GridPainter._rest);
       }
-      grid._mark(canvas, tile, box, alpha, 1);
+      grid._mark(canvas, app, box, alpha, 1);
       canvas.restore();
       canvas
         ..save()
         ..translate(p.dx, p.dy)
         ..scale(k);
-      grid._badge(canvas, tile, alpha);
+      grid._badge(canvas, app, alpha);
       canvas.restore();
-      // Its name, as it will be, carried along under it at the tile's size of the moment.
+      // Its name, as it will be, under it at the tile's size of the moment.
       final TextPainter tp = grid._label(i, cw, b.k);
       final double f = k / b.k;
       canvas
@@ -2251,6 +2257,34 @@ class _FlowPainter extends CustomPainter {
         canvas.restore();
       }
       canvas.restore();
+    }
+
+    for (int i = lo; i < hi; i++) {
+      final bool inA = a.shows(i), inB = b.shows(i);
+      if (!inA && !inB) {
+        continue;
+      }
+      final Offset pa = a.at(i, size), pb = b.at(i, size);
+      final double ka = a.k * a.s, kb = b.k * b.s;
+      final bool sameRow =
+          ((i - a.start) / a.cols).floor() == ((i - b.start) / b.cols).floor();
+      if (inA && inB && sameRow) {
+        // Stays in its row: it slides along it to its new place, and takes its new size.
+        tile(i, Offset.lerp(pa, pb, e)!, ui.lerpDouble(ka, kb, e)!, 1);
+        continue;
+      }
+      // Goes to another row, or out of view, or comes into it: nothing flies across the
+      // others. It fades where it was and comes up where it now is.
+      final double out = (1 - t.value * 2.4).clamp(0.0, 1.0);
+      final double up = Curves.easeOut.transform(
+        ((t.value - 0.3) / 0.7).clamp(0.0, 1.0),
+      );
+      if (inA) {
+        tile(i, pa, ka * (1 - 0.06 * (1 - out)), out);
+      }
+      if (inB) {
+        tile(i, pb, kb * (0.94 + 0.06 * up), up);
+      }
     }
   }
 

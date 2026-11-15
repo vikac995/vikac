@@ -1,5 +1,22 @@
 # Lumen changelog
 
+## Prism, build 159 (15 November 2026)
+
+**File:** `releases/prism-build-159.apk`
+
+Needs Play Protect paused to install. Can be installed over build 158.
+
+**A calmer pinch, in both layouts.**
+
+- **Nothing flies across the grid any more.** An app that stays in its row slides along it to its new place. An app that goes to another row fades where it was and comes up where it now is. Before, those apps flew diagonally over all the others, which was most of the busyness.
+- **The grid only leans with your fingers.** It follows them a third of the way, not one-to-one, so the whole screen no longer swells and shrinks under a pinch. The ticks and the steps come at the same finger distances as before.
+- **No bounce when you let go.** It comes to rest and stays. At the largest and smallest size the give is half what it was.
+- **Quicker off the mark, softer at the end** (three tenths of a second, starting fast).
+- **List mode:** near the end of the list, the apps are now sent to where the list will truly be, so there is no jump when they arrive.
+
+**Checked:** it compiles; the automatic test in my preview, 62 of 66 with the usual 4 misses (the pinch checks right).
+**Not checked:** on a phone, and I have not seen this in motion: my preview draws too slowly to judge movement. Your two recordings are what I worked from. One thing I could not explain from them: the Pages recording still shows two grids laid over each other, which is how builds 153 to 155 changed size, not 156 or later. If that recording was made on build 157 or 158, please tell me, because then something on the phone differs from my preview.
+
 ## Prism, build 158 (15 November 2026)
 
 **File:** `releases/prism-build-158.apk`
