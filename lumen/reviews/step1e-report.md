@@ -1,7 +1,8 @@
 # Step 1e report: the leak test (build 174, test only)
 
 Asked for by the review of build 173's phone run (485 of 485, one engine). Branch
-`claude/flutter-ui-showcase-ngzfru`, based on `43ffe04`. Step 2 not started. **No change to how Prism
+`claude/flutter-ui-showcase-ngzfru`, based on `43ffe04`. Two commits: `531ea68` (the code, the APK, the
+changelog, the handover, this report) and the one after it, which only adds the checked link here. Step 2 not started. **No change to how Prism
 behaves:** every change is in the tests, the test report or the testing panel's list of runs.
 
 **What has only run in the preview:** everything. Nothing in this build has run on a phone. In the
@@ -193,7 +194,9 @@ long test:    CHECKS: 65 right, 4 wrong, of 69 (the usual 4: the flick timing ch
 
 **Build 174:** `Prism build 174`, `0.135.0+202`, built from the final code. NAME-OK. "Run the leak test"
 is in its `libapp.so`. sha256 `fe5b5a4fe40972cfb302751fb656bb3c64007f461fdab1010687558882556742`.
-Link: LINK_RESULT
+Link: https://github.com/vikac995/vikac/raw/531ea68c82a25c9340a0a3233441790a38d89659/lumen/releases/prism-build-174.apk
+(pinned to `531ea68`, the commit that added the APK). Checked after the push: it answers 200, and the
+downloaded file has the same sha256 as the one built.
 
 ## For the owner on the phone
 
