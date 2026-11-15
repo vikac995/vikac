@@ -5343,8 +5343,17 @@ class _ShellState extends State<Shell>
                         ]),
                         builder: (BuildContext context, Widget? _) =>
                             Transform.scale(
-                              scaleX: _kick.value * (1 + _wob.value),
-                              scaleY: _kick.value * (1 - _wob.value),
+                              // (The glass is drawn a little larger than its place in the bar, so it
+                              // rises just past the bar's edge: the piece the rest is set around.
+                              // The blob under it keeps its size: see _ButtonSign._blob.)
+                              scaleX:
+                                  _kick.value *
+                                  (1 + _wob.value) *
+                                  _ButtonSign.grow,
+                              scaleY:
+                                  _kick.value *
+                                  (1 - _wob.value) *
+                                  _ButtonSign.grow,
                               child: _glass.value > 0.5 || _returning
                                   // While the glass is lifted away, the prism stays: only the glass
                                   // went, as a magnifying glass picked up off what it lay on. No ring:
@@ -7196,8 +7205,12 @@ class _ButtonSign extends CustomPainter {
   /// The magnifying glass lies over the blob. Off while it is lifted away.
   final bool glass;
 
-  /// How large the blob is against its glass: the glass is plainly the larger, lying over it.
-  static const double _blob = 0.62;
+  /// How much larger the glass is drawn than its place in the bar.
+  static const double grow = 1.14;
+
+  /// How large the blob is against its glass: it keeps the size it always had, and the glass,
+  /// drawn larger (see [grow]), lies over it with a little room all round.
+  static const double _blob = 1 / grow;
 
   /// Which look the sign has: one of [BlobSign]'s.
   final String look;

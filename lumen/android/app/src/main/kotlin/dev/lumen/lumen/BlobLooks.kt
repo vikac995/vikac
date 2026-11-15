@@ -16,7 +16,7 @@ import android.graphics.SweepGradient
  *
  * TO REMOVE A LOOK: delete its line in [looks] and its one function below, and the same two
  * things in blob_sign.dart. Nothing else knows the looks by name: one that is not known here is
- * drawn as the first in the list.
+ * drawn as Window; remove Window last.
  *
  * Every function draws with the middle of the glass at (0, 0), in a circle of radius r (already
  * clipped to it), for blobs of these colours, pointing along a (radians).
@@ -52,7 +52,8 @@ object BlobLooks {
      */
     fun paint(id: String, canvas: Canvas, cx: Float, cy: Float, r: Float, a: Double, colours: IntArray, paint: Paint, vivid: Boolean = false) {
         if (colours.isEmpty()) return
-        val look = looks[id] ?: looks.values.first()
+        // (Nothing chosen, or a look no longer known: Window, as in Prism.)
+        val look = looks[id] ?: looks.getValue("window")
         var cs = IntArray(minOf(colours.size, 5)) { colours[it] or 0xFF000000.toInt() }
         if (vivid) {
             cs = if (look.spectrum) vividColours else IntArray(cs.size) {

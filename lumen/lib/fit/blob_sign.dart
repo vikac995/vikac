@@ -7,7 +7,7 @@ import 'package:material_ui/material_ui.dart';
 //
 // TO REMOVE A LOOK: delete its line in [BlobSign.looks] and its one function below, and the
 // same two things in android/.../BlobLooks.kt. Nothing else knows the looks by name: a phone
-// that had the removed one chosen falls back to the first in the list.
+// that had the removed one chosen falls back to Window (see [BlobSign.first]); remove Window last.
 //
 // TO ADD ONE: write the function here and in BlobLooks.kt from the same numbers, and add the
 // line in both lists.
@@ -74,8 +74,14 @@ abstract final class BlobSign {
   /// The blob's own dark ground when the look is not vivid, under the magnifying glass.
   static const Color ground = Color(0xE6121519);
 
-  static BlobLook of(String id) =>
-      looks.firstWhere((BlobLook l) => l.id == id, orElse: () => looks.first);
+  /// Where a phone starts, with nothing chosen yet: the glass and the coloured triangle are the
+  /// heart of Prism. (An id no longer known falls back to it too.)
+  static const String first = 'window';
+
+  static BlobLook of(String id) => looks.firstWhere(
+    (BlobLook l) => l.id == id,
+    orElse: () => looks.firstWhere((BlobLook l) => l.id == first),
+  );
 
   /// The colours as the look draws them: five at most, and in rainbow order where it asks.
   /// [vivid]: a look of light takes the light's own six colours at full strength; a look of

@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 144 (15 November 2026)
+
+**File:** `releases/prism-build-144.apk`
+
+Needs Play Protect paused to install. Can be installed over build 143.
+
+- **The triangle is its full size again, and the glass over it is larger**, as you meant it. In build 139 the blob was made smaller inside the same glass. Now the blob (the triangle, or any look) is back to the size it had, and the magnifying glass is drawn about a seventh larger, so it rises just past the top edge of the bar and lies over the blob with a little room all round. Lifted away, the glass leaves the blob at that same size.
+- **The glass and the coloured triangle are the centre piece**: a phone with nothing chosen yet starts on Window. (A look chosen before stays chosen.)
+
+**Checked:** it compiles; in my preview: the button mellow and vivid, and with the glass lifted; the automatic test in the preview.
+**Not checked:** on a phone. The button's place for touches is as it was; the glass drawn past it does not take touches there.
+
 ## Prism, build 143 (15 November 2026)
 
 **File:** `releases/prism-build-143.apk`
