@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 152 (15 November 2026)
+
+**File:** `releases/prism-build-152.apk`
+
+Needs Play Protect paused to install. Can be installed over build 151.
+
+- **"Side blob" comes after Prism's five own actions** in the choices (Workout, Log food, Scan, Weigh-in, Timer, then Side blob, then the pages), not first. Those five are used most. It also keeps the automatic test true: one of its checks taps the first choice and expects Workout, and in build 151 that check failed for that reason alone.
+
+**Checked:** it compiles; the automatic test in the preview, back to 53 of 57 with the usual 4 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 151 (15 November 2026)
 
 **File:** `releases/prism-build-151.apk`

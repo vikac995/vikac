@@ -5020,13 +5020,6 @@ class _ShellState extends State<Shell>
                           Icons.notifications_rounded,
                           const Color(0xFF5A6373),
                         ),
-                      // Bringing out the side Blob: for a swipe, or for a place in the menu.
-                      (
-                        'phone:side',
-                        'Side blob',
-                        Icons.bubble_chart_rounded,
-                        const Color(0xFF5A6373),
-                      ),
                       for (int k = 0; k < _actions.length; k++)
                         (
                           'action:$k',
@@ -5034,6 +5027,14 @@ class _ShellState extends State<Shell>
                           _actions[k].$2,
                           _actions[k].$3,
                         ),
+                      // Bringing out the side Blob: for a swipe, or for a place in the menu.
+                      // (After Prism's own actions, which are used most.)
+                      (
+                        'phone:side',
+                        'Side blob',
+                        Icons.bubble_chart_rounded,
+                        const Color(0xFF5A6373),
+                      ),
                       for (int k = 0; k < _tabs.length; k++)
                         ('screen:$k', _tabs[k].$2, _tabs[k].$1, c.accent),
                     ],
