@@ -6,8 +6,14 @@ import 'package:material_ui/material_ui.dart';
 /// and dots (drawn where it always was); the others are drawn here. Android draws the same
 /// ones for the floating blob, from the same numbers: change one, change the other.
 abstract final class BlobSign {
-  /// By its number: 1 pearls, 2 rays, 3 petals. (There was a fan of stems, 0; it is gone.)
-  static const List<String> names = <String>['', 'Pearls', 'Rays', 'Petals'];
+  /// By its number: 1 pearls, 2 rays, 3 petals, 4 lotus. (There was a fan of stems, 0; it is gone.)
+  static const List<String> names = <String>[
+    '',
+    'Pearls',
+    'Rays',
+    'Petals',
+    'Lotus',
+  ];
 
   static const List<double> _pearl = <double>[6.0, 5.4, 4.8, 4.3, 3.9];
   static const List<double> _spread = <double>[0, 52, 40, 31, 26];
@@ -38,6 +44,8 @@ abstract final class BlobSign {
         _pearls(canvas, u, n, colours, angle, seen);
       case 2:
         _rays(canvas, u, n, colours, angle, seen);
+      case 4:
+        _lotus(canvas, u, n, colours, angle, seen);
       default:
         _petals(canvas, u, n, colours, angle, seen);
     }
@@ -217,6 +225,65 @@ abstract final class BlobSign {
         2.4 * u,
         Paint()..color = Colors.white.withValues(alpha: 0.85 * seen),
       );
+  }
+
+  /// A lotus: pointed petals in the blobs' colours, opening from one foot the way the blobs
+  /// do, the middle one tallest and in front, nearly filling the glass.
+  static void _lotus(
+    Canvas canvas,
+    double u,
+    int n,
+    List<Color> colours,
+    double a,
+    double seen,
+  ) {
+    final double step = (n <= 3 ? 38.0 : 29.0) * math.pi / 180;
+    final Offset foot = Offset(-18 * u * math.cos(a), -18 * u * math.sin(a));
+    // From the outside in, so the middle petal lies over its neighbours.
+    final List<int> order = <int>[for (int k = 0; k < n; k++) k]
+      ..sort(
+        (int x, int y) =>
+            ((y - (n - 1) / 2).abs()).compareTo((x - (n - 1) / 2).abs()),
+      );
+    for (final int k in order) {
+      final double off = k - (n - 1) / 2;
+      final double len = (39 - 4 * off.abs()) * u, w = 9.6 * u;
+      canvas
+        ..save()
+        ..translate(foot.dx, foot.dy)
+        ..rotate(a + off * step)
+        ..drawPath(
+          Path()
+            ..moveTo(0, 0)
+            ..cubicTo(len * 0.22, -w * 1.5, len * 0.72, -w * 1.05, len, 0)
+            ..cubicTo(len * 0.72, w * 1.05, len * 0.22, w * 1.5, 0, 0)
+            ..close(),
+          Paint()
+            ..color = Color.lerp(
+              colours[k],
+              Colors.white,
+              0.14,
+            )!.withValues(alpha: 0.8 * seen),
+        )
+        ..restore();
+    }
+    canvas.drawCircle(
+      foot + Offset(math.cos(a), math.sin(a)) * 4 * u,
+      7 * u,
+      Paint()
+        ..shader =
+            RadialGradient(
+              colors: <Color>[
+                Colors.white.withValues(alpha: 0.5 * seen),
+                Colors.white.withValues(alpha: 0),
+              ],
+            ).createShader(
+              Rect.fromCircle(
+                center: foot + Offset(math.cos(a), math.sin(a)) * 4 * u,
+                radius: 7 * u,
+              ),
+            ),
+    );
   }
 }
 

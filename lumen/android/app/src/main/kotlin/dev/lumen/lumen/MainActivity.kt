@@ -304,7 +304,7 @@ class MainActivity : FlutterActivity() {
                 result.success(RestBubble.lensSizeNow(applicationContext))
             } else if (call.method == "blobLook") {
                 // Which look the Blob's sign has: the fan, pearls, rays or petals.
-                RestBubble.look = ((call.arguments as? Number)?.toInt() ?: 1).coerceIn(1, 3)
+                RestBubble.look = ((call.arguments as? Number)?.toInt() ?: 1).coerceIn(1, 4)
                 result.success(null)
             } else if (call.method == "blobNames") {
                 // Whether the blobs show their names under them.
@@ -1205,7 +1205,7 @@ class Floater(val timer: Boolean) {
     // blobs sit a little nearer.
     var blobNames = true
 
-    /** Which look the Blob's sign has: 1 pearls, 2 rays, 3 petals. The same as in Prism. */
+    /** Which look the Blob's sign has: 1 pearls, 2 rays, 3 petals, 4 lotus. The same as in Prism. */
     var look = 1
         set(v) { if (field != v) { field = v; view?.postInvalidate() } }
 
@@ -1618,6 +1618,7 @@ class Floater(val timer: Boolean) {
             1 -> paintPearls(canvas, cx, cy, u, toward, paint)
             2 -> paintRays(canvas, cx, cy, u, toward, paint)
             3 -> paintPetals(canvas, cx, cy, u, toward, paint)
+            4 -> paintLotus(canvas, cx, cy, u, toward, paint)
             else -> paintStems(canvas, cx, cy, u, toward, paint)
         }
         paint.shader = null
@@ -1719,6 +1720,39 @@ class Floater(val timer: Boolean) {
         paint.shader = null
         paint.color = 0xD9FFFFFF.toInt()
         canvas.drawCircle(cx, cy, 2.4f * u, paint)
+    }
+
+    /**
+     * Lotus: pointed petals in the blobs' colours, opening from one foot the way the blobs do,
+     * the middle one tallest and in front. The same numbers as BlobSign in Prism.
+     */
+    private fun paintLotus(canvas: android.graphics.Canvas, cx: Float, cy: Float, u: Float, a: Double, paint: android.graphics.Paint) {
+        val n = blobs.size.coerceIn(1, 5)
+        val step = if (n <= 3) 38.0 else 29.0
+        val fx = cx - 18 * u * Math.cos(a).toFloat(); val fy = cy - 18 * u * Math.sin(a).toFloat()
+        paint.shader = null
+        paint.style = android.graphics.Paint.Style.FILL
+        val path = android.graphics.Path()
+        // From the outside in, so the middle petal lies over its neighbours.
+        for (k in (0 until n).sortedByDescending { Math.abs(it - (n - 1) / 2f) }) {
+            val off = k - (n - 1) / 2f
+            val len = (39f - 4f * Math.abs(off)) * u; val w = 9.6f * u
+            canvas.save()
+            canvas.translate(fx, fy)
+            canvas.rotate((Math.toDegrees(a) + off * step).toFloat())
+            path.reset()
+            path.moveTo(0f, 0f)
+            path.cubicTo(len * 0.22f, -w * 1.5f, len * 0.72f, -w * 1.05f, len, 0f)
+            path.cubicTo(len * 0.72f, w * 1.05f, len * 0.22f, w * 1.5f, 0f, 0f)
+            path.close()
+            paint.color = (lighter(blobs[k].color, 0.14f) and 0x00FFFFFF) or (0xCC shl 24)
+            canvas.drawPath(path, paint)
+            canvas.restore()
+        }
+        val gx = fx + 4 * u * Math.cos(a).toFloat(); val gy = fy + 4 * u * Math.sin(a).toFloat()
+        paint.shader = android.graphics.RadialGradient(gx, gy, 7f * u, 0x80FFFFFF.toInt(), 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP)
+        canvas.drawCircle(gx, gy, 7f * u, paint)
+        paint.shader = null
     }
 
     /** The fan: a stem for each blob with a dot in its colour. */

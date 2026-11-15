@@ -806,11 +806,11 @@ class Apps extends ChangeNotifier {
     }
   }
 
-  /// Which look the Blob's sign has: 1 pearls, 2 rays, 3 petals.
+  /// Which look the Blob's sign has: 1 pearls, 2 rays, 3 petals, 4 lotus.
   int blobLook = 1;
   File get _lookFile => File('${_iconsFile.parent.path}/prism_blob_look');
   void setBlobLook(int v) {
-    blobLook = v.clamp(1, 3);
+    blobLook = v.clamp(1, 4);
     try {
       _lookFile.writeAsStringSync('$blobLook');
     } catch (_) {
@@ -870,7 +870,7 @@ class Apps extends ChangeNotifier {
     try {
       blobLook = (int.tryParse(_lookFile.readAsStringSync().trim()) ?? 1).clamp(
         1,
-        3,
+        4,
       );
     } catch (_) {
       // Never chosen: pearls.

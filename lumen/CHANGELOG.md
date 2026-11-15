@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 130 (15 November 2026)
+
+**File:** `releases/prism-build-130.apk`
+
+Needs Play Protect paused to install. Can be installed over build 129.
+
+- **A fourth look: Lotus.** The petals that opened from one foot are back, as a lotus: pointed petals in your blobs' colours, the middle one tallest and in front, its neighbours behind, with a soft white glow where they meet. Large: it nearly fills the glass. The colours have the same softening as Petals. It opens the way the blobs do, so on the floating blob it leans as the other looks do.
+- The Blob panel's Look row now has four: Pearls, Rays, Petals, Lotus.
+
+**Checked:** it compiles; in my preview: the Lotus on Prism's button and in the Look row.
+**Not checked:** on a phone, and the floating blob not at all (it only exists on Android). With one or two blobs the lotus has one or two petals: look at whether that still reads as a lotus to you.
+
 ## Prism, build 129 (15 November 2026)
 
 **File:** `releases/prism-build-129.apk`
