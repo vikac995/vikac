@@ -1,5 +1,35 @@
 # Lumen changelog
 
+## Prism, build 133 (15 November 2026)
+
+**File:** `releases/prism-build-133.apk`
+
+Needs Play Protect paused to install. Can be installed over build 132.
+
+**The side Blob: two ways into the same menu.** As you decided: the floating blob is only ever the Blob itself, it comes back with the next app you open, and "Launch and follow" is gone.
+
+- **The Blob at the side is always the Blob's sign, and a tap opens the same menu Prism's button opens.** With "In Prism" and "Over other apps" both on, it is in the same spot in Prism and over every other app. With one of them off, it is only where the other allows.
+- **Sent away, it comes back with the next app you open from Prism, in the spot it was in.** Over other apps you send it away by dropping it on the cross, as before.
+- **In Prism you send it away by dropping it on Prism's own button: the two fuse.** No cross is shown there. The Blob is pulled onto the button as it comes near, shrinks into it, and the button takes it in with one small gulp and a thud. It works the same whichever look is chosen.
+- **Its spot is kept**, through Android closing Prism and from one day to the next. The very first time it starts tucked into the right side.
+- **Nothing of an app's is put in it any more.** A blob dragged out of the menu and let go, or dropped on the button, goes back to its place (in Prism's menu and in the floating one). Before, that made it that app's own floating blob.
+- **"Launch and follow" is gone from the Blob panel.** Two switches decide everything.
+- **Bands, Clear and Lined have the white shine round the prism that Beam has.**
+
+**What I did not do, on purpose.** The code for putting a blob out to float is still in Prism, switched off at its two entrances, not yet deleted: the flight of the blob to the side, the lens taking it, its return among the others. It is long and tangled with what does still run, and taking it out blind in the same build as this change would have been the riskiest thing I could do. Once you have seen the side Blob work, removing it is its own build.
+
+**The long test** on the phone was changed with it: its part 7 (535 lines of checks on a blob put out to float) is replaced by checks on the side Blob (there in Prism; in the same spot over another app; gone when sent away, in Prism too; back with the next app opened). The battery test's "a blob" is now the side Blob.
+
+**Checked:** it compiles, both sides; the automatic test in my preview, 53 of 57: the usual 4 misses, and 3 checks fewer than before because the removed switch's are gone.
+**Not checked:** on a phone, and none of this can run in my preview: the side Blob only exists on Android. It is written from reading the code. Please try, in this order, and send "what just happened" if any of it is off:
+1. Open Prism: the Blob is at the side, as the sign. Tap it: the menu opens from there.
+2. Open an app from Prism: the Blob is in the same spot. Swipe between apps, open the task manager: still the sign, still there.
+3. Go back to Prism: still there, same spot.
+4. In Prism, drag it to the button: it fuses. It stays away. Open an app: it is back where it was.
+5. Over an app, drop it on the cross: gone. Open another app from Prism: back where it was.
+6. Drag a blob out of the menu and let go: it goes back to its place.
+7. The timer, during a rest: unchanged, I expect, but it shares this code, so look at it once.
+
 ## Prism, build 132 (15 November 2026)
 
 **File:** `releases/prism-build-132.apk`

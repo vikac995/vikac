@@ -78,8 +78,8 @@ class MainActivity : FlutterActivity() {
         Trail.add("Prism in front")
         // Prism itself is in front: no other app is.
         for (b in Floaters) b.frontApp = ""
-        // A blob that only came along with an app gives way to whatever was floating before.
-        RestBubble.homeAgain()
+        // (The side Blob stays as it is: the same in Prism as over anything else.)
+        RestBubble.showSide(applicationContext, false)
         for (b in Floaters) b.refresh(applicationContext)
     }
 
@@ -226,9 +226,9 @@ class MainActivity : FlutterActivity() {
                         startActivity(i, opts)
                         // Prism has just opened this app: it is the one in front.
                         for (b in Floaters) b.frontApp = pkg
-                        // Prism is told, so that the app's blob can go along if that is switched on.
-                        // (Not for Prism itself, opened from its own app list: it has nowhere to follow to.)
-                        if (RestBubble.follow && pkg != packageName) RestBubble.channel?.invokeMethod("launched", pkg)
+                        // An app opened from Prism brings the side Blob back, if it had been sent away.
+                        // (Not Prism itself, opened from its own app list.)
+                        if (pkg != packageName) RestBubble.showSide(applicationContext, true)
                     }
                     result.success(i != null)
                 }
@@ -280,10 +280,11 @@ class MainActivity : FlutterActivity() {
                 RestBubble.pinFromPrism(if (a == null) null else RestBubble.blobOf(a))
                 RestBubble.refresh(applicationContext)
                 result.success(null)
-            } else if (call.method == "follow") {
-                // The blob of an app Prism has just opened: it floats for now, tucked at the side.
-                val a = call.arguments as? Map<*, *>
-                if (a != null) RestBubble.followTo(applicationContext, RestBubble.blobOf(a))
+            } else if (call.method == "button") {
+                // Where Prism's own button is on the screen, in real pixels: the side Blob dropped
+                // on it fuses with it.
+                val at = (call.arguments as? List<*>)?.map { (it as Number).toFloat() }
+                RestBubble.buttonAt = if (at != null && at.size >= 2) floatArrayOf(at[0], at[1]) else null
                 result.success(null)
             } else if (call.method == "land") {
                 // A blob has been shot out of Prism's button to become the lens. The lens is put in
@@ -313,13 +314,13 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "floating") {
                 // Where the floating elements may be seen: over Prism itself, and over other apps.
                 val where = call.arguments as? List<*>
-                RestBubble.follow = (where?.getOrNull(2) as? Boolean) ?: false
-                if (!RestBubble.follow) RestBubble.homeAgain()
                 for (b in Floaters) {
                     b.floatIn = (where?.getOrNull(0) as? Boolean) ?: true
                     b.floatOut = (where?.getOrNull(1) as? Boolean) ?: true
                     b.refresh(applicationContext)
                 }
+                // (Switched on again, the side Blob is there again.)
+                RestBubble.showSide(applicationContext, false)
                 result.success(null)
             } else if (call.method == "fan") {
                 // Where Prism's own blobs sit while they are out, or nothing when they are not.
@@ -350,6 +351,8 @@ class MainActivity : FlutterActivity() {
                 }
                 b.refresh(applicationContext)
                 }
+                // (Only now is it known that the lens is a container: the side Blob can be shown.)
+                RestBubble.showSide(applicationContext, false)
                 result.success(null)
             } else if (call.method == "tab") {
                 // Which of Prism's own pages is the one showing.
@@ -1048,6 +1051,9 @@ class Floater(val timer: Boolean) {
 
     private var frontListener: android.content.BroadcastReceiver? = null
     private val HOME = "~home"
+
+    /** Where Prism's own button is on the screen (its middle, in real pixels), as Prism last said. */
+    var buttonAt: FloatArray? = null
     private val frontHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var frontChecks = 0
 
@@ -1200,42 +1206,84 @@ class Floater(val timer: Boolean) {
     var floatIn = true
     var floatOut = true
 
-    // "Launch and follow". An app opened from Prism brings its blob along as the one in the
-    // lens, tucked at the side: a guest, in nobody's place. What the person had floating (or
-    // nothing) is kept aside and is back when Prism is. The five blobs are never changed by it.
-    var follow = false
+    // The side Blob. The floating blob is the Blob itself: the same menu Prism's button opens,
+    // from the side of the screen. It is always the Blob's sign, a tap opens the blobs, and it
+    // stands in the same spot in Prism and over every other app (wherever the two switches in
+    // the Blob panel allow). Nothing of an app's is ever put in it.
+    //
+    // Sent away (dropped on the cross, or on Prism's button, where the two fuse), it stays away
+    // until the next app is opened from Prism, and is then back where it was.
+    //
+    // [guest] says the lens holds it. (The name is from when it was an app's blob that came
+    // along with the app for a while. It holds for the lens as long as the side Blob is in it.)
     private var guest = false
     private var own: Pin? = null
-    private var tuckWhenShown = false
+    private var sideGone = false
 
-    /** What Prism says is pinned. While a guest is in the lens it is only noted, for afterwards. */
-    fun pinFromPrism(p: Pin?) {
-        if (guest) own = p else pin = p
-    }
+    private fun side() = Pin("blob:side", "blob", -1, "", "", accent, null, false, 0, "", -1)
 
-    fun followTo(context: Context, blob: Pin) {
-        if (follow) Trail.add("launch and follow: ${blob.key} comes along")
-        if (!follow || !floatOut || !container || blob.kind != "app") return
-        // Already the one in the lens: it stays as it is.
-        if (pin?.key == blob.key) return
-        if (!guest) {
-            own = pin
-            guest = true
+    // The side Blob's spot is kept from one day to the next, and through Android closing Prism:
+    // it is always where it was left.
+    private var spotContext: Context? = null
+    private val keepSpot = Runnable {
+        val c = spotContext
+        if (c != null && !timer && guest && placed && !swallowing) {
+            try {
+                c.getSharedPreferences("prism_lens", Context.MODE_PRIVATE).edit()
+                    .putInt("sideX", lensX).putInt("sideY", lensY)
+                    .putBoolean("sideTucked", tucked).putBoolean("sideRight", tuckRight).apply()
+            } catch (e: Exception) {}
         }
-        pin = blob
-        tuckWhenShown = true
-        refresh(context)
-        val v = view
-        if (v != null) v.post { if (tuckWhenShown) { tuckWhenShown = false; v.tuckNow() } }
     }
 
-    /** Prism is in front again, or following was switched off: the guest goes. */
-    fun homeAgain() {
-        if (!guest) return
-        guest = false
-        tuckWhenShown = false
-        pin = own
-        own = null
+    /** Its spot has changed: it is written down once it has been still for a second. */
+    private fun spotMoved(context: Context) {
+        if (timer || !guest) return
+        spotContext = context.applicationContext
+        frontHandler.removeCallbacks(keepSpot)
+        frontHandler.postDelayed(keepSpot, 1000)
+    }
+
+    /** The spot it was last left in, if Prism has only just started and does not know it. */
+    private fun recallSpot(context: Context) {
+        if (placed || lensX >= 0) return
+        try {
+            val p = context.getSharedPreferences("prism_lens", Context.MODE_PRIVATE)
+            if (p.contains("sideX")) {
+                lensX = p.getInt("sideX", -1); lensY = p.getInt("sideY", -1)
+                tucked = p.getBoolean("sideTucked", false); tuckRight = p.getBoolean("sideRight", true)
+                placed = true
+            }
+        } catch (e: Exception) {}
+    }
+
+    /** What Prism says is pinned. Nothing can be, any more: whatever it says is put aside. */
+    fun pinFromPrism(p: Pin?) {
+        if (!guest) pin = null
+    }
+
+    /**
+     * Shows the side Blob, if it has not been sent away. [again]: an app has just been opened
+     * from Prism (or from the Blob's own menu), which brings back one that was sent away.
+     */
+    fun showSide(context: Context, again: Boolean) {
+        if (timer) return
+        if (again && sideGone) {
+            sideGone = false
+            Trail.add("blob: back, with the app that was opened")
+        }
+        if (sideGone || !container || !(floatIn || floatOut)) return
+        if (!guest) {
+            guest = true
+            own = null
+            pin = side()
+        }
+        recallSpot(context)
+        val fresh = view == null && !placed
+        refresh(context)
+        // The very first time, it starts tucked into the side. After that it is where it was left.
+        val v = view
+        if (fresh && v != null) v.post { v.tuckNow() }
     }
 
     private fun seen(): Boolean = if (foreground) (floatIn || (floatOut && fan != null)) else floatOut
@@ -1716,8 +1764,7 @@ class Floater(val timer: Boolean) {
                 Trail.add("$who menu: ${b.pkg} opened $how")
                 if (!how.startsWith("could")) {
                     frontApp = b.pkg
-                    // Opened from the lens's own menu: with following on, this one is in the lens now.
-                    followTo(context, b)
+                    showSide(context, true)
                 }
             } else {
                 haptic(context, "thud")
@@ -2046,6 +2093,19 @@ class Floater(val timer: Boolean) {
                     } catch (e: Exception) {}
                     watcher.postDelayed({ done(state(context)) }, num("settleMs", 2500))
                 }
+                // The side Blob: shown (as an app opened from Prism would bring it back), or sent away.
+                "side" -> {
+                    if (a["on"] == true) {
+                        showSide(context, true)
+                    } else {
+                        sideGone = true
+                        guest = false
+                        own = null
+                        pin = null
+                        remove(context)
+                    }
+                    watcher.postDelayed({ done(state(context)) }, 400)
+                }
                 "state" -> done(state(context))
                 // It is given a size, as two fingers would give it, within what it allows.
                 "size" -> {
@@ -2178,6 +2238,8 @@ class Floater(val timer: Boolean) {
                             .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED),
                     )
                     for (b in Floaters) b.frontApp = if (open != null) pkg!! else "com.android.settings"
+                    // (Asked to, it counts as an app opened from Prism, which brings the side Blob back.)
+                    if (a["bring"] == true) showSide(context, true)
                     watcher.postDelayed({
                         val away = !foreground
                         measure(context, num("ms", 60000)) { told ->
@@ -2317,6 +2379,7 @@ class Floater(val timer: Boolean) {
     /** Does what the pinned thing is, wherever the person is. */
     private fun usePinned(context: Context) {
         val p = pin ?: return
+        if (p.kind == "blob") return
         if (p.kind == "app") {
             val i = context.packageManager.getLaunchIntentForPackage(p.pkg)
             if (i != null) {
@@ -2446,8 +2509,6 @@ class Floater(val timer: Boolean) {
                 v.animate().scaleX(1f).scaleY(1f).setDuration(190)
                     .setInterpolator(android.view.animation.OvershootInterpolator(1.7f)).start()
             }
-            // A blob that came along with an app starts tucked at the side.
-            if (tuckWhenShown) v.post { if (tuckWhenShown) { tuckWhenShown = false; v.tuckNow() } }
             listenForFront(context)
             // Tucked away, it has its handle along that edge.
             if (tucked) openGrip(context, lp.y)
@@ -3142,7 +3203,9 @@ class Floater(val timer: Boolean) {
                         val g = room
                         room = -1
                         // (While they are being changed it never goes into the lens: it sits in the seat kept for it.)
-                        if (g < 0 && !editing) put(d, dragX, dragY) else settle(d, if (g < 0) d else g)
+                        // (Let go clear of the others, it goes back to its own place. It used to go
+                        // into the lens, as that app's own floating blob: nothing goes in the lens now.)
+                        settle(d, if (g < 0) d else g)
                     } else if (kept) {
                         // Already being changed, by the hold.
                     } else if (i >= 0) {
@@ -3507,6 +3570,8 @@ class Floater(val timer: Boolean) {
         }
 
         override fun onDraw(canvas: android.graphics.Canvas) {
+            // In Prism the side Blob is dropped on Prism's own button, which is there to be seen: no cross.
+            if (!timer && guest && this@Floater.foreground && buttonAt != null) return
             val c = width / 2f
             val cy = height / 2f
             // The small timer has a place either side of the cross. (Not while the cross is swallowing.)
@@ -3572,6 +3637,12 @@ class Floater(val timer: Boolean) {
         private var shadersFor = 0
         private var shadersPinned = false
         private var downX = 0f; private var downY = 0f; private var startX = 0; private var startY = 0
+
+        // Where it stood, and whether tucked in, when it was last picked up: where it is back if sent away.
+        private var homeX = -1; private var homeY = -1; private var homeTucked = false
+
+        /** In Prism, the side Blob is sent away by dropping it on Prism's own button, where the two fuse. No cross is shown. */
+        private fun fusing() = !timer && guest && this@Floater.foreground && buttonAt != null
         private var dragged = false
         private var snapped = false
 
@@ -3720,6 +3791,7 @@ class Floater(val timer: Boolean) {
             if (!docked) {
                 lensX = posX(); lensY = posY()
                 placed = true
+                spotMoved(context)
             }
             lag()
             invalidate()
@@ -4145,6 +4217,7 @@ class Floater(val timer: Boolean) {
          * finger at once, and closes the distance to the finger over a moment as it goes.
          */
         private fun pullOut(e: android.view.MotionEvent) {
+            homeX = lp.x; homeY = lp.y; homeTucked = true
             tucked = false
             pressed = true
             sizing = false
@@ -4437,7 +4510,7 @@ class Floater(val timer: Boolean) {
         /** Whether the middle of the lens is among Prism's own blobs, which are out, with something in it to put back. */
         private fun amongBlobs(): Boolean {
             val f = fan ?: return false
-            if (f.size < 4 || !this@Floater.foreground || pin == null || snapped) return false
+            if (f.size < 4 || !this@Floater.foreground || pin == null || snapped || guest) return false
             val vx = lp.x + lp.width / 2f - f[0]
             val vy = lp.y + lp.height / 2f - f[1]
             val d = Math.hypot(vx.toDouble(), vy.toDouble()).toFloat()
@@ -4448,7 +4521,7 @@ class Floater(val timer: Boolean) {
         /** While the lens is carried near Prism's blobs, Prism is told where it is, so they can make room for it. */
         private fun overBlobs() {
             val f = fan
-            if (f == null || f.size < 4 || !this@Floater.foreground || pin == null) return
+            if (f == null || f.size < 4 || !this@Floater.foreground || pin == null || guest) return
             val cx = lp.x + lp.width / 2f
             val cy = lp.y + lp.height / 2f
             val near = !snapped && Math.hypot((cx - f[0]).toDouble(), (cy - f[1]).toDouble()) < f[3] + 60 * dp
@@ -4573,6 +4646,7 @@ class Floater(val timer: Boolean) {
             if (!docked) {
                 lensX = lp.x; lensY = lp.y
                 placed = true
+                spotMoved(context)
             }
             lag()
             try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, lp) } catch (ex: Exception) {}
@@ -4581,9 +4655,9 @@ class Floater(val timer: Boolean) {
         /** The middle of each of the timer's places at the foot: 0 the cross, 1 pause to its left, 2 count up to its right. */
         private fun placeX(k: Int) = crossX() + (if (k == 1) -SIDE else if (k == 2) SIDE else 0) * dp
 
-        /** The middle of the cross, on the screen. */
-        private fun crossX() = resources.displayMetrics.widthPixels / 2f
-        private fun crossY() = resources.displayMetrics.heightPixels - 104 * dp
+        /** The middle of the cross, on the screen. In Prism, for the side Blob, that is Prism's own button. */
+        private fun crossX() = if (fusing()) buttonAt!![0] else resources.displayMetrics.widthPixels / 2f
+        private fun crossY() = if (fusing()) buttonAt!![1] else resources.displayMetrics.heightPixels - 104 * dp
 
         // A firm spring for a thrown lens: it carries on a little with the throw and comes to rest
         // without bouncing.
@@ -4616,8 +4690,10 @@ class Floater(val timer: Boolean) {
          * then stays away until the workout page is opened; a pinned thing is unpinned.
          */
         private fun close() {
-            Trail.add("$who dropped on the cross")
-            haptic(context, "thud")
+            val fused = fusing()
+            Trail.add(if (fused) "$who dropped on Prism's button: they fuse" else "$who dropped on the cross")
+            // (Prism's button answers for itself as it takes the Blob in.)
+            if (fused) channel?.invokeMethod("fused", null) else haptic(context, "thud")
             val c = context
             val wasWorkout = mode() == 1
             val colour = lensColor()
@@ -4637,17 +4713,24 @@ class Floater(val timer: Boolean) {
                         dismissed = true
                         if (!timerOff) channel?.invokeMethod("timerOff", null)
                     } else {
-                        // Dropped on the cross, nothing floats: a guest goes, and so does what it stood in for.
+                        // The side Blob sent away: it stays away until the next app is opened from Prism.
+                        sideGone = guest
                         guest = false
                         own = null
                         pin = null
                         channel?.invokeMethod("unpinned", null)
                     }
-                    // It comes back at its usual place, not on the cross. If something is still due (a
-                    // container's other thing, once the workout's timer is closed), that is a fresh lens.
-                    lensX = -1; lensY = -1
-                    placed = false
-                    tucked = false
+                    if (wasWorkout || homeX < 0) {
+                        // It comes back at its usual place, not on the cross.
+                        lensX = -1; lensY = -1
+                        placed = false
+                        tucked = false
+                    } else {
+                        // The side Blob comes back where it was before it was carried off: the same spot, always.
+                        lensX = homeX; lensY = homeY
+                        placed = true
+                        tucked = homeTucked
+                    }
                     remove(c)
                     refresh(c)
                 }
@@ -4835,6 +4918,7 @@ class Floater(val timer: Boolean) {
                     tracker?.recycle()
                     tracker = android.view.VelocityTracker.obtain()
                     downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y; dragged = false; snapped = false
+                    if (!roaming) { homeX = lp.x; homeY = lp.y; homeTucked = false }
                     animate().scaleX(0.9f).scaleY(0.9f).setDuration(90).start()
                 }
                 android.view.MotionEvent.ACTION_MOVE -> {

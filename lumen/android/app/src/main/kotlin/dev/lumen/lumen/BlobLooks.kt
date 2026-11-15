@@ -248,6 +248,10 @@ object BlobLooks {
             for (k in (if (line == dark) 0 else 1)..(if (line == dark) n else n - 1)) c.drawLine(0f, 0f, cos(k * each) * r * 2.2f, sin(k * each) * r * 2.2f, p)
         }
         c.restore()
+        // The same white shine round the prism as Beam has.
+        glow(c, x, y, r * 0.95f, Color.WHITE, 0.6f, p)
+        p.style = Paint.Style.STROKE
+        p.strokeCap = Paint.Cap.BUTT
         p.color = Color.WHITE; p.strokeWidth = r * 0.13f
         c.drawLine(-cos(a) * r * 1.1f, -sin(a) * r * 1.1f, x, y, p)
         val prism = Path(upright(x, y + r * 0.02f, r * 0.34f))

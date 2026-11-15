@@ -18,12 +18,8 @@ class RestBubble with WidgetsBindingObserver {
 
   void start() {
     WidgetsBinding.instance.addObserver(this);
-    try {
-      final String pin = _pinFile.readAsStringSync().trim();
-      pinned.value = pin.isEmpty ? null : pin;
-    } catch (_) {
-      // Nothing pinned.
-    }
+    // (Nothing is pinned any more: the floating blob is the Blob itself. What an older build
+    // had pinned is not read back, or that blob would be missing from the menu.)
     try {
       countUp.value = _modeFile.readAsStringSync().trim() == 'up';
     } catch (_) {
@@ -40,7 +36,6 @@ class RestBubble with WidgetsBindingObserver {
       );
       floatIn.value = where[0] != '0';
       floatOut.value = where.length < 2 || where[1] != '0';
-      follow.value = where.length > 2 && where[2] == '1';
     } catch (_) {
       // Never chosen: both.
     }
@@ -130,37 +125,28 @@ class RestBubble with WidgetsBindingObserver {
   final ValueNotifier<bool> floatIn = ValueNotifier<bool>(true);
   final ValueNotifier<bool> floatOut = ValueNotifier<bool>(true);
 
-  /// "Launch and follow": an app opened from Prism brings its blob along as the floating one,
-  /// tucked at the side. Off unless the person chooses it.
-  final ValueNotifier<bool> follow = ValueNotifier<bool>(false);
-
-  /// Android says Prism has just opened this app.
-  void Function(String package)? onLaunched;
-
-  /// The blob of the app just opened is to be the floating one for now.
-  void followTo(Map<String, Object> blob) {
-    _device.invokeMethod<void>('follow', blob).catchError((Object _) {});
+  /// Tells Android where Prism's own button is on the screen (its middle, in real pixels).
+  /// The side Blob dropped on it fuses with it.
+  void tellButton(Offset at) {
+    _device
+        .invokeMethod<void>('button', <double>[at.dx, at.dy])
+        .catchError((Object _) {});
   }
+
+  /// The side Blob was dropped on Prism's button and is fusing with it. Set by the shell.
+  VoidCallback? onFused;
 
   /// Whether there can be floating elements at all.
   bool get canFloat => floatIn.value || floatOut.value;
 
   File get _floatFile => File('${_styleFile.parent.path}/prism_floating');
 
-  void setFloating({bool? inPrism, bool? overApps, bool? followApps}) {
+  void setFloating({bool? inPrism, bool? overApps}) {
     floatIn.value = inPrism ?? floatIn.value;
     floatOut.value = overApps ?? floatOut.value;
-    follow.value = followApps ?? follow.value;
-    // Following is over other apps: on, it switches that on; that off, it goes off too.
-    if (followApps == true) {
-      floatOut.value = true;
-    }
-    if (!floatOut.value) {
-      follow.value = false;
-    }
     try {
       _floatFile.writeAsStringSync(
-        '${floatIn.value ? 1 : 0} ${floatOut.value ? 1 : 0} ${follow.value ? 1 : 0}',
+        '${floatIn.value ? 1 : 0} ${floatOut.value ? 1 : 0}',
       );
     } catch (_) {
       // Not saved: both are on next time.
@@ -171,11 +157,7 @@ class RestBubble with WidgetsBindingObserver {
   /// Tells Android where the floating elements may be seen.
   void tellFloating() {
     _device
-        .invokeMethod<void>('floating', <bool>[
-          floatIn.value,
-          floatOut.value,
-          follow.value,
-        ])
+        .invokeMethod<void>('floating', <bool>[floatIn.value, floatOut.value])
         .catchError((Object _) {});
   }
 
@@ -371,8 +353,8 @@ class RestBubble with WidgetsBindingObserver {
         onTimer?.call('off');
       case 'pinned':
         onPinned?.call(call.arguments as String?);
-      case 'launched':
-        onLaunched?.call(call.arguments as String);
+      case 'fused':
+        onFused?.call();
       case 'weigh':
         onWeigh?.call((call.arguments as num).toDouble());
       case 'food':

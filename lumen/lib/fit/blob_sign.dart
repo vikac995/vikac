@@ -408,6 +408,16 @@ void _cutBands(
   }
   c
     ..restore()
+    // The same white shine round the prism as Beam has.
+    ..drawCircle(
+      at,
+      r * 0.95,
+      Paint()
+        ..shader = ui.Gradient.radial(at, r * 0.95, <Color>[
+          Colors.white.withValues(alpha: 0.6),
+          Colors.white.withValues(alpha: 0),
+        ]),
+    )
     ..drawLine(
       -_dir(a) * r * 1.1,
       at,
