@@ -25,11 +25,8 @@ class RestBubble with WidgetsBindingObserver {
     } catch (_) {
       // Never chosen: a countdown.
     }
-    try {
-      container.value = _styleFile.readAsStringSync().trim() != 'classic';
-    } catch (_) {
-      // Never chosen: the container.
-    }
+    // (The older lens, which took the look of the app on it, is gone with hand-placed blobs:
+    // it is always the container now, whatever was once chosen.)
     try {
       final List<String> where = _floatFile.readAsStringSync().trim().split(
         ' ',

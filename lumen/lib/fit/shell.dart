@@ -95,7 +95,7 @@ class _ShellState extends State<Shell>
       '  colour ${Look.instance.hue.round()}  ·  background ${Look.vibes[Look.instance.vibe]}${Look.instance.vibe != 0 ? ' ${Look.instance.pattern}' : ''}  ·  theme ${settings.themeMode.name}',
       '  frame-rate readout ${onOff(settings.showFps)}  ·  haptics ${onOff(settings.haptics)}  ·  reduce transparency ${onOff(settings.reduceTransparency)}  ·  background lights ${onOff(Diag.instance.wallpaperOn.value)}',
       '  glass style ${const <String>['Orig.', 'One', 'Frost', 'Event', 'Auto'][Diag.instance.glassMode.value.clamp(0, 4)]}${Diag.instance.glassMode.value == 4 ? ' (now ${const <String>['Orig.', 'One', 'Frost', 'Event'][Diag.instance.autoLevel.value.clamp(0, 3)]})' : ''}  ·  glass quality ${settings.quality.name}  ·  Prism icons: app list ${onOff(Apps.instance.prismIcons)}, blobs ${onOff(Apps.instance.blobPrismIcons)}',
-      '  floats over other apps ${onOff(b.allowed.value)}  ·  lens is a container ${onOff(b.container.value)}  ·  notification counts ${onOff(Notes.instance.allowed.value)}  ·  blobs open real apps ${onOff(BlobApps.instance.on.value)}',
+      '  floats over other apps ${onOff(b.allowed.value)}  ·  notification counts ${onOff(Notes.instance.allowed.value)}  ·  blobs open real apps ${onOff(BlobApps.instance.on.value)}',
       '  blob: in Prism ${onOff(b.floatIn.value)}  ·  over other apps ${onOff(b.floatOut.value)}  ·  labels ${onOff(BlobSlots.instance.names)}  ·  floating ${b.pinned.value ?? 'nothing'}',
       '  blobs: ${<String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(', ')}',
       '  side menu: ${BlobSlots.instance.sideOwn ? <String>[for (int i = 0; i < _n; i++) _sideKey(i)].join(', ') : 'the same as the main one'}  ·  side design: ${Apps.instance.sideLook.isEmpty ? 'window' : Apps.instance.sideLook}${Apps.instance.sideVivid ? ', vivid' : ''}  ·  main design: ${Apps.instance.blobLook.isEmpty ? 'window' : Apps.instance.blobLook}${Apps.instance.blobVivid ? ', vivid' : ''}',
@@ -175,10 +175,11 @@ class _ShellState extends State<Shell>
   ];
 
   // How far the button's X has turned into the cog: 0 the X, 1 the cog.
+  // (Unhurried, both ways: the reshaping is the point, and at speed it read as a swap.)
   late final SpringValue _cog = SpringValue(
     this,
     value: 0,
-    spring: Motions.spatialFast,
+    spring: Motions.spatial,
   );
 
   // The cog showing itself off, once: a turn that settles and one glint round the button's rim.
@@ -6501,16 +6502,6 @@ void showPrismSettings(BuildContext context) {
                               value: RestBubble.instance.allowed.value,
                               // Android decides this, on its own screen. The switch only takes you there.
                               onChanged: (bool _) => RestBubble.instance.ask(),
-                            ),
-                      ),
-                      const SizedBox(height: 12),
-                      ListenableBuilder(
-                        listenable: RestBubble.instance.container,
-                        builder: (BuildContext context, Widget? _) =>
-                            SwitchLine(
-                              label: 'The lens is a container (new)',
-                              value: RestBubble.instance.container.value,
-                              onChanged: RestBubble.instance.setContainer,
                             ),
                       ),
                       const SizedBox(height: 12),

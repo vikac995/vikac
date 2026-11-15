@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 154 (15 November 2026)
+
+**File:** `releases/prism-build-154.apk`
+
+Needs Play Protect paused to install. Can be installed over build 153.
+
+- **The "Prism" action (was "Side blob") now brings it out.** The cause: an old switch in Settings, "The lens is a container (new)", was off on your phone, and with it off the side Prism was never shown at all, by the action or otherwise. That switch chose between the older floating lens, which took the look of the app on it, and the newer one, which is always the same glass and holds the menu. The older one went away with hand-placed blobs, so the switch is removed and it is always the newer one.
+- **The cog goes back to the sign at the same unhurried pace it should come from it.** In the code the reshaping was already the same both ways, drawn from one number, but it ran in about an eighth of a second, which reads as a swap. It now takes about twice as long, both ways.
+
+**Checked:** it compiles, both sides; the automatic test in the preview: 56 of 60 with the usual 4 misses (a first run had one more miss, a timing check about the flick; the second run did not).
+**Not checked:** on a phone. Both changes are about things my preview cannot show well: the side Prism is Android only, and I have not judged the cog's pace by eye. If the cog still does not look like a reshaping on the way back, a short recording would show me what differs.
+
 ## Prism, build 153 (15 November 2026)
 
 **File:** `releases/prism-build-153.apk`
