@@ -663,6 +663,20 @@ class _ShellState extends State<Shell>
                         },
                       ),
                       const SizedBox(height: 16),
+                      // Vivid: black glass and colours at full strength. Off, mellow.
+                      SwitchLine(
+                        key: Robot.key('blobVivid'),
+                        label: 'Vivid',
+                        value: Apps.instance.blobVivid,
+                        onChanged: (bool v) {
+                          Haptics.tick();
+                          Apps.instance.setBlobVivid(v);
+                          RestBubble.instance.tellVivid(v);
+                          Diag.instance.event(v ? 'blob vivid' : 'blob mellow');
+                          setState(() {});
+                        },
+                      ),
+                      const SizedBox(height: 16),
                       // The Blob's sign, on the button here and on the floating blob over other
                       // apps: each look drawn as it will be, with these blobs' own colours.
                       Text(
@@ -726,6 +740,7 @@ class _ShellState extends State<Shell>
                                                   in _fanBlobs)
                                                 b.$2,
                                             ],
+                                            vivid: Apps.instance.blobVivid,
                                           ),
                                         ),
                                       ),
@@ -1126,6 +1141,7 @@ class _ShellState extends State<Shell>
   Future<void> _sendBlobs() async {
     RestBubble.instance.tellNames(BlobSlots.instance.names);
     RestBubble.instance.tellLook(Apps.instance.blobLook);
+    RestBubble.instance.tellVivid(Apps.instance.blobVivid);
     final List<Map<String, Object>> all = <Map<String, Object>>[];
     for (int i = 0; i < _n; i++) {
       if (_floating(i)) {
@@ -5332,6 +5348,8 @@ class _ShellState extends State<Shell>
                                         painter: _ButtonSign(
                                           blobs: _fanBlobs,
                                           turn: _signTurn.value,
+                                          vivid: Apps.instance.blobVivid,
+                                          glass: false,
                                           cog: _cog.value,
                                           look: Apps.instance.blobLook,
                                           rim: _button / 2 - 2,
@@ -5369,6 +5387,7 @@ class _ShellState extends State<Shell>
                                                 blobs: _fanBlobs,
                                                 turn: _signTurn.value,
                                                 shot: _signShot.value,
+                                                vivid: Apps.instance.blobVivid,
                                                 cog: _cog.value,
                                                 look: Apps.instance.blobLook,
                                                 hint: _cogHint.value,
@@ -7064,6 +7083,8 @@ class _ButtonSign extends CustomPainter {
     required this.turn,
     required this.cog,
     this.shot = 0,
+    this.vivid = false,
+    this.glass = true,
     this.look = '',
     this.hint = 1,
     this.rim = 0,
@@ -7074,6 +7095,15 @@ class _ButtonSign extends CustomPainter {
 
   /// The bouncy shot (see the shell's _signShot): how far the sign is out of its place.
   final double shot;
+
+  /// Vivid or mellow (see [BlobSign.paint]).
+  final bool vivid;
+
+  /// The magnifying glass lies over the blob. Off while it is lifted away.
+  final bool glass;
+
+  /// How large the blob is against its glass: the glass is plainly the larger, lying over it.
+  static const double _blob = 0.62;
 
   /// Which look the sign has: one of [BlobSign]'s.
   final String look;
@@ -7124,15 +7154,38 @@ class _ButtonSign extends CustomPainter {
           size,
           look,
           <Color>[for (final (double, Color) b in blobs) b.$2],
-          radius: rim > 0 ? rim : size.width / 2,
+          radius: (rim > 0 ? rim : size.width / 2) * _blob,
           angle: -math.pi / 2 + turn,
           // (Gone early: the cog takes its place, reshaping out of it.)
           fold: (c * 3).clamp(0.0, 1.0),
           // (A triangle only fades: the cog reshapes out of that very outline.)
           shrink: !BlobSign.of(look).triangle,
+          vivid: vivid,
+          ground: BlobSign.ground,
         );
         canvas.restore();
       }
+    }
+    if (glass && rim > 0 && c < 0.999) {
+      // The magnifying glass lying over it: its light across the top, over the blob too.
+      final Rect lens = Rect.fromCircle(center: mid, radius: rim);
+      canvas.drawOval(
+        Rect.fromLTRB(
+          lens.left + rim * 0.18,
+          lens.top + rim * 0.08,
+          lens.right - rim * 0.18,
+          mid.dy - rim * 0.05,
+        ),
+        Paint()
+          ..shader = ui.Gradient.linear(
+            lens.topCenter,
+            Offset(mid.dx, mid.dy),
+            <Color>[
+              Colors.white.withValues(alpha: 0.2 * (1 - c)),
+              Colors.white.withValues(alpha: 0),
+            ],
+          ),
+      );
     }
     if (c > 0.001) {
       // Showing itself off, the cog comes round a further quarter turn and settles a little past.
@@ -7152,6 +7205,7 @@ class _ButtonSign extends CustomPainter {
           t: c,
           angle: -math.pi / 2 + turn,
           spin: spin,
+          vivid: vivid,
         );
       } else {
         // With no blobs there are no colours: the plain white cog.
@@ -7201,6 +7255,8 @@ class _ButtonSign extends CustomPainter {
   bool shouldRepaint(_ButtonSign old) =>
       old.turn != turn ||
       old.shot != shot ||
+      old.vivid != vivid ||
+      old.glass != glass ||
       old.cog != cog ||
       old.look != look ||
       old.hint != hint ||

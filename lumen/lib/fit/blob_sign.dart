@@ -52,20 +52,12 @@ abstract final class BlobSign {
     BlobLook('bands', 'Bands', _bands, spectrum: true),
     BlobLook('bandsclear', 'Clear', _bandsClear, spectrum: true),
     BlobLook('bandswhite', 'Lined', _bandsWhite, spectrum: true),
-    BlobLook('vivid', 'Vivid', _vivid),
     BlobLook('halo', 'Halo', _halo, spectrum: true),
     BlobLook(
       'triangle',
       'Triangle',
       _triangle,
       spectrum: true,
-      triangle: true,
-      turns: true,
-    ),
-    BlobLook(
-      'vividtriangle',
-      'Vivid Triangle',
-      _vividTriangle,
       triangle: true,
       turns: true,
     ),
@@ -77,21 +69,31 @@ abstract final class BlobSign {
       triangle: true,
       turns: true,
     ),
-    BlobLook(
-      'vividwindow',
-      'Vivid Window',
-      _vividWindow,
-      triangle: true,
-      turns: true,
-    ),
   ];
+
+  /// The blob's own dark ground when the look is not vivid, under the magnifying glass.
+  static const Color ground = Color(0xE6121519);
 
   static BlobLook of(String id) =>
       looks.firstWhere((BlobLook l) => l.id == id, orElse: () => looks.first);
 
   /// The colours as the look draws them: five at most, and in rainbow order where it asks.
-  static List<Color> _ordered(BlobLook look, List<Color> colours) {
+  /// [vivid]: a look of light takes the light's own six colours at full strength; a look of
+  /// the blobs keeps the blobs' colours, at full strength.
+  static List<Color> _ordered(BlobLook look, List<Color> colours, bool vivid) {
     final List<Color> cs = colours.length > 5 ? colours.sublist(0, 5) : colours;
+    if (vivid) {
+      if (look.spectrum) {
+        return _vividColours;
+      }
+      return <Color>[
+        for (final Color c in cs)
+          HSVColor.fromColor(c)
+              .withSaturation(math.max(HSVColor.fromColor(c).saturation, 0.85))
+              .withValue(math.max(HSVColor.fromColor(c).value, 0.95))
+              .toColor(),
+      ];
+    }
     if (!look.spectrum) {
       return cs;
     }
@@ -114,12 +116,13 @@ abstract final class BlobSign {
     required double t,
     double angle = -math.pi / 2,
     double spin = 0,
+    bool vivid = false,
   }) {
     if (colours.isEmpty || t <= 0.001) {
       return;
     }
     final BlobLook look = of(id);
-    final List<Color> cs = _ordered(look, colours);
+    final List<Color> cs = _ordered(look, colours, vivid);
     final double e = Curves.easeInOut.transform(t.clamp(0.0, 1.0));
     final double r = radius, side = r * 0.94, apex = angle + math.pi;
     const int steps = 120;
@@ -222,12 +225,14 @@ abstract final class BlobSign {
     double angle = -math.pi / 2,
     double fold = 0,
     bool shrink = true,
+    bool vivid = false,
+    Color? ground,
   }) {
     if (colours.isEmpty || fold >= 0.999) {
       return;
     }
     final BlobLook look = of(id);
-    final List<Color> cs = _ordered(look, colours);
+    final List<Color> cs = _ordered(look, colours, vivid);
     canvas
       ..save()
       ..translate(size.width / 2, size.height / 2)
@@ -244,7 +249,15 @@ abstract final class BlobSign {
     canvas.clipPath(
       Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: radius)),
     );
+    // Its own ground: black when vivid; otherwise the colour asked for, if any.
+    if (vivid) {
+      _black(canvas, radius);
+    } else if (ground != null) {
+      canvas.drawCircle(Offset.zero, radius, Paint()..color = ground);
+    }
+    _vividNow = vivid;
     look._draw(canvas, radius, cs, angle);
+    _vividNow = false;
     if (fold > 0) {
       canvas.restore();
     }
@@ -254,17 +267,27 @@ abstract final class BlobSign {
 
 /// One of the looks, drawn small, for choosing among them.
 class BlobSignPreview extends CustomPainter {
-  const BlobSignPreview(this.id, this.colours);
+  const BlobSignPreview(this.id, this.colours, {this.vivid = false});
   final String id;
   final List<Color> colours;
+  final bool vivid;
 
   @override
-  void paint(Canvas canvas, Size size) =>
-      BlobSign.paint(canvas, size, id, colours, radius: size.width / 2 - 1);
+  void paint(Canvas canvas, Size size) => BlobSign.paint(
+    canvas,
+    size,
+    id,
+    colours,
+    radius: size.width / 2 - 1,
+    vivid: vivid,
+    ground: BlobSign.ground,
+  );
 
   @override
   bool shouldRepaint(BlobSignPreview old) =>
-      old.id != id || old.colours.length != colours.length;
+      old.id != id ||
+      old.vivid != vivid ||
+      old.colours.length != colours.length;
 }
 
 // ---- Shared by the looks made of light.
@@ -524,6 +547,9 @@ void _bandsClear(Canvas c, double r, List<Color> cs, double a) =>
 void _bandsWhite(Canvas c, double r, List<Color> cs, double a) =>
     _cutBands(c, r, cs, a, Colors.white, 0.018);
 
+/// Whether the look being drawn is vivid: then nothing greys the black (see [_cutBands]).
+bool _vividNow = false;
+
 /// The light's own colours, at full strength, for the Vivid looks.
 const List<Color> _vividColours = <Color>[
   Color(0xFFF2334B),
@@ -537,26 +563,6 @@ const List<Color> _vividColours = <Color>[
 /// Black glass under a Vivid look.
 void _black(Canvas c, double r) =>
     c.drawCircle(Offset.zero, r, Paint()..color = const Color(0xF2000000));
-
-/// Vivid Triangle: Triangle on black glass, in the light's own colours.
-void _vividTriangle(Canvas c, double r, List<Color> cs, double a) {
-  _black(c, r);
-  _triangle(c, r, _vividColours, a);
-}
-
-/// Vivid Window: Window on black glass, in the light's own colours.
-void _vividWindow(Canvas c, double r, List<Color> cs, double a) {
-  _black(c, r);
-  _window(c, r, _vividColours, a);
-}
-
-/// Vivid: black glass and the full rainbow at full strength, cut clean. The colours are the
-/// light's own here, not the blobs': always these six, however many blobs there are.
-void _vivid(Canvas c, double r, List<Color> cs, double a) {
-  _black(c, r);
-  // (No white shine: it would grey the black.)
-  _cutBands(c, r, _vividColours, a, null, 0, shine: 0);
-}
 
 /// The flat bands of the looks above. [line] is drawn between the colours, [width] of
 /// the glass's radius wide; with no line there is none. (Used only by Bands, Clear, Lined and
@@ -610,7 +616,7 @@ void _cutBands(
       r * 0.95,
       Paint()
         ..shader = ui.Gradient.radial(at, r * 0.95, <Color>[
-          Colors.white.withValues(alpha: shine),
+          Colors.white.withValues(alpha: _vividNow ? 0 : shine),
           Colors.white.withValues(alpha: 0),
         ]),
     )

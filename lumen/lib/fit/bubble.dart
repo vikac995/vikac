@@ -206,6 +206,11 @@ class RestBubble with WidgetsBindingObserver {
     _device.invokeMethod<void>('blobs', blobs).catchError((Object _) {});
   }
 
+  /// Tells Android whether the Blob's sign is vivid or mellow.
+  void tellVivid(bool vivid) {
+    _device.invokeMethod<void>('blobVivid', vivid).catchError((Object _) {});
+  }
+
   /// Tells Android which look the Blob's sign has, so the floating blob wears the same one.
   void tellLook(String look) {
     _device.invokeMethod<void>('blobLook', look).catchError((Object _) {});

@@ -810,6 +810,20 @@ class Apps extends ChangeNotifier {
   /// known there, or none, is drawn as the first of the looks.
   String blobLook = '';
   File get _lookFile => File('${_iconsFile.parent.path}/prism_blob_look');
+
+  /// The Blob's sign vivid (black glass, colours at full strength) or mellow.
+  bool blobVivid = false;
+  File get _vividFile => File('${_iconsFile.parent.path}/prism_blob_vivid');
+  void setBlobVivid(bool v) {
+    blobVivid = v;
+    try {
+      _vividFile.writeAsStringSync(v ? '1' : '0');
+    } catch (_) {
+      // Not saved: mellow next time.
+    }
+    notifyListeners();
+  }
+
   void setBlobLook(String id) {
     blobLook = id;
     try {
@@ -872,6 +886,21 @@ class Apps extends ChangeNotifier {
       blobLook = _lookFile.readAsStringSync().trim();
     } catch (_) {
       // Never chosen: the first look.
+    }
+    try {
+      blobVivid = _vividFile.readAsStringSync().trim() == '1';
+    } catch (_) {
+      // Never chosen: mellow.
+    }
+    // The Vivid looks of builds 134 to 138 are the switch now: what was chosen stays as it was.
+    const Map<String, String> was = <String, String>{
+      'vivid': 'clear',
+      'vividtriangle': 'triangle',
+      'vividwindow': 'window',
+    };
+    if (was.containsKey(blobLook)) {
+      blobLook = was[blobLook]!;
+      blobVivid = true;
     }
     try {
       cogShown = int.tryParse(_cogFile.readAsStringSync().trim()) ?? 0;

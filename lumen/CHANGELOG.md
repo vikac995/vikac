@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 139 (15 November 2026)
+
+**File:** `releases/prism-build-139.apk`
+
+Needs Play Protect paused to install. Can be installed over build 138.
+
+- **A Vivid switch for every look**, in the Blob panel, above the looks. On: black glass, colours at full strength. Off: mellow, as before. The looks of light (Beam, Bands, Clear, Lined, Halo, Triangle, Window) take the light's own six colours when vivid; the looks of your blobs (Pearls, Petals, Lotus) keep your blobs' colours, at full strength, so they still show your blobs. The previews in the panel follow the switch.
+- **Vivid, Vivid Triangle and Vivid Window are gone as looks**: the switch is them now. If one of them was chosen, it becomes the switch on with Clear, Triangle or Window.
+- **The magnifying glass is plainly larger than the blob under it.** On Prism's button the blob is now about three fifths of the glass across, on a dark ground of its own (black when vivid), with the glass's light lying over it. Lifted away, the glass leaves the blob alone, the same size, as it was under the glass.
+- The floating blob wears the switch too. (It is still all glass: the blob fills it.)
+
+**Checked:** it compiles, both sides; in my preview: Window, Bands and Pearls mellow and vivid on the button, Window with the glass lifted, the panel with the switch and the looks vivid; the automatic test in the preview.
+**Not checked:** on a phone, and the floating blob's drawing of it not at all.
+
 ## Prism, build 138 (15 November 2026)
 
 **File:** `releases/prism-build-138.apk`

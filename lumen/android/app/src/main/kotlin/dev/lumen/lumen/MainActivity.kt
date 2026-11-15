@@ -303,6 +303,10 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
             } else if (call.method == "lensSize") {
                 result.success(RestBubble.lensSizeNow(applicationContext))
+            } else if (call.method == "blobVivid") {
+                // The Blob's sign vivid (black glass, colours at full strength) or mellow.
+                RestBubble.vivid = (call.arguments as? Boolean) ?: false
+                result.success(null)
             } else if (call.method == "blobLook") {
                 // Which look the Blob's sign has, by its id (see BlobLooks.kt).
                 RestBubble.look = (call.arguments as? String) ?: ""
@@ -1294,6 +1298,10 @@ class Floater(val timer: Boolean) {
 
     /** Which look the Blob's sign has, by its id. The same as in Prism; see BlobLooks.kt. */
     var look = ""
+        set(v) { if (field != v) { field = v; view?.postInvalidate() } }
+
+    /** Vivid or mellow, as in Prism. */
+    var vivid = false
         set(v) { if (field != v) { field = v; view?.postInvalidate() } }
 
     // A lens has been dropped on the cross and is being closed. Until that is done no new lens is made.
@@ -4052,7 +4060,7 @@ class Floater(val timer: Boolean) {
             if (t == null && atHome()) {
                 // Already where it leads: the Blob sign, pointing the way the blobs will come out.
                 // In the look that was chosen in Prism, filling the glass. (All of them live in BlobLooks.kt.)
-                BlobLooks.paint(look, canvas, r, r, disc - 1.3f * dp, signAngle(), IntArray(blobs.size) { blobs[it].color }, paint)
+                BlobLooks.paint(look, canvas, r, r, disc - 1.3f * dp, signAngle(), IntArray(blobs.size) { blobs[it].color }, paint, vivid)
                 return
             }
             if (t == null && container) {

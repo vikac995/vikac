@@ -32,12 +32,9 @@ object BlobLooks {
         "bands" to Look(true, ::bands),
         "bandsclear" to Look(true, ::bandsClear),
         "bandswhite" to Look(true, ::bandsWhite),
-        "vivid" to Look(false, ::vivid),
         "halo" to Look(true, ::halo),
         "triangle" to Look(true, ::triangle),
-        "vividtriangle" to Look(false, ::vividTriangle),
         "window" to Look(true, ::window),
-        "vividwindow" to Look(false, ::vividWindow),
     )
 
     private val clip = Path()
@@ -45,12 +42,25 @@ object BlobLooks {
     private val box = RectF()
     private val hsv = FloatArray(3)
 
-    /** Draws look [id] with its middle at ([cx], [cy]) in glass of radius [r]. */
-    fun paint(id: String, canvas: Canvas, cx: Float, cy: Float, r: Float, a: Double, colours: IntArray, paint: Paint) {
+    // Whether the look being drawn is vivid: then nothing greys the black (see [cutBands]).
+    private var vividNow = false
+
+    /**
+     * Draws look [id] with its middle at ([cx], [cy]) in glass of radius [r]. [vivid]: on black, a
+     * look of light in the light's own six colours at full strength, a look of the blobs in the
+     * blobs' colours at full strength.
+     */
+    fun paint(id: String, canvas: Canvas, cx: Float, cy: Float, r: Float, a: Double, colours: IntArray, paint: Paint, vivid: Boolean = false) {
         if (colours.isEmpty()) return
         val look = looks[id] ?: looks.values.first()
         var cs = IntArray(minOf(colours.size, 5)) { colours[it] or 0xFF000000.toInt() }
-        if (look.spectrum) {
+        if (vivid) {
+            cs = if (look.spectrum) vividColours else IntArray(cs.size) {
+                Color.colorToHSV(cs[it], hsv)
+                hsv[1] = Math.max(hsv[1], 0.85f); hsv[2] = Math.max(hsv[2], 0.95f)
+                Color.HSVToColor(hsv)
+            }
+        } else if (look.spectrum) {
             // From red round to violet, so that the colours read as light.
             cs = cs.sortedBy { Color.colorToHSV(it, hsv); (hsv[0] + 20f) % 360f }.toIntArray()
         }
@@ -63,7 +73,10 @@ object BlobLooks {
         paint.style = Paint.Style.FILL
         paint.strokeCap = Paint.Cap.ROUND
         paint.strokeJoin = Paint.Join.ROUND
+        if (vivid) black(canvas, r, paint)
+        vividNow = vivid
         look.draw(canvas, r, cs, a, paint)
+        vividNow = false
         canvas.restore()
         paint.shader = null
         paint.alpha = 255
@@ -237,24 +250,6 @@ object BlobLooks {
         c.drawCircle(0f, 0f, r, p)
     }
 
-    /** Vivid: black glass and the full rainbow at full strength, cut clean. */
-    private fun vivid(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
-        black(c, r, p)
-        // (No white shine: it would grey the black.)
-        cutBands(c, r, vividColours, a, 0, 0f, p, 0f)
-    }
-
-    /** Vivid Triangle: Triangle on black glass, in the light's own colours. */
-    private fun vividTriangle(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
-        black(c, r, p)
-        triangle(c, r, vividColours, a, p)
-    }
-
-    /** Vivid Window: Window on black glass, in the light's own colours. */
-    private fun vividWindow(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
-        black(c, r, p)
-        window(c, r, vividColours, a, p)
-    }
 
     /**
      * The flat bands of the looks above. [line] is drawn between the colours, [width] of the
@@ -285,7 +280,7 @@ object BlobLooks {
         }
         c.restore()
         // The same white shine round the prism as Beam has.
-        if (shine > 0f) glow(c, x, y, r * 0.95f, Color.WHITE, shine, p)
+        if (shine > 0f && !vividNow) glow(c, x, y, r * 0.95f, Color.WHITE, shine, p)
         p.style = Paint.Style.STROKE
         p.strokeCap = Paint.Cap.BUTT
         p.color = Color.WHITE; p.strokeWidth = r * 0.13f
