@@ -38,6 +38,7 @@ abstract final class BlobSign {
     BlobLook('bands', 'Bands', _bands, spectrum: true),
     BlobLook('bandsclear', 'Clear', _bandsClear, spectrum: true),
     BlobLook('bandswhite', 'Lined', _bandsWhite, spectrum: true),
+    BlobLook('vivid', 'Vivid', _vivid),
     BlobLook('halo', 'Halo', _halo, spectrum: true),
     BlobLook('triangle', 'Triangle', _triangle, spectrum: true),
   ];
@@ -363,17 +364,41 @@ void _bandsClear(Canvas c, double r, List<Color> cs, double a) =>
 void _bandsWhite(Canvas c, double r, List<Color> cs, double a) =>
     _cutBands(c, r, cs, a, Colors.white, 0.018);
 
-/// The flat bands of the three looks above. [line] is drawn between the colours, [width] of
-/// the glass's radius wide; with no line there is none. (Used only by those three: when the
-/// last of them is removed, this goes with it.)
+/// Vivid: black glass and the full rainbow at full strength, cut clean. The colours are the
+/// light's own here, not the blobs': always these six, however many blobs there are.
+void _vivid(Canvas c, double r, List<Color> cs, double a) {
+  c.drawCircle(Offset.zero, r, Paint()..color = const Color(0xF2000000));
+  _cutBands(
+    c,
+    r,
+    const <Color>[
+      Color(0xFFF2334B),
+      Color(0xFFFF7A2B),
+      Color(0xFFFFD21F),
+      Color(0xFF34C94A),
+      Color(0xFF1F7BF2),
+      Color(0xFF8A3FF0),
+    ],
+    a,
+    null,
+    0,
+    // (No white shine: it would grey the black.)
+    shine: 0,
+  );
+}
+
+/// The flat bands of the looks above. [line] is drawn between the colours, [width] of
+/// the glass's radius wide; with no line there is none. (Used only by Bands, Clear, Lined and
+/// Vivid: when the last of them is removed, this goes with it.)
 void _cutBands(
   Canvas c,
   double r,
   List<Color> cs,
   double a,
   Color? line,
-  double width,
-) {
+  double width, {
+  double shine = 0.6,
+}) {
   final int n = cs.length;
   final Offset at = -_dir(a) * r * 0.42;
   final double half = (n == 1 ? 24 : 54) * math.pi / 180, each = 2 * half / n;
@@ -414,7 +439,7 @@ void _cutBands(
       r * 0.95,
       Paint()
         ..shader = ui.Gradient.radial(at, r * 0.95, <Color>[
-          Colors.white.withValues(alpha: 0.6),
+          Colors.white.withValues(alpha: shine),
           Colors.white.withValues(alpha: 0),
         ]),
     )

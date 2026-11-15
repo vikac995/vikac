@@ -32,6 +32,7 @@ object BlobLooks {
         "bands" to Look(true, ::bands),
         "bandsclear" to Look(true, ::bandsClear),
         "bandswhite" to Look(true, ::bandsWhite),
+        "vivid" to Look(false, ::vivid),
         "halo" to Look(true, ::halo),
         "triangle" to Look(true, ::triangle),
     )
@@ -221,11 +222,28 @@ object BlobLooks {
     private fun bandsWhite(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) = cutBands(c, r, cs, a, Color.WHITE, 0.018f, p)
 
     /**
-     * The flat bands of the three looks above. [line] is drawn between the colours, [width] of the
-     * glass's radius wide; 0 for none. (Used only by those three: when the last of them is removed,
+     * Vivid: black glass and the full rainbow at full strength, cut clean. The colours are the
+     * light's own here, not the blobs': always these six, however many blobs there are.
+     */
+    private fun vivid(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
+        p.style = Paint.Style.FILL
+        p.shader = null
+        p.color = 0xF2000000.toInt()
+        c.drawCircle(0f, 0f, r, p)
+        cutBands(
+            c, r,
+            intArrayOf(0xFFF2334B.toInt(), 0xFFFF7A2B.toInt(), 0xFFFFD21F.toInt(), 0xFF34C94A.toInt(), 0xFF1F7BF2.toInt(), 0xFF8A3FF0.toInt()),
+            // (No white shine: it would grey the black.)
+            a, 0, 0f, p, 0f,
+        )
+    }
+
+    /**
+     * The flat bands of the looks above. [line] is drawn between the colours, [width] of the
+     * glass's radius wide; 0 for none. (Used only by Bands, Clear, Lined and Vivid: when the last of them is removed,
      * this goes with it.)
      */
-    private fun cutBands(c: Canvas, r: Float, cs: IntArray, a: Double, line: Int, width: Float, p: Paint) {
+    private fun cutBands(c: Canvas, r: Float, cs: IntArray, a: Double, line: Int, width: Float, p: Paint, shine: Float = 0.6f) {
         val n = cs.size
         val x = -cos(a) * r * 0.42f; val y = -sin(a) * r * 0.42f
         val half = (if (n == 1) 24.0 else 54.0) * Math.PI / 180.0
@@ -249,7 +267,7 @@ object BlobLooks {
         }
         c.restore()
         // The same white shine round the prism as Beam has.
-        glow(c, x, y, r * 0.95f, Color.WHITE, 0.6f, p)
+        if (shine > 0f) glow(c, x, y, r * 0.95f, Color.WHITE, shine, p)
         p.style = Paint.Style.STROKE
         p.strokeCap = Paint.Cap.BUTT
         p.color = Color.WHITE; p.strokeWidth = r * 0.13f

@@ -1,5 +1,21 @@
 # Lumen changelog
 
+## Prism, build 134 (15 November 2026)
+
+**File:** `releases/prism-build-134.apk`
+
+Needs Play Protect paused to install. Can be installed over build 133.
+
+**The prism is always there**, as you put it.
+
+- **The glass lifts, the prism stays.** While the magnifying glass is carried away from the button, the button's place used to be an empty ring. Now the Blob's sign stays in that ring: only the glass went.
+- **The sign turns, and never becomes an X.** With the blobs out it turns a sixth of a turn to the right (for the Triangle, until its top left corner points up). With the app list up it turns half way round. A tap on it still closes what is open, as the X did. With no blobs at all the button shows the plus, which turns into a cross with the blobs out, as before.
+- **While the blobs are being changed** the sign still draws in to the cog, and comes back after.
+- **A new look: Vivid.** Black glass and the full rainbow at full strength, cut clean, with the white prism and beam. Its six colours are the light's own, not your blobs': the same however many blobs there are. (No white shine on this one: it greyed the black.) The Look row is ten.
+
+**Checked:** it compiles; in my preview: the Triangle on the button at rest, turned with the blobs out, turned half way with the app list up; Vivid and Bands on the button; the automatic test in the preview, 53 of 57, the usual 4 misses.
+**Not checked:** on a phone. In my preview I did not see the glass lifted with the sign staying (my preview cannot hold a drag for a picture), nor the turn in motion. On the floating blob Vivid is drawn by Android's own code, which I could not see at all.
+
 ## Prism, build 133 (15 November 2026)
 
 **File:** `releases/prism-build-133.apk`

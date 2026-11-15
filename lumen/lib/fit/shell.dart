@@ -188,8 +188,12 @@ class _ShellState extends State<Shell>
     value: 1,
   );
 
+  // How far the button's sign has turned, in radians: see [_ButtonSign].
+  late final SpringValue _signTurn = SpringValue(this, spring: Motions.snappy);
+
   /// The cog is the button's sign only while the blobs are out and being changed.
   void _signSync() {
+    _signTurn.animateTo(_drawerOpen ? math.pi : (_open ? math.pi / 3 : 0));
     final bool want = _editing && _open;
     if (want && _cog.target != 1 && Apps.instance.takeCogHint()) {
       _cogHint.forward(from: 0);
@@ -4026,6 +4030,7 @@ class _ShellState extends State<Shell>
       }
     });
     _t.animateTo(v ? 1 : 0);
+    _signSync();
     Diag.instance
       ..overlay = v ? '+drawer' : ''
       ..event(v ? 'drawer open' : 'drawer close');
@@ -4118,6 +4123,7 @@ class _ShellState extends State<Shell>
   @override
   void dispose() {
     _cogHint.dispose();
+    _signTurn.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _freeLater?.cancel();
     for (final Timer t in _fuses) {
@@ -5281,16 +5287,20 @@ class _ShellState extends State<Shell>
                           _wob,
                           _cog,
                           _cogHint,
+                          _signTurn,
                         ]),
                         builder: (BuildContext context, Widget? _) =>
                             Transform.scale(
                               scaleX: _kick.value * (1 + _wob.value),
                               scaleY: _kick.value * (1 - _wob.value),
                               child: _glass.value > 0.5 || _returning
-                                  // While the button is away, an empty ring marks where it lives.
+                                  // While the glass is lifted away, the prism stays: only the glass
+                                  // went. A ring marks where the glass belongs, and the sign is in it
+                                  // as it always is.
                                   ? Container(
                                       width: _button,
                                       height: _button,
+                                      alignment: Alignment.center,
                                       decoration: ShapeDecoration(
                                         shape: CircleBorder(
                                           side: BorderSide(
@@ -5299,6 +5309,16 @@ class _ShellState extends State<Shell>
                                             ),
                                             width: 1.5,
                                           ),
+                                        ),
+                                      ),
+                                      child: CustomPaint(
+                                        size: const Size(38, 38),
+                                        painter: _ButtonSign(
+                                          blobs: _fanBlobs,
+                                          turn: _signTurn.value,
+                                          cog: _cog.value,
+                                          look: Apps.instance.blobLook,
+                                          rim: _button / 2 - 2,
                                         ),
                                       ),
                                     )
@@ -5325,14 +5345,13 @@ class _ShellState extends State<Shell>
                                           clipBehavior: Clip.none,
                                           alignment: Alignment.center,
                                           children: <Widget>[
-                                            // The button's sign: one drawing that turns from the fan into the X as the
-                                            // blobs come out, and from the X into the cog while they are being changed.
-                                            // It follows the same springs the blobs do, so it can be turned back half way.
+                                            // The button's sign: always the Blob's sign, turned to say what is open,
+                                            // and drawn in to the cog while the blobs are being changed.
                                             CustomPaint(
                                               size: const Size(38, 38),
                                               painter: _ButtonSign(
                                                 blobs: _fanBlobs,
-                                                open: _t.value,
+                                                turn: _signTurn.value,
                                                 cog: _cog.value,
                                                 look: Apps.instance.blobLook,
                                                 hint: _cogHint.value,
@@ -7017,14 +7036,15 @@ bool _sameBlobs(List<(double, Color)> a, List<(double, Color)> b) {
   return true;
 }
 
-/// The button's sign in all its states, as one drawing. [open] is how far the blobs are out:
-/// at 0 it is the Blob's sign in the look that was chosen (see blob_sign.dart); as it rises
-/// that folds away into the middle, and out of that point the X unfolds, turning as it comes. [cog] is how
-/// far the X has become the cog: the X turns on and shrinks away as the cog turns in.
+/// The button's sign in all its states, as one drawing. It is always the Blob's sign, in the
+/// look that was chosen (see blob_sign.dart): the prism is always there. It says what is open
+/// by how far it has turned ([turn], in radians): not at all with nothing open, a sixth of a
+/// turn to the right with the blobs out, half a turn with the app list up. [cog] is how far it
+/// has become the cog, while the blobs are being changed: the sign draws in and the cog turns in.
 class _ButtonSign extends CustomPainter {
   const _ButtonSign({
     required this.blobs,
-    required this.open,
+    required this.turn,
     required this.cog,
     this.look = '',
     this.hint = 1,
@@ -7032,9 +7052,9 @@ class _ButtonSign extends CustomPainter {
     this.glint = Colors.white,
   });
   final List<(double, Color)> blobs;
-  final double open, cog;
+  final double turn, cog;
 
-  /// Which look the sign has while the blobs are in: the fan, or one of [BlobSign]'s.
+  /// Which look the sign has: one of [BlobSign]'s.
   final String look;
 
   /// The cog showing itself off: 0 just begun, 1 over (and nothing more is drawn for it).
@@ -7060,46 +7080,28 @@ class _ButtonSign extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final double u = size.width / 38;
     final Offset mid = Offset(19 * u, 19 * u);
-    // The fan folds away over the first half of the way.
-    final double a = Curves.easeInOut.transform((open / 0.5).clamp(0.0, 1.0));
-    if (a < 0.999) {
+    final double c = cog.clamp(0.0, 1.0);
+    if (c < 0.999) {
       if (blobs.isEmpty) {
-        _PlusMark(fold: a).paint(canvas, size);
-      } else {
-        // In the button's glass: the sign's square sits in its middle.
+        // Nothing to come out: the plus, which turned an eighth of the way is a cross.
         canvas
           ..save()
-          ..translate(mid.dx - size.width / 2, mid.dy - size.height / 2);
+          ..translate(mid.dx, mid.dy)
+          ..rotate(turn.clamp(0.0, math.pi / 3) * 0.75)
+          ..translate(-mid.dx, -mid.dy);
+        _PlusMark(fold: c * 0.6).paint(canvas, size);
+        canvas.restore();
+      } else {
         BlobSign.paint(
           canvas,
           size,
           look,
           <Color>[for (final (double, Color) b in blobs) b.$2],
           radius: rim > 0 ? rim : size.width / 2,
-          fold: a,
+          angle: -math.pi / 2 + turn,
+          fold: c,
         );
-        canvas.restore();
       }
-    }
-    // The X unfolds over the second half, and may swing a little past its size.
-    final double b = ((open - 0.5) / 0.5).clamp(0.0, 1.25);
-    final double c = cog.clamp(0.0, 1.0);
-    if (b > 0.001 && c < 0.999) {
-      final double arm = 8.6 * u * b * (1 - c),
-          turn = (1 - b.clamp(0.0, 1.0)) * 0.5 + c * 0.5;
-      final Paint line = Paint()
-        ..color = Colors.white.withValues(
-          alpha: (b * 2.2).clamp(0.0, 1.0) * (1 - c),
-        )
-        ..strokeWidth = 3.3 * u
-        ..strokeCap = StrokeCap.round;
-      canvas
-        ..save()
-        ..translate(mid.dx, mid.dy)
-        ..rotate(math.pi / 4 + turn * math.pi)
-        ..drawLine(Offset(-arm, 0), Offset(arm, 0), line)
-        ..drawLine(Offset(0, -arm), Offset(0, arm), line)
-        ..restore();
     }
     if (c > 0.001) {
       canvas
@@ -7151,7 +7153,7 @@ class _ButtonSign extends CustomPainter {
 
   @override
   bool shouldRepaint(_ButtonSign old) =>
-      old.open != open ||
+      old.turn != turn ||
       old.cog != cog ||
       old.look != look ||
       old.hint != hint ||
