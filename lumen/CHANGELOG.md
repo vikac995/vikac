@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 147 (15 November 2026)
+
+**File:** `releases/prism-build-147.apk`
+
+Needs Play Protect paused to install. Can be installed over build 146.
+
+- **The black no longer pops in when the glass comes back**, from your recording. It was tied straight to where the glass was, and the glass is set back in its place all at once as it lands, so the black came back all at once too. Now it has a fade of its own: as the glass is lifted it goes quickly; as the glass comes back it waits until the glass has landed and then comes in gently, over about a quarter of a second, while the glass settles.
+
+**Checked:** it compiles; in my preview: the glass coming back, a quarter, half and three quarters of a second after it was let go, and after it settled (no black as it lands, the black in once it has); the automatic test in the preview.
+**Not checked:** on a phone.
+
 ## Prism, build 146 (15 November 2026)
 
 **File:** `releases/prism-build-146.apk`

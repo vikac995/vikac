@@ -1660,7 +1660,27 @@ class _ShellState extends State<Shell>
   late final SpringValue _glass = SpringValue(
     this,
     spring: Motions.expressiveFast,
-  );
+  )..addListener(_darkSync);
+
+  // The black the glass lays behind a triangle while it rests on it (1), and not while it is
+  // away (0). It has its own fade: quick as the glass is lifted, gentle once the glass has
+  // landed back, and never all at once.
+  late final SpringValue _dark = SpringValue(this, value: 1);
+
+  void _darkSync() {
+    if (!mounted) {
+      return;
+    }
+    final double want =
+        !_returning && _glass.target < 0.5 && _glass.value < 0.25 ? 1 : 0;
+    if (_dark.target != want) {
+      _dark.animateTo(
+        want,
+        spring: want == 1 ? Motions.effectsSlow : Motions.effectsFast,
+      );
+    }
+  }
+
   late final SpringValue _lx = SpringValue(this, spring: Motions.follow);
   late final SpringValue _ly = SpringValue(this, spring: Motions.follow);
   late final SpringValue _morph = SpringValue(this, spring: Motions.expressive);
@@ -3731,6 +3751,7 @@ class _ShellState extends State<Shell>
       if (whole < 4 || (done.dx * way.dx + done.dy * way.dy) / whole >= 0.985) {
         final double speed = Offset(_lx.velocity, _ly.velocity).distance;
         setState(() => _returning = false);
+        _darkSync();
         _lx.jumpTo(_home.dx);
         _ly.jumpTo(_home.dy);
         _glass.jumpTo(0);
@@ -3961,6 +3982,8 @@ class _ShellState extends State<Shell>
     setState(() {
       _carrying = true;
       _returning = false;
+      // (The black under the glass follows: see _darkSync.)
+      WidgetsBinding.instance.addPostFrameCallback((_) => _darkSync());
     });
     _lx.jumpTo(_home.dx);
     _ly.jumpTo(_home.dy);
@@ -4040,6 +4063,8 @@ class _ShellState extends State<Shell>
       _carrying = false;
       _parked = false;
       _returning = false;
+      // (The black under the glass follows: see _darkSync.)
+      WidgetsBinding.instance.addPostFrameCallback((_) => _darkSync());
       _target = null;
     });
     _lx.jumpTo(_home.dx);
@@ -4103,6 +4128,8 @@ class _ShellState extends State<Shell>
       _parked = false;
       _carrying = true;
       _returning = false;
+      // (The black under the glass follows: see _darkSync.)
+      WidgetsBinding.instance.addPostFrameCallback((_) => _darkSync());
     });
     // The same as when it leaves the button.
     Haptics.settle();
@@ -4175,6 +4202,7 @@ class _ShellState extends State<Shell>
     _cogHint.dispose();
     _signTurn.dispose();
     _signShot.dispose();
+    _dark.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _freeLater?.cancel();
     for (final Timer t in _fuses) {
@@ -5340,6 +5368,7 @@ class _ShellState extends State<Shell>
                           _cogHint,
                           _signTurn,
                           _signShot,
+                          _dark,
                         ]),
                         builder: (BuildContext context, Widget? _) =>
                             Transform.scale(
@@ -5369,11 +5398,7 @@ class _ShellState extends State<Shell>
                                           turn: _signTurn.value,
                                           vivid: Apps.instance.blobVivid,
                                           glass: false,
-                                          // (Coming back, the black comes back with the glass.)
-                                          dark: (1 - _glass.value * 4).clamp(
-                                            0.0,
-                                            1.0,
-                                          ),
+                                          dark: _dark.value,
                                           cog: _cog.value,
                                           look: Apps.instance.blobLook,
                                           rim: _button / 2 - 2,
@@ -5412,8 +5437,7 @@ class _ShellState extends State<Shell>
                                                 turn: _signTurn.value,
                                                 shot: _signShot.value,
                                                 vivid: Apps.instance.blobVivid,
-                                                dark: (1 - _glass.value * 4)
-                                                    .clamp(0.0, 1.0),
+                                                dark: _dark.value,
                                                 cog: _cog.value,
                                                 look: Apps.instance.blobLook,
                                                 hint: _cogHint.value,
