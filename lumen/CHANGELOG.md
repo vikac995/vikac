@@ -1,5 +1,27 @@
 # Lumen changelog
 
+## Prism, build 168 (15 November 2026)
+
+**File:** `releases/prism-build-168.apk`
+
+Needs Play Protect paused to install. Can be installed over build 167.
+
+**The Sidekick's sliders: the real cause, fixed.** When a slider was grabbed, the panel fades everything else away. To leave that one slider alone, my code changed how it sat in the panel, which made it anew under the finger: the drag was lost the moment it began, the panel half-faded and flickered back. Now the slider keeps its place and only what is round it fades. In my preview the panel clears fully and the slider follows the drag.
+
+**The empty space round the blobs.**
+- **In Prism:** hold the empty space while the blobs are out, and a small menu comes up: **Edit Prism | Add Blob** (Add Blob in green, there while there is room). Add Blob opens the list for the first free place, at the right of the others. Edit Prism opens Prism's settings.
+- **On the Sidekick:** the same on the empty space round its blobs: **Edit Sidekick | Add Blob**.
+- (An unpublished version of this had a third item, "Sidekick". That was my misreading and is gone.)
+
+**Prism's settings open and close exactly as the app list does.** Not an imitation with its own timing any more: the same two springs (the quick one with a hint of give to open, the quick one to close), the same growth out of the button and back into it, the contents fading at the same points. Every way of closing (the X, a tap beside it, a tap on the button, back) closes it at that speed.
+
+**Checked:** it compiles, both sides; in my preview: the slider dragged with the panel clear, the empty space's menu; the button test's Prism half, 62 of 63 (the one miss is a measurement only Android can make), with new checks for the empty space's menu; the long test, 65 of 69 with the usual 4 misses.
+**Not checked:** on a phone; the Sidekick's "Edit Sidekick | Add Blob" (Android only).
+
+**Not in this build, on purpose:** the back button closing the Sidekick's blobs while a keyboard stays open (you asked me to explain first), and the glass against the app list (the doubled buzz). Both are explained in my message.
+
+**Still to do:** the Sidekick's settings over whatever app you are in.
+
 ## Prism, build 167 (15 November 2026)
 
 **File:** `releases/prism-build-167.apk`

@@ -395,6 +395,44 @@ class _ShellState extends State<Shell>
   /// The blob whose small menu (Change, Remove) is showing, if any.
   int? _menuFor;
 
+  /// Held on the empty space round the blobs: where, for its small menu (Edit Prism, Add
+  /// Blob). Null when that menu is not up.
+  Offset? _spaceAt;
+
+  void _heldSpace(Offset at) {
+    if (!_open || _drawerOpen || _menuFor != null || _dragI != null) {
+      return;
+    }
+    Haptics.settle();
+    Diag.instance.event('space held: its menu');
+    setState(() => _spaceAt = at);
+  }
+
+  void _spaceAway() {
+    if (_spaceAt != null && mounted) {
+      setState(() => _spaceAt = null);
+    }
+  }
+
+  /// "Edit Prism": the button's settings.
+  void _spaceEdit() {
+    setState(() => _spaceAt = null);
+    _setOpen(false);
+    _designSide.value = false;
+    _showFloating();
+  }
+
+  /// "Add Blob": a new blob in the first free place, at the right of the others.
+  void _spaceAdd() {
+    setState(() => _spaceAt = null);
+    final int at = <int>[for (int k = 0; k < _n; k++) k]
+        .firstWhere(_isEmpty, orElse: () => -1);
+    if (at >= 0) {
+      Diag.instance.event('blob: add at the end');
+      _pickFor(at);
+    }
+  }
+
   /// While a blob is being changed, the button is that blob: the sign draws in and the blob
   /// grows out of it, and back again once it is chosen. 0 the sign, 1 the blob.
   late final SpringValue _face = SpringValue(
@@ -407,6 +445,9 @@ class _ShellState extends State<Shell>
   /// The settings panel (Prism's or the Sidekick's) is open. [_panelBack]: Prism came forward
   /// only for it, from the Sidekick over another app, and steps back when it is closed.
   bool _panelOpen = false, _panelBack = false;
+
+  /// Closes the open settings on the app list's spring; null when none are open.
+  VoidCallback? _closePanel;
 
   /// In the settings: which slider is being dragged, if one is. The rest of the panel goes
   /// clear meanwhile, so that what the slider moves can be watched.
@@ -775,11 +816,12 @@ class _ShellState extends State<Shell>
     });
     showGeneralDialog<void>(
       context: context,
-      barrierDismissible: true,
+      // (Closed by the panel itself, on the app list's spring: see _SpringPanel.)
+      barrierDismissible: false,
       barrierLabel: 'Close',
       // (Its own shade, below, so that it can clear with the panel.)
       barrierColor: Colors.transparent,
-      transitionDuration: growTime,
+      transitionDuration: Duration.zero,
       transitionBuilder: panelNoFade,
       pageBuilder: (BuildContext context, Animation<double> rise, _) {
         final LumenColors c = LumenColors.of(context);
@@ -787,301 +829,282 @@ class _ShellState extends State<Shell>
         // Below the button's top: the button stays in sight, and a tap on it closes these.
         final double above =
             MediaQuery.sizeOf(context).height - (_home.dy - _button * 0.62);
-        return Stack(
-          children: <Widget>[
-            Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: above,
-              child: IgnorePointer(
-                child: FadeTransition(
-                  opacity: rise,
-                  child: ValueListenableBuilder<String?>(
-                    valueListenable: _panelClear,
-                    builder: (BuildContext context, String? held, Widget? _) =>
-                        AnimatedOpacity(
-                          opacity: held == null ? 1 : 0,
-                          duration: const Duration(milliseconds: 160),
-                          child: const ColoredBox(color: Color(0x66000000)),
+        // Grows out of the button and goes back into it exactly as the app list does: the same
+        // springs, the same shape, the same speed both ways.
+        return _SpringPanel(
+          from: _home,
+          button: _button,
+          above: above,
+          clear: _panelClear,
+          onReady: (VoidCallback close) => _closePanel = close,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(10, 0, 10, above + 8),
+            child: Material(
+              type: MaterialType.transparency,
+              child: ValueListenableBuilder<String?>(
+                valueListenable: _panelClear,
+                builder: (BuildContext context, String? held, Widget? child) =>
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      padding: const EdgeInsets.all(20),
+                      decoration: ShapeDecoration(
+                        color: held == null
+                            ? c.surface
+                            : c.surface.withValues(alpha: 0),
+                        shape: RoundedSuperellipseBorder(
+                          borderRadius: BorderRadius.circular(36),
+                          side: BorderSide(
+                            color: held == null
+                                ? c.hairline
+                                : c.hairline.withValues(alpha: 0),
+                          ),
                         ),
-                  ),
-                ),
-              ),
-            ),
-            PanelGrow(
-              from: _home,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(10, 0, 10, above + 8),
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: ValueListenableBuilder<String?>(
-                    valueListenable: _panelClear,
-                    builder:
-                        (BuildContext context, String? held, Widget? child) =>
-                            AnimatedContainer(
-                              duration: const Duration(milliseconds: 160),
-                              padding: const EdgeInsets.all(20),
-                              decoration: ShapeDecoration(
-                                color: held == null
-                                    ? c.surface
-                                    : c.surface.withValues(alpha: 0),
-                                shape: RoundedSuperellipseBorder(
-                                  borderRadius: BorderRadius.circular(36),
-                                  side: BorderSide(
-                                    color: held == null
-                                        ? c.hairline
-                                        : c.hairline.withValues(alpha: 0),
+                      ),
+                      child: child,
+                    ),
+                child: ListenableBuilder(
+                  listenable: Listenable.merge(<Listenable>[
+                    b.floatIn,
+                    b.floatOut,
+                    Apps.instance,
+                    BlobSlots.instance,
+                    _designSide,
+                    _panelClear,
+                  ]),
+                  builder: (BuildContext context, Widget? _) => ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight:
+                          MediaQuery.sizeOf(context).height -
+                          MediaQuery.paddingOf(context).vertical -
+                          70,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: _clearBut(<Widget>[
+                          // Its name, and a plain way out: the round X in the corner.
+                          Row(
+                            children: <Widget>[
+                              Expanded(
+                                child: Text(
+                                  _designSide.value ? 'Sidekick' : 'Prism',
+                                  style: LumenType.display(
+                                    22,
+                                    weight: 700,
+                                    color: c.ink,
                                   ),
                                 ),
                               ),
-                              child: child,
-                            ),
-                    child: ListenableBuilder(
-                      listenable: Listenable.merge(<Listenable>[
-                        b.floatIn,
-                        b.floatOut,
-                        Apps.instance,
-                        BlobSlots.instance,
-                        _designSide,
-                        _panelClear,
-                      ]),
-                      builder: (BuildContext context, Widget? _) => ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxHeight:
-                              MediaQuery.sizeOf(context).height -
-                              MediaQuery.paddingOf(context).vertical -
-                              70,
-                        ),
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: _clearBut(<Widget>[
-                              // Its name, and a plain way out: the round X in the corner.
-                              Row(
-                                children: <Widget>[
-                                  Expanded(
-                                    child: Text(
-                                      _designSide.value ? 'Sidekick' : 'Prism',
-                                      style: LumenType.display(
-                                        22,
-                                        weight: 700,
-                                        color: c.ink,
-                                      ),
+                              Semantics(
+                                button: true,
+                                label: 'Close',
+                                child: GestureDetector(
+                                  key: Robot.key('floatClose'),
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    Haptics.tick();
+                                    _closePanel != null
+                                        ? _closePanel!()
+                                        : Navigator.of(context).pop();
+                                  },
+                                  child: Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: ShapeDecoration(
+                                      color: c.ink.withValues(alpha: 0.1),
+                                      shape: const CircleBorder(),
+                                    ),
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      size: 24,
+                                      color: c.ink,
                                     ),
                                   ),
-                                  Semantics(
-                                    button: true,
-                                    label: 'Close',
-                                    child: GestureDetector(
-                                      key: Robot.key('floatClose'),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          // Whose settings these are: the button in the middle, or the one at the side.
+                          Segmented<bool>(
+                            key: Robot.key('blobDesignFor'),
+                            values: const <bool>[false, true],
+                            labels: const <String>['Prism', 'Sidekick'],
+                            value: _designSide.value,
+                            onChanged: (bool v) => _designSide.value = v,
+                          ),
+                          const SizedBox(height: 16),
+                          // Where the Sidekick shows. (Prism is always in its place.)
+                          if (_designSide.value) ...<Widget>[
+                            SwitchLine(
+                              key: Robot.key('floatIn'),
+                              label: 'In this app',
+                              value: b.floatIn.value,
+                              onChanged: (bool v) => _setFloating(inPrism: v),
+                            ),
+                            const SizedBox(height: 12),
+                            SwitchLine(
+                              key: Robot.key('floatOut'),
+                              label: 'Over other apps',
+                              value: b.floatOut.value,
+                              onChanged: (bool v) => _setFloating(overApps: v),
+                            ),
+                            const SizedBox(height: 14),
+                            // Its two places at a side of the screen. Dragged, the panel
+                            // clears and the Sidekick goes to that place, to be seen.
+                            Text(
+                              'Distance from the edge',
+                              style: LumenType.text(
+                                15,
+                                weight: 560,
+                                color: c.ink,
+                              ),
+                            ),
+                            LumenSlider(
+                              key: const ValueKey<String>('rest'),
+                              value:
+                                  (b.sideGap - RestBubble.gapMin) /
+                                  (RestBubble.gapMax - RestBubble.gapMin),
+                              onHold: (bool on) {
+                                _spotHold('rest', on);
+                                if (!on) {
+                                  b.setSpots(save: true);
+                                }
+                              },
+                              onChanged: (double v) {
+                                final double gap =
+                                    RestBubble.gapMin +
+                                    (RestBubble.gapMax - RestBubble.gapMin) * v;
+                                if ((gap - b.sideGap).abs() > 0.05) {
+                                  b.setSpots(gap: gap, show: 'rest');
+                                }
+                              },
+                            ),
+                            Text(
+                              'Tucked in, how much shows',
+                              style: LumenType.text(
+                                15,
+                                weight: 560,
+                                color: c.ink,
+                              ),
+                            ),
+                            LumenSlider(
+                              key: const ValueKey<String>('tuck'),
+                              value:
+                                  (b.sideTuck - RestBubble.tuckMin) /
+                                  (RestBubble.tuckMax - RestBubble.tuckMin),
+                              onHold: (bool on) {
+                                _spotHold('tuck', on);
+                                if (!on) {
+                                  b.setSpots(save: true);
+                                }
+                              },
+                              onChanged: (double v) {
+                                final double tuck =
+                                    RestBubble.tuckMin +
+                                    (RestBubble.tuckMax - RestBubble.tuckMin) *
+                                        v;
+                                if ((tuck - b.sideTuck).abs() > 0.05) {
+                                  b.setSpots(tuck: tuck, show: 'tuck');
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 4),
+                          ],
+                          // Names under its blobs: each has its own choice.
+                          Text(
+                            'Labels',
+                            style: LumenType.text(
+                              15,
+                              weight: 560,
+                              color: c.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // The glass two-way picker, as every two-way choice here.
+                          Segmented<bool>(
+                            key: Robot.key('names'),
+                            values: const <bool>[true, false],
+                            labels: const <String>['Show', 'Hide'],
+                            value: _designSide.value
+                                ? BlobSlots.instance.sideNames
+                                : BlobSlots.instance.names,
+                            onChanged: (bool v) {
+                              if (_designSide.value) {
+                                Haptics.tick();
+                                Diag.instance.event(
+                                  v
+                                      ? 'Sidekick names on'
+                                      : 'Sidekick names off',
+                                );
+                                BlobSlots.instance.setNames(v, side: true);
+                                RestBubble.instance.tellNames(v);
+                              } else {
+                                _setNames(v);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          // The blobs' own choice; the app list has its own, behind its cog.
+                          Text(
+                            'Icons',
+                            style: LumenType.text(
+                              15,
+                              weight: 560,
+                              color: c.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Segmented<bool>(
+                            values: const <bool>[true, false],
+                            labels: const <String>['Prism', 'Regular'],
+                            value: Apps.instance.blobPrismIcons,
+                            onChanged: (bool v) =>
+                                Apps.instance.setPrismIcons(v, blobs: true),
+                          ),
+                          const SizedBox(height: 16),
+                          // Prism's two-finger swipes: what each of the four does. A tap on one
+                          // asks what it should do.
+                          if (!_designSide.value) ...<Widget>[
+                            Text(
+                              'Two-finger swipes',
+                              style: LumenType.text(
+                                15,
+                                weight: 560,
+                                color: c.ink,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ListenableBuilder(
+                              listenable: GestureSlots.instance,
+                              builder: (BuildContext context, Widget? _) => Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: <Widget>[
+                                  for (int g = 0; g < 4; g++)
+                                    GestureDetector(
+                                      key: Robot.key('gesture$g'),
                                       behavior: HitTestBehavior.opaque,
                                       onTap: () {
-                                        Haptics.tick();
                                         Navigator.of(context).pop();
+                                        _pickGesture(g);
                                       },
-                                      child: Container(
-                                        width: 44,
-                                        height: 44,
-                                        decoration: ShapeDecoration(
-                                          color: c.ink.withValues(alpha: 0.1),
-                                          shape: const CircleBorder(),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
                                         ),
-                                        child: Icon(
-                                          Icons.close_rounded,
-                                          size: 24,
-                                          color: c.ink,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              // Whose settings these are: the button in the middle, or the one at the side.
-                              Segmented<bool>(
-                                key: Robot.key('blobDesignFor'),
-                                values: const <bool>[false, true],
-                                labels: const <String>['Prism', 'Sidekick'],
-                                value: _designSide.value,
-                                onChanged: (bool v) => _designSide.value = v,
-                              ),
-                              const SizedBox(height: 16),
-                              // Where the Sidekick shows. (Prism is always in its place.)
-                              if (_designSide.value) ...<Widget>[
-                                SwitchLine(
-                                  key: Robot.key('floatIn'),
-                                  label: 'In this app',
-                                  value: b.floatIn.value,
-                                  onChanged: (bool v) =>
-                                      _setFloating(inPrism: v),
-                                ),
-                                const SizedBox(height: 12),
-                                SwitchLine(
-                                  key: Robot.key('floatOut'),
-                                  label: 'Over other apps',
-                                  value: b.floatOut.value,
-                                  onChanged: (bool v) =>
-                                      _setFloating(overApps: v),
-                                ),
-                                const SizedBox(height: 14),
-                                // Its two places at a side of the screen. Dragged, the panel
-                                // clears and the Sidekick goes to that place, to be seen.
-                                Text(
-                                  'Distance from the edge',
-                                  style: LumenType.text(
-                                    15,
-                                    weight: 560,
-                                    color: c.ink,
-                                  ),
-                                ),
-                                LumenSlider(
-                                  key: const ValueKey<String>('rest'),
-                                  value:
-                                      (b.sideGap - RestBubble.gapMin) /
-                                      (RestBubble.gapMax - RestBubble.gapMin),
-                                  onHold: (bool on) {
-                                    _spotHold('rest', on);
-                                    if (!on) {
-                                      b.setSpots(save: true);
-                                    }
-                                  },
-                                  onChanged: (double v) {
-                                    final double gap =
-                                        RestBubble.gapMin +
-                                        (RestBubble.gapMax -
-                                                RestBubble.gapMin) *
-                                            v;
-                                    if ((gap - b.sideGap).abs() > 0.05) {
-                                      b.setSpots(gap: gap, show: 'rest');
-                                    }
-                                  },
-                                ),
-                                Text(
-                                  'Tucked in, how much shows',
-                                  style: LumenType.text(
-                                    15,
-                                    weight: 560,
-                                    color: c.ink,
-                                  ),
-                                ),
-                                LumenSlider(
-                                  key: const ValueKey<String>('tuck'),
-                                  value:
-                                      (b.sideTuck - RestBubble.tuckMin) /
-                                      (RestBubble.tuckMax - RestBubble.tuckMin),
-                                  onHold: (bool on) {
-                                    _spotHold('tuck', on);
-                                    if (!on) {
-                                      b.setSpots(save: true);
-                                    }
-                                  },
-                                  onChanged: (double v) {
-                                    final double tuck =
-                                        RestBubble.tuckMin +
-                                        (RestBubble.tuckMax -
-                                                RestBubble.tuckMin) *
-                                            v;
-                                    if ((tuck - b.sideTuck).abs() > 0.05) {
-                                      b.setSpots(tuck: tuck, show: 'tuck');
-                                    }
-                                  },
-                                ),
-                                const SizedBox(height: 4),
-                              ],
-                              // Names under its blobs: each has its own choice.
-                              Text(
-                                'Labels',
-                                style: LumenType.text(
-                                  15,
-                                  weight: 560,
-                                  color: c.ink,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              // The glass two-way picker, as every two-way choice here.
-                              Segmented<bool>(
-                                key: Robot.key('names'),
-                                values: const <bool>[true, false],
-                                labels: const <String>['Show', 'Hide'],
-                                value: _designSide.value
-                                    ? BlobSlots.instance.sideNames
-                                    : BlobSlots.instance.names,
-                                onChanged: (bool v) {
-                                  if (_designSide.value) {
-                                    Haptics.tick();
-                                    Diag.instance.event(
-                                      v
-                                          ? 'Sidekick names on'
-                                          : 'Sidekick names off',
-                                    );
-                                    BlobSlots.instance.setNames(v, side: true);
-                                    RestBubble.instance.tellNames(v);
-                                  } else {
-                                    _setNames(v);
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 14),
-                              // The blobs' own choice; the app list has its own, behind its cog.
-                              Text(
-                                'Icons',
-                                style: LumenType.text(
-                                  15,
-                                  weight: 560,
-                                  color: c.ink,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Segmented<bool>(
-                                values: const <bool>[true, false],
-                                labels: const <String>['Prism', 'Regular'],
-                                value: Apps.instance.blobPrismIcons,
-                                onChanged: (bool v) =>
-                                    Apps.instance.setPrismIcons(v, blobs: true),
-                              ),
-                              const SizedBox(height: 16),
-                              // Prism's two-finger swipes: what each of the four does. A tap on one
-                              // asks what it should do.
-                              if (!_designSide.value) ...<Widget>[
-                                Text(
-                                  'Two-finger swipes',
-                                  style: LumenType.text(
-                                    15,
-                                    weight: 560,
-                                    color: c.ink,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                ListenableBuilder(
-                                  listenable: GestureSlots.instance,
-                                  builder: (BuildContext context, Widget? _) => Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: <Widget>[
-                                      for (int g = 0; g < 4; g++)
-                                        GestureDetector(
-                                          key: Robot.key('gesture$g'),
-                                          behavior: HitTestBehavior.opaque,
-                                          onTap: () {
-                                            Navigator.of(context).pop();
-                                            _pickGesture(g);
-                                          },
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                            ),
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: <Widget>[
-                                                SizedBox(
-                                                  width: 46,
-                                                  height: 46,
-                                                  // (Given nothing: a plus in a ring, in the panel's own ink.)
-                                                  child: _isEmpty(100 + g)
-                                                      ? DecoratedBox(
-                                                          decoration: ShapeDecoration(
+                                        child: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: <Widget>[
+                                            SizedBox(
+                                              width: 46,
+                                              height: 46,
+                                              // (Given nothing: a plus in a ring, in the panel's own ink.)
+                                              child: _isEmpty(100 + g)
+                                                  ? DecoratedBox(
+                                                      decoration:
+                                                          ShapeDecoration(
                                                             shape: CircleBorder(
                                                               side: BorderSide(
                                                                 color:
@@ -1090,206 +1113,31 @@ class _ShellState extends State<Shell>
                                                               ),
                                                             ),
                                                           ),
-                                                          child: Icon(
-                                                            Icons.add_rounded,
-                                                            size: 22,
-                                                            color: c.inkMuted,
-                                                          ),
-                                                        )
-                                                      : FittedBox(
-                                                          child: _blobDisc(
-                                                            100 + g,
-                                                          ),
-                                                        ),
-                                                ),
-                                                const SizedBox(height: 2),
-                                                // Two arrows: two fingers, and which way.
-                                                Icon(
-                                                  const <IconData>[
-                                                    Icons
-                                                        .keyboard_double_arrow_down_rounded,
-                                                    Icons
-                                                        .keyboard_double_arrow_up_rounded,
-                                                    Icons
-                                                        .keyboard_double_arrow_left_rounded,
-                                                    Icons
-                                                        .keyboard_double_arrow_right_rounded,
-                                                  ][g],
-                                                  size: 20,
-                                                  color: c.inkMuted,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 14),
-                              ],
-                              // Vivid: black glass and colours at full strength. Mellow: as before.
-                              Text(
-                                'Colours',
-                                style: LumenType.text(
-                                  15,
-                                  weight: 560,
-                                  color: c.ink,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Segmented<bool>(
-                                key: Robot.key('blobVivid'),
-                                values: const <bool>[false, true],
-                                labels: const <String>['Mellow', 'Vivid'],
-                                value: _designSide.value
-                                    ? Apps.instance.sideVivid
-                                    : Apps.instance.blobVivid,
-                                onChanged: (bool v) {
-                                  Apps.instance.setBlobVivid(
-                                    v,
-                                    side: _designSide.value,
-                                  );
-                                  RestBubble.instance.tellVivid(
-                                    Apps.instance.sideVivid,
-                                  );
-                                  Diag.instance.event(
-                                    '${_designSide.value ? 'side blob' : 'main button'} ${v ? 'vivid' : 'mellow'}',
-                                  );
-                                  setState(() {});
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              // The Blob's sign, on the button here and on the floating blob over other
-                              // apps: each look drawn as it will be, with these blobs' own colours.
-                              Text(
-                                'Look',
-                                style: LumenType.text(
-                                  15,
-                                  weight: 560,
-                                  color: c.ink,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Wrap(
-                                alignment: WrapAlignment.center,
-                                spacing: 10,
-                                runSpacing: 12,
-                                children: <Widget>[
-                                  for (final BlobLook look in BlobSign.looks)
-                                    GestureDetector(
-                                      key: Robot.key('blobLook-${look.id}'),
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: () {
-                                        Haptics.tick();
-                                        Apps.instance.setBlobLook(
-                                          look.id,
-                                          side: _designSide.value,
-                                        );
-                                        RestBubble.instance.tellLook(
-                                          Apps.instance.sideLook,
-                                        );
-                                        Diag.instance.event(
-                                          '${_designSide.value ? 'side blob' : 'main button'} look: ${look.name}',
-                                        );
-                                        // (A look that turns, or does not: the sign takes it up at once.)
-                                        _signSync();
-                                        setState(() {});
-                                      },
-                                      child: SizedBox(
-                                        width: 70,
-                                        child: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: <Widget>[
-                                            AnimatedContainer(
-                                              duration: const Duration(
-                                                milliseconds: 160,
-                                              ),
-                                              padding: const EdgeInsets.all(4),
-                                              decoration: ShapeDecoration(
-                                                shape: CircleBorder(
-                                                  side: BorderSide(
-                                                    width: 2.5,
-                                                    color: c.accent.withValues(
-                                                      alpha:
-                                                          BlobSign.of(
-                                                                _designSide
-                                                                        .value
-                                                                    ? Apps
-                                                                          .instance
-                                                                          .sideLook
-                                                                    : Apps
-                                                                          .instance
-                                                                          .blobLook,
-                                                              ) ==
-                                                              look
-                                                          ? 1
-                                                          : 0,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              child: SizedBox(
-                                                width: 56,
-                                                height: 56,
-                                                child: CustomPaint(
-                                                  painter: _LensDisc(c.accent),
-                                                  foregroundPainter:
-                                                      BlobSignPreview(
-                                                        look.id,
-                                                        <Color>[
-                                                          for (final (
-                                                                double,
-                                                                Color,
-                                                              )
-                                                              b
-                                                              in _fanBlobs)
-                                                            b.$2,
-                                                        ],
-                                                        vivid: _designSide.value
-                                                            ? Apps
-                                                                  .instance
-                                                                  .sideVivid
-                                                            : Apps
-                                                                  .instance
-                                                                  .blobVivid,
+                                                      child: Icon(
+                                                        Icons.add_rounded,
+                                                        size: 22,
+                                                        color: c.inkMuted,
                                                       ),
-                                                ),
-                                              ),
+                                                    )
+                                                  : FittedBox(
+                                                      child: _blobDisc(100 + g),
+                                                    ),
                                             ),
-                                            const SizedBox(height: 6),
-                                            Text(
-                                              look.name,
-                                              textAlign: TextAlign.center,
-                                              maxLines: 2,
-                                              style: LumenType.text(
-                                                12.5,
-                                                weight:
-                                                    BlobSign.of(
-                                                          _designSide.value
-                                                              ? Apps
-                                                                    .instance
-                                                                    .sideLook
-                                                              : Apps
-                                                                    .instance
-                                                                    .blobLook,
-                                                        ) ==
-                                                        look
-                                                    ? 650
-                                                    : 500,
-                                                color:
-                                                    BlobSign.of(
-                                                          _designSide.value
-                                                              ? Apps
-                                                                    .instance
-                                                                    .sideLook
-                                                              : Apps
-                                                                    .instance
-                                                                    .blobLook,
-                                                        ) ==
-                                                        look
-                                                    ? c.ink
-                                                    : c.inkMuted,
-                                              ),
+                                            const SizedBox(height: 2),
+                                            // Two arrows: two fingers, and which way.
+                                            Icon(
+                                              const <IconData>[
+                                                Icons
+                                                    .keyboard_double_arrow_down_rounded,
+                                                Icons
+                                                    .keyboard_double_arrow_up_rounded,
+                                                Icons
+                                                    .keyboard_double_arrow_left_rounded,
+                                                Icons
+                                                    .keyboard_double_arrow_right_rounded,
+                                              ][g],
+                                              size: 20,
+                                              color: c.inkMuted,
                                             ),
                                           ],
                                         ),
@@ -1297,20 +1145,188 @@ class _ShellState extends State<Shell>
                                     ),
                                 ],
                               ),
-                            ]),
+                            ),
+                            const SizedBox(height: 14),
+                          ],
+                          // Vivid: black glass and colours at full strength. Mellow: as before.
+                          Text(
+                            'Colours',
+                            style: LumenType.text(
+                              15,
+                              weight: 560,
+                              color: c.ink,
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          Segmented<bool>(
+                            key: Robot.key('blobVivid'),
+                            values: const <bool>[false, true],
+                            labels: const <String>['Mellow', 'Vivid'],
+                            value: _designSide.value
+                                ? Apps.instance.sideVivid
+                                : Apps.instance.blobVivid,
+                            onChanged: (bool v) {
+                              Apps.instance.setBlobVivid(
+                                v,
+                                side: _designSide.value,
+                              );
+                              RestBubble.instance.tellVivid(
+                                Apps.instance.sideVivid,
+                              );
+                              Diag.instance.event(
+                                '${_designSide.value ? 'side blob' : 'main button'} ${v ? 'vivid' : 'mellow'}',
+                              );
+                              setState(() {});
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          // The Blob's sign, on the button here and on the floating blob over other
+                          // apps: each look drawn as it will be, with these blobs' own colours.
+                          Text(
+                            'Look',
+                            style: LumenType.text(
+                              15,
+                              weight: 560,
+                              color: c.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 10,
+                            runSpacing: 12,
+                            children: <Widget>[
+                              for (final BlobLook look in BlobSign.looks)
+                                GestureDetector(
+                                  key: Robot.key('blobLook-${look.id}'),
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () {
+                                    Haptics.tick();
+                                    Apps.instance.setBlobLook(
+                                      look.id,
+                                      side: _designSide.value,
+                                    );
+                                    RestBubble.instance.tellLook(
+                                      Apps.instance.sideLook,
+                                    );
+                                    Diag.instance.event(
+                                      '${_designSide.value ? 'side blob' : 'main button'} look: ${look.name}',
+                                    );
+                                    // (A look that turns, or does not: the sign takes it up at once.)
+                                    _signSync();
+                                    setState(() {});
+                                  },
+                                  child: SizedBox(
+                                    width: 70,
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        AnimatedContainer(
+                                          duration: const Duration(
+                                            milliseconds: 160,
+                                          ),
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: ShapeDecoration(
+                                            shape: CircleBorder(
+                                              side: BorderSide(
+                                                width: 2.5,
+                                                color: c.accent.withValues(
+                                                  alpha:
+                                                      BlobSign.of(
+                                                            _designSide.value
+                                                                ? Apps
+                                                                      .instance
+                                                                      .sideLook
+                                                                : Apps
+                                                                      .instance
+                                                                      .blobLook,
+                                                          ) ==
+                                                          look
+                                                      ? 1
+                                                      : 0,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          child: SizedBox(
+                                            width: 56,
+                                            height: 56,
+                                            child: CustomPaint(
+                                              painter: _LensDisc(c.accent),
+                                              foregroundPainter:
+                                                  BlobSignPreview(
+                                                    look.id,
+                                                    <Color>[
+                                                      for (final (double, Color)
+                                                          b
+                                                          in _fanBlobs)
+                                                        b.$2,
+                                                    ],
+                                                    vivid: _designSide.value
+                                                        ? Apps
+                                                              .instance
+                                                              .sideVivid
+                                                        : Apps
+                                                              .instance
+                                                              .blobVivid,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          look.name,
+                                          textAlign: TextAlign.center,
+                                          maxLines: 2,
+                                          style: LumenType.text(
+                                            12.5,
+                                            weight:
+                                                BlobSign.of(
+                                                      _designSide.value
+                                                          ? Apps
+                                                                .instance
+                                                                .sideLook
+                                                          : Apps
+                                                                .instance
+                                                                .blobLook,
+                                                    ) ==
+                                                    look
+                                                ? 650
+                                                : 500,
+                                            color:
+                                                BlobSign.of(
+                                                      _designSide.value
+                                                          ? Apps
+                                                                .instance
+                                                                .sideLook
+                                                          : Apps
+                                                                .instance
+                                                                .blobLook,
+                                                    ) ==
+                                                    look
+                                                ? c.ink
+                                                : c.inkMuted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ]),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         );
       },
     ).whenComplete(() {
       _panelOpen = false;
+      _closePanel = null;
       _designSide.removeListener(_sideInSight);
       if (mounted) {
         _signSync();
@@ -1326,16 +1342,20 @@ class _ShellState extends State<Shell>
   }
 
   /// The panel's parts, each fading away while a slider is held, all but that slider.
+  /// (Every part keeps its place in the panel, the held slider too: taken out of its
+  /// wrapping, it was made anew under the finger and the drag was lost at once.)
   List<Widget> _clearBut(List<Widget> parts) => <Widget>[
     for (final Widget w in parts)
-      w.key is ValueKey<String> &&
-              (w.key! as ValueKey<String>).value == _panelClear.value
-          ? w
-          : AnimatedOpacity(
-              opacity: _panelClear.value == null ? 1 : 0,
-              duration: const Duration(milliseconds: 160),
-              child: w,
-            ),
+      AnimatedOpacity(
+        opacity:
+            _panelClear.value == null ||
+                (w.key is ValueKey<String> &&
+                    (w.key! as ValueKey<String>).value == _panelClear.value)
+            ? 1
+            : 0,
+        duration: const Duration(milliseconds: 160),
+        child: w,
+      ),
   ];
 
   void _setFloating({bool? inPrism, bool? overApps}) {
@@ -4287,6 +4307,67 @@ class _ShellState extends State<Shell>
         }
         clean('after the blobs');
 
+        // ------------------------------------------------ the empty space round the blobs
+        await Robot.tap(_home, after: 900);
+        await Robot.hold(beside, ms: _holdMs + 260, after: 700);
+        t.check(
+          'space: held, its menu comes up with Edit Prism, and no Add Blob while there are five',
+          _spaceAt != null &&
+              Robot.spot('spaceEdit') != null &&
+              Robot.spot('spaceAdd') == null,
+        );
+        await Robot.tap(beside + const Offset(0, 120), after: 600);
+        t.check(
+          'space: a tap beside its menu puts it away, the blobs stay',
+          _spaceAt == null && _open,
+        );
+        BlobSlots.instance.putAll(<String>[
+          ...five.take(3),
+          'empty:',
+          'empty:',
+        ]);
+        await Robot.wait(700);
+        await Robot.hold(beside, ms: _holdMs + 260, after: 700);
+        final Offset? spaceAdd = Robot.spot('spaceAdd');
+        t.check('space: with room, Add Blob is there', spaceAdd != null);
+        if (spaceAdd != null) {
+          await Robot.tap(spaceAdd, after: 1300);
+        }
+        t.check(
+          'space: Add Blob opens the list for the first free place, at the right of the others',
+          _drawerOpen && _editSlot == 3,
+          'list $_drawerOpen, place $_editSlot',
+        );
+        final Offset? pickAdd = Robot.spot('choice0');
+        if (pickAdd != null) {
+          await Robot.tap(pickAdd, after: 1700);
+        }
+        t.check(
+          'space: what was chosen stands at the right of the others',
+          shown() == 4 && _pinKey(3) == 'action:0' && packed(),
+          keys().join(' '),
+        );
+        if (_drawerOpen) {
+          _setDrawer(false);
+          await Robot.wait(800);
+        }
+        BlobSlots.instance.putAll(five);
+        await Robot.wait(600);
+        if (!_open) {
+          await Robot.tap(_home, after: 900);
+        }
+        await Robot.hold(beside, ms: _holdMs + 260, after: 700);
+        final Offset? spaceEdit = Robot.spot('spaceEdit');
+        if (spaceEdit != null) {
+          await Robot.tap(spaceEdit, after: 1100);
+        }
+        t.check(
+          'space: Edit Prism opens Prism\'s settings, and the blobs go in',
+          _panelOpen && !_designSide.value && !_open,
+        );
+        await closePanel();
+        clean('after the empty space\'s menu');
+
         // ------------------------------------------------ the settings' own parts
         say('4 of 6, the settings');
         await holdButton();
@@ -5787,6 +5868,7 @@ class _ShellState extends State<Shell>
     setState(() {
       _open = v;
       _menuFor = null;
+      _spaceAt = null;
       // No blob is left picked up, or on its way back, from the last time.
       _dragI = null;
       _backI = null;
@@ -6416,17 +6498,34 @@ class _ShellState extends State<Shell>
                   listenable: _t,
                   builder: (BuildContext context, Widget? _) => IgnorePointer(
                     ignoring: !_open,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      // A tap beside the blobs closes them. While they are being changed it ends
-                      // the changing first, and they stay out.
-                      onTap: () =>
-                          _editing ? _setEditing(false) : _setOpen(false),
-                      child: ColoredBox(
-                        color: Colors.black.withValues(
-                          alpha: 0.5 * _t.value.clamp(0.0, 1.0),
+                    // Held still on the empty space: its small menu (Edit Prism, Add Blob).
+                    child: RawGestureDetector(
+                      gestures: <Type, GestureRecognizerFactory>{
+                        LongPressGestureRecognizer:
+                            GestureRecognizerFactoryWithHandlers<
+                              LongPressGestureRecognizer
+                            >(
+                              () => LongPressGestureRecognizer(
+                                duration: Duration(milliseconds: _holdMs),
+                              ),
+                              (LongPressGestureRecognizer r) => r
+                                ..onLongPressStart = (
+                                  LongPressStartDetails d,
+                                ) => _heldSpace(d.globalPosition),
+                            ),
+                      },
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        // A tap beside the blobs closes them. While they are being changed it ends
+                        // the changing first, and they stay out.
+                        onTap: () =>
+                            _editing ? _setEditing(false) : _setOpen(false),
+                        child: ColoredBox(
+                          color: Colors.black.withValues(
+                            alpha: 0.5 * _t.value.clamp(0.0, 1.0),
+                          ),
+                          child: const SizedBox.expand(),
                         ),
-                        child: const SizedBox.expand(),
                       ),
                     ),
                   ),
@@ -6812,6 +6911,51 @@ class _ShellState extends State<Shell>
                       );
                     },
                   ),
+                // The empty space held: its small menu, above the finger.
+                if (_spaceAt != null && _open) ...<Widget>[
+                  Positioned.fill(
+                    child: GestureDetector(
+                      key: Robot.key('spaceAway'),
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _spaceAway,
+                    ),
+                  ),
+                  Builder(
+                    builder: (BuildContext context) {
+                      final int parts = 1 + (_room ? 1 : 0);
+                      final double width = 30.0 + parts * 118;
+                      return Positioned(
+                        left: (_spaceAt!.dx - width / 2).clamp(
+                          10.0,
+                          screen.width - width - 10,
+                        ),
+                        top: (_spaceAt!.dy - 82).clamp(
+                          safe.top + 10,
+                          screen.height,
+                        ),
+                        width: width,
+                        height: 50,
+                        child: _PillMenu(
+                          items: <(String, Color, VoidCallback, String)>[
+                            (
+                              'Edit Prism',
+                              Colors.white,
+                              _spaceEdit,
+                              'spaceEdit',
+                            ),
+                            if (_room)
+                              (
+                                'Add Blob',
+                                const Color(0xFF4CD48A),
+                                _spaceAdd,
+                                'spaceAdd',
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
                 // A held blob's small menu: Change and Remove, beside it. A tap anywhere else
                 // puts it away and leaves the blobs out.
                 if (_menuFor != null && _open) ...<Widget>[
@@ -9487,6 +9631,236 @@ class _BlobMenu extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A small dark-glass menu of a few words in a row, as a held blob's: each a tap.
+class _PillMenu extends StatelessWidget {
+  const _PillMenu({required this.items});
+
+  final List<(String, Color, VoidCallback, String)> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
+      builder: (BuildContext context, double t, Widget? child) => Opacity(
+        opacity: t,
+        child: Transform.scale(
+          scale: 0.9 + 0.1 * t,
+          alignment: Alignment.bottomCenter,
+          child: child,
+        ),
+      ),
+      child: DecoratedBox(
+        decoration: ShapeDecoration(
+          color: const Color(0xF2202228),
+          shape: StadiumBorder(
+            side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+          ),
+          shadows: const <BoxShadow>[
+            BoxShadow(
+              color: Color(0x66000000),
+              blurRadius: 16,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: <Widget>[
+            for (int k = 0; k < items.length; k++) ...<Widget>[
+              if (k > 0)
+                Container(
+                  width: 1,
+                  height: 22,
+                  color: Colors.white.withValues(alpha: 0.16),
+                ),
+              Expanded(
+                child: GestureDetector(
+                  key: Robot.key(items[k].$4),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    Haptics.tick();
+                    items[k].$3();
+                  },
+                  child: Center(
+                    child: Text(
+                      items[k].$1,
+                      textScaler: TextScaler.noScaling,
+                      style: LumenType.text(
+                        15.5,
+                        weight: 650,
+                        color: items[k].$2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A panel that grows out of the button and goes back into it exactly as the app list does:
+/// its rectangle goes from the button's circle to its own, on the same spring (quick, with a
+/// hint of give) and back on the same quick one, its contents fading in and out at the same
+/// points. A tap beside it, on the button included, and back close it the same way.
+class _SpringPanel extends StatefulWidget {
+  const _SpringPanel({
+    required this.from,
+    required this.button,
+    required this.above,
+    required this.clear,
+    required this.onReady,
+    required this.child,
+  });
+
+  final Offset from;
+  final double button, above;
+
+  /// While a slider in it is held the shade goes, as the panel does.
+  final ValueNotifier<String?> clear;
+  final void Function(VoidCallback close) onReady;
+  final Widget child;
+
+  @override
+  State<_SpringPanel> createState() => _SpringPanelState();
+}
+
+class _SpringPanelState extends State<_SpringPanel>
+    with TickerProviderStateMixin {
+  late final SpringValue _g = SpringValue(
+    this,
+    value: 0,
+    spring: Motions.snappy,
+  );
+  final GlobalKey _box = GlobalKey();
+  Rect? _end;
+  bool _closing = false, _gone = false;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.onReady(_close);
+    _g
+      ..addListener(_moved)
+      ..animateTo(1, spring: Motions.snappy);
+  }
+
+  /// Where the panel is when fully open, read after each layout: it changes size with what is in it.
+  void _measure(Duration _) {
+    if (!mounted) {
+      return;
+    }
+    final RenderObject? o = _box.currentContext?.findRenderObject();
+    if (o is RenderBox && o.hasSize) {
+      final Rect r = o.localToGlobal(Offset.zero) & o.size;
+      if (r != _end) {
+        setState(() => _end = r);
+      }
+    }
+  }
+
+  void _close() {
+    if (_closing || _gone) {
+      return;
+    }
+    _closing = true;
+    _g.animateTo(0, spring: Motions.spatialFast);
+  }
+
+  void _moved() {
+    if (_closing && !_gone && _g.value <= 0.004 && mounted) {
+      _gone = true;
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _g.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback(_measure);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? _) {
+        if (!didPop) {
+          _close();
+        }
+      },
+      child: Stack(
+        children: <Widget>[
+          // A tap anywhere beside it, the button too, closes it.
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _close,
+            ),
+          ),
+          // The shade, above the bar only: the button stays in sight.
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: widget.above,
+            child: IgnorePointer(
+              child: ListenableBuilder(
+                listenable: Listenable.merge(<Listenable>[_g, widget.clear]),
+                builder: (BuildContext context, Widget? _) => ColoredBox(
+                  color: Colors.black.withValues(
+                    alpha: widget.clear.value == null
+                        ? 0.4 * _g.value.clamp(0.0, 1.0)
+                        : 0,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          ListenableBuilder(
+            listenable: _g,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: KeyedSubtree(key: _box, child: widget.child),
+            ),
+            builder: (BuildContext context, Widget? child) {
+              final double g = _g.value;
+              final Rect? end = _end;
+              if (end == null || end.isEmpty) {
+                return Opacity(opacity: 0, child: child);
+              }
+              final Rect start = Rect.fromCircle(
+                center: widget.from,
+                radius: widget.button / 2,
+              );
+              final Rect r = Rect.lerp(start, end, g)!;
+              final Matrix4 m = Matrix4.identity()
+                ..translateByDouble(r.left, r.top, 0, 1)
+                ..scaleByDouble(
+                  r.width / end.width,
+                  r.height / end.height,
+                  1,
+                  1,
+                )
+                ..translateByDouble(-end.left, -end.top, 0, 1);
+              return Opacity(
+                // (The contents come in and go at the same points as the app list's.)
+                opacity: ((g - 0.05) / 0.25).clamp(0.0, 1.0),
+                child: Transform(transform: m, child: child),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

@@ -3129,9 +3129,9 @@ class Floater(val timer: Boolean) {
 
         /** Where one part of the held blob's small menu is: 0 Change, 1 Remove, 2 Add. */
         fun testPopSpot(which: Int): FloatArray? {
-            if (menuFor < 0) return null
+            if (menuFor == -1) return null
             popAt(menuFor)
-            val parts = if (room()) 3 else 2
+            val parts = labels().size
             if (which >= parts) return null
             val w = popBox.width() / parts
             return floatArrayOf(popBox.left + w * (which + 0.5f), popBox.centerY())
@@ -3319,16 +3319,41 @@ class Floater(val timer: Boolean) {
         // Room for one more blob: the menu then has Add too.
         private fun room() = items.count { it.kind != "empty" } < 5
 
+        // Held on the empty space round the blobs: where, for its small menu (menuFor is -2 then).
+        private var spaceX = 0f
+        private var spaceY = 0f
+        private val spaceHold = Runnable {
+            if (!moved && opening && menuFor == -1 && flying < 0) {
+                kept = true
+                menuFor = -2
+                spaceX = downX
+                spaceY = downY
+                haptic(context, "click")
+                invalidate()
+            }
+        }
+
+        /** The words of the small menu that is up: a blob's, or the empty space's. */
+        private fun labels(): List<Pair<String, Int>> =
+            if (menuFor == -2) {
+                listOf("Edit Sidekick" to WHITE) + (if (room()) listOf("Add Blob" to 0xFF4CD48A.toInt()) else emptyList())
+            } else {
+                listOf("Change" to WHITE, "Remove" to 0xFFFF6B6F.toInt()) + (if (room()) listOf("Add" to 0xFF4CD48A.toInt()) else emptyList())
+            }
+
         private fun popAt(i: Int) {
-            val w = (if (room()) 300 else 204) * dp
+            val space = i == -2
+            val parts = labels().size
+            val w = (if (space) parts * 140 + 10 else if (room()) 300 else 204) * dp
             val h = 46 * dp
-            val x = restX[i].coerceIn(w / 2 + 8 * dp, Math.max(w / 2 + 8 * dp, width - w / 2 - 8 * dp))
-            val top = Math.max(8 * dp, restY[i] - 31 * dp - 14 * dp - h)
+            val cx0 = if (space) spaceX else restX[i]
+            val x = cx0.coerceIn(w / 2 + 8 * dp, Math.max(w / 2 + 8 * dp, width - w / 2 - 8 * dp))
+            val top = Math.max(8 * dp, if (space) spaceY - 82 * dp else restY[i] - 31 * dp - 14 * dp - h)
             popBox.set(x - w / 2, top, x + w / 2, top + h)
         }
 
         private fun paintPop(canvas: android.graphics.Canvas) {
-            if (menuFor < 0 || menuFor >= n) return
+            if (menuFor == -1 || menuFor >= n) return
             popAt(menuFor)
             pop.shader = null
             pop.style = android.graphics.Paint.Style.FILL
@@ -3339,7 +3364,8 @@ class Floater(val timer: Boolean) {
             pop.color = 0x24FFFFFF
             canvas.drawRoundRect(popBox, popBox.height() / 2, popBox.height() / 2, pop)
             pop.color = 0x29FFFFFF
-            val parts = if (room()) 3 else 2
+            val words = labels()
+            val parts = words.size
             val w = popBox.width() / parts
             for (k in 1 until parts) {
                 val x = popBox.left + w * k
@@ -3350,13 +3376,9 @@ class Floater(val timer: Boolean) {
             pop.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
             pop.textSize = 15.5f * dp
             val base = popBox.centerY() - (pop.descent() + pop.ascent()) / 2f
-            pop.color = WHITE
-            canvas.drawText("Change", popBox.left + w / 2, base, pop)
-            pop.color = 0xFFFF6B6F.toInt()
-            canvas.drawText("Remove", popBox.left + w * 1.5f, base, pop)
-            if (parts == 3) {
-                pop.color = 0xFF4CD48A.toInt()
-                canvas.drawText("Add", popBox.left + w * 2.5f, base, pop)
+            for (k in 0 until parts) {
+                pop.color = words[k].second
+                canvas.drawText(words[k].first, popBox.left + w * (k + 0.5f), base, pop)
             }
         }
 
@@ -3377,10 +3399,10 @@ class Floater(val timer: Boolean) {
                     kept = false
                     moved = false
                     dragging = -1
-                    if (menuFor >= 0) {
-                        // A blob's small menu is up: this finger is for it, or puts it away.
+                    if (menuFor != -1) {
+                        // A small menu is up: this finger is for it, or puts it away.
                         popAt(menuFor)
-                        val parts = if (room()) 3 else 2
+                        val parts = labels().size
                         popHit = if (!popBox.contains(e.x, e.y)) 9 else ((e.x - popBox.left) / (popBox.width() / parts)).toInt().coerceIn(0, parts - 1)
                         pressedAt = -1
                         return true
@@ -3390,6 +3412,8 @@ class Floater(val timer: Boolean) {
                     if (pressedAt >= 0) postDelayed(keep, holdTime())
                     // Held on the Sidekick itself, in the middle of its blobs: its settings.
                     else if (guest && Math.hypot((e.x - cx).toDouble(), (e.y - cy).toDouble()) < lensR + 6 * dp) postDelayed(lensHold, holdTime())
+                    // Held on the empty space round them: Edit Sidekick | Add Blob.
+                    else if (guest) postDelayed(spaceHold, holdTime())
                     invalidate()
                 }
                 android.view.MotionEvent.ACTION_MOVE -> {
@@ -3398,6 +3422,7 @@ class Floater(val timer: Boolean) {
                         moved = true
                         removeCallbacks(keep)
                     removeCallbacks(lensHold)
+                    removeCallbacks(spaceHold)
                         // (Held and then moved on: the small menu goes, and the blob comes along.)
                         if (popHit < 0) menuFor = -1
                         if (pressedAt >= 0 && popHit < 0 && items[pressedAt].kind != "empty") {
@@ -3428,13 +3453,23 @@ class Floater(val timer: Boolean) {
                 android.view.MotionEvent.ACTION_UP -> {
                     removeCallbacks(keep)
                     removeCallbacks(lensHold)
+                    removeCallbacks(spaceHold)
                     if (popHit >= 0) {
                         // Let go on the small menu, or beside it.
                         val which = popHit
                         val of = menuFor
                         popHit = -1
                         menuFor = -1
-                        if (of >= 0 && !moved && which == 0) change(of)
+                        if (of == -2 && !moved && which == 0) {
+                            // "Edit Sidekick": its settings.
+                            val c = context
+                            close()
+                            sideSettings(c)
+                        } else if (of == -2 && !moved && which == 1) {
+                            // "Add Blob": a new one at the end, after the last there is.
+                            val last = items.indexOfLast { it.kind != "empty" }
+                            if (last >= 0) change(last, true) else change(0)
+                        } else if (of >= 0 && !moved && which == 0) change(of)
                         else if (of >= 0 && !moved && which == 1) remove(of)
                         else if (of >= 0 && !moved && which == 2) change(of, true)
                         invalidate()
@@ -3471,6 +3506,7 @@ class Floater(val timer: Boolean) {
                 android.view.MotionEvent.ACTION_CANCEL -> {
                     removeCallbacks(keep)
                     removeCallbacks(lensHold)
+                    removeCallbacks(spaceHold)
                     pressedAt = -1
                     dragging = -1
                     popHit = -1
