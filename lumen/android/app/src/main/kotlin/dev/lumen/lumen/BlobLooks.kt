@@ -77,6 +77,13 @@ object BlobLooks {
         // (Not under a triangle: the triangle is the blob, and a disc behind it would be a second shape.)
         if (vivid && id != "triangle" && id != "window") black(canvas, r, paint)
         vividNow = vivid
+        if (id == "triangle" || id == "window" || looks[id] == null) {
+            // Centred by where its corners are on the screen, whichever way it points, as in Prism.
+            val sz = r * 0.94f
+            val xs = floatArrayOf((-cos(a) * sz).toFloat(), (cos(a + Math.PI / 3) * sz).toFloat(), (cos(a - Math.PI / 3) * sz).toFloat())
+            val ys = floatArrayOf((-sin(a) * sz).toFloat(), (sin(a + Math.PI / 3) * sz).toFloat(), (sin(a - Math.PI / 3) * sz).toFloat())
+            canvas.translate(-(xs.min() + xs.max()) / 2f * 0.75f, -(ys.min() + ys.max()) / 2f * 0.75f)
+        }
         look.draw(canvas, r, cs, a, paint)
         vividNow = false
         canvas.restore()

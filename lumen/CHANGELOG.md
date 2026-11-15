@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 161 (15 November 2026)
+
+**File:** `releases/prism-build-161.apk`
+
+Needs Play Protect paused to install. Can be installed over build 160.
+
+**The triangle is centred in the glass, whichever way it points.**
+
+- **What was wrong:** with the blobs out, the triangle turns 60°, and a triangle turned 60° looks exactly like one turned 180°, pointing up. But the small nudge that keeps it off the rim was worked out from how far it had turned, not from how it looks. At 60° that pushed it up and to the right; in your recordings it sat about 9 points high and 3 to the right. In the app list (180°) the nudge was right, which is the only state I had checked.
+- **Now:** the nudge is worked out from where its three corners actually are on screen, so it is the same at rest, with the blobs out and with the app list open, and it moves smoothly while it turns. Its middle as the eye sees it sits in the middle of the glass: most of the way from its own centre to the middle of its outline.
+- **The Sidekick** gets the same centring for Triangle and Window. Before, it had no nudge at all.
+
+**Checked:** it compiles, both sides; in my preview, the button at rest, with the blobs out and with the app list open: the triangle sits in the same place in all three. The automatic test: 61 of 66, the usual 4 misses and one more, "a slower flick up is still the app list". That one depends on timing in my slow preview and has missed now and then before (build 154). This build changes only how the triangle is drawn, nothing a finger does.
+**Not checked:** on a phone, and the Sidekick's triangle (Android only).
+
 ## Prism, build 160 (15 November 2026)
 
 **File:** `releases/prism-build-160.apk`

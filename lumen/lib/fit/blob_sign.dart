@@ -78,10 +78,33 @@ abstract final class BlobSign {
   /// it is drawn lifted away from its tip, so that it sits in the middle to the eye, and a
   /// little larger. [k] is how much (1 the triangle, 0 the cog it becomes).
   static void _settleTriangle(Canvas c, double r, double angle, double k) {
-    final Offset lift = Offset(math.cos(angle), math.sin(angle)) * r * 0.12 * k;
+    // Centred by where its corners are on the screen, whichever way it points: its middle
+    // as the eye sees it, most of the way from its own centre to the middle of its outline.
+    // (It was moved along the way it pointed, which is not the way it looks: turned 60°
+    // it looks just as it does turned 180°, and was pushed up and to the side.)
+    final Offset lift = triangleNudge(r, angle) * k;
     c
       ..translate(lift.dx, lift.dy)
       ..scale(1 + 0.06 * k);
+  }
+
+  /// How far a triangle look is moved from the middle, for it to look centred: the same on
+  /// Android (BlobLooks.kt).
+  static Offset triangleNudge(double r, double angle) {
+    final double s = r * 0.94;
+    final List<Offset> p = <Offset>[
+      -Offset(math.cos(angle), math.sin(angle)) * s,
+      Offset(math.cos(angle + math.pi / 3), math.sin(angle + math.pi / 3)) * s,
+      Offset(math.cos(angle - math.pi / 3), math.sin(angle - math.pi / 3)) * s,
+    ];
+    double lx = p[0].dx, hx = lx, ly = p[0].dy, hy = ly;
+    for (final Offset q in p) {
+      lx = math.min(lx, q.dx);
+      hx = math.max(hx, q.dx);
+      ly = math.min(ly, q.dy);
+      hy = math.max(hy, q.dy);
+    }
+    return -Offset((lx + hx) / 2, (ly + hy) / 2) * 1.06 * 0.75;
   }
 
   /// Where a phone starts, with nothing chosen yet: the glass and the coloured triangle are the
