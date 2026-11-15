@@ -169,6 +169,21 @@ class _ShellState extends State<Shell>
     }
   }
 
+  /// What the button's sign is drawn from: the blobs, or with none in the menu the light's own
+  /// colours, so that the button keeps its look and never goes bare.
+  List<(double, Color)> get _signBlobs {
+    final List<(double, Color)> own = _fanBlobs;
+    return own.isNotEmpty
+        ? own
+        : const <(double, Color)>[
+            (0, Color(0xFFF2334B)),
+            (0, Color(0xFFFFD21F)),
+            (0, Color(0xFF34C94A)),
+            (0, Color(0xFF1F7BF2)),
+            (0, Color(0xFF8A3FF0)),
+          ];
+  }
+
   /// The blobs that would come out of the button, for its sign: where each sits and its colour.
   List<(double, Color)> get _fanBlobs => <(double, Color)>[
     for (int i = 0; i < _n; i++)
@@ -1259,7 +1274,7 @@ class _ShellState extends State<Shell>
                                                     <Color>[
                                                       for (final (double, Color)
                                                           b
-                                                          in _fanBlobs)
+                                                          in _signBlobs)
                                                         b.$2,
                                                     ],
                                                     vivid: _designSide.value
@@ -7342,7 +7357,7 @@ class _ShellState extends State<Shell>
                                       child: CustomPaint(
                                         size: const Size(38, 38),
                                         painter: _ButtonSign(
-                                          blobs: _fanBlobs,
+                                          blobs: _signBlobs,
                                           turn: _signTurn.value,
                                           vivid: Apps.instance.blobVivid,
                                           glass: false,
@@ -7392,7 +7407,7 @@ class _ShellState extends State<Shell>
                                                 child: CustomPaint(
                                                   size: const Size(38, 38),
                                                   painter: _ButtonSign(
-                                                    blobs: _fanBlobs,
+                                                    blobs: _signBlobs,
                                                     turn: _signTurn.value,
                                                     shot: _signShot.value,
                                                     vivid:

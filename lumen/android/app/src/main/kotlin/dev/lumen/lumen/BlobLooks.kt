@@ -45,7 +45,9 @@ object BlobLooks {
      * blobs' colours at full strength.
      */
     fun paint(id: String, canvas: Canvas, cx: Float, cy: Float, r: Float, a: Double, colours: IntArray, paint: Paint, vivid: Boolean = false) {
-        if (colours.isEmpty()) return
+        // (With nothing in the menu it keeps its look, in the light's own colours: never bare glass.)
+        @Suppress("NAME_SHADOWING")
+        val colours = if (colours.isEmpty()) intArrayOf(0xFFF2334B.toInt(), 0xFFFFD21F.toInt(), 0xFF34C94A.toInt(), 0xFF1F7BF2.toInt(), 0xFF8A3FF0.toInt()) else colours
         // (Nothing chosen, or a look no longer known: Window, as in Prism.)
         val look = looks[id] ?: looks.getValue("window")
         var cs = IntArray(minOf(colours.size, 5)) { colours[it] or 0xFF000000.toInt() }

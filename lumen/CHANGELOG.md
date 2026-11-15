@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 169 (15 November 2026)
+
+**File:** `releases/prism-build-169.apk`
+
+Needs Play Protect paused to install. Can be installed over build 168.
+
+- **An empty menu no longer strips the button.** With every blob removed, Prism's button fell back to a bare "+" and the Sidekick drew nothing at all (dark glass), because both take their colours from the blobs. With nothing in the menu they now keep their chosen look, drawn in the light's own colours. The "+" to add a blob is still there when the blobs are opened.
+
+**Checked:** it compiles, both sides; in my preview, Prism's button with an empty menu.
+**Not checked:** on a phone; the Sidekick with an empty menu (Android only). The automatic tests were not run again: this changes only what colours the sign is drawn with.
+
 ## Prism, build 168 (15 November 2026)
 
 **File:** `releases/prism-build-168.apk`
