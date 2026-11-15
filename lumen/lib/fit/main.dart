@@ -204,6 +204,34 @@ class PrismApp extends StatelessWidget {
                                                 ),
                                               ),
                                       ),
+                                      // The button test's text field, for its keyboard measurement.
+                                      ValueListenableBuilder<bool>(
+                                        valueListenable:
+                                            Diag.instance.typingShown,
+                                        builder:
+                                            (
+                                              BuildContext context,
+                                              bool shown,
+                                              Widget? _,
+                                            ) => !shown
+                                            ? const SizedBox.shrink()
+                                            : SizedBox(
+                                                width: 200,
+                                                child: Material(
+                                                  type:
+                                                      MaterialType.transparency,
+                                                  child: TextField(
+                                                    focusNode:
+                                                        Diag.instance.typing,
+                                                    style: const TextStyle(
+                                                      fontFamily: 'Inter',
+                                                      fontSize: 12,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                      ),
                                       // The leak test's text that changes weight (see Diag.probe).
                                       ValueListenableBuilder<(double, bool)?>(
                                         valueListenable: Diag.instance.probe,

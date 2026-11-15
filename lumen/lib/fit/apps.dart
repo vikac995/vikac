@@ -713,19 +713,12 @@ class BlobSlots extends ChangeNotifier {
 
   File get _namesFile => File('${_file.parent.path}/prism_blob_names');
 
-  /// The same for the Sidekick's blobs: its own choice.
-  bool sideNames = true;
+  // (The Sidekick's own Labels are Android's from build 176: see RestBubble.sideNames.)
 
-  File get _sideNamesFile => File('${_file.parent.path}/prism_blob_names_side');
-
-  void setNames(bool v, {bool side = false}) {
-    if (side) {
-      sideNames = v;
-    } else {
-      names = v;
-    }
+  void setNames(bool v) {
+    names = v;
     try {
-      (side ? _sideNamesFile : _namesFile).writeAsStringSync(v ? '1' : '0');
+      _namesFile.writeAsStringSync(v ? '1' : '0');
     } catch (_) {
       // Not saved: the names are back next time.
     }
@@ -754,12 +747,6 @@ class BlobSlots extends ChangeNotifier {
       names = _namesFile.readAsStringSync().trim() != '0';
     } catch (_) {
       // Never switched off.
-    }
-    try {
-      sideNames = _sideNamesFile.readAsStringSync().trim() != '0';
-    } catch (_) {
-      // Never chosen for the Sidekick: as Prism's are.
-      sideNames = names;
     }
   }
 
@@ -861,39 +848,24 @@ class Apps extends ChangeNotifier {
   /// The Blob's sign vivid (black glass, colours at full strength) or mellow.
   bool blobVivid = false;
   File get _vividFile => File('${_iconsFile.parent.path}/prism_blob_vivid');
-  // The side Blob's own look and colours, where they have been chosen for it. Until then
-  // (null) it wears what the main button wears.
-  String? _sideLook;
-  bool? _sideVivid;
-  String get sideLook => _sideLook ?? blobLook;
-  bool get sideVivid => _sideVivid ?? blobVivid;
-  File get _sideLookFile => File('${_iconsFile.parent.path}/prism_side_look');
-  File get _sideVividFile => File('${_iconsFile.parent.path}/prism_side_vivid');
+  // (The Sidekick's own look and colours are Android's from build 176: see RestBubble.sideLook.)
 
-  /// Vivid or mellow, for the main button, or with [side] for the side Blob.
-  void setBlobVivid(bool v, {bool side = false}) {
-    if (side) {
-      _sideVivid = v;
-    } else {
-      blobVivid = v;
-    }
+  /// Vivid or mellow, for Prism's button.
+  void setBlobVivid(bool v) {
+    blobVivid = v;
     try {
-      (side ? _sideVividFile : _vividFile).writeAsStringSync(v ? '1' : '0');
+      _vividFile.writeAsStringSync(v ? '1' : '0');
     } catch (_) {
       // Not saved: as it was next time.
     }
     notifyListeners();
   }
 
-  /// The look, for the main button, or with [side] for the side Blob.
-  void setBlobLook(String id, {bool side = false}) {
-    if (side) {
-      _sideLook = id;
-    } else {
-      blobLook = id;
-    }
+  /// The look, for Prism's button.
+  void setBlobLook(String id) {
+    blobLook = id;
     try {
-      (side ? _sideLookFile : _lookFile).writeAsStringSync(id);
+      _lookFile.writeAsStringSync(id);
     } catch (_) {
       // Not saved: as it was next time.
     }
@@ -918,7 +890,25 @@ class Apps extends ChangeNotifier {
   }
 
   /// The apps' own icons are held while either of the two wants them.
-  bool get _wantOwn => !prismIcons || !blobPrismIcons;
+  bool get _wantOwn => !prismIcons || !blobPrismIcons || _sideOwn;
+
+  /// The Sidekick's own Icons choice is Regular (it is Android's: see RestBubble.sidePrismIcons):
+  /// the apps' own icons are wanted for its pictures too, and fetched if they are not held.
+  bool _sideOwn = false;
+  void sideOwnIcons(bool want) {
+    if (want == _sideOwn) {
+      return;
+    }
+    _sideOwn = want;
+    if (_wantOwn) {
+      _loadOwn();
+    } else {
+      for (final AppTile t in all) {
+        t.own = null;
+      }
+      notifyListeners();
+    }
+  }
 
   File get _blobIconsFile =>
       File('${_iconsFile.parent.path}/prism_icons_blobs');
@@ -967,17 +957,6 @@ class Apps extends ChangeNotifier {
     if (was.containsKey(blobLook)) {
       blobLook = was[blobLook]!;
       blobVivid = true;
-    }
-    try {
-      final String side = _sideLookFile.readAsStringSync().trim();
-      _sideLook = side.isEmpty ? null : side;
-    } catch (_) {
-      // Never chosen for the side Blob: it wears the main button's.
-    }
-    try {
-      _sideVivid = _sideVividFile.readAsStringSync().trim() == '1';
-    } catch (_) {
-      // Never chosen for the side Blob: as the main button.
     }
     try {
       cogShown = int.tryParse(_cogFile.readAsStringSync().trim()) ?? 0;

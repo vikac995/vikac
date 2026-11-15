@@ -98,9 +98,10 @@ class _ShellState extends State<Shell>
       '  frame-rate readout ${onOff(settings.showFps)}  ·  haptics ${onOff(settings.haptics)}  ·  reduce transparency ${onOff(settings.reduceTransparency)}  ·  background lights ${onOff(Diag.instance.wallpaperOn.value)}',
       '  glass style ${const <String>['Orig.', 'One', 'Frost', 'Event', 'Auto'][Diag.instance.glassMode.value.clamp(0, 4)]}${Diag.instance.glassMode.value == 4 ? ' (now ${const <String>['Orig.', 'One', 'Frost', 'Event'][Diag.instance.autoLevel.value.clamp(0, 3)]})' : ''}  ·  glass quality ${settings.quality.name}  ·  Prism icons: app list ${onOff(Apps.instance.prismIcons)}, blobs ${onOff(Apps.instance.blobPrismIcons)}',
       '  floats over other apps ${onOff(b.allowed.value)}  ·  notification counts ${onOff(Notes.instance.allowed.value)}  ·  blobs open real apps ${onOff(BlobApps.instance.on.value)}',
-      '  blob: in Prism ${onOff(b.floatIn.value)}  ·  over other apps ${onOff(b.floatOut.value)}  ·  labels ${onOff(BlobSlots.instance.names)}  ·  floating ${b.pinned.value ?? 'nothing'}',
+      '  Sidekick (kept by Android${b.sideKnown ? '' : ', not told yet'}): in Prism ${onOff(b.floatIn.value)}  ·  over other apps ${onOff(b.floatOut.value)}  ·  distance ${b.sideGap.toStringAsFixed(1)}, tucked ${b.sideTuck.toStringAsFixed(1)}  ·  labels ${onOff(b.sideNames)}  ·  icons ${b.sidePrismIcons ? 'Prism' : 'regular'}  ·  floating ${b.pinned.value ?? 'nothing'}',
+      '  Prism\'s blobs: labels ${onOff(BlobSlots.instance.names)}',
       '  blobs: ${<String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(', ')}',
-      '  side menu: ${_sideKeys.isEmpty ? 'not told by Android yet' : _sideKeys.join(', ')}  ·  side design: ${Apps.instance.sideLook.isEmpty ? 'window' : Apps.instance.sideLook}${Apps.instance.sideVivid ? ', vivid' : ''}  ·  main design: ${Apps.instance.blobLook.isEmpty ? 'window' : Apps.instance.blobLook}${Apps.instance.blobVivid ? ', vivid' : ''}',
+      '  side menu: ${_sideKeys.isEmpty ? 'not told by Android yet' : _sideKeys.join(', ')}  ·  side design: ${b.sideLook.isEmpty ? 'window' : b.sideLook}${b.sideVivid ? ', vivid' : ''}  ·  main design: ${Apps.instance.blobLook.isEmpty ? 'window' : Apps.instance.blobLook}${Apps.instance.blobVivid ? ', vivid' : ''}',
       '  swipes: ${<String>[for (int g = 0; g < 4; g++) '${GestureSlots.names[g]} ${GestureSlots.instance.keys[g]}'].join(', ')}',
     ];
   }
@@ -926,6 +927,7 @@ class _ShellState extends State<Shell>
                   listenable: Listenable.merge(<Listenable>[
                     b.floatIn,
                     b.floatOut,
+                    b.sideChanged,
                     Apps.instance,
                     BlobSlots.instance,
                     _designSide,
@@ -1093,7 +1095,7 @@ class _ShellState extends State<Shell>
                             values: const <bool>[true, false],
                             labels: const <String>['Show', 'Hide'],
                             value: _designSide.value
-                                ? BlobSlots.instance.sideNames
+                                ? b.sideNames
                                 : BlobSlots.instance.names,
                             onChanged: (bool v) {
                               if (_designSide.value) {
@@ -1103,8 +1105,7 @@ class _ShellState extends State<Shell>
                                       ? 'Sidekick names on'
                                       : 'Sidekick names off',
                                 );
-                                BlobSlots.instance.setNames(v, side: true);
-                                RestBubble.instance.tellNames(v);
+                                b.setSideNames(v);
                               } else {
                                 _setNames(v);
                               }
@@ -1121,12 +1122,26 @@ class _ShellState extends State<Shell>
                             ),
                           ),
                           const SizedBox(height: 8),
+                          // (Each its own from build 176: Prism's blobs, or the Sidekick's.)
                           Segmented<bool>(
+                            key: Robot.key('blobIcons'),
                             values: const <bool>[true, false],
                             labels: const <String>['Prism', 'Regular'],
-                            value: Apps.instance.blobPrismIcons,
-                            onChanged: (bool v) =>
-                                Apps.instance.setPrismIcons(v, blobs: true),
+                            value: _designSide.value
+                                ? b.sidePrismIcons
+                                : Apps.instance.blobPrismIcons,
+                            onChanged: (bool v) {
+                              if (_designSide.value) {
+                                Diag.instance.event(
+                                  'Sidekick icons: ${v ? 'Prism' : 'regular'}',
+                                );
+                                b.setSideIcons(v);
+                                // (Its pictures again, in its own choice.)
+                                _sendSidekick();
+                              } else {
+                                Apps.instance.setPrismIcons(v, blobs: true);
+                              }
+                            },
                           ),
                           const SizedBox(height: 16),
                           // Prism's two-finger swipes: what each of the four does. A tap on one
@@ -1228,16 +1243,12 @@ class _ShellState extends State<Shell>
                             values: const <bool>[false, true],
                             labels: const <String>['Mellow', 'Vivid'],
                             value: _designSide.value
-                                ? Apps.instance.sideVivid
+                                ? b.sideVivid
                                 : Apps.instance.blobVivid,
                             onChanged: (bool v) {
-                              Apps.instance.setBlobVivid(
-                                v,
-                                side: _designSide.value,
-                              );
-                              RestBubble.instance.tellVivid(
-                                Apps.instance.sideVivid,
-                              );
+                              _designSide.value
+                                  ? b.setSideVivid(v)
+                                  : Apps.instance.setBlobVivid(v);
                               Diag.instance.event(
                                 '${_designSide.value ? 'side blob' : 'main button'} ${v ? 'vivid' : 'mellow'}',
                               );
@@ -1267,13 +1278,9 @@ class _ShellState extends State<Shell>
                                   behavior: HitTestBehavior.opaque,
                                   onTap: () {
                                     Haptics.tick();
-                                    Apps.instance.setBlobLook(
-                                      look.id,
-                                      side: _designSide.value,
-                                    );
-                                    RestBubble.instance.tellLook(
-                                      Apps.instance.sideLook,
-                                    );
+                                    _designSide.value
+                                        ? b.setSideLook(look.id)
+                                        : Apps.instance.setBlobLook(look.id);
                                     Diag.instance.event(
                                       '${_designSide.value ? 'side blob' : 'main button'} look: ${look.name}',
                                     );
@@ -1299,9 +1306,7 @@ class _ShellState extends State<Shell>
                                                   alpha:
                                                       BlobSign.of(
                                                             _designSide.value
-                                                                ? Apps
-                                                                      .instance
-                                                                      .sideLook
+                                                                ? b.sideLook
                                                                 : Apps
                                                                       .instance
                                                                       .blobLook,
@@ -1334,9 +1339,7 @@ class _ShellState extends State<Shell>
                                                           b.$2,
                                                       ],
                                                       vivid: _designSide.value
-                                                          ? Apps
-                                                                .instance
-                                                                .sideVivid
+                                                          ? b.sideVivid
                                                           : Apps
                                                                 .instance
                                                                 .blobVivid,
@@ -1354,9 +1357,7 @@ class _ShellState extends State<Shell>
                                             weight:
                                                 BlobSign.of(
                                                       _designSide.value
-                                                          ? Apps
-                                                                .instance
-                                                                .sideLook
+                                                          ? b.sideLook
                                                           : Apps
                                                                 .instance
                                                                 .blobLook,
@@ -1367,9 +1368,7 @@ class _ShellState extends State<Shell>
                                             color:
                                                 BlobSign.of(
                                                       _designSide.value
-                                                          ? Apps
-                                                                .instance
-                                                                .sideLook
+                                                          ? b.sideLook
                                                           : Apps
                                                                 .instance
                                                                 .blobLook,
@@ -1711,6 +1710,24 @@ class _ShellState extends State<Shell>
             Brightness.dark,
     };
     final LumenColors now = dark ? Look.instance.night : Look.instance.day;
+    // Prism's panel colours, light and dark, kept by Android for the Sidekick's own panel in a
+    // later step (sent only when they change), and which of the two is in force now.
+    RestBubble.instance.tellPalette(<String, int>{
+      'dark': dark ? 1 : 0,
+      for (final (String side, LumenColors c) in <(String, LumenColors)>[
+        ('light', Look.instance.day),
+        ('dark', Look.instance.night),
+      ]) ...<String, int>{
+        '$side.surface': c.surface.toARGB32(),
+        '$side.surfaceHigh': c.surfaceHigh.toARGB32(),
+        '$side.hairline': c.hairline.toARGB32(),
+        '$side.ink': c.ink.toARGB32(),
+        '$side.inkMuted': c.inkMuted.toARGB32(),
+        '$side.inkFaint': c.inkFaint.toARGB32(),
+        '$side.accent': c.accent.toARGB32(),
+        '$side.onAccent': c.onAccent.toARGB32(),
+      },
+    });
     RestBubble.instance.tellData(<String, Object>{
       'light': !dark,
       'container': RestBubble.instance.container.value,
@@ -1821,13 +1838,13 @@ class _ShellState extends State<Shell>
   /// colour and picture of each. One way: which blob goes where is the Sidekick's own, kept by
   /// Android. Sent when Android tells its keys, and when the pictures may have changed.
   Future<void> _sendSidekick() async {
-    RestBubble.instance.tellNames(BlobSlots.instance.sideNames);
-    // (Android draws the Sidekick, so it is told the Sidekick's look and colours.)
-    RestBubble.instance.tellLook(Apps.instance.sideLook);
-    RestBubble.instance.tellVivid(Apps.instance.sideVivid);
+    // (Its labels, look and colours are Android's own from build 176: only the pictures are sent.)
     final List<Map<String, Object>> all = <Map<String, Object>>[];
     for (final String key in <String>{..._sideKeys}) {
-      final Map<String, Object>? blob = await _blobMap(key);
+      final Map<String, Object>? blob = await _blobMap(
+        key,
+        prismIcons: RestBubble.instance.sidePrismIcons,
+      );
       if (blob != null) {
         all.add(blob);
       }
@@ -1940,7 +1957,9 @@ class _ShellState extends State<Shell>
   }
 
   /// One blob as Android needs it: its name, colour and picture. Null if its app is not known yet.
-  Future<Map<String, Object>?> _blobMap(String key) async {
+  /// [prismIcons]: Prism's icons or the apps' own, as chosen for the blobs this is for (the
+  /// Sidekick's own choice for its pictures; Prism's otherwise).
+  Future<Map<String, Object>?> _blobMap(String key, {bool? prismIcons}) async {
     if (!mounted || key.startsWith('empty:')) {
       return null;
     }
@@ -1989,7 +2008,10 @@ class _ShellState extends State<Shell>
         picture = t.glyph == null;
       }
       // With Prism's icons switched off, the floating blob shows the app's own icon too.
-      final ui.Image? own = _ownIcon(what);
+      final ui.Image? own = _ownIcon(
+        what,
+        prismIcons: prismIcons ?? Apps.instance.blobPrismIcons,
+      );
       if (own != null) {
         image = own;
         picture = true;
@@ -2043,8 +2065,8 @@ class _ShellState extends State<Shell>
 
   /// The disc of a blob: its colour, lighter at the top, and its mark.
   /// With Prism's icons switched off: the app's own icon, as the phone has it, if it is there.
-  ui.Image? _ownIcon(String package) {
-    if (Apps.instance.blobPrismIcons) {
+  ui.Image? _ownIcon(String package, {bool? prismIcons}) {
+    if (prismIcons ?? Apps.instance.blobPrismIcons) {
       return null;
     }
     for (final AppTile t in Apps.instance.all) {
@@ -2600,8 +2622,18 @@ class _ShellState extends State<Shell>
         ),
       );
     }
+    // The Sidekick's settings are Android's: Prism asks for a copy, and writes down what it has.
+    RestBubble.instance.onSidekick = (Map<Object?, Object?> m, String how) {
+      Diag.instance.event(
+        'Prism #$_engineNo: Sidekick settings $how: in this app ${m['inApp'] == true ? 'on' : 'off'}, over other apps ${m['overApps'] == true ? 'on' : 'off'}, distance ${m['gap']}, tucked ${m['tuck']}, labels ${m['names'] == true ? 'show' : 'hide'}, icons ${m['prismIcons'] == true ? 'Prism' : 'regular'}, colours ${m['vivid'] == true ? 'vivid' : 'mellow'}, look ${m['look'] == '' ? '(the first)' : m['look']}',
+      );
+      if (how.contains('icons changed') && mounted) {
+        _sendSidekick();
+      }
+    };
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      RestBubble.instance.tellFloating();
+      // (Where the Sidekick and the timer may float is Android's own from build 176.)
+      RestBubble.instance.askSidekick();
       RestBubble.instance.tellTab(_tab);
       // (Where the button is, for the side Blob to fuse with.)
       _tellFan();
@@ -2629,6 +2661,11 @@ class _ShellState extends State<Shell>
         Diag.instance.event(
           'Prism #$_engineNo got ${call.method}${mounted ? '' : ' (but it is not on the screen)'}',
         );
+      }
+      if (call.method == 'sidekickSettings') {
+        // The Sidekick's settings changed on Android, which keeps them: Prism's copy follows.
+        RestBubble.instance.took(call.arguments, 'told');
+        return;
       }
       if (call.method == 'sidekickChoose' && mounted) {
         // Change or Add on one of the Sidekick's blobs: Prism has come to the front with its
@@ -5355,6 +5392,158 @@ class _ShellState extends State<Shell>
           _panelClear.value == null && s['covered'] == true,
           'clear ${_panelClear.value}, hidden ${s['covered']}',
         );
+        // Its settings are kept by Android (build 176). Each one changed here is read back from
+        // Android, and Prism's own stays as it was (Icons, Colours and Look are each one's own).
+        Map<Object?, Object?>? kept(Map<String, Object?> m) =>
+            m['sidekickSettings'] is Map
+            ? m['sidekickSettings']! as Map<Object?, Object?>
+            : null;
+        double? numAt(Map<Object?, Object?>? m, String k) =>
+            m?[k] is num ? (m![k]! as num).toDouble() : null;
+        s = await where();
+        final Map<Object?, Object?>? had = kept(s);
+        if (had == null) {
+          t.skip(
+            'sidekick settings: kept by Android, moved over from Prism once',
+            'Android did not say what it keeps',
+          );
+        } else {
+          t.check(
+            'sidekick settings: kept by Android, moved over from Prism once',
+            '${had['moved'] ?? ''}'.isNotEmpty,
+            '${had['moved']}',
+          );
+          t.check(
+            'sidekick settings: the distances just put back are kept by Android',
+            ((numAt(had, 'gap') ?? -99) - gapWas).abs() < 0.05 &&
+                ((numAt(had, 'tuck') ?? -99) - tuckWas).abs() < 0.05,
+            'kept ${had['gap']} and ${had['tuck']}, put back ${gapWas.toStringAsFixed(1)} and ${tuckWas.toStringAsFixed(1)}',
+          );
+        }
+        // One two-way choice of the Sidekick's, changed and put back: Android keeps each change,
+        // Prism's copy follows, and Prism's own choice is not touched.
+        Future<void> choice(
+          String what,
+          String spot,
+          String key,
+          bool Function() copy,
+          bool Function() prismOwn, {
+          required bool leftIs,
+        }) async {
+          if (!panelUp || had == null) {
+            t.skip(
+              'sidekick settings: $what changed, kept by Android, Prism\'s own untouched',
+              panelUp
+                  ? 'Android did not say what it keeps'
+                  : 'its settings did not come up',
+            );
+            return;
+          }
+          final BuildContext? at = Robot.key(spot).currentContext;
+          if (at != null && at.mounted) {
+            await Scrollable.ensureVisible(at);
+            await Robot.wait(300);
+          }
+          final Offset? o = Robot.spot(spot);
+          if (o == null) {
+            t.check(
+              'sidekick settings: $what changed, kept by Android, Prism\'s own untouched',
+              false,
+              'its picker is not in the panel',
+            );
+            return;
+          }
+          final bool was = copy(), prismWas = prismOwn();
+          // (The left half is [leftIs], the right half the other.)
+          Offset half(bool v) => o + Offset(v == leftIs ? -88 : 88, 0);
+          await Robot.tap(half(!was), after: 900);
+          final Map<Object?, Object?>? now = kept(await where());
+          t.check(
+            'sidekick settings: $what changed, kept by Android, Prism\'s own untouched',
+            now?[key] == !was && copy() == !was && prismOwn() == prismWas,
+            'Android ${now?[key]}, Prism\'s copy ${copy()}, Prism\'s own ${prismOwn()} (was $prismWas)',
+          );
+          await Robot.tap(half(was), after: 900);
+          final Map<Object?, Object?>? back = kept(await where());
+          t.check(
+            'sidekick settings: $what back as it was, kept by Android',
+            back?[key] == was && copy() == was,
+            'Android ${back?[key]}, Prism\'s copy ${copy()}',
+          );
+        }
+
+        await choice(
+          'Labels',
+          'names',
+          'names',
+          () => lensOf.sideNames,
+          () => BlobSlots.instance.names,
+          leftIs: true,
+        );
+        await choice(
+          'Icons',
+          'blobIcons',
+          'prismIcons',
+          () => lensOf.sidePrismIcons,
+          () => Apps.instance.blobPrismIcons,
+          leftIs: true,
+        );
+        await choice(
+          'Colours',
+          'blobVivid',
+          'vivid',
+          () => lensOf.sideVivid,
+          () => Apps.instance.blobVivid,
+          leftIs: false,
+        );
+        // Its look: another one chosen, then its own put back.
+        if (panelUp && had != null) {
+          final String lookWas = lensOf.sideLook,
+              prismLook = Apps.instance.blobLook;
+          final BlobLook other = BlobSign.looks.firstWhere(
+            (BlobLook l) => BlobSign.of(lookWas) != l,
+          );
+          final BuildContext? at = Robot.key('blobLook-${other.id}')
+              .currentContext;
+          if (at != null && at.mounted) {
+            await Scrollable.ensureVisible(at);
+            await Robot.wait(300);
+          }
+          final Offset? o = Robot.spot('blobLook-${other.id}');
+          if (o != null) {
+            await Robot.tap(o, after: 900);
+          }
+          final Map<Object?, Object?>? now = kept(await where());
+          t.check(
+            'sidekick settings: another look chosen, kept by Android, Prism\'s own untouched',
+            o != null &&
+                now?['look'] == other.id &&
+                lensOf.sideLook == other.id &&
+                Apps.instance.blobLook == prismLook,
+            'Android ${now?['look']}, Prism\'s copy ${lensOf.sideLook}, Prism\'s own ${Apps.instance.blobLook}',
+          );
+          lensOf.setSideLook(lookWas);
+          await Robot.wait(700);
+          final Map<Object?, Object?>? back = kept(await where());
+          t.check(
+            'sidekick settings: its own look back, kept by Android',
+            back?['look'] == lookWas,
+            'Android ${back?['look']}, was ${lookWas.isEmpty ? '(the first)' : lookWas}',
+          );
+        } else {
+          t.skip(
+            'sidekick settings: another look chosen, kept by Android, Prism\'s own untouched',
+            panelUp
+                ? 'Android did not say what it keeps'
+                : 'its settings did not come up',
+          );
+        }
+        // Prism's panel colours, kept by Android for the Sidekick's own panel later.
+        t.check(
+          'sidekick settings: Prism\'s panel colours have reached Android',
+          ((numAt(kept(await where()), 'palette') ?? 0)) >= 16,
+          '${kept(await where())?['palette']} colours kept',
+        );
         // Prism chosen in the same panel: the Sidekick steps aside, as under any panel.
         final Offset? toPrism = panelUp ? Robot.spot('designPrism') : null;
         if (!panelUp) {
@@ -5381,6 +5570,104 @@ class _ShellState extends State<Shell>
           'shown ${s['lens']}, hidden ${s['covered']}, tucked ${s['tucked']}',
         );
         clean('after the Sidekick\'s settings');
+        // The keyboard and a window over it (build 176, a measurement for the Sidekick's own
+        // panel): Prism's own text field has the keyboard up, and Android puts a small window
+        // that can't be seen over it for 2 seconds. A: one that never takes the focus (as the
+        // Sidekick's menu; the keyboard must stay). B: one that takes the focus but can never
+        // type (the panel would hear Back that way; does the keyboard stay?). Measured from
+        // both sides: Android's own view of Prism's window, and Prism's (how tall the keyboard
+        // is, every 100 ms, whether Prism's window lost the focus, whether its field kept it).
+        Diag.instance.typingShown.value = true;
+        await Robot.wait(400);
+        Diag.instance.typing.requestFocus();
+        double keyboard() => WidgetsBinding
+            .instance
+            .platformDispatcher
+            .views
+            .first
+            .viewInsets
+            .bottom;
+        for (int i = 0; i < 30 && keyboard() <= 0; i++) {
+          await Robot.wait(100);
+        }
+        if (keyboard() <= 0) {
+          for (final String kind in <String>['A', 'B']) {
+            t.skip(
+              'keyboard: probe $kind measured',
+              'the keyboard did not come up for Prism\'s own text field',
+            );
+          }
+        } else {
+          await Robot.wait(600);
+          for (final String kind in <String>['A', 'B']) {
+            final double before = keyboard();
+            final List<double> seen = <double>[];
+            bool inactive = false;
+            final Timer every = Timer.periodic(
+              const Duration(milliseconds: 100),
+              (Timer _) {
+                seen.add(keyboard());
+                if (WidgetsBinding.instance.lifecycleState ==
+                    AppLifecycleState.inactive) {
+                  inactive = true;
+                }
+              },
+            );
+            final Map<String, Object?> m = await t.lens(<String, Object?>{
+              'op': 'keyboardProbe',
+              'kind': kind,
+              'ms': 2000,
+            }, extraMs: 3000);
+            every.cancel();
+            final bool answered = m['probe'] is List;
+            final bool stayed =
+                seen.isNotEmpty && seen.every((double k) => k > 0);
+            final String down = seen.isEmpty
+                ? 'no readings'
+                : stayed
+                ? 'up the whole time'
+                : 'down at ${seen.indexWhere((double k) => k <= 0) * 100} ms';
+            final String told = answered
+                ? (m['probe']! as List<Object?>).join(' / ')
+                : '${m['note'] ?? 'no answer'}';
+            t.note(
+              'KEYBOARD PROBE $kind (${kind == 'A' ? 'never takes the focus' : 'takes the focus, can never type'}), Android ${m['sdk'] ?? '?'}: '
+              'Prism saw the keyboard ${before.round()} px tall before, $down; Prism\'s window ${inactive ? 'lost' : 'kept'} the focus; '
+              'its field ${Diag.instance.typing.hasFocus ? 'kept' : 'lost'} it. Android saw: $told',
+            );
+            if (kind == 'A') {
+              answered
+                  ? t.check(
+                      'keyboard: a window that never takes the focus leaves it up (the measurement\'s control)',
+                      stayed,
+                      down,
+                    )
+                  : t.skip(
+                      'keyboard: a window that never takes the focus leaves it up (the measurement\'s control)',
+                      'Android did not answer: $told',
+                    );
+            } else {
+              // (Not right or wrong: what it found decides how the Sidekick's panel hears Back.)
+              answered
+                  ? t.check('keyboard: probe B measured', true, down)
+                  : t.skip(
+                      'keyboard: probe B measured',
+                      'Android did not answer: $told',
+                    );
+            }
+            // (The keyboard back up for the next, if it went.)
+            if (!Diag.instance.typing.hasFocus) {
+              Diag.instance.typing.requestFocus();
+            }
+            for (int i = 0; i < 20 && keyboard() <= 0; i++) {
+              await Robot.wait(100);
+            }
+            await Robot.wait(500);
+          }
+        }
+        Diag.instance.typing.unfocus();
+        Diag.instance.typingShown.value = false;
+        await Robot.wait(900);
         // Held in the middle of its own blobs: its settings too.
         if (await openMenu()) {
           s = await menu('middleHold', settleMs: 1500);
@@ -6207,6 +6494,8 @@ class _ShellState extends State<Shell>
       _leakNoSends = _leakNoCover = _leakNoLooks = false;
       Segmented.testJump = false;
       Diag.instance.probe.value = null;
+      Diag.instance.typing.unfocus();
+      Diag.instance.typingShown.value = false;
       lensOf.setPin(pinWas);
       _sendPin();
       final List<String>? sideBack = sideWere;

@@ -1,8 +1,28 @@
 # Lumen changelog
 
-## Not in a build yet (goes into the next one)
+## Prism, build 176 (15 November 2026)
 
-- **The font guard made complete:** along with the boldness (175), the two other font settings Prism uses, optical size and width, are now drawn in steps (half a point; 1). Nothing you see changes: every size and width in Prism is already on those steps. Only the app list's names, whose size follows how dense the list is, use the nearest half point for their optical size.
+**File:** `releases/prism-build-176.apk`
+
+Needs Play Protect paused to install. Can be installed over build 175.
+
+**Your leak test on 175: the cause is proven and the fix holds.** Step 2 begins: the Sidekick's own settings. **Nothing should look different in this build.**
+
+- **The Sidekick keeps its own settings now,** not Prism.
+  - **Which ones:** In this app, Over other apps, the two distances, Labels, Icons, Colours and Look.
+  - **The move:** the first time 176 starts, the Sidekick reads what Prism had kept for it and keeps it from then on. Prism then deletes its old copies. Everything should be exactly as you left it.
+  - **What hasn't changed:** you still change them in Prism's settings, under Prism | Sidekick → Sidekick. Prism now passes each change to the Sidekick, which keeps it. Its own panel comes in the next build, once you've decided where it sits.
+- **Icons is now each one's own.** Until now, Icons Prism | Regular was one choice shared by Prism's blobs and the Sidekick's. Now the Sidekick's part of the panel changes only the Sidekick's, and Prism's part only Prism's. Both start as the shared one was.
+- **One difference you may notice later:** a Sidekick whose Labels, Colours or Look you had never chosen used to follow Prism's. From now on it keeps what it shows today, even if you change Prism's.
+- **Prism passes its panel colours to the Sidekick** (light and dark), ready for the Sidekick's own panel.
+- **The rest timer** still follows "In this app" and "Over other apps", exactly as before.
+- **A measurement in the button test** (it runs by itself, part 5):
+  - **Why:** the Sidekick's own panel can either hear Back or never touch another app's keyboard, perhaps not both. This finds out which on your phone.
+  - **What happens:** you'll see a small text field appear under the test banner and the keyboard come up for a few seconds. That's the test.
+- **The font guard made complete:** along with the boldness (175), the two other font settings Prism uses, optical size and width, are now drawn in steps. Nothing you see changes.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 68 of 69 (the miss is the Android-only measurement); the long test, 65 of 69 with the usual 4 misses.
+**Not checked:** on a phone. The move, the settings kept by the Sidekick and the keyboard measurement all run only there. The button test checks each of them; please run it and send the report.
 
 ## Prism, build 175 (15 November 2026)
 

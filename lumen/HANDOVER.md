@@ -27,7 +27,14 @@ by hand. `LumenType`'s `opsz` follows the size, so don't animate a `LumenType` s
 with a `Transform` instead.** (`LumenType` also steps the optical size by 0.5 and the width by 1.) 175's
 phone run proved it: the old way kept about 125 KB per new weight, and every step of the panel, the
 pickers and the tab bar stayed flat. Graphics memory (about 500 MB) is the next memory target, after the
-Sidekick work. Next: step 2, **plan first** (`tasks/STEP2-plan.md`), no code until the owner agrees. Tasks are in `tasks/`; each ends with a
+Sidekick work. Step 2's plan is `tasks/STEP2-plan.md`. Build 176 ("step 2a", brief `tasks/STEP2a.md`,
+report `reviews/step2a-report.md`): **the Sidekick's settings are Android's** (`SidekickSettings.kt`, one
+key each in `prism_sidekick`, with a one-time move from Prism's old files). Prism keeps only a read-only
+copy (`RestBubble.side*`, `floatIn`, `floatOut`), asks for it at start (`sidekickSettings`) and writes
+through Android (`sidekickSet`, answered with all of them); never write them in Prism again. Icons is
+each one's own. The button test measures whether a focusable window that can't type keeps another app's
+keyboard (part 5, "KEYBOARD PROBE" notes): that decides how the Sidekick's panel hears Back. Next: 176's
+phone run, then 2b once the owner has chosen where the panel sits and the way back. Tasks are in `tasks/`; each ends with a
 report in `reviews/` that is reviewed before the owner relies on the work. The preview scripts are in
 `tools/preview/` (see its README).
 

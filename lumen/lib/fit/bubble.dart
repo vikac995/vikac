@@ -27,25 +27,7 @@ class RestBubble with WidgetsBindingObserver {
     }
     // (The older lens, which took the look of the app on it, is gone with hand-placed blobs:
     // it is always the container now, whatever was once chosen.)
-    try {
-      final List<String> where = _floatFile.readAsStringSync().trim().split(
-        ' ',
-      );
-      floatIn.value = where[0] != '0';
-      floatOut.value = where.length < 2 || where[1] != '0';
-    } catch (_) {
-      // Never chosen: both.
-    }
-    try {
-      final List<String> spots = _spotsFile.readAsStringSync().trim().split(
-        ' ',
-      );
-      sideGap = double.parse(spots[0]).clamp(gapMin, gapMax);
-      sideTuck = double.parse(spots[1]).clamp(tuckMin, tuckMax);
-    } catch (_) {
-      // Never chosen: as it has always been.
-    }
-    setSpots();
+    // (The Sidekick's settings are Android's own from build 176: the shell asks for a copy.)
     refresh();
   }
 
@@ -127,8 +109,8 @@ class RestBubble with WidgetsBindingObserver {
     }
   }
 
-  /// Where the floating elements (a blob that was put down, the workout's timer) may be seen:
-  /// over Prism itself, and over other apps. Both, unless the person chooses otherwise.
+  /// Where the floating elements (the Sidekick, the workout's timer) may be seen: over Prism
+  /// itself, and over other apps. A copy of the Sidekick's own settings: see [took].
   final ValueNotifier<bool> floatIn = ValueNotifier<bool>(true);
   final ValueNotifier<bool> floatOut = ValueNotifier<bool>(true);
 
@@ -163,7 +145,12 @@ class RestBubble with WidgetsBindingObserver {
   /// Whether there can be floating elements at all.
   bool get canFloat => floatIn.value || floatOut.value;
 
-  File get _floatFile => File('${_styleFile.parent.path}/prism_floating');
+  // ---- The Sidekick's settings: kept by Android (SidekickSettings.kt) from build 176.
+  // Prism keeps only this copy, to show them in the Sidekick's part of its settings panel and in
+  // the test report. Prism asks for it when it starts ("sidekickSettings"); changed from that
+  // panel, they are sent to Android ("sidekickSet"), which keeps them and answers with them all.
+  // (Android may also tell them by itself, with "sidekickSettings": its own panel will.) Until
+  // Android has answered (or away from a phone), the copy shows what Prism last did to it.
 
   /// The Sidekick's two places at a side of the screen, in points: how far from the edge it
   /// rests, and how much of it shows when it is tucked in.
@@ -171,46 +158,176 @@ class RestBubble with WidgetsBindingObserver {
   static const double gapMin = 0, gapMax = 36, tuckMin = 8, tuckMax = 40;
   double sideGap = 8, sideTuck = 22;
 
-  File get _spotsFile => File('${_styleFile.parent.path}/prism_side_spots');
+  /// Labels Show | Hide, Icons Prism | Regular, Colours Mellow | Vivid, and its look's id, for
+  /// the Sidekick's blobs and sign.
+  bool sideNames = true, sidePrismIcons = true, sideVivid = false;
+  String sideLook = '';
 
-  /// Sets them, tells Android, and keeps them if [save]. [show]: 'rest' or 'tuck' puts the
-  /// Sidekick in that place now, so it can be seen while it is being chosen.
-  void setSpots({double? gap, double? tuck, String? show, bool save = false}) {
-    sideGap = gap ?? sideGap;
-    sideTuck = tuck ?? sideTuck;
-    _device
-        .invokeMethod<void>('sideSpots', <String, Object?>{
-          'gap': sideGap,
-          'tuck': sideTuck,
-          'show': show,
-        })
-        .catchError((Object _) {});
-    if (save) {
-      try {
-        _spotsFile.writeAsStringSync('$sideGap $sideTuck');
-      } catch (_) {
-        // Not saved: as it was, next time.
+  /// What Android took over from Prism's old files, the one time it did ("" until it is known).
+  String sideMoved = '';
+
+  /// Whether Android has said what they are (false away from a phone).
+  bool sideKnown = false;
+
+  /// Changes whenever the copy does.
+  final ValueNotifier<int> sideChanged = ValueNotifier<int>(0);
+
+  /// Told the Sidekick's settings (by Android, or by Prism changing them while away from a phone).
+  /// Set by the shell: it logs them and sends the Sidekick's pictures again if Icons changed.
+  void Function(Map<Object?, Object?> told, String how)? onSidekick;
+
+  /// Android's answer or message: its settings as they are now.
+  void took(Object? told, String how) {
+    if (told is! Map) {
+      return;
+    }
+    final bool iconsWere = sidePrismIcons;
+    floatIn.value = told['inApp'] != false;
+    floatOut.value = told['overApps'] != false;
+    sideGap = ((told['gap'] as num?)?.toDouble() ?? sideGap).clamp(
+      gapMin,
+      gapMax,
+    );
+    sideTuck = ((told['tuck'] as num?)?.toDouble() ?? sideTuck).clamp(
+      tuckMin,
+      tuckMax,
+    );
+    sideNames = told['names'] != false;
+    sidePrismIcons = told['prismIcons'] != false;
+    sideVivid = told['vivid'] == true;
+    sideLook = (told['look'] as String?) ?? sideLook;
+    sideMoved = (told['moved'] as String?) ?? sideMoved;
+    sideKnown = true;
+    Apps.instance.sideOwnIcons(!sidePrismIcons);
+    sideChanged.value++;
+    if (sideMoved.isNotEmpty) {
+      _forgetOldFiles();
+    }
+    onSidekick?.call(
+      told,
+      iconsWere != sidePrismIcons ? '$how (icons changed)' : how,
+    );
+  }
+
+  /// Asks Android for them (at the start, and whenever Prism wants to be sure of them).
+  Future<void> askSidekick() async {
+    try {
+      took(await _device.invokeMethod<Object?>('sidekickSettings'), 'asked');
+    } catch (_) {
+      // Not on a phone: the copy stays as it is.
+    }
+  }
+
+  /// Changes some of them ([what]: any of inApp, overApps, gap, tuck, names, prismIcons, vivid,
+  /// look). [show] ('rest' or 'tuck') puts the Sidekick in that place now, to be seen while it
+  /// is chosen; [keep] false: in force but not saved yet (a slider still being dragged).
+  Future<void> _set(
+    Map<String, Object> what, {
+    String? show,
+    bool keep = true,
+  }) async {
+    try {
+      final Object? told = await _device.invokeMethod<Object?>(
+        'sidekickSet',
+        <String, Object?>{...what, 'show': show, 'keep': keep},
+      );
+      if (keep) {
+        took(told, 'changed');
+      }
+    } catch (_) {
+      // Not on a phone: the copy is all there is.
+      if (keep) {
+        sideChanged.value++;
       }
     }
+  }
+
+  /// Sets the two distances in force at once, so the sliders move the Sidekick as they are
+  /// dragged. [show]: 'rest' or 'tuck' puts it in that place now. [save]: kept by Android.
+  void setSpots({double? gap, double? tuck, String? show, bool save = false}) {
+    sideGap = (gap ?? sideGap).clamp(gapMin, gapMax);
+    sideTuck = (tuck ?? sideTuck).clamp(tuckMin, tuckMax);
+    _set(
+      <String, Object>{'gap': sideGap, 'tuck': sideTuck},
+      show: show,
+      keep: save,
+    );
   }
 
   void setFloating({bool? inPrism, bool? overApps}) {
     floatIn.value = inPrism ?? floatIn.value;
     floatOut.value = overApps ?? floatOut.value;
-    try {
-      _floatFile.writeAsStringSync(
-        '${floatIn.value ? 1 : 0} ${floatOut.value ? 1 : 0}',
-      );
-    } catch (_) {
-      // Not saved: both are on next time.
-    }
-    tellFloating();
+    _set(<String, Object>{'inApp': floatIn.value, 'overApps': floatOut.value});
   }
 
-  /// Tells Android where the floating elements may be seen.
-  void tellFloating() {
+  void setSideNames(bool v) {
+    sideNames = v;
+    _set(<String, Object>{'names': v});
+  }
+
+  void setSideIcons(bool prism) {
+    sidePrismIcons = prism;
+    Apps.instance.sideOwnIcons(!prism);
+    _set(<String, Object>{'prismIcons': prism});
+  }
+
+  void setSideVivid(bool v) {
+    sideVivid = v;
+    _set(<String, Object>{'vivid': v});
+  }
+
+  void setSideLook(String id) {
+    sideLook = id;
+    _set(<String, Object>{'look': id});
+  }
+
+  /// Prism's old files for the Sidekick's settings, which Android has taken over: deleted once
+  /// it says it has. (Prism's own Labels, Colours, Look and Icons files stay: they are Prism's.)
+  bool _forgot = false;
+  void _forgetOldFiles() {
+    if (_forgot) {
+      return;
+    }
+    _forgot = true;
+    for (final String name in <String>[
+      'prism_floating',
+      'prism_side_spots',
+      'prism_blob_names_side',
+      'prism_side_look',
+      'prism_side_vivid',
+    ]) {
+      // (Where Prism wrote them: its files folder, or its temporary folder if that was missing.)
+      for (final String dir in <String>[
+        _styleFile.parent.path,
+        Directory.systemTemp.path,
+      ]) {
+        try {
+          final File f = File('$dir/$name');
+          if (f.existsSync()) {
+            f.deleteSync();
+          }
+        } catch (_) {
+          // Left where it is: nothing reads it any more.
+        }
+      }
+    }
+  }
+
+  /// Prism's panel colours, light and dark, for the Sidekick's own panel in a later step. Sent
+  /// only when they have changed.
+  Map<String, int>? _paletteSent;
+  void tellPalette(Map<String, int> palette) {
+    final Map<String, int>? was = _paletteSent;
+    if (was != null &&
+        was.length == palette.length &&
+        palette.entries.every(
+          (MapEntry<String, int> e) => was[e.key] == e.value,
+        )) {
+      return;
+    }
+    _paletteSent = palette;
     _device
-        .invokeMethod<void>('floating', <bool>[floatIn.value, floatOut.value])
+        .invokeMethod<void>('sidekickPalette', palette)
         .catchError((Object _) {});
   }
 
@@ -311,21 +428,6 @@ class RestBubble with WidgetsBindingObserver {
   /// draws over everything, steps aside meanwhile: a tap meant for the panel must not reach it.
   void tellCovered(bool covered) {
     _device.invokeMethod<void>('covered', covered).catchError((Object _) {});
-  }
-
-  /// Tells Android whether the Blob's sign is vivid or mellow.
-  void tellVivid(bool vivid) {
-    _device.invokeMethod<void>('blobVivid', vivid).catchError((Object _) {});
-  }
-
-  /// Tells Android which look the Blob's sign has, so the floating blob wears the same one.
-  void tellLook(String look) {
-    _device.invokeMethod<void>('blobLook', look).catchError((Object _) {});
-  }
-
-  /// Tells Android whether the blobs show their names, so the lens's own menu does the same.
-  void tellNames(bool names) {
-    _device.invokeMethod<void>('blobNames', names).catchError((Object _) {});
   }
 
   /// A blob is on its way to become the floating lens: shot out of Prism's button, or put down

@@ -11,3 +11,6 @@ What went wrong → why → the rule that prevents it. Short. Agreed rules only;
 - **Prism started itself in more than one way** (two tasks, two engines). → **Rule:** one path brings Prism forward (`PrismScreen.bringForward`); nothing starts `MainActivity` by name.
 - **One kind of change per build.** → **Rule:** test-only builds stay test-only; behaviour changes stay small and named.
 - **A value that changed every frame made a cached resource every frame** (a font weight following an animation: a new font per frame, kept for good; 175). → **Rule:** anything whose value changes each frame (font variations, shaders, paths keyed by values) must not create a cached resource per value. Step it, or keep the resource fixed.
+- **Briefs lived only in chat messages.** A context summary or a new session lost their exact words. → **Rule:** every brief is saved to `tasks/` before work starts.
+- **A request crossed the build it was meant for** (LESSONS.md, asked for in 175 after it was built). → **Rule:** anything asked mid-build goes into the next commit, and the reply says so.
+- **Builds mixed several fixes with investigations** (1b had seven items), so a phone run couldn't say which change did what. → **Rule:** at most one behaviour change and one investigation per build.

@@ -365,6 +365,9 @@ class MainActivity : FlutterActivity() {
         engineNo = ++enginesMade
         // (The recorder is opened here too: this runs inside onCreate, before its own line.)
         Trail.start(applicationContext)
+        // The Sidekick's own settings, kept here (the one-time move from Prism's files, if it is
+        // the first time), in force before Prism can say anything.
+        SidekickSettings.load(applicationContext)
         live[engineNo] = device!!
         noteEngine("Prism's engine #$engineNo made (screen $screen); ${live.size} alive")
         lineTo(engineNo, "the one just made")
@@ -438,20 +441,6 @@ class MainActivity : FlutterActivity() {
                 val can = android.provider.Settings.canDrawOverlays(applicationContext)
                 if (can) RestBubble.showSide(applicationContext, true, out = true)
                 result.success(can)
-            } else if (call.method == "sideSpots") {
-                // The Sidekick's two places at a side of the screen, as chosen in Prism: how far
-                // from the edge it rests, and how much of it shows when it is tucked in. With
-                // "show", it goes to that place now, to be seen while it is being chosen.
-                val a = call.arguments as? Map<*, *>
-                val gap = (a?.get("gap") as? Number)?.toFloat() ?: 8f
-                val tuck = (a?.get("tuck") as? Number)?.toFloat() ?: 22f
-                val show = a?.get("show") as? String
-                for (b in Floaters) {
-                    b.restGap = gap.coerceIn(0f, 40f)
-                    b.tuckOut = tuck.coerceIn(6f, 40f)
-                    if (show != null) b.showSpot(show == "tuck")
-                }
-                result.success(null)
             } else if (call.method == "engineNo") {
                 // Which engine this Prism is, for its own flight recorder lines.
                 result.success(engineNo)
@@ -467,28 +456,20 @@ class MainActivity : FlutterActivity() {
                 RestBubble.covered = (call.arguments as? Boolean) ?: false
                 RestBubble.refresh(applicationContext)
                 result.success(null)
-            } else if (call.method == "blobVivid") {
-                // The Blob's sign vivid (black glass, colours at full strength) or mellow.
-                RestBubble.vivid = (call.arguments as? Boolean) ?: false
-                result.success(null)
-            } else if (call.method == "blobLook") {
-                // Which look the Blob's sign has, by its id (see BlobLooks.kt).
-                RestBubble.look = (call.arguments as? String) ?: ""
-                result.success(null)
-            } else if (call.method == "blobNames") {
-                // Whether the blobs show their names under them.
-                RestBubble.blobNames = (call.arguments as? Boolean) ?: true
-                result.success(null)
-            } else if (call.method == "floating") {
-                // Where the floating elements may be seen: over Prism itself, and over other apps.
-                val where = call.arguments as? List<*>
-                for (b in Floaters) {
-                    b.floatIn = (where?.getOrNull(0) as? Boolean) ?: true
-                    b.floatOut = (where?.getOrNull(1) as? Boolean) ?: true
-                    b.refresh(applicationContext)
-                }
-                // (Switched on again, the side Blob is there again.)
-                RestBubble.showSide(applicationContext, false)
+            } else if (call.method == "sidekickSet") {
+                // The Sidekick's part of Prism's settings panel changed some of its settings,
+                // which are kept here (SidekickSettings). "show": the Sidekick goes to that place
+                // now, while a distance is chosen; "keep" false: not saved yet (still dragging).
+                val a = call.arguments as? Map<*, *> ?: emptyMap<Any, Any>()
+                SidekickSettings.set(applicationContext, a, a["show"] as? String, a["keep"] != false)
+                result.success(SidekickSettings.state(applicationContext))
+            } else if (call.method == "sidekickSettings") {
+                // Prism asks what the Sidekick's settings are, to show them (it keeps a copy only).
+                Trail.add("Sidekick settings: Prism #$engineNo asked for them")
+                result.success(SidekickSettings.state(applicationContext))
+            } else if (call.method == "sidekickPalette") {
+                // Prism's panel colours, light and dark, kept for the Sidekick's own panel later.
+                SidekickSettings.setPalette(applicationContext, call.arguments as? Map<*, *> ?: emptyMap<Any, Any>())
                 result.success(null)
             } else if (call.method == "fan") {
                 // Where Prism's own blobs sit while they are out, or nothing when they are not.
@@ -1268,6 +1249,11 @@ class Floater(val timer: Boolean) {
     /** The Sidekick's menu has changed ([SidekickMenu]): what it shows now. Its sign takes its colours from them. */
     fun setBlobs(next: List<Pin>) {
         blobs = next
+        view?.postInvalidate()
+    }
+
+    /** Drawn again, for a setting it shows that has changed (its labels). */
+    fun redraw() {
         view?.postInvalidate()
     }
 
@@ -2175,6 +2161,8 @@ class Floater(val timer: Boolean) {
         m["sideKeys"] = blobs.joinToString(",") { it.key }
         // (And the Sidekick's menu as it is kept: its five keys, whether it is its own, what was moved over.)
         SidekickMenu.state(context, m)
+        // (And its settings as they are kept here.)
+        m["sidekickSettings"] = SidekickSettings.state(context)
         // (What Android's side keeps that could grow: the blobs' pictures decoded, and the recorder's lines.)
         m["iconsCached"] = icons.size
         m["iconsKb"] = icons.values.sumOf { it.second.allocationByteCount.toLong() } / 1024
@@ -2398,6 +2386,73 @@ class Floater(val timer: Boolean) {
                     watcher.postDelayed({ done(state(context)) }, 400)
                 }
                 "state" -> done(state(context))
+                // The button test's keyboard measurement (step 2a): Prism's own text field has the
+                // keyboard up; a small window that can't be seen is put over it for [ms], of the kind
+                // the Sidekick's own panel could be ("B": it takes the focus but can never type, so
+                // the keyboard should stay with the app underneath; "A": it never takes the focus, as
+                // the Sidekick's menu). Measured before, during and after, from Prism's own window:
+                // whether Android says the keyboard is up and how tall, whether Prism's window has the
+                // focus, and whether the keyboard is still connected to Prism's text field.
+                "keyboardProbe" -> {
+                    val act = activity
+                    if (!android.provider.Settings.canDrawOverlays(context)) return fail("not allowed over other apps")
+                    val kind = if (a["kind"] == "A") "A" else "B"
+                    val ms = num("ms", 2000)
+                    val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+                    val decor = act.window.decorView
+                    val samples = ArrayList<String>()
+                    var probeFocus = false
+                    fun sample(at: String) {
+                        val ins = if (Build.VERSION.SDK_INT >= 30) decor.rootWindowInsets else null
+                        val up = if (Build.VERSION.SDK_INT >= 30) ins?.isVisible(android.view.WindowInsets.Type.ime()) else null
+                        val h = if (Build.VERSION.SDK_INT >= 30) ins?.getInsets(android.view.WindowInsets.Type.ime())?.bottom else null
+                        val f = act.currentFocus
+                        samples.add("$at: keyboard ${if (up == null) "unknown" else if (up) "up" else "down"}${if (h != null) " ($h px)" else ""}, " +
+                            "Prism has the focus ${if (act.hasWindowFocus()) "yes" else "no"}, " +
+                            "keyboard connected to Prism's field ${if (f != null && imm.isActive(f)) "yes" else "no"}, " +
+                            "probe has the focus ${if (probeFocus) "yes" else "no"}")
+                    }
+                    sample("before")
+                    val probe = object : android.view.View(context) {
+                        override fun onWindowFocusChanged(has: Boolean) {
+                            super.onWindowFocusChanged(has)
+                            if (has) probeFocus = true
+                        }
+                    }
+                    val flags = if (kind == "A") {
+                        android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                    } else {
+                        android.view.WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM or android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                            android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                    }
+                    val lp = android.view.WindowManager.LayoutParams(
+                        2, 2, android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, flags, android.graphics.PixelFormat.TRANSLUCENT,
+                    )
+                    lp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
+                    try {
+                        wm(context).addView(probe, lp)
+                        if (kind == "B") {
+                            probe.isFocusableInTouchMode = true
+                            probe.requestFocus()
+                        }
+                    } catch (e: Exception) {
+                        return fail("the probe window could not be added (${e.javaClass.simpleName})")
+                    }
+                    Trail.add("test: keyboard probe $kind over Prism's text field, for $ms ms")
+                    for (t in listOf(250L, 500L, 1000L, ms)) watcher.postDelayed({ sample("$t ms") }, t)
+                    watcher.postDelayed({
+                        try { wm(context).removeView(probe) } catch (e: Exception) {}
+                    }, ms + 50)
+                    watcher.postDelayed({
+                        sample("600 ms after it went")
+                        Trail.add("test: keyboard probe $kind: ${samples.joinToString(" / ")}")
+                        val m = state(context)
+                        m["probe"] = ArrayList(samples)
+                        m["probeKind"] = kind
+                        m["sdk"] = Build.VERSION.SDK_INT
+                        done(m)
+                    }, ms + 650)
+                }
                 // The button test: the Sidekick's menu set for the test, and put back as it was afterwards.
                 "sidekick" -> {
                     SidekickMenu.testPut(context, (a["keys"] as? List<*>)?.map { "$it" } ?: emptyList())

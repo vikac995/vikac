@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 import 'recorder.dart';
 
@@ -106,7 +107,7 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 175';
+  static const String build = 'Prism build 176';
 
   // ---- where the person is
   String _page = 'home', _overlay = '', _extra = '';
@@ -427,6 +428,11 @@ class Diag {
   final ValueNotifier<(double, bool)?> probe = ValueNotifier<(double, bool)?>(
     null,
   );
+
+  /// The button test's keyboard measurement only (build 176): while true, a small text field
+  /// under the banner, which [typing] gives the focus so that the keyboard comes up.
+  final ValueNotifier<bool> typingShown = ValueNotifier<bool>(false);
+  final FocusNode typing = FocusNode(debugLabel: 'test typing');
 
   /// Becomes the finished report when a guided test ends.
   final ValueNotifier<String?> finished = ValueNotifier<String?>(null);
