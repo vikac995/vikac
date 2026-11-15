@@ -1,5 +1,27 @@
 # Lumen changelog
 
+## Prism, build 132 (15 November 2026)
+
+**File:** `releases/prism-build-132.apk`
+
+Needs Play Protect paused to install. Can be installed over build 131.
+
+**The floating blob: one rule in place of guessing.** From your recordings (the WOOX icon in the task manager, and the flash of it on the way home), and a read through all of the code that decides what the blob is, shows, and does on a tap.
+
+- **A blob that came along with an app (Launch and follow) is the Blob sign for as long as it is on the screen, and a tap on it opens the blobs.** Always: over any app, in the task manager, however you change apps, and for the moment it is still there as Prism comes back. Before, it had to know which app was in front to decide between the sign and the app's icon, and Android leaves gaps in that knowledge (a swipe between apps, the task manager, the home gesture). Each gap was one of the bugs you sent. Now it does not need to know, so there is nothing for it to get wrong, and for this blob nothing looks at which app is in front at all: no checks after touches, no cost.
+- **It comes up as the sign from its first frame.** There was one more place the app's icon showed for a moment: the blob's arrival drew the app's own blob shrinking into the glass. A blob coming up as the sign now fades in as one piece.
+- **In its menu, a tap on the blob itself just closes the menu** (it has nowhere of its own to go).
+- **A blob you put down yourself** still works the other way, on purpose: it is the app's icon everywhere and the sign in its own app. For it, the checking is tighter:
+  - it tells the task manager (nothing changes while you are in it, so no flicker) from another home screen (no app is in front);
+  - after a touch it now looks three times over about three seconds, not once, because opening an app can take longer than the touch that asked for it;
+  - going home no longer wipes what it knew before Prism is actually in front.
+- The flight recorder now notes what Android says when you go home or open the task manager, and each time Prism learns a different app is in front.
+
+**Two more looks, as you asked:** **Clear** (the bands with nothing between them) and **Lined** (the bands with a very thin white line between them). Bands keeps its dark lines. The Look row is now nine.
+
+**Checked:** it compiles; in my preview: Bands, Clear and Lined on Prism's button; the automatic test in the preview, 56 of 60, the usual 4 misses.
+**Not checked:** on a phone. None of the floating blob's behaviour can be run in my preview (it only exists on Android): the changes above come from reading the code and from your recordings and reports, and are not proven until you see them. What I read, and what I did not, is in my message.
+
 ## Prism, build 131 (15 November 2026)
 
 **File:** `releases/prism-build-131.apk`

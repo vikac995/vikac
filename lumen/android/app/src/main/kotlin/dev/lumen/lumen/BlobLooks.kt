@@ -30,6 +30,8 @@ object BlobLooks {
         "lotus" to Look(false, ::lotus),
         "beam" to Look(true, ::beam),
         "bands" to Look(true, ::bands),
+        "bandsclear" to Look(true, ::bandsClear),
+        "bandswhite" to Look(true, ::bandsWhite),
         "halo" to Look(true, ::halo),
         "triangle" to Look(true, ::triangle),
     )
@@ -210,7 +212,20 @@ object BlobLooks {
     }
 
     /** Bands: the same light through the same prism, cut clean, with a dark line between the colours. */
-    private fun bands(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) {
+    private fun bands(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) = cutBands(c, r, cs, a, 0xFF0B0E11.toInt(), 0.05f, p)
+
+    /** Clear: the bands with nothing between them, colour straight against colour. */
+    private fun bandsClear(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) = cutBands(c, r, cs, a, 0, 0f, p)
+
+    /** Lined: the bands with a very thin white line between them. */
+    private fun bandsWhite(c: Canvas, r: Float, cs: IntArray, a: Double, p: Paint) = cutBands(c, r, cs, a, Color.WHITE, 0.018f, p)
+
+    /**
+     * The flat bands of the three looks above. [line] is drawn between the colours, [width] of the
+     * glass's radius wide; 0 for none. (Used only by those three: when the last of them is removed,
+     * this goes with it.)
+     */
+    private fun cutBands(c: Canvas, r: Float, cs: IntArray, a: Double, line: Int, width: Float, p: Paint) {
         val n = cs.size
         val x = -cos(a) * r * 0.42f; val y = -sin(a) * r * 0.42f
         val half = (if (n == 1) 24.0 else 54.0) * Math.PI / 180.0
@@ -227,8 +242,11 @@ object BlobLooks {
         }
         p.style = Paint.Style.STROKE
         p.strokeCap = Paint.Cap.BUTT
-        p.color = dark; p.strokeWidth = r * 0.05f
-        for (k in 0..n) c.drawLine(0f, 0f, cos(k * each) * r * 2.2f, sin(k * each) * r * 2.2f, p)
+        if (line != 0) {
+            // Between the colours only, but for the dark one: the fan's two outer edges lie against the dark glass.
+            p.color = line; p.strokeWidth = Math.max(1f, r * width)
+            for (k in (if (line == dark) 0 else 1)..(if (line == dark) n else n - 1)) c.drawLine(0f, 0f, cos(k * each) * r * 2.2f, sin(k * each) * r * 2.2f, p)
+        }
         c.restore()
         p.color = Color.WHITE; p.strokeWidth = r * 0.13f
         c.drawLine(-cos(a) * r * 1.1f, -sin(a) * r * 1.1f, x, y, p)

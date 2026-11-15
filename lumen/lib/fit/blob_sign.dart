@@ -36,6 +36,8 @@ abstract final class BlobSign {
     BlobLook('lotus', 'Lotus', _lotus),
     BlobLook('beam', 'Beam', _beam, spectrum: true),
     BlobLook('bands', 'Bands', _bands, spectrum: true),
+    BlobLook('bandsclear', 'Clear', _bandsClear, spectrum: true),
+    BlobLook('bandswhite', 'Lined', _bandsWhite, spectrum: true),
     BlobLook('halo', 'Halo', _halo, spectrum: true),
     BlobLook('triangle', 'Triangle', _triangle, spectrum: true),
   ];
@@ -350,7 +352,28 @@ void _beam(Canvas c, double r, List<Color> cs, double a) {
 
 /// Bands: the same light through the same prism, but cut clean: each colour a flat band with
 /// a dark line between it and the next, seen paler through the prism, which is drawn bold.
-void _bands(Canvas c, double r, List<Color> cs, double a) {
+void _bands(Canvas c, double r, List<Color> cs, double a) =>
+    _cutBands(c, r, cs, a, const Color(0xFF0B0E11), 0.05);
+
+/// Clear: the bands with nothing between them, colour straight against colour.
+void _bandsClear(Canvas c, double r, List<Color> cs, double a) =>
+    _cutBands(c, r, cs, a, null, 0);
+
+/// Lined: the bands with a very thin white line between them.
+void _bandsWhite(Canvas c, double r, List<Color> cs, double a) =>
+    _cutBands(c, r, cs, a, Colors.white, 0.018);
+
+/// The flat bands of the three looks above. [line] is drawn between the colours, [width] of
+/// the glass's radius wide; with no line there is none. (Used only by those three: when the
+/// last of them is removed, this goes with it.)
+void _cutBands(
+  Canvas c,
+  double r,
+  List<Color> cs,
+  double a,
+  Color? line,
+  double width,
+) {
   final int n = cs.length;
   final Offset at = -_dir(a) * r * 0.42;
   final double half = (n == 1 ? 24 : 54) * math.pi / 180, each = 2 * half / n;
@@ -371,14 +394,17 @@ void _bands(Canvas c, double r, List<Color> cs, double a) {
   for (int k = 0; k < n; k++) {
     c.drawPath(band(k, r * 2.2), Paint()..color = cs[k]);
   }
-  for (int k = 0; k <= n; k++) {
-    c.drawLine(
-      Offset.zero,
-      _dir(k * each) * r * 2.2,
-      Paint()
-        ..color = dark
-        ..strokeWidth = r * 0.05,
-    );
+  if (line != null) {
+    // Between the colours only: the fan's two outer edges lie against the dark glass.
+    for (int k = line == dark ? 0 : 1; k <= (line == dark ? n : n - 1); k++) {
+      c.drawLine(
+        Offset.zero,
+        _dir(k * each) * r * 2.2,
+        Paint()
+          ..color = line
+          ..strokeWidth = math.max(1, r * width),
+      );
+    }
   }
   c
     ..restore()

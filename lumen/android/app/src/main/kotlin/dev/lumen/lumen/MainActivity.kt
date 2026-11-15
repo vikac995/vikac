@@ -1047,14 +1047,19 @@ class Floater(val timer: Boolean) {
         set(v) { if (field != v) { field = v; view?.postInvalidate() } }
 
     private var frontListener: android.content.BroadcastReceiver? = null
+    private val HOME = "~home"
     private val frontHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var frontChecks = 0
 
     /**
-     * Which app Android says is in front, from the usage record: null where Prism may not look
-     * (no usage access), empty where it cannot yet be told (the recent apps or a launcher are
-     * showing, or Prism itself), otherwise the app's package. One short look at the last half
-     * minute: nothing is kept running for it.
+     * Which app Android says is in front, from the usage record. One short look at the last
+     * half minute: nothing is kept running for it. It answers:
+     *  - null where Prism may not look (no usage access);
+     *  - empty where it cannot be told, and what was known stays: the recent apps are showing
+     *    (the person is on the way somewhere), or Android's own panels, or nothing has changed
+     *    in the half minute;
+     *  - [HOME] where another home screen is showing: no app is in front;
+     *  - otherwise the app's package.
      */
     private fun frontFromUsage(context: Context): String? {
         try {
@@ -1071,29 +1076,58 @@ class Floater(val timer: Boolean) {
             val events = um.queryEvents(now - 30000, now)
             val e = android.app.usage.UsageEvents.Event()
             var last = ""
+            var screen = ""
             while (events.hasNextEvent()) {
                 events.getNextEvent(e)
-                if (e.eventType == 1) last = e.packageName ?: "" // 1: an activity came to the front
+                if (e.eventType == 1) { // 1: an activity came to the front
+                    last = e.packageName ?: ""
+                    screen = e.className ?: ""
+                }
             }
-            if (last == context.packageName || last.contains("launcher") || last.contains("systemui")) return ""
+            if (last.isEmpty() || last == context.packageName || last.contains("systemui")) return ""
+            // A launcher shows two things: its home screen, and the recent apps.
+            if (last.contains("launcher")) return if (screen.contains("ecents")) "" else HOME
             return last
         } catch (ex: Exception) {
             return null
         }
     }
 
+    /**
+     * Takes what the usage record says as what is in front, if it says anything. [why] is for
+     * the flight recorder. Says whether Prism may look at all.
+     */
+    private fun lookFront(context: Context, why: String): Boolean {
+        val p = frontFromUsage(context) ?: return false
+        val now = if (p == HOME) "" else p
+        if (p.isNotEmpty() && now != frontApp) {
+            Trail.add("$who: $why, ${if (now.isEmpty()) "a home screen" else now} is in front (it was ${if (frontApp.isEmpty()) "nothing" else frontApp})")
+            frontApp = now
+        }
+        return true
+    }
+
+    /**
+     * Whether it matters to this blob which app is in front. Only to a blob the person put down
+     * themselves and that stands for an app: it wears the Blob sign in that app and the app's
+     * icon everywhere else. A blob that came along with an app (see [guest]) is always the
+     * sign, and the timer never is: neither needs to know, so for them nothing ever looks.
+     */
+    private fun frontMatters() = !timer && !guest && pin?.kind == "app" && view != null
+
     // When a look at which app is in front was first asked for and not yet taken; 0, none waiting.
     private var frontAsked = 0L
     private var frontContext: Context? = null
-    private val frontLook = Runnable {
-        frontAsked = 0L
-        val c = frontContext
-        if (c != null && !foreground) {
-            val p = frontFromUsage(c)
-            if (!p.isNullOrEmpty() && p != frontApp) {
-                Trail.add("$who: $p is in front now (it was ${if (frontApp.isEmpty()) "nothing" else frontApp})")
-                frontApp = p
-            }
+    private var frontLooks = 0
+    private val frontLook: Runnable = object : Runnable {
+        override fun run() {
+            frontAsked = 0L
+            val c = frontContext
+            if (c == null || foreground || !frontMatters()) return
+            if (!lookFront(c, "after a touch")) return
+            // Opening an app can take longer than the touch that asked for it: two more looks,
+            // later, and then nothing until the screen is touched again.
+            if (frontLooks++ < 2) frontHandler.postDelayed(this, if (frontLooks == 1) 900L else 1600L)
         }
     }
 
@@ -1105,30 +1139,28 @@ class Floater(val timer: Boolean) {
      * a phone lying still asks nothing. Only where Prism has usage access.
      */
     private fun frontSoon(context: Context) {
-        if (foreground || pin == null) return
+        if (foreground || !frontMatters()) return
         val now = android.os.SystemClock.uptimeMillis()
         if (frontAsked != 0L && now - frontAsked > 1500) return
         if (frontAsked == 0L) frontAsked = now
         frontContext = context
+        frontLooks = 0
         frontHandler.removeCallbacks(frontLook)
-        frontHandler.postDelayed(frontLook, 700)
+        frontHandler.postDelayed(frontLook, 600)
     }
 
     /** The recent apps were opened. Looks, every second and a half for a while, for the app the person lands in. */
     private fun watchFront(context: Context) {
+        if (!frontMatters()) return
         frontAsked = 0L
         frontChecks = 12
         frontHandler.removeCallbacksAndMessages(null)
         frontHandler.postDelayed(object : Runnable {
             override fun run() {
-                if (frontChecks-- <= 0 || foreground) return
+                if (frontChecks-- <= 0 || foreground || !frontMatters()) return
                 val p = frontFromUsage(context) ?: return
-                if (p.isEmpty()) {
-                    frontHandler.postDelayed(this, 1500)
-                } else if (p != frontApp) {
-                    Trail.add("$who: after the recent apps, $p is in front")
-                    frontApp = p
-                }
+                // Still the recent apps: look again. Anything else is where the person landed.
+                if (p.isEmpty()) frontHandler.postDelayed(this, 1500) else lookFront(context, "after the recent apps")
             }
         }, 1200)
     }
@@ -1139,10 +1171,17 @@ class Floater(val timer: Boolean) {
         val r = object : android.content.BroadcastReceiver() {
             override fun onReceive(c: Context, i: android.content.Intent) {
                 val why = i.getStringExtra("reason")
-                // Home leads back to Prism, which is the home screen. The recent apps lead anywhere:
-                // most often straight back to the same app, so that is what is kept, and where
-                // Prism may look (usage access) it looks, a few times, until it knows.
-                if (why == "homekey") frontApp = "" else if (why == "recentapps") watchFront(c.applicationContext)
+                // The recent apps lead anywhere: most often straight back to the same app, so that
+                // is what is kept, and where Prism may look (usage access) it looks, a few times,
+                // until it knows. Home: where Prism is the home screen, Prism coming to the front
+                // settles it. Where it is not, Prism looks; and where it may not look, it takes it
+                // that no app is in front any more.
+                if (view != null && !timer) Trail.add("$who: Android says \"$why\"")
+                if (why == "recentapps") {
+                    watchFront(c.applicationContext)
+                } else if (why == "homekey" && frontMatters()) {
+                    if (frontFromUsage(c.applicationContext) == null) frontApp = "" else frontSoon(c.applicationContext)
+                }
             }
         }
         try {
@@ -1585,6 +1624,17 @@ class Floater(val timer: Boolean) {
         return g
     }
 
+    /**
+     * The blob counts as being where it leads. A blob that came along with an app (Launch and
+     * follow) always does, for as long as it is on the screen: over any app, in the recent apps,
+     * and for the moment it is still there as Prism comes back to the front (it used to show
+     * the app's icon for that moment). It is there for whatever app is in front, it is the
+     * Blob sign, and a tap opens the blobs. It does not depend on Prism knowing which app that
+     * is, which Android makes hard to know: so there is nothing to get wrong, in the recent
+     * apps or anywhere. A blob the person put down themselves counts only in its own app.
+     */
+    private fun home(p: Pin): Boolean = guest || here(p)
+
     /** The person is already where [p] leads: its app is in front, or its page is showing. */
     private fun here(p: Pin): Boolean = when (p.kind) {
         "app" -> !foreground && frontApp == p.pkg
@@ -1605,7 +1655,7 @@ class Floater(val timer: Boolean) {
         // icon and changes to the sign a second later. (Prism forgets the app whenever it is
         // itself in front again, so "Prism in front and this app noted" can only mean that.)
         val arriving = p.kind == "app" && foreground && frontApp == p.pkg
-        return mode() != 1 && container && blobs.isNotEmpty() && (arriving || here(p))
+        return mode() != 1 && container && blobs.isNotEmpty() && (arriving || home(p))
     }
 
     private fun paintBlob(
@@ -2226,15 +2276,10 @@ class Floater(val timer: Boolean) {
      */
     private fun tapPinned(context: Context) {
         val p = pin ?: return
-        // Where Prism may look, it looks before deciding: the person may have changed apps in a way it was not told of.
-        if (!foreground) {
-            val now = frontFromUsage(context)
-            if (!now.isNullOrEmpty() && now != frontApp) {
-                Trail.add("$who: on a tap, $now is in front (Prism thought ${if (frontApp.isEmpty()) "nothing" else frontApp})")
-                frontApp = now
-            }
-        }
-        val there = here(p)
+        // Where it matters and Prism may look, it looks before deciding: the person may have
+        // changed apps in a way it was not told of.
+        if (!foreground && frontMatters()) lookFront(context, "on a tap")
+        val there = home(p)
         lastTouch += "; Prism in front ${foreground}, thinks ${if (frontApp.isEmpty()) "nothing" else frontApp} is in front"
         if (there && container && blobs.isNotEmpty()) {
             lastTouch += "; so it opens the menu"
@@ -3108,7 +3153,8 @@ class Floater(val timer: Boolean) {
                         val onLens = mode() == 2 && Math.hypot((downX - cx).toDouble(), (downY - cy).toDouble()) < lensR + 6 * dp
                         val c = context
                         close()
-                        if (onLens) watcher.postDelayed({ usePinned(c) }, 110)
+                        // (A blob that only came along has nowhere of its own to go: the menu just closes.)
+                        if (onLens && !guest) watcher.postDelayed({ usePinned(c) }, 110)
                     }
                     invalidate()
                 }
@@ -3807,7 +3853,14 @@ class Floater(val timer: Boolean) {
             if (roaming) canvas.translate(offX, offY) else canvas.translate((width - size) / 2f, (height - size) / 2f)
             canvas.scale(k, k)
             val arriving = pin
-            if (come < 1f && arriving != null && container && mode() == 2) {
+            if (come < 1f && arriving != null && container && mode() == 2 && atHome()) {
+                // Coming up as the Blob sign (it came along with an app): the whole of it fades in
+                // as one. The app's own blob is not shown shrinking into it, as it is below: that
+                // was the app's icon on the screen for a moment, where there should only be the sign.
+                val layer = canvas.saveLayerAlpha(0f, 0f, base, base + 2 * dp, (come * 255).toInt().coerceIn(0, 255))
+                paintLens(canvas, k)
+                canvas.restoreToCount(layer)
+            } else if (come < 1f && arriving != null && container && mode() == 2) {
                 // Taking over from a blob that was put down: the glass comes in around it, and
                 // it comes down from the size it was put down at to the size it has inside.
                 val mid = base / 2f
