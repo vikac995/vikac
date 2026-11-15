@@ -69,7 +69,7 @@ class HomePage extends StatelessWidget {
           children: <Widget>[
             PageTitle(
               'Good evening',
-              kicker: 'Friday 13 November',
+              kicker: _today(),
               icon: Icons.tune_rounded,
               onIcon: () => showPrismSettings(context),
             ),
@@ -495,4 +495,33 @@ class _Spark extends CustomPainter {
 
   @override
   bool shouldRepaint(_Spark old) => false;
+}
+
+/// Today's date as Home shows it: "Sunday 15 November". Worked out when Home is drawn.
+String _today() {
+  const List<String> days = <String>[
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  const List<String> months = <String>[
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  final DateTime now = DateTime.now();
+  return '${days[now.weekday - 1]} ${now.day} ${months[now.month - 1]}';
 }

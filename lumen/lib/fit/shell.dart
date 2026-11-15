@@ -430,6 +430,9 @@ class _ShellState extends State<Shell>
   /// How many times Android has asked Prism to choose for the Sidekick: for the button test.
   int _sideAsks = 0;
 
+  /// Which of Prism's engines this is, as Android numbers them (0 until it has said).
+  int _engineNo = 0;
+
   /// Done once the five apps Prism starts with have been looked up on the phone.
   Future<void> _blobAppsLoaded = Future<void>.value();
 
@@ -508,8 +511,9 @@ class _ShellState extends State<Shell>
   void _spotHold(String which, bool on) {
     _panelClear.value = on ? which : null;
     // (Under the panel it is hidden, so that it never lies over the panel and takes its taps.
-    // Only while its place is being chosen, with the panel clear, is it shown.)
-    RestBubble.instance.tellCovered(!on);
+    // Only while its place is being chosen, with the panel clear, is it shown. Let go, it is
+    // hidden again only if a panel really is open: nothing may leave it hidden without one.)
+    RestBubble.instance.tellCovered(!on && PanelWatch.instance.anyOpen);
     if (on) {
       RestBubble.instance.setSpots(show: which);
     }
@@ -2568,9 +2572,25 @@ class _ShellState extends State<Shell>
       unawaited(_sidekickStart());
     });
     // Pressing the home button while Prism is the home screen: everything closes and Home shows.
+    // Which of Prism's engines this is (Android numbers them): for the flight recorder lines.
+    const MethodChannel('lumen/device')
+        .invokeMethod<int>('engineNo')
+        .then((int? n) {
+          _engineNo = n ?? 0;
+          Diag.instance.event(
+            'this Prism is engine #$_engineNo (shell ${identityHashCode(this).toRadixString(16)})',
+          );
+        })
+        .catchError((Object _) {});
     const MethodChannel('lumen/device').setMethodCallHandler((
       MethodCall call,
     ) async {
+      if (call.method.startsWith('sidekick') || call.method == 'sideSettings') {
+        // (Written down: which Prism got what Android sent. See Floater.toPrism.)
+        Diag.instance.event(
+          'Prism #$_engineNo got ${call.method}${mounted ? '' : ' (but it is not on the screen)'}',
+        );
+      }
       if (call.method == 'sidekickChoose' && mounted) {
         // Change or Add on one of the Sidekick's blobs: Prism has come to the front with its
         // app list, only to choose from. What is chosen is sent back to Android, which keeps
@@ -4117,6 +4137,7 @@ class _ShellState extends State<Shell>
       Future<void> memoryAt(String part) async {
         final Map<String, Object?> m = await t.lens(<String, Object?>{
           'op': 'memory',
+          'gc': true,
         });
         final (int cache, int icons) = _pictureBytes();
         t.memoryAt.add((
@@ -4662,6 +4683,9 @@ class _ShellState extends State<Shell>
         say('4 of 6, the settings');
         await memoryAt('part 4 of 6');
         await holdButton();
+        // (Part 4 is where native memory grew on the phone, about 40 MB a round: it is read
+        // after each of its steps, to see which.)
+        await memoryAt('part 4: settings open');
         final Offset? names = Robot.spot('names');
         if (names != null) {
           await Robot.tap(names + const Offset(88, 0), after: 900);
@@ -4672,6 +4696,7 @@ class _ShellState extends State<Shell>
           );
           t.check('labels: Show shows them', BlobSlots.instance.names);
         }
+        await memoryAt('part 4: labels hidden and shown');
         // A swipe set from the settings, the list closed without choosing: the settings come back.
         final Offset? swipe = Robot.spot('gesture3');
         if (swipe != null) {
@@ -4688,6 +4713,7 @@ class _ShellState extends State<Shell>
         }
         // (Each half is found by its own key: the panel changes size and place when the
         // Sidekick's switches come into it, and on a phone it may not be where it is here.)
+        await memoryAt('part 4: a swipe\'s list, and back');
         final Offset? toSide = Robot.spot('designSidekick');
         if (toSide != null) {
           await Robot.tap(toSide, after: 800);
@@ -4710,7 +4736,9 @@ class _ShellState extends State<Shell>
             );
           }
         }
+        await memoryAt('part 4: Sidekick, then Prism, chosen');
         await closePanel();
+        await memoryAt('part 4: settings closed');
         clean('after the settings\' own parts');
 
         // ------------------------------------------------ the Sidekick
@@ -4730,6 +4758,23 @@ class _ShellState extends State<Shell>
           s['lens'] == true && s['guest'] == true,
           'shown ${s['lens']}, ${s['pin']}',
         );
+        // Android's line to Prism must lead to this Prism, the one running the test: everything the
+        // Sidekick tells Prism or asks of it goes along it. (On the phone, in build 171, it did not.)
+        final Object? lineTo = s['engineLine'], testIn = s['engineHere'];
+        final bool lineOk = lineTo == null || lineTo == testIn;
+        t.check(
+          'sidekick: Android\'s line to Prism leads to this Prism, the one running the test',
+          lineOk,
+          'line to Prism #$lineTo, the test in Prism #$testIn, ${s['enginesMade']} made so far',
+        );
+        // What needs Android to reach this Prism is checked only where its line leads here:
+        // otherwise that one miss, just above, would be counted again in every check after it.
+        void heard(String name, bool ok, [String note = '']) => lineOk
+            ? t.check(name, ok, note)
+            : t.skip(
+                name,
+                'Android\'s line to Prism leads to Prism #$lineTo, not to this one (#$testIn)',
+              );
         // Its menu is Android's own (SidekickMenu.kt): kept, saved and changed there. Prism only
         // draws its pictures, and lends its app list to choose from.
         List<String> stored(Map<String, Object?> m) => <String>[
@@ -4912,7 +4957,7 @@ class _ShellState extends State<Shell>
             keys().join(' ') == mainBefore.join(' ') && _open == openBefore,
             'Prism ${keys().join(' ')}, blobs out $_open',
           );
-          t.check(
+          heard(
             'sidekick: Prism has been told its keys again, only for their pictures',
             _sideKeys.join(' ') == afterRemove.join(' '),
             'Prism was told ${_sideKeys.join(' ')}',
@@ -4928,7 +4973,7 @@ class _ShellState extends State<Shell>
             await menu('hold', i: 0);
             s = await menu('pop', which: 2, settleMs: 1200);
             await Robot.wait(1200);
-            t.check(
+            heard(
               'sidekick: Add brings Prism\'s list, only to choose for the place after it',
               _drawerOpen &&
                   _editSlot == _sideSlot &&
@@ -4936,14 +4981,14 @@ class _ShellState extends State<Shell>
                   _sideAsk?.slot == 0,
               'list $_drawerOpen, place $_editSlot, asked for ${_sideAsk?.slot} (add ${_sideAsk?.add})',
             );
-            t.check(
+            heard(
               'sidekick: while Prism\'s list is up for it, Prism\'s triangle does not turn',
               !turns || _signTurn.target.abs() < 0.01,
               'turned ${_signTurn.target.toStringAsFixed(2)}',
             );
             await Robot.tap(_home, after: 1300);
             s = await where();
-            t.check(
+            heard(
               'sidekick: closed without choosing, both menus are as they were and Prism\'s blobs do not open',
               !_drawerOpen &&
                   _sideAsk == null &&
@@ -4959,7 +5004,7 @@ class _ShellState extends State<Shell>
             await menu('hold', i: 0);
             s = await menu('pop', which: 0, settleMs: 1200);
             await Robot.wait(1200);
-            t.check(
+            heard(
               'sidekick: Change brings Prism\'s list, only to choose for that blob, and the button wears it meanwhile',
               _drawerOpen &&
                   _editSlot == _sideSlot &&
@@ -4975,13 +5020,13 @@ class _ShellState extends State<Shell>
             }
             s = await where();
             afterChange = <String>[...afterRemove]..[0] = 'action:0';
-            t.check(
+            heard(
               'sidekick: what was chosen is in that place of the Sidekick\'s menu, and only there',
               stored(s).join(' ') == afterChange.join(' ') &&
                   keys().join(' ') == mainBefore.join(' '),
               'its menu ${stored(s).join(' ')}; Prism ${keys().join(' ')}',
             );
-            t.check(
+            heard(
               'sidekick: chosen, Prism\'s blobs do not open',
               _open == openBefore,
               'blobs out $_open',
@@ -5001,7 +5046,7 @@ class _ShellState extends State<Shell>
             final List<String> want = together(
               <String>[...filled(afterChange)]..insert(2, 'action:0'),
             );
-            t.check(
+            heard(
               'sidekick: Add puts what was chosen right after the held blob, in the Sidekick\'s menu only',
               stored(s).join(' ') == want.join(' ') &&
                   keys().join(' ') == mainBefore.join(' ') &&
@@ -5021,10 +5066,12 @@ class _ShellState extends State<Shell>
             'sidekick: over another app, Add chosen: back in that app, and the Sidekick has it after the held blob',
             'sidekick: over another app, Add closed without choosing: back in that app, nothing changed',
           ];
-          if (t.other == null) {
+          if (t.other == null || !lineOk) {
             skip(
               roundTrip,
-              'none of the usual apps was found to be "another app"',
+              t.other == null
+                  ? 'none of the usual apps was found to be "another app"'
+                  : 'Android\'s line to Prism leads to Prism #$lineTo, not to this one (#$testIn)',
             );
           } else {
             await t.lens(<String, Object?>{
@@ -5162,12 +5209,18 @@ class _ShellState extends State<Shell>
           settleMs: 1500,
         );
         await Robot.wait(900);
-        t.check(
+        heard(
           'sidekick: held, its settings come up, for the Sidekick',
           _panelOpen && _designSide.value,
         );
+        // What needs its settings to be up is checked only if they came up. (Without them,
+        // nothing hides the Sidekick: see _spotHold.)
+        final bool panelUp = _panelOpen && _designSide.value;
+        void inPanel(String name, bool ok, [String note = '']) => panelUp
+            ? t.check(name, ok, note)
+            : t.skip(name, 'its settings did not come up');
         s = await where();
-        t.check(
+        inPanel(
           'sidekick: under its own settings it is hidden, so it cannot take their taps',
           s['covered'] == true,
           'hidden ${s['covered']}',
@@ -5179,7 +5232,7 @@ class _ShellState extends State<Shell>
         _spotHold('rest', true);
         await Robot.wait(700);
         s = await where();
-        t.check(
+        inPanel(
           'sidekick: a slider held, the panel clears and it is shown',
           _panelClear.value == 'rest' && s['covered'] != true,
           'clear ${_panelClear.value}, hidden ${s['covered']}',
@@ -5221,13 +5274,19 @@ class _ShellState extends State<Shell>
         _spotHold('tuck', false);
         await Robot.wait(700);
         s = await where();
-        t.check(
+        inPanel(
           'sidekick: the slider let go, the panel is back and it is hidden again',
           _panelClear.value == null && s['covered'] == true,
           'clear ${_panelClear.value}, hidden ${s['covered']}',
         );
         // Prism chosen in the same panel: the Sidekick steps aside, as under any panel.
-        final Offset? toPrism = Robot.spot('designPrism');
+        final Offset? toPrism = panelUp ? Robot.spot('designPrism') : null;
+        if (!panelUp) {
+          t.skip(
+            'sidekick: under Prism\'s own settings it is hidden',
+            'its settings did not come up',
+          );
+        }
         if (toPrism != null) {
           await Robot.tap(toPrism, after: 900);
           s = await where();
@@ -5250,7 +5309,7 @@ class _ShellState extends State<Shell>
         if (await openMenu()) {
           s = await menu('middleHold', settleMs: 1500);
           await Robot.wait(900);
-          t.check(
+          heard(
             'sidekick: held in the middle of its blobs, its settings come up',
             _panelOpen && _designSide.value && s['menu'] != true,
           );
@@ -5822,7 +5881,9 @@ class _ShellState extends State<Shell>
       if (_tab != 0) {
         _go(0);
       }
-      await t.lens(<String, Object?>{'op': 'end'});
+      final Map<String, Object?> ended = await t.lens(<String, Object?>{
+        'op': 'end',
+      });
       Haptics.enabled = hapticsWere;
       t.close();
       Diag.instance.banner.value = null;
@@ -5835,6 +5896,15 @@ class _ShellState extends State<Shell>
           'SET FOR THE TEST, and put back afterwards: ${adjusted.join('  ·  ')}',
         if (stoppedAt != null)
           'STOPPED BY YOU while it was at: $stoppedAt (what follows is as far as it got)',
+        // Which of Prism's engines ran the test, and where Android's line to Prism led. (There
+        // should be one engine; build 171's phone run looked like two.)
+        if (ended['engineHere'] != null) ...<String>[
+          'PRISM\'S ENGINES: ${ended['enginesMade']} made since Prism started, ${ended['enginesAlive']} alive at the end; the test ran in #${ended['engineHere']}; Android\'s line to Prism led to #${ended['engineLine']} at the end',
+          for (final Object? e
+              in (ended['engineHistory'] as List<Object?>?) ??
+                  const <Object?>[])
+            '  $e',
+        ],
       ]);
       if (Platform.environment['PRISM_LONG_TEST'] != null) {
         // ignore: avoid_print
@@ -9023,7 +9093,7 @@ void showPrismSettings(BuildContext context) {
                             shape: const StadiumBorder(),
                           ),
                           child: Text(
-                            'Run the button test (about 8 min, hands off)',
+                            'Run the button test (about 14 min, hands off)',
                             style: LumenType.text(
                               15,
                               weight: 700,

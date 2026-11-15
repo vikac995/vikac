@@ -1,5 +1,30 @@
 # Lumen changelog
 
+## Prism, build 172 (15 November 2026)
+
+**File:** `releases/prism-build-172.apk`
+
+Needs Play Protect paused to install. Can be installed over build 171.
+
+**Your phone run of 171:** Prism's blob menu, the settings picker and the smallest tuck all came out right in all four rounds. One new problem: in the Sidekick part, nothing the Sidekick told Prism reached the Prism that was running the test. That's why Change, Add and its settings "failed".
+
+- **The likely cause: two copies of Prism at once.**
+  - Prism is your home screen. Android keeps the home-screen copy of Prism separate from a copy opened any other way (the app icon, recents, or the Sidekick bringing Prism forward). So two copies, each with its own engine, can be alive at the same time.
+  - The Sidekick always talked to the copy made last. If that wasn't the one on screen, what it said went to the other one. This also fits "it takes me back to Prism and nothing happens".
+  - I haven't proven it yet: it can only be seen on the phone.
+- **What this build does about it:**
+  - The Sidekick now always talks to the copy of Prism that is on screen, and never to one that is gone. With only one copy, nothing changes.
+  - Every copy is numbered. The flight recorder writes which copy each message was sent to and whether it answered. The button test's report lists every copy made, with times, and checks that the Sidekick talks to the copy running the test.
+  - Next run settles it.
+- **The Sidekick stayed hidden** for the rest of a round after its settings failed to open. Nothing hides it now unless a panel really is open.
+- **The test:** if the Sidekick isn't talking to the test's Prism, or its settings didn't open, that's reported once as wrong. The checks that depend on it are listed as SKIPPED instead of failing one after another.
+- **Memory:** native memory grew about 40 MB a round during part 4 of the button test (Prism's settings). The cause isn't found yet, and nothing changed blind. The report now reads memory after each step of part 4, and again after Java's garbage is collected. That shows which step it is, and whether the memory is really kept or just not yet given back.
+- **Home** shows today's date (it said "Friday 13 November").
+- **The button test's label** says about 14 minutes, which is what it takes.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 68 of 69 (the miss is the Android-only measurement); the long test, 65 of 69 with the usual 4 misses (a first run also missed the three "hold, then carry" timing checks; the rerun did not).
+**Not checked:** on a phone. Everything about the copies of Prism and the Sidekick runs only on Android.
+
 ## Prism, build 171 (15 November 2026)
 
 **File:** `releases/prism-build-171.apk`

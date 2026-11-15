@@ -6,7 +6,11 @@ Everything below was agreed with the owner of the project.
 
 **Where the work stands:** step 1 of THE PLAN (below) is **done** and accepted in review: build 170, report
 `reviews/step1-report.md`. Build 171 ("step 1b") then fixed what the first phone run of the button test
-showed (report `reviews/step1b-report.md`). Step 2 has not started. Tasks are in `tasks/`; each ends with a
+showed (report `reviews/step1b-report.md`). Build 172 ("step 1c", `reviews/step1c-report.md`) is about
+messages from the Sidekick reaching a *second* copy of Prism: Prism is the home activity, and a launch
+by an ordinary intent (app icon, recents, Prism's own `openPrism`) can make a second `MainActivity`
+with its own engine. Android's line to Prism now follows the copy on screen; the test report lists
+every engine. Not yet confirmed on the phone. Step 2 has not started. Tasks are in `tasks/`; each ends with a
 report in `reviews/` that is reviewed before the owner relies on the work. The preview scripts are in
 `tools/preview/` (see its README).
 

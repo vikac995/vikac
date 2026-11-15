@@ -173,7 +173,8 @@ object SidekickMenu {
     private fun changed(context: Context, now: Boolean = false) {
         save(context, now)
         show()
-        try { RestBubble.channel?.invokeMethod("sidekickKeys", keys.toList()) } catch (e: Exception) {}
+        // (Written down in the flight recorder: sent, to which Prism, and whether it answered.)
+        RestBubble.toPrism("sidekickKeys", keys.toList())
     }
 
     /**

@@ -481,15 +481,15 @@ class TestRun {
       o
         ..writeln()
         ..writeln(
-          'MEMORY BY PART, MB, at the start of each part. "native" is what Prism and Android\'s side hold outside Java and the graphics chip; "process" is all of Prism as it sees itself.',
+          'MEMORY BY PART, MB, at the start of each part (and after each step of part 4). "native" is what Prism and Android\'s side hold outside Java and the graphics chip, "after gc" the same once Java\'s garbage is collected; "process" is all of Prism as it sees itself.',
         )
         ..writeln(
-          '${'when'.padRight(40)} ${'native'.padLeft(7)} ${'graphics'.padLeft(9)} ${'java'.padLeft(5)} ${'total'.padLeft(6)} ${'process'.padLeft(8)} ${'pictures'.padLeft(9)}',
+          '${'when'.padRight(48)} ${'native'.padLeft(7)} ${'after gc'.padLeft(9)} ${'graphics'.padLeft(9)} ${'java'.padLeft(5)} ${'total'.padLeft(6)} ${'process'.padLeft(8)} ${'pictures'.padLeft(9)}',
         );
       String mb(Object? kb) => kb is num ? (kb / 1024).round().toString() : '-';
       for (final (String at, Map<String, Object?> m) in memoryAt) {
         o.writeln(
-          '${at.padRight(40)} ${mb(m['mem_native']).padLeft(7)} ${mb(m['mem_graphics']).padLeft(9)} ${mb(m['mem_java']).padLeft(5)} ${mb(m['pss']).padLeft(6)} ${mb(m['rssKb']).padLeft(8)} ${mb(m['picturesKb']).padLeft(9)}',
+          '${at.padRight(48)} ${mb(m['mem_native']).padLeft(7)} ${mb(m['mem_native_gc']).padLeft(9)} ${mb(m['mem_graphics']).padLeft(9)} ${mb(m['mem_java']).padLeft(5)} ${mb(m['pss']).padLeft(6)} ${mb(m['rssKb']).padLeft(8)} ${mb(m['picturesKb']).padLeft(9)}',
         );
       }
     }

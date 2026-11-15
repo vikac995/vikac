@@ -17,6 +17,41 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 
 class MainActivity : FlutterActivity() {
+    companion object {
+        /** How many times Prism's engine (its Flutter side, with its own copy of Prism) has been made in this process. */
+        var enginesMade = 0
+
+        /** The engines alive now, by number, each with its line. Normally there is one. */
+        private val live = LinkedHashMap<Int, MethodChannel>()
+
+        /** Each engine's comings and goings, with the time: for the test report, which keeps them whole. */
+        val engineHistory = ArrayList<String>()
+
+        private fun noteEngine(what: String) {
+            val at = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())
+            engineHistory.add("$at $what")
+            while (engineHistory.size > 40) engineHistory.removeAt(0)
+            Trail.add(what)
+        }
+
+        /** Android's line to Prism leads to engine [n] from now on (if it is alive). */
+        private fun lineTo(n: Int, why: String) {
+            val ch = live[n] ?: return
+            if (RestBubble.channelEngine == n && RestBubble.channel === ch) return
+            for (b in Floaters) {
+                b.channel = ch
+                b.channelEngine = n
+            }
+            noteEngine("Android's line to Prism now leads to #$n ($why)")
+        }
+    }
+
+    /** This screen's engine: its number, for the flight recorder and the test. */
+    var engineNo = 0
+
+    /** Which screen this is, for the flight recorder: there should only ever be one at a time. */
+    private val screen get() = Integer.toHexString(System.identityHashCode(this))
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Whether all of Prism was started afresh (Android had closed it, or it crashed) or only
@@ -24,7 +59,7 @@ class MainActivity : FlutterActivity() {
         // different cures, and the flight recorder could not tell them apart before.
         val fresh = !Trail.started()
         Trail.start(applicationContext)
-        Trail.add(if (fresh) "Prism's screen made: all of Prism started afresh" else "Prism's screen made again: Prism itself had kept running" + (if (savedInstanceState != null) ", Android had taken the screen away" else ""))
+        Trail.add((if (fresh) "Prism's screen made: all of Prism started afresh" else "Prism's screen made again: Prism itself had kept running" + (if (savedInstanceState != null) ", Android had taken the screen away" else "")) + " (screen $screen, engine #$engineNo)")
         if (fresh) Trail.add(whyClosed())
         requestHighestRefreshRate()
     }
@@ -62,7 +97,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
-        Trail.add("Prism's screen taken down" + (if (isFinishing) " (closed)" else " (by Android, to be made again)"))
+        Trail.add("Prism's screen taken down" + (if (isFinishing) " (closed)" else " (by Android, to be made again)") + " (screen $screen, engine #$engineNo)")
         super.onDestroy()
     }
 
@@ -106,6 +141,8 @@ class MainActivity : FlutterActivity() {
 
     override fun onStart() {
         super.onStart()
+        // The Prism in front is the one the Sidekick talks to (should there ever be two).
+        lineTo(engineNo, "it came to the front")
         for (b in Floaters) b.foreground = true
         Floater.activity = java.lang.ref.WeakReference(this)
         Trail.add("Prism in front")
@@ -150,6 +187,22 @@ class MainActivity : FlutterActivity() {
         } else if (intent.hasCategory(android.content.Intent.CATEGORY_HOME)) {
             device?.invokeMethod("home", null)
         }
+    }
+
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        live.remove(engineNo)
+        noteEngine("Prism's engine #$engineNo let go (screen $screen); ${live.size} alive")
+        // Android's line to Prism never stays with a Prism that is gone: it goes to one still alive.
+        if (RestBubble.channelEngine == engineNo) {
+            val other = live.keys.lastOrNull()
+            if (other != null) {
+                lineTo(other, "#$engineNo is gone")
+            } else {
+                for (b in Floaters) b.channel = null
+                noteEngine("Android's line to Prism leads nowhere: no Prism is alive")
+            }
+        }
+        super.cleanUpFlutterEngine(flutterEngine)
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -270,7 +323,14 @@ class MainActivity : FlutterActivity() {
         }
         // Which phone this is, for the test report.
         device = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "lumen/device")
-        for (b in Floaters) b.channel = device
+        // Each engine has its own copy of Prism. Android's line to Prism (what the Sidekick and
+        // the timer tell it, and ask of it) leads to the one made last.
+        engineNo = ++enginesMade
+        // (The recorder is opened here too: this runs inside onCreate, before its own line.)
+        Trail.start(applicationContext)
+        live[engineNo] = device!!
+        noteEngine("Prism's engine #$engineNo made (screen $screen); ${live.size} alive")
+        lineTo(engineNo, "the one just made")
         device!!.setMethodCallHandler { call, result ->
             if (call.method == "rest") {
                 // Everything the floating workout needs to know, or nothing if no workout is on.
@@ -355,6 +415,9 @@ class MainActivity : FlutterActivity() {
                     if (show != null) b.showSpot(show == "tuck")
                 }
                 result.success(null)
+            } else if (call.method == "engineNo") {
+                // Which engine this Prism is, for its own flight recorder lines.
+                result.success(engineNo)
             } else if (call.method == "holdMs") {
                 // How long a finger held still counts as a hold, the same in Prism as on the Sidekick.
                 result.success(Floater.holdTime().toInt())
@@ -570,7 +633,14 @@ class MainActivity : FlutterActivity() {
                 whom.test(this, asked) { told ->
                     if (!answered) {
                         answered = true
-                        try { result.success(told) } catch (e: Exception) {}
+                        // (With which Prism asked, and which Prism Android's line leads to: they must be the same.)
+                        val m = HashMap<String, Any?>(told)
+                        m["engineHere"] = engineNo
+                        m["engineLine"] = RestBubble.channelEngine
+                        m["enginesMade"] = enginesMade
+                        m["enginesAlive"] = live.size
+                        if (asked["op"] == "begin" || asked["op"] == "end") m["engineHistory"] = ArrayList(engineHistory)
+                        try { result.success(m) } catch (e: Exception) {}
                     }
                 }
             } else if (call.method == "battery") {
@@ -1071,6 +1141,33 @@ class Floater(val timer: Boolean) {
     class SetRow(var kg: Double, var reps: Int, var done: Boolean)
 
     var channel: MethodChannel? = null
+
+    /** Which of Prism's engines [channel] leads to (see MainActivity.engineNo). */
+    var channelEngine = 0
+
+    /**
+     * Tells Prism something, and writes down in the flight recorder that it was sent, to which
+     * Prism, and whether that Prism answered. (No answer line after a "sending" line: it went
+     * to a Prism that is gone.)
+     */
+    fun toPrism(method: String, args: Any?) {
+        val ch = channel
+        val n = channelEngine
+        if (ch == null) {
+            Trail.add("$who: $method not sent: no line to Prism")
+            return
+        }
+        Trail.add("$who: sending $method to Prism #$n")
+        try {
+            ch.invokeMethod(method, args, object : MethodChannel.Result {
+                override fun success(result: Any?) { Trail.add("$who: Prism #$n answered $method") }
+                override fun error(code: String, message: String?, details: Any?) { Trail.add("$who: Prism #$n answered $method with an error ($code)") }
+                override fun notImplemented() { Trail.add("$who: Prism #$n did not answer $method (nothing listening)") }
+            })
+        } catch (e: Exception) {
+            Trail.add("$who: $method to Prism #$n failed (${e.javaClass.simpleName})")
+        }
+    }
     var active = false
     var title = ""
     var exercise = ""
@@ -2218,6 +2315,20 @@ class Floater(val timer: Boolean) {
                             m["mem_$k"] = mi.getMemoryStat(name)?.toIntOrNull() ?: 0
                         }
                     } catch (e: Exception) {}
+                    // Asked to (the button test, at each part): native memory again after Java's
+                    // garbage is collected. What Java objects hold outside Java (pictures, for one)
+                    // is given back only then: what is still there afterwards is really kept.
+                    if (a["gc"] == true) {
+                        try {
+                            Runtime.getRuntime().gc()
+                            System.runFinalization()
+                            Runtime.getRuntime().gc()
+                            val mi = android.os.Debug.MemoryInfo()
+                            android.os.Debug.getMemoryInfo(mi)
+                            m["mem_native_gc"] = mi.getMemoryStat("summary.native-heap")?.toIntOrNull() ?: 0
+                            m["mem_java_gc"] = mi.getMemoryStat("summary.java-heap")?.toIntOrNull() ?: 0
+                        } catch (e: Exception) {}
+                    }
                     done(m)
                 }
                 // Prism is brought back to the front, from whatever app is there.
@@ -2738,22 +2849,24 @@ class Floater(val timer: Boolean) {
     private fun askPrism(method: String, args: Any?, tries: Int = 12) {
         val again = Runnable { askPrism(method, args, tries - 1) }
         val ch = channel
+        val n = channelEngine
         if (ch == null) {
-            if (tries > 0) watcher.postDelayed(again, 250)
+            if (tries > 0) watcher.postDelayed(again, 250) else Trail.add("$who: $method not sent: no line to Prism")
             return
         }
+        if (tries == 12) Trail.add("$who: sending $method to Prism #$n")
         try {
             ch.invokeMethod(method, args, object : MethodChannel.Result {
-                override fun success(result: Any?) {}
+                override fun success(result: Any?) { Trail.add("$who: Prism #$n answered $method") }
                 override fun error(code: String, message: String?, details: Any?) {
-                    if (tries > 0) watcher.postDelayed(again, 250)
+                    if (tries > 0) watcher.postDelayed(again, 250) else Trail.add("$who: Prism #$n answered $method with an error ($code)")
                 }
                 override fun notImplemented() {
-                    if (tries > 0) watcher.postDelayed(again, 250) else Trail.add("$who: Prism did not answer $method")
+                    if (tries > 0) watcher.postDelayed(again, 250) else Trail.add("$who: Prism #$n did not answer $method (nothing listening)")
                 }
             })
         } catch (e: Exception) {
-            if (tries > 0) watcher.postDelayed(again, 250)
+            if (tries > 0) watcher.postDelayed(again, 250) else Trail.add("$who: $method to Prism #$n failed (${e.javaClass.simpleName})")
         }
     }
 
