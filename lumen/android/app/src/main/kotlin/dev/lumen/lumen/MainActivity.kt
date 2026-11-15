@@ -303,7 +303,7 @@ class MainActivity : FlutterActivity() {
                 result.success(RestBubble.lensSizeNow(applicationContext))
             } else if (call.method == "blobLook") {
                 // Which look the Blob's sign has: the fan, pearls, rays or petals.
-                RestBubble.look = ((call.arguments as? Number)?.toInt() ?: 0).coerceIn(0, 3)
+                RestBubble.look = ((call.arguments as? Number)?.toInt() ?: 1).coerceIn(1, 3)
                 result.success(null)
             } else if (call.method == "blobNames") {
                 // Whether the blobs show their names under them.
@@ -1081,8 +1081,41 @@ class Floater(val timer: Boolean) {
         }
     }
 
+    // When a look at which app is in front was first asked for and not yet taken; 0, none waiting.
+    private var frontAsked = 0L
+    private var frontContext: Context? = null
+    private val frontLook = Runnable {
+        frontAsked = 0L
+        val c = frontContext
+        if (c != null && !foreground) {
+            val p = frontFromUsage(c)
+            if (!p.isNullOrEmpty() && p != frontApp) {
+                Trail.add("$who: $p is in front now (it was ${if (frontApp.isEmpty()) "nothing" else frontApp})")
+                frontApp = p
+            }
+        }
+    }
+
+    /**
+     * The screen was touched while the blob floats over another app. Changing apps takes a touch
+     * (a swipe along the foot of the screen, the recent apps, a link), and Android tells Prism of
+     * hardly any of them. So a little after the touching stops, or after a second and a half of
+     * it at most, Prism takes one look at which app is in front. With no touch there is no look:
+     * a phone lying still asks nothing. Only where Prism has usage access.
+     */
+    private fun frontSoon(context: Context) {
+        if (foreground || pin == null) return
+        val now = android.os.SystemClock.uptimeMillis()
+        if (frontAsked != 0L && now - frontAsked > 1500) return
+        if (frontAsked == 0L) frontAsked = now
+        frontContext = context
+        frontHandler.removeCallbacks(frontLook)
+        frontHandler.postDelayed(frontLook, 700)
+    }
+
     /** The recent apps were opened. Looks, every second and a half for a while, for the app the person lands in. */
     private fun watchFront(context: Context) {
+        frontAsked = 0L
         frontChecks = 12
         frontHandler.removeCallbacksAndMessages(null)
         frontHandler.postDelayed(object : Runnable {
@@ -1171,8 +1204,8 @@ class Floater(val timer: Boolean) {
     // blobs sit a little nearer.
     var blobNames = true
 
-    /** Which look the Blob's sign has: 0 the fan, 1 pearls, 2 rays, 3 petals. The same as in Prism. */
-    var look = 0
+    /** Which look the Blob's sign has: 1 pearls, 2 rays, 3 petals. The same as in Prism. */
+    var look = 1
         set(v) { if (field != v) { field = v; view?.postInvalidate() } }
 
     // A lens has been dropped on the cross and is being closed. Until that is done no new lens is made.
@@ -1662,24 +1695,29 @@ class Floater(val timer: Boolean) {
         canvas.restore()
     }
 
-    /** Petals: the blobs' colours laid over one another, opening the way the blobs do. */
+    /**
+     * Petals: the blobs' colours as petals round a quiet white point in the very middle of the
+     * glass, nearly filling it. The same numbers as BlobSign in Prism.
+     */
     private fun paintPetals(canvas: android.graphics.Canvas, cx: Float, cy: Float, u: Float, a: Double, paint: android.graphics.Paint) {
         val n = blobs.size.coerceIn(1, 5)
-        val back = (if (n == 1) 4f else 8f) * u
-        val step = (if (n <= 3) 46.0 else 36.0)
-        val fx = cx - back * Math.cos(a).toFloat(); val fy = cy - back * Math.sin(a).toFloat()
+        val step = if (n == 1) 0.0 else 360.0 / n
         paint.shader = null
         paint.style = android.graphics.Paint.Style.FILL
         for (k in 0 until n) {
             canvas.save()
-            canvas.translate(fx, fy)
+            canvas.translate(cx, cy)
             canvas.rotate((Math.toDegrees(a) + (k - (n - 1) / 2.0) * step).toFloat())
-            paint.color = (blobs[k].color and 0x00FFFFFF) or (0xCC shl 24)
-            canvas.drawOval(0.5f * u, -5.4f * u, 19.5f * u, 5.4f * u, paint)
+            // A little softer than the blob's own colour, and seen through.
+            paint.color = (lighter(blobs[k].color, 0.14f) and 0x00FFFFFF) or (0xC2 shl 24)
+            canvas.drawOval(1f * u, -9.5f * u, 25f * u, 9.5f * u, paint)
             canvas.restore()
         }
-        paint.color = WHITE
-        canvas.drawCircle(fx + 1.5f * u * Math.cos(a).toFloat(), fy + 1.5f * u * Math.sin(a).toFloat(), 2.2f * u, paint)
+        paint.shader = android.graphics.RadialGradient(cx, cy, 6.5f * u, 0x59FFFFFF, 0x00FFFFFF, android.graphics.Shader.TileMode.CLAMP)
+        canvas.drawCircle(cx, cy, 6.5f * u, paint)
+        paint.shader = null
+        paint.color = 0xD9FFFFFF.toInt()
+        canvas.drawCircle(cx, cy, 2.4f * u, paint)
     }
 
     /** The fan: a stem for each blob with a dot in its colour. */
@@ -2479,7 +2517,10 @@ class Floater(val timer: Boolean) {
             val lp = android.view.WindowManager.LayoutParams(
                 size, size,
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+                android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    // The blob is told when the screen is touched somewhere else (that it was, not where
+                    // or what): its cue to look which app is in front. See [frontSoon].
+                    (if (timer) 0 else android.view.WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH),
                 android.graphics.PixelFormat.TRANSLUCENT,
             )
             lp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
@@ -4751,6 +4792,11 @@ class Floater(val timer: Boolean) {
         }
 
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            if (e.actionMasked == android.view.MotionEvent.ACTION_OUTSIDE) {
+                // A touch somewhere else on the screen. Apps are only ever changed by touching it.
+                frontSoon(context.applicationContext)
+                return false
+            }
             if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
                 lastTouch = "down at ${e.rawX.toInt()},${e.rawY.toInt()}; lens at ${posX().toInt()},${posY().toInt()} size ${sizeNow().toInt()}" +
                     (if (roaming) ", roaming" else "") + (if (tucked) ", tucked" else "") + (if (hideInner) ", not yet shown" else "") +

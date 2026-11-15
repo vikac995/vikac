@@ -6,7 +6,8 @@ import 'package:material_ui/material_ui.dart';
 /// and dots (drawn where it always was); the others are drawn here. Android draws the same
 /// ones for the floating blob, from the same numbers: change one, change the other.
 abstract final class BlobSign {
-  static const List<String> names = <String>['Fan', 'Pearls', 'Rays', 'Petals'];
+  /// By its number: 1 pearls, 2 rays, 3 petals. (There was a fan of stems, 0; it is gone.)
+  static const List<String> names = <String>['', 'Pearls', 'Rays', 'Petals'];
 
   static const List<double> _pearl = <double>[6.0, 5.4, 4.8, 4.3, 3.9];
   static const List<double> _spread = <double>[0, 52, 40, 31, 26];
@@ -172,7 +173,8 @@ abstract final class BlobSign {
     );
   }
 
-  /// The blobs' colours as petals laid over one another, opening the way the blobs do.
+  /// The blobs' colours as petals round a quiet white point in the very middle of the glass,
+  /// nearly filling it.
   static void _petals(
     Canvas canvas,
     double u,
@@ -181,46 +183,52 @@ abstract final class BlobSign {
     double a,
     double seen,
   ) {
-    final double back = (n == 1 ? 4.0 : 8.0) * u,
-        step = (n <= 3 ? 46.0 : 36.0) * math.pi / 180;
-    final Offset foot = Offset(-back * math.cos(a), -back * math.sin(a));
+    final double step = n == 1 ? 0 : 2 * math.pi / n;
     for (int k = 0; k < n; k++) {
-      final double t = a + (k - (n - 1) / 2) * step;
       canvas
         ..save()
-        ..translate(foot.dx, foot.dy)
-        ..rotate(t)
+        ..rotate(a + (k - (n - 1) / 2) * step)
         ..drawOval(
-          Rect.fromLTRB(0.5 * u, -5.4 * u, 19.5 * u, 5.4 * u),
-          Paint()..color = colours[k].withValues(alpha: 0.8 * seen),
+          Rect.fromLTRB(1 * u, -9.5 * u, 25 * u, 9.5 * u),
+          // A little softer than the blob's own colour, and seen through.
+          Paint()
+            ..color = Color.lerp(
+              colours[k],
+              Colors.white,
+              0.14,
+            )!.withValues(alpha: 0.76 * seen),
         )
         ..restore();
     }
-    canvas.drawCircle(
-      foot + Offset(math.cos(a), math.sin(a)) * 1.5 * u,
-      2.2 * u,
-      Paint()..color = Colors.white.withValues(alpha: seen),
-    );
+    canvas
+      ..drawCircle(
+        Offset.zero,
+        6.5 * u,
+        Paint()
+          ..shader = RadialGradient(
+            colors: <Color>[
+              Colors.white.withValues(alpha: 0.35 * seen),
+              Colors.white.withValues(alpha: 0),
+            ],
+          ).createShader(Rect.fromCircle(center: Offset.zero, radius: 6.5 * u)),
+      )
+      ..drawCircle(
+        Offset.zero,
+        2.4 * u,
+        Paint()..color = Colors.white.withValues(alpha: 0.85 * seen),
+      );
   }
 }
 
 /// One of the looks, drawn small, for choosing among them.
 class BlobSignPreview extends CustomPainter {
-  const BlobSignPreview(this.look, this.colours, this.fan);
+  const BlobSignPreview(this.look, this.colours);
   final int look;
   final List<Color> colours;
 
-  /// Draws the first look, the fan, which lives with the button's own drawing.
-  final void Function(Canvas canvas, Size size) fan;
-
   @override
-  void paint(Canvas canvas, Size size) {
-    if (look == 0) {
-      fan(canvas, size);
-    } else {
+  void paint(Canvas canvas, Size size) =>
       BlobSign.paint(canvas, size, look, colours);
-    }
-  }
 
   @override
   bool shouldRepaint(BlobSignPreview old) =>

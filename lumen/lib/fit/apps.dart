@@ -806,15 +806,15 @@ class Apps extends ChangeNotifier {
     }
   }
 
-  /// Which look the Blob's sign has: 0 the fan, 1 pearls, 2 rays, 3 petals.
-  int blobLook = 0;
+  /// Which look the Blob's sign has: 1 pearls, 2 rays, 3 petals.
+  int blobLook = 1;
   File get _lookFile => File('${_iconsFile.parent.path}/prism_blob_look');
   void setBlobLook(int v) {
-    blobLook = v.clamp(0, 3);
+    blobLook = v.clamp(1, 3);
     try {
       _lookFile.writeAsStringSync('$blobLook');
     } catch (_) {
-      // Not saved: the fan next time.
+      // Not saved: pearls next time.
     }
     notifyListeners();
   }
@@ -868,12 +868,12 @@ class Apps extends ChangeNotifier {
       // Never changed: pages.
     }
     try {
-      blobLook = (int.tryParse(_lookFile.readAsStringSync().trim()) ?? 0).clamp(
-        0,
+      blobLook = (int.tryParse(_lookFile.readAsStringSync().trim()) ?? 1).clamp(
+        1,
         3,
       );
     } catch (_) {
-      // Never chosen: the fan.
+      // Never chosen: pearls.
     }
     try {
       cogShown = int.tryParse(_cogFile.readAsStringSync().trim()) ?? 0;

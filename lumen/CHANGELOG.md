@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 128 (15 November 2026)
+
+**File:** `releases/prism-build-128.apk`
+
+Needs Play Protect paused to install. Can be installed over build 127.
+
+- **The floating blob's icon the wrong way round, from your recording** (Claude's icon in Claude, the sign in Gallery). You change apps by swiping along the foot of the screen, and Android tells Prism nothing of that, so its note of which app is in front went stale and stayed one app behind. Now the blob is told whenever the screen is touched somewhere else (only that it was, not where or what), and a little after the touching stops Prism takes one look at which app is in front. No touch, no look: a phone lying still asks nothing. This needs usage access, which your last report shows Prism has.
+- **The Fan is gone.** Three looks are left: Pearls (now where it starts), Rays, Petals.
+- **Petals, as you asked:** much larger, nearly filling the glass, as a full flower round the middle; the colours a little softer; the white point always in the very middle, smaller and quieter, with a faint glow.
+- Rays is unchanged for now: it is being thought out again from the start.
+
+**Checked:** it compiles; in my preview: the three looks in the Blob panel, the new Petals on Prism's button; the automatic test in the preview, 56 of 60, the usual 4 misses.
+**Not checked:** on a phone, and the floating blob not at all (it only exists on Android). The thing to try: swipe between two apps a few times with a blob out, and see that it is the sign in its own app and the app's icon elsewhere, within about a second each time. If it is wrong, "Send what just happened" will now show a line each time Prism looked.
+
 ## Prism, build 127 (15 November 2026)
 
 **File:** `releases/prism-build-127.apk`

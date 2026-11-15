@@ -641,9 +641,9 @@ class _ShellState extends State<Shell>
                       ),
                       const SizedBox(height: 10),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: <Widget>[
-                          for (int i = 0; i < BlobSign.names.length; i++)
+                          for (int i = 1; i < BlobSign.names.length; i++)
                             GestureDetector(
                               key: Robot.key('blobLook$i'),
                               behavior: HitTestBehavior.opaque,
@@ -682,17 +682,11 @@ class _ShellState extends State<Shell>
                                         child: Center(
                                           child: CustomPaint(
                                             size: const Size(38, 38),
-                                            painter: BlobSignPreview(
-                                              i,
-                                              <Color>[
-                                                for (final (double, Color) b
-                                                    in _fanBlobs)
-                                                  b.$2,
-                                              ],
-                                              (Canvas canvas, Size size) =>
-                                                  _FanMark(_fanBlobs)
-                                                      .paint(canvas, size),
-                                            ),
+                                            painter: BlobSignPreview(i, <Color>[
+                                              for (final (double, Color) b
+                                                  in _fanBlobs)
+                                                b.$2,
+                                            ]),
                                           ),
                                         ),
                                       ),
