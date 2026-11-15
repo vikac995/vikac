@@ -4165,6 +4165,12 @@ class _ShellState extends State<Shell>
           'flick: a flick up opens the app list, and not the settings',
           _drawerOpen && !_panelOpen,
         );
+        if (!_drawerOpen) {
+          // (A flick missed from timing must not knock over every check after it.)
+          await calm();
+          _setDrawer(true);
+          await Robot.wait(900);
+        }
         signIs('with the app list up it has turned half way', math.pi);
         // Held with the app list up: the button only closes it.
         await holdButton();

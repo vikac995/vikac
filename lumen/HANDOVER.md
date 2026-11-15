@@ -1,7 +1,12 @@
 # Handover: Prism, after build 169 (15 November 2026)
 
-Read this first in a new chat. Then `PRISM.md` (the product and its rules), the top of `CHANGELOG.md`
-(what each build did), and only then the code. Everything below was agreed with the owner of the project.
+Read this first in a new chat. Then **`DESIGN.md` (the design rules: every agent follows them)**,
+`PRISM.md` (the product), the top of `CHANGELOG.md` (what each build did), and only then the code.
+Everything below was agreed with the owner of the project.
+
+**The current task** is in `tasks/` (start with `tasks/STEP1-separate-menus.md`). Each task ends with a
+report in `reviews/` that is reviewed before the owner relies on the work. The preview scripts are in
+`tools/preview/` (see its README).
 
 ## Who you are working with, and how
 
