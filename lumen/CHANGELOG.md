@@ -1,5 +1,17 @@
 # Lumen changelog
 
+## Prism, build 164 (15 November 2026)
+
+**File:** `releases/prism-build-164.apk`
+
+Needs Play Protect paused to install. Can be installed over build 163.
+
+- **The List-mode pinch no longer jumps at the end.** The list was quietly keeping the phone's status-bar height as space at its top, which the change of density did not know about: the apps arrived about that much higher than the list, then snapped down. The list no longer has that space (the panel is well below the status bar anyway), so they land exactly where the list is. The first row of the list also starts a little higher than before because of this.
+- **An emptied menu shows one "+" blob.** Remove every blob from Prism's menu or the Sidekick's and a single "+" stands in the middle; a tap on it opens the list to add one.
+
+**Checked:** it compiles, both sides; the automatic test, 65 of 69 with the usual 4 misses. (A first run had 3 more misses, the "hold, then carry" checks that depend on timing in my slow preview, as in build 160; the run after had none.)
+**Not checked:** on a phone; the Sidekick's "+" (Android only); the List pinch with real fingers.
+
 ## Prism, build 163 (15 November 2026)
 
 **File:** `releases/prism-build-163.apk`

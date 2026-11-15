@@ -1333,9 +1333,15 @@ class _ShellState extends State<Shell>
   bool _floating(int i) => RestBubble.instance.pinned.value == _pinKey(i);
 
   /// Whether place [i] is, for now, not one of the blobs in the menu.
-  /// (Empty places are not shown: the blobs that are there stand together in the middle.)
+  /// (Empty places are not shown: the blobs that are there stand together in the middle. With
+  /// none at all, the first place shows as a plus, to give it something.)
   bool _leftOut(int i) =>
-      _floating(i) || i == _awayI || i == _shotI || _isEmpty(i);
+      _floating(i) ||
+      i == _awayI ||
+      i == _shotI ||
+      (_isEmpty(i) && !(i == 0 && _allEmpty));
+
+  bool get _allEmpty => <int>[for (int k = 0; k < _n; k++) k].every(_isEmpty);
 
   /// Gives every blob left in the menu its seat. One that was out and is back takes its seat
   /// at once; the others move over to theirs.
@@ -1676,6 +1682,21 @@ class _ShellState extends State<Shell>
       for (int i = 0; i < _n; i++) _sideKey(i),
     ];
     final List<Map<String, Object>> all = <Map<String, Object>>[];
+    if (keys.every((String k) => k.startsWith('empty:'))) {
+      // Nothing in the Sidekick's menu at all: one plus, to add a blob.
+      all.add(<String, Object>{
+        'key': 'empty:0',
+        'kind': 'empty',
+        'index': 0,
+        'package': '',
+        'notesFor': '',
+        'name': '',
+        'color': 0x00FFFFFF,
+        'badge': 0,
+        'picture': false,
+        'slot': 0,
+      });
+    }
     for (int i = 0; i < _n; i++) {
       final Map<String, Object>? blob = await _blobMap(keys[i]);
       if (blob != null) {
@@ -5752,9 +5773,35 @@ class _ShellState extends State<Shell>
                       if (_shotI == i) {
                         return const SizedBox.shrink();
                       }
-                      if (empty) {
+                      if (empty && !(i == 0 && _allEmpty)) {
                         // An empty place is not shown: the others stand together in the middle.
                         return const SizedBox.shrink();
+                      }
+                      if (empty) {
+                        // Nothing in the menu at all: one plus, in the middle, to add a blob.
+                        if (p <= 0.001) {
+                          return const SizedBox.shrink();
+                        }
+                        final Offset m = bc + (rest(i) - bc) * p;
+                        return Positioned(
+                          left: m.dx - _blob / 2 - 6,
+                          top: m.dy - _blob / 2 - 6,
+                          child: IgnorePointer(
+                            ignoring: !_open,
+                            child: Opacity(
+                              opacity: (p * 12).clamp(0.0, 1.0) * 0.85,
+                              child: GestureDetector(
+                                key: Robot.key('plus$i'),
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () => _pickFor(i),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(6),
+                                  child: _blobDisc(i),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
                       }
                       if (p <= 0.001) {
                         return const SizedBox.shrink();

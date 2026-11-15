@@ -576,6 +576,9 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                     .copyWith(scrollbars: false),
                 child: ListView.builder(
                   controller: _list,
+                  // (None of the phone's own top space: the panel is well below it, and with it
+                  // the rows did not start where a change of density left them, and jumped.)
+                  padding: EdgeInsets.zero,
                   // Two fingers are a pinch: the list stays where it is under them.
                   physics: _pinchLock
                       ? const NeverScrollableScrollPhysics()
