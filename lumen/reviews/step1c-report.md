@@ -1,7 +1,8 @@
 # Step 1c report: the lost Sidekick messages, part 4's memory, two small things (build 172)
 
 Asked for by the review of build 171's phone run. Branch `claude/flutter-ui-showcase-ngzfru`, based on
-`fb13624`. Step 2 not started. No look or motion changed (Home's date apart: it is now today's).
+`fb13624`. Two commits: `0dde82e` (the code, the APK, the changelog, the handover, this report) and the
+one after it, which only adds the checked link here. Step 2 not started. No look or motion changed (Home's date apart: it is now today's).
 
 **What has only run in the preview:** everything. Nothing in this build has run on a phone. The cause
 below is a strong explanation, not a proven one. This build is made so that the next phone run
@@ -160,7 +161,9 @@ long test, second run:  CHECKS: 65 right, 4 wrong, of 69
 **Build 172:** `Prism build 172`, `0.133.0+200`, built from the final code. NAME-OK. The new line-
 following code is in its `classes.dex`. sha256
 `b4d921f471382fb00397b1e93a94d6d565a28cf4741d4636e8a047e20499b3ff`. It is 18,583,722 bytes, the same as
-171 by coincidence of padding; the checksum differs. Link: LINK_RESULT
+171 by coincidence of padding; the checksum differs. Link: https://github.com/vikac995/vikac/raw/0dde82e4f82ad56b081b24340f93284d6043ee09/lumen/releases/prism-build-172.apk
+(pinned to `0dde82e`, the commit that added the APK). Checked after the push: it answers 200, and the
+downloaded file has the same sha256 as the one built.
 
 ## For the owner on the phone
 
