@@ -25,7 +25,40 @@ class MainActivity : FlutterActivity() {
         val fresh = !Trail.started()
         Trail.start(applicationContext)
         Trail.add(if (fresh) "Prism's screen made: all of Prism started afresh" else "Prism's screen made again: Prism itself had kept running" + (if (savedInstanceState != null) ", Android had taken the screen away" else ""))
+        if (fresh) Trail.add(whyClosed())
         requestHighestRefreshRate()
+    }
+
+    /// Why Prism was closed the last time, as Android itself recorded it: out of memory, a crash,
+    /// swiped away, and so on. Asked once, when all of Prism starts afresh.
+    private fun whyClosed(): String {
+        if (android.os.Build.VERSION.SDK_INT < 30) return "why it was closed last time: this Android does not say"
+        return try {
+            val am = getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager
+            val e = am.getHistoricalProcessExitReasons(packageName, 0, 1).firstOrNull()
+                ?: return "why it was closed last time: Android has no record"
+            val why = when (e.reason) {
+                android.app.ApplicationExitInfo.REASON_LOW_MEMORY -> "the phone was short of memory"
+                android.app.ApplicationExitInfo.REASON_CRASH -> "Prism crashed (its Android side)"
+                android.app.ApplicationExitInfo.REASON_CRASH_NATIVE -> "Prism crashed (its drawing or Flutter side)"
+                android.app.ApplicationExitInfo.REASON_ANR -> "Prism stopped answering"
+                android.app.ApplicationExitInfo.REASON_USER_REQUESTED -> "it was closed by hand (swiped away or stopped)"
+                android.app.ApplicationExitInfo.REASON_USER_STOPPED -> "it was force-stopped"
+                android.app.ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE -> "Android said it used too much"
+                android.app.ApplicationExitInfo.REASON_SIGNALED -> "Android killed it (signal ${e.status})"
+                android.app.ApplicationExitInfo.REASON_EXIT_SELF -> "Prism ended itself"
+                android.app.ApplicationExitInfo.REASON_DEPENDENCY_DIED -> "something it depends on died"
+                android.app.ApplicationExitInfo.REASON_PACKAGE_UPDATED -> "a new build was installed"
+                android.app.ApplicationExitInfo.REASON_OTHER -> "another reason Android does not name"
+                else -> "reason ${e.reason}"
+            }
+            val ago = (System.currentTimeMillis() - e.timestamp) / 1000
+            "why it was closed last time (${ago} s ago): $why" +
+                (if (e.description.isNullOrEmpty()) "" else " [${e.description}]") +
+                ", importance ${e.importance}, memory ${e.rss / 1024} MB"
+        } catch (t: Throwable) {
+            "why it was closed last time: could not be read"
+        }
     }
 
     override fun onDestroy() {

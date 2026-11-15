@@ -298,7 +298,7 @@ class _ShellState extends State<Shell>
   String _blobName(int i) => _isEmpty(i)
       ? ''
       : _isPhone(i)
-      ? (_isSide(i) ? 'Side blob' : 'Notifications')
+      ? (_isSide(i) ? 'Prism' : 'Notifications')
       : _isApp(i)
       ? (_blobApp(i)?.name ?? _tile(i)?.label ?? '')
       : (_isScreen(i) ? _tabs[_screenAt(i)].$2 : _actions[_actionAt(i)].$1);
@@ -683,7 +683,7 @@ class _ShellState extends State<Shell>
                       const SizedBox(height: 16),
                       SwitchLine(
                         key: Robot.key('floatIn'),
-                        label: 'In Prism',
+                        label: 'In this app',
                         value: b.floatIn.value,
                         onChanged: (bool v) => _setFloating(inPrism: v),
                       ),
@@ -720,7 +720,7 @@ class _ShellState extends State<Shell>
                       Segmented<bool>(
                         key: Robot.key('blobDesignFor'),
                         values: const <bool>[false, true],
-                        labels: const <String>['Main button', 'Side blob'],
+                        labels: const <String>['Glass', 'Prism'],
                         value: _designSide.value,
                         onChanged: (bool v) => _designSide.value = v,
                       ),
@@ -2782,6 +2782,27 @@ class _ShellState extends State<Shell>
               after: 600,
             );
           });
+          // Two fingers pinch the grid: together for more apps across, apart for fewer.
+          final int had = Apps.instance.density;
+          final bool room = had < Apps.columns.length - 1;
+          await t.scene('app list pinched', () async {
+            await Robot.pinch(mid, room ? 260 : 150, room ? 215 : 190);
+          });
+          t.check(
+            'app list: a pinch changes how many apps are across, one step',
+            Apps.instance.density == (room ? had + 1 : had - 1),
+          );
+          await t.scene('app list pinched back', () async {
+            await Robot.pinch(mid, room ? 150 : 260, room ? 190 : 215);
+          });
+          t.check(
+            'app list: the opposite pinch puts it back',
+            Apps.instance.density == had,
+          );
+          t.check(
+            'app list: a pinch opens nothing and closes nothing',
+            _drawerOpen && !_sheetOpen,
+          );
           await t.scene('app list closing', () async {
             await Robot.tap(_home, after: 800);
           });
@@ -5031,7 +5052,7 @@ class _ShellState extends State<Shell>
                       // (After Prism's own actions, which are used most.)
                       (
                         'phone:side',
-                        'Side blob',
+                        'Prism',
                         Icons.bubble_chart_rounded,
                         const Color(0xFF5A6373),
                       ),
@@ -5356,9 +5377,7 @@ class _ShellState extends State<Shell>
                                               shape: const StadiumBorder(),
                                             ),
                                             child: Text(
-                                              side
-                                                  ? 'Side blob'
-                                                  : 'Main button',
+                                              side ? 'Prism' : 'Glass',
                                               textScaler: TextScaler.noScaling,
                                               style: LumenType.text(
                                                 14,
@@ -5412,7 +5431,7 @@ class _ShellState extends State<Shell>
                                         ],
                                       ),
                                       child: Text(
-                                        'Same as main',
+                                        'Same as Glass',
                                         textScaler: TextScaler.noScaling,
                                         style: LumenType.text(
                                           14,

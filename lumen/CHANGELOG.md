@@ -1,5 +1,32 @@
 # Lumen changelog
 
+## Prism, build 153 (15 November 2026)
+
+**File:** `releases/prism-build-153.apk`
+
+Needs Play Protect paused to install. Can be installed over build 152.
+
+**Pinch the app list to change its density.**
+
+- **Two fingers on the app list:** together for more apps across, apart for fewer and larger. The grid follows the fingers, clicks once (a tick) as it passes each size, and settles with a small spring when you let go. It works in both layouts, Pages and List. The choice is saved, the same one the Density slider sets.
+- **At the largest and the smallest size** the grid gives a little under the fingers and comes back: there is nothing further to go to.
+- **A pinch does nothing else.** While two fingers are down, and until both have left, no app is opened, no page is turned and the list does not scroll.
+- **The Density slider now moves the grid the same way:** the old grid zooms and fades into the new one instead of jumping.
+- **The app that was first in view stays in view** when the size changes (before, the slider could leave you on another page).
+- How it is done, for the battery: the old grid is kept as one picture for about a fifth of a second and thrown away; nothing runs when the grid is at rest.
+
+**Names.** The side one is now **Prism**; the centre piece (the magnifying glass and its menu) is **Glass**.
+
+- In the Blob panel: Design is **Glass | Prism** (was Main button | Side blob).
+- While changing the menus: the picker is **Glass | Prism**, and "Same as main" is **Same as Glass**.
+- The action you can give to a swipe or a place in the menu is called **Prism** (was Side blob).
+- The switch "In Prism" is now **In this app**, so that it is not mistaken for the side Prism.
+
+**The flight recorder now says why Android closed Prism.** Your report from build 152 shows all of Prism starting afresh three times in two minutes, once after only 5 seconds away, and I could not tell from it whether that was memory or a crash. From this build, each time all of Prism starts afresh, the next line is Android's own record of why it ended last time: short of memory, a crash, closed by hand, and so on, with how much memory it held.
+
+**Checked:** it compiles, both sides; in my preview: the slider leaves the right grid with the same first app; the automatic test, which now pinches the app list both ways (3 new checks, all right): 56 of 60 with the usual 4 misses.
+**Not checked:** on a phone. I have not seen the zoom itself in motion (my screenshot missed it), nor the renamed labels on screen (they are plain text changes). The pinch with real fingers, how the zoom looks at 120 Hz, and the "why it was closed" line (Android only) have not been seen by me.
+
 ## Prism, build 152 (15 November 2026)
 
 **File:** `releases/prism-build-152.apk`

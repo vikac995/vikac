@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:material_ui/material_ui.dart';
 
 import 'dart:typed_data';
@@ -135,7 +137,7 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
 
   void _toLetter(double y, double height, double rowH) {
     final List<(String, int)> ls = _letters();
-    if (ls.isEmpty || !_list.hasClients) {
+    if (ls.isEmpty || !_list.hasClients || _pinchLock) {
       return;
     }
     final (String l, int i) =
@@ -171,7 +173,235 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
 
   /// How large a tile is against the usual (4 across), and how tall a row is.
   double get _k => const <double>[1.12, 1, 0.86, 0.74][Apps.instance.density];
-  double get _pitch => const <double>[132, 114, 99, 87][Apps.instance.density];
+  static const List<double> _pitches = <double>[132, 114, 99, 87];
+
+  /// As many rows as fit at a density, so tiles are always the same generous size.
+  double _panelH = 600;
+  int _rowsFor(int density) => math.max(
+    3,
+    ((_panelH - 92 - (widget.pick == null ? 0 : 80)) / _pitches[density])
+        .floor(),
+  );
+
+  // ---- Changing the density: by pinching the grid, or with the slider in the settings. Either
+  // way the grid is one picture that is stretched, and nothing runs when it is at rest.
+
+  /// How large the grid is drawn against its true size. 1 at rest.
+  late final SpringValue _zoom = SpringValue(
+    this,
+    value: 1,
+    spring: Motions.snappy,
+  );
+
+  /// The grid as it was just before the density changed: one picture, laid over the new grid and
+  /// faded away, so the change is a zoom and not a jump. Thrown away when the fade ends.
+  ui.Image? _ghost;
+  double _ghostRatio = 1;
+  late final AnimationController _ghostFade =
+      AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 190),
+      )..addStatusListener((AnimationStatus s) {
+        if (s == AnimationStatus.completed) {
+          _dropGhost();
+        }
+      });
+  final GlobalKey _gridKey = GlobalKey();
+  late int _densityWas = Apps.instance.density;
+
+  void _dropGhost() {
+    _ghost?.dispose();
+    _ghost = null;
+  }
+
+  // The fingers on the grid, and the pinch they make.
+  final Map<int, Offset> _fingers = <int, Offset>{};
+  bool _pinching = false;
+
+  /// From the second finger landing until every finger has left: nothing beneath is tapped,
+  /// paged or scrolled.
+  bool _pinchLock = false;
+  double _pinchFrom = 1, _pinchBase = 1;
+
+  double _spread() {
+    final List<Offset> f = _fingers.values.toList();
+    return math.max(24, (f[0] - f[1]).distance);
+  }
+
+  /// What the pinch asks for now, against the grid's true size.
+  double get _pinchLive => _pinchBase * _spread() / _pinchFrom;
+
+  /// The same, as it is shown: at the largest and the smallest density there is nothing further
+  /// to go to, and the grid gives a little and no more.
+  double _pinchShown() {
+    final double live = _pinchLive;
+    final int d = Apps.instance.density;
+    if (live > 1 && d == 0) {
+      return 1 + 0.16 * (1 - math.exp(-(live - 1) * 1.6));
+    }
+    if (live < 1 && d == Apps.columns.length - 1) {
+      return 1 - 0.12 * (1 - math.exp(-(1 - live) * 2.2));
+    }
+    return live;
+  }
+
+  void _fingerDown(PointerDownEvent e) {
+    _fingers[e.pointer] = e.position;
+    if (_fingers.length == 2 && !_pinching) {
+      _pinching = true;
+      _pinchLock = true;
+      _zoom.jumpTo(_zoom.value);
+      _pinchFrom = _spread();
+      _pinchBase = _zoom.value;
+      // Whatever the first finger had begun stops here.
+      _letGoLetters();
+      if (Apps.instance.scrolling) {
+        if (_list.hasClients) {
+          _list.jumpTo(_list.offset);
+        }
+      } else {
+        _settle();
+      }
+      setState(() => _pressed = -1);
+      Diag.instance.event('drawer pinch');
+    }
+  }
+
+  void _fingerMove(PointerMoveEvent e) {
+    if (!_fingers.containsKey(e.pointer)) {
+      return;
+    }
+    _fingers[e.pointer] = e.position;
+    if (!_pinching || _fingers.length < 2) {
+      return;
+    }
+    final int d = Apps.instance.density;
+    final int cols = Apps.columns[d];
+    final double live = _pinchLive;
+    // A little past half way to the next size, it becomes that size. (Past half way, so that it
+    // does not flicker between two sizes at the border.)
+    if (d < Apps.columns.length - 1 &&
+        live <= math.pow(cols / (cols + 1), 0.62)) {
+      Haptics.tick();
+      Apps.instance.setDensity(d + 1);
+    } else if (d > 0 && live >= math.pow(cols / (cols - 1), 0.62)) {
+      Haptics.tick();
+      Apps.instance.setDensity(d - 1);
+    }
+    _zoom.jumpTo(_pinchShown());
+  }
+
+  void _fingerUp(PointerEvent e) {
+    if (_fingers.remove(e.pointer) == null) {
+      return;
+    }
+    if (_pinching && _fingers.length < 2) {
+      _pinching = false;
+      _zoom.animateTo(1, spring: Motions.snappy);
+      Apps.instance.setDensity(Apps.instance.density, save: true);
+    }
+    if (_fingers.isEmpty && _pinchLock) {
+      // After this finger's own tap has been decided, not before: the lift that ends a pinch
+      // must not open an app.
+      scheduleMicrotask(() {
+        if (mounted && _fingers.isEmpty) {
+          setState(() => _pinchLock = false);
+        }
+      });
+    }
+  }
+
+  /// The density changed, by pinch or by slider: the grid as it was is kept as a picture and
+  /// faded away over the new one, both stretched so their columns meet, and the app that was
+  /// first in view is still in view.
+  void _regrid(int was, int now) {
+    final int oldCols = Apps.columns[was], newCols = Apps.columns[now];
+    final double ratio = newCols / oldCols;
+    final bool scrolling = Apps.instance.scrolling;
+    final int first = scrolling
+        ? (_list.hasClients && _rowH > 0
+              ? (_list.offset / _rowH + 0.3).floor().clamp(0, 1 << 20) * oldCols
+              : 0)
+        : _page * _rowsFor(was) * oldCols;
+    if (widget.open && _rise.value > 0.9) {
+      try {
+        final RenderObject? o = _gridKey.currentContext?.findRenderObject();
+        if (o is RenderRepaintBoundary) {
+          final ui.Image picture = o.toImageSync(
+            pixelRatio: math.min(2.0, MediaQuery.devicePixelRatioOf(context)),
+          );
+          _dropGhost();
+          _ghost = picture;
+          _ghostRatio = 1 / ratio;
+          _ghostFade.forward(from: 0);
+        }
+      } catch (_) {
+        // No picture of the old grid: the new one is simply stretched into place.
+      }
+      if (_pinching) {
+        _pinchBase *= ratio;
+        _zoom.jumpTo(_pinchShown());
+      } else {
+        _zoom
+          ..jumpTo(_zoom.value * ratio)
+          ..animateTo(1, spring: Motions.snappy);
+      }
+    }
+    if (scrolling) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _list.hasClients && _rowH > 0) {
+          _list.jumpTo(
+            ((first ~/ newCols) * _rowH).clamp(
+              0.0,
+              _list.position.maxScrollExtent,
+            ),
+          );
+        }
+      });
+    } else {
+      _turn.value = 0;
+      _pull = 0;
+      _page = first ~/ (_rowsFor(now) * newCols);
+      _toward = _page;
+    }
+  }
+
+  /// The grid, stretched by [_zoom], with the picture of the old grid fading over it while the
+  /// density changes. At rest it is the grid alone.
+  Widget _zoomed(Widget grid) => ClipRect(
+    child: ListenableBuilder(
+      listenable: Listenable.merge(<Listenable>[_zoom, _ghostFade]),
+      child: grid,
+      builder: (BuildContext context, Widget? child) {
+        final double z = _zoom.value;
+        final ui.Image? ghost = _ghost;
+        return Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Transform.scale(
+              scale: z,
+              alignment: Alignment.topCenter,
+              child: child,
+            ),
+            if (ghost != null)
+              IgnorePointer(
+                child: Transform.scale(
+                  scale: z * _ghostRatio,
+                  alignment: Alignment.topCenter,
+                  child: RawImage(
+                    image: ghost,
+                    fit: BoxFit.fill,
+                    opacity: AlwaysStoppedAnimation<double>(
+                      1 - Curves.easeOut.transform(_ghostFade.value),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    ),
+  );
 
   @override
   void initState() {
@@ -183,6 +413,11 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
 
   void _changed() {
     if (mounted) {
+      final int d = Apps.instance.density;
+      if (d != _densityWas) {
+        _regrid(_densityWas, d);
+        _densityWas = d;
+      }
       setState(() {});
       _aim();
     }
@@ -298,58 +533,69 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
           bottom: 0,
           width: w,
           // (No scrollbar: it ran down over the letters, and the letters are the scrollbar.)
-          child: ScrollConfiguration(
-            behavior: ScrollConfiguration.of(context)
-                .copyWith(scrollbars: false),
-            child: ListView.builder(
-              controller: _list,
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
-              ),
-              itemExtent: rowH,
-              itemCount: rowsAll,
-              itemBuilder: (BuildContext context, int r) => GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: (TapUpDetails d) {
-                  final int col = (d.localPosition.dx / (w / _cols))
-                      .floor()
-                      .clamp(0, _cols - 1);
-                  final double dpr = MediaQuery.devicePixelRatioOf(context);
-                  final Offset centre =
-                      d.globalPosition -
-                      d.localPosition +
-                      Offset(
-                        w / _cols * (col + 0.5),
-                        (8 + _GridPainter._tile / 2) * _k,
+          child: _zoomed(
+            RepaintBoundary(
+              key: _gridKey,
+              child: ScrollConfiguration(
+                behavior: ScrollConfiguration.of(context)
+                    .copyWith(scrollbars: false),
+                child: ListView.builder(
+                  controller: _list,
+                  // Two fingers are a pinch: the list stays where it is under them.
+                  physics: _pinchLock
+                      ? const NeverScrollableScrollPhysics()
+                      : const BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics(),
+                        ),
+                  itemExtent: rowH,
+                  itemCount: rowsAll,
+                  itemBuilder: (BuildContext context, int r) => GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapUp: (TapUpDetails d) {
+                      if (_pinchLock) {
+                        return;
+                      }
+                      final int col = (d.localPosition.dx / (w / _cols))
+                          .floor()
+                          .clamp(0, _cols - 1);
+                      final double dpr = MediaQuery.devicePixelRatioOf(context);
+                      final Offset centre =
+                          d.globalPosition -
+                          d.localPosition +
+                          Offset(
+                            w / _cols * (col + 0.5),
+                            (8 + _GridPainter._tile / 2) * _k,
+                          );
+                      _open(
+                        r * _cols + col,
+                        Rect.fromCenter(
+                          center: centre * dpr,
+                          width: _GridPainter._tile * _k * dpr,
+                          height: _GridPainter._tile * _k * dpr,
+                        ),
                       );
-                  _open(
-                    r * _cols + col,
-                    Rect.fromCenter(
-                      center: centre * dpr,
-                      width: _GridPainter._tile * _k * dpr,
-                      height: _GridPainter._tile * _k * dpr,
-                    ),
-                  );
-                },
-                child: RepaintBoundary(
-                  child: CustomPaint(
-                    size: Size(w, rowH),
-                    painter: _GridPainter(
-                      apps: all,
-                      from: r,
-                      to: r,
-                      dir: 0,
-                      rows: 1,
-                      cols: _cols,
-                      k: _k,
-                      turn: kAlwaysDismissedAnimation,
-                      ink: c.ink.withValues(alpha: 0.84),
-                      accent: c.accent,
-                      surface: c.surface,
-                      counts: Notes.instance.counts.value,
-                      pressed: -1,
-                      bounceAt: _bounceAt ~/ _cols == r ? _bounceAt : -1,
-                      bounce: _bounceAt ~/ _cols == r ? _bounce : null,
+                    },
+                    child: RepaintBoundary(
+                      child: CustomPaint(
+                        size: Size(w, rowH),
+                        painter: _GridPainter(
+                          apps: all,
+                          from: r,
+                          to: r,
+                          dir: 0,
+                          rows: 1,
+                          cols: _cols,
+                          k: _k,
+                          turn: kAlwaysDismissedAnimation,
+                          ink: c.ink.withValues(alpha: 0.84),
+                          accent: c.accent,
+                          surface: c.surface,
+                          counts: Notes.instance.counts.value,
+                          pressed: -1,
+                          bounceAt: _bounceAt ~/ _cols == r ? _bounceAt : -1,
+                          bounce: _bounceAt ~/ _cols == r ? _bounce : null,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -750,6 +996,9 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       ..dispose();
     _railY.dispose();
     _bounce.dispose();
+    _zoom.dispose();
+    _ghostFade.dispose();
+    _dropGhost();
     _turn.dispose();
     super.dispose();
   }
@@ -766,6 +1015,9 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   /// The finger moved. The morph follows it exactly: further is more, back is less,
   /// and past the full distance the page is taken and the next one begins.
   void _drag(double by) {
+    if (_pinchLock) {
+      return;
+    }
     _turn.stop();
     _pull += by;
     int dir = _pull < 0 ? 1 : -1;
@@ -787,6 +1039,9 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
 
   /// The finger left. Past a third of the way (or with a flick) the change completes; otherwise it goes back.
   void _release(double speed) {
+    if (_pinchLock) {
+      return;
+    }
     _pull = 0;
     if (_toward == _page) {
       _turn.value = 0;
@@ -872,11 +1127,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       screen.width - 10,
       widget.origin.dy - widget.button / 2 - 16,
     );
-    // As many rows as fit, so tiles are always the same generous size.
-    _rows = math.max(
-      3,
-      ((panel.height - 92 - (widget.pick == null ? 0 : 80)) / _pitch).floor(),
-    );
+    _panelH = panel.height;
+    _rows = _rowsFor(Apps.instance.density);
     // Fewer rows fit while Prism's own actions are offered above the apps.
     _page = _page.clamp(0, _pages - 1);
     _toward = _toward.clamp(0, _pages - 1);
@@ -1140,114 +1392,138 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                   ),
                 ),
               Expanded(
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints box) =>
-                      Apps.instance.scrolling
-                      ? _scrolled(context, box, c)
-                      // The tile answers the instant a finger lands, before anyone can tell whether it
-                      // is a tap or a drag. Waiting to be sure costs a tenth of a second of nothing.
-                      : Listener(
-                          onPointerDown: (PointerDownEvent d) {
-                            final int col =
-                                (d.localPosition.dx / (box.maxWidth / _cols))
-                                    .floor()
-                                    .clamp(0, _cols - 1);
-                            final int row =
-                                (d.localPosition.dy / (box.maxHeight / _rows))
-                                    .floor()
-                                    .clamp(0, _rows - 1);
-                            final int i = row * _cols + col;
-                            if (_page * _perPage + i <
-                                Apps.instance.all.length) {
-                              setState(() => _pressed = i);
-                              Haptics.tick();
-                            }
-                          },
-                          onPointerUp: (_) => _unpress(),
-                          onPointerCancel: (_) => _unpress(),
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onPanStart: (_) {
-                              _unpress();
-                              _settle();
-                            },
-                            // No scrolling. Up or left is forward, down or right is back, whichever way the finger mostly goes.
-                            onPanUpdate: (DragUpdateDetails d) => _drag(
-                              d.delta.dy.abs() >= d.delta.dx.abs()
-                                  ? d.delta.dy
-                                  : d.delta.dx,
-                            ),
-                            onPanEnd: (DragEndDetails d) {
-                              final Offset v = d.velocity.pixelsPerSecond;
-                              _release(v.dy.abs() >= v.dx.abs() ? v.dy : v.dx);
-                            },
-                            onPanCancel: () => _release(0),
-                            onTapUp: (TapUpDetails d) {
-                              final int col =
-                                  (d.localPosition.dx / (box.maxWidth / _cols))
-                                      .floor()
-                                      .clamp(0, _cols - 1);
-                              final int row =
-                                  (d.localPosition.dy / (box.maxHeight / _rows))
-                                      .floor()
-                                      .clamp(0, _rows - 1);
-                              final int i =
-                                  _page * _perPage + row * _cols + col;
-                              if (i < Apps.instance.all.length &&
-                                  widget.onPick != null &&
-                                  widget.pick != null) {
-                                // Up to choose a blob's replacement: this one is it.
-                                widget.onPick!(
-                                  'app:${Apps.instance.all[i].package}',
-                                );
-                              } else if (i < Apps.instance.all.length) {
-                                Diag.instance.event('drawer open app');
-                                // Where the tile is on the glass, in real pixels: the app opens out of it.
-                                final double dpr =
-                                    MediaQuery.devicePixelRatioOf(context);
-                                final Offset origin =
-                                    d.globalPosition - d.localPosition;
-                                final Offset centre =
-                                    origin +
-                                    Offset(
-                                      box.maxWidth / _cols * (col + 0.5),
-                                      box.maxHeight / _rows * row +
-                                          (8 + _GridPainter._tile / 2) * _k,
+                // Two fingers on the grid pinch it: apart for larger tiles, together for more of them.
+                child: Listener(
+                  onPointerDown: _fingerDown,
+                  onPointerMove: _fingerMove,
+                  onPointerUp: _fingerUp,
+                  onPointerCancel: _fingerUp,
+                  child: LayoutBuilder(
+                    builder: (BuildContext context, BoxConstraints box) =>
+                        Apps.instance.scrolling
+                        ? _scrolled(context, box, c)
+                        // The tile answers the instant a finger lands, before anyone can tell whether it
+                        // is a tap or a drag. Waiting to be sure costs a tenth of a second of nothing.
+                        : _zoomed(
+                            Listener(
+                              onPointerDown: (PointerDownEvent d) {
+                                if (_pinchLock || _fingers.isNotEmpty) {
+                                  return;
+                                }
+                                final int col =
+                                    (d.localPosition.dx /
+                                            (box.maxWidth / _cols))
+                                        .floor()
+                                        .clamp(0, _cols - 1);
+                                final int row =
+                                    (d.localPosition.dy /
+                                            (box.maxHeight / _rows))
+                                        .floor()
+                                        .clamp(0, _rows - 1);
+                                final int i = row * _cols + col;
+                                if (_page * _perPage + i <
+                                    Apps.instance.all.length) {
+                                  setState(() => _pressed = i);
+                                  Haptics.tick();
+                                }
+                              },
+                              onPointerUp: (_) => _unpress(),
+                              onPointerCancel: (_) => _unpress(),
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onPanStart: (_) {
+                                  _unpress();
+                                  if (!_pinchLock) {
+                                    _settle();
+                                  }
+                                },
+                                // No scrolling. Up or left is forward, down or right is back, whichever way the finger mostly goes.
+                                onPanUpdate: (DragUpdateDetails d) => _drag(
+                                  d.delta.dy.abs() >= d.delta.dx.abs()
+                                      ? d.delta.dy
+                                      : d.delta.dx,
+                                ),
+                                onPanEnd: (DragEndDetails d) {
+                                  final Offset v = d.velocity.pixelsPerSecond;
+                                  _release(
+                                    v.dy.abs() >= v.dx.abs() ? v.dy : v.dx,
+                                  );
+                                },
+                                onPanCancel: () => _release(0),
+                                onTapUp: (TapUpDetails d) {
+                                  if (_pinchLock) {
+                                    return;
+                                  }
+                                  final int col =
+                                      (d.localPosition.dx /
+                                              (box.maxWidth / _cols))
+                                          .floor()
+                                          .clamp(0, _cols - 1);
+                                  final int row =
+                                      (d.localPosition.dy /
+                                              (box.maxHeight / _rows))
+                                          .floor()
+                                          .clamp(0, _rows - 1);
+                                  final int i =
+                                      _page * _perPage + row * _cols + col;
+                                  if (i < Apps.instance.all.length &&
+                                      widget.onPick != null &&
+                                      widget.pick != null) {
+                                    // Up to choose a blob's replacement: this one is it.
+                                    widget.onPick!(
+                                      'app:${Apps.instance.all[i].package}',
                                     );
-                                final Rect tile = Rect.fromCenter(
-                                  center: centre * dpr,
-                                  width: _GridPainter._tile * _k * dpr,
-                                  height: _GridPainter._tile * _k * dpr,
-                                );
-                                Apps.instance.launch(
-                                  Apps.instance.all[i],
-                                  from: tile,
-                                );
-                              }
-                            },
-                            // Its own layer: opening, closing and the ring never make the grid redraw.
-                            child: RepaintBoundary(
-                              child: CustomPaint(
-                                size: Size(box.maxWidth, box.maxHeight),
-                                painter: _GridPainter(
-                                  apps: Apps.instance.all,
-                                  from: _page,
-                                  to: _toward,
-                                  dir: _dir,
-                                  rows: _rows,
-                                  cols: _cols,
-                                  k: _k,
-                                  turn: _turn,
-                                  ink: c.ink.withValues(alpha: 0.84),
-                                  accent: c.accent,
-                                  surface: c.surface,
-                                  counts: Notes.instance.counts.value,
-                                  pressed: _pressed,
+                                  } else if (i < Apps.instance.all.length) {
+                                    Diag.instance.event('drawer open app');
+                                    // Where the tile is on the glass, in real pixels: the app opens out of it.
+                                    final double dpr =
+                                        MediaQuery.devicePixelRatioOf(context);
+                                    final Offset origin =
+                                        d.globalPosition - d.localPosition;
+                                    final Offset centre =
+                                        origin +
+                                        Offset(
+                                          box.maxWidth / _cols * (col + 0.5),
+                                          box.maxHeight / _rows * row +
+                                              (8 + _GridPainter._tile / 2) * _k,
+                                        );
+                                    final Rect tile = Rect.fromCenter(
+                                      center: centre * dpr,
+                                      width: _GridPainter._tile * _k * dpr,
+                                      height: _GridPainter._tile * _k * dpr,
+                                    );
+                                    Apps.instance.launch(
+                                      Apps.instance.all[i],
+                                      from: tile,
+                                    );
+                                  }
+                                },
+                                // Its own layer: opening, closing and the ring never make the grid redraw.
+                                child: RepaintBoundary(
+                                  key: _gridKey,
+                                  child: CustomPaint(
+                                    size: Size(box.maxWidth, box.maxHeight),
+                                    painter: _GridPainter(
+                                      apps: Apps.instance.all,
+                                      from: _page,
+                                      to: _toward,
+                                      dir: _dir,
+                                      rows: _rows,
+                                      cols: _cols,
+                                      k: _k,
+                                      turn: _turn,
+                                      ink: c.ink.withValues(alpha: 0.84),
+                                      accent: c.accent,
+                                      surface: c.surface,
+                                      counts: Notes.instance.counts.value,
+                                      pressed: _pressed,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
+                  ),
                 ),
               ),
             ],
