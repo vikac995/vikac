@@ -1,5 +1,28 @@
 # Lumen changelog
 
+## Prism, build 170 (15 November 2026)
+
+**File:** `releases/prism-build-170.apk`
+
+Needs Play Protect paused to install. Can be installed over build 169.
+
+**The Sidekick has its own menu now (step 1 of 4 of separating it from Prism).** Nothing should look or move differently: this build moves where the Sidekick's blobs are kept.
+
+- **Where it is kept:** the Sidekick's list of blobs is kept and saved by the Sidekick itself, on Android (a new small part of its code, `SidekickMenu.kt`). Prism keeps only its own list. Before, Prism held both and switched between them, which is how the Add and Remove mix-ups happened.
+- **Your Sidekick keeps the blobs it had.** The first time build 170 starts, the Sidekick's list is moved over once: its own saved list if it had one, otherwise a copy of Prism's (which is what it showed). After that the old copy in Prism is deleted.
+- **Remove on a Sidekick blob** is done by the Sidekick alone. Prism is not asked and not brought forward, and Prism's own menu is not touched.
+- **Dragging the Sidekick's blobs into a new order** is done by the Sidekick alone.
+- **Change and Add on a Sidekick blob** still open Prism's app list (the Sidekick gets its own list in step 3), but only to choose from: the choice is sent back, and the Sidekick puts it in its own list (Change: in that place; Add: right after the blob you held; Add Blob: at the end). Afterwards Prism's own blobs do not open, and Prism goes back behind the app you were in, as before.
+- **Two small differences you may notice, both from the task:** while Prism's app list is up only to choose for the Sidekick, Prism's triangle no longer turns half a turn; and after choosing, Prism's own blobs no longer come out.
+- Prism still draws the Sidekick's pictures: the Sidekick tells Prism which blobs it has, and Prism sends back the name, colour and picture of each, one way.
+- **Removed from Prism's code:** the Sidekick's list and the switching between the two lists (`_side`, `side`, `sideOwn`, `sideAt`, `show(side:)`, `sideAsMain`, `putSideAll`, `_sideFile` in `apps.dart`; `_sideKey`, `_pickSide`, `_showMenu(side:)`, the `editSlot`, `sideRemove` and `blobOrder` handlers' list editing in `shell.dart`), and the "Prism | Sidekick" and "Same as Prism" switches of the old edit screen, which could no longer be reached.
+- **The button test** checks the new arrangement on the Sidekick: the list is the Sidekick's own; Remove (done over another app where it can) changes only the Sidekick's list and leaves that app in front; Change and Add put the choice only in the Sidekick's list; Prism's list is the same before and after. The test now uses a list of its own for the Sidekick and puts yours back afterwards (until now it reset your Sidekick to Prism's blobs).
+
+**Checked:** it compiles, both sides; a second, separate read of the code (it found four rare cases, for example the test resetting a menu that had not been moved yet; all fixed); in my preview, on the final code: the button test, 62 of 63 (the one miss is a measurement only Android can make; a first run also missed the flick timing check, the run after did not); the long test, 65 of 69 with the usual 4 misses.
+**Not checked:** on a phone. Everything about the Sidekick runs only on Android, so the move of your list, Remove, Change, Add and dragging on the Sidekick have not run anywhere yet. The button test's Sidekick half cannot run in my preview.
+
+**Please try:** before installing, note which blobs your Sidekick shows; after installing, check it shows the same ones. Then the steps in `reviews/step1-report.md`, and the button test.
+
 ## Prism, build 169 (15 November 2026)
 
 **File:** `releases/prism-build-169.apk`

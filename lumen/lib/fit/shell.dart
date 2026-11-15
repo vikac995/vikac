@@ -100,7 +100,7 @@ class _ShellState extends State<Shell>
       '  floats over other apps ${onOff(b.allowed.value)}  ·  notification counts ${onOff(Notes.instance.allowed.value)}  ·  blobs open real apps ${onOff(BlobApps.instance.on.value)}',
       '  blob: in Prism ${onOff(b.floatIn.value)}  ·  over other apps ${onOff(b.floatOut.value)}  ·  labels ${onOff(BlobSlots.instance.names)}  ·  floating ${b.pinned.value ?? 'nothing'}',
       '  blobs: ${<String>[for (int i = 0; i < _n; i++) _pinKey(i)].join(', ')}',
-      '  side menu: ${BlobSlots.instance.sideOwn ? <String>[for (int i = 0; i < _n; i++) _sideKey(i)].join(', ') : 'the same as the main one'}  ·  side design: ${Apps.instance.sideLook.isEmpty ? 'window' : Apps.instance.sideLook}${Apps.instance.sideVivid ? ', vivid' : ''}  ·  main design: ${Apps.instance.blobLook.isEmpty ? 'window' : Apps.instance.blobLook}${Apps.instance.blobVivid ? ', vivid' : ''}',
+      '  side menu: ${_sideKeys.isEmpty ? 'not told by Android yet' : _sideKeys.join(', ')}  ·  side design: ${Apps.instance.sideLook.isEmpty ? 'window' : Apps.instance.sideLook}${Apps.instance.sideVivid ? ', vivid' : ''}  ·  main design: ${Apps.instance.blobLook.isEmpty ? 'window' : Apps.instance.blobLook}${Apps.instance.blobVivid ? ', vivid' : ''}',
       '  swipes: ${<String>[for (int g = 0; g < 4; g++) '${GestureSlots.names[g]} ${GestureSlots.instance.keys[g]}'].join(', ')}',
     ];
   }
@@ -230,7 +230,11 @@ class _ShellState extends State<Shell>
     if (_panelOpen && !PanelWatch.instance.anyOpen) {
       _panelOpen = false;
     }
-    final int now = _drawerOpen || _panelOpen ? 2 : (_open ? 1 : 0);
+    // (The app list up only to choose for the Sidekick does not turn Prism's triangle: it is
+    // not Prism's own list being opened.)
+    final int now = (_drawerOpen && _editSlot != _sideSlot) || _panelOpen
+        ? 2
+        : (_open ? 1 : 0);
     if (BlobSign.of(Apps.instance.blobLook).turns) {
       // Half a turn for the app list and for the button's settings, a sixth for the blobs.
       // (Settling without overshoot: it turns and stops, and never spins past.)
@@ -400,9 +404,34 @@ class _ShellState extends State<Shell>
   bool _editing = false;
   int? _editSlot;
 
-  /// The place being changed is the Sidekick's (its own menu, not Prism's), and Prism came
-  /// forward only for it: once chosen, it steps back to the app that was in front.
-  bool _pickSide = false, _pickBack = false;
+  /// Prism's app list is up only to choose for one of the Sidekick's places, as Android asked
+  /// ("sidekickChoose"): which place, whether the new blob is to go right after it (Add), and
+  /// what is there now. The list is then only a chooser: what is chosen is sent back to
+  /// Android, which keeps the Sidekick's menu. Prism's own menu is not touched. While it is up,
+  /// [_editSlot] is [_sideSlot].
+  ({int slot, bool add, String key})? _sideAsk;
+
+  /// The place number that stands for the Sidekick's blob being chosen for, so that everything
+  /// that names or draws a blob (the list's title, the button wearing the blob) works for it as
+  /// it is. (As places 100 to 103 are the two-finger swipes.)
+  static const int _sideSlot = 200;
+
+  /// Whether place [i] is one of the two-finger swipes.
+  static bool _isSwipe(int i) => i >= 100 && i < _sideSlot;
+
+  /// Prism came forward only to choose (for the Sidekick): once chosen, it steps back to the
+  /// app that was in front.
+  bool _pickBack = false;
+
+  /// The Sidekick's keys, as Android last told them: only to draw their pictures and for the
+  /// flight recorder's report. Prism never changes them. (Empty until Android has said.)
+  List<String> _sideKeys = const <String>[];
+
+  /// How many times Android has asked Prism to choose for the Sidekick: for the button test.
+  int _sideAsks = 0;
+
+  /// Done once the five apps Prism starts with have been looked up on the phone.
+  Future<void> _blobAppsLoaded = Future<void>.value();
 
   /// How long a finger held still on a blob counts as a hold: Android's own, as on the Sidekick.
   int _holdMs = 385;
@@ -557,26 +586,9 @@ class _ShellState extends State<Shell>
       _blobDrop(_dragI!, _home, Offset.zero);
     }
     setState(() => _editing = v);
-    if (!v) {
-      // Done changing: the blobs out of the button are the main button's again.
-      _showMenu(side: false);
-    }
     _signSync();
     v ? Haptics.settle() : Haptics.tick();
     Diag.instance.event(v ? 'blobs: editing' : 'blobs: done editing');
-  }
-
-  /// While the blobs are being changed: shows the side Blob's menu to be changed, or the main
-  /// button's. The blobs that are out become that menu's, each place empty or not as it is there.
-  void _showMenu({required bool side}) {
-    if (BlobSlots.instance.side == side) {
-      return;
-    }
-    BlobSlots.instance.show(side: side);
-    _reseat();
-    Diag.instance.event(
-      side ? 'changing the side menu' : 'changing the main menu',
-    );
   }
 
   /// While editing, a blob was tapped: the drawer comes up to choose what takes its place.
@@ -677,8 +689,10 @@ class _ShellState extends State<Shell>
   void _picked(String key) {
     if (key == 'test:buttons') {
       // Not a blob: the button test, which needs the list closed and the menu as it was.
+      // (Chosen while choosing for the Sidekick, Prism's own menu is left as it is.)
+      final bool side = _editSlot == _sideSlot;
       _setDrawer(false);
-      if (_pickSide || _editSlot == null) {
+      if (!side) {
         _rearrange(_packed());
       }
       Future<void>.delayed(
@@ -688,7 +702,13 @@ class _ShellState extends State<Shell>
       return;
     }
     final int? i = _editSlot;
-    if (i != null && i >= 100) {
+    if (i == _sideSlot) {
+      // Chosen for the Sidekick: sent to Android, which puts it in the Sidekick's own menu.
+      _sideChosen(key);
+      _setDrawer(false);
+      return;
+    }
+    if (i != null && _isSwipe(i)) {
       GestureSlots.instance.put(i - 100, key);
       Diag.instance.event('gesture ${GestureSlots.names[i - 100]} set');
       _setDrawer(false);
@@ -718,6 +738,9 @@ class _ShellState extends State<Shell>
           (String? k) => k != null && k.startsWith('app:'),
         )) {
       _blobsChanged();
+    } else if (_sideKeys.any((String k) => k.startsWith('app:'))) {
+      // Only the Sidekick's menu holds one: its pictures are sent again.
+      _sendSidekick();
     }
   }
 
@@ -725,9 +748,9 @@ class _ShellState extends State<Shell>
     if (mounted) {
       setState(() {});
       // The apps' pictures have arrived or the menu changed: the pinned lens may need its picture,
-      // and the floating lens's own menu shows these same blobs.
+      // and the Sidekick's pictures may have changed with the apps' (its menu is Android's own).
       _sendPin();
-      _sendBlobs();
+      _sendSidekick();
       _reseat();
       _recentre();
     }
@@ -749,8 +772,6 @@ class _ShellState extends State<Shell>
         }
       }
     }
-    // The floating lens's own menu holds the same blobs.
-    _sendBlobs();
   }
 
   // Where each blob sits along the fan, counted in places from the middle. With all five in,
@@ -1536,9 +1557,6 @@ class _ShellState extends State<Shell>
       _dragBack.animateTo(0);
     }
     Haptics.settle();
-    if (!same) {
-      _sendBlobs();
-    }
   }
 
   /// The place of the thing floating as the lens, if one of the blobs is.
@@ -1618,18 +1636,17 @@ class _ShellState extends State<Shell>
 
   /// The name a blob is pinned under.
   // (Places from 100 on are not blobs: they are what the two-finger swipes do, kept the same
-  // way, so that everything that draws, names or changes a blob works for them as it is.)
-  String _pinKey(int i) => i >= 100
+  // way, so that everything that draws, names or changes a blob works for them as it is.
+  // Place 200 is the Sidekick's blob being chosen for, as Android said: only read, for the
+  // list's title and for the button to wear it meanwhile.)
+  String _pinKey(int i) => i == _sideSlot
+      ? (_sideAsk == null || _sideAsk!.add ? 'empty:' : _sideAsk!.key)
+      : i >= 100
       ? GestureSlots.instance.keys[i - 100]
       : BlobSlots.instance.at(i) ??
             (_appBlobs
                 ? 'app:${BlobApps.instance.apps[i].package}'
                 : 'action:$i');
-
-  /// What the side Blob's menu has in place [i], whichever menu Prism is showing.
-  String _sideKey(int i) =>
-      BlobSlots.instance.sideAt(i) ??
-      (_appBlobs ? 'app:${BlobApps.instance.apps[i].package}' : 'action:$i');
 
   void _sendPinData() {
     // The colours as they are now, not as the last drawn frame had them: this also runs at the
@@ -1737,41 +1754,126 @@ class _ShellState extends State<Shell>
     }
   }
 
-  /// Tells Android what all the blobs in the menu are, in order.
-  Future<void> _sendBlobs() async {
+  /// Sends Android the pictures for the Sidekick's keys, exactly those it last told: the name,
+  /// colour and picture of each. One way: which blob goes where is the Sidekick's own, kept by
+  /// Android. Sent when Android tells its keys, and when the pictures may have changed.
+  Future<void> _sendSidekick() async {
     RestBubble.instance.tellNames(BlobSlots.instance.sideNames);
-    // (Android draws the side Blob, so it is told the side Blob's look and colours.)
+    // (Android draws the Sidekick, so it is told the Sidekick's look and colours.)
     RestBubble.instance.tellLook(Apps.instance.sideLook);
     RestBubble.instance.tellVivid(Apps.instance.sideVivid);
-    // (Android's menu is the side Blob's: it is told the side Blob's blobs, which are the main
-    // button's until the side Blob has a set of its own.)
-    final List<String> keys = <String>[
-      for (int i = 0; i < _n; i++) _sideKey(i),
-    ];
     final List<Map<String, Object>> all = <Map<String, Object>>[];
-    if (keys.every((String k) => k.startsWith('empty:'))) {
-      // Nothing in the Sidekick's menu at all: one plus, to add a blob.
-      all.add(<String, Object>{
-        'key': 'empty:0',
-        'kind': 'empty',
-        'index': 0,
-        'package': '',
-        'notesFor': '',
-        'name': '',
-        'color': 0x00FFFFFF,
-        'badge': 0,
-        'picture': false,
-        'slot': 0,
-      });
-    }
-    for (int i = 0; i < _n; i++) {
-      final Map<String, Object>? blob = await _blobMap(keys[i]);
+    for (final String key in <String>{..._sideKeys}) {
+      final Map<String, Object>? blob = await _blobMap(key);
       if (blob != null) {
-        // Which place it is in, so the floating lens's menu can ask for that place to be changed.
-        all.add(<String, Object>{...blob, 'slot': i});
+        all.add(blob);
       }
     }
-    RestBubble.instance.tellBlobs(all);
+    RestBubble.instance.tellSidekickPictures(all);
+  }
+
+  /// Android told the Sidekick's keys (its menu changed, or Prism asked): its pictures are sent.
+  void _sidekickTold(List<String> keys) {
+    _sideKeys = List<String>.unmodifiable(keys);
+    if (_sideKeys.any(
+          (String k) =>
+              k.startsWith('app:') &&
+              !BlobApps.instance.apps.any(
+                (BlobApp a) => 'app:${a.package}' == k,
+              ),
+        ) &&
+        Apps.instance.all.isEmpty) {
+      // An app from the app list: its look comes from there, which is read once for it.
+      Apps.instance.refresh();
+    }
+    _sendSidekick();
+  }
+
+  /// Where Prism kept the Sidekick's own menu before build 170 gave it to Android. Read once,
+  /// for the one-time move, and then deleted.
+  File _oldSideFile() {
+    final Directory files = Directory(
+      '${Directory.systemTemp.parent.path}/files',
+    );
+    return File(
+      '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_blobs_side',
+    );
+  }
+
+  /// At the start: Android is asked what the Sidekick's menu holds, to send its pictures.
+  ///
+  /// The one time it has no menu of its own yet (the first start of build 170, which gave the
+  /// Sidekick its own menu, kept by Android), the menu it showed until then is moved over: its
+  /// own saved set if it had one (the file "prism_blobs_side"), otherwise Prism's. After that,
+  /// Android keeps it, and the old file is gone.
+  Future<void> _sidekickStart() async {
+    List<String>? keys = await RestBubble.instance.sidekickKeys();
+    if (keys == null) {
+      // (Not on Android, or Android has none of its own yet.)
+      if (!Platform.isAndroid || !mounted) {
+        return;
+      }
+      // Prism's default blobs are the five apps, by the packages the phone really has them
+      // under: those are known once they have been looked up.
+      await _blobAppsLoaded;
+      if (!mounted) {
+        return;
+      }
+      String fallback(int i) =>
+          _appBlobs ? 'app:${BlobApps.instance.apps[i].package}' : 'action:$i';
+      final File old = _oldSideFile();
+      List<String> was;
+      String from;
+      try {
+        final List<String> lines = old.readAsLinesSync();
+        was = <String>[
+          for (int i = 0; i < _n; i++)
+            i < lines.length && lines[i].trim().isNotEmpty
+                ? lines[i].trim()
+                : fallback(i),
+        ];
+        from = 'its own saved set';
+      } catch (_) {
+        // It had none of its own: it showed Prism's.
+        was = <String>[for (int i = 0; i < _n; i++) _pinKey(i)];
+        from = 'Prism\'s menu, which it showed';
+      }
+      keys = await RestBubble.instance.sidekickAdopt(was);
+      if (keys == null) {
+        return; // Not moved: asked again at the next start.
+      }
+      try {
+        old.deleteSync();
+      } catch (_) {
+        // There was none.
+      }
+      Diag.instance.event(
+        'Sidekick: its menu moved to Android (from $from): ${keys.join(', ')}',
+      );
+    } else {
+      // Android has its own: a copy Prism might still have from before is not needed.
+      try {
+        _oldSideFile().deleteSync();
+      } catch (_) {
+        // There is none: the usual case.
+      }
+    }
+    if (mounted) {
+      _sidekickTold(keys);
+    }
+  }
+
+  /// Something was chosen in the app list for the Sidekick's place ('empty:' for Remove):
+  /// Android is told, and puts it in the Sidekick's own menu.
+  void _sideChosen(String key) {
+    final ({int slot, bool add, String key})? ask = _sideAsk;
+    if (ask == null) {
+      return;
+    }
+    Diag.instance.event(
+      'Sidekick: $key chosen ${ask.add ? 'to add after its place ${ask.slot + 1}' : 'for its place ${ask.slot + 1}'}',
+    );
+    RestBubble.instance.sidekickChosen(slot: ask.slot, add: ask.add, key: key);
   }
 
   /// One blob as Android needs it: its name, colour and picture. Null if its app is not known yet.
@@ -2431,48 +2533,47 @@ class _ShellState extends State<Shell>
       _tellFan();
       _sendPinData();
       _sendPin();
-      _sendBlobs();
+      // (The Sidekick's menu is Android's: it is asked for its keys, to send their pictures.)
+      unawaited(_sidekickStart());
     });
     // Pressing the home button while Prism is the home screen: everything closes and Home shows.
     const MethodChannel('lumen/device').setMethodCallHandler((
       MethodCall call,
     ) async {
-      if (call.method == 'editSlot' && mounted) {
-        // A blob was held in the Sidekick's menu: Prism has come to the front to choose what
-        // takes its place, in the Sidekick's own menu.
+      if (call.method == 'sidekickChoose' && mounted) {
+        // Change or Add on one of the Sidekick's blobs: Prism has come to the front with its
+        // app list, only to choose from. What is chosen is sent back to Android, which keeps
+        // the Sidekick's menu; Prism's own menu is not touched.
         if (_sheetOpen) {
           _closeSheet();
         }
-        final Object? a = call.arguments;
-        final int slot = ((a is Map ? a['slot'] : a) as num).toInt().clamp(
-          0,
-          _n - 1,
-        );
+        final Map<Object?, Object?> a = call.arguments as Map<Object?, Object?>;
         if (_editing) {
           _setEditing(false);
         }
-        _pickSide = true;
-        _pickBack = a is Map && a['back'] == true;
-        BlobSlots.instance.show(side: true);
-        int at = slot;
-        if (a is Map && a['add'] == true) {
-          // A new place right after the blob that was held, in the Sidekick's menu.
-          final List<String> keys = <String>[
-            for (int k = 0; k < _n; k++) _pinKey(k),
-          ];
-          final List<String> full = <String>[
-            for (final String k in keys)
-              if (!k.startsWith('empty:')) k,
-          ];
-          at = (full.indexOf(keys[slot]) + 1).clamp(0, _n - 1);
-          full.insert(at, 'empty:');
-          while (full.length < _n) {
-            full.add('empty:');
-          }
-          BlobSlots.instance.putAll(full.sublist(0, _n));
-        }
-        setState(() => _editSlot = at);
+        _sideAsks++;
+        _sideAsk = (
+          slot: ((a['slot'] as num?)?.toInt() ?? 0).clamp(0, _n - 1),
+          add: a['add'] == true,
+          key: (a['key'] as String?) ?? 'empty:',
+        );
+        _pickBack = a['back'] == true;
+        Diag.instance.event(
+          _sideAsk!.add
+              ? 'Sidekick: Add, Prism\'s list to choose from'
+              : 'Sidekick: Change, Prism\'s list to choose from',
+        );
+        setState(() => _editSlot = _sideSlot);
         _setDrawer(true);
+        return;
+      }
+      if (call.method == 'sidekickKeys' && mounted) {
+        // The Sidekick's menu changed on Android: these are its keys now. Their pictures are sent.
+        _sidekickTold(<String>[
+          for (final Object? k
+              in (call.arguments as List<Object?>?) ?? const <Object?>[])
+            '$k',
+        ]);
         return;
       }
       if (call.method == 'sideSettings' && mounted) {
@@ -2493,48 +2594,9 @@ class _ShellState extends State<Shell>
         }
         return;
       }
-      if (call.method == 'sideRemove' && mounted) {
-        // "Remove" in the small menu of one of the Sidekick's blobs: a plus stands in its place,
-        // in the Sidekick's own menu.
-        final int slot = (call.arguments as num).toInt().clamp(0, _n - 1);
-        final bool was = BlobSlots.instance.side;
-        BlobSlots.instance.show(side: true);
-        // The others close up round the middle.
-        final List<String> left = <String>[
-          for (int k = 0; k < _n; k++)
-            if (k != slot && !_pinKey(k).startsWith('empty:')) _pinKey(k),
-        ];
-        while (left.length < _n) {
-          left.add('empty:');
-        }
-        BlobSlots.instance.putAll(left);
-        BlobSlots.instance.show(side: was);
-        Diag.instance.event('Sidekick blob removed');
-        return;
-      }
       if (call.method == 'notes') {
         // Android says how many notifications each app has.
         Notes.instance.take(call.arguments);
-        return;
-      }
-      if (call.method == 'blobOrder' && mounted) {
-        // The blobs were put in a new order in the floating lens's own menu: the places
-        // those blobs are in, as they now stand. What floats keeps its place.
-        final List<int> order = <int>[
-          for (final Object? o in call.arguments as List<Object?>)
-            (o! as num).toInt().clamp(0, _n - 1),
-        ];
-        final List<int> places = <int>[...order]..sort();
-        final List<String> keys = <String>[
-          for (int k = 0; k < _n; k++) _sideKey(k),
-        ];
-        final List<String> next = <String>[...keys];
-        for (int j = 0; j < order.length; j++) {
-          next[places[j]] = keys[order[j]];
-        }
-        Diag.instance.event('side menu: blobs reordered');
-        // (It was the side Blob's menu they were moved in: that is the one that changes.)
-        BlobSlots.instance.putSideAll(next);
         return;
       }
       if (RestBubble.instance.handle(call)) {
@@ -2606,7 +2668,7 @@ class _ShellState extends State<Shell>
       Apps.instance.refresh();
     }
     BlobApps.instance.on.addListener(_blobsChanged);
-    BlobApps.instance.load();
+    _blobAppsLoaded = BlobApps.instance.load();
     _lx.addListener(_lensMoved);
     _ly.addListener(_lensMoved);
     _glass.addListener(_lensMoved);
@@ -2831,6 +2893,8 @@ class _ShellState extends State<Shell>
 
     // As things are now, to be put back at the end.
     final List<String?> keysWere = <String?>[...BlobSlots.instance.keys];
+    // The Sidekick's own menu (Android's), once the button test has read it: put back at the end.
+    List<String>? sideWere;
     final bool namesWere = BlobSlots.instance.names;
     final String? pinWas = lensOf.pinned.value;
     final bool inWas = lensOf.floatIn.value, outWas = lensOf.floatOut.value;
@@ -4001,10 +4065,10 @@ class _ShellState extends State<Shell>
             _menuFor == null &&
             !_drawerOpen &&
             _editSlot == null &&
-            !_pickSide &&
+            _sideAsk == null &&
             !_carrying &&
             !_parked,
-        'panel $_panelOpen/${PanelWatch.instance.anyOpen}, menu $_menuFor, list $_drawerOpen, place $_editSlot, side $_pickSide, glass $_carrying/$_parked',
+        'panel $_panelOpen/${PanelWatch.instance.anyOpen}, menu $_menuFor, list $_drawerOpen, place $_editSlot, for the Sidekick ${_sideAsk != null}, glass $_carrying/$_parked',
       );
       Future<void> closePanel() async {
         final Offset? x = Robot.spot('floatClose');
@@ -4016,10 +4080,6 @@ class _ShellState extends State<Shell>
       Future<void> holdButton({int extra = 260}) =>
           Robot.hold(_home, ms: _holdMs + extra, after: 900);
       List<String> keys() => <String>[for (int k = 0; k < _n; k++) _pinKey(k)];
-      List<String> sideKeys() => <String>[
-        for (int k = 0; k < _n; k++)
-          if (!_sideKey(k).startsWith('empty:')) _sideKey(k),
-      ];
       bool packed() {
         bool seenEmpty = false;
         for (int k = 0; k < _n; k++) {
@@ -4444,8 +4504,6 @@ class _ShellState extends State<Shell>
           return;
         }
         say('5 of 6, the Sidekick');
-        BlobSlots.instance.sideAsMain();
-        await _sendBlobs();
         await t.lens(<String, Object?>{'op': 'side', 'on': true});
         await Robot.wait(1200);
         Map<String, Object?> s = await where();
@@ -4454,6 +4512,54 @@ class _ShellState extends State<Shell>
           s['lens'] == true && s['guest'] == true,
           'shown ${s['lens']}, ${s['pin']}',
         );
+        // Its menu is Android's own (SidekickMenu.kt): kept, saved and changed there. Prism only
+        // draws its pictures, and lends its app list to choose from.
+        List<String> stored(Map<String, Object?> m) => <String>[
+          for (final Object? k
+              in (m['sidekickKeys'] as List<Object?>?) ?? const <Object?>[])
+            '$k',
+        ];
+        List<String> filled(List<String> k) => <String>[
+          for (final String x in k)
+            if (!x.startsWith('empty:')) x,
+        ];
+        // The places with the blobs together and the empty ones last, as the menu keeps them.
+        List<String> together(List<String> k) => <String>[
+          ...filled(k),
+          for (int j = filled(k).length; j < _n; j++) 'empty:',
+        ];
+        // First the person's own menu, as it is: since the one-time move, Android's.
+        final List<String> own = stored(s);
+        t.check(
+          'sidekick: its menu is Android\'s own, five places, the empty ones last',
+          s['sidekickOwn'] == true &&
+              own.length == _n &&
+              own.join(' ') == together(own).join(' '),
+          own.isEmpty ? 'Android has none' : own.join(' '),
+        );
+        t.note(
+          'the Sidekick\'s menu as Android took it over from Prism, the one time (build 170\'s first start): ${'${s['sidekickMoved'] ?? ''}'.isEmpty ? 'not recorded' : s['sidekickMoved']}',
+        );
+        t.check(
+          'sidekick: Prism has been told its keys, and keeps no saved copy of them',
+          _sideKeys.join(' ') == own.join(' ') && !_oldSideFile().existsSync(),
+          'Prism was told ${_sideKeys.join(' ')}; old file ${_oldSideFile().existsSync() ? 'still there' : 'gone'}',
+        );
+        t.check(
+          'sidekick: it shows every blob of its own menu, in order',
+          '${s['sideKeys']}' ==
+              (filled(own).isEmpty ? 'empty:0' : filled(own).join(',')),
+          'shown ${s['sideKeys']}',
+        );
+        // The person's own menu is put aside for the test, and put back afterwards. (Only a menu
+        // Android has as its own: without one, the one-time move has not happened, and the test
+        // leaves the Sidekick's menu alone so that it still can.)
+        if (sideWere == null && s['sidekickOwn'] == true && own.length == _n) {
+          sideWere = own;
+        }
+        final bool mine = sideWere != null;
+        final List<String> mainBefore = keys();
+        final bool openBefore = _open;
         Future<Map<String, Object?>> menu(
           String what, {
           int i = 0,
@@ -4481,77 +4587,192 @@ class _ShellState extends State<Shell>
           return m['menu'] == true;
         }
 
-        t.check('sidekick: a tap opens its blobs', await openMenu());
-        s = await where();
-        t.check(
-          'sidekick: as many blobs as its menu has',
-          s['menuCount'] == sideKeys().length,
-          '${s['menuCount']} shown, ${sideKeys().length} in its menu',
-        );
-        s = await menu('hold', i: 1);
-        t.check(
-          'sidekick: holding a blob brings its small menu',
-          s['pop'] == 1,
-          'small menu ${s['pop']}',
-        );
-        s = await menu('outside', settleMs: 700);
-        t.check(
-          'sidekick: a tap beside it puts the small menu away, the blobs stay',
-          s['pop'] == -1 && s['menu'] == true,
-          'small menu ${s['pop']}, blobs ${s['menu']}',
-        );
-        // Remove: the Sidekick's own menu loses that one, Prism's keeps it.
-        final List<String> mainBefore = keys();
-        final int sideBefore = sideKeys().length;
-        await menu('hold', i: 1);
-        s = await menu('pop', which: 1, settleMs: 1200);
-        await Robot.wait(900);
-        t.check(
-          'sidekick: Remove takes one from its own menu, together, and Prism\'s is untouched',
-          sideKeys().length == sideBefore - 1 &&
-              keys().join(' ') == mainBefore.join(' '),
-          '${sideKeys().length} left of $sideBefore; Prism ${keys().join(' ')}',
-        );
-        // Add, closed without choosing.
-        if (await openMenu()) {
-          await menu('hold', i: 0);
-          s = await menu('pop', which: 2, settleMs: 1200);
-          await Robot.wait(1200);
-          t.check(
-            'sidekick: Add brings Prism\'s list, for the place after it, in the Sidekick\'s menu',
-            _drawerOpen && _pickSide && _editSlot == 1,
-            'list $_drawerOpen, side $_pickSide, place $_editSlot',
+        if (!mine) {
+          t.note(
+            'the Sidekick\'s Remove, Change and Add were not tried: its menu is not yet Android\'s own, and the test must not change it before the one-time move',
           );
-          await Robot.tap(_home, after: 1300);
+        } else {
+          // For the test, a menu that is not Prism's (Prism's is five actions now), so that it can
+          // be told which one changed.
+          const List<String> sideTest = <String>[
+            'action:4',
+            'action:3',
+            'action:2',
+            'action:1',
+            'screen:0',
+          ];
+          await t.lens(<String, Object?>{'op': 'sidekick', 'keys': sideTest});
+          await Robot.wait(600);
+          t.check('sidekick: a tap opens its blobs', await openMenu());
+          s = await where();
           t.check(
-            'sidekick: closed without choosing, its menu is as it was and Prism\'s is shown again',
-            !_drawerOpen &&
-                !_pickSide &&
-                !BlobSlots.instance.side &&
-                sideKeys().length == sideBefore - 1,
-            'side ${BlobSlots.instance.side}, ${sideKeys().length} in its menu',
+            'sidekick: as many blobs as its menu has',
+            s['menuCount'] == filled(stored(s)).length,
+            '${s['menuCount']} shown, ${filled(stored(s)).length} in its menu',
           );
-        }
-        // Change, choosing the first thing.
-        if (await openMenu()) {
-          await menu('hold', i: 0);
-          s = await menu('pop', which: 0, settleMs: 1200);
-          await Robot.wait(1200);
+          s = await menu('hold', i: 1);
           t.check(
-            'sidekick: Change brings Prism\'s list for that blob',
-            _drawerOpen && _pickSide && _editSlot == 0,
+            'sidekick: holding a blob brings its small menu',
+            s['pop'] == 1,
+            'small menu ${s['pop']}',
           );
-          final Offset? first = Robot.spot('choice0');
-          if (first != null) {
-            await Robot.tap(first, after: 1700);
+          s = await menu('outside', settleMs: 700);
+          t.check(
+            'sidekick: a tap beside it puts the small menu away, the blobs stay',
+            s['pop'] == -1 && s['menu'] == true,
+            'small menu ${s['pop']}, blobs ${s['menu']}',
+          );
+          // Remove: done by Android alone. Over another app where there is one, so that it can be
+          // seen that Prism is not brought forward for it.
+          final int asksBefore = _sideAsks;
+          final List<String> sideBefore = stored(await where());
+          bool over = false, left = false;
+          if (t.other != null) {
+            s = await t.lens(<String, Object?>{
+              'op': 'leave',
+              'pkg': otherPkg,
+            }, extraMs: 3000);
+            left = s['ok'] != false;
+            over = left && s['fg'] == false;
+            if (over) {
+              t.check(
+                'sidekick: over another app, a tap opens its blobs',
+                await openMenu(),
+              );
+            }
           }
-          t.check(
-            'sidekick: what was chosen is in the Sidekick\'s menu, and only there',
-            _sideKey(0) == 'action:0' &&
-                keys().join(' ') == mainBefore.join(' '),
-            'side ${_sideKey(0)}; Prism ${keys().join(' ')}',
+          if (!over) {
+            t.note(
+              'the Sidekick\'s Remove was tried in Prism, not over another app (${t.other == null ? 'none of the usual apps was found' : 'the other app did not come to the front'})',
+            );
+            if ((await where())['menu'] != true) {
+              await openMenu();
+            }
+          }
+          await menu('hold', i: 1);
+          s = await menu('pop', which: 1, settleMs: 1200);
+          await Robot.wait(900);
+          s = await where();
+          final List<String> afterRemove = together(
+            <String>[...sideBefore]..removeAt(1),
           );
-          clean('after changing a Sidekick blob');
+          t.check(
+            'sidekick: Remove takes that blob out of its own menu, and the others close up',
+            stored(s).join(' ') == afterRemove.join(' '),
+            'its menu ${stored(s).join(' ')} (was ${sideBefore.join(' ')})',
+          );
+          t.check(
+            over
+                ? 'sidekick: Remove over another app leaves that app in front: Prism is not brought forward'
+                : 'sidekick: Remove asks nothing of Prism',
+            (!over || s['fg'] == false) &&
+                _sideAsks == asksBefore &&
+                !_drawerOpen,
+            'Prism in front ${s['fg']}, asked to choose ${_sideAsks - asksBefore} times, list $_drawerOpen',
+          );
+          t.check(
+            'sidekick: Remove leaves Prism\'s menu as it was, and its blobs as they were',
+            keys().join(' ') == mainBefore.join(' ') && _open == openBefore,
+            'Prism ${keys().join(' ')}, blobs out $_open',
+          );
+          t.check(
+            'sidekick: Prism has been told its keys again, only for their pictures',
+            _sideKeys.join(' ') == afterRemove.join(' '),
+            'Prism was told ${_sideKeys.join(' ')}',
+          );
+          if (left) {
+            // (Also when the other app was slow to come to the front: Prism comes back, and the
+            // speck that kept the screen on goes.)
+            await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
+            await Robot.wait(900);
+          }
+          // Add, closed without choosing.
+          if (await openMenu()) {
+            await menu('hold', i: 0);
+            s = await menu('pop', which: 2, settleMs: 1200);
+            await Robot.wait(1200);
+            t.check(
+              'sidekick: Add brings Prism\'s list, only to choose for the place after it',
+              _drawerOpen &&
+                  _editSlot == _sideSlot &&
+                  _sideAsk?.add == true &&
+                  _sideAsk?.slot == 0,
+              'list $_drawerOpen, place $_editSlot, asked for ${_sideAsk?.slot} (add ${_sideAsk?.add})',
+            );
+            t.check(
+              'sidekick: while Prism\'s list is up for it, Prism\'s triangle does not turn',
+              !turns || _signTurn.target.abs() < 0.01,
+              'turned ${_signTurn.target.toStringAsFixed(2)}',
+            );
+            await Robot.tap(_home, after: 1300);
+            s = await where();
+            t.check(
+              'sidekick: closed without choosing, both menus are as they were and Prism\'s blobs do not open',
+              !_drawerOpen &&
+                  _sideAsk == null &&
+                  stored(s).join(' ') == afterRemove.join(' ') &&
+                  keys().join(' ') == mainBefore.join(' ') &&
+                  _open == openBefore,
+              'its menu ${stored(s).join(' ')}; Prism ${keys().join(' ')}, blobs out $_open',
+            );
+          }
+          // Change, choosing the first thing.
+          List<String> afterChange = afterRemove;
+          if (await openMenu()) {
+            await menu('hold', i: 0);
+            s = await menu('pop', which: 0, settleMs: 1200);
+            await Robot.wait(1200);
+            t.check(
+              'sidekick: Change brings Prism\'s list, only to choose for that blob, and the button wears it meanwhile',
+              _drawerOpen &&
+                  _editSlot == _sideSlot &&
+                  _sideAsk?.add == false &&
+                  _sideAsk?.slot == 0 &&
+                  _sideAsk?.key == afterRemove[0] &&
+                  _face.target == 1,
+              'list $_drawerOpen, place $_editSlot, asked for ${_sideAsk?.slot} ${_sideAsk?.key}, button as the blob ${_face.target}',
+            );
+            final Offset? first = Robot.spot('choice0');
+            if (first != null) {
+              await Robot.tap(first, after: 1700);
+            }
+            s = await where();
+            afterChange = <String>[...afterRemove]..[0] = 'action:0';
+            t.check(
+              'sidekick: what was chosen is in that place of the Sidekick\'s menu, and only there',
+              stored(s).join(' ') == afterChange.join(' ') &&
+                  keys().join(' ') == mainBefore.join(' '),
+              'its menu ${stored(s).join(' ')}; Prism ${keys().join(' ')}',
+            );
+            t.check(
+              'sidekick: chosen, Prism\'s blobs do not open',
+              _open == openBefore,
+              'blobs out $_open',
+            );
+            clean('after changing a Sidekick blob');
+          }
+          // Add, choosing the first thing: right after the blob that was held, and only there.
+          if (await openMenu()) {
+            await menu('hold', i: 1);
+            s = await menu('pop', which: 2, settleMs: 1200);
+            await Robot.wait(1200);
+            final Offset? first = Robot.spot('choice0');
+            if (first != null) {
+              await Robot.tap(first, after: 1700);
+            }
+            s = await where();
+            final List<String> want = together(
+              <String>[...filled(afterChange)]..insert(2, 'action:0'),
+            );
+            t.check(
+              'sidekick: Add puts what was chosen right after the held blob, in the Sidekick\'s menu only',
+              stored(s).join(' ') == want.join(' ') &&
+                  keys().join(' ') == mainBefore.join(' ') &&
+                  _open == openBefore,
+              'its menu ${stored(s).join(' ')} (want ${want.join(' ')}); Prism ${keys().join(' ')}, blobs out $_open',
+            );
+            clean('after adding a Sidekick blob');
+          }
         }
         // Held, closed: its settings, for the Sidekick.
         s = await press(
@@ -4711,19 +4932,33 @@ class _ShellState extends State<Shell>
         );
         await t.lens(<String, Object?>{'op': 'side', 'on': true});
         await Robot.wait(1200);
-        // An emptied Sidekick menu: one plus.
-        BlobSlots.instance.putSideAll(List<String>.filled(_n, 'empty:'));
-        await _sendBlobs();
-        await Robot.wait(900);
-        s = await where();
+        // An emptied Sidekick menu: one plus. Then the person's own menu, back as it was.
+        final List<String>? back = sideWere;
+        if (back != null) {
+          await t.lens(<String, Object?>{
+            'op': 'sidekick',
+            'keys': List<String>.filled(_n, 'empty:'),
+          });
+          s = await where();
+          t.check(
+            'sidekick: with nothing in its menu, it holds one plus',
+            s['blobs'] == 1 && '${s['sideKeys']}'.startsWith('empty:'),
+            '${s['blobs']} blobs: ${s['sideKeys']}',
+          );
+          await t.lens(<String, Object?>{'op': 'sidekick', 'keys': back});
+          await Robot.wait(600);
+          s = await where();
+          t.check(
+            'sidekick: its own menu is back as it was before the test',
+            stored(s).join(' ') == back.join(' '),
+            'its menu ${stored(s).join(' ')} (was ${back.join(' ')})',
+          );
+        }
         t.check(
-          'sidekick: with nothing in its menu, it holds one plus',
-          s['blobs'] == 1 && '${s['sideKeys']}'.startsWith('empty:'),
-          '${s['blobs']} blobs: ${s['sideKeys']}',
+          'sidekick: Prism\'s menu is the same after all of it',
+          keys().join(' ') == mainBefore.join(' '),
+          'Prism ${keys().join(' ')} (was ${mainBefore.join(' ')})',
         );
-        BlobSlots.instance.sideAsMain();
-        await _sendBlobs();
-        await Robot.wait(600);
         clean('after the Sidekick');
 
         // ------------------------------------------------ everything at once
@@ -5177,6 +5412,10 @@ class _ShellState extends State<Shell>
       settings.reduceTransparency = solidWas;
       lensOf.setPin(pinWas);
       _sendPin();
+      final List<String>? sideBack = sideWere;
+      if (sideBack != null) {
+        await t.lens(<String, Object?>{'op': 'sidekick', 'keys': sideBack});
+      }
       if (_tab != 0) {
         _go(0);
       }
@@ -5695,7 +5934,8 @@ class _ShellState extends State<Shell>
       _lensHome();
     }
     // Up to change a blob: the button becomes that blob for as long as it is being chosen.
-    if (v && _editSlot != null && _editSlot! < 100) {
+    // (The Sidekick's too, while choosing for it.)
+    if (v && _editSlot != null && !_isSwipe(_editSlot!)) {
       _faceOf = _blobDisc(_editSlot!);
       _face.animateTo(1);
     } else {
@@ -5703,7 +5943,9 @@ class _ShellState extends State<Shell>
     }
     // The drawer may have been up to choose what takes a blob's place.
     final bool choosing = !v && _editSlot != null;
-    final bool swipe = choosing && _editSlot! >= 100;
+    final bool swipe = choosing && _isSwipe(_editSlot!);
+    // Up only to choose for the Sidekick: nothing of Prism's own menu is touched.
+    final bool side = choosing && _editSlot == _sideSlot;
     _setOpen(false);
     setState(() {
       _drawerOpen = v;
@@ -5717,17 +5959,14 @@ class _ShellState extends State<Shell>
       ..overlay = v ? '+drawer' : ''
       ..event(v ? 'drawer open' : 'drawer close');
     Haptics.settle();
-    if (choosing && !swipe) {
+    if (choosing && !swipe && !side) {
       // (A place made for "Add" and left empty: the empty ones go last again.)
       _rearrange(_packed());
     }
     if (choosing) {
-      final bool side = _pickSide, back = _pickBack;
-      _pickSide = _pickBack = false;
-      if (side) {
-        // The Sidekick's place was changed: Prism's own menu is the one shown again.
-        _showMenu(side: false);
-      }
+      final bool back = _pickBack;
+      _pickBack = false;
+      _sideAsk = null;
       if (back) {
         // Prism came forward only for this: back to the app you were in.
         const MethodChannel('lumen/device')
@@ -5737,8 +5976,9 @@ class _ShellState extends State<Shell>
         // A two-finger swipe was being set, from Prism's settings: back to them.
         _designSide.value = false;
         _showFloating();
-      } else {
-        // Chosen or not, the blobs come back out, showing what is there now.
+      } else if (!side) {
+        // Chosen or not, the blobs come back out, showing what is there now. (Not after
+        // choosing for the Sidekick: Prism's own blobs stay as they were, in.)
         _setOpen(true);
       }
     }
@@ -5898,9 +6138,6 @@ class _ShellState extends State<Shell>
         _editing = false;
       }
     });
-    if (!_editing && !_pickSide) {
-      _showMenu(side: false);
-    }
     _signSync();
     Diag.instance
       ..overlay = v ? '+blobs' : ''
@@ -6565,14 +6802,18 @@ class _ShellState extends State<Shell>
                     // Taking it away, from the same place it is changed.
                     onRemove:
                         _editSlot != null &&
-                            (_editSlot! >= 100
+                            (_isSwipe(_editSlot!)
                                 ? GestureSlots.instance.keys[_editSlot! -
                                           100] !=
                                       'empty:'
                                 : !_isEmpty(_editSlot!))
                         ? () {
                             final int i = _editSlot!;
-                            if (i >= 100) {
+                            if (i == _sideSlot) {
+                              // The Sidekick's blob: Android takes it out of its menu.
+                              Haptics.thud();
+                              _sideChosen('empty:');
+                            } else if (_isSwipe(i)) {
                               Haptics.thud();
                               Diag.instance.event(
                                 'gesture ${GestureSlots.names[i - 100]} cleared',
@@ -6584,7 +6825,7 @@ class _ShellState extends State<Shell>
                             _setDrawer(false);
                           }
                         : null,
-                    pickTitle: _editSlot != null && _editSlot! >= 100
+                    pickTitle: _editSlot != null && _isSwipe(_editSlot!)
                         ? (
                             'Swipe ${GestureSlots.names[_editSlot! - 100]}',
                             'with two fingers',
@@ -6593,7 +6834,9 @@ class _ShellState extends State<Shell>
                     choices: <(String, String, IconData, Color)>[
                       // The button test, first, while choosing for a blob: chosen, it runs and
                       // nothing is put in the place.
-                      if (_editSlot != null && _editSlot! < 100 && !_testing)
+                      if (_editSlot != null &&
+                          !_isSwipe(_editSlot!) &&
+                          !_testing)
                         (
                           'test:buttons',
                           'Button test',
@@ -6601,7 +6844,7 @@ class _ShellState extends State<Shell>
                           const Color(0xFF2E3440),
                         ),
                       // A swipe can also pull the phone's notifications down.
-                      if (_editSlot != null && _editSlot! >= 100)
+                      if (_editSlot != null && _isSwipe(_editSlot!))
                         (
                           'phone:shade',
                           'Notifications',
@@ -7016,126 +7259,6 @@ class _ShellState extends State<Shell>
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            // Which menu is being changed: the main button's, or the side Blob's.
-                            // (And, where the side Blob has a set of its own, the way back.)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: <Widget>[
-                                Container(
-                                  padding: const EdgeInsets.all(3),
-                                  decoration: const ShapeDecoration(
-                                    color: Colors.white,
-                                    shape: StadiumBorder(),
-                                    shadows: <BoxShadow>[
-                                      BoxShadow(
-                                        color: Color(0x55000000),
-                                        blurRadius: 6,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: <Widget>[
-                                      for (final bool side in const <bool>[
-                                        false,
-                                        true,
-                                      ])
-                                        GestureDetector(
-                                          key: Robot.key(
-                                            side ? 'menuSide' : 'menuMain',
-                                          ),
-                                          behavior: HitTestBehavior.opaque,
-                                          onTap: () {
-                                            Haptics.tick();
-                                            _showMenu(side: side);
-                                          },
-                                          child: AnimatedContainer(
-                                            duration: const Duration(
-                                              milliseconds: 160,
-                                            ),
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 14,
-                                              vertical: 7,
-                                            ),
-                                            decoration: ShapeDecoration(
-                                              color:
-                                                  BlobSlots.instance.side ==
-                                                      side
-                                                  ? const Color(0xFF15171C)
-                                                  : const Color(0x0015171C),
-                                              shape: const StadiumBorder(),
-                                            ),
-                                            child: Text(
-                                              side ? 'Sidekick' : 'Prism',
-                                              textScaler: TextScaler.noScaling,
-                                              style: LumenType.text(
-                                                14,
-                                                weight: 650,
-                                                color:
-                                                    BlobSlots.instance.side ==
-                                                        side
-                                                    ? Colors.white
-                                                    : const Color(0xFF15171C),
-                                                height: 1.2,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                if (BlobSlots.instance.side &&
-                                    BlobSlots.instance.sideOwn) ...<Widget>[
-                                  const SizedBox(width: 8),
-                                  GestureDetector(
-                                    key: Robot.key('menuSame'),
-                                    behavior: HitTestBehavior.opaque,
-                                    onTap: () {
-                                      Haptics.tick();
-                                      BlobSlots.instance.sideAsMain();
-                                      for (int i = 0; i < _n; i++) {
-                                        _gone[i].animateTo(
-                                          _isEmpty(i) ? 1 : 0,
-                                          spring: Motions.spatialFast,
-                                        );
-                                      }
-                                      Diag.instance.event(
-                                        'side menu: same as main again',
-                                      );
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 10,
-                                      ),
-                                      decoration: const ShapeDecoration(
-                                        color: Colors.white,
-                                        shape: StadiumBorder(),
-                                        shadows: <BoxShadow>[
-                                          BoxShadow(
-                                            color: Color(0x55000000),
-                                            blurRadius: 6,
-                                            offset: Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Text(
-                                        'Same as Prism',
-                                        textScaler: TextScaler.noScaling,
-                                        style: LumenType.text(
-                                          14,
-                                          weight: 650,
-                                          color: const Color(0xFF15171C),
-                                          height: 1.2,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 4),
                             // Names under the blobs, on or off. White, like the marks on the
                             // blobs: the things that can be tapped while changing.
                             GestureDetector(

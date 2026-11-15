@@ -254,9 +254,57 @@ class RestBubble with WidgetsBindingObserver {
   /// large the blob was drawn inside the lens, in real pixels.
   void Function(Offset at, double inner)? onReturned;
 
-  /// Tells Android what the blobs in the menu are, so the floating lens can open the same menu.
-  void tellBlobs(List<Map<String, Object>> blobs) {
-    _device.invokeMethod<void>('blobs', blobs).catchError((Object _) {});
+  // ---- The Sidekick's menu. It is Android's own (SidekickMenu.kt): kept, saved and changed
+  // there. Prism only draws its pictures, and lends its app list to choose from.
+
+  /// Sends Android the pictures for the Sidekick's keys: the name, colour and picture of each.
+  void tellSidekickPictures(List<Map<String, Object>> pictures) {
+    _device
+        .invokeMethod<void>('sidekickPictures', pictures)
+        .catchError((Object _) {});
+  }
+
+  /// What the Sidekick's menu holds: its five keys. Null where Android has none of its own yet
+  /// (before the one-time move), or away from a phone.
+  Future<List<String>?> sidekickKeys() async {
+    try {
+      final List<Object?>? keys = await _device.invokeMethod<List<Object?>>(
+        'sidekickKeys',
+      );
+      return keys == null ? null : <String>[for (final Object? k in keys) '$k'];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// The one-time move: the menu the Sidekick showed until now, for Android to keep from now
+  /// on. Taken only if it has none of its own yet. Answers with the keys it has; null if no answer.
+  Future<List<String>?> sidekickAdopt(List<String> keys) async {
+    try {
+      final List<Object?>? now = await _device.invokeMethod<List<Object?>>(
+        'sidekickAdopt',
+        keys,
+      );
+      return now == null ? null : <String>[for (final Object? k in now) '$k'];
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// What was chosen in the app list for the Sidekick's place [slot] ([add]: to go right after
+  /// it). Android puts it in the Sidekick's menu.
+  void sidekickChosen({
+    required int slot,
+    required bool add,
+    required String key,
+  }) {
+    _device
+        .invokeMethod<void>('sidekickChosen', <String, Object>{
+          'slot': slot,
+          'add': add,
+          'key': key,
+        })
+        .catchError((Object _) {});
   }
 
   /// Tells Android that a panel is open in Prism (true) or not. The side Blob, which Android

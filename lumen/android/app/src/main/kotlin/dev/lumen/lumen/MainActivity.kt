@@ -397,10 +397,32 @@ class MainActivity : FlutterActivity() {
                 // (With floating elements switched off in Prism, they are seen there only while the blobs are out.)
                 if (!RestBubble.floatIn) for (b in Floaters) b.refresh(applicationContext)
                 result.success(null)
-            } else if (call.method == "blobs") {
-                // What the blobs in the menu are, in order, so the floating lens can open the same menu.
+            } else if (call.method == "sidekickPictures") {
+                // Prism's pictures for the Sidekick's keys (the name, colour and picture of each),
+                // sent whenever it was told the keys, or the pictures have changed. Only pictures:
+                // which blob goes where is the Sidekick's own (SidekickMenu).
                 val list = call.arguments as? List<*>
-                RestBubble.blobs = list?.mapNotNull { (it as? Map<*, *>)?.let { m -> RestBubble.blobOf(m) } } ?: emptyList()
+                SidekickMenu.pictures(applicationContext, list?.mapNotNull { (it as? Map<*, *>)?.let { m -> RestBubble.blobOf(m) } } ?: emptyList())
+                result.success(null)
+            } else if (call.method == "sidekickKeys") {
+                // Prism asks what the Sidekick's menu holds, to draw the pictures: its five keys,
+                // or nothing if it has no menu of its own yet (then Prism moves the old one over).
+                result.success(SidekickMenu.keys(applicationContext))
+            } else if (call.method == "sidekickAdopt") {
+                // The one-time move: the menu the Sidekick showed until now, as Prism kept it.
+                // Taken only if the Sidekick has none of its own yet.
+                val list = (call.arguments as? List<*>)?.map { "$it" } ?: emptyList()
+                result.success(SidekickMenu.adopt(applicationContext, list))
+            } else if (call.method == "sidekickChosen") {
+                // Chosen in Prism's app list for one of the Sidekick's places (asked for with
+                // "sidekickChoose"): that place is given it, or with "add" it goes right after it.
+                val a = call.arguments as? Map<*, *>
+                val slot = (a?.get("slot") as? Number)?.toInt() ?: -1
+                val key = (a?.get("key") as? String) ?: ""
+                if (key.isNotEmpty()) {
+                    if (a?.get("add") == true) SidekickMenu.addAfter(applicationContext, slot, key)
+                    else SidekickMenu.put(applicationContext, slot, key)
+                }
                 result.success(null)
             } else if (call.method == "pinData") {
                 // The numbers the pinned sheets show.
@@ -1101,9 +1123,16 @@ class Floater(val timer: Boolean) {
      */
     var container = false
 
-    /** What the blobs in the menu are, in order: the same blobs Prism's own button shows. */
+    /** What the blobs in the Sidekick's menu are, in order, each knowing its place there. See [SidekickMenu]. */
     var blobs: List<Pin> = emptyList()
+        private set
     private var menu: Menu? = null
+
+    /** The Sidekick's menu has changed ([SidekickMenu]): what it shows now. Its sign takes its colours from them. */
+    fun setBlobs(next: List<Pin>) {
+        blobs = next
+        view?.postInvalidate()
+    }
 
     // Where Prism's own blobs sit while they are out: the middle of its button, and how near
     // and how far from it counts as among them. A lens let go among them is put back with them.
@@ -2007,6 +2036,8 @@ class Floater(val timer: Boolean) {
         m["covered"] = covered
         m["gone"] = sideGone
         m["sideKeys"] = blobs.joinToString(",") { it.key }
+        // (And the Sidekick's menu as it is kept: its five keys, whether it is its own, what was moved over.)
+        SidekickMenu.state(context, m)
         m["sheet"] = sheet != null
         m["closing"] = swallowing
         m["blobs"] = blobs.size
@@ -2190,6 +2221,9 @@ class Floater(val timer: Boolean) {
                 }
                 // Prism is brought back to the front, from whatever app is there.
                 "front" -> {
+                    // (The speck that kept the screen on over the other app is not needed any more.)
+                    awake?.let { try { wm(context).removeView(it) } catch (e: Exception) {} }
+                    awake = null
                     try {
                         context.startActivity(
                             android.content.Intent(context, MainActivity::class.java)
@@ -2212,6 +2246,38 @@ class Floater(val timer: Boolean) {
                     watcher.postDelayed({ done(state(context)) }, 400)
                 }
                 "state" -> done(state(context))
+                // The button test: the Sidekick's menu set for the test, and put back as it was afterwards.
+                "sidekick" -> {
+                    SidekickMenu.testPut(context, (a["keys"] as? List<*>)?.map { "$it" } ?: emptyList())
+                    // (Long enough for Prism to send the pictures.)
+                    watcher.postDelayed({ done(state(context)) }, num("settleMs", 900))
+                }
+                // Another app put in front, and left there: the test does things over it, and then
+                // brings Prism back ("front").
+                "leave" -> {
+                    if (!android.provider.Settings.canDrawOverlays(context)) return fail("not allowed over other apps")
+                    val pkg = a["pkg"] as? String
+                    val open = pkg?.let { context.packageManager.getLaunchIntentForPackage(it) } ?: return fail("no app to put in front")
+                    try {
+                        // A speck of a window that keeps the screen on while Prism is not in front.
+                        val speck = android.view.View(context)
+                        val slp = android.view.WindowManager.LayoutParams(
+                            1, 1, android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                            android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                                android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
+                            android.graphics.PixelFormat.TRANSLUCENT,
+                        )
+                        slp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
+                        slp.alpha = 0.02f
+                        if (awake == null) {
+                            wm(context).addView(speck, slp)
+                            awake = speck
+                        }
+                    } catch (e: Exception) {}
+                    activity.startActivity(open.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED))
+                    for (b in Floaters) b.frontApp = pkg ?: ""
+                    watcher.postDelayed({ done(state(context)) }, num("settleMs", 2500))
+                }
                 // It is given a size, as two fingers would give it, within what it allows.
                 "size" -> {
                     lensSize = (num("dp", 84) * context.resources.displayMetrics.density).toInt()
@@ -3019,14 +3085,14 @@ class Floater(val timer: Boolean) {
 
         /**
          * Blob [d] was let go among the others, in seat [g]: it sits there. If that is not the
-         * seat it had, the order changes, here at once and in Prism, where it is kept.
+         * seat it had, the order changes, here at once and in the Sidekick's menu, where it is kept.
          */
         private fun settle(d: Int, g: Int) {
             var at = d
             if (g != d && items.all { it.slot >= 0 }) {
                 val order = (0 until n).filter { it != d }.toMutableList()
                 order.add(g.coerceIn(0, order.size), d)
-                // The places these blobs are in, as Prism knows them, are handed out again in the new order.
+                // The places these blobs are in, in the Sidekick's menu, are handed out again in the new order.
                 val places = items.map { it.slot }.sorted()
                 val next = order.mapIndexed { j, k -> items[k].inPlace(places[j]) }
                 val rx = FloatArray(n) { restX[order[it]] }
@@ -3036,9 +3102,11 @@ class Floater(val timer: Boolean) {
                 for (i in 0 until n) {
                     restX[i] = rx[i]; restY[i] = ry[i]; out[i] = o[i]; speed[i] = sp[i]
                 }
-                channel?.invokeMethod("blobOrder", order.map { items[it].slot })
+                // The places they were in, as they now stand. (Read before they are handed out again.)
+                val from = order.map { items[it].slot }
                 items = next
-                blobs = next
+                // (Kept there, and shown the same way from now on: Prism is not asked.)
+                SidekickMenu.arrange(context, from)
                 at = order.indexOf(d)
                 haptic(context, "click")
             } else {
@@ -3382,13 +3450,16 @@ class Floater(val timer: Boolean) {
             }
         }
 
-        /** "Remove" in a blob's small menu: Prism takes it out of the Sidekick's menu, and a plus stands there. */
+        /**
+         * "Remove" in a blob's small menu: it is taken out of the Sidekick's menu, here, and the
+         * others close up round the middle at once. Prism is not asked and not brought forward.
+         */
         private fun remove(i: Int) {
             val c = context
             haptic(c, "thud")
             val slot = if (items[i].slot >= 0) items[i].slot else i
             close()
-            channel?.invokeMethod("sideRemove", slot)
+            SidekickMenu.remove(c, slot)
         }
 
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
@@ -3551,17 +3622,23 @@ class Floater(val timer: Boolean) {
             watcher.postDelayed({ use(c, b) }, 110)
         }
 
-        /** Held: Prism comes to the front with its apps to choose from, for this blob's place. */
+        /**
+         * Change, or Add ([adding]: a new blob right after this one): Prism comes to the front with
+         * its app list, only to choose from. What is chosen is sent back ("sidekickChosen") and
+         * put in the Sidekick's menu here; Prism's own menu is not touched.
+         */
         private fun change(i: Int, adding: Boolean = false) {
             val c = context
             haptic(c, "click")
             val slot = if (items[i].slot >= 0) items[i].slot else i
+            // What is there now, for the list's title and for Prism's button to wear meanwhile.
+            val key = SidekickMenu.keyAt(c, slot)
             // Brought forward only for this: once chosen, Prism steps back to where you were.
             val back = !this@Floater.foreground
             close()
             openPrism(c, false)
             // Once Prism is in front.
-            watcher.postDelayed({ channel?.invokeMethod("editSlot", mapOf("slot" to slot, "back" to back, "add" to adding)) }, 220)
+            watcher.postDelayed({ channel?.invokeMethod("sidekickChoose", mapOf("slot" to slot, "back" to back, "add" to adding, "key" to key)) }, 220)
         }
 
         /** Dragged out of its place and let go, at this spot: it goes into the lens. */
