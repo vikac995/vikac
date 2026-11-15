@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 136 (15 November 2026)
+
+**File:** `releases/prism-build-136.apk`
+
+Needs Play Protect paused to install. Can be installed over build 135.
+
+- **The sign becomes the cog, in its own colours.** While the blobs are being changed, the cog used to appear, white, as the sign shrank away. Now, in Triangle and Window, the triangle's own outline reshapes into the cog: its corners draw in and the teeth grow out, the hole opens in the middle, and the colours go once round it. In the other looks the sign draws in and the same colourful cog grows out of its middle. It turns as it comes, as before, and still shows itself off the first three times. With no blobs at all it is the plain white cog.
+
+**Checked:** it compiles; in my preview: the cog in Triangle (also a moment into the change), Pearls and Vivid; the automatic test in the preview.
+**Not checked:** on a phone, and the change in motion (my preview takes still pictures). The cog's colours are your blobs', in every look, Vivid included.
+
 ## Prism, build 135 (15 November 2026)
 
 **File:** `releases/prism-build-135.apk`

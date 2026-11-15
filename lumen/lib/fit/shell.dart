@@ -7099,27 +7099,45 @@ class _ButtonSign extends CustomPainter {
           <Color>[for (final (double, Color) b in blobs) b.$2],
           radius: rim > 0 ? rim : size.width / 2,
           angle: -math.pi / 2 + turn,
-          fold: c,
+          // (Gone early: the cog takes its place, reshaping out of it.)
+          fold: (c * 3).clamp(0.0, 1.0),
+          // (A triangle only fades: the cog reshapes out of that very outline.)
+          shrink: !BlobSign.of(look).triangle,
         );
       }
     }
     if (c > 0.001) {
-      canvas
-        ..saveLayer(
-          Rect.fromCenter(center: mid, width: 40 * u, height: 40 * u),
-          Paint()..color = Colors.white.withValues(alpha: c),
-        )
-        ..translate(mid.dx, mid.dy)
-        // Showing itself off, it comes round a further quarter turn and settles a little past.
-        ..rotate(
+      // Showing itself off, the cog comes round a further quarter turn and settles a little past.
+      final double spin =
           (1 - c) * -math.pi / 2 -
-              (1 - Curves.easeOutBack.transform(hint.clamp(0.0, 1.0))) *
-                  math.pi /
-                  2,
-        )
-        ..scale((0.55 + 0.45 * c) * u);
-      _gear.paint(canvas, Offset(-_gear.width / 2, -_gear.height / 2));
-      canvas.restore();
+          (1 - Curves.easeOutBack.transform(hint.clamp(0.0, 1.0))) *
+              math.pi /
+              2;
+      if (blobs.isNotEmpty) {
+        // The sign becomes the cog, in its own colours.
+        BlobSign.paintCog(
+          canvas,
+          size,
+          look,
+          <Color>[for (final (double, Color) b in blobs) b.$2],
+          radius: rim > 0 ? rim : size.width / 2,
+          t: c,
+          angle: -math.pi / 2 + turn,
+          spin: spin,
+        );
+      } else {
+        // With no blobs there are no colours: the plain white cog.
+        canvas
+          ..saveLayer(
+            Rect.fromCenter(center: mid, width: 40 * u, height: 40 * u),
+            Paint()..color = Colors.white.withValues(alpha: c),
+          )
+          ..translate(mid.dx, mid.dy)
+          ..rotate(spin)
+          ..scale((0.55 + 0.45 * c) * u);
+        _gear.paint(canvas, Offset(-_gear.width / 2, -_gear.height / 2));
+        canvas.restore();
+      }
     }
     if (hint < 0.999 && rim > 0 && c > 0.001) {
       // One glint goes once round the button's edge, from the top: bright in the middle of

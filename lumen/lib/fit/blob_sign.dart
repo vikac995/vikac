@@ -18,7 +18,13 @@ import 'package:material_ui/material_ui.dart';
 typedef _Paint = void Function(Canvas c, double r, List<Color> cs, double a);
 
 class BlobLook {
-  const BlobLook(this.id, this.name, this._draw, {this.spectrum = false});
+  const BlobLook(
+    this.id,
+    this.name,
+    this._draw, {
+    this.spectrum = false,
+    this.triangle = false,
+  });
 
   /// What is saved and what Android is told. Never shown.
   final String id;
@@ -27,6 +33,9 @@ class BlobLook {
 
   /// The colours are put in rainbow order first, so that they read as light.
   final bool spectrum;
+
+  /// Its outline is the large triangle: it can reshape into the cog (see [BlobSign.paintCog]).
+  final bool triangle;
 }
 
 abstract final class BlobSign {
@@ -40,16 +49,137 @@ abstract final class BlobSign {
     BlobLook('bandswhite', 'Lined', _bandsWhite, spectrum: true),
     BlobLook('vivid', 'Vivid', _vivid),
     BlobLook('halo', 'Halo', _halo, spectrum: true),
-    BlobLook('triangle', 'Triangle', _triangle, spectrum: true),
-    BlobLook('window', 'Window', _window, spectrum: true),
+    BlobLook('triangle', 'Triangle', _triangle, spectrum: true, triangle: true),
+    BlobLook('window', 'Window', _window, spectrum: true, triangle: true),
   ];
 
   static BlobLook of(String id) =>
       looks.firstWhere((BlobLook l) => l.id == id, orElse: () => looks.first);
 
+  /// The colours as the look draws them: five at most, and in rainbow order where it asks.
+  static List<Color> _ordered(BlobLook look, List<Color> colours) {
+    final List<Color> cs = colours.length > 5 ? colours.sublist(0, 5) : colours;
+    if (!look.spectrum) {
+      return cs;
+    }
+    // From red round to violet. (The 20 keeps the reds that sit just under 360 with the rest.)
+    double hue(Color c) => (HSVColor.fromColor(c).hue + 20) % 360;
+    return <Color>[...cs]..sort((Color x, Color y) => hue(x).compareTo(hue(y)));
+  }
+
+  /// The cog the sign becomes while the blobs are being changed, in the sign's own colours.
+  /// [t] is how far it has become the cog (0 not at all, 1 the cog). A look whose outline is
+  /// the triangle reshapes into it, corner by corner; any other look draws in, and the cog
+  /// grows out of its middle. [angle] is where the sign points, [spin] how far the cog has
+  /// turned.
+  static void paintCog(
+    Canvas canvas,
+    Size size,
+    String id,
+    List<Color> colours, {
+    required double radius,
+    required double t,
+    double angle = -math.pi / 2,
+    double spin = 0,
+  }) {
+    if (colours.isEmpty || t <= 0.001) {
+      return;
+    }
+    final BlobLook look = of(id);
+    final List<Color> cs = _ordered(look, colours);
+    final double e = Curves.easeInOut.transform(t.clamp(0.0, 1.0));
+    final double r = radius, side = r * 0.94, apex = angle + math.pi;
+    const int steps = 120;
+    const double third = 2 * math.pi / 3;
+    final Path shape = Path();
+    for (int i = 0; i < steps; i++) {
+      final double th = i / steps * 2 * math.pi;
+      // The cog: eight teeth with sloped sides.
+      final double tooth = math.cos(8 * (th - spin));
+      final double k = ((tooth + 0.3) / 0.6).clamp(0.0, 1.0);
+      final double cog = r * (0.47 + 0.17 * k * k * (3 - 2 * k));
+      // What it comes from: the triangle's own outline at this angle, or nothing.
+      double from = 0;
+      if (look.triangle) {
+        final double d = ((th - apex) % third + third) % third;
+        from = side * 0.5 / math.cos(d - third / 2);
+      }
+      final double at = from + (cog - from) * e;
+      final Offset p = Offset(math.cos(th), math.sin(th)) * at;
+      if (i == 0) {
+        shape.moveTo(p.dx, p.dy);
+      } else {
+        shape.lineTo(p.dx, p.dy);
+      }
+    }
+    shape.close();
+    canvas
+      ..save()
+      ..translate(size.width / 2, size.height / 2)
+      ..clipPath(
+        Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: r)),
+      );
+    final Paint fill = Paint()
+      ..color = cs.first.withValues(alpha: look.triangle ? 1 : e);
+    if (cs.length > 1) {
+      // The colours go once round it, and it turns with them.
+      fill.shader = ui.Gradient.sweep(
+        Offset.zero,
+        <Color>[
+          for (final Color c in cs) c.withValues(alpha: look.triangle ? 1 : e),
+          cs.first.withValues(alpha: look.triangle ? 1 : e),
+        ],
+        <double>[for (int i = 0; i <= cs.length; i++) i / cs.length],
+        TileMode.clamp,
+        0,
+        2 * math.pi,
+        (Matrix4.identity()..rotateZ(spin)).storage,
+      );
+    }
+    canvas
+      ..drawPath(shape, fill)
+      // A little light on it from above, as on the glass.
+      ..drawPath(
+        shape,
+        Paint()
+          ..shader = ui.Gradient.linear(
+            Offset(0, -r * 0.7),
+            Offset(0, r * 0.7),
+            <Color>[
+              Colors.white.withValues(alpha: 0.28 * e),
+              Colors.white.withValues(alpha: 0),
+            ],
+          ),
+      )
+      ..drawPath(
+        shape,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.75)
+          ..style = PaintingStyle.stroke
+          ..strokeJoin = StrokeJoin.round
+          ..strokeWidth = math.max(1, r * 0.035),
+      )
+      // The hole in its middle opens as it becomes the cog.
+      ..drawCircle(
+        Offset.zero,
+        r * 0.19 * e,
+        Paint()..color = const Color(0xFF14181C),
+      )
+      ..drawCircle(
+        Offset.zero,
+        r * 0.19 * e,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.75 * e)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = math.max(1, r * 0.03),
+      )
+      ..restore();
+  }
+
   /// Draws look [id] in the middle of [size], in glass of radius [radius], for blobs of these
   /// [colours], pointing along [angle] (straight up by default). [fold] is how far it has
-  /// folded away: 0 there, 1 gone.
+  /// folded away: 0 there, 1 gone. It shrinks as it folds, unless [shrink] is off, and then it
+  /// only fades.
   static void paint(
     Canvas canvas,
     Size size,
@@ -58,21 +188,17 @@ abstract final class BlobSign {
     required double radius,
     double angle = -math.pi / 2,
     double fold = 0,
+    bool shrink = true,
   }) {
     if (colours.isEmpty || fold >= 0.999) {
       return;
     }
     final BlobLook look = of(id);
-    List<Color> cs = colours.length > 5 ? colours.sublist(0, 5) : colours;
-    if (look.spectrum) {
-      // From red round to violet. (The 20 keeps the reds that sit just under 360 with the rest.)
-      double hue(Color c) => (HSVColor.fromColor(c).hue + 20) % 360;
-      cs = <Color>[...cs]..sort((Color x, Color y) => hue(x).compareTo(hue(y)));
-    }
+    final List<Color> cs = _ordered(look, colours);
     canvas
       ..save()
       ..translate(size.width / 2, size.height / 2)
-      ..scale(1 - 0.7 * fold);
+      ..scale(shrink ? 1 - 0.7 * fold : 1);
     if (fold > 0) {
       canvas.saveLayer(
         Rect.fromCircle(center: Offset.zero, radius: radius),
