@@ -325,9 +325,13 @@ class LumenSlider extends StatefulWidget {
     required this.onChanged,
     this.ink,
     this.fill,
+    this.onHold,
   });
   final double value;
   final ValueChanged<double> onChanged;
+
+  /// Told when a finger takes the slider (true) and lets it go (false).
+  final ValueChanged<bool>? onHold;
   final Color? ink;
   final Color? fill;
 
@@ -353,11 +357,13 @@ class _LumenSliderState extends State<LumenSlider>
       ((dx - _thumb / 2) / (_width - _thumb)).clamp(0.0, 1.0);
 
   void _start(double dx) {
+    widget.onHold?.call(true);
     _grab.animateTo(1, velocity: 10);
     _pos.animateTo(_toValue(dx));
   }
 
   void _end() {
+    widget.onHold?.call(false);
     _grab.onSettle = Haptics.settle;
     _grab.animateTo(0);
   }

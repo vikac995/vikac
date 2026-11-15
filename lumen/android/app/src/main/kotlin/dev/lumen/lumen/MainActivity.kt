@@ -357,7 +357,7 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
             } else if (call.method == "holdMs") {
                 // How long a finger held still counts as a hold, the same in Prism as on the Sidekick.
-                result.success(android.view.ViewConfiguration.getLongPressTimeout().coerceIn(300, 600))
+                result.success(Floater.holdTime().toInt())
             } else if (call.method == "toBack") {
                 // Prism came forward only to change a Sidekick blob: it steps back to the app you were in.
                 moveTaskToBack(true)
@@ -816,6 +816,11 @@ val Floaters = arrayOf(RestBubble, TimerBubble)
 class Floater(val timer: Boolean) {
     companion object {
         const val OPEN_TRAIN = "dev.lumen.OPEN_TRAIN"
+        // Prism to the front, on whatever page it was: for the Sidekick's own things.
+        const val OPEN_ONLY = "dev.lumen.OPEN_ONLY"
+
+        /** How long a finger held still is a hold: a little under Android's own, the same everywhere in Prism. */
+        fun holdTime(): Long = (android.view.ViewConfiguration.getLongPressTimeout().coerceIn(300, 600) * 0.85).toLong()
         const val OPEN_ACTION = "dev.lumen.OPEN_ACTION"
         private const val WHITE = 0xFFFFFFFF.toInt()
         private const val GREY = 0xFFA9ACB6.toInt()
@@ -2624,10 +2629,19 @@ class Floater(val timer: Boolean) {
         try { wm(context).removeView(v) } catch (e: Exception) {}
     }
 
-    private fun openPrism(context: Context) {
+    /** The Sidekick's settings, in Prism, which steps back afterwards if it came forward only for them. */
+    private fun sideSettings(context: Context) {
+        haptic(context, "click")
+        val back = !foreground
+        openPrism(context, false)
+        watcher.postDelayed({ channel?.invokeMethod("sideSettings", mapOf("back" to back)) }, 220)
+    }
+
+    /** Brings Prism to the front. [train]: on the workout (for the timer); otherwise as it was. */
+    private fun openPrism(context: Context, train: Boolean = true) {
         closeSheet(context)
         val i = android.content.Intent(context, MainActivity::class.java)
-            .setAction(OPEN_TRAIN)
+            .setAction(if (train) OPEN_TRAIN else OPEN_ONLY)
             .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
         try { context.startActivity(i) } catch (ex: Exception) {}
     }
@@ -3257,6 +3271,15 @@ class Floater(val timer: Boolean) {
             }
         }
 
+        private val lensHold = Runnable {
+            if (!moved && opening && menuFor < 0) {
+                kept = true
+                val c = context
+                close()
+                sideSettings(c)
+            }
+        }
+
         // The blob whose small menu is showing, or none; and which half of it a finger came down on.
         private var menuFor = -1
         private var popHit = -1
@@ -3264,8 +3287,11 @@ class Floater(val timer: Boolean) {
         private val popBox = android.graphics.RectF()
 
         /** Where the small menu of blob [i] is: above it, kept on the screen. */
+        // Room for one more blob: the menu then has Add too.
+        private fun room() = items.count { it.kind != "empty" } < 5
+
         private fun popAt(i: Int) {
-            val w = 204 * dp
+            val w = (if (room()) 300 else 204) * dp
             val h = 46 * dp
             val x = restX[i].coerceIn(w / 2 + 8 * dp, Math.max(w / 2 + 8 * dp, width - w / 2 - 8 * dp))
             val top = Math.max(8 * dp, restY[i] - 31 * dp - 14 * dp - h)
@@ -3284,16 +3310,25 @@ class Floater(val timer: Boolean) {
             pop.color = 0x24FFFFFF
             canvas.drawRoundRect(popBox, popBox.height() / 2, popBox.height() / 2, pop)
             pop.color = 0x29FFFFFF
-            canvas.drawLine(popBox.centerX(), popBox.centerY() - 11 * dp, popBox.centerX(), popBox.centerY() + 11 * dp, pop)
+            val parts = if (room()) 3 else 2
+            val w = popBox.width() / parts
+            for (k in 1 until parts) {
+                val x = popBox.left + w * k
+                canvas.drawLine(x, popBox.centerY() - 11 * dp, x, popBox.centerY() + 11 * dp, pop)
+            }
             pop.style = android.graphics.Paint.Style.FILL
             pop.textAlign = android.graphics.Paint.Align.CENTER
             pop.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
             pop.textSize = 15.5f * dp
             val base = popBox.centerY() - (pop.descent() + pop.ascent()) / 2f
             pop.color = WHITE
-            canvas.drawText("Change", popBox.left + popBox.width() / 4, base, pop)
+            canvas.drawText("Change", popBox.left + w / 2, base, pop)
             pop.color = 0xFFFF6B6F.toInt()
-            canvas.drawText("Remove", popBox.right - popBox.width() / 4, base, pop)
+            canvas.drawText("Remove", popBox.left + w * 1.5f, base, pop)
+            if (parts == 3) {
+                pop.color = 0xFF4CD48A.toInt()
+                canvas.drawText("Add", popBox.left + w * 2.5f, base, pop)
+            }
         }
 
         /** "Remove" in a blob's small menu: Prism takes it out of the Sidekick's menu, and a plus stands there. */
@@ -3316,13 +3351,16 @@ class Floater(val timer: Boolean) {
                     if (menuFor >= 0) {
                         // A blob's small menu is up: this finger is for it, or puts it away.
                         popAt(menuFor)
-                        popHit = if (!popBox.contains(e.x, e.y)) 2 else if (e.x < popBox.centerX()) 0 else 1
+                        val parts = if (room()) 3 else 2
+                        popHit = if (!popBox.contains(e.x, e.y)) 9 else ((e.x - popBox.left) / (popBox.width() / parts)).toInt().coerceIn(0, parts - 1)
                         pressedAt = -1
                         return true
                     }
                     popHit = -1
                     pressedAt = at(e.x, e.y)
-                    if (pressedAt >= 0) postDelayed(keep, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L))
+                    if (pressedAt >= 0) postDelayed(keep, holdTime())
+                    // Held on the Sidekick itself, in the middle of its blobs: its settings.
+                    else if (guest && Math.hypot((e.x - cx).toDouble(), (e.y - cy).toDouble()) < lensR + 6 * dp) postDelayed(lensHold, holdTime())
                     invalidate()
                 }
                 android.view.MotionEvent.ACTION_MOVE -> {
@@ -3330,6 +3368,7 @@ class Floater(val timer: Boolean) {
                         // Moved: neither a tap nor a hold. If it began on a blob, the blob comes along.
                         moved = true
                         removeCallbacks(keep)
+                    removeCallbacks(lensHold)
                         // (Held and then moved on: the small menu goes, and the blob comes along.)
                         if (popHit < 0) menuFor = -1
                         if (pressedAt >= 0 && popHit < 0 && items[pressedAt].kind != "empty") {
@@ -3359,6 +3398,7 @@ class Floater(val timer: Boolean) {
                 }
                 android.view.MotionEvent.ACTION_UP -> {
                     removeCallbacks(keep)
+                    removeCallbacks(lensHold)
                     if (popHit >= 0) {
                         // Let go on the small menu, or beside it.
                         val which = popHit
@@ -3367,6 +3407,7 @@ class Floater(val timer: Boolean) {
                         menuFor = -1
                         if (of >= 0 && !moved && which == 0) change(of)
                         else if (of >= 0 && !moved && which == 1) remove(of)
+                        else if (of >= 0 && !moved && which == 2) change(of, true)
                         invalidate()
                         return true
                     }
@@ -3400,6 +3441,7 @@ class Floater(val timer: Boolean) {
                 }
                 android.view.MotionEvent.ACTION_CANCEL -> {
                     removeCallbacks(keep)
+                    removeCallbacks(lensHold)
                     pressedAt = -1
                     dragging = -1
                     popHit = -1
@@ -3445,16 +3487,16 @@ class Floater(val timer: Boolean) {
         }
 
         /** Held: Prism comes to the front with its apps to choose from, for this blob's place. */
-        private fun change(i: Int) {
+        private fun change(i: Int, adding: Boolean = false) {
             val c = context
             haptic(c, "click")
             val slot = if (items[i].slot >= 0) items[i].slot else i
             // Brought forward only for this: once chosen, Prism steps back to where you were.
             val back = !this@Floater.foreground
             close()
-            openPrism(c)
+            openPrism(c, false)
             // Once Prism is in front.
-            watcher.postDelayed({ channel?.invokeMethod("editSlot", mapOf("slot" to slot, "back" to back)) }, 220)
+            watcher.postDelayed({ channel?.invokeMethod("editSlot", mapOf("slot" to slot, "back" to back, "add" to adding)) }, 220)
         }
 
         /** Dragged out of its place and let go, at this spot: it goes into the lens. */
@@ -4591,11 +4633,7 @@ class Floater(val timer: Boolean) {
                 settingsHeld = true
                 closeReach(context)
                 animate().scaleX(1f).scaleY(1f).setDuration(160).setInterpolator(EASE).start()
-                haptic(context, "click")
-                val back = !this@Floater.foreground
-                val c = context
-                openPrism(c)
-                watcher.postDelayed({ channel?.invokeMethod("sideSettings", mapOf("back" to back)) }, 220)
+                sideSettings(context)
             } else if (pressed && !dragged && !sized && !docked && !tucked && container && menu == null && isAttachedToWindow && blobs.isNotEmpty()) {
                 menuTouch = true
                 closeReach(context)
@@ -5172,7 +5210,7 @@ class Floater(val timer: Boolean) {
                     adopted = false
                     reachDown = false
                     if (container) {
-                        postDelayed(holder, android.view.ViewConfiguration.getLongPressTimeout().toLong().coerceIn(300L, 600L))
+                        postDelayed(holder, holdTime())
                     }
                     // From now until the finger lifts, a second finger anywhere resizes the lens.
                     openReach(context)

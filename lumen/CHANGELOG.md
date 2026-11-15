@@ -1,5 +1,39 @@
 # Lumen changelog
 
+## Prism, build 163 (15 November 2026)
+
+**File:** `releases/prism-build-163.apk`
+
+Needs Play Protect paused to install. Can be installed over build 162.
+
+**Blobs: removing and adding, reworked as you described.**
+
+- **Remove:** the others close up round the middle at once. No plus is left behind.
+- **Add (green):** a third choice in a held blob's small menu, there whenever the menu has room (fewer than five). It opens the list titled "Add", and what you choose goes right after the blob you held; the ones after it move along. Close the list without choosing and nothing changes.
+- The same on the Sidekick: its held-blob menu has Change, Remove and, when there is room, Add.
+
+**The button's settings.**
+
+- **No cog any more.** Holding the button turns the triangle half a turn, as the app list does, and it turns back when the settings close.
+- **The settings sit above the button**, which stays in sight below them, and a tap on the button closes them.
+- **The cog that stayed** (your screenshot): the settings' flag could outlive the panel. Now the panel's absence always wins, and opening the settings puts the blobs away first.
+- **The triangle popping back when the settings closed:** the cog it came from was drawn a quarter larger than the triangle, so the triangle appeared smaller at the very end. They now match. (With no cog, this no longer happens in any case.)
+- **The turning settles without overshoot**, for the app list and the settings: it turns and stops. That was the "spins too much".
+
+**The Sidekick.**
+
+- **Holding the Sidekick while its blobs are out** now opens its settings, as holding it closed does.
+- **No more jump to the Train page.** Prism was being brought forward the way the workout timer brings it, which goes to Train. It now comes forward on whatever page it was on.
+- **Smooth sliders:** "Distance from the edge" and "Tucked in, how much shows" no longer have stops. Any distance, from touching the edge to 36 points away, and from 8 to 40 points showing.
+- **No more blinking while sliding:** the Sidekick was taken off the screen and put back each time a slider was grabbed and let go. While its own settings are open it now stays on screen, so you see it move.
+
+**Holding is a little quicker:** 15% shorter than Android's own hold time, the same for every hold in Prism and on the Sidekick.
+
+**Checked:** it compiles, both sides; in my preview: the settings above the button with the triangle turned; the automatic test, 65 of 69 with the usual 4 misses. It has new checks for: remove closing up the others in the middle; Add putting the new blob right after the held one; no Add when there are five; the triangle turning half way for settings and back; the settings above the button; a tap on the button closing them.
+**Not checked:** on a phone. Everything on the Sidekick is Android only.
+
+**Next:** the Sidekick's settings drawn over whatever app you are in, so editing it never leaves that screen; a "+" blob when a menu is emptied; a calmer pinch in List mode.
+
 ## Prism, build 162 (15 November 2026)
 
 **File:** `releases/prism-build-162.apk`

@@ -40,8 +40,8 @@ class RestBubble with WidgetsBindingObserver {
       final List<String> spots = _spotsFile.readAsStringSync().trim().split(
         ' ',
       );
-      sideGap = int.parse(spots[0]).clamp(0, 40);
-      sideTuck = int.parse(spots[1]).clamp(6, 40);
+      sideGap = double.parse(spots[0]).clamp(gapMin, gapMax);
+      sideTuck = double.parse(spots[1]).clamp(tuckMin, tuckMax);
     } catch (_) {
       // Never chosen: as it has always been.
     }
@@ -167,15 +167,15 @@ class RestBubble with WidgetsBindingObserver {
 
   /// The Sidekick's two places at a side of the screen, in points: how far from the edge it
   /// rests, and how much of it shows when it is tucked in.
-  static const List<int> gaps = <int>[0, 4, 8, 12, 16, 20, 24, 28, 32];
-  static const List<int> tucks = <int>[8, 12, 16, 20, 22, 26, 30, 34, 38];
-  int sideGap = 8, sideTuck = 22;
+  /// (Any distance between these: the sliders are smooth.)
+  static const double gapMin = 0, gapMax = 36, tuckMin = 8, tuckMax = 40;
+  double sideGap = 8, sideTuck = 22;
 
   File get _spotsFile => File('${_styleFile.parent.path}/prism_side_spots');
 
   /// Sets them, tells Android, and keeps them if [save]. [show]: 'rest' or 'tuck' puts the
   /// Sidekick in that place now, so it can be seen while it is being chosen.
-  void setSpots({int? gap, int? tuck, String? show, bool save = false}) {
+  void setSpots({double? gap, double? tuck, String? show, bool save = false}) {
     sideGap = gap ?? sideGap;
     sideTuck = tuck ?? sideTuck;
     _device

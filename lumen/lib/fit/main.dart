@@ -226,6 +226,9 @@ class PanelWatch extends NavigatorObserver {
   static final PanelWatch instance = PanelWatch._();
   int _open = 0;
 
+  /// Whether any panel is open just now.
+  bool get anyOpen => _open > 0;
+
   void _set(int n) {
     final bool was = _open > 0;
     _open = math.max(0, n);

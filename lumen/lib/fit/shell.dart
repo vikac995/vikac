@@ -23,6 +23,7 @@ import 'home_page.dart';
 import 'lens.dart';
 import 'long_test.dart';
 import 'look.dart';
+import 'main.dart' show PanelWatch;
 import 'apps.dart';
 import 'blob_sign.dart';
 import 'bubble.dart';
@@ -210,9 +211,18 @@ class _ShellState extends State<Shell>
 
   /// The cog is the button's sign only while the blobs are out and being changed.
   void _signSync() {
-    final int now = _drawerOpen ? 2 : (_open ? 1 : 0);
+    // (Should the settings' flag ever outlive the panel, the panel's absence wins.)
+    if (_panelOpen && !PanelWatch.instance.anyOpen) {
+      _panelOpen = false;
+    }
+    final int now = _drawerOpen || _panelOpen ? 2 : (_open ? 1 : 0);
     if (BlobSign.of(Apps.instance.blobLook).turns) {
-      _signTurn.animateTo(now == 2 ? math.pi : (now == 1 ? math.pi / 3 : 0));
+      // Half a turn for the app list and for the button's settings, a sixth for the blobs.
+      // (Settling without overshoot: it turns and stops, and never spins past.)
+      _signTurn.animateTo(
+        now == 2 || _panelOpen ? math.pi : (now == 1 ? math.pi / 3 : 0),
+        spring: Motions.spatialFast,
+      );
     } else {
       // The others stay pointing up, and shoot out a little as something opens.
       _signTurn.animateTo(0);
@@ -221,19 +231,50 @@ class _ShellState extends State<Shell>
       }
     }
     _signWas = now;
-    // The cog is the button's sign while its settings are open.
-    final bool want = _panelOpen;
-    if (want && _cog.target != 1 && Apps.instance.takeCogHint()) {
-      _cogHint.forward(from: 0);
-    }
-    _cog.animateTo(want ? 1 : 0);
+    // (No cog any more: the settings turn the sign half a turn, as the app list does.)
+    _cog.animateTo(0);
   }
+
+  /// The places put in a new [order] (old place numbers, in their new order), with [empty]
+  /// made empty. Each blob goes on being drawn where it was, and moves from there to its
+  /// new seat: the blobs that are there always stand together in the middle.
+  void _rearrange(List<int> order, {int? empty}) {
+    final List<String> keys = <String>[
+      for (final int k in order) k == empty ? 'empty:' : _pinKey(k),
+    ];
+    final List<double> seats = <double>[
+      for (final int k in order) _seat[k].value,
+    ];
+    final List<double> outs = <double>[
+      for (final int k in order) k == empty ? 0 : _out[k].value,
+    ];
+    final Set<int> was = <int>{..._seated};
+    BlobSlots.instance.putAll(keys);
+    _seated.clear();
+    for (int k = 0; k < _n; k++) {
+      _seat[k].jumpTo(seats[k]);
+      _gone[k].jumpTo(0);
+      _out[k].jumpTo(outs[k]);
+      if (was.contains(order[k]) && order[k] != empty) {
+        _seated.add(k);
+      }
+    }
+    _reseat();
+  }
+
+  /// The order with the empty places last, the others as they are.
+  List<int> _packed({int? without}) => <int>[
+    for (int k = 0; k < _n; k++)
+      if (!_isEmpty(k) && k != without) k,
+    for (int k = 0; k < _n; k++)
+      if (_isEmpty(k) || k == without) k,
+  ];
 
   void _removeBlob(int i) {
     Haptics.thud();
     Diag.instance.event('blob removed');
-    // (It keeps its seat: a plus stands where it was.)
-    BlobSlots.instance.put(i, 'empty:');
+    // The others close up round the middle at once.
+    _rearrange(_packed(without: i), empty: i);
   }
 
   /// Whether place [i] holds something that is neither an app nor one of Prism's sheets or
@@ -344,7 +385,7 @@ class _ShellState extends State<Shell>
   bool _pickSide = false, _pickBack = false;
 
   /// How long a finger held still on a blob counts as a hold: Android's own, as on the Sidekick.
-  int _holdMs = 450;
+  int _holdMs = 385;
 
   /// The blob whose small menu (Change, Remove) is showing, if any.
   int? _menuFor;
@@ -369,10 +410,16 @@ class _ShellState extends State<Shell>
   /// One of the Sidekick's distances is being dragged ([which]: 'rest' or 'tuck'), or let go.
   void _spotHold(String which, bool on) {
     _panelClear.value = on ? which : null;
-    // (A panel hides the Sidekick; while its place is chosen it is let through.)
-    RestBubble.instance.tellCovered(!on);
     if (on) {
       RestBubble.instance.setSpots(show: which);
+    }
+  }
+
+  /// While its own settings are open the Sidekick stays in sight, to be seen as it changes.
+  /// (Other panels hide it, so that a tap meant for them cannot reach it.)
+  void _sideInSight() {
+    if (_panelOpen) {
+      RestBubble.instance.tellCovered(!_designSide.value);
     }
   }
 
@@ -406,7 +453,28 @@ class _ShellState extends State<Shell>
     _pickFor(i);
   }
 
-  /// "Remove" in a blob's small menu: a plus stands where it was.
+  /// "Add" in a blob's small menu: a new place right after this blob, and the list to fill it.
+  void _menuAdd() {
+    final int? i = _menuFor;
+    if (i == null) {
+      return;
+    }
+    setState(() => _menuFor = null);
+    final List<int> order = _packed();
+    final int at = order.indexOf(i) + 1;
+    final int spare = order.firstWhere(_isEmpty);
+    order
+      ..remove(spare)
+      ..insert(at, spare);
+    _rearrange(order);
+    Diag.instance.event('blob: add after');
+    _pickFor(at);
+  }
+
+  /// Whether there is room for one more blob.
+  bool get _room => <int>[for (int k = 0; k < _n; k++) k].any(_isEmpty);
+
+  /// "Remove" in a blob's small menu: the others close up round the middle.
   void _menuRemove() {
     final int? i = _menuFor;
     if (i == null) {
@@ -677,7 +745,14 @@ class _ShellState extends State<Shell>
       _designSide.value ? 'settings: Sidekick' : 'settings: Prism',
     );
     _panelOpen = true;
-    _signSync();
+    _designSide.addListener(_sideInSight);
+    // (Once the panel is up: the cog then knows a panel is open.)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _sideInSight();
+      if (mounted) {
+        _signSync();
+      }
+    });
     showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -689,9 +764,16 @@ class _ShellState extends State<Shell>
       pageBuilder: (BuildContext context, Animation<double> rise, _) {
         final LumenColors c = LumenColors.of(context);
         final RestBubble b = RestBubble.instance;
+        // Below the button's top: the button stays in sight, and a tap on it closes these.
+        final double above =
+            MediaQuery.sizeOf(context).height - (_home.dy - _button * 0.62);
         return Stack(
           children: <Widget>[
-            Positioned.fill(
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: above,
               child: IgnorePointer(
                 child: FadeTransition(
                   opacity: rise,
@@ -709,12 +791,7 @@ class _ShellState extends State<Shell>
             ),
             PanelRise(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  10,
-                  0,
-                  10,
-                  MediaQuery.paddingOf(context).bottom + 10,
-                ),
+                padding: EdgeInsets.fromLTRB(10, 0, 10, above + 8),
                 child: Material(
                   type: MaterialType.transparency,
                   child: ValueListenableBuilder<String?>(
@@ -838,21 +915,27 @@ class _ShellState extends State<Shell>
                                     color: c.ink,
                                   ),
                                 ),
-                                StopSlider(
+                                LumenSlider(
                                   key: const ValueKey<String>('rest'),
-                                  value: RestBubble.gaps
-                                      .indexOf(b.sideGap)
-                                      .clamp(0, RestBubble.gaps.length - 1),
-                                  stops: RestBubble.gaps.length,
-                                  onChanged: (int v) => b.setSpots(
-                                    gap: RestBubble.gaps[v],
-                                    show: 'rest',
-                                  ),
-                                  onHold: (bool on) => _spotHold('rest', on),
-                                  onDone: (int v) => b.setSpots(
-                                    gap: RestBubble.gaps[v],
-                                    save: true,
-                                  ),
+                                  value:
+                                      (b.sideGap - RestBubble.gapMin) /
+                                      (RestBubble.gapMax - RestBubble.gapMin),
+                                  onHold: (bool on) {
+                                    _spotHold('rest', on);
+                                    if (!on) {
+                                      b.setSpots(save: true);
+                                    }
+                                  },
+                                  onChanged: (double v) {
+                                    final double gap =
+                                        RestBubble.gapMin +
+                                        (RestBubble.gapMax -
+                                                RestBubble.gapMin) *
+                                            v;
+                                    if ((gap - b.sideGap).abs() > 0.05) {
+                                      b.setSpots(gap: gap, show: 'rest');
+                                    }
+                                  },
                                 ),
                                 Text(
                                   'Tucked in, how much shows',
@@ -862,21 +945,27 @@ class _ShellState extends State<Shell>
                                     color: c.ink,
                                   ),
                                 ),
-                                StopSlider(
+                                LumenSlider(
                                   key: const ValueKey<String>('tuck'),
-                                  value: RestBubble.tucks
-                                      .indexOf(b.sideTuck)
-                                      .clamp(0, RestBubble.tucks.length - 1),
-                                  stops: RestBubble.tucks.length,
-                                  onChanged: (int v) => b.setSpots(
-                                    tuck: RestBubble.tucks[v],
-                                    show: 'tuck',
-                                  ),
-                                  onHold: (bool on) => _spotHold('tuck', on),
-                                  onDone: (int v) => b.setSpots(
-                                    tuck: RestBubble.tucks[v],
-                                    save: true,
-                                  ),
+                                  value:
+                                      (b.sideTuck - RestBubble.tuckMin) /
+                                      (RestBubble.tuckMax - RestBubble.tuckMin),
+                                  onHold: (bool on) {
+                                    _spotHold('tuck', on);
+                                    if (!on) {
+                                      b.setSpots(save: true);
+                                    }
+                                  },
+                                  onChanged: (double v) {
+                                    final double tuck =
+                                        RestBubble.tuckMin +
+                                        (RestBubble.tuckMax -
+                                                RestBubble.tuckMin) *
+                                            v;
+                                    if ((tuck - b.sideTuck).abs() > 0.05) {
+                                      b.setSpots(tuck: tuck, show: 'tuck');
+                                    }
+                                  },
                                 ),
                                 const SizedBox(height: 4),
                               ],
@@ -1190,6 +1279,7 @@ class _ShellState extends State<Shell>
       },
     ).whenComplete(() {
       _panelOpen = false;
+      _designSide.removeListener(_sideInSight);
       if (mounted) {
         _signSync();
       }
@@ -1243,8 +1333,9 @@ class _ShellState extends State<Shell>
   bool _floating(int i) => RestBubble.instance.pinned.value == _pinKey(i);
 
   /// Whether place [i] is, for now, not one of the blobs in the menu.
-  /// (An empty place is not left out: it keeps its seat, and shows there as a plus.)
-  bool _leftOut(int i) => _floating(i) || i == _awayI || i == _shotI;
+  /// (Empty places are not shown: the blobs that are there stand together in the middle.)
+  bool _leftOut(int i) =>
+      _floating(i) || i == _awayI || i == _shotI || _isEmpty(i);
 
   /// Gives every blob left in the menu its seat. One that was out and is back takes its seat
   /// at once; the others move over to theirs.
@@ -1272,7 +1363,7 @@ class _ShellState extends State<Shell>
   /// The places still in the menu other than [i]: not floating, not on their way out.
   List<int> _others(int i) => <int>[
     for (int k = 0; k < _n; k++)
-      if (k != i && !_floating(k) && k != _shotI) k,
+      if (k != i && !_floating(k) && k != _shotI && !_isEmpty(k)) k,
   ];
 
   /// Which seat among [others] other blobs something at [at] would take, or null if that is
@@ -1586,22 +1677,6 @@ class _ShellState extends State<Shell>
     ];
     final List<Map<String, Object>> all = <Map<String, Object>>[];
     for (int i = 0; i < _n; i++) {
-      if (keys[i].startsWith('empty:')) {
-        // An empty place keeps its seat on the Sidekick too: a plus, to give it something.
-        all.add(<String, Object>{
-          'key': 'empty:$i',
-          'kind': 'empty',
-          'index': 0,
-          'package': '',
-          'notesFor': '',
-          'name': '',
-          'color': 0x00FFFFFF,
-          'badge': 0,
-          'picture': false,
-          'slot': i,
-        });
-        continue;
-      }
       final Map<String, Object>? blob = await _blobMap(keys[i]);
       if (blob != null) {
         // Which place it is in, so the floating lens's menu can ask for that place to be changed.
@@ -2280,7 +2355,24 @@ class _ShellState extends State<Shell>
         _pickSide = true;
         _pickBack = a is Map && a['back'] == true;
         BlobSlots.instance.show(side: true);
-        setState(() => _editSlot = slot);
+        int at = slot;
+        if (a is Map && a['add'] == true) {
+          // A new place right after the blob that was held, in the Sidekick's menu.
+          final List<String> keys = <String>[
+            for (int k = 0; k < _n; k++) _pinKey(k),
+          ];
+          final List<String> full = <String>[
+            for (final String k in keys)
+              if (!k.startsWith('empty:')) k,
+          ];
+          at = (full.indexOf(keys[slot]) + 1).clamp(0, _n - 1);
+          full.insert(at, 'empty:');
+          while (full.length < _n) {
+            full.add('empty:');
+          }
+          BlobSlots.instance.putAll(full.sublist(0, _n));
+        }
+        setState(() => _editSlot = at);
         _setDrawer(true);
         return;
       }
@@ -2308,7 +2400,15 @@ class _ShellState extends State<Shell>
         final int slot = (call.arguments as num).toInt().clamp(0, _n - 1);
         final bool was = BlobSlots.instance.side;
         BlobSlots.instance.show(side: true);
-        BlobSlots.instance.put(slot, 'empty:');
+        // The others close up round the middle.
+        final List<String> left = <String>[
+          for (int k = 0; k < _n; k++)
+            if (k != slot && !_pinKey(k).startsWith('empty:')) _pinKey(k),
+        ];
+        while (left.length < _n) {
+          left.add('empty:');
+        }
+        BlobSlots.instance.putAll(left);
         BlobSlots.instance.show(side: was);
         Diag.instance.event('Sidekick blob removed');
         return;
@@ -2855,45 +2955,68 @@ class _ShellState extends State<Shell>
           _setDrawer(false);
           await Robot.wait(700);
         }
-        // Remove: a plus stands where the blob was.
+        // Remove: the others close up round the middle at once.
+        final String gone = _pinKey(2);
         await Robot.hold(seat(2), after: 700);
         final Offset? remove = Robot.spot('menuRemove');
         if (remove != null) {
-          await t.scene('Remove, and a plus is left', () async {
+          await t.scene('Remove, and the others close up', () async {
             await Robot.tap(remove, after: 900);
           });
         }
-        t.check('remove: the third place is empty', _isEmpty(2));
         t.check(
-          'remove: four blobs are left, and the others have not moved over',
-          shown() == 4 && _seat[2].target == 0 && _seat[0].target == -2,
-          '${shown()} left; seats ${_seat[0].target} ${_seat[2].target}',
+          'remove: four blobs are left, and that one is gone',
+          shown() == 4 &&
+              !<String>[for (int k = 0; k < _n; k++) _pinKey(k)].contains(gone),
+          '${shown()} left',
         );
-        final Offset? plus = Robot.spot('plus2');
         t.check(
-          'plus: it stands where the blob was',
-          plus != null && (plus - seat(2)).distance < 24,
-          plus == null
-              ? 'not found'
-              : '${(plus - seat(2)).distance.round()} away',
+          'remove: they stand together in the middle, the empty place last',
+          _isEmpty(4) &&
+              <double>[for (int k = 0; k < 4; k++) _seat[k].target].join(' ') ==
+                  '-1.5 -0.5 0.5 1.5',
+          <double>[for (int k = 0; k < _n; k++) _seat[k].target].join(' '),
         );
-        if (plus != null) {
-          await t.scene('the plus opens the list', () async {
-            await Robot.tap(plus, after: 1300);
+        // Add: a new blob right after the one held.
+        final String held1 = _pinKey(1), next1 = _pinKey(2);
+        await Robot.hold(seat(1), after: 700);
+        final Offset? add = Robot.spot('menuAdd');
+        t.check('menu: "Add" is there while there is room', add != null);
+        if (add != null) {
+          await t.scene('Add, and the list comes up', () async {
+            await Robot.tap(add, after: 1300);
           });
         }
-        t.check('plus: a tap opens "Add"', _drawerOpen && _editSlot == 2);
+        t.check(
+          'add: the list comes up, titled Add',
+          _drawerOpen && _editSlot == 2,
+        );
         first = Robot.spot('choice0');
         if (first != null) {
-          await t.scene('choosing, and the new blob is there', () async {
+          await t.scene('choosing, and the new blob is beside it', () async {
             await Robot.tap(first!, after: 1700);
           });
         }
-        t.check('add: the third place holds something again', !_isEmpty(2));
+        t.check(
+          'add: the new blob is right after the one held, and the rest move along',
+          _pinKey(1) == held1 &&
+              _pinKey(2) == 'action:0' &&
+              _pinKey(3) == next1 &&
+              shown() == 5,
+          <String>[for (int k = 0; k < _n; k++) _pinKey(k)].join(' '),
+        );
         if (_drawerOpen) {
           _setDrawer(false);
           await Robot.wait(700);
         }
+        await Robot.hold(seat(1), after: 700);
+        t.check(
+          'menu: with five, there is no "Add"',
+          Robot.spot('menuAdd') == null && _menuFor == 1,
+        );
+        await Robot.tap(beside, after: 500);
+        BlobSlots.instance.putAll(five);
+        await Robot.wait(400);
         // Removing from the list itself.
         await Robot.hold(seat(3), after: 700);
         final Offset? change3 = Robot.spot('menuChange');
@@ -2907,7 +3030,7 @@ class _ShellState extends State<Shell>
         }
         t.check(
           'picker: "Remove" takes it away and closes the list',
-          _isEmpty(3) && !_drawerOpen && _open,
+          shown() == 4 && _isEmpty(4) && !_drawerOpen && _open,
         );
         if (_drawerOpen) {
           _setDrawer(false);
@@ -2933,8 +3056,8 @@ class _ShellState extends State<Shell>
           !_carrying && !_open && !_drawerOpen,
         );
         t.check(
-          'sign: while its settings are open it is the cog',
-          _cog.target == 1,
+          'sign: while its settings are open it has turned half way, as for the app list',
+          (_signTurn.target - math.pi).abs() < 0.01 && _cog.target == 0,
         );
         t.check(
           'settings: Prism has no "In this app" switch',
@@ -2982,10 +3105,22 @@ class _ShellState extends State<Shell>
           await Robot.tap(shut, after: 900);
         }
         t.check(
-          'settings: the X closes them, and the button is the sign again',
+          'settings: the X closes them, and the sign turns back',
           !_panelOpen &&
               Robot.spot('blobDesignFor') == null &&
-              _cog.target == 0,
+              _signTurn.target.abs() < 0.01,
+        );
+        // The button itself, still in sight below them, closes them too.
+        await Robot.hold(_home, ms: 650, after: 900);
+        t.check(
+          'settings: they sit above the button, which stays in sight',
+          _panelOpen &&
+              (Robot.spot('floatClose')?.dy ?? sc.height) < _home.dy - _button,
+        );
+        await Robot.tap(_home, after: 900);
+        t.check(
+          'settings: a tap on the button closes them, and the sign turns back',
+          !_panelOpen && _signTurn.target.abs() < 0.01 && !_open,
         );
         BlobSlots.instance.putAll(five);
         await Robot.wait(500);
@@ -4711,6 +4846,10 @@ class _ShellState extends State<Shell>
       ..overlay = v ? '+drawer' : ''
       ..event(v ? 'drawer open' : 'drawer close');
     Haptics.settle();
+    if (choosing && !swipe) {
+      // (A place made for "Add" and left empty: the empty ones go last again.)
+      _rearrange(_packed());
+    }
     if (choosing) {
       final bool side = _pickSide, back = _pickBack;
       _pickSide = _pickBack = false;
@@ -5614,32 +5753,8 @@ class _ShellState extends State<Shell>
                         return const SizedBox.shrink();
                       }
                       if (empty) {
-                        // An empty place: a plus, in the seat the blob had. A tap gives it something.
-                        if (p <= 0.001) {
-                          return const SizedBox.shrink();
-                        }
-                        final Offset m = bc + (rest(i) - bc) * p;
-                        return Positioned(
-                          left: m.dx - _blob / 2 - 6,
-                          top: m.dy - _blob / 2 - 6,
-                          child: IgnorePointer(
-                            ignoring: !_open || _menuFor != null,
-                            child: Opacity(
-                              opacity:
-                                  (p * 12).clamp(0.0, 1.0) *
-                                  (_menuFor != null ? 0.3 : 0.75),
-                              child: GestureDetector(
-                                key: Robot.key('plus$i'),
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => _pickFor(i),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(6),
-                                  child: _blobDisc(i),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
+                        // An empty place is not shown: the others stand together in the middle.
+                        return const SizedBox.shrink();
                       }
                       if (p <= 0.001) {
                         return const SizedBox.shrink();
@@ -5891,16 +6006,17 @@ class _ShellState extends State<Shell>
                     ),
                   ),
                   Positioned(
-                    left: (rest(_menuFor!).dx - 104).clamp(
+                    left: (rest(_menuFor!).dx - (_room ? 150 : 104)).clamp(
                       10.0,
-                      screen.width - 218,
+                      screen.width - (_room ? 310 : 218),
                     ),
                     top: rest(_menuFor!).dy - _blob / 2 - 66,
-                    width: 208,
+                    width: _room ? 300 : 208,
                     height: 50,
                     child: _BlobMenu(
                       onChange: _menuChange,
                       onRemove: _menuRemove,
+                      onAdd: _room ? _menuAdd : null,
                     ),
                   ),
                 ],
@@ -6181,6 +6297,10 @@ class _ShellState extends State<Shell>
                         // Held still while the blobs are out: the same as holding a blob.
                         _heldEdit = false;
                         _holdTimer?.cancel();
+                        if (_panelOpen && !PanelWatch.instance.anyOpen) {
+                          _panelOpen = false;
+                          _signSync();
+                        }
                         // Held still, closed or with the blobs out: Prism's settings. A finger
                         // that moves before the wait is over is the glass or a flick, never this.
                         if (!_drawerOpen &&
@@ -6201,6 +6321,8 @@ class _ShellState extends State<Shell>
                                 _liftTimer?.cancel();
                                 _kick.animateTo(1);
                                 _menuAway();
+                                // (The blobs go in: the settings are for the button.)
+                                _setOpen(false);
                                 _designSide.value = false;
                                 Haptics.settle();
                                 _showFloating();
@@ -8238,7 +8360,9 @@ class _ButtonSign extends CustomPainter {
           size,
           look,
           <Color>[for (final (double, Color) b in blobs) b.$2],
-          radius: rim > 0 ? rim : size.width / 2,
+          // (It grows out of the sign at the sign's own size, and back into it at that size:
+          // the cog was the glass's size all the way, and the sign popped back smaller.)
+          radius: (rim > 0 ? rim : size.width / 2) * (_blob + (1 - _blob) * c),
           t: c,
           angle: -math.pi / 2 + turn,
           spin: spin,
@@ -8436,9 +8560,12 @@ class _LensDisc extends CustomPainter {
 
 /// The small menu beside a held blob: Change, and Remove in red. Dark glass, as the panels are.
 class _BlobMenu extends StatelessWidget {
-  const _BlobMenu({required this.onChange, required this.onRemove});
+  const _BlobMenu({required this.onChange, required this.onRemove, this.onAdd});
 
   final VoidCallback onChange, onRemove;
+
+  /// A new blob right after this one. Null when the menu is full.
+  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) {
@@ -8495,6 +8622,14 @@ class _BlobMenu extends StatelessWidget {
               color: Colors.white.withValues(alpha: 0.16),
             ),
             half('Remove', const Color(0xFFFF6B6F), onRemove, 'menuRemove'),
+            if (onAdd != null) ...<Widget>[
+              Container(
+                width: 1,
+                height: 22,
+                color: Colors.white.withValues(alpha: 0.16),
+              ),
+              half('Add', const Color(0xFF4CD48A), onAdd!, 'menuAdd'),
+            ],
           ],
         ),
       ),
