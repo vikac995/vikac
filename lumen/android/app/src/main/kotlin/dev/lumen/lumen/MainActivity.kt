@@ -27,7 +27,7 @@ class MainActivity : FlutterActivity() {
         /** Each engine's comings and goings, with the time: for the test report, which keeps them whole. */
         val engineHistory = ArrayList<String>()
 
-        private fun noteEngine(what: String) {
+        fun noteEngine(what: String) {
             val at = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())
             engineHistory.add("$at $what")
             while (engineHistory.size > 40) engineHistory.removeAt(0)
@@ -49,6 +49,9 @@ class MainActivity : FlutterActivity() {
     /** This screen's engine: its number, for the flight recorder and the test. */
     var engineNo = 0
 
+    /** Whether this screen was opened as the home screen (Android keeps that one apart: see PrismScreen). */
+    var isHomeScreen = false
+
     /** Which screen this is, for the flight recorder: there should only ever be one at a time. */
     private val screen get() = Integer.toHexString(System.identityHashCode(this))
 
@@ -59,9 +62,39 @@ class MainActivity : FlutterActivity() {
         // different cures, and the flight recorder could not tell them apart before.
         val fresh = !Trail.started()
         Trail.start(applicationContext)
-        Trail.add((if (fresh) "Prism's screen made: all of Prism started afresh" else "Prism's screen made again: Prism itself had kept running" + (if (savedInstanceState != null) ", Android had taken the screen away" else "")) + " (screen $screen, engine #$engineNo)")
+        Trail.add((if (fresh) "Prism's screen made: all of Prism started afresh" else "Prism's screen made again: Prism itself had kept running" + (if (savedInstanceState != null) ", Android had taken the screen away" else "")) + " (screen $screen, engine #$engineNo, opened by ${PrismScreen.describe(intent)})")
         if (fresh) Trail.add(whyClosed())
+        // Only ever one Prism screen (see PrismScreen). Should Android have made a second one:
+        // the one that is the home screen stays (the home gesture always finds that one), and
+        // the other is closed at once, with its engine.
+        val other = PrismScreen.alive()
+        if (other != null && other !== this) {
+            val how = PrismScreen.describe(intent)
+            if (PrismScreen.isHomeIntent(intent)) {
+                noteEngine("a second Prism screen was made by $how: the other one (engine #${other.engineNo}) is closed")
+                other.finishAndRemoveTask()
+            } else {
+                noteEngine("a second Prism screen was made by $how: it is closed at once, and the one there was (engine #${other.engineNo}) brought forward")
+                finishAndRemoveTask()
+                // (Reached with its own kind of launch: Android hands that to the one there is.)
+                PrismScreen.start(applicationContext, PrismScreen.actionOf(intent), intent.getIntExtra("index", 0), other.isHomeScreen)
+                return
+            }
+        }
+        isHomeScreen = PrismScreen.isHomeIntent(intent)
+        PrismScreen.current = java.lang.ref.WeakReference(this)
         requestHighestRefreshRate()
+    }
+
+    /**
+     * Prism has been brought forward to do something (by the timer, the Sidekick, a sheet):
+     * [action] is what. Brought forward without being started again, it is told here.
+     */
+    fun opened(action: String?, index: Int) {
+        when (action) {
+            Floater.OPEN_TRAIN -> device?.invokeMethod("train", null)
+            Floater.OPEN_ACTION -> device?.invokeMethod("action", index)
+        }
     }
 
     /// Why Prism was closed the last time, as Android itself recorded it: out of memory, a crash,
@@ -97,6 +130,7 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onDestroy() {
+        if (PrismScreen.current?.get() === this) PrismScreen.current = null
         Trail.add("Prism's screen taken down" + (if (isFinishing) " (closed)" else " (by Android, to be made again)") + " (screen $screen, engine #$engineNo)")
         super.onDestroy()
     }
@@ -180,7 +214,10 @@ class MainActivity : FlutterActivity() {
     // The home button was pressed while Prism is the home screen: tell the app, so it can go back to its first page.
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
-        if (intent.action == Floater.OPEN_TRAIN) {
+        if (intent.hasExtra(PrismScreen.OPEN)) {
+            // Prism started itself as the home screen (see PrismScreen): not the home button.
+            opened(PrismScreen.actionOf(intent), intent.getIntExtra("index", 0))
+        } else if (intent.action == Floater.OPEN_TRAIN) {
             device?.invokeMethod("train", null)
         } else if (intent.action == Floater.OPEN_ACTION) {
             device?.invokeMethod("action", intent.getIntExtra("index", 0))
@@ -853,6 +890,9 @@ object Trail {
     private var file: java.io.File? = null
 
     fun started() = file != null
+
+    /** How many lines it holds now (at most [KEEP]). */
+    fun size(): Int = synchronized(lines) { lines.size }
 
     fun start(context: Context) {
         if (file != null) return
@@ -2135,6 +2175,10 @@ class Floater(val timer: Boolean) {
         m["sideKeys"] = blobs.joinToString(",") { it.key }
         // (And the Sidekick's menu as it is kept: its five keys, whether it is its own, what was moved over.)
         SidekickMenu.state(context, m)
+        // (What Android's side keeps that could grow: the blobs' pictures decoded, and the recorder's lines.)
+        m["iconsCached"] = icons.size
+        m["iconsKb"] = icons.values.sumOf { it.second.allocationByteCount.toLong() } / 1024
+        m["trailLines"] = Trail.size()
         m["sheet"] = sheet != null
         m["closing"] = swallowing
         m["blobs"] = blobs.size
@@ -2336,12 +2380,8 @@ class Floater(val timer: Boolean) {
                     // (The speck that kept the screen on over the other app is not needed any more.)
                     awake?.let { try { wm(context).removeView(it) } catch (e: Exception) {} }
                     awake = null
-                    try {
-                        context.startActivity(
-                            android.content.Intent(context, MainActivity::class.java)
-                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT),
-                        )
-                    } catch (e: Exception) {}
+                    // (The one Prism screen, brought forward: never a second one. See PrismScreen.)
+                    PrismScreen.bringForward(context, null, why = "the test")
                     watcher.postDelayed({ done(state(context)) }, num("settleMs", 2500))
                 }
                 // The side Blob: shown (as an app opened from Prism would bring it back), or sent away.
@@ -2545,12 +2585,7 @@ class Floater(val timer: Boolean) {
                             // Whether each floating thing was on the screen over the other app, as Android has it.
                             m["blobShown"] = RestBubble.view?.let { it.windowVisibility == android.view.View.VISIBLE && it.isShown } ?: false
                             m["timerShown"] = TimerBubble.view?.let { it.windowVisibility == android.view.View.VISIBLE && it.isShown } ?: false
-                            try {
-                                context.startActivity(
-                                    android.content.Intent(context, MainActivity::class.java)
-                                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT),
-                                )
-                            } catch (e: Exception) {}
+                            PrismScreen.bringForward(context, null, why = "the test, back from another app")
                             watcher.postDelayed({
                                 awake?.let { try { wm(context).removeView(it) } catch (e: Exception) {} }
                                 awake = null
@@ -2703,11 +2738,8 @@ class Floater(val timer: Boolean) {
     /** Opens Prism at one of its own actions. */
     private fun openAction(context: Context, index: Int) {
         closeSheet(context)
-        val i = android.content.Intent(context, MainActivity::class.java)
-            .setAction(OPEN_ACTION)
-            .putExtra("index", index)
-            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-        try { context.startActivity(i) } catch (ex: Exception) {}
+        // (The one Prism screen, brought forward: never a second one. See PrismScreen.)
+        PrismScreen.bringForward(context, OPEN_ACTION, index, why = "$who: one of Prism's actions or pages")
     }
 
     /** Opens Prism on one of its own pages. (Sent the same way as an action, numbered from a hundred.) */
@@ -2873,10 +2905,8 @@ class Floater(val timer: Boolean) {
     /** Brings Prism to the front. [train]: on the workout (for the timer); otherwise as it was. */
     private fun openPrism(context: Context, train: Boolean = true) {
         closeSheet(context)
-        val i = android.content.Intent(context, MainActivity::class.java)
-            .setAction(if (train) OPEN_TRAIN else OPEN_ONLY)
-            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-        try { context.startActivity(i) } catch (ex: Exception) {}
+        // (The one Prism screen, brought forward: never a second one. See PrismScreen.)
+        PrismScreen.bringForward(context, if (train) OPEN_TRAIN else OPEN_ONLY, why = if (train) "the timer" else "$who: to choose or for its settings")
     }
 
     private fun rounded(color: Int, radius: Float, stroke: Int = 0, strokeWidth: Int = 0): android.graphics.drawable.GradientDrawable {

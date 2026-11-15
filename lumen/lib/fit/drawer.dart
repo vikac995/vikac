@@ -1608,6 +1608,14 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
 /// across, the old mark shrinks away and the new one grows in, and the tile
 /// dips slightly as it changes. Rows go one after another in the direction
 /// of the swipe.
+/// How many text layouts the app list keeps (names, initials, numbers): for the test report.
+/// (Each holds memory outside Dart; none is ever let go.)
+({int names, int letters, int numbers}) appListTexts() => (
+  names: _GridPainter._labels.length,
+  letters: _GridPainter._letters.length,
+  numbers: _GridPainter._figures.length,
+);
+
 class _GridPainter extends CustomPainter {
   _GridPainter({
     required this.apps,

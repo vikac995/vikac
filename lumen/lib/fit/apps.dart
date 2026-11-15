@@ -127,7 +127,11 @@ class BlobApps extends ChangeNotifier {
   // ignore: unused_element
   static Future<ui.Image> _decodeOld(Uint8List bytes) async {
     final ui.Codec codec = await ui.instantiateImageCodec(bytes);
-    return (await codec.getNextFrame()).image;
+    try {
+      return (await codec.getNextFrame()).image;
+    } finally {
+      codec.dispose();
+    }
   }
 
   /// Turns a simple icon into a white mark. It finds the icon's ground (the
@@ -311,8 +315,17 @@ class BlobApps extends ChangeNotifier {
       height: side,
       pixelFormat: ui.PixelFormat.rgba8888,
     );
-    final ui.Image glyph =
-        (await (await desc.instantiateCodec()).getNextFrame()).image;
+    // (The codec, the descriptor and the buffer hold memory outside Dart until they are let go
+    // by hand: done here, as soon as the picture is out, on every path.)
+    final ui.Codec codec = await desc.instantiateCodec();
+    final ui.Image glyph;
+    try {
+      glyph = (await codec.getNextFrame()).image;
+    } finally {
+      codec.dispose();
+      desc.dispose();
+      buffer.dispose();
+    }
     // The blob's colour: the ground if it has colour, else the mark's.
     Color? pick(double r, double g, double b) {
       final HSLColor c = HSLColor.fromColor(
@@ -453,7 +466,12 @@ class AppLook {
 class IconEngine {
   static Future<ui.Image> decode(Uint8List bytes) async {
     final ui.Codec codec = await ui.instantiateImageCodec(bytes);
-    return (await codec.getNextFrame()).image;
+    // (Let go as soon as the picture is out, on every path: it holds memory outside Dart.)
+    try {
+      return (await codec.getNextFrame()).image;
+    } finally {
+      codec.dispose();
+    }
   }
 
   static Future<AppLook> look(
@@ -598,7 +616,15 @@ class IconEngine {
       height: h,
       pixelFormat: ui.PixelFormat.rgba8888,
     );
-    return (await (await desc.instantiateCodec()).getNextFrame()).image;
+    // (Codec, descriptor and buffer let go as soon as the picture is out, on every path.)
+    final ui.Codec codec = await desc.instantiateCodec();
+    try {
+      return (await codec.getNextFrame()).image;
+    } finally {
+      codec.dispose();
+      desc.dispose();
+      buffer.dispose();
+    }
   }
 }
 

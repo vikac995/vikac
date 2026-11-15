@@ -1,5 +1,27 @@
 # Lumen changelog
 
+## Prism, build 173 (15 November 2026)
+
+**File:** `releases/prism-build-173.apk`
+
+Needs Play Protect paused to install. Can be installed over build 172.
+
+**Your phone run of 172: 485 right, 0 wrong.** Step 1 is proven on the phone. The run also showed two copies of Prism at once, as suspected. The first copy was made when Prism was opened, and the second 5 seconds later.
+
+- **Only ever one Prism now.**
+  - **How the second copy was made:** you opened Prism one way (the app icon or the installer's "Open"), then went home with the Home gesture. Android keeps the screen it opens as the home screen apart from the same screen opened any other way, so the Home gesture made a second one.
+  - **From Prism's side:** every way Prism brings itself forward (the Sidekick, the timer, the sheets, the test) now moves the one Prism screen forward instead of starting it again. If no Prism screen is alive, it starts as the home screen, so the Home gesture finds that same one.
+  - **From outside:** the app icon and the installer's "Open" go through a small invisible step that does the same.
+  - **The rest:** should Android make a second screen all the same, one of the two is closed at once (the home one stays). The test report's engine list should now say "1 made".
+- **Memory:**
+  - The second copy wasn't the main cost: with one copy, memory still grows about 57 MB a round, at the same steps.
+  - Pictures, decoders and text that Prism makes and doesn't need any more are now let go at once, instead of whenever Prism next cleans up its own memory.
+  - The test report counts what each store of pictures and text is holding at every step, on both sides. The next run names the one that grows.
+- **One thing that looks different:** Prism's app icon is now a different part of Prism. If you have Prism's icon on another launcher's screen, it may need adding again. Your home screen is Prism itself, so this shouldn't matter.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 68 of 69 (the miss is the Android-only measurement); the long test, 65 of 69 with the usual 4 misses.
+**Not checked:** on a phone. Bringing Prism forward, the icon, the Home gesture and the memory counts on Android's side all run only there.
+
 ## Prism, build 172 (15 November 2026)
 
 **File:** `releases/prism-build-172.apk`

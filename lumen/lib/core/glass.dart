@@ -111,8 +111,10 @@ abstract final class GlassShaders {
           }
         }
       }
-      final ui.Image img = await rec.endRecording().toImage(8, 8);
+      final ui.Picture picture = rec.endRecording();
+      final ui.Image img = await picture.toImage(8, 8);
       img.dispose();
+      picture.dispose();
     } catch (_) {
       // Warming up is an optimisation; a failure here changes nothing else.
     }

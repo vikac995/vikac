@@ -1761,12 +1761,23 @@ class _ShellState extends State<Shell>
       textDirection: TextDirection.ltr,
     )..layout();
     tp.paint(Canvas(rec), Offset((120 - tp.width) / 2, (120 - tp.height) / 2));
-    final ui.Image image = await rec.endRecording().toImage(120, 120);
-    final Uint8List? made = (await image.toByteData(
-      format: ui.ImageByteFormat.png,
-    ))?.buffer.asUint8List();
-    // The picture was only needed to make the file.
-    image.dispose();
+    // (The recording and the text's layout hold memory outside Dart: let go by hand.)
+    final ui.Picture picture = rec.endRecording();
+    tp.dispose();
+    final ui.Image image;
+    try {
+      image = await picture.toImage(120, 120);
+    } finally {
+      picture.dispose();
+    }
+    final Uint8List? made;
+    try {
+      made = (await image.toByteData(format: ui.ImageByteFormat.png))?.buffer
+          .asUint8List();
+    } finally {
+      // The picture was only needed to make the file (let go even if that failed).
+      image.dispose();
+    }
     if (made != null) {
       _markPngs[which] = made;
     }
@@ -4140,12 +4151,48 @@ class _ShellState extends State<Shell>
           'gc': true,
         });
         final (int cache, int icons) = _pictureBytes();
+        // Every cache that could grow, with what it holds.
+        int pngBytes = 0;
+        for (final Uint8List b in <Uint8List>[
+          ..._imagePngs.values,
+          ..._markPngs.values,
+        ]) {
+          pngBytes += b.length;
+        }
+        int appImages = 0, appBytes = 0;
+        void count(ui.Image? i) {
+          if (i != null) {
+            appImages++;
+            appBytes += i.width * i.height * 4;
+          }
+        }
+
+        for (final AppTile a in Apps.instance.all) {
+          count(a.glyph);
+          count(a.picture);
+          count(a.own);
+        }
+        for (final BlobApp a in BlobApps.instance.apps) {
+          count(a.glyph);
+          count(a.icon);
+          count(a.picture);
+        }
+        final ImageCache ic = PaintingBinding.instance.imageCache;
+        final ({int names, int letters, int numbers}) texts = appListTexts();
         t.memoryAt.add((
           'round $roundNow, $part',
           <String, Object?>{
             if (m['ok'] != false) ...m,
             'rssKb': ProcessInfo.currentRss ~/ 1024,
             'picturesKb': (cache + icons) ~/ 1024,
+            'pngs': _imagePngs.length + _markPngs.length,
+            'pngsKb': pngBytes ~/ 1024,
+            'cacheImages': ic.currentSize + ic.liveImageCount,
+            'cacheKb': ic.currentSizeBytes ~/ 1024,
+            'appImages': appImages,
+            'appImagesKb': appBytes ~/ 1024,
+            'texts': '${texts.names}+${texts.letters}+${texts.numbers}',
+            'framesKept': t.framesKept,
           },
         ));
       }

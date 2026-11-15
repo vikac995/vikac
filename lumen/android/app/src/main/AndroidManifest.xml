@@ -31,15 +31,26 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-            <!-- Prism can be chosen as the phone's home screen. For Lumen the placeholder is a category nothing uses. -->
+            <!-- Prism can be chosen as the phone's home screen. For Lumen the placeholder is a category nothing uses.
+                 (The app icon is PrismLauncher, below: opened that way, this screen is brought forward, never made twice.) -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="${homeCategory}"/>
                 <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+        <!-- The app icon and the installer's "Open": no screen of its own. It brings the one Prism screen
+             forward, or starts it, and is gone at once (PrismScreen.kt). -->
+        <activity
+            android:name=".PrismLauncher"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
         <!-- Counts on app icons. Android tells this of notifications once the person allows it, on Android's own screen. -->

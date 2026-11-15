@@ -41,6 +41,9 @@ class TestRun {
 
   void _took(List<FrameTiming> t) => _frames.addAll(t);
 
+  /// How many frames' timings the test is holding (it keeps every one): for the report.
+  int get framesKept => _frames.length;
+
   void close() => SchedulerBinding.instance.removeTimingsCallback(_took);
 
   void check(String what, bool ok, [String note = '']) {
@@ -492,6 +495,22 @@ class TestRun {
           '${at.padRight(48)} ${mb(m['mem_native']).padLeft(7)} ${mb(m['mem_native_gc']).padLeft(9)} ${mb(m['mem_graphics']).padLeft(9)} ${mb(m['mem_java']).padLeft(5)} ${mb(m['pss']).padLeft(6)} ${mb(m['rssKb']).padLeft(8)} ${mb(m['picturesKb']).padLeft(9)}',
         );
       }
+    }
+    // What each cache that could grow is holding, at the same moments.
+    o
+      ..writeln()
+      ..writeln(
+        'CACHES BY PART, at the same moments: count/KB. Prism: its pictures made into files for Android (pngs), Flutter\'s picture cache (cache), the apps\' pictures (apps), the app list\'s text (texts: names+letters+numbers), the frames the test keeps; Android: the blobs\' pictures decoded (icons), the Sidekick\'s pictures, the flight recorder\'s lines.',
+      )
+      ..writeln(
+        '${'when'.padRight(48)} ${'pngs'.padLeft(9)} ${'cache'.padLeft(9)} ${'apps'.padLeft(10)} ${'texts'.padLeft(12)} ${'frames'.padLeft(7)} ${'icons'.padLeft(9)} ${'sk pics'.padLeft(7)} ${'trail'.padLeft(5)}',
+      );
+    String nk(Object? n, Object? kb) =>
+        n is num ? '${n.round()}/${kb is num ? kb.round() : '-'}' : '-';
+    for (final (String at, Map<String, Object?> m) in memoryAt) {
+      o.writeln(
+        '${at.padRight(48)} ${nk(m['pngs'], m['pngsKb']).padLeft(9)} ${nk(m['cacheImages'], m['cacheKb']).padLeft(9)} ${nk(m['appImages'], m['appImagesKb']).padLeft(10)} ${'${m['texts'] ?? '-'}'.padLeft(12)} ${'${m['framesKept'] ?? '-'}'.padLeft(7)} ${nk(m['iconsCached'], m['iconsKb']).padLeft(9)} ${'${m['sidekickPictures'] ?? '-'}'.padLeft(7)} ${'${m['trailLines'] ?? '-'}'.padLeft(5)}',
+      );
     }
     o.writeln();
   }

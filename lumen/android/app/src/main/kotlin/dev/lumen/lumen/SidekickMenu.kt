@@ -167,6 +167,7 @@ object SidekickMenu {
         into["sidekickKeys"] = keys.toList()
         into["sidekickOwn"] = own
         into["sidekickMoved"] = moved
+        into["sidekickPictures"] = pictures.size
     }
 
     /** Saved, shown, and Prism told the keys, so that it sends their pictures. */
