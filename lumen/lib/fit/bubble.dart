@@ -133,6 +133,23 @@ class RestBubble with WidgetsBindingObserver {
         .catchError((Object _) {});
   }
 
+  /// Brings the side Blob out, as an app opened from Prism does. True if it could be shown.
+  Future<bool> bringSide() async {
+    if (!canFloat) {
+      return false;
+    }
+    try {
+      final bool ok = await _device.invokeMethod<bool>('side') ?? false;
+      if (!ok) {
+        // Android has not been told Prism may float: the person is taken to where that is granted.
+        ask();
+      }
+      return ok;
+    } catch (_) {
+      return false; // Not on Android.
+    }
+  }
+
   /// The side Blob was dropped on Prism's button and is fusing with it. Set by the shell.
   VoidCallback? onFused;
 

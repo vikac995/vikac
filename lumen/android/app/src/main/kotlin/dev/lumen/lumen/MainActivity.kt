@@ -303,6 +303,11 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
             } else if (call.method == "lensSize") {
                 result.success(RestBubble.lensSizeNow(applicationContext))
+            } else if (call.method == "side") {
+                // Asked for from Prism (a blob or a swipe given "Side blob"): it comes out, even if it had been sent away.
+                val can = android.provider.Settings.canDrawOverlays(applicationContext)
+                if (can) RestBubble.showSide(applicationContext, true)
+                result.success(can)
             } else if (call.method == "covered") {
                 // A panel is open in Prism, or none is: the side Blob steps aside meanwhile.
                 RestBubble.covered = (call.arguments as? Boolean) ?: false

@@ -235,8 +235,21 @@ class _ShellState extends State<Shell>
     _recentre();
   }
 
-  /// Whether place [i] holds something of the phone's own: its notifications.
+  /// Whether place [i] holds something that is neither an app nor one of Prism's sheets or
+  /// pages: the phone's notifications, or bringing out the side Blob.
   bool _isPhone(int i) => _pinKey(i).startsWith('phone:');
+
+  /// Whether place [i] brings out the side Blob.
+  bool _isSide(int i) => _pinKey(i) == 'phone:side';
+
+  /// Brings the side Blob out, where it was last left. (It may have been sent away, or not
+  /// be allowed anywhere: then there is a thud, and Android's own screen for allowing it.)
+  void _bringSide() {
+    Diag.instance.event('side blob: brought out');
+    RestBubble.instance.bringSide().then((bool ok) {
+      ok ? Haptics.settle() : Haptics.thud();
+    });
+  }
 
   /// Whether place [i] holds an app, rather than one of Prism's own actions or pages.
   bool _isApp(int i) => _pinKey(i).startsWith('app:');
@@ -285,7 +298,7 @@ class _ShellState extends State<Shell>
   String _blobName(int i) => _isEmpty(i)
       ? ''
       : _isPhone(i)
-      ? 'Notifications'
+      ? (_isSide(i) ? 'Side blob' : 'Notifications')
       : _isApp(i)
       ? (_blobApp(i)?.name ?? _tile(i)?.label ?? '')
       : (_isScreen(i) ? _tabs[_screenAt(i)].$2 : _actions[_actionAt(i)].$1);
@@ -414,7 +427,9 @@ class _ShellState extends State<Shell>
       return;
     }
     Diag.instance.event('gesture ${GestureSlots.names[g]}: ${_blobName(i)}');
-    if (_isPhone(i)) {
+    if (_isSide(i)) {
+      _bringSide();
+    } else if (_isPhone(i)) {
       Haptics.settle();
       GestureSlots.shade().then((bool ok) {
         if (!ok) {
@@ -1573,8 +1588,8 @@ class _ShellState extends State<Shell>
       return const SizedBox.shrink();
     }
     if (_isPhone(i)) {
-      return const Icon(
-        Icons.notifications_rounded,
+      return Icon(
+        _isSide(i) ? Icons.bubble_chart_rounded : Icons.notifications_rounded,
         color: Colors.white,
         size: 26,
       );
@@ -4410,6 +4425,17 @@ class _ShellState extends State<Shell>
 
   /// A blob was tapped. What that means depends on what the blobs are showing.
   void _blobTap(int i) {
+    if (_isPhone(i)) {
+      // Not an app, a sheet or a page: the side Blob comes out, or the notifications down.
+      _setOpen(false);
+      if (_isSide(i)) {
+        _bringSide();
+      } else {
+        Haptics.settle();
+        GestureSlots.shade();
+      }
+      return;
+    }
     if (_isScreen(i)) {
       // One of Prism's own pages: straight to it.
       _setOpen(false);
@@ -4994,6 +5020,13 @@ class _ShellState extends State<Shell>
                           Icons.notifications_rounded,
                           const Color(0xFF5A6373),
                         ),
+                      // Bringing out the side Blob: for a swipe, or for a place in the menu.
+                      (
+                        'phone:side',
+                        'Side blob',
+                        Icons.bubble_chart_rounded,
+                        const Color(0xFF5A6373),
+                      ),
                       for (int k = 0; k < _actions.length; k++)
                         (
                           'action:$k',

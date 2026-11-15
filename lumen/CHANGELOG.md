@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 151 (15 November 2026)
+
+**File:** `releases/prism-build-151.apk`
+
+Needs Play Protect paused to install. Can be installed over build 150.
+
+- **"Side blob" is an action you can give to a swipe or to a place in the menu.** It is the first of the choices when you change a blob or set a two-finger swipe. Used, it brings the side Blob out where it was last left, even if you had sent it away. If Prism has not yet been allowed over other apps, it takes you to Android's screen for that; if both "In Prism" and "Over other apps" are off, it can go nowhere and there is a thud.
+- In the side Blob's own menu a blob given "Side blob" is left out: there it would do nothing.
+
+**Checked:** it compiles, both sides; in my preview: "Side blob" among the choices for a blob; the automatic test in the preview.
+**Not checked:** on a phone: the side Blob coming out when the action is used cannot run in my preview.
+
+**Housekeeping:** this machine's disk filled up during build 150. I removed my own old screenshots and logs, and the copies on this machine of the files for builds 1 to 130. Those builds are all still in the repository and their download links still work (checked for build 100).
+
 ## Prism, build 150 (15 November 2026)
 
 **File:** `releases/prism-build-150.apk`
