@@ -267,6 +267,7 @@ abstract final class BlobSign {
     bool shrink = true,
     bool vivid = false,
     Color? ground,
+    bool ownGround = true,
   }) {
     if (colours.isEmpty || fold >= 0.999) {
       return;
@@ -300,7 +301,7 @@ abstract final class BlobSign {
     }
     // Its own ground: black when vivid; otherwise the colour asked for, if any. Not under a
     // triangle: the triangle is the blob, and a disc behind it would be a second shape.
-    if (look.triangle) {
+    if (look.triangle || !ownGround) {
       // (Nothing.)
     } else if (vivid) {
       _black(canvas, radius);
@@ -325,15 +326,23 @@ class BlobSignPreview extends CustomPainter {
   final bool vivid;
 
   @override
-  void paint(Canvas canvas, Size size) => BlobSign.paint(
-    canvas,
-    size,
-    id,
-    colours,
-    radius: size.width / 2 - 1,
-    vivid: vivid,
-    ground: BlobSign.ground,
-  );
+  void paint(Canvas canvas, Size size) {
+    // On black, as every look is under the button's glass.
+    canvas.drawCircle(
+      size.center(Offset.zero),
+      size.width / 2 - 1,
+      Paint()..color = const Color(0xEB000000),
+    );
+    BlobSign.paint(
+      canvas,
+      size,
+      id,
+      colours,
+      radius: size.width / 2 - 1,
+      vivid: vivid,
+      ownGround: false,
+    );
+  }
 
   @override
   bool shouldRepaint(BlobSignPreview old) =>

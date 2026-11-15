@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 148 (15 November 2026)
+
+**File:** `releases/prism-build-148.apk`
+
+Needs Play Protect paused to install. Can be installed over build 147.
+
+- **The glass is less tinted.** Its wash of Prism's colour is under half what it was, and the glow at its foot is halved, so the black under it shows through clearly.
+- **Every look works as the triangle does.** On Prism's button no look has a disc of its own any more. Under the glass each one is set in the glass's black; as the glass is lifted the black goes with it and the shape is left alone (the pearls, the petals, the bands and their prism); when the glass has landed back the black fades in again. Mellow or Vivid changes only the colours. (Turning is still the triangles' and Petals' alone.)
+- **The looks in the Blob panel are shown on that same black.**
+- **The Vivid background:** the white line across the top of the colour bands is gone, and the grey halftone dots are far fainter, close to the ground's own colour.
+
+**Checked:** it compiles; in my preview: Window, Pearls and Bands under the glass and with the glass lifted, the Look row in the panel; the automatic test in the preview (run before the two changes to the background, which are two lines).
+**Not checked:** on a phone. Lifted from under the glass, Pearls' white point is faint on a light page: look at whether each look reads well alone on both a dark and a light background.
+
 ## Prism, build 147 (15 November 2026)
 
 **File:** `releases/prism-build-147.apk`

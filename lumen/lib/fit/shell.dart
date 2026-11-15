@@ -6847,12 +6847,6 @@ class _Wallpaper extends CustomPainter {
         fill(hues[i]),
       );
     }
-    // A thin line of the ink colour across them, where the staircase begins.
-    canvas.drawRect(
-      Rect.fromLTWH(0, h * 0.70 - w * 0.03, w * 0.62, w * 0.008),
-      fill(ink, 0.8),
-    );
-
     // Circles: a target of the six colours off the top right corner, ring inside ring.
     final Offset corner = Offset(w * 1.06, -h * 0.02);
     final double step = w * 0.046;
@@ -6882,7 +6876,8 @@ class _Wallpaper extends CustomPainter {
           canvas.drawCircle(
             Offset(x, y),
             gap * 0.42 * (1 - d),
-            fill(ink, dark ? 0.22 : 0.18),
+            // (Barely there: close to the ground's own colour.)
+            fill(ink, dark ? 0.09 : 0.07),
           );
         }
       }
@@ -7285,7 +7280,7 @@ class _ButtonSign extends CustomPainter {
         _PlusMark(fold: c * 0.6).paint(canvas, size);
         canvas.restore();
       } else {
-        if (dark > 0.001 && BlobSign.of(look).triangle) {
+        if (dark > 0.001) {
           // Under the glass, the triangle is set in black: the glass's own darkness. It goes
           // with the glass, in the first moment it is lifted, and the triangle is left alone.
           canvas.drawCircle(
@@ -7312,7 +7307,9 @@ class _ButtonSign extends CustomPainter {
           // (A triangle only fades: the cog reshapes out of that very outline.)
           shrink: !BlobSign.of(look).triangle,
           vivid: vivid,
-          ground: BlobSign.ground,
+          // (No ground of its own: under the glass the black is the glass's, and lifted away
+          // the blob is the shape alone, whatever the look.)
+          ownGround: false,
         );
         canvas.restore();
       }
@@ -7493,9 +7490,10 @@ class _LensDisc extends CustomPainter {
           ..shader = RadialGradient(
             center: const Alignment(-0.35, -0.45),
             radius: 0.85,
+            // (Lightly tinted: what lies under the glass, the black most of all, shows through.)
             colors: <Color>[
-              tone(0.42, 0.6),
-              tone(0.2, 0.72),
+              tone(0.42, 0.26),
+              tone(0.2, 0.3),
               const Color(0xFF0A0B0E),
             ],
             stops: const <double>[0, 0.55, 1],
@@ -7512,7 +7510,7 @@ class _LensDisc extends CustomPainter {
               h
                   .withValue((h.value * 1.2).clamp(0.0, 1.0))
                   .toColor()
-                  .withValues(alpha: 0.42),
+                  .withValues(alpha: 0.22),
               accent.withValues(alpha: 0),
             ],
           ).createShader(box),
