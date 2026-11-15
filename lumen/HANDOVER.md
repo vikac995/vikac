@@ -243,6 +243,10 @@ PRISM_LONG_TEST=1 timeout 590 build/linux/x64/release/bundle/lumen > long.log &
 PRISM_BUTTON_TEST=1 timeout 420 build/linux/x64/release/bundle/lumen &
 ```
 
+**Large text, every build that changes what is seen (from the queued large-text fix on):** the panels are
+also looked at with a text scale of about 1.3 and the maximum, with screenshots in the report (see
+`tasks/QUEUE-large-text.md` and LESSONS.md).
+
 Screenshots: `scratchpad/f.sh out.png "<xdotool commands>"` with `NOBUILD=1` (window 824x1830 = 412x915
 points x 2; Prism's button at 412,1738). The preview's saved state lives in `/tmp/prism_*` files.
 The "hold, then carry" checks sometimes miss once from timing; run again before believing them.
