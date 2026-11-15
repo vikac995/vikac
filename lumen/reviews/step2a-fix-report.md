@@ -1,7 +1,9 @@
 # Step 2a fix report: two regressions in the Sidekick half (build 177)
 
 Brief: `tasks/STEP2a-fix.md` (saved as given). Branch `claude/flutter-ui-showcase-ngzfru`, based on
-`a3b5072`. Fixes only: no panel UI.
+`a3b5072`. Two commits: `76dd5e5` (the code, the APK, the changelog, the handover, the plan, PRISM.md,
+the brief, this report) and the one after it, which only adds the checked link here. Fixes only: no panel
+UI.
 
 **What has only run in the preview:**
 - **Fault 1:** a copy of the layout code in Python, at every height.
@@ -136,7 +138,9 @@ long test:    CHECKS: 65 right, 4 wrong, of 69 (the usual 4, on its first run)
 them" is in its `libapp.so`, and its Android code differs from 176's (the only Kotlin change is the hit
 test and its test line; method names are shortened in a release build, so they can't be searched for).
 sha256 `d6c9fbc3809c95525f92985214b13b01eb7eb9e0c53e1de661ee6aad67a8da61`, 18,649,338 bytes. Link:
-LINK_RESULT
+https://github.com/vikac995/vikac/raw/76dd5e52a4af72771d1b2c44b19720e32815b752/lumen/releases/prism-build-177.apk
+(pinned to `76dd5e5`, the commit that added the APK). Checked after the push: it answers 200, and the
+downloaded file has the same sha256 as the one built.
 
 ## For the owner on the phone
 
