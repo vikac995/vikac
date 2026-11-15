@@ -155,25 +155,40 @@ abstract final class BlobSign {
       ..clipPath(
         Path()..addOval(Rect.fromCircle(center: Offset.zero, radius: r)),
       );
-    final Paint fill = Paint()
-      ..color = cs.first.withValues(alpha: look.triangle ? 1 : e);
-    if (cs.length > 1) {
-      // The colours go once round it, and it turns with them.
-      fill.shader = ui.Gradient.sweep(
+    // Inside the cog, the look itself, as it is drawn everywhere: the cog is a window cut in
+    // the shape of a cog onto the same picture, on the same ground (black when vivid).
+    canvas
+      ..save()
+      ..clipPath(shape)
+      ..drawCircle(
         Offset.zero,
-        <Color>[
-          for (final Color c in cs) c.withValues(alpha: look.triangle ? 1 : e),
-          cs.first.withValues(alpha: look.triangle ? 1 : e),
-        ],
-        <double>[for (int i = 0; i <= cs.length; i++) i / cs.length],
-        TileMode.clamp,
-        0,
-        2 * math.pi,
-        (Matrix4.identity()..rotateZ(spin)).storage,
+        r,
+        Paint()
+          ..color = (vivid ? const Color(0xF2000000) : ground).withValues(
+            alpha: look.triangle ? 1 : e,
+          ),
+      );
+    if (!look.triangle) {
+      // (The others fade in as the sign they come from draws away.)
+      canvas.saveLayer(
+        Rect.fromCircle(center: Offset.zero, radius: r),
+        Paint()..color = Colors.white.withValues(alpha: e),
       );
     }
+    _vividNow = vivid;
+    if (look.id == 'window') {
+      _windowField(canvas, r, cs);
+    } else if (look.id == 'triangle') {
+      _triangleField(canvas, r, cs, angle, e);
+    } else {
+      look._draw(canvas, r, cs, angle);
+    }
+    _vividNow = false;
+    if (!look.triangle) {
+      canvas.restore();
+    }
+    canvas.restore();
     canvas
-      ..drawPath(shape, fill)
       // A little light on it from above, as on the glass.
       ..drawPath(
         shape,
@@ -741,24 +756,8 @@ void _triangle(Canvas c, double r, List<Color> cs, double a) {
   c
     ..save()
     ..clipPath(shape);
-  _fan(c, apex, r * 2.2, cs, a, math.pi / 6);
+  _triangleField(c, r, cs, a, 0);
   c
-    ..drawCircle(
-      apex,
-      s * 1.75,
-      Paint()
-        ..shader = ui.Gradient.radial(
-          apex,
-          s * 1.75,
-          <Color>[
-            Colors.white,
-            Colors.white.withValues(alpha: 0.75),
-            Colors.white.withValues(alpha: 0.1),
-            Colors.white.withValues(alpha: 0),
-          ],
-          const <double>[0, 0.3, 0.62, 1],
-        ),
-    )
     ..restore()
     ..drawPath(
       shape,
@@ -767,6 +766,73 @@ void _triangle(Canvas c, double r, List<Color> cs, double a) {
         ..style = PaintingStyle.stroke
         ..strokeJoin = StrokeJoin.round
         ..strokeWidth = math.max(1, r * 0.03),
+    );
+}
+
+/// What Triangle is filled with: the colours fanned from the corner the light comes in by, white
+/// there. [open] widens the fan, from just the triangle (0) to all round (1), for the cog.
+void _triangleField(Canvas c, double r, List<Color> cs, double a, double open) {
+  final double s = r * 0.94;
+  final Offset apex = -_dir(a) * s;
+  _fan(
+    c,
+    apex,
+    r * 2.4,
+    cs,
+    a,
+    math.pi / 6 + (math.pi / 2.1 - math.pi / 6) * open,
+  );
+  c.drawCircle(
+    apex,
+    s * 1.75,
+    Paint()
+      ..shader = ui.Gradient.radial(
+        apex,
+        s * 1.75,
+        <Color>[
+          Colors.white,
+          Colors.white.withValues(alpha: 0.75),
+          Colors.white.withValues(alpha: 0.1),
+          Colors.white.withValues(alpha: 0),
+        ],
+        const <double>[0, 0.3, 0.62, 1],
+      ),
+  );
+}
+
+/// What Window looks onto: upright bands of the colours, standing still, with light from above.
+void _windowField(Canvas c, double r, List<Color> cs) {
+  final int n = cs.length;
+  final Paint field = Paint()..color = cs.first;
+  if (n > 1) {
+    // Each colour holds across the middle of its band and melts into the next.
+    field.shader = ui.Gradient.linear(
+      Offset(-r, 0),
+      Offset(r, 0),
+      <Color>[
+        for (final Color k in cs) ...<Color>[k, k],
+      ],
+      <double>[
+        for (int k = 0; k < n; k++) ...<double>[(k + 0.25) / n, (k + 0.75) / n],
+      ],
+    );
+  }
+  c
+    ..drawRect(Rect.fromCircle(center: Offset.zero, radius: r), field)
+    // Light from above, the same across the whole field: it does not turn either.
+    ..drawRect(
+      Rect.fromCircle(center: Offset.zero, radius: r),
+      Paint()
+        ..shader = ui.Gradient.linear(
+          Offset(0, -r),
+          Offset(0, r),
+          <Color>[
+            Colors.white.withValues(alpha: 0.32),
+            Colors.white.withValues(alpha: 0),
+            Colors.black.withValues(alpha: 0.12),
+          ],
+          const <double>[0, 0.55, 1],
+        ),
     );
 }
 
@@ -785,40 +851,11 @@ void _window(Canvas c, double r, List<Color> cs, double a) {
     ..lineTo(p1.dx, p1.dy)
     ..lineTo(p2.dx, p2.dy)
     ..close();
-  final int n = cs.length;
-  final Paint field = Paint()..color = cs.first;
-  if (n > 1) {
-    // Each colour holds across the middle of its band and melts into the next.
-    field.shader = ui.Gradient.linear(
-      Offset(-r, 0),
-      Offset(r, 0),
-      <Color>[
-        for (final Color k in cs) ...<Color>[k, k],
-      ],
-      <double>[
-        for (int k = 0; k < n; k++) ...<double>[(k + 0.25) / n, (k + 0.75) / n],
-      ],
-    );
-  }
   c
     ..save()
-    ..clipPath(shape)
-    ..drawRect(Rect.fromCircle(center: Offset.zero, radius: r), field)
-    // Light from above, the same across the whole field: it does not turn either.
-    ..drawRect(
-      Rect.fromCircle(center: Offset.zero, radius: r),
-      Paint()
-        ..shader = ui.Gradient.linear(
-          Offset(0, -r),
-          Offset(0, r),
-          <Color>[
-            Colors.white.withValues(alpha: 0.32),
-            Colors.white.withValues(alpha: 0),
-            Colors.black.withValues(alpha: 0.12),
-          ],
-          const <double>[0, 0.55, 1],
-        ),
-    )
+    ..clipPath(shape);
+  _windowField(c, r, cs);
+  c
     ..restore()
     ..drawPath(
       shape,

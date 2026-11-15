@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 143 (15 November 2026)
+
+**File:** `releases/prism-build-143.apk`
+
+Needs Play Protect paused to install. Can be installed over build 142.
+
+- **The cog follows the look**, and Vivid. It used to be one sweep of the colours round it, whatever the look. Now it is a window cut in the shape of a cog onto the look itself, on the look's own ground (black when vivid): Window's cog shows the same upright bands standing still; Triangle's the light fanned from its corner, the fan opening wider as the triangle becomes the cog; Beam's, Bands', Clear's and Lined's the bands and the white prism; Pearls', Petals', Lotus' and Halo's their own pearls, petals and rings. The triangle still reshapes into it, corner by corner; the others fade into it.
+
+**Checked:** it compiles; in my preview: the cog of Window, Triangle, Bands and Pearls, mellow and vivid, and of Window a moment into the change; the automatic test in the preview.
+**Not checked:** on a phone, and the change in motion.
+
 ## Prism, build 142 (15 November 2026)
 
 **File:** `releases/prism-build-142.apk`
