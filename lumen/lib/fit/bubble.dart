@@ -242,44 +242,19 @@ class RestBubble with WidgetsBindingObserver {
     }
   }
 
-  /// Sets the two distances in force at once, so the sliders move the Sidekick as they are
-  /// dragged. [show]: 'rest' or 'tuck' puts it in that place now. [save]: kept by Android.
-  void setSpots({double? gap, double? tuck, String? show, bool save = false}) {
-    sideGap = (gap ?? sideGap).clamp(gapMin, gapMax);
-    sideTuck = (tuck ?? sideTuck).clamp(tuckMin, tuckMax);
-    _set(
-      <String, Object>{'gap': sideGap, 'tuck': sideTuck},
-      show: show,
-      keep: save,
-    );
-  }
-
+  /// Where the Sidekick may be seen. Prism sets these only to bring it back when it has been
+  /// switched off everywhere ("Bring back the Sidekick", in Prism's settings page), and in its
+  /// tests. Everything else about the Sidekick is changed in its own panel, on Android.
   void setFloating({bool? inPrism, bool? overApps}) {
     floatIn.value = inPrism ?? floatIn.value;
     floatOut.value = overApps ?? floatOut.value;
     _set(<String, Object>{'inApp': floatIn.value, 'overApps': floatOut.value});
   }
 
-  void setSideNames(bool v) {
-    sideNames = v;
-    _set(<String, Object>{'names': v});
-  }
-
-  void setSideIcons(bool prism) {
-    sidePrismIcons = prism;
-    Apps.instance.sideOwnIcons(!prism);
-    _set(<String, Object>{'prismIcons': prism});
-  }
-
-  void setSideVivid(bool v) {
-    sideVivid = v;
-    _set(<String, Object>{'vivid': v});
-  }
-
-  void setSideLook(String id) {
-    sideLook = id;
-    _set(<String, Object>{'look': id});
-  }
+  /// For the tests only: some of the Sidekick's settings put as the test needs them, and back
+  /// afterwards (keys as in [_set]). [show] ('rest' or 'tuck') puts the Sidekick in that place.
+  Future<void> testPut(Map<String, Object> what, {String? show}) =>
+      _set(what, show: show);
 
   /// Prism's old files for the Sidekick's settings, which Android has taken over: deleted once
   /// it says it has. (Prism's own Labels, Colours, Look and Icons files stay: they are Prism's.)

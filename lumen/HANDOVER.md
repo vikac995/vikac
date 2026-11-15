@@ -38,7 +38,13 @@ phone run, then 2b once the owner has chosen where the panel sits and the way ba
 worked; Back is decided (A: the Sidekick's panel never takes the focus). Build 177 (`tasks/STEP2a-fix.md`,
 `reviews/step2a-fix-report.md`) fixes the Sidekick's menu picking a neighbour when its fan is pressed
 against the top or bottom of the screen, and the test leaving Prism's settings open. 2b waits for the
-owner's approved mock-up. Tasks are in `tasks/`; each ends with a
+owner's approved mock-up. Build 178 ("step 2b", `tasks/STEP2b.md`, `reviews/step2b-report.md`): **the
+Sidekick's own settings panel**, drawn by Android (`SidekickPanel.kt`), opened from the Sidekick (held;
+held in the middle of its blobs; Edit Sidekick), never focusable. Prism's settings panel is Prism's
+only; Prism's settings page has "Bring back the Sidekick" only while it is off everywhere. **Controls now
+exist twice, Flutter and Android, and a change to one is a change to both:** `_SpringPanel` ↔ the panel's
+grow and shade, `Segmented` ↔ its pickers, `LumenSwitch`/`SwitchLine` ↔ its switches, `DragDial` ↔ its two
+dials, `BlobSignPreview` ↔ its look previews (`BlobLooks.kt` already twins `blob_sign.dart`). Tasks are in `tasks/`; each ends with a
 report in `reviews/` that is reviewed before the owner relies on the work. The preview scripts are in
 `tools/preview/` (see its README).
 

@@ -1502,6 +1502,54 @@ class Floater(val timer: Boolean) {
         view?.showSpot(tuck)
     }
 
+    // ---- For the Sidekick's own panel (SidekickPanel).
+
+    /** Where the Sidekick is on the screen: its middle and the radius of its glass, in pixels; null if it is not shown. */
+    fun lensOnScreen(): FloatArray? {
+        val v = view ?: return null
+        if (!guest || !v.isAttachedToWindow) return null
+        val at = IntArray(2)
+        v.getLocationOnScreen(at)
+        val dp = v.resources.displayMetrics.density
+        return floatArrayOf(at[0] + v.width * v.scaleX / 2f, at[1] + v.height * v.scaleY / 2f, v.width / 2f - 5 * dp)
+    }
+
+    fun lensTucked(): Boolean = tucked
+
+    /** Which opening of its panel its window was last put above (for the test report). */
+    var raisedFor = -1
+
+    /** Whether the Sidekick is on the screen now (it may just have been switched off where it is). */
+    fun lensShownNow(): Boolean = guest && view?.isAttachedToWindow == true
+
+    /** The colours of its blobs, for its look as it is drawn. */
+    fun blobColours(): IntArray = blobs.filter { it.kind != "empty" }.map { it.color }.toIntArray()
+
+    /**
+     * Its window put back on top of every other window of Prism's: over its own panel, which was
+     * just added. (Windows over other apps lie in the order they were added. It is taken off and
+     * put back at once, without its coming-in animation.)
+     */
+    fun raise(context: Context) {
+        val v = view ?: return
+        if (!v.isAttachedToWindow) return
+        if (v.fingerOn()) {
+            // Held to open the panel, the finger is still on it: taken off now, its window would
+            // never hear the finger lift. Done the moment it does (see Dot.onTouchEvent).
+            v.raiseWhenUp = true
+            return
+        }
+        try {
+            v.raising = true
+            wm(context).removeViewImmediate(v)
+            wm(context).addView(v, v.lp)
+            raisedFor = SidekickPanel.opened
+        } catch (e: Exception) {
+            v.raising = false
+            Trail.add("$who: could not be put above its panel (${e.javaClass.simpleName})")
+        }
+    }
+
     fun showSide(context: Context, again: Boolean, out: Boolean = false) {
         if (timer) return
         if (again && sideGone) {
@@ -2161,8 +2209,12 @@ class Floater(val timer: Boolean) {
         m["sideKeys"] = blobs.joinToString(",") { it.key }
         // (And the Sidekick's menu as it is kept: its five keys, whether it is its own, what was moved over.)
         SidekickMenu.state(context, m)
-        // (And its settings as they are kept here.)
+        // (And its settings as they are kept here, and its own panel: whether its window is above
+        // the panel's, and how often Prism has been brought forward.)
         m["sidekickSettings"] = SidekickSettings.state(context)
+        m.putAll(SidekickPanel.testState())
+        m["lensAbove"] = raisedFor == SidekickPanel.opened && view?.isAttachedToWindow == true
+        m["forwards"] = PrismScreen.forwards
         // (What Android's side keeps that could grow: the blobs' pictures decoded, and the recorder's lines.)
         m["iconsCached"] = icons.size
         m["iconsKb"] = icons.values.sumOf { it.second.allocationByteCount.toLong() } / 1024
@@ -2453,6 +2505,55 @@ class Floater(val timer: Boolean) {
                         done(m)
                     }, ms + 650)
                 }
+                // The button test: the Sidekick's own settings panel (build 178). "tap" a part of it
+                // ("close", "inApp", "names.1", "look.halo", "ruler.gap", "shade", ...); "drag" a dial
+                // ("ruler.gap") by "dx" points, a list, each leg [legMs]; "flick" one by "dx" fast;
+                // "press" a dial and keep the finger on it for [holdMs] (answering while it is held);
+                // "home": as Home or the recent apps would. Real touches on its view, every time.
+                "panel" -> {
+                    val pv = SidekickPanel.testView() ?: return fail("the Sidekick's panel is not open")
+                    val dp = context.resources.displayMetrics.density
+                    val at = IntArray(2)
+                    pv.getLocationOnScreen(at)
+                    fun local(p: FloatArray) = floatArrayOf(p[0] - at[0], p[1] - at[1])
+                    val part = a["part"] as? String ?: ""
+                    when (a["what"] as? String) {
+                        "home" -> {
+                            SidekickPanel.testHome()
+                            watcher.postDelayed({ done(state(context)) }, num("settleMs", 700))
+                        }
+                        "tap" -> {
+                            val spot = SidekickPanel.testSpot(part) ?: return fail("no part $part in the panel")
+                            watcher.postDelayed({
+                                finger(pv, listOf(local(spot)), true, 60, 0, 0, false, num("settleMs", 700), { true }, { done(state(context)) })
+                            }, 80)
+                        }
+                        "drag", "flick", "press" -> {
+                            val spot = SidekickPanel.testSpot(part) ?: return fail("no part $part in the panel")
+                            val from = local(spot)
+                            val legs = (a["dx"] as? List<*>)?.map { (it as Number).toFloat() } ?: listOf((a["dx"] as? Number)?.toFloat() ?: 0f)
+                            val path = ArrayList<FloatArray>()
+                            path.add(from)
+                            var x = from[0]
+                            for (d in legs) {
+                                x += d * dp
+                                path.add(floatArrayOf(x, from[1]))
+                            }
+                            val flick = a["what"] == "flick"
+                            val held = a["what"] == "press"
+                            watcher.postDelayed({
+                                if (held) {
+                                    // (Answers while the finger is still down, then lifts it.)
+                                    finger(pv, listOf(from), true, num("holdMs", 600), 0, 0, false, 0, { true }, {})
+                                    watcher.postDelayed({ done(state(context)) }, num("holdMs", 600) / 2)
+                                } else {
+                                    finger(pv, path, true, 40, num("legMs", if (flick) 60 else 400), 0, flick, num("settleMs", 1200), { true }, { done(state(context)) })
+                                }
+                            }, 80)
+                        }
+                        else -> done(state(context))
+                    }
+                }
                 // The button test: the Sidekick's menu set for the test, and put back as it was afterwards.
                 "sidekick" -> {
                     SidekickMenu.testPut(context, (a["keys"] as? List<*>)?.map { "$it" } ?: emptyList())
@@ -2545,6 +2646,8 @@ class Floater(val timer: Boolean) {
                         "middle" -> finger(m, listOf(m.testMiddle()), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)
                         // Held on the Sidekick itself in the middle of its blobs: its settings.
                         "middleHold" -> finger(m, listOf(m.testMiddle()), true, 50, 0, holdTime() + 250, false, num("settleMs", 900), { true }, after)
+                        // Held on the empty space round the blobs: Edit Sidekick | Add Blob.
+                        "spaceHold" -> finger(m, listOf(m.testSpace()), true, 50, 0, holdTime() + 250, false, num("settleMs", 900), { true }, after)
                         // Down on one part of the held blob's small menu, slid onto another ("to"), let go there.
                         "popSlide" -> {
                             val from = m.testPopSpot(num("which", 0).toInt()) ?: return fail("no small menu, or not that part of it")
@@ -2928,12 +3031,11 @@ class Floater(val timer: Boolean) {
         try { wm(context).removeView(v) } catch (e: Exception) {}
     }
 
-    /** The Sidekick's settings, in Prism, which steps back afterwards if it came forward only for them. */
-    private fun sideSettings(context: Context) {
+    /** The Sidekick's own settings, over the app it is in: Prism neither comes forward nor is asked (build 178). */
+    private fun sideSettings(context: Context, how: String) {
         haptic(context, "click")
-        val back = !foreground
-        openPrism(context, false)
-        watcher.postDelayed({ askPrism("sideSettings", mapOf("back" to back)) }, 220)
+        // (Its blobs' menu has just closed, for two of the three ways: the panel opens from where it rests.)
+        watcher.postDelayed({ SidekickPanel.open(context, how) }, 60)
     }
 
     /**
@@ -3450,6 +3552,12 @@ class Floater(val timer: Boolean) {
         }
         fun testMiddle(): FloatArray = floatArrayOf(cx, cy)
 
+        /** A spot on the empty space round the blobs: half way from the Sidekick to the middle blob. */
+        fun testSpace(): FloatArray {
+            val k = n / 2
+            return floatArrayOf((cx + restX[k]) / 2f, (cy + restY[k]) / 2f)
+        }
+
         override fun onDraw(canvas: android.graphics.Canvas) {
             if (!laid) return
             drawn()
@@ -3641,7 +3749,7 @@ class Floater(val timer: Boolean) {
                 kept = true
                 val c = context
                 close()
-                sideSettings(c)
+                sideSettings(c, "held in the middle of its blobs")
             }
         }
 
@@ -3813,7 +3921,7 @@ class Floater(val timer: Boolean) {
                             // "Edit Sidekick": its settings.
                             val c = context
                             close()
-                            sideSettings(c)
+                            sideSettings(c, "Edit Sidekick")
                         } else if (of == -2 && which == 1) {
                             // "Add Blob": a new one at the end, after the last there is.
                             val last = items.indexOfLast { it.kind != "empty" }
@@ -4385,8 +4493,20 @@ class Floater(val timer: Boolean) {
         // While a blob is on its way in from the menu, the one inside is not drawn yet.
         var hideInner = false
 
+        // Taken off and put back on top (see raise): no coming-in animation.
+        var raising = false
+
+        // To be put on top once the finger that is on it now lifts (see raise).
+        var raiseWhenUp = false
+
+        fun fingerOn() = pressed
+
         override fun onAttachedToWindow() {
             super.onAttachedToWindow()
+            if (raising) {
+                raising = false
+                return
+            }
             if (unseen) {
                 // In place for a blob that is on its way: it shows itself when the blob lands.
                 alpha = 0f
@@ -5066,7 +5186,7 @@ class Floater(val timer: Boolean) {
                 settingsHeld = true
                 closeReach(context)
                 animate().scaleX(1f).scaleY(1f).setDuration(160).setInterpolator(EASE).start()
-                sideSettings(context)
+                sideSettings(context, "held")
             } else if (pressed && !dragged && !sized && !docked && !tucked && container && menu == null && isAttachedToWindow && blobs.isNotEmpty()) {
                 menuTouch = true
                 closeReach(context)
@@ -5534,11 +5654,37 @@ class Floater(val timer: Boolean) {
             }
         }
 
+        private var panelDownX = 0f
+        private var panelDownY = 0f
+
+        // A touch that began while its panel was open: only that is the panel's (a tap closes it).
+        // The hold that opened the panel ends as every touch on it does.
+        private var panelTouch = false
+
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
             if (e.actionMasked == android.view.MotionEvent.ACTION_OUTSIDE) {
                 // A touch somewhere else on the screen. Apps are only ever changed by touching it.
                 frontSoon(context.applicationContext)
                 return false
+            }
+            val ending = e.actionMasked == android.view.MotionEvent.ACTION_UP || e.actionMasked == android.view.MotionEvent.ACTION_CANCEL
+            if (ending && raiseWhenUp) {
+                // (The finger is lifting: once this touch is done with, it goes on top of its panel.)
+                raiseWhenUp = false
+                post { RestBubble.raise(context.applicationContext) }
+            }
+            if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) panelTouch = guest && SidekickPanel.isOpen
+            if (panelTouch) {
+                // Its own settings are open: a tap on it closes them, and it does nothing else meanwhile.
+                when (e.actionMasked) {
+                    android.view.MotionEvent.ACTION_DOWN -> { panelDownX = e.rawX; panelDownY = e.rawY }
+                    android.view.MotionEvent.ACTION_UP ->
+                        if (Math.hypot((e.rawX - panelDownX).toDouble(), (e.rawY - panelDownY).toDouble()) < 14 * resources.displayMetrics.density) {
+                            SidekickPanel.close("a tap on the Sidekick")
+                        }
+                }
+                if (ending) panelTouch = false
+                return true
             }
             if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
                 lastTouch = "down at ${e.rawX.toInt()},${e.rawY.toInt()}; lens at ${posX().toInt()},${posY().toInt()} size ${sizeNow().toInt()}" +

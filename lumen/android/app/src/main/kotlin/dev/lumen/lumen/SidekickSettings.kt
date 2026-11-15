@@ -174,7 +174,7 @@ object SidekickSettings {
      * ("rest" or "tuck") puts the Sidekick in that place now, while a distance is being chosen.
      * [keep] false: in force at once but not saved yet (a slider still being dragged).
      */
-    fun set(context: Context, a: Map<*, *>, show: String?, keep: Boolean) {
+    fun set(context: Context, a: Map<*, *>, show: String?, keep: Boolean, fromPanel: Boolean = false) {
         load(context)
         val was = describe()
         (a["inApp"] as? Boolean)?.let { inApp = it }
@@ -199,9 +199,14 @@ object SidekickSettings {
         if (!keep) return
         save(context)
         val now = describe()
-        // (Prism is told them in the answer to its own change: see the "sidekickSet" handler.)
-        if (now != was) Trail.add("Sidekick settings changed by Prism's panel: $now")
+        // (Prism is told them in the answer to its own change: see the "sidekickSet" handler. A
+        // change in the Sidekick's own panel is told to Prism here, for its copy.)
+        if (now != was) Trail.add("Sidekick settings changed by ${if (fromPanel) "its own panel" else "Prism's panel"}: $now")
+        if (fromPanel) RestBubble.toPrism("sidekickSettings", state(context))
     }
+
+    /** One of Prism's panel colours ("light.surface", "dark.ink", …), or "dark": 1 if Prism is dark; null if not sent yet. */
+    fun paletteColour(name: String): Int? = palette[name]
 
     /** Prism's panel colours ([a]: "light.surface", "dark.ink" and so on, to ARGB), kept for the Sidekick's own panel. */
     fun setPalette(context: Context, a: Map<*, *>) {

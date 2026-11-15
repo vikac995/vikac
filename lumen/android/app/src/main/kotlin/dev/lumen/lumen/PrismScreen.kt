@@ -53,7 +53,12 @@ object PrismScreen {
      * [Floater.OPEN_ACTION] with [index], or [Floater.OPEN_ONLY] / null for nothing). [why] is for
      * the flight recorder.
      */
+    /** How often Prism has been brought forward since it started: for the test report. */
+    var forwards = 0
+        private set
+
     fun bringForward(context: Context, action: String?, index: Int = 0, why: String) {
+        forwards++
         val act = alive()
         val asHome = act?.isHomeScreen ?: isDefaultHome(context)
         Trail.add(

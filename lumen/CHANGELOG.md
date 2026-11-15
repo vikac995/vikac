@@ -1,5 +1,31 @@
 # Lumen changelog
 
+## Prism, build 178 (15 November 2026)
+
+**File:** `releases/prism-build-178.apk`
+
+Needs Play Protect paused to install. Can be installed over build 177.
+
+**Your phone run of 177: 537 right, 0 wrong.** This build is the Sidekick's own settings, as in the mock-up you approved.
+
+- **The Sidekick has its own settings panel now,** over whatever app you're in. Prism doesn't come forward, and its triangle doesn't turn.
+  - **To open it:** hold the Sidekick; or hold it in the middle of its open blobs; or choose Edit Sidekick (hold the empty space round its blobs).
+  - **Where it sits:** beside the Sidekick, on the side away from it, nearly full height. It grows out of the Sidekick and goes back into it, on the same springs as Prism's settings. The app behind is shaded, except where the Sidekick is, and the Sidekick stays on top.
+  - **What's in it:** In Prism and Over other apps; Labels, Icons, Colours; the six looks, three to a row; and "Where it rests": two dials side by side, **Hovering** and **Tucked in**.
+  - **The dials:**
+    - Touch one and the Sidekick goes to that position at once.
+    - Slide and it moves the way your finger moves, on either side of the screen. One small tick for each point. A flick coasts on and stops on a whole point.
+    - While you slide, the panel stays exactly as it is and only the shade lifts, so you see the Sidekick over your app.
+    - Let go: the shade comes back, without a flicker, and the Sidekick goes back to how it was (out, or tucked in) at the new distance.
+  - **To close it:** the ✕, a tap beside it, a tap on the Sidekick, Home, or the screen going off.
+  - **Back:** it never takes the focus, so Back goes to the app you're in, and that app's keyboard is never closed by it.
+- **Prism's own settings are Prism's alone:** the Prism | Sidekick choice is gone, and so is the Sidekick's part.
+- **If you switch the Sidekick off everywhere,** there's nothing left to hold. Prism's settings page then shows "Bring back the Sidekick", and only then.
+- **What might look a little different from the mock-up:** the panel is drawn by Android, copying Prism's own pickers, switches, colours and type. Corners, shadows and text can differ by a pixel or so from Prism's own panel. The look previews are in the Sidekick's own colours. The first switch is now called "In Prism".
+
+**Checked:** it compiles, both sides; in my preview: the button test, 67 of 68 (one check fewer: Prism's settings no longer have a Prism | Sidekick choice to test); the long test, 62 of 66 (three checks of the old Sidekick switches in Prism's settings are gone: they are the Sidekick's own panel's now), with the usual 4 misses; the leak test runs to the end.
+**Not checked:** on a phone. The panel is Android's own, so none of it has run anywhere yet. The button test's part 5 checks it on your phone; please run it and send the report. Then try it yourself over an app with the keyboard up.
+
 ## Prism, build 177 (15 November 2026)
 
 **File:** `releases/prism-build-177.apk`

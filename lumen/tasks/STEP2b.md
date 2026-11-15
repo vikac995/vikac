@@ -43,8 +43,9 @@ weigh-in's `Ruler`.
 The mock-up says itself: "the controls, glass, haptics and springs will be Prism's own. This shows size,
 place, order and motion." So every control is drawn as Prism's own (its pickers, switches, type, panel
 surface and corners), and only the following is taken from the mock-up:
-- **Place:** on a 412 × 915 pt screen, 330 wide, from 56 pt below the top to 98 pt above the bottom,
-  8 pt in from the screen's edge on the side away from the Sidekick.
+- **Place:** on a 412 × 915 pt screen, 330 wide, from 56 pt below the top to 42 pt above the bottom
+  (corrected in build 178: this said 98 at first, a misreading of the mock-up's numbers), 8 pt in from
+  the screen's edge on the side away from the Sidekick.
 - **Grow and close:** the panel's rectangle runs from the Sidekick's own circle (its place and size) to
   the panel's place. Its corners also run from the Sidekick's round to the panel's.
 - **The shade:** black at up to about 40%, with a clear round hole about 6 pt bigger than the Sidekick.

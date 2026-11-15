@@ -208,10 +208,6 @@ class _ShellState extends State<Shell>
     value: 1,
   );
 
-  // In the Blob panel: whether the design being chosen is the side Blob's (true) or the main
-  // button's (false).
-  final ValueNotifier<bool> _designSide = ValueNotifier<bool>(false);
-
   // How far the button's sign has turned, in radians: see [_ButtonSign].
   late final SpringValue _signTurn = SpringValue(this, spring: Motions.snappy);
 
@@ -473,7 +469,6 @@ class _ShellState extends State<Shell>
   void _spaceEdit() {
     setState(() => _spaceAt = null);
     _setOpen(false);
-    _designSide.value = false;
     _showFloating();
   }
 
@@ -497,9 +492,9 @@ class _ShellState extends State<Shell>
   );
   Widget? _faceOf;
 
-  /// The settings panel (Prism's or the Sidekick's) is open. [_panelBack]: Prism came forward
-  /// only for it, from the Sidekick over another app, and steps back when it is closed.
-  bool _panelOpen = false, _panelBack = false;
+  /// Prism's settings panel is open. (The Sidekick's own settings are Android's, from build 178:
+  /// SidekickPanel.kt.)
+  bool _panelOpen = false;
 
   /// Closes the open settings on the app list's spring; null when none are open.
   VoidCallback? _closePanel;
@@ -511,31 +506,10 @@ class _ShellState extends State<Shell>
   // For the leak test only: parts of Prism it leaves out for a while, to see which one keeps
   // memory. All off outside the test, which puts them back in its `finally`.
   // [_leakNoSends]: Prism's messages to Android when its blobs change (the pin, the Sidekick's
-  // pictures, where the blobs sit). [_leakNoCover]: the "covered" message while the Sidekick's
-  // own settings are open. [_leakNoLooks]: the six look previews drawn as empty boxes.
+  // pictures, where the blobs sit). [_leakNoLooks]: the six look previews drawn as empty boxes.
   // [_leakBump]: rebuilds the settings' content with nothing changed.
-  bool _leakNoSends = false, _leakNoCover = false, _leakNoLooks = false;
+  bool _leakNoSends = false, _leakNoLooks = false;
   final ValueNotifier<int> _leakBump = ValueNotifier<int>(0);
-
-  /// One of the Sidekick's distances is being dragged ([which]: 'rest' or 'tuck'), or let go.
-  void _spotHold(String which, bool on) {
-    _panelClear.value = on ? which : null;
-    // (Under the panel it is hidden, so that it never lies over the panel and takes its taps.
-    // Only while its place is being chosen, with the panel clear, is it shown. Let go, it is
-    // hidden again only if a panel really is open: nothing may leave it hidden without one.)
-    RestBubble.instance.tellCovered(!on && PanelWatch.instance.anyOpen);
-    if (on) {
-      RestBubble.instance.setSpots(show: which);
-    }
-  }
-
-  /// While its own settings are open the Sidekick stays in sight, to be seen as it changes.
-  /// (Other panels hide it, so that a tap meant for them cannot reach it.)
-  void _sideInSight() {
-    if (_panelOpen && _panelClear.value == null && !_leakNoCover) {
-      RestBubble.instance.tellCovered(true);
-    }
-  }
 
   /// Where the finger was when a hold on a blob was recognised.
   Offset _holdFrom = Offset.zero;
@@ -863,14 +837,10 @@ class _ShellState extends State<Shell>
   /// Where the floating elements may be seen. Opened from the cog on the button.
   void _showFloating() {
     Haptics.tick();
-    Diag.instance.event(
-      _designSide.value ? 'settings: Sidekick' : 'settings: Prism',
-    );
+    Diag.instance.event('settings: Prism');
     _panelOpen = true;
-    _designSide.addListener(_sideInSight);
     // (Once the panel is up: the cog then knows a panel is open.)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _sideInSight();
       if (mounted) {
         _signSync();
       }
@@ -886,7 +856,6 @@ class _ShellState extends State<Shell>
       transitionBuilder: panelNoFade,
       pageBuilder: (BuildContext context, Animation<double> rise, _) {
         final LumenColors c = LumenColors.of(context);
-        final RestBubble b = RestBubble.instance;
         // Below the button's top: the button stays in sight, and a tap on it closes these.
         final double above =
             MediaQuery.sizeOf(context).height - (_home.dy - _button * 0.62);
@@ -925,12 +894,8 @@ class _ShellState extends State<Shell>
                     ),
                 child: ListenableBuilder(
                   listenable: Listenable.merge(<Listenable>[
-                    b.floatIn,
-                    b.floatOut,
-                    b.sideChanged,
                     Apps.instance,
                     BlobSlots.instance,
-                    _designSide,
                     _panelClear,
                     _leakBump,
                   ]),
@@ -951,7 +916,7 @@ class _ShellState extends State<Shell>
                             children: <Widget>[
                               Expanded(
                                 child: Text(
-                                  _designSide.value ? 'Sidekick' : 'Prism',
+                                  'Prism',
                                   style: LumenType.display(
                                     22,
                                     weight: 700,
@@ -989,96 +954,6 @@ class _ShellState extends State<Shell>
                             ],
                           ),
                           const SizedBox(height: 14),
-                          // Whose settings these are: the button in the middle, or the one at the side.
-                          Segmented<bool>(
-                            key: Robot.key('blobDesignFor'),
-                            segmentKeys: <Key>[
-                              Robot.key('designPrism'),
-                              Robot.key('designSidekick'),
-                            ],
-                            values: const <bool>[false, true],
-                            labels: const <String>['Prism', 'Sidekick'],
-                            value: _designSide.value,
-                            onChanged: (bool v) => _designSide.value = v,
-                          ),
-                          const SizedBox(height: 16),
-                          // Where the Sidekick shows. (Prism is always in its place.)
-                          if (_designSide.value) ...<Widget>[
-                            SwitchLine(
-                              key: Robot.key('floatIn'),
-                              label: 'In this app',
-                              value: b.floatIn.value,
-                              onChanged: (bool v) => _setFloating(inPrism: v),
-                            ),
-                            const SizedBox(height: 12),
-                            SwitchLine(
-                              key: Robot.key('floatOut'),
-                              label: 'Over other apps',
-                              value: b.floatOut.value,
-                              onChanged: (bool v) => _setFloating(overApps: v),
-                            ),
-                            const SizedBox(height: 14),
-                            // Its two places at a side of the screen. Dragged, the panel
-                            // clears and the Sidekick goes to that place, to be seen.
-                            Text(
-                              'Distance from the edge',
-                              style: LumenType.text(
-                                15,
-                                weight: 560,
-                                color: c.ink,
-                              ),
-                            ),
-                            LumenSlider(
-                              key: const ValueKey<String>('rest'),
-                              value:
-                                  (b.sideGap - RestBubble.gapMin) /
-                                  (RestBubble.gapMax - RestBubble.gapMin),
-                              onHold: (bool on) {
-                                _spotHold('rest', on);
-                                if (!on) {
-                                  b.setSpots(save: true);
-                                }
-                              },
-                              onChanged: (double v) {
-                                final double gap =
-                                    RestBubble.gapMin +
-                                    (RestBubble.gapMax - RestBubble.gapMin) * v;
-                                if ((gap - b.sideGap).abs() > 0.05) {
-                                  b.setSpots(gap: gap, show: 'rest');
-                                }
-                              },
-                            ),
-                            Text(
-                              'Tucked in, how much shows',
-                              style: LumenType.text(
-                                15,
-                                weight: 560,
-                                color: c.ink,
-                              ),
-                            ),
-                            LumenSlider(
-                              key: const ValueKey<String>('tuck'),
-                              value:
-                                  (b.sideTuck - RestBubble.tuckMin) /
-                                  (RestBubble.tuckMax - RestBubble.tuckMin),
-                              onHold: (bool on) {
-                                _spotHold('tuck', on);
-                                if (!on) {
-                                  b.setSpots(save: true);
-                                }
-                              },
-                              onChanged: (double v) {
-                                final double tuck =
-                                    RestBubble.tuckMin +
-                                    (RestBubble.tuckMax - RestBubble.tuckMin) *
-                                        v;
-                                if ((tuck - b.sideTuck).abs() > 0.05) {
-                                  b.setSpots(tuck: tuck, show: 'tuck');
-                                }
-                              },
-                            ),
-                            const SizedBox(height: 4),
-                          ],
                           // Names under its blobs: each has its own choice.
                           Text(
                             'Labels',
@@ -1094,22 +969,8 @@ class _ShellState extends State<Shell>
                             key: Robot.key('names'),
                             values: const <bool>[true, false],
                             labels: const <String>['Show', 'Hide'],
-                            value: _designSide.value
-                                ? b.sideNames
-                                : BlobSlots.instance.names,
-                            onChanged: (bool v) {
-                              if (_designSide.value) {
-                                Haptics.tick();
-                                Diag.instance.event(
-                                  v
-                                      ? 'Sidekick names on'
-                                      : 'Sidekick names off',
-                                );
-                                b.setSideNames(v);
-                              } else {
-                                _setNames(v);
-                              }
-                            },
+                            value: BlobSlots.instance.names,
+                            onChanged: _setNames,
                           ),
                           const SizedBox(height: 14),
                           // The blobs' own choice; the app list has its own, behind its cog.
@@ -1122,31 +983,19 @@ class _ShellState extends State<Shell>
                             ),
                           ),
                           const SizedBox(height: 8),
-                          // (Each its own from build 176: Prism's blobs, or the Sidekick's.)
+                          // (Prism's blobs' own: the Sidekick has its own, in its own panel.)
                           Segmented<bool>(
                             key: Robot.key('blobIcons'),
                             values: const <bool>[true, false],
                             labels: const <String>['Prism', 'Regular'],
-                            value: _designSide.value
-                                ? b.sidePrismIcons
-                                : Apps.instance.blobPrismIcons,
-                            onChanged: (bool v) {
-                              if (_designSide.value) {
-                                Diag.instance.event(
-                                  'Sidekick icons: ${v ? 'Prism' : 'regular'}',
-                                );
-                                b.setSideIcons(v);
-                                // (Its pictures again, in its own choice.)
-                                _sendSidekick();
-                              } else {
-                                Apps.instance.setPrismIcons(v, blobs: true);
-                              }
-                            },
+                            value: Apps.instance.blobPrismIcons,
+                            onChanged: (bool v) =>
+                                Apps.instance.setPrismIcons(v, blobs: true),
                           ),
                           const SizedBox(height: 16),
                           // Prism's two-finger swipes: what each of the four does. A tap on one
                           // asks what it should do.
-                          if (!_designSide.value) ...<Widget>[
+                          ...<Widget>[
                             Text(
                               'Two-finger swipes',
                               style: LumenType.text(
@@ -1242,15 +1091,11 @@ class _ShellState extends State<Shell>
                             key: Robot.key('blobVivid'),
                             values: const <bool>[false, true],
                             labels: const <String>['Mellow', 'Vivid'],
-                            value: _designSide.value
-                                ? b.sideVivid
-                                : Apps.instance.blobVivid,
+                            value: Apps.instance.blobVivid,
                             onChanged: (bool v) {
-                              _designSide.value
-                                  ? b.setSideVivid(v)
-                                  : Apps.instance.setBlobVivid(v);
+                              Apps.instance.setBlobVivid(v);
                               Diag.instance.event(
-                                '${_designSide.value ? 'side blob' : 'main button'} ${v ? 'vivid' : 'mellow'}',
+                                'main button ${v ? 'vivid' : 'mellow'}',
                               );
                               setState(() {});
                             },
@@ -1278,11 +1123,9 @@ class _ShellState extends State<Shell>
                                   behavior: HitTestBehavior.opaque,
                                   onTap: () {
                                     Haptics.tick();
-                                    _designSide.value
-                                        ? b.setSideLook(look.id)
-                                        : Apps.instance.setBlobLook(look.id);
+                                    Apps.instance.setBlobLook(look.id);
                                     Diag.instance.event(
-                                      '${_designSide.value ? 'side blob' : 'main button'} look: ${look.name}',
+                                      'main button look: ${look.name}',
                                     );
                                     // (A look that turns, or does not: the sign takes it up at once.)
                                     _signSync();
@@ -1305,11 +1148,9 @@ class _ShellState extends State<Shell>
                                                 color: c.accent.withValues(
                                                   alpha:
                                                       BlobSign.of(
-                                                            _designSide.value
-                                                                ? b.sideLook
-                                                                : Apps
-                                                                      .instance
-                                                                      .blobLook,
+                                                            Apps
+                                                                .instance
+                                                                .blobLook,
                                                           ) ==
                                                           look
                                                       ? 1
@@ -1338,11 +1179,9 @@ class _ShellState extends State<Shell>
                                                             in _signBlobs)
                                                           b.$2,
                                                       ],
-                                                      vivid: _designSide.value
-                                                          ? b.sideVivid
-                                                          : Apps
-                                                                .instance
-                                                                .blobVivid,
+                                                      vivid: Apps
+                                                          .instance
+                                                          .blobVivid,
                                                     ),
                                             ),
                                           ),
@@ -1356,22 +1195,14 @@ class _ShellState extends State<Shell>
                                             12.5,
                                             weight:
                                                 BlobSign.of(
-                                                      _designSide.value
-                                                          ? b.sideLook
-                                                          : Apps
-                                                                .instance
-                                                                .blobLook,
+                                                      Apps.instance.blobLook,
                                                     ) ==
                                                     look
                                                 ? 650
                                                 : 500,
                                             color:
                                                 BlobSign.of(
-                                                      _designSide.value
-                                                          ? b.sideLook
-                                                          : Apps
-                                                                .instance
-                                                                .blobLook,
+                                                      Apps.instance.blobLook,
                                                     ) ==
                                                     look
                                                 ? c.ink
@@ -1397,19 +1228,11 @@ class _ShellState extends State<Shell>
     ).whenComplete(() {
       _panelOpen = false;
       _closePanel = null;
-      _designSide.removeListener(_sideInSight);
       // (Closed: the Sidekick is hidden only if another panel is still open. Whatever was said
       // while this one was open, a closed panel never leaves it hidden.)
       RestBubble.instance.tellCovered(PanelWatch.instance.anyOpen);
       if (mounted) {
         _signSync();
-      }
-      if (_panelBack) {
-        // Prism came forward only for this: back to the app you were in.
-        _panelBack = false;
-        const MethodChannel('lumen/device')
-            .invokeMethod<void>('toBack')
-            .catchError((Object _) {});
       }
     });
   }
@@ -1430,17 +1253,6 @@ class _ShellState extends State<Shell>
         child: w,
       ),
   ];
-
-  void _setFloating({bool? inPrism, bool? overApps}) {
-    Haptics.tick();
-    RestBubble.instance.setFloating(inPrism: inPrism, overApps: overApps);
-    if (!RestBubble.instance.canFloat &&
-        RestBubble.instance.pinned.value != null) {
-      // Nothing floats any more: what was floating is a blob in the menu again.
-      RestBubble.instance.setPin(null);
-      _sendPin();
-    }
-  }
 
   // The blob being carried is held against a side of the screen, where the lens rests.
   bool _stuck = false;
@@ -2659,7 +2471,7 @@ class _ShellState extends State<Shell>
     const MethodChannel('lumen/device').setMethodCallHandler((
       MethodCall call,
     ) async {
-      if (call.method.startsWith('sidekick') || call.method == 'sideSettings') {
+      if (call.method.startsWith('sidekick')) {
         // (Written down: which Prism got what Android sent. See Floater.toPrism.)
         Diag.instance.event(
           'Prism #$_engineNo got ${call.method}${mounted ? '' : ' (but it is not on the screen)'}',
@@ -2704,24 +2516,6 @@ class _ShellState extends State<Shell>
               in (call.arguments as List<Object?>?) ?? const <Object?>[])
             '$k',
         ]);
-        return;
-      }
-      if (call.method == 'sideSettings' && mounted) {
-        // The Sidekick was held: its settings, here. Prism steps back afterwards if it came
-        // forward only for this.
-        if (_sheetOpen) {
-          _closeSheet();
-        }
-        if (_drawerOpen) {
-          _setDrawer(false);
-        }
-        _setOpen(false);
-        final Object? a = call.arguments;
-        if (!_panelOpen) {
-          _panelBack = a is Map && a['back'] == true;
-          _designSide.value = true;
-          _showFloating();
-        }
         return;
       }
       if (call.method == 'notes') {
@@ -3377,9 +3171,7 @@ class _ShellState extends State<Shell>
         });
         t.check(
           'settings: holding the closed button opens them, for Prism',
-          _panelOpen &&
-              !_designSide.value &&
-              Robot.spot('blobDesignFor') != null,
+          _panelOpen && Robot.spot('names') != null,
         );
         t.check(
           'settings: the hold brought out neither the glass nor the blobs',
@@ -3389,9 +3181,11 @@ class _ShellState extends State<Shell>
           'sign: while its settings are open it has turned half way, as for the app list',
           (_signTurn.target - math.pi).abs() < 0.01 && _cog.target == 0,
         );
+        // (From build 178 the Sidekick's settings are its own, over the app it is in: Prism's
+        // have no Sidekick part at all. The Sidekick's own panel is checked in the button test.)
         t.check(
-          'settings: Prism has no "In this app" switch',
-          Robot.spot('floatIn') == null,
+          'settings: Prism\'s have no Sidekick part (no Prism | Sidekick, no "In Prism")',
+          Robot.spot('blobDesignFor') == null && Robot.spot('floatIn') == null,
         );
         final Offset? names = Robot.spot('names');
         t.check('names: the switch is in the settings', names != null);
@@ -3413,24 +3207,6 @@ class _ShellState extends State<Shell>
             'at ${_far.value.round()}',
           );
         }
-        final Offset? whose = Robot.spot('blobDesignFor');
-        if (whose != null) {
-          await Robot.tap(whose + const Offset(80, 0), after: 700);
-        }
-        final Offset? inPrism = Robot.spot('floatIn');
-        t.check(
-          'settings: the Sidekick\'s has "In this app"',
-          _designSide.value && inPrism != null,
-        );
-        if (inPrism != null) {
-          await Robot.tap(inPrism + const Offset(120, 0), after: 500);
-          t.check(
-            'floating: "In this app" switches off',
-            !lensOf.floatIn.value,
-          );
-          await Robot.tap(inPrism + const Offset(120, 0), after: 500);
-          t.check('floating: and on again', lensOf.floatIn.value);
-        }
         final Offset? shut = Robot.spot('floatClose');
         if (shut != null) {
           await Robot.tap(shut, after: 900);
@@ -3438,7 +3214,7 @@ class _ShellState extends State<Shell>
         t.check(
           'settings: the X closes them, and the sign turns back',
           !_panelOpen &&
-              Robot.spot('blobDesignFor') == null &&
+              Robot.spot('names') == null &&
               _signTurn.target.abs() < 0.01,
         );
         // The button itself, still in sight below them, closes them too.
@@ -4376,7 +4152,7 @@ class _ShellState extends State<Shell>
         });
         t.check(
           'hold: the closed button held opens its settings, for Prism',
-          _panelOpen && !_designSide.value,
+          _panelOpen && Robot.spot('names') != null,
         );
         t.check(
           'hold: and neither the glass nor the blobs came out',
@@ -4813,7 +4589,7 @@ class _ShellState extends State<Shell>
         }
         t.check(
           'space: Edit Prism opens Prism\'s settings, and the blobs go in',
-          _panelOpen && !_designSide.value && !_open,
+          _panelOpen && Robot.spot('names') != null && !_open,
         );
         await closePanel();
         clean('after the empty space\'s menu');
@@ -4850,32 +4626,13 @@ class _ShellState extends State<Shell>
             _panelOpen && !_drawerOpen,
           );
         }
-        // (Each half is found by its own key: the panel changes size and place when the
-        // Sidekick's switches come into it, and on a phone it may not be where it is here.)
         await memoryAt('part 4: a swipe\'s list, and back');
-        final Offset? toSide = Robot.spot('designSidekick');
-        if (toSide != null) {
-          await Robot.tap(toSide, after: 800);
-          t.check(
-            'settings: Sidekick chosen, its own switches show',
-            _designSide.value && Robot.spot('floatIn') != null,
-          );
-          final Offset? toPrism = Robot.spot('designPrism');
-          if (toPrism == null) {
-            t.skip(
-              'settings: Prism chosen again, the Sidekick\'s switches go',
-              'the Prism half of the picker was not found',
-            );
-          } else {
-            await Robot.tap(toPrism, after: 800);
-            t.check(
-              'settings: Prism chosen again, the Sidekick\'s switches go',
-              !_designSide.value && Robot.spot('floatIn') == null,
-              'tapped at ${toPrism.dx.round()},${toPrism.dy.round()}; now ${_designSide.value ? 'Sidekick' : 'Prism'}, panel ${_panelOpen ? 'open' : 'closed'}',
-            );
-          }
-        }
-        await memoryAt('part 4: Sidekick, then Prism, chosen');
+        // (From build 178 the Sidekick's settings are its own, over the app it is in: checked in
+        // part 5, on the phone.)
+        t.check(
+          'settings: Prism\'s have no Prism | Sidekick, and no Sidekick switches',
+          Robot.spot('blobDesignFor') == null && Robot.spot('floatIn') == null,
+        );
         await closePanel();
         await memoryAt('part 4: settings closed');
         clean('after the settings\' own parts');
@@ -5340,161 +5097,149 @@ class _ShellState extends State<Shell>
             await calm();
           }
         }
-        // Held, closed: its settings, for the Sidekick.
-        s = await press(
-          'sidekick held',
-          <Offset>[],
-          holdMs: _holdMs + 300,
-          settleMs: 1500,
-        );
-        await Robot.wait(900);
-        heard(
-          'sidekick: held, its settings come up, for the Sidekick',
-          _panelOpen && _designSide.value,
-        );
-        // What needs its settings to be up is checked only if they came up. (Without them,
-        // nothing hides the Sidekick: see _spotHold.)
-        final bool panelUp = _panelOpen && _designSide.value;
-        void inPanel(String name, bool ok, [String note = '']) => panelUp
-            ? t.check(name, ok, note)
-            : t.skip(name, 'its settings did not come up');
-        s = await where();
-        inPanel(
-          'sidekick: under its own settings it is hidden, so it cannot take their taps',
-          s['covered'] == true,
-          'hidden ${s['covered']}',
-        );
-        // The two distances, at their ends: it goes there to be seen.
-        final double gapWas = lensOf.sideGap, tuckWas = lensOf.sideTuck;
-        final double wPx = (s['w'] as num?)?.toDouble() ?? w;
-        // (As a finger on the slider: while it is held the panel clears and the Sidekick shows.)
-        _spotHold('rest', true);
-        await Robot.wait(700);
-        s = await where();
-        inPanel(
-          'sidekick: a slider held, the panel clears and it is shown',
-          _panelClear.value == 'rest' && s['covered'] != true,
-          'clear ${_panelClear.value}, hidden ${s['covered']}',
-        );
-        for (final double g in <double>[RestBubble.gapMin, RestBubble.gapMax]) {
-          lensOf.setSpots(gap: g, show: 'rest');
-          await Robot.wait(900);
-          s = await where();
-          final double x = (s['x'] as num?)?.toDouble() ?? -1;
-          final double size = (s['size'] as num?)?.toDouble() ?? 0;
-          final double fromEdge = math.min(x, wPx - x - size) / dp;
-          t.check(
-            'sidekick: distance from the edge ${g.round()}, it rests there',
-            (fromEdge - g).abs() < 6 && s['tucked'] != true,
-            '${fromEdge.toStringAsFixed(1)} points from the edge',
-          );
-        }
-        _spotHold('rest', false);
-        _spotHold('tuck', true);
-        for (final double k in <double>[
-          RestBubble.tuckMin,
-          RestBubble.tuckMax,
-        ]) {
-          lensOf.setSpots(tuck: k, show: 'tuck');
-          await Robot.wait(1100);
-          s = await where();
-          final double x = (s['x'] as num?)?.toDouble() ?? -1;
-          final double size = (s['size'] as num?)?.toDouble() ?? 0;
-          final double showing =
-              (x < 0 ? x + size : wPx - x).clamp(0, size) / dp;
-          t.check(
-            'sidekick: tucked, ${k.round()} points showing',
-            s['tucked'] == true && (showing - k).abs() < 8,
-            '${showing.toStringAsFixed(1)} points showing, tucked ${s['tucked']}',
-          );
-        }
-        lensOf.setSpots(gap: gapWas, tuck: tuckWas, show: 'rest', save: true);
-        await Robot.wait(900);
-        _spotHold('tuck', false);
-        await Robot.wait(700);
-        s = await where();
-        inPanel(
-          'sidekick: the slider let go, the panel is back and it is hidden again',
-          _panelClear.value == null && s['covered'] == true,
-          'clear ${_panelClear.value}, hidden ${s['covered']}',
-        );
-        // Its settings are kept by Android (build 176). Each one changed here is read back from
-        // Android, and Prism's own stays as it was (Icons, Colours and Look are each one's own).
+        // ------------------------------------------------ the Sidekick's own settings
+        // From build 178 they are its own panel, drawn by Android over the app it is in
+        // (SidekickPanel.kt): Prism neither comes forward nor is asked anything. Each way of
+        // opening it, its place, each of its parts, its two dials, and each way of closing it.
+        Future<Map<String, Object?>> panel(
+          String what, {
+          String part = '',
+          Object? dx,
+          int settleMs = 800,
+          int holdMs = 700,
+          int legMs = 400,
+        }) => t.lens(<String, Object?>{
+          'op': 'panel',
+          'what': what,
+          'part': part,
+          'dx': ?dx,
+          'settleMs': settleMs,
+          'holdMs': holdMs,
+          'legMs': legMs,
+        }, extraMs: 4000);
         Map<Object?, Object?>? kept(Map<String, Object?> m) =>
             m['sidekickSettings'] is Map
             ? m['sidekickSettings']! as Map<Object?, Object?>
             : null;
-        double? numAt(Map<Object?, Object?>? m, String k) =>
-            m?[k] is num ? (m![k]! as num).toDouble() : null;
-        s = await where();
-        final Map<Object?, Object?>? had = kept(s);
-        if (had == null) {
-          t.skip(
-            'sidekick settings: kept by Android, moved over from Prism once',
-            'Android did not say what it keeps',
-          );
-        } else {
-          t.check(
-            'sidekick settings: kept by Android, moved over from Prism once',
-            '${had['moved'] ?? ''}'.isNotEmpty,
-            '${had['moved']}',
-          );
-          t.check(
-            'sidekick settings: the distances just put back are kept by Android',
-            ((numAt(had, 'gap') ?? -99) - gapWas).abs() < 0.05 &&
-                ((numAt(had, 'tuck') ?? -99) - tuckWas).abs() < 0.05,
-            'kept ${had['gap']} and ${had['tuck']}, put back ${gapWas.toStringAsFixed(1)} and ${tuckWas.toStringAsFixed(1)}',
-          );
+        double numOf(Object? v) => v is num ? v.toDouble() : double.nan;
+        bool panelUp(Map<String, Object?> m) =>
+            m['panelOpen'] == true && m['panelOpenFully'] == true;
+        final double wPx = (s['w'] as num?)?.toDouble() ?? w;
+        // How far the Sidekick rests from its edge, and how much of it shows tucked, in points.
+        double fromEdge(Map<String, Object?> m) {
+          final double x = numOf(m['x']), size = numOf(m['size']);
+          return math.min(x, wPx - x - size) / dp;
         }
-        // One two-way choice of the Sidekick's, changed and put back: Android keeps each change,
-        // Prism's copy follows, and Prism's own choice is not touched.
+
+        double showing(Map<String, Object?> m) {
+          final double x = numOf(m['x']), size = numOf(m['size']);
+          return (x < 0 ? x + size : wPx - x).clamp(0, size) / dp;
+        }
+
+        // Opens it by holding the closed Sidekick; true if it came up.
+        Future<bool> holdOpen(String why) async {
+          await press(why, <Offset>[], holdMs: _holdMs + 300, settleMs: 1500);
+          await Robot.wait(700);
+          return panelUp(await where());
+        }
+
+        Future<void> shut() async {
+          if ((await where())['panelOpen'] == true) {
+            await panel('tap', part: 'close', settleMs: 900);
+          }
+        }
+
+        final int forwardsWas = numOf(s['forwards']).isNaN
+            ? -1
+            : numOf(s['forwards']).toInt();
+        final bool wasTucked = s['tucked'] == true;
+        final bool opened = await holdOpen('sidekick held');
+        s = await where();
+        heard(
+          'sidekick panel: held, its own settings come up, over the app it is in',
+          opened,
+          'open ${s['panelOpen']}, fully ${s['panelOpenFully']}',
+        );
+        void inPanel(String name, bool ok, [String note = '']) => opened
+            ? t.check(name, ok, note)
+            : t.skip(name, 'its own settings did not come up');
+        inPanel(
+          'sidekick panel: Prism did not come forward, and its own settings stayed shut',
+          numOf(s['forwards']).toInt() == forwardsWas &&
+              !_panelOpen &&
+              _signTurn.target.abs() < 0.01,
+          'brought forward ${numOf(s['forwards']).toInt() - forwardsWas} times, Prism\'s settings ${_panelOpen ? 'open' : 'shut'}',
+        );
+        inPanel(
+          'sidekick panel: it never takes the focus (Back and the keyboard stay the app\'s)',
+          s['panelFocusable'] == false,
+          'focusable ${s['panelFocusable']}',
+        );
+        final List<Object?> pbox =
+            (s['panelBox'] as List<Object?>?) ?? const <Object?>[];
+        final double sidekickX =
+            (numOf(s['x']) + numOf(s['size']) / 2) /
+            dp; // its middle, in points
+        inPanel(
+          'sidekick panel: beside the Sidekick, on the side away from it, about 330 points wide',
+          pbox.length == 4 &&
+              numOf(pbox[2]) <= 330.5 &&
+              numOf(pbox[2]) >= 280 &&
+              (s['panelOnRight'] == true
+                  ? numOf(pbox[0]) + numOf(pbox[2]) < sidekickX
+                  : numOf(pbox[0]) > sidekickX),
+          'box ${pbox.map((Object? v) => numOf(v).round()).join(', ')}; the Sidekick\'s middle at ${sidekickX.round()}',
+        );
+        inPanel('sidekick panel: it grew out of the Sidekick, where it is', () {
+          final List<Object?> from =
+              (s['panelFrom'] as List<Object?>?) ?? const <Object?>[];
+          return from.length == 3 && (numOf(from[0]) - sidekickX).abs() < 6;
+        }(), 'from ${s['panelFrom']}');
+        inPanel(
+          'sidekick panel: the Sidekick stays in sight, above the panel',
+          s['lens'] == true && s['lensAbove'] == true && s['covered'] != true,
+          'shown ${s['lens']}, above ${s['lensAbove']}, hidden ${s['covered']}',
+        );
+        inPanel(
+          'sidekick panel: the shade is over the app',
+          (numOf(s['panelShade']) - 0.4).abs() < 0.02,
+          'shade ${numOf(s['panelShade']).toStringAsFixed(2)}',
+        );
+        // Each two-way choice, changed in the panel and put back: kept by Android, and Prism's
+        // copy follows; Prism's own choice is not touched.
         Future<void> choice(
           String what,
-          String spot,
+          String part,
           String key,
           bool Function() copy,
           bool Function() prismOwn, {
-          required bool leftIs,
+          required bool first,
         }) async {
-          if (!panelUp || had == null) {
+          if (!opened) {
             t.skip(
-              'sidekick settings: $what changed, kept by Android, Prism\'s own untouched',
-              panelUp
-                  ? 'Android did not say what it keeps'
-                  : 'its settings did not come up',
+              'sidekick panel: $what changed, kept by Android, Prism\'s own untouched',
+              'its own settings did not come up',
             );
             return;
           }
-          final BuildContext? at = Robot.key(spot).currentContext;
-          if (at != null && at.mounted) {
-            await Scrollable.ensureVisible(at);
-            await Robot.wait(300);
-          }
-          final Offset? o = Robot.spot(spot);
-          if (o == null) {
-            t.check(
-              'sidekick settings: $what changed, kept by Android, Prism\'s own untouched',
-              false,
-              'its picker is not in the panel',
-            );
-            return;
-          }
-          final bool was = copy(), prismWas = prismOwn();
-          // (The left half is [leftIs], the right half the other.)
-          Offset half(bool v) => o + Offset(v == leftIs ? -88 : 88, 0);
-          await Robot.tap(half(!was), after: 900);
-          final Map<Object?, Object?>? now = kept(await where());
+          final Map<Object?, Object?>? had = kept(await where());
+          final bool was = had?[key] == true, prismWas = prismOwn();
+          // (Index 0 is [first]'s value, index 1 the other.)
+          int at(bool v) => v == first ? 0 : 1;
+          s = await panel('tap', part: '$part.${at(!was)}');
+          final Map<Object?, Object?>? now = kept(s);
+          await Robot.wait(300);
           t.check(
-            'sidekick settings: $what changed, kept by Android, Prism\'s own untouched',
+            'sidekick panel: $what changed, kept by Android, Prism\'s own untouched',
             now?[key] == !was && copy() == !was && prismOwn() == prismWas,
             'Android ${now?[key]}, Prism\'s copy ${copy()}, Prism\'s own ${prismOwn()} (was $prismWas)',
           );
-          await Robot.tap(half(was), after: 900);
-          final Map<Object?, Object?>? back = kept(await where());
+          s = await panel('tap', part: '$part.${at(was)}');
+          await Robot.wait(300);
           t.check(
-            'sidekick settings: $what back as it was, kept by Android',
-            back?[key] == was && copy() == was,
-            'Android ${back?[key]}, Prism\'s copy ${copy()}',
+            'sidekick panel: $what back as it was',
+            kept(s)?[key] == was && copy() == was,
+            'Android ${kept(s)?[key]}, Prism\'s copy ${copy()}',
           );
         }
 
@@ -5504,112 +5249,249 @@ class _ShellState extends State<Shell>
           'names',
           () => lensOf.sideNames,
           () => BlobSlots.instance.names,
-          leftIs: true,
+          first: true,
         );
         await choice(
           'Icons',
-          'blobIcons',
+          'prismIcons',
           'prismIcons',
           () => lensOf.sidePrismIcons,
           () => Apps.instance.blobPrismIcons,
-          leftIs: true,
+          first: true,
         );
         await choice(
           'Colours',
-          'blobVivid',
+          'vivid',
           'vivid',
           () => lensOf.sideVivid,
           () => Apps.instance.blobVivid,
-          leftIs: false,
+          first: false,
         );
-        // Its look: another one chosen, then its own put back.
-        if (panelUp && had != null) {
-          final String lookWas = lensOf.sideLook,
-              prismLook = Apps.instance.blobLook;
-          final BlobLook other = BlobSign.looks.firstWhere(
-            (BlobLook l) => BlobSign.of(lookWas) != l,
-          );
-          final BuildContext? at = Robot.key('blobLook-${other.id}')
-              .currentContext;
-          if (at != null && at.mounted) {
-            await Scrollable.ensureVisible(at);
-            await Robot.wait(300);
-          }
-          final Offset? o = Robot.spot('blobLook-${other.id}');
-          if (o != null) {
-            await Robot.tap(o, after: 900);
-          }
-          final Map<Object?, Object?>? now = kept(await where());
+        // Its look: another one chosen, then its own again.
+        if (opened) {
+          final String lookWas = '${kept(await where())?['look'] ?? ''}'.isEmpty
+              ? 'window'
+              : '${kept(await where())?['look']}';
+          final String prismLook = Apps.instance.blobLook;
+          final String other = lookWas == 'halo' ? 'pearls' : 'halo';
+          s = await panel('tap', part: 'look.$other');
+          await Robot.wait(300);
           t.check(
-            'sidekick settings: another look chosen, kept by Android, Prism\'s own untouched',
-            o != null &&
-                now?['look'] == other.id &&
-                lensOf.sideLook == other.id &&
+            'sidekick panel: another look chosen, kept by Android, Prism\'s own untouched',
+            kept(s)?['look'] == other &&
+                lensOf.sideLook == other &&
                 Apps.instance.blobLook == prismLook,
-            'Android ${now?['look']}, Prism\'s copy ${lensOf.sideLook}, Prism\'s own ${Apps.instance.blobLook}',
+            'Android ${kept(s)?['look']}, Prism\'s copy ${lensOf.sideLook}, Prism\'s own ${Apps.instance.blobLook}',
           );
-          lensOf.setSideLook(lookWas);
-          await Robot.wait(700);
-          final Map<Object?, Object?>? back = kept(await where());
+          s = await panel('tap', part: 'look.$lookWas');
           t.check(
-            'sidekick settings: its own look back, kept by Android',
-            back?['look'] == lookWas,
-            'Android ${back?['look']}, was ${lookWas.isEmpty ? '(the first)' : lookWas}',
+            'sidekick panel: its own look back',
+            kept(s)?['look'] == lookWas,
+            'Android ${kept(s)?['look']}, was $lookWas',
           );
         } else {
           t.skip(
-            'sidekick settings: another look chosen, kept by Android, Prism\'s own untouched',
-            panelUp
-                ? 'Android did not say what it keeps'
-                : 'its settings did not come up',
+            'sidekick panel: another look chosen, kept by Android, Prism\'s own untouched',
+            'its own settings did not come up',
           );
         }
-        // Prism's panel colours, kept by Android for the Sidekick's own panel later.
-        t.check(
-          'sidekick settings: Prism\'s panel colours have reached Android',
-          ((numAt(kept(await where()), 'palette') ?? 0)) >= 16,
-          '${kept(await where())?['palette']} colours kept',
-        );
-        // (Back to the top of the panel: the checks above scrolled it down to the looks, which put
-        // Prism | Sidekick and the X out of sight, and a tap there would land on the panel itself.)
-        final BuildContext? top = Robot.key('blobDesignFor').currentContext;
-        if (panelUp && top != null && top.mounted) {
-          await Scrollable.ensureVisible(top);
-          await Robot.wait(400);
-        }
-        // Prism chosen in the same panel: the Sidekick steps aside, as under any panel.
-        final Offset? toPrism = panelUp ? Robot.spot('designPrism') : null;
-        if (!panelUp) {
-          t.skip(
-            'sidekick: under Prism\'s own settings it is hidden',
-            'its settings did not come up',
+        // "Over other apps", off and on again, over Prism: the Sidekick stays (it is in Prism).
+        if (opened) {
+          s = await panel('tap', part: 'overApps', settleMs: 900);
+          t.check(
+            'sidekick panel: "Over other apps" off: kept by Android, it stays here, the panel stays',
+            kept(s)?['overApps'] == false &&
+                !lensOf.floatOut.value &&
+                s['lens'] == true &&
+                panelUp(s),
+            'Android ${kept(s)?['overApps']}, Prism\'s copy ${lensOf.floatOut.value}, shown ${s['lens']}, panel ${s['panelOpen']}',
+          );
+          s = await panel('tap', part: 'overApps', settleMs: 900);
+          t.check(
+            'sidekick panel: "Over other apps" on again',
+            kept(s)?['overApps'] == true && lensOf.floatOut.value,
+            'Android ${kept(s)?['overApps']}',
           );
         }
-        if (toPrism != null) {
-          await Robot.tap(toPrism, after: 900);
+        // The two dials. Touching one puts the Sidekick in that state at once; the panel stays
+        // and only the shade lifts; sliding toward the middle of the screen is more; let go, the
+        // shade comes back with no flash, and the Sidekick goes back to the state it was in.
+        final double inward = s['panelOnRight'] == true ? -1 : 1;
+        Future<void> dial(String id, String name, bool tucks) async {
+          if (!opened) {
+            t.skip(
+              'sidekick panel: $name touched, the Sidekick goes there, only the shade lifts',
+              'its own settings did not come up',
+            );
+            return;
+          }
+          final double was = numOf(kept(await where())?[id]);
+          s = await panel('press', part: 'ruler.$id', holdMs: 900);
+          t.check(
+            'sidekick panel: $name touched, the Sidekick goes there, only the shade lifts',
+            (s['tucked'] == true) == tucks &&
+                numOf(s['panelShade']) < 0.25 &&
+                numOf(s['panelLeastSinceOpen']) >= 0.999 &&
+                s['lens'] == true,
+            'tucked ${s['tucked']}, shade ${numOf(s['panelShade']).toStringAsFixed(2)}, the panel at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}',
+          );
+          await Robot.wait(900);
           s = await where();
           t.check(
-            'sidekick: under Prism\'s own settings it is hidden',
-            s['covered'] == true,
-            'hidden ${s['covered']}',
+            'sidekick panel: $name let go, the shade is back with no flash, the Sidekick as it was',
+            (numOf(s['panelShade']) - 0.4).abs() < 0.02 &&
+                numOf(s['panelLeastSinceOpen']) >= 0.999 &&
+                (s['tucked'] == true) == wasTucked,
+            'shade ${numOf(s['panelShade']).toStringAsFixed(2)}, the panel at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, tucked ${s['tucked']} (was $wasTucked)',
+          );
+          // Slid toward the middle by 4 points' worth (16 points of finger a point), then back.
+          final double max = id == 'gap'
+              ? RestBubble.gapMax
+              : RestBubble.tuckMax;
+          final double min = id == 'gap'
+              ? RestBubble.gapMin
+              : RestBubble.tuckMin;
+          final double step = was + 4 <= max ? 4 : -4;
+          s = await panel(
+            'drag',
+            part: 'ruler.$id',
+            dx: <double>[inward * step * 16],
+            legMs: 700,
+            settleMs: 1300,
+          );
+          final double now = numOf(kept(s)?[id]);
+          t.check(
+            'sidekick panel: $name slid toward the ${step > 0 ? 'middle' : 'edge'}, ${step.abs().round()} points ${step > 0 ? 'more' : 'less'}, kept by Android',
+            (now - (was + step).clamp(min, max)).abs() < 0.01 &&
+                (numOf(id == 'gap' ? lensOf.sideGap : lensOf.sideTuck) - now)
+                        .abs() <
+                    0.01,
+            'was ${was.round()}, now ${now.round()}, Prism\'s copy ${(id == 'gap' ? lensOf.sideGap : lensOf.sideTuck).round()}',
+          );
+          if (id == 'gap' && !wasTucked) {
+            await Robot.wait(600);
+            final Map<String, Object?> r = await where();
+            t.check(
+              'sidekick panel: it rests at the new distance',
+              (fromEdge(r) - now).abs() < 6 && r['tucked'] != true,
+              '${fromEdge(r).toStringAsFixed(1)} points from the edge',
+            );
+          }
+          s = await panel(
+            'drag',
+            part: 'ruler.$id',
+            dx: <double>[-inward * step * 16],
+            legMs: 700,
+            settleMs: 1300,
+          );
+          t.check(
+            'sidekick panel: $name slid back',
+            (numOf(kept(s)?[id]) - was).abs() < 0.01,
+            'now ${numOf(kept(s)?[id]).round()}, was ${was.round()}',
           );
         }
-        await closePanel();
-        await Robot.wait(600);
-        s = await where();
+
+        await dial('gap', 'Hovering', false);
+        await dial('tuck', 'Tucked in', true);
+        // A flick: it coasts on past where the finger stopped, and lands on a whole point.
+        if (opened) {
+          final double was = numOf(kept(await where())?['gap']);
+          final double room = RestBubble.gapMax - was;
+          final double way = room >= 8 ? 1 : -1;
+          s = await panel(
+            'flick',
+            part: 'ruler.gap',
+            dx: <double>[inward * way * 48],
+            settleMs: 2200,
+          );
+          final double now = numOf(kept(s)?['gap']);
+          t.check(
+            'sidekick panel: Hovering flicked, it coasts past the finger and lands on a whole point',
+            (now - now.roundToDouble()).abs() < 0.001 && (now - was) * way > 3,
+            'was ${was.round()}, now $now, the finger moved 3 points\' worth',
+          );
+          await lensOf.testPut(<String, Object>{'gap': was});
+          await Robot.wait(400);
+        }
+        // Prism's panel colours, kept by Android for this panel.
         t.check(
-          'sidekick: settings closed, it is back in sight, out at its place',
-          s['lens'] == true && s['covered'] != true,
-          'shown ${s['lens']}, hidden ${s['covered']}, tucked ${s['tucked']}',
+          'sidekick panel: Prism\'s panel colours have reached it',
+          numOf(kept(await where())?['palette']) >= 16,
+          '${kept(await where())?['palette']} colours kept',
         );
-        clean('after the Sidekick\'s settings');
-        // The keyboard and a window over it (build 176, a measurement for the Sidekick's own
-        // panel): Prism's own text field has the keyboard up, and Android puts a small window
-        // that can't be seen over it for 2 seconds. A: one that never takes the focus (as the
-        // Sidekick's menu; the keyboard must stay). B: one that takes the focus but can never
-        // type (the panel would hear Back that way; does the keyboard stay?). Measured from
-        // both sides: Android's own view of Prism's window, and Prism's (how tall the keyboard
-        // is, every 100 ms, whether Prism's window lost the focus, whether its field kept it).
+        // Closed by its X: the Sidekick as it was.
+        if (opened) {
+          s = await panel('tap', part: 'close', settleMs: 900);
+          t.check(
+            'sidekick panel: its X closes it, back into the Sidekick, which is as it was',
+            s['panelOpen'] != true &&
+                s['lens'] == true &&
+                (s['tucked'] == true) == wasTucked,
+            'open ${s['panelOpen']}, shown ${s['lens']}, tucked ${s['tucked']}',
+          );
+        }
+        // Closed by a tap on the shade, by a tap on the Sidekick (which then does nothing else),
+        // and by Home.
+        for (final (String how, Future<void> Function() close)
+            in <(String, Future<void> Function())>[
+              (
+                'a tap on the shade',
+                () async => panel('tap', part: 'shade', settleMs: 900),
+              ),
+              (
+                'a tap on the Sidekick',
+                () async => press(
+                  'sidekick tapped, its panel open',
+                  <Offset>[],
+                  holdMs: 60,
+                  settleMs: 1100,
+                ),
+              ),
+              ('Home', () async => panel('home', settleMs: 900)),
+            ]) {
+          if (!await holdOpen('sidekick held, to close it by $how')) {
+            t.skip(
+              'sidekick panel: $how closes it',
+              'its own settings did not come up',
+            );
+            continue;
+          }
+          await close();
+          await Robot.wait(500);
+          s = await where();
+          t.check(
+            'sidekick panel: $how closes it',
+            s['panelOpen'] != true && s['menu'] != true && s['lens'] == true,
+            'open ${s['panelOpen']}, its blobs ${s['menu']}, shown ${s['lens']}, closed by "${s['panelClosed']}"',
+          );
+        }
+        // The other two ways of opening it: held in the middle of its blobs, and Edit Sidekick.
+        if (await openMenu()) {
+          await menu('middleHold', settleMs: 1500);
+          await Robot.wait(900);
+          s = await where();
+          heard(
+            'sidekick panel: held in the middle of its blobs, its own settings come up',
+            panelUp(s) && s['menu'] != true && !_panelOpen,
+            'open ${s['panelOpen']}, its blobs ${s['menu']}',
+          );
+          await shut();
+        }
+        if (await openMenu()) {
+          await menu('spaceHold', settleMs: 900);
+          s = await menu('pop', which: 0, settleMs: 1500);
+          await Robot.wait(900);
+          s = await where();
+          heard(
+            'sidekick panel: Edit Sidekick brings its own settings',
+            panelUp(s) && s['menu'] != true && !_panelOpen,
+            'open ${s['panelOpen']}, its blobs ${s['menu']}',
+          );
+          await shut();
+        }
+        // The keyboard: Prism's own text field has it up, the Sidekick's panel opens over it and
+        // closes again. The keyboard must stay up the whole time (decision A, build 177: the
+        // panel never takes the focus). Prism's window reads how tall the keyboard is.
         Diag.instance.typingShown.value = true;
         await Robot.wait(400);
         Diag.instance.typing.requestFocus();
@@ -5624,93 +5506,122 @@ class _ShellState extends State<Shell>
           await Robot.wait(100);
         }
         if (keyboard() <= 0) {
-          for (final String kind in <String>['A', 'B']) {
-            t.skip(
-              'keyboard: probe $kind measured',
-              'the keyboard did not come up for Prism\'s own text field',
-            );
-          }
+          t.skip(
+            'sidekick panel: opened and closed over a keyboard, the keyboard stays up',
+            'the keyboard did not come up for Prism\'s own text field',
+          );
         } else {
-          await Robot.wait(600);
-          for (final String kind in <String>['A', 'B']) {
-            final double before = keyboard();
-            final List<double> seen = <double>[];
-            bool inactive = false;
-            final Timer every = Timer.periodic(
-              const Duration(milliseconds: 100),
-              (Timer _) {
-                seen.add(keyboard());
-                if (WidgetsBinding.instance.lifecycleState ==
-                    AppLifecycleState.inactive) {
-                  inactive = true;
-                }
-              },
-            );
-            final Map<String, Object?> m = await t.lens(<String, Object?>{
-              'op': 'keyboardProbe',
-              'kind': kind,
-              'ms': 2000,
-            }, extraMs: 3000);
-            every.cancel();
-            final bool answered = m['probe'] is List;
-            final bool stayed =
-                seen.isNotEmpty && seen.every((double k) => k > 0);
-            final String down = seen.isEmpty
-                ? 'no readings'
-                : stayed
-                ? 'up the whole time'
-                : 'down at ${seen.indexWhere((double k) => k <= 0) * 100} ms';
-            final String told = answered
-                ? (m['probe']! as List<Object?>).join(' / ')
-                : '${m['note'] ?? 'no answer'}';
-            t.note(
-              'KEYBOARD PROBE $kind (${kind == 'A' ? 'never takes the focus' : 'takes the focus, can never type'}), Android ${m['sdk'] ?? '?'}: '
-              'Prism saw the keyboard ${before.round()} px tall before, $down; Prism\'s window ${inactive ? 'lost' : 'kept'} the focus; '
-              'its field ${Diag.instance.typing.hasFocus ? 'kept' : 'lost'} it. Android saw: $told',
-            );
-            if (kind == 'A') {
-              answered
-                  ? t.check(
-                      'keyboard: a window that never takes the focus leaves it up (the measurement\'s control)',
-                      stayed,
-                      down,
-                    )
-                  : t.skip(
-                      'keyboard: a window that never takes the focus leaves it up (the measurement\'s control)',
-                      'Android did not answer: $told',
-                    );
-            } else {
-              // (Not right or wrong: what it found decides how the Sidekick's panel hears Back.)
-              answered
-                  ? t.check('keyboard: probe B measured', true, down)
-                  : t.skip(
-                      'keyboard: probe B measured',
-                      'Android did not answer: $told',
-                    );
-            }
-            // (The keyboard back up for the next, if it went.)
-            if (!Diag.instance.typing.hasFocus) {
-              Diag.instance.typing.requestFocus();
-            }
-            for (int i = 0; i < 20 && keyboard() <= 0; i++) {
-              await Robot.wait(100);
-            }
-            await Robot.wait(500);
-          }
+          await Robot.wait(500);
+          final List<double> seen = <double>[];
+          final Timer every = Timer.periodic(
+            const Duration(milliseconds: 100),
+            (Timer _) => seen.add(keyboard()),
+          );
+          final bool up = await holdOpen('sidekick held, over a keyboard');
+          await shut();
+          await Robot.wait(800);
+          every.cancel();
+          t.check(
+            'sidekick panel: opened and closed over a keyboard, the keyboard stays up',
+            up && seen.isNotEmpty && seen.every((double k) => k > 0),
+            up
+                ? (seen.every((double k) => k > 0)
+                      ? 'up the whole time (${seen.length} readings)'
+                      : 'down at ${seen.indexWhere((double k) => k <= 0) * 100} ms')
+                : 'its own settings did not come up',
+          );
         }
         Diag.instance.typing.unfocus();
         Diag.instance.typingShown.value = false;
         await Robot.wait(900);
-        // Held in the middle of its own blobs: its settings too.
-        if (await openMenu()) {
-          s = await menu('middleHold', settleMs: 1500);
+        // The two distances at their ends (put by the test, as the dials would): it goes there.
+        final double gapWas = lensOf.sideGap, tuckWas = lensOf.sideTuck;
+        for (final double g in <double>[RestBubble.gapMin, RestBubble.gapMax]) {
+          await lensOf.testPut(<String, Object>{'gap': g}, show: 'rest');
           await Robot.wait(900);
-          heard(
-            'sidekick: held in the middle of its blobs, its settings come up',
-            _panelOpen && _designSide.value && s['menu'] != true,
+          s = await where();
+          t.check(
+            'sidekick: distance from the edge ${g.round()}, it rests there',
+            (fromEdge(s) - g).abs() < 6 && s['tucked'] != true,
+            '${fromEdge(s).toStringAsFixed(1)} points from the edge',
           );
-          await closePanel();
         }
+        for (final double k in <double>[
+          RestBubble.tuckMin,
+          RestBubble.tuckMax,
+        ]) {
+          await lensOf.testPut(<String, Object>{'tuck': k}, show: 'tuck');
+          await Robot.wait(1100);
+          s = await where();
+          t.check(
+            'sidekick: tucked, ${k.round()} points showing',
+            s['tucked'] == true && (showing(s) - k).abs() < 8,
+            '${showing(s).toStringAsFixed(1)} points showing, tucked ${s['tucked']}',
+          );
+        }
+        await lensOf.testPut(<String, Object>{
+          'gap': gapWas,
+          'tuck': tuckWas,
+        }, show: wasTucked ? 'tuck' : 'rest');
+        await Robot.wait(900);
+        // Switched off in Prism: it goes, and its panel with it; switched off everywhere, Prism's
+        // settings page offers to bring it back, which brings it back.
+        if (await holdOpen('sidekick held, to switch it off')) {
+          s = await panel('tap', part: 'inApp', settleMs: 1300);
+          await Robot.wait(600);
+          s = await where();
+          t.check(
+            'sidekick panel: "In Prism" off: kept by Android, the Sidekick goes, and so does the panel',
+            kept(s)?['inApp'] == false &&
+                !lensOf.floatIn.value &&
+                s['lens'] != true &&
+                s['panelOpen'] != true,
+            'Android ${kept(s)?['inApp']}, shown ${s['lens']}, panel ${s['panelOpen']}',
+          );
+          lensOf.setFloating(overApps: false);
+          await Robot.wait(600);
+          if (mounted) {
+            showPrismSettings(context);
+          }
+          await Robot.wait(1200);
+          final Offset? bring = Robot.spot('bringBack');
+          t.check(
+            'settings page: off everywhere, "Bring back the Sidekick" is there',
+            bring != null,
+          );
+          if (bring != null) {
+            await Robot.tap(bring, after: 1200);
+          }
+          s = await where();
+          t.check(
+            'settings page: "Bring back" brings it back, on everywhere',
+            lensOf.floatIn.value &&
+                lensOf.floatOut.value &&
+                kept(s)?['inApp'] == true &&
+                kept(s)?['overApps'] == true &&
+                Robot.spot('bringBack') == null,
+            'Android ${kept(s)?['inApp']}/${kept(s)?['overApps']}, the line ${Robot.spot('bringBack') == null ? 'gone' : 'still there'}',
+          );
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+            await Robot.wait(900);
+          }
+          lensOf.setFloating(inPrism: true, overApps: true);
+          await t.lens(<String, Object?>{'op': 'side', 'on': true});
+          await Robot.wait(1200);
+        } else {
+          t.skip(
+            'sidekick panel: "In Prism" off: kept by Android, the Sidekick goes, and so does the panel',
+            'its own settings did not come up',
+          );
+        }
+        s = await where();
+        t.check(
+          'sidekick: its settings closed, it is back in sight, out at its place',
+          s['lens'] == true && s['covered'] != true && s['panelOpen'] != true,
+          'shown ${s['lens']}, hidden ${s['covered']}, panel ${s['panelOpen']}, tucked ${s['tucked']}',
+        );
+        clean('after the Sidekick\'s settings');
         // Moved first, then still: never the settings.
         final double sx = (s['x'] as num?)?.toDouble() ?? w / 2;
         s = await where();
@@ -6190,17 +6101,6 @@ class _ShellState extends State<Shell>
           }
         }
 
-        Future<void> whose() async {
-          final Offset? side = Robot.spot('designSidekick');
-          if (side != null) {
-            await Robot.tap(side, after: 600);
-          }
-          final Offset? prism = Robot.spot('designPrism');
-          if (prism != null) {
-            await Robot.tap(prism, after: 600);
-          }
-        }
-
         Future<void> noSidekick() async {
           lensOf.setFloating(inPrism: false, overApps: false);
           await Robot.wait(800);
@@ -6243,7 +6143,6 @@ class _ShellState extends State<Shell>
           await Robot.wait(300);
         };
         void sends(bool off) => _leakNoSends = off;
-        void cover(bool off) => _leakNoCover = off;
         void looks(bool off) => setState(() => _leakNoLooks = off);
         void jump(bool on) => Segmented.testJump = on;
 
@@ -6268,12 +6167,6 @@ class _ShellState extends State<Shell>
             'b. Labels Hide and Show, in the settings',
             holdButton,
             labels,
-            closePanel,
-          ),
-          (
-            'c. Prism | Sidekick and back, in the settings',
-            holdButton,
-            whose,
             closePanel,
           ),
           (
@@ -6328,12 +6221,6 @@ class _ShellState extends State<Shell>
             back(sends),
           ),
           (
-            'iv. c, without the Sidekick\'s "covered" message',
-            without(cover),
-            whose,
-            back(cover),
-          ),
-          (
             'v. b, the six look previews as empty boxes',
             without(looks),
             labels,
@@ -6346,7 +6233,6 @@ class _ShellState extends State<Shell>
             back(jump),
           ),
           ('b, the Sidekick switched off', noSidekick, labels, sidekickBack),
-          ('c, the Sidekick switched off', noSidekick, whose, sidekickBack),
         ]);
         for (int k = 0; k < steps.length; k++) {
           await run(k, steps.length);
@@ -6524,7 +6410,7 @@ class _ShellState extends State<Shell>
       }
       settings.reduceTransparency = solidWas;
       // (The leak test's parts left out, all back; its text that changes weight, gone.)
-      _leakNoSends = _leakNoCover = _leakNoLooks = false;
+      _leakNoSends = _leakNoLooks = false;
       Segmented.testJump = false;
       Diag.instance.probe.value = null;
       Diag.instance.typing.unfocus();
@@ -7105,7 +6991,6 @@ class _ShellState extends State<Shell>
             .catchError((Object _) {});
       } else if (swipe) {
         // A two-finger swipe was being set, from Prism's settings: back to them.
-        _designSide.value = false;
         _showFloating();
       } else if (!side) {
         // Chosen or not, the blobs come back out, showing what is there now. (Not after
@@ -7201,7 +7086,6 @@ class _ShellState extends State<Shell>
     _cogHint.dispose();
     _signTurn.dispose();
     _signShot.dispose();
-    _designSide.dispose();
     _leakBump.dispose();
     _dark.dispose();
     WidgetsBinding.instance.removeObserver(this);
@@ -8560,7 +8444,6 @@ class _ShellState extends State<Shell>
                                 _menuAway();
                                 // (The blobs go in: the settings are for the button.)
                                 _setOpen(false);
-                                _designSide.value = false;
                                 Haptics.settle();
                                 _showFloating();
                               }
@@ -9522,6 +9405,67 @@ void showPrismSettings(BuildContext context) {
                               onChanged: (bool v) =>
                                   BlobApps.instance.on.value = v,
                             ),
+                      ),
+                      // The Sidekick switched off everywhere has nowhere to be held, so its own
+                      // settings can't be reached: only then, this one line brings it back.
+                      // (Nothing else about the Sidekick is here: its settings are its own.)
+                      ListenableBuilder(
+                        listenable: Listenable.merge(<Listenable>[
+                          RestBubble.instance.floatIn,
+                          RestBubble.instance.floatOut,
+                        ]),
+                        builder: (BuildContext context, Widget? _) =>
+                            RestBubble.instance.canFloat
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Row(
+                                  children: <Widget>[
+                                    Expanded(
+                                      child: Text(
+                                        'Bring back the Sidekick',
+                                        style: LumenType.text(
+                                          15,
+                                          weight: 560,
+                                          color: c.ink,
+                                        ),
+                                      ),
+                                    ),
+                                    Pressable(
+                                      key: Robot.key('bringBack'),
+                                      onTap: () {
+                                        Haptics.tick();
+                                        Diag.instance.event(
+                                          'settings page: the Sidekick brought back',
+                                        );
+                                        RestBubble.instance.setFloating(
+                                          inPrism: true,
+                                          overApps: true,
+                                        );
+                                        RestBubble.instance.bringSide();
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 10,
+                                        ),
+                                        decoration: ShapeDecoration(
+                                          color: c.accent,
+                                          shape: const StadiumBorder(),
+                                        ),
+                                        child: Text(
+                                          'Bring back',
+                                          style: LumenType.text(
+                                            14,
+                                            weight: 650,
+                                            color: c.onAccent,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                       ),
                       const SizedBox(height: 16),
                       Text(

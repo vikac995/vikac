@@ -95,8 +95,14 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
 - **The Sidekick never takes the keyboard or the focus** of the app underneath.
 - **Dismissing the Sidekick is quiet**: nothing shows while it is moved; a thin ring fades in only
   when it is carried into the bottom quarter, and lights up when it would be dismissed there.
-- Its two places at a screen edge (distance from the edge, how much shows when tucked) are smooth
-  sliders, and it moves live while they are dragged.
+- Its two places at a screen edge are two dials side by side in its own panel, **Hovering** (how far
+  from the edge it rests) and **Tucked in** (how much of it shows), in whole points, like the Train
+  page's kg and reps. Touching one puts the Sidekick in that state at once; sliding moves it the way
+  the finger goes, on either edge; let go, it goes back to the state it was in.
+- **Its own settings panel** (Android's, over the app it is in) sits beside it, on the side away from
+  it, nearly full height, and grows out of it and back into it as Prism's settings do from the
+  button. The Sidekick is always drawn above its panel. The panel never takes the focus: Back goes to
+  the app underneath; it closes with the ✕, a tap on the shade, a tap on the Sidekick, or Home.
 
 ## 7. Panels and controls
 
@@ -104,11 +110,13 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   in `PRISM.md`.)
 - **Two-way choices are glass segmented pickers** (`Segmented`): Labels Show | Hide, Icons Prism |
   Regular, Layout Pages | List, Colours Mellow | Vivid. **Switches** only turn a feature on or off
-  (In this app, Over other apps).
+  (In Prism, Over other apps).
 - **Continuous values are smooth sliders** (`LumenSlider`). Stops only where the steps mean
   something (app list density: 3, 4, 5 or 6 across).
-- **A slider whose effect is on screen clears the panel while it is held**: only the slider stays,
-  so the effect can be watched. A tap does not clear.
+- **A panel steps aside while a control is held only when it hides what that control changes;
+  otherwise only the shade lifts.** The app list's Density (its grid is behind its panel) clears the
+  panel, so the grid can be watched; the Sidekick's dials leave its panel exactly as it is and lift
+  only the shade, since the Sidekick is beside it and above it. A tap changes nothing of this.
 - **Panels opened from the button sit above it**; the button stays in sight, and a tap on it, beside
   the panel, the X or back closes the panel, all at the same speed.
 - Back undoes the most recent thing opened, one step per press (the table in `PRISM.md`). Every new
