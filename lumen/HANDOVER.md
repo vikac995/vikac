@@ -163,6 +163,13 @@ on the owner's phone; extend its Sidekick half as you go.
 1. Finish the Sidekick: steps 2, 3 and 4 of THE PLAN. Step 4 also deletes the old modes and the fusion.
 2. Memory: the remaining ~500 MB of graphics, measured by state, then reduced.
 3. Prism's basics polished: the button, the magnifying glass, the app list.
+   - **Idea to mock up (the owner's, 15 November 2026):** the app list's Density control (now a slider
+     with four stops, 3/4/5/6 across, beside the pinch in the list itself) as a dial.
+     - Compare it in the mock-up with the slider as it is and with a 3 | 4 | 5 | 6 picker.
+     - Doubts to check: a dial is a twisting gesture on flat glass, harder with one thumb, takes more
+       room, and is less familiar. For four fixed choices it may be no better than what is there.
+     - If it's chosen, DESIGN.md §7 ("stops only where the steps mean something: app list density")
+       changes with it.
 4. Tests on 2–3 other phones (one cheaper, one not a Samsung).
 5. A Play Store policy check for the overlay and notification-access permissions.
 6. The home screen.
