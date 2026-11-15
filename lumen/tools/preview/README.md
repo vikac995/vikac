@@ -10,6 +10,7 @@ cd lumen
 flutter build linux --release -t lib/fit/main.dart
 tools/preview/test.sh long      # expect 65 of 69 (3 Android-only measurements, 1 flick timing check)
 tools/preview/test.sh buttons   # expect 68 of 69 (1 Android-only measurement)
+tools/preview/test.sh leak      # the leak test: prints its LEAK TEST table (no Android readings here)
 NOBUILD=1 tools/preview/shot.sh /tmp/a.png "xdotool mousemove 412 1738 click 1; sleep 1.2"
 ```
 

@@ -14,7 +14,10 @@ every engine. Build 172's phone run confirmed two copies and passed 485 of 485. 
 `reviews/step1d-report.md`) makes it one: **every way Prism brings itself forward goes through
 `PrismScreen.bringForward()` (`PrismScreen.kt`), and the app icon goes through `PrismLauncher`; never
 start `MainActivity` by name anywhere else.** It also counts every cache in the test report, to find
-the native memory growth (about 57 MB a round). Step 2 has not started. Tasks are in `tasks/`; each ends with a
+the native memory growth (about 57 MB a round). Build 173 passed 485 of 485 on the phone with one
+engine; step 1 is closed. Build 174 ("step 1e", test only, `reviews/step1e-report.md`) adds the **leak
+test** (testing panel: everyday steps done 20 times, memory read every 5; `tools/preview/test.sh
+leak`). Next: its phone results, then step 2. Tasks are in `tasks/`; each ends with a
 report in `reviews/` that is reviewed before the owner relies on the work. The preview scripts are in
 `tools/preview/` (see its README).
 

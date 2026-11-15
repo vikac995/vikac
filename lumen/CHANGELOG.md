@@ -1,5 +1,24 @@
 # Lumen changelog
 
+## Prism, build 174 (15 November 2026)
+
+**File:** `releases/prism-build-174.apk`
+
+Needs Play Protect paused to install. Can be installed over build 173.
+
+**Your phone run of 173: 485 right, 0 wrong, with one Prism the whole time.** Step 1 is closed.
+
+**This build only adds a test. Prism itself works exactly as in 173.**
+
+- **The leak test** (new, in the testing panel: "Run the leak test (about 8 min, hands off)").
+  - **Why:** in 173, nothing we count grew, yet memory still grew wherever Prism's settings panel changed.
+  - **What it does:** it takes a few everyday steps and does each one 20 times, reading memory before and after every 5. The steps: Prism's settings opened and closed; Labels Hide/Show; Prism | Sidekick and back; the app list opened and closed; the blobs opened and closed; the Sidekick's blobs opened and closed. Labels and Prism | Sidekick are then done again with the glass made solid ("reduce transparency"), and again with the Sidekick switched off. Both are put back afterwards, whatever happens.
+  - **What the report shows:** for each step, how much the first 5 repeats added, and how much each repeat added after that. A step that leaks shows in the second number.
+- **The tests themselves no longer grow.** The button test used to keep the timing of every frame it saw (25,000 by the end); now it keeps only the frames its report uses. The report's numbers are the same.
+
+**Checked:** it compiles, both sides; in my preview: the leak test runs (5 min 8 s; without Android only the "process" column has numbers, and after the first 5 repeats no step adds memory there, every slope between −0.8 and +1.1 MB, which is noise); the button test, 68 of 69 (the miss is the Android-only measurement); the long test, 65 of 69 with the usual 4 misses.
+**Not checked:** on a phone. The leak test's native and graphics readings, and its Sidekick step, run only there.
+
 ## Prism, build 173 (15 November 2026)
 
 **File:** `releases/prism-build-173.apk`

@@ -39,10 +39,26 @@ class TestRun {
   /// How long one refresh of the screen is, in thousandths of a second.
   late final double budget;
 
-  void _took(List<FrameTiming> t) => _frames.addAll(t);
+  // Frames are kept only while a scene is being recorded (its frames are the report's data);
+  // every other frame is only counted. The test used to keep every frame it ever saw, and grew
+  // by itself, which got in the way of measuring Prism's own memory.
+  int _recording = 0;
+  int _counted = 0;
 
-  /// How many frames' timings the test is holding (it keeps every one): for the report.
-  int get framesKept => _frames.length;
+  void _took(List<FrameTiming> t) {
+    _counted += t.length;
+    if (_recording > 0) {
+      _frames.addAll(t);
+    }
+  }
+
+  /// How many frames' timings the test is holding (those of its scenes): for the report.
+  int get framesKept =>
+      _frames.length +
+      scenes.fold<int>(
+        0,
+        (int n, (String, List<FrameTiming>, int) s) => n + s.$2.length,
+      );
 
   void close() => SchedulerBinding.instance.removeTimingsCallback(_took);
 
@@ -102,6 +118,10 @@ class TestRun {
   /// Runs [body] and keeps every frame Prism made while it ran.
   Future<void> scene(String name, Future<void> Function() body) async {
     await _settle();
+    if (_recording == 0) {
+      _frames.clear();
+    }
+    _recording++;
     final int from = _frames.length;
     final Stopwatch took = Stopwatch()..start();
     try {
@@ -112,6 +132,10 @@ class TestRun {
     final int ms = took.elapsedMilliseconds;
     await _settle();
     scenes.add((name, _frames.sublist(from), ms));
+    _recording--;
+    if (_recording == 0) {
+      _frames.clear();
+    }
   }
 
   /// Something done to the floating lens, as Android reported it.
@@ -140,14 +164,14 @@ class TestRun {
   /// A stretch of nothing being touched, in Prism or with another app in front.
   Future<void> phase(String name, int seconds, {bool away = false}) async {
     await _settle();
-    final int from = _frames.length;
+    final int from = _counted;
     final Map<String, Object?> told = await lens(<String, Object?>{
       'op': away ? 'away' : 'measure',
       'ms': seconds * 1000,
       'pkg': ?other,
     }, extraMs: seconds * 1000 + 15000);
     await _settle();
-    phases.add((name, told, _frames.length - from, away));
+    phases.add((name, told, _counted - from, away));
     if (told['ok'] != true) {
       check('$name: measured', false, '${told['note']}');
     } else if (away) {
@@ -327,6 +351,10 @@ class TestRun {
       <(int, int, int, Map<String, Object?>, int)>[];
 
   void roundStart() => _roundFrom = scenes.length;
+
+  /// The leak test: for each step, memory after so many repeats (0, 5, 10, 15, 20).
+  final List<(String, int, Map<String, Object?>)> leakRows =
+      <(String, int, Map<String, Object?>)>[];
 
   /// Memory at the start of each part of the button test, round by round: where it grows.
   /// (Android's readings where there are any; the whole process as Prism sees it everywhere.)
@@ -602,6 +630,62 @@ class TestRun {
       if (bad == 0 && !skippedByName.containsKey(e.key)) {
         o.writeln(
           '  ok     ${e.key}${right > 1 ? '  (all $right times)' : ''}${said.isEmpty ? '' : '  [$said]'}',
+        );
+      }
+    }
+
+    // The leak test: for each step, how much memory each repeat leaves behind.
+    if (leakRows.isNotEmpty) {
+      double? kb(Map<String, Object?> m, String k) =>
+          m[k] is num ? (m[k]! as num).toDouble() : null;
+      // Two numbers for each measure: what the first five repeats added (a step's first use
+      // makes things it then keeps, once), and what each repeat added after that (a leak).
+      String two(List<(String, int, Map<String, Object?>)> rows, String k) {
+        final double? a = kb(rows.first.$3, k);
+        final double? five = rows.length > 1 ? kb(rows[1].$3, k) : null;
+        final double? last = kb(rows.last.$3, k);
+        final int n = rows.last.$2 - (rows.length > 1 ? rows[1].$2 : 0);
+        if (a == null || five == null || last == null || n <= 0) {
+          return '-';
+        }
+        String f(double v) =>
+            '${v >= 0 ? '+' : ''}${v.toStringAsFixed(v.abs() >= 10 ? 0 : 2)}';
+        return '${f((five - a) / 1024)} | ${f((last - five) / 1024 / n)}';
+      }
+
+      o
+        ..writeln()
+        ..writeln(
+          'LEAK TEST: each step done 20 times, memory read before and after every 5 (after a garbage collection of Android\'s side). For each measure: MB added by the first 5 repeats | MB per repeat after that (repeats 5 to 20: a leak shows here). native, native after the collection, graphics, all of Prism as it sees itself (process).',
+        )
+        ..writeln(
+          '${'step'.padRight(50)} ${'native'.padLeft(14)} ${'after gc'.padLeft(14)} ${'graphics'.padLeft(14)} ${'process'.padLeft(14)}',
+        );
+      final List<String> steps = <String>[];
+      for (final (String step, int _, Map<String, Object?> _) in leakRows) {
+        if (!steps.contains(step)) {
+          steps.add(step);
+        }
+      }
+      for (final String step in steps) {
+        final List<(String, int, Map<String, Object?>)> rows =
+            <(String, int, Map<String, Object?>)>[
+              for (final (String, int, Map<String, Object?>) r in leakRows)
+                if (r.$1 == step) r,
+            ];
+        o.writeln(
+          '${step.padRight(50)} ${two(rows, 'mem_native').padLeft(14)} ${two(rows, 'mem_native_gc').padLeft(14)} ${two(rows, 'mem_graphics').padLeft(14)} ${two(rows, 'rssKb').padLeft(14)}',
+        );
+      }
+      o.writeln(
+        '  Every reading, MB (native / after gc / graphics / process):',
+      );
+      String mb(Map<String, Object?> m, String k) =>
+          m[k] is num ? ((m[k]! as num) / 1024).round().toString() : '-';
+      for (final String step in steps) {
+        o.writeln(
+          '  $step: ${<String>[for (final (String s, int done, Map<String, Object?> m) in leakRows)
+            if (s == step) 'after $done ${mb(m, 'mem_native')}/${mb(m, 'mem_native_gc')}/${mb(m, 'mem_graphics')}/${mb(m, 'rssKb')}'].join('  ·  ')}',
         );
       }
     }

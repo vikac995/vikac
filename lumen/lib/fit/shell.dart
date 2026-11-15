@@ -2503,6 +2503,9 @@ class _ShellState extends State<Shell>
     );
     Diag.instance.hourTest = () =>
         _longTest(rounds: 4, still: 180, quiet: true, title: 'hour-long test');
+    // The leak test: each of a few everyday steps done twenty times over, memory read as it goes.
+    Diag.instance.leakTest = () =>
+        _longTest(rounds: 0, leak: true, title: 'leak test');
     // The pinned thing: what its sheets ask of Prism, and keeping Android told.
     RestBubble.instance
       ..onWeigh = (double kg) {
@@ -2561,6 +2564,11 @@ class _ShellState extends State<Shell>
           buttons: true,
           title: 'button test, dry run',
         ),
+      );
+    } else if (Platform.environment['PRISM_LEAK_TEST'] != null) {
+      Future<void>.delayed(
+        const Duration(seconds: 9),
+        () => _longTest(rounds: 0, leak: true, title: 'leak test, dry run'),
       );
     } else if (Platform.environment['PRISM_LONG_TEST'] != null) {
       Future<void>.delayed(
@@ -2874,6 +2882,7 @@ class _ShellState extends State<Shell>
     bool drain = false,
     bool glass = false,
     bool buttons = false,
+    bool leak = false,
     String title = 'long test',
   }) async {
     if (_testing || !mounted) {
@@ -5748,6 +5757,230 @@ class _ShellState extends State<Shell>
         base();
         await Apps.instance.setPrismIcons(listIconsWere);
         await Apps.instance.setPrismIcons(blobIconsWere, blobs: true);
+      } else if (leak) {
+        // ------------------------------------------------------------ the leak test
+        // Native memory grew in steps, round after round, wherever the button test changed
+        // Prism's settings panel, and none of the caches counted grew with it. Here each of a
+        // few everyday steps is done twenty times over, with memory read before and after every
+        // five: a step that keeps something each time shows a slope; one that doesn't, a flat line.
+        Future<void> reading(String step, int done) async {
+          final Map<String, Object?> m = await t.lens(<String, Object?>{
+            'op': 'memory',
+            'gc': true,
+          });
+          t.leakRows.add((
+            step,
+            done,
+            <String, Object?>{
+              if (m['ok'] != false) ...m,
+              'rssKb': ProcessInfo.currentRss ~/ 1024,
+            },
+          ));
+        }
+
+        Future<void> ensureClosed() async {
+          if (_drawerOpen) {
+            _setDrawer(false);
+            await Robot.wait(800);
+          }
+          if (_panelOpen && Robot.spot('floatClose') != null) {
+            await closePanel();
+          }
+          if (_open) {
+            _setOpen(false);
+            await Robot.wait(700);
+          }
+        }
+
+        // One step: [before] once, then [once] twenty times with a reading every five, then [after].
+        final List<
+          (
+            String,
+            Future<void> Function()?,
+            Future<void> Function(),
+            Future<void> Function()?,
+          )
+        >
+        steps =
+            <
+              (
+                String,
+                Future<void> Function()?,
+                Future<void> Function(),
+                Future<void> Function()?,
+              )
+            >[];
+        final Stopwatch leakClock = Stopwatch()..start();
+        Future<void> run(int k, int of) async {
+          final (
+            String name,
+            Future<void> Function()? before,
+            Future<void> Function() once,
+            Future<void> Function()? after,
+          ) = steps[k];
+          say('leak test, ${k + 1} of $of: $name');
+          final int took = leakClock.elapsed.inSeconds;
+          Diag.instance.progress.value = (
+            'Leak test  ·  step ${k + 1} of $of  ·  ${k == 0 || took < 20 ? 'working out how long' : 'about ${math.max(1, (took * (of - k) / k / 60).ceil())} min left'}',
+            k / of,
+          );
+          await ensureClosed();
+          await before?.call();
+          await Robot.wait(600);
+          await reading(name, 0);
+          for (int n = 1; n <= 20; n++) {
+            await once();
+            if (n % 5 == 0) {
+              await reading(name, n);
+            }
+          }
+          await after?.call();
+          await ensureClosed();
+        }
+
+        Future<void> labels() async {
+          final Offset? n = Robot.spot('names');
+          if (n != null) {
+            await Robot.tap(n + const Offset(88, 0), after: 500);
+            await Robot.tap(
+              (Robot.spot('names') ?? n) - const Offset(88, 0),
+              after: 500,
+            );
+          }
+        }
+
+        Future<void> whose() async {
+          final Offset? side = Robot.spot('designSidekick');
+          if (side != null) {
+            await Robot.tap(side, after: 600);
+          }
+          final Offset? prism = Robot.spot('designPrism');
+          if (prism != null) {
+            await Robot.tap(prism, after: 600);
+          }
+        }
+
+        final bool solidNow = settings.reduceTransparency;
+        Future<void> solid() async {
+          settings.reduceTransparency = true;
+          await Robot.wait(600);
+          await holdButton();
+        }
+
+        Future<void> unsolid() async {
+          await closePanel();
+          settings.reduceTransparency = solidNow;
+          await Robot.wait(600);
+        }
+
+        Future<void> noSidekick() async {
+          lensOf.setFloating(inPrism: false, overApps: false);
+          await Robot.wait(800);
+          await holdButton();
+        }
+
+        Future<void> sidekickBack() async {
+          await closePanel();
+          lensOf.setFloating(inPrism: true, overApps: true);
+          await Robot.wait(800);
+        }
+
+        steps.addAll(<
+          (
+            String,
+            Future<void> Function()?,
+            Future<void> Function(),
+            Future<void> Function()?,
+          )
+        >[
+          (
+            'a. Prism\'s settings opened and closed',
+            null,
+            () async {
+              await holdButton();
+              await closePanel();
+            },
+            null,
+          ),
+          (
+            'b. Labels Hide and Show, in the settings',
+            holdButton,
+            labels,
+            closePanel,
+          ),
+          (
+            'c. Prism | Sidekick and back, in the settings',
+            holdButton,
+            whose,
+            closePanel,
+          ),
+          (
+            'd. the app list opened and closed',
+            null,
+            () async {
+              await Robot.drag(
+                <Offset>[_home, _home - const Offset(0, 320)],
+                legMs: 120,
+                flick: true,
+                after: 1100,
+              );
+              if (!_drawerOpen) {
+                _setDrawer(true);
+                await Robot.wait(1000);
+              }
+              await Robot.tap(_home, after: 1000);
+              if (_drawerOpen) {
+                _setDrawer(false);
+                await Robot.wait(800);
+              }
+            },
+            null,
+          ),
+          (
+            'e. the blobs opened and closed',
+            null,
+            () async {
+              await Robot.tap(_home, after: 800);
+              await Robot.tap(_home, after: 800);
+            },
+            null,
+          ),
+          if (floats)
+            (
+              'f. the Sidekick\'s blobs opened and closed, over Prism',
+              () async {
+                await t.lens(<String, Object?>{'op': 'side', 'on': true});
+                await Robot.wait(800);
+              },
+              () async {
+                await press(
+                  'sidekick tapped (leak test)',
+                  <Offset>[],
+                  holdMs: 60,
+                  settleMs: 1100,
+                );
+                await t.lens(<String, Object?>{
+                  'op': 'menu',
+                  'what': 'outside',
+                  'settleMs': 700,
+                });
+              },
+              null,
+            ),
+          ('b, the glass solid (reduce transparency)', solid, labels, unsolid),
+          ('c, the glass solid (reduce transparency)', solid, whose, unsolid),
+          ('b, the Sidekick switched off', noSidekick, labels, sidekickBack),
+          ('c, the Sidekick switched off', noSidekick, whose, sidekickBack),
+        ]);
+        if (!floats) {
+          t.note(
+            'the leak test\'s step f (the Sidekick\'s blobs) was not done: Prism is not allowed over other apps',
+          );
+        }
+        for (int k = 0; k < steps.length; k++) {
+          await run(k, steps.length);
+        }
+        Diag.instance.progress.value = ('Leak test  ·  done', 1);
       } else if (buttons) {
         // A little while of nothing being touched, to see that the buttons leave nothing running.
         say('sitting still for a minute');
@@ -5888,7 +6121,7 @@ class _ShellState extends State<Shell>
         );
       }
       build =
-          '${Diag.build}  ·  $title${drain ? '' : ', $rounds round${rounds == 1 ? '' : 's'}'}  ·  ${DateTime.now().toString().substring(0, 16)}${begun['model'] == null ? '' : '\n${begun['model']}  ·  chip ${begun['soc']}  ·  Android ${begun['android']}  ·  ${(begun['hz'] as num?)?.round() ?? '?'} Hz  ·  ${begun['ramGb']} GB memory  ·  battery about ${begun['battMah']} mAh when full'}\nscreen ${w.round()}x${h.round()} at ${dp}x  ·  allowed over other apps: ${floats ? 'yes' : 'NO'}  ·  ${last['blobs']} blobs known to Android';
+          '${Diag.build}  ·  $title${drain || leak ? '' : ', $rounds round${rounds == 1 ? '' : 's'}'}  ·  ${DateTime.now().toString().substring(0, 16)}${begun['model'] == null ? '' : '\n${begun['model']}  ·  chip ${begun['soc']}  ·  Android ${begun['android']}  ·  ${(begun['hz'] as num?)?.round() ?? '?'} Hz  ·  ${begun['ramGb']} GB memory  ·  battery about ${begun['battMah']} mAh when full'}\nscreen ${w.round()}x${h.round()} at ${dp}x  ·  allowed over other apps: ${floats ? 'yes' : 'NO'}  ·  ${last['blobs']} blobs known to Android';
     } catch (e, where) {
       if (e is TestStopped) {
         stoppedAt = Robot.stoppedWhile
@@ -9116,6 +9349,31 @@ void showPrismSettings(BuildContext context) {
                           ),
                           child: Text(
                             'Run the chat-head battery test (about 35 min)',
+                            style: LumenType.text(
+                              15,
+                              weight: 700,
+                              color: c.ink,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Pressable(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          Haptics.settle();
+                          Diag.instance.leakTest?.call();
+                        },
+                        child: Container(
+                          height: 52,
+                          alignment: Alignment.center,
+                          decoration: ShapeDecoration(
+                            color: c.ink.withValues(alpha: 0.08),
+                            shape: const StadiumBorder(),
+                          ),
+                          child: Text(
+                            'Run the leak test (about 8 min, hands off)',
                             style: LumenType.text(
                               15,
                               weight: 700,
