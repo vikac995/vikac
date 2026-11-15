@@ -1,7 +1,9 @@
 # Step 2a report: the Sidekick's settings move to Android (build 176)
 
 Brief: `tasks/STEP2a.md` (saved as given). Plan: `tasks/STEP2-plan.md`. Branch
-`claude/flutter-ui-showcase-ngzfru`, based on `9eae84c`. Step 2b (the panel) not started: where it sits
+`claude/flutter-ui-showcase-ngzfru`, based on `9eae84c`. Two commits: `dedd41e` (the code, the APK, the
+changelog, the handover, the lessons, the brief, this report) and the one after it, which only adds the
+checked link here. Step 2b (the panel) not started: where it sits
 and the way back are still the owner's to decide. **Nothing should look different.**
 
 **What has only run in the preview:** the Prism side, and only where it doesn't need Android.
@@ -211,7 +213,9 @@ long test:    CHECKS: 65 right, 4 wrong, of 69 (the usual 4, on its first run)
 
 **Build 176:** `Prism build 176`, `0.137.0+204`, built from the final code. NAME-OK. The move's and the probe's
 recorder lines are in its `classes.dex`, and "KEYBOARD PROBE" is in its `libapp.so`. sha256
-`47d331b087f3cc83ad5e02b10d3d2f5b4d37a7d3d35898dd6d74df4b05ec0743`, 18,649,338 bytes. Link: LINK_RESULT
+`47d331b087f3cc83ad5e02b10d3d2f5b4d37a7d3d35898dd6d74df4b05ec0743`, 18,649,338 bytes. Link: https://github.com/vikac995/vikac/raw/dedd41ef1734f78dc090145903e24d75d726426e/lumen/releases/prism-build-176.apk
+(pinned to `dedd41e`, the commit that added the APK). Checked after the push: it answers 200, and the
+downloaded file has the same sha256 as the one built.
 
 ## For the owner on the phone
 
