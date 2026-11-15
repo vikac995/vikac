@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 127 (15 November 2026)
+
+**File:** `releases/prism-build-127.apk`
+
+Needs Play Protect paused to install. Can be installed over build 126.
+
+- **The floating blob no longer changes its icon a moment after it appears, from your recording.** A blob that comes along with an app (Launch and follow) came up wearing the app's icon, and changed to the Blob sign about a second later. For that second Prism was still in front while the app opened, and the blob only counted itself "in its own app" once Prism had left the screen. Now it counts from the first moment, so it comes up as the sign and stays so. (In your recording this is the red of the Notes icon in the tucked blob's edge, gone a second later.)
+- **The flight recorder now says why Prism started again.** Your report shows "Prism started" twice (01:14:45 and 01:15:54), each after a short time in another app. The recorder could not say whether all of Prism had been closed, or only its screen had been taken away by Android while Prism kept running. From this build it says which, and notes when the screen is taken down. No crash was recorded either time.
+
+**Checked:** it compiles.
+**Not checked:** on a phone, and not in my preview (the floating blob only exists on Android).
+
+**Still open, and it matters:** those two restarts. Prism was at 776 MB when you sent the report, 535 MB of it graphics. The next report from this build will show which kind of restart it is; either way, cutting graphics memory stays the first stability job.
+
 ## Prism, build 126 (15 November 2026)
 
 **File:** `releases/prism-build-126.apk`

@@ -19,10 +19,20 @@ import io.flutter.plugin.common.EventChannel
 class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Whether all of Prism was started afresh (Android had closed it, or it crashed) or only
+        // its screen was made again (Android took the screen away and kept Prism): they need
+        // different cures, and the flight recorder could not tell them apart before.
+        val fresh = !Trail.started()
         Trail.start(applicationContext)
-        Trail.add("Prism's screen made")
+        Trail.add(if (fresh) "Prism's screen made: all of Prism started afresh" else "Prism's screen made again: Prism itself had kept running" + (if (savedInstanceState != null) ", Android had taken the screen away" else ""))
         requestHighestRefreshRate()
     }
+
+    override fun onDestroy() {
+        Trail.add("Prism's screen taken down" + (if (isFinishing) " (closed)" else " (by Android, to be made again)"))
+        super.onDestroy()
+    }
+
 
     private var device: MethodChannel? = null
 
@@ -677,6 +687,8 @@ object Trail {
     private const val KEEP = 400
     private val lines = ArrayDeque<Pair<Long, String>>()
     private var file: java.io.File? = null
+
+    fun started() = file != null
 
     fun start(context: Context) {
         if (file != null) return
@@ -1554,7 +1566,12 @@ class Floater(val timer: Boolean) {
      */
     private fun atHome(): Boolean {
         val p = pin ?: return false
-        return mode() != 1 && container && blobs.isNotEmpty() && here(p)
+        // An app Prism has just opened counts from the first moment, while Prism is still in
+        // front for the blink the launch takes: otherwise the blob comes up wearing the app's
+        // icon and changes to the sign a second later. (Prism forgets the app whenever it is
+        // itself in front again, so "Prism in front and this app noted" can only mean that.)
+        val arriving = p.kind == "app" && foreground && frontApp == p.pkg
+        return mode() != 1 && container && blobs.isNotEmpty() && (arriving || here(p))
     }
 
     /**
