@@ -206,6 +206,12 @@ class RestBubble with WidgetsBindingObserver {
     _device.invokeMethod<void>('blobs', blobs).catchError((Object _) {});
   }
 
+  /// Tells Android that a panel is open in Prism (true) or not. The side Blob, which Android
+  /// draws over everything, steps aside meanwhile: a tap meant for the panel must not reach it.
+  void tellCovered(bool covered) {
+    _device.invokeMethod<void>('covered', covered).catchError((Object _) {});
+  }
+
   /// Tells Android whether the Blob's sign is vivid or mellow.
   void tellVivid(bool vivid) {
     _device.invokeMethod<void>('blobVivid', vivid).catchError((Object _) {});

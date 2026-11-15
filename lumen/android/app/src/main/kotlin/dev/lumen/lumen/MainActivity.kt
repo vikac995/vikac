@@ -303,6 +303,11 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
             } else if (call.method == "lensSize") {
                 result.success(RestBubble.lensSizeNow(applicationContext))
+            } else if (call.method == "covered") {
+                // A panel is open in Prism, or none is: the side Blob steps aside meanwhile.
+                RestBubble.covered = (call.arguments as? Boolean) ?: false
+                RestBubble.refresh(applicationContext)
+                result.success(null)
             } else if (call.method == "blobVivid") {
                 // The Blob's sign vivid (black glass, colours at full strength) or mellow.
                 RestBubble.vivid = (call.arguments as? Boolean) ?: false
@@ -1290,7 +1295,11 @@ class Floater(val timer: Boolean) {
         if (fresh && v != null) v.post { v.tuckNow() }
     }
 
-    private fun seen(): Boolean = if (foreground) (floatIn || (floatOut && fan != null)) else floatOut
+    // A panel is open in Prism. The side Blob is drawn over everything, panels too, and a tap meant
+    // for the panel would reach it: it steps aside until the panel is closed. (Only in Prism.)
+    var covered = false
+
+    private fun seen(): Boolean = if (foreground && covered && guest) false else if (foreground) (floatIn || (floatOut && fan != null)) else floatOut
 
     // Whether the blobs show their names under them, as chosen in Prism. Without them the
     // blobs sit a little nearer.

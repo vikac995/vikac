@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 141 (15 November 2026)
+
+**File:** `releases/prism-build-141.apk`
+
+Needs Play Protect paused to install. Can be installed over build 140.
+
+- **The side Blob steps aside while a panel is open in Prism**, from your recording. It is drawn by Android over everything, panels too, so a tap meant for the panel reached it (and it closed the app list behind the panel). Now, while any panel or sheet of Prism's is open, the side Blob is not on the screen, and it is back in its spot when the panel closes. Over other apps nothing changes.
+- **The app list's settings panel closes when the app list does**, whichever way the app list closes.
+- **The same glass picker for every two-way choice**, as you asked. In the app list's panel: **Icons** (Prism, Regular) and **Layout** (Pages, List) in place of the two switches. In the Blob panel: **Icons** (Prism, Regular) and **Colours** (Mellow, Vivid). "In Prism" and "Over other apps" stay switches: each is on or off of its own.
+
+**Checked:** it compiles, both sides; in my preview: both panels with the new pickers; the automatic test in the preview.
+**Not checked:** on a phone. The side Blob stepping aside cannot run in my preview (it only exists on Android).
+
 ## Prism, build 140 (15 November 2026)
 
 **File:** `releases/prism-build-140.apk`

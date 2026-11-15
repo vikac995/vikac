@@ -654,22 +654,32 @@ class _ShellState extends State<Shell>
                       ),
                       const SizedBox(height: 12),
                       // The blobs' own choice; the app list has its own, behind its cog.
-                      SwitchLine(
-                        label: 'Prism icons',
+                      // Two choices of two each: the glass segmented picker, as everywhere.
+                      Text(
+                        'Icons',
+                        style: LumenType.text(15, weight: 560, color: c.ink),
+                      ),
+                      const SizedBox(height: 8),
+                      Segmented<bool>(
+                        values: const <bool>[true, false],
+                        labels: const <String>['Prism', 'Regular'],
                         value: Apps.instance.blobPrismIcons,
-                        onChanged: (bool v) {
-                          Haptics.tick();
-                          Apps.instance.setPrismIcons(v, blobs: true);
-                        },
+                        onChanged: (bool v) =>
+                            Apps.instance.setPrismIcons(v, blobs: true),
                       ),
                       const SizedBox(height: 16),
-                      // Vivid: black glass and colours at full strength. Off, mellow.
-                      SwitchLine(
+                      // Vivid: black glass and colours at full strength. Mellow: as before.
+                      Text(
+                        'Colours',
+                        style: LumenType.text(15, weight: 560, color: c.ink),
+                      ),
+                      const SizedBox(height: 8),
+                      Segmented<bool>(
                         key: Robot.key('blobVivid'),
-                        label: 'Vivid',
+                        values: const <bool>[false, true],
+                        labels: const <String>['Mellow', 'Vivid'],
                         value: Apps.instance.blobVivid,
                         onChanged: (bool v) {
-                          Haptics.tick();
                           Apps.instance.setBlobVivid(v);
                           RestBubble.instance.tellVivid(v);
                           Diag.instance.event(v ? 'blob vivid' : 'blob mellow');

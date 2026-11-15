@@ -13,6 +13,7 @@ import '../core/theme.dart';
 import 'apps.dart';
 import 'diag.dart';
 import 'robot.dart';
+import '../widgets/controls.dart';
 import '../widgets/panel.dart';
 
 /// The app drawer. It grows out of the centre button: the round button
@@ -242,6 +243,14 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
   @override
   void didUpdateWidget(AppDrawer old) {
     super.didUpdateWidget(old);
+    if (widget.open != old.open && !widget.open) {
+      // The app list closing takes its settings panel with it.
+      final ModalRoute<Object?>? panel = _choice;
+      _choice = null;
+      if (panel != null && panel.isActive) {
+        Navigator.of(context).removeRoute(panel);
+      }
+    }
     if (widget.open != old.open) {
       _rise.animateTo(
         widget.open ? 1 : 0,
@@ -489,11 +498,15 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
     );
   }
 
+  // The app list's settings panel while it is open.
+  ModalRoute<Object?>? _choice;
+
   /// The app list's own settings, behind the cog on its first page.
   void _showIconChoice() {
     Haptics.tick();
     // While the density is being dragged, the panel and its shade step aside so the list can be seen.
     final ValueNotifier<bool> clear = ValueNotifier<bool>(false);
+    _choice = null;
     showGeneralDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -504,6 +517,8 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
       transitionBuilder: panelNoFade,
       pageBuilder: (BuildContext context, Animation<double> a, _) {
         final LumenColors c = LumenColors.of(context);
+        // (Kept, so that the panel can be closed when the app list is.)
+        _choice = ModalRoute.of(context);
         return ValueListenableBuilder<bool>(
           valueListenable: clear,
           builder: (BuildContext context, bool see, Widget? panel) => Stack(
@@ -610,22 +625,40 @@ class _AppDrawerState extends State<AppDrawer> with TickerProviderStateMixin {
                                     ],
                                   ),
                                   const SizedBox(height: 14),
-                                  SwitchLine(
-                                    key: Robot.key('prismIcons'),
-                                    label: 'Prism icons',
-                                    value: Apps.instance.prismIcons,
-                                    onChanged: (bool v) {
-                                      Haptics.tick();
-                                      Apps.instance.setPrismIcons(v);
-                                    },
+                                  // Two choices of two each: the glass segmented picker, as everywhere.
+                                  Text(
+                                    'Icons',
+                                    style: LumenType.text(
+                                      15,
+                                      weight: 560,
+                                      color: c.ink,
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  SwitchLine(
+                                  const SizedBox(height: 8),
+                                  Segmented<bool>(
+                                    key: Robot.key('prismIcons'),
+                                    values: const <bool>[true, false],
+                                    labels: const <String>['Prism', 'Regular'],
+                                    value: Apps.instance.prismIcons,
+                                    onChanged: (bool v) =>
+                                        Apps.instance.setPrismIcons(v),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Layout',
+                                    style: LumenType.text(
+                                      15,
+                                      weight: 560,
+                                      color: c.ink,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Segmented<bool>(
                                     key: Robot.key('appsScrolling'),
-                                    label: 'Scrolling list',
+                                    values: const <bool>[false, true],
+                                    labels: const <String>['Pages', 'List'],
                                     value: Apps.instance.scrolling,
                                     onChanged: (bool v) {
-                                      Haptics.tick();
                                       Apps.instance.setScrolling(v);
                                       // The ring now measures the other way of moving through the list.
                                       _aim();

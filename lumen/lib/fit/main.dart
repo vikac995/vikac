@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/services.dart';
@@ -69,6 +70,7 @@ class PrismApp extends StatelessWidget {
         darkTheme: lumenTheme(Look.instance.night),
         themeMode: settings.themeMode,
         home: const Shell(),
+        navigatorObservers: <NavigatorObserver>[PanelWatch.instance],
         builder: (BuildContext context, Widget? child) {
           final LumenColors c = LumenColors.of(context);
           return AnnotatedRegion<SystemUiOverlayStyle>(
@@ -214,5 +216,42 @@ class PrismApp extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+/// Counts the panels open in Prism (sheets and dialogs over the pages), and tells Android
+/// whenever there come to be some or none: the side Blob steps aside while there are.
+class PanelWatch extends NavigatorObserver {
+  PanelWatch._();
+  static final PanelWatch instance = PanelWatch._();
+  int _open = 0;
+
+  void _set(int n) {
+    final bool was = _open > 0;
+    _open = math.max(0, n);
+    if ((_open > 0) != was) {
+      RestBubble.instance.tellCovered(_open > 0);
+    }
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route is PopupRoute) {
+      _set(_open + 1);
+    }
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route is PopupRoute) {
+      _set(_open - 1);
+    }
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route is PopupRoute) {
+      _set(_open - 1);
+    }
   }
 }
