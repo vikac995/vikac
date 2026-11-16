@@ -186,7 +186,35 @@ near-critically damped.
        - a wrong check then says why.
        Item 3's rewrite changes this drawing anyway (panel clipped outside the lens, inside at 0.3,
        stand-in last), and its tests sample the centre and a ring at several stages.
-6. Whatever else the 182 phone results ask for. The review chat adds it here.
+6. **Past reports** (approved by the owner; from the review chat, 16 November 2026). Board card: "Test
+   reports are kept: every past report, ready to copy".
+   - **What's kept:**
+     - Every finished test (button, long, leak, hour-long, stability, and the recorder export) is
+       saved to a file in Prism's own storage the moment it ends.
+     - One file per report, written before anything else, so a crash right after still keeps it.
+   - **Where it shows:**
+     - In the test area, under "Copy the last report": a **"Past reports"** list, newest first.
+     - Each row shows the date and time, the test's name, the build and the result ("605 right,
+       12 wrong").
+     - Tapping a row copies that report's full text, identical to "Copy the last report" today.
+   - **How long:**
+     - The last 20 are kept.
+     - They survive Prism being closed, a phone restart, and installing a new build: they live in app
+       storage, which survives an update.
+     - The report notes that an uninstall would clear it.
+   - **Test:** write a report, simulate a process restart (or re-read from disk), and check that the
+     list and the copied text match byte for byte. Also check the cap at 20.
+   - **From the code today** (for building):
+     - The last report is one file, `files/prism_long_test.txt` (`LongTest._kept`). `keep()`
+       overwrites it after every round, so a test that's cut short still leaves what it had, and
+       `last()` reads it back for "Copy the last report".
+     - Past reports add a folder next to it, one file per finished test (a name that sorts by time
+       and carries the test's name), trimmed to 20 when one is added.
+     - The per-round `keep()` stays as it is, so a cut-short test still has its partial report as
+       "the last". Only a finished test adds a past report.
+     - The cleanup that removes Prism's old files (`_forgetOldFiles` in `bubble.dart`) must never
+       touch the folder.
+7. Whatever else the 182 phone results ask for. The review chat adds it here.
 
 **Later, for step 3's brief (the Sidekick's own app chooser),** not for 183: after a Change or Add, the new
 blob shows only once Prism has sent its picture. Only a menu where every blob is new has nothing to open
