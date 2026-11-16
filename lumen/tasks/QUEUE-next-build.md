@@ -42,7 +42,55 @@ review chat's go (see LESSONS.md: no new build while the owner is testing).
      4. A real `Robot.drag` flick from open blobs.
      5. Phone only, a note: the largest step per frame. SKIPPED in the preview, whose frames are too slow.
    - **The 183 report** includes the cause write-up from `reviews/investigate-sign-spin.md`.
-3. Whatever the 182 phone results ask for. The review chat adds it here.
+3. **The Sidekick's panel goes "under the glass"** (approved by the owner; from the review chat,
+   16 November 2026). Mock-up: https://claude.ai/artifact/XZo7zUA66qjXF5Cr6ik8xJ ("Under the glass").
+   - **The bug (182):**
+     - Closing the Sidekick's panel lets the shrinking panel land on the Sidekick. For about 0.1 s the
+       Sidekick is hidden by an opaque dark rounded box (owner's video, 11:23).
+     - Opening is fine (no blink).
+   - **What the code shows** (read, not seen on a phone; for the 183 report):
+     - **The stand-in is not skipped, and not drawn under the panel.** `PanelView.onDraw` draws it
+       last, on every frame where `covers(rr)` is true, closing included. While the panel shrinks
+       onto the Sidekick, its rectangle always contains the Sidekick's middle, so `covers` is true.
+     - **But the Sidekick's glass is see-through.** Its body gradient is 0x78–0xD6 alpha, about
+       47–84%, made to let the app show through. Over the panel, the panel's opaque dark surface shows
+       through the glass instead of the app, and darkens it. Around the glass, the panel's rounded
+       rectangle sticks out:
+       - it ends as the Sidekick's own square, with corners of its radius;
+       - at 20% open it is a fifth of the way to the full panel.
+       Together, that reads as a dark box over the Sidekick.
+     - **Why only closing:** the close uses `spatialFast` (1400, 0.9). From 30% down to 0.4% takes
+       about 90 ms: 60 ms to reach 30%, 149 ms to reach 0.4%. That's the spring's slow tail, with the
+       panel at about the Sidekick's size. Opening (`snappy`) is under 30% for only about 30 ms.
+     - **To confirm from the 182 recorder:** around the close there should be "stand-in drawn" and no
+       "stand-in stopped" before "its own settings gone". A "stopped" during the close would mean
+       `drawLensInto` returned false (the Sidekick's window not attached, or not the Sidekick), and
+       then the cause is different.
+   - **Spec, "under the glass":**
+     - For the whole open and close movement, the panel is drawn first and the Sidekick's stand-in
+       last, on top.
+     - The panel shrinks towards the Sidekick's centre (it already does).
+     - As it passes under the glass, it shows faintly through it. The Dot's glass fill is see-through
+       enough. If needed, the stand-in's glass is drawn at reduced opacity over the panel, inside the
+       lens circle only.
+     - A **barely noticeable** glow in the glass as it takes the panel in: a short, soft brightening
+       of the lens, about 0.1 s, low intensity (the owner: "very subtle, barely noticeable").
+       Opening reverses it.
+     - The Sidekick must never disappear or be covered, not even for one frame.
+     - (From the finding above: "faintly" means the dark panel must not fill the glass at full
+       strength, as it does now. Inside the lens circle the panel is drawn faded, or the glass over
+       it is made more opaque. The mock-up decides which reads as "faintly".)
+   - **Test:**
+     - During the open and the close, sample the panel's frames at several stages.
+     - At the Dot's centre, the panel's pixel must match the stand-in, not the panel's colour, at
+       every sampled stage, including the last 20%.
+     - Any stage where the Dot is covered is WRONG.
+     - (Today's `testSample` samples one stage, 12% open, as the opening. It needs the closing's
+       stages too, including the last 20%. It should also check a ring just inside the glass's edge,
+       where the dark box showed, not only the middle.)
+   - **Later, not 183:** Prism's own panels will go into and come out of Prism's button the same way,
+     as part of the panel-family redesign.
+4. Whatever the 182 phone results ask for. The review chat adds it here.
 
 **Later, for step 3's brief (the Sidekick's own app chooser),** not for 183: after a Change or Add, the new
 blob shows only once Prism has sent its picture. Only a menu where every blob is new has nothing to open
