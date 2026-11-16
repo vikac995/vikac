@@ -186,7 +186,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
   the room under the dials and the new two-stroke check.
 - sha256 `8378fcf7430b47cdfee2857594c71f740411f5110bb7fdd5b54cbbe45a3917de`, 18,797,002 bytes (the same
   size as 185 and 186 again: the APK's large parts are stored unpacked, padded to whole blocks).
-- Link: in the next commit.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/485b9d51868272378c35d7867d4c55217618873e/lumen/releases/prism-build-187.apk
 
 ## Where I could be wrong
 
