@@ -211,10 +211,12 @@ near-critically damped.
        either; it should.
      - **This is the case the stand-in was for** ("at a large Hovering, it lies over it", 181). So
        it's tied to item 3, and to the check 3 question of whether the stand-in is really drawn.
-     - **A spec question, for the review chat and the owner:**
-       - (a) the panel narrows to the space beside the Sidekick (less its gap), so it never overlaps;
-       - (b) it may overlap, the Sidekick always on top (item 3), and the check becomes "the panel
-         never hides the Sidekick" instead of "left of its middle".
+     - **Decided (review chat, 12:40): (b), for now.**
+       - The panel may overlap, and the Sidekick is always on top.
+       - The check becomes "the panel never hides the Sidekick", instead of "left of its middle", and
+         prints the Sidekick's side and its Hovering distance.
+       - (a), a panel that narrows, is settled for good in the panel-family redesign (the bottom half,
+         not full width, growing from its button).
 6. **Past reports** (approved by the owner; from the review chat, 16 November 2026). Board card: "Test
    reports are kept: every past report, ready to copy".
    - **What's kept:**
