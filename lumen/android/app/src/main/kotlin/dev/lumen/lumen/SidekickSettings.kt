@@ -27,9 +27,13 @@ import android.content.Context
  */
 object SidekickSettings {
     private const val STORE = "prism_sidekick"
-    const val GAP_MIN = 0f
+    // Hovering, from build 189: from 60 points past the edge (75% of the Sidekick, its glass, past
+    // it; below 0 these are points at its standard size, and scale with it) to 36 from it. The
+    // default stays 8. Tucked in: the least that shows is 18 points (8 until 189: about 13% more of
+    // the Sidekick now).
+    const val GAP_MIN = -60f
     const val GAP_MAX = 36f
-    const val TUCK_MIN = 8f
+    const val TUCK_MIN = 18f
     const val TUCK_MAX = 40f
 
     var inApp = true

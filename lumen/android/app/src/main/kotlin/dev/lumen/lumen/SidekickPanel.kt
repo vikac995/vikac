@@ -583,10 +583,11 @@ internal class PanelView(
 
     private fun smooth(t: Float) = t * t * (3 - 2 * t)
 
-    // While a dial is held, how see-through the rest of the panel goes (0.6: it is drawn at 0.4,
-    // clearly background). The whole "Where it rests" section stays solid: its title and both
-    // dials, on a backing of its own (build 187; 186 kept only the dial held).
-    private val REST_SEE = 0.6f
+    // While a dial is held, how see-through the rest of the panel goes (0.8: it is drawn at 0.2,
+    // the owner's number in 189; 0.4 in 186 to 188). The whole "Where it rests" section stays
+    // solid: its title and both dials, on a backing of its own (build 187; 186 kept only the dial
+    // held).
+    private val REST_SEE = 0.8f
 
     // The dial held, or just let go ("" when none): while it is set, "Where it rests" is drawn
     // solid, apart from the see-through panel.
@@ -639,7 +640,7 @@ internal class PanelView(
         lastCovers = covers(outline)
         // It fades in as it grows out of the Sidekick and out as it shrinks back in: while it is
         // small it is all but clear, so no dark box is ever seen round the Sidekick. While a dial
-        // is held it is half see-through, to see where the Sidekick goes; on the dial's spring.
+        // is held it is all but see-through (at 0.2), to see where the Sidekick goes; on the dial's spring.
         val grown = smooth((tt / 0.4f).coerceIn(0f, 1f))
         val fade = grown * (1f - REST_SEE * clear.value.coerceIn(0f, 1f))
         lastFade = fade
@@ -938,7 +939,8 @@ internal class PanelView(
             paint.style = Paint.Style.FILL
             canvas.restore()
             val v = if (id == "gap") SidekickSettings.gap else SidekickSettings.tuck
-            drawText(canvas, "${Math.round(v)}", mid, b.bottom - 24 * dp, 19f, 700, if (hideNumbers) 0 else cInk, center = true)
+            // (Below 0, Hovering is past the edge: a true minus sign, as the number is set.)
+            drawText(canvas, "${Math.round(v)}".replace('-', '\u2212'), mid, b.bottom - 24 * dp, 19f, 700, if (hideNumbers) 0 else cInk, center = true)
             canvas.restore()
         }
     }
@@ -1254,7 +1256,7 @@ internal class PanelView(
             clear.to(0f)
             holding = false
             // ("Where it rests" stays drawn apart, solid, until the rest has come back to solid
-            // too: dropped now, it would dip to the rest's 0.4 and come back with it. onDraw lets
+            // too: dropped now, it would dip to the rest's 0.2 and come back with it. onDraw lets
             // it go once the rest is solid.)
             RestBubble.showSpot(wasTucked)
             run()
@@ -1290,7 +1292,7 @@ internal class PanelView(
         "panelProgress" to g.value.toDouble(),
         // (No shade from build 185: always 0, kept so the test can say so.)
         "panelShade" to 0.0,
-        // How opaque the panel's body and contents are: 1, or about 0.5 while a dial is held.
+        // How opaque the panel's body and contents are: 1, or about 0.2 while a dial is held.
         "panelAlpha" to (1f - REST_SEE * clear.value.coerceIn(0f, 1f)).toDouble(),
         // The dial held ("" for none); what the last frame drew solid apart from the panel ("title",
         // "gap", "tuck": the whole "Where it rests" section) and at what alpha; each dial's alpha.
@@ -1363,7 +1365,7 @@ internal class PanelView(
      * software three times, as it is, without the ticks and without the numbers, onto clear pixels;
      * the differences are the ticks and the numbers. Says:
      * - how opaque the section's own area is at its least (255 solid), and a point of the rest of
-     *   the panel (on the Labels row, right of its name: about 102 while a dial is held);
+     *   the panel (on the Labels row, right of its name: about 51 while a dial is held);
      * - for each dial, how many pixels its number has and how opaque they are at the least;
      * - for each dial, how many pixels its ticks have, how many of those lie outside its pill (its
      *   rounded outline, 2 points in), and the room under the lowest, in points.

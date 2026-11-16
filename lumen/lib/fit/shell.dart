@@ -6177,14 +6177,14 @@ class _ShellState extends State<Shell>
 
         // From the section's own pixels (188: 187 read only what was meant to be drawn, and passed
         // while the phone showed nothing): its area solid (255), the rest of the panel at about
-        // 0.4 (about 102), and both dials' numbers there, drawn solid.
+        // 0.2 (about 51; 0.4 until 189), and both dials' numbers there, drawn solid.
         bool solidPixels(Map<String, Object?> m) {
           // (As opaque as the panel's own colour can be: 255 in every look so far.)
           final double full = numOf(m['pixSurfaceAlpha']).isNaN
               ? 255
               : numOf(m['pixSurfaceAlpha']);
           return numOf(m['pixBlockLeast']) >= full - 5 &&
-              (numOf(m['pixRest']) - 0.4 * full).abs() <= 0.1 * full &&
+              (numOf(m['pixRest']) - 0.2 * full).abs() <= 0.08 * full &&
               <String>['gap', 'tuck'].every(
                 (String d) =>
                     numOf(m['pix${d}NumberPx']) >= 30 &&
@@ -6221,7 +6221,7 @@ class _ShellState extends State<Shell>
           t.check(
             'sidekick panel: $name touched, the Sidekick goes there, the rest of the panel see-through, "Where it rests" solid',
             (s['tucked'] == true) == tucks &&
-                (numOf(s['panelAlpha']) - 0.4).abs() < 0.08 &&
+                (numOf(s['panelAlpha']) - 0.2).abs() < 0.06 &&
                 s['panelSolidDial'] == id &&
                 solidRests(s) &&
                 solidPixels(s) &&
@@ -6312,7 +6312,7 @@ class _ShellState extends State<Shell>
               : numOf(d['panelHeldFrames']).toInt();
           t.check(
             'sidekick panel: a dial dragged for 1.5 s, the rest of the panel stays see-through the whole time',
-            frames >= 3 && most <= 0.45,
+            frames >= 3 && most <= 0.25,
             'the most opaque it was drawn ${most.toStringAsFixed(2)}, over $frames frames',
           );
           await Robot.wait(600);
@@ -6333,7 +6333,7 @@ class _ShellState extends State<Shell>
               : numOf(d['panelCarriedOn']).toInt();
           t.check(
             'sidekick panel: a finger back on the dial 0.05 s after the let-go carries straight on, no dip',
-            numOf(d['panelHeldAlphaMost']) <= 0.45 && carriedNow == carried + 1,
+            numOf(d['panelHeldAlphaMost']) <= 0.25 && carriedNow == carried + 1,
             'the most opaque it was drawn over both strokes ${numOf(d['panelHeldAlphaMost']).toStringAsFixed(2)}, over ${numOf(d['panelHeldFrames']).isNaN ? 0 : numOf(d['panelHeldFrames']).toInt()} frames; carried on ${carriedNow - carried} time(s)',
           );
           await Robot.wait(400);
@@ -6521,11 +6521,62 @@ class _ShellState extends State<Shell>
           await lensOf.testPut(<String, Object>{'gap': g}, show: 'rest');
           await Robot.wait(900);
           s = await where();
+          // (Below 0 the points are at its standard size, 84, and scale with it, 189.)
+          final double k = numOf(s['size']) / dp / 84;
+          final double want = g < 0 ? g * k : g;
           t.check(
             'sidekick: distance from the edge ${g.round()}, it rests there',
-            (fromEdge(s) - g).abs() < 6 && s['tucked'] != true,
-            '${fromEdge(s).toStringAsFixed(1)} points from the edge',
+            (fromEdge(s) - want).abs() < 6 && s['tucked'] != true,
+            '${fromEdge(s).toStringAsFixed(1)} points from the edge (${want.toStringAsFixed(1)} at its size)',
           );
+          // How much of its glass is past the edge, and the grab area beside it (189).
+          final List<Object?> mid =
+              (s['lensMid'] as List<Object?>?) ?? const <Object?>[];
+          final double r = numOf(s['lensRadius']);
+          final double screenW = wPx / dp;
+          final double pastShare = mid.length == 2 && r > 0
+              ? math.max(
+                      0,
+                      math.max(
+                        r - numOf(mid[0]),
+                        numOf(mid[0]) + r - screenW,
+                      ),
+                    ) /
+                    (2 * r)
+              : double.nan;
+          final List<Object?> gb =
+              (s['gripBox'] as List<Object?>?) ?? const <Object?>[];
+          final double gripW = gb.length == 4 ? numOf(gb[2]) / dp : 0;
+          final bool gripAtEdge =
+              gb.length == 4 &&
+              (numOf(gb[0]) <= 1 ||
+                  numOf(gb[0]) + numOf(gb[2]) >= wPx - 1);
+          final bool gripBeside =
+              gb.length == 4 &&
+              numOf(gb[1]) <= numOf(s['y']) + 1 &&
+              numOf(gb[1]) + numOf(gb[3]) >= numOf(s['y']) + numOf(s['size']) - 1;
+          if (g < 0) {
+            t.check(
+              'sidekick: Hovering at its closest, 75% of it past the edge',
+              (pastShare - 0.75).abs() < 0.04,
+              '${(pastShare * 100).toStringAsFixed(1)}% of its glass past the edge',
+            );
+            t.check(
+              'sidekick: resting past the edge, a grab area at least 56 points wide beside it, at the edge, kept from the back gesture',
+              s['gripOpen'] == true &&
+                  s['gripHover'] == true &&
+                  gripW >= 55.5 &&
+                  gripAtEdge &&
+                  gripBeside,
+              'grip ${s['gripOpen'] == true ? 'open' : 'none'} (for resting past the edge: ${s['gripHover']}), ${gripW.toStringAsFixed(1)} points wide, at the edge $gripAtEdge, beside it $gripBeside; ${showing(s).toStringAsFixed(1)} points of the Sidekick showing',
+            );
+          } else {
+            t.check(
+              'sidekick: Hovering at its farthest, wholly on the screen, no grab area added',
+              pastShare == 0 && s['gripOpen'] != true,
+              '${(pastShare * 100).toStringAsFixed(1)}% past the edge, grip ${s['gripOpen'] == true ? 'open' : 'none'}',
+            );
+          }
         }
         for (final double k in <double>[
           RestBubble.tuckMin,

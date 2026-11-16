@@ -110,7 +110,13 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   when it is carried into the bottom quarter, and lights up when it would be dismissed there.
 - Its two places at a screen edge are two dials side by side in its own panel, **Hovering** (how far
   from the edge it rests) and **Tucked in** (how much of it shows), in whole points, like the Train
-  page's kg and reps. Touching one puts the Sidekick in that state at once; sliding moves it the way
+  page's kg and reps. **Hovering** goes from 60 points past the edge (75% of the Sidekick past it,
+  shown as −60) to 36 from it; the default stays 8. **Tucked in** shows from 18 to 40 points (from
+  189).
+- **Resting past the edge, it is still easy to take hold of** (from 189): when less than 56 points
+  of it shows, a strip 56 points wide beside it, from the edge, takes its touches and keeps them from
+  Android's back gesture, as the tucked Sidekick's grip does. The strip follows it: gone while it
+  moves, back where it comes to rest. Touching one puts the Sidekick in that state at once; sliding moves it the way
   the finger goes, on either edge; let go, it goes back to the state it was in.
 - **Its own settings panel** (Android's, over the app it is in; the owner's rule from build 185):
   - **Where:** beside it, on the side away from it, at its height (kept on the screen), as tall as
@@ -133,9 +139,9 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
     overshoot), faint while it is small.
   - **While it is open:** the Sidekick stays put and on top. It can still be dragged by hand, and the
     panel follows it up and down. A tap on the Sidekick closes the panel.
-  - **While a finger is on a dial:** the rest of the panel goes see-through (drawn at 0.4). The whole
-    "Where it rests" section, its title and both dials, stays fully solid, on a backing of its own,
-    so it reads as one block (from 187).
+  - **While a finger is on a dial:** the rest of the panel goes see-through (drawn at 0.2, the
+    owner's number, from 189; 0.4 before). The whole "Where it rests" section, its title and both
+    dials, stays fully solid, on a backing of its own, so it reads as one block (from 187).
   - **Let go:** the panel is solid again right away, on the quick spring, and the Sidekick goes back
     with it. The only wait is a tenth of a second, too short to notice, so a finger straight back on
     the dial carries on without a flash (from 187; 186 waited 0.6 s, much too long).

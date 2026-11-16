@@ -2135,6 +2135,8 @@ class Floater(val timer: Boolean) {
         val m = menu ?: return
         menu = null
         try { wm(context).removeView(m) } catch (e: Exception) {}
+        // (Resting past the edge, its grab area comes back now its menu is gone, 189.)
+        view?.regrip()
         val r = menuListener
         menuListener = null
         if (r != null) try { context.applicationContext.unregisterReceiver(r) } catch (e: Exception) {}
@@ -2236,6 +2238,14 @@ class Floater(val timer: Boolean) {
         m["docked"] = docked
         m["pin"] = pin?.key
         m["menu"] = menu != null
+        // The grip beside it (tucked, or resting past the edge, 189), and where it is, in pixels.
+        m["gripOpen"] = grip != null
+        m["gripHover"] = hoverGrip
+        m["gripBox"] = grip?.let { g ->
+            val at = IntArray(2)
+            g.getLocationOnScreen(at)
+            listOf(at[0], at[1], g.width, g.height)
+        }
         // Only one menu open at a time (188): how often Prism was told, and taps handed to Prism.
         m["swaps"] = swaps
         m["buttonTaps"] = buttonTaps
@@ -2601,6 +2611,11 @@ class Floater(val timer: Boolean) {
                         // Hovering set as the dial would set it, the Sidekick going to its new place.
                         "gap" -> {
                             SidekickSettings.set(context, mapOf("gap" to num("value", 8).toFloat()), "rest", keep = true, fromPanel = true)
+                            watcher.postDelayed({ done(state(context)) }, num("settleMs", 900))
+                        }
+                        // Tucked in set as its dial would set it, the Sidekick tucked in to show it (189).
+                        "tuck" -> {
+                            SidekickSettings.set(context, mapOf("tuck" to num("value", 22).toFloat()), "tuck", keep = true, fromPanel = true)
                             watcher.postDelayed({ done(state(context)) }, num("settleMs", 900))
                         }
                         // A finger on the Sidekick, through its panel, dragging it [dy] points down.
@@ -4258,14 +4273,22 @@ class Floater(val timer: Boolean) {
         }
     }
 
-    /** Puts the handle beside the tucked lens, whose top is at [y]. */
-    private fun openGrip(context: Context, y: Int) {
+    // (Whether the grip is the one for resting past the edge (189), not the tucked one; and where
+    // the Sidekick was when it was fitted.)
+    private var hoverGrip = false
+    private var hoverGripX = 0
+    private var hoverGripY = 0
+    private var hoverGripW = 0
+
+    /** Puts the handle beside the tucked lens (or one resting past the edge), whose top is at [y], [wideDp] points wide from the edge. */
+    private fun openGrip(context: Context, y: Int, right: Boolean = tuckRight, wideDp: Float = 76f) {
         val v = view ?: return
         closeGrip(context)
+        hoverGrip = false
         try {
             val d = context.resources.displayMetrics
             val dp = d.density
-            val wide = (76 * dp).toInt()
+            val wide = (wideDp * dp).toInt()
             val lp = android.view.WindowManager.LayoutParams(
                 wide, v.ownSize() + (16 * dp).toInt(),
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
@@ -4273,7 +4296,7 @@ class Floater(val timer: Boolean) {
                 android.graphics.PixelFormat.TRANSLUCENT,
             )
             lp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
-            lp.x = if (tuckRight) d.widthPixels - wide else 0
+            lp.x = if (right) d.widthPixels - wide else 0
             lp.y = y - (8 * dp).toInt()
             val g = Grip(context)
             wm(context).addView(g, lp)
@@ -4284,6 +4307,7 @@ class Floater(val timer: Boolean) {
     }
 
     private fun closeGrip(context: Context) {
+        hoverGrip = false
         val g = grip ?: return
         grip = null
         try { wm(context).removeView(g) } catch (e: Exception) {}
@@ -5155,8 +5179,15 @@ class Floater(val timer: Boolean) {
             return if (right) resources.displayMetrics.widthPixels - out else -(lp.width - out)
         }
 
-        /** How far from the edge it rests. */
-        private fun edgeGap(): Float = (if (guest) restGap else 8f) * dp
+        /**
+         * How far from the edge it rests (its window's edge). Below 0 it rests past the edge (from
+         * build 189, as far as 75% of its glass): those points are at its standard size and scale
+         * with it, as the tucked sliver does, so the same share of it is past the edge at any size.
+         */
+        private fun edgeGap(): Float {
+            val g = if (guest) restGap else 8f
+            return if (g < 0) g * dp * lp.width / base else g * dp
+        }
 
         // A place asked for before this window was on the screen: the latest one, kept for then.
         private var spotLater: Boolean? = null
@@ -5298,7 +5329,8 @@ class Floater(val timer: Boolean) {
             place()
             overBlobs()
             // Pushed a quarter of the way past a side, letting go tucks it away there. A tick says so.
-            val past = 0.25f * lp.width
+            // (Resting past the edge (Hovering below 0, 189), it must go 15% further past than that.)
+            val past = Math.max(0.25f * lp.width, -edgeGap() + 0.15f * lp.width)
             val would = !snapped && (lp.x < -past || lp.x + lp.width > resources.displayMetrics.widthPixels + past)
             if (would != wouldTuck) {
                 wouldTuck = would
@@ -5617,8 +5649,10 @@ class Floater(val timer: Boolean) {
             removeCallbacks(holder)
             catching?.cancel()
             closeReach(context)
-            // The handle of a lens that was pulled out of a side has done its work.
+            // The handle of a lens that was pulled out of a side has done its work. (Resting past
+            // the edge, 189, its grab area is fitted again where it comes to rest.)
             closeGrip(context)
+            if (guest) regrip()
             var velX = 0f; var velY = 0f
             val t = tracker
             if (t != null) {
@@ -5682,6 +5716,57 @@ class Floater(val timer: Boolean) {
             lag()
             try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, lp) } catch (ex: Exception) {}
             SidekickPanel.lensChanged()
+            // The grab area beside it, when it rests past the edge (189): gone as soon as it moves by
+            // itself, fitted again once it has been still for a moment. (While a finger has it, the
+            // strip stays until the finger lifts, as the tucked one's grip does: a touch that began
+            // on the strip goes on through it, and taking the strip away would cancel it.)
+            if (guest) {
+                if (hoverGrip && !pressed && (lp.x != hoverGripX || lp.y != hoverGripY || lp.width != hoverGripW)) dropHoverGrip()
+                regrip()
+            }
+        }
+
+        // ---- The grab area (189). Resting past the edge (Hovering below 0), less of the Sidekick is
+        // on the screen than a thumb takes hold of easily. Then a strip beside it, from the edge, at
+        // least [GRAB] points wide and a little taller than it, takes its touches (as the tucked
+        // Sidekick's grip does) and keeps them from Android's back gesture. It follows the Sidekick:
+        // taken away as soon as it moves, put back where it comes to rest.
+        private val GRAB = 56f
+        private val gripCheck = Runnable { fitGrip() }
+
+        /** Fits the grab area again in a moment (it rests past the edge, or its menu has closed). */
+        fun regrip() {
+            removeCallbacks(gripCheck)
+            postDelayed(gripCheck, 150)
+        }
+
+        private fun fitGrip() {
+            // (Not over its own menu: the strip would be above it and take its touches. Fitted
+            // again when the menu closes.)
+            if (!guest || tucked || !isAttachedToWindow || docked || menu != null) return
+            if (pressed || roaming || springing || glide?.isRunning == true) {
+                removeCallbacks(gripCheck)
+                postDelayed(gripCheck, 150)
+                return
+            }
+            val screen = resources.displayMetrics.widthPixels
+            val shows = Math.min(lp.x + lp.width, screen) - Math.max(lp.x, 0)
+            val past = lp.x < 0 || lp.x + lp.width > screen
+            if (!past || shows >= GRAB * dp) {
+                if (hoverGrip) dropHoverGrip()
+                return
+            }
+            if (hoverGrip && hoverGripX == lp.x && hoverGripY == lp.y && hoverGripW == lp.width) return
+            val right = lp.x + lp.width / 2 > screen / 2
+            openGrip(context, lp.y, right, GRAB)
+            hoverGrip = grip != null
+            hoverGripX = lp.x; hoverGripY = lp.y; hoverGripW = lp.width
+            if (hoverGrip) Trail.add("$who: resting past the edge, ${(shows / dp).toInt()} points of it showing: a grab area ${GRAB.toInt()} points wide beside it")
+        }
+
+        private fun dropHoverGrip() {
+            hoverGrip = false
+            if (!tucked) closeGrip(context)
         }
 
         /** The middle of each of the timer's places at the foot: 0 the cross, 1 pause to its left, 2 count up to its right. */

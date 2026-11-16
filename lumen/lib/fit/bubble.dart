@@ -154,8 +154,10 @@ class RestBubble with WidgetsBindingObserver {
 
   /// The Sidekick's two places at a side of the screen, in points: how far from the edge it
   /// rests, and how much of it shows when it is tucked in.
-  /// (Any distance between these: the sliders are smooth.)
-  static const double gapMin = 0, gapMax = 36, tuckMin = 8, tuckMax = 40;
+  /// (Any distance between these: the sliders are smooth.) From build 189 it may rest past the
+  /// edge: down to 60 points past it (75% of its glass, at its standard size), and the least that
+  /// shows tucked in is 18 points (it was 8).
+  static const double gapMin = -60, gapMax = 36, tuckMin = 18, tuckMax = 40;
   double sideGap = 8, sideTuck = 22;
 
   /// Labels Show | Hide, Icons Prism | Regular, Colours Mellow | Vivid, and its look's id, for

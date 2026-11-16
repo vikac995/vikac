@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 189 (16 November 2026)
+
+**File:** `releases/prism-build-189.apk`
+
+Needs Play Protect paused to install. Can be installed over build 188.
+
+**The Hovering range, as planned:**
+- **Hovering goes from −60 to 36.** At −60, three-quarters of the Sidekick rests past the edge of the screen; 0 is right at the edge; 36 is the farthest, as before. The default stays 8.
+- **Still easy to grab when it rests past the edge:** when less than a thumb's width of it shows, a strip a thumb wide beside it, from the edge, takes your touch for it and is kept away from Android's Back swipe. It follows the Sidekick wherever it comes to rest.
+- **Tucked in shows at least 18 points now** (it was 8), so a tucked Sidekick is easier to see and take hold of.
+- **While you hold a dial, the rest of the panel is fainter:** 0.2 instead of 0.4, your number. "Where it rests" stays fully solid.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone. Where the Sidekick rests, its grab strip and the panel are Android's.
+
 ## Prism, build 188 (16 November 2026)
 
 **File:** `releases/prism-build-188.apk`
