@@ -5153,8 +5153,24 @@ class _ShellState extends State<Shell>
             ? -1
             : numOf(s['forwards']).toInt();
         final bool wasTucked = s['tucked'] == true;
+        final Object? closedWas = s['panelClosed'];
+        final double openedWas = numOf(s['panelOpened']);
         final bool opened = await holdOpen('sidekick held');
+        // Still open well after the finger has lifted, never closed meanwhile, and the Sidekick
+        // put above it without the panel changing at all (build 178 closed by itself, about
+        // 0.6 to 1 s after the opening hold was let go, on the owner's phones).
+        await Robot.wait(900);
         s = await where();
+        heard(
+          'sidekick panel: still open 1.5 s after the hold is let go, never closed, the Sidekick above it, the panel unchanged',
+          s['panelOpen'] == true &&
+              numOf(s['panelOpened']) == openedWas + 1 &&
+              s['panelClosed'] == closedWas &&
+              s['lensAbove'] == true &&
+              numOf(s['panelLeastSinceOpen']) >= 0.999 &&
+              (numOf(s['panelShade']) - 0.4).abs() < 0.02,
+          'open ${s['panelOpen']}, opened ${numOf(s['panelOpened']) - openedWas} time(s), last closed "${s['panelClosed']}" (before: "$closedWas"), above ${s['lensAbove']}, the panel at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, shade ${numOf(s['panelShade']).toStringAsFixed(2)}',
+        );
         heard(
           'sidekick panel: held, its own settings come up, over the app it is in',
           opened,

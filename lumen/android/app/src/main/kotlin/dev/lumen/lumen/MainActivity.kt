@@ -1516,8 +1516,9 @@ class Floater(val timer: Boolean) {
 
     fun lensTucked(): Boolean = tucked
 
-    /** Which opening of its panel its window was last put above (for the test report). */
+    /** Which opening of its panel its window was last put above (for the test report), and when. */
     var raisedFor = -1
+    var raisedAt = 0L
 
     /** Whether the Sidekick is on the screen now (it may just have been switched off where it is). */
     fun lensShownNow(): Boolean = guest && view?.isAttachedToWindow == true
@@ -1544,6 +1545,8 @@ class Floater(val timer: Boolean) {
             wm(context).removeViewImmediate(v)
             wm(context).addView(v, v.lp)
             raisedFor = SidekickPanel.opened
+            raisedAt = android.os.SystemClock.uptimeMillis()
+            Trail.add("$who: put above its own settings panel")
         } catch (e: Exception) {
             v.raising = false
             Trail.add("$who: could not be put above its panel (${e.javaClass.simpleName})")
@@ -5680,7 +5683,13 @@ class Floater(val timer: Boolean) {
                     android.view.MotionEvent.ACTION_DOWN -> { panelDownX = e.rawX; panelDownY = e.rawY }
                     android.view.MotionEvent.ACTION_UP ->
                         if (Math.hypot((e.rawX - panelDownX).toDouble(), (e.rawY - panelDownY).toDouble()) < 14 * resources.displayMetrics.density) {
-                            SidekickPanel.close("a tap on the Sidekick")
+                            val since = android.os.SystemClock.uptimeMillis() - raisedAt
+                            if (since < 400) {
+                                // (Just put above its panel: not a finger of anyone's.)
+                                Trail.add("$who: a touch on it ${since} ms after it was put above its panel: not taken as a tap")
+                            } else {
+                                SidekickPanel.close("a tap on the Sidekick, ${e.eventTime - e.downTime} ms long")
+                            }
                         }
                 }
                 if (ending) panelTouch = false

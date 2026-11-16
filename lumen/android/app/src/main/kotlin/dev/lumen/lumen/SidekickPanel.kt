@@ -104,12 +104,27 @@ object SidekickPanel {
         Trail.add("Sidekick: its own settings closed ($why)")
     }
 
-    // Heading for the home screen or the recent apps, or the screen going off: it closes.
+    // Heading for the home screen or the recent apps, the phone locking or dreaming, or the
+    // screen going off: it closes. Android (and One UI) announce "close system dialogs" for many
+    // other reasons too ("assist", "globalactions", and others with no reason at all, some of
+    // them on window changes): those are written in the recorder and leave it open. (Build 178
+    // closed on every one of them, and the owner saw it close by itself a moment after opening.)
+    private val closingReasons = setOf("homekey", "recentapps", "lock", "dream")
+
     private fun listen(app: Context) {
         if (listener != null) return
         val r = object : android.content.BroadcastReceiver() {
             override fun onReceive(c: Context, i: android.content.Intent) {
-                close(if (i.action == android.content.Intent.ACTION_SCREEN_OFF) "the screen went off" else "home or recent apps")
+                if (i.action == android.content.Intent.ACTION_SCREEN_OFF) {
+                    close("the screen went off")
+                    return
+                }
+                val reason = i.getStringExtra("reason")
+                if (reason != null && reason in closingReasons) {
+                    close("Android said \"$reason\": home, recent apps, the lock or the screensaver")
+                } else {
+                    Trail.add("Sidekick: its own settings stay open: Android said \"close system dialogs\" (${reason ?: "no reason given"})")
+                }
             }
         }
         try {
@@ -142,7 +157,7 @@ object SidekickPanel {
     fun testSpot(id: String): FloatArray? = view?.testSpot(id)
 
     /** As Home or the recent apps would. */
-    fun testHome() = close("home or recent apps (the test)")
+    fun testHome() = close("Android said \"homekey\" (the test)")
 }
 
 /** A spring as in springs.dart: stiffness and damping ratio, mass 1. */
@@ -831,7 +846,7 @@ internal class PanelView(
 
     private fun tapped(id: String) {
         when {
-            id == "shade" -> SidekickPanel.close("a tap beside it")
+            id == "shade" -> SidekickPanel.close("a tap beside it, at ${(downX / dp).toInt()},${(downY / dp).toInt()}")
             id == "close" -> {
                 haptic("tick")
                 SidekickPanel.close("its X")
@@ -842,8 +857,12 @@ internal class PanelView(
                 switches[id]?.let { it.onSettle = { haptic("click") }; it.to(if (v) 1f else 0f) }
                 run()
                 // Nowhere left to be seen (both off, or not over the app it is over): it closes
-                // into where the Sidekick was, and the Sidekick goes.
-                postDelayed({ if (!RestBubble.lensShownNow()) SidekickPanel.close("the Sidekick switched off here") }, 350)
+                // into where the Sidekick was, and the Sidekick goes. (Only ever after a switch
+                // is tapped, and only if that switch left it nowhere to be.)
+                val nowhere = !SidekickSettings.inApp && !SidekickSettings.overApps
+                postDelayed({
+                    if (!closing && (nowhere || !RestBubble.lensShownNow())) SidekickPanel.close("the Sidekick switched off here (${if (nowhere) "everywhere" else id})")
+                }, 350)
             }
             id.contains('.') && !id.startsWith("look.") -> {
                 val (pid, idx) = id.split('.').let { it[0] to it[1].toInt() }

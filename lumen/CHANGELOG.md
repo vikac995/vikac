@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 179 (16 November 2026)
+
+**File:** `releases/prism-build-179.apk`
+
+Needs Play Protect paused to install. Can be installed over build 178.
+
+**The Sidekick's panel closed by itself** about a second after you let go of the hold that opened it (your two recordings, over Prism and over the Claude app). This build is that fix, and nothing else.
+
+- **What could close it by itself:** the panel closes when Android announces "close system dialogs". In 178 it believed every such announcement meant Home or the recent apps. Android, and Samsung's One UI, send it for many other reasons too, some when windows change. Now only Home, the recent apps, the phone locking and the screen saver close it. Every other announcement is written in the flight recorder, with its reason, and the panel stays open.
+- **Two more guards,** in case the cause is one of them instead:
+  - A touch arriving on the Sidekick in the instant it is put back on top of the panel no longer counts as a tap that closes it.
+  - The check that closes the panel when a switch leaves the Sidekick nowhere to be now runs only after a switch is tapped.
+- **Every close now says exactly why** in the flight recorder: which announcement and its reason, where a tap beside it was, how long a tap on the Sidekick was.
+- **The button test now checks** that the panel opened by holding the Sidekick is still open 1.5 seconds after the finger lifts, never closed meanwhile, with the Sidekick on top and the panel unchanged.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 67 of 68 (the miss is the Android-only measurement); the long test, 62 of 66 with the usual 4 misses (each first run beside the APK build missed one flick-timing check more; both clean when run alone).
+**Not checked:** on a phone. Which of the three it was, only your flight recorder can say: after a hold, look for "Sidekick: its own settings stay open: Android said ..." or the line that closed it.
+
 ## Prism, build 178 (15 November 2026)
 
 **File:** `releases/prism-build-178.apk`
