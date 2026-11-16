@@ -120,7 +120,9 @@ downloaded file has the same sha256 as the one built.
   test isn't re-run: Prism's code is unchanged from 179 but for its build number.
 - **Build 180:** `Prism build 180`, `0.141.0+208`. NAME-OK; "ms after they opened" is in its
   `classes.dex`. sha256 `238255a523073a8f3f37866052aca4cbfead1abce410d76d13ad2623b44db2c6`, 18,665,722
-  bytes. Link: LINK180
+  bytes. Link: https://github.com/vikac995/vikac/raw/7cf04560fe58bf7a269d31b11db219af33336119/lumen/releases/prism-build-180.apk
+(pinned to `7cf0456`). Checked after the push: it answers 200, and the downloaded file has the same
+sha256 as the one built.
 
 **For the owner:** install 180 rather than 179. Then as above: hold, let go, wait, close with the ✕, send
 the recorder, then the button test.
