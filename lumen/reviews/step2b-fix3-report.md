@@ -1,5 +1,10 @@
 # Step 2b fix 3 report: the S26's one missed tap (build 182)
 
+**On hold.** The review chat asked to hold 182 and send only the investigation. The owner is testing 181,
+and a new build in the middle of that confuses things. Its message was sent at 07:42 but reached this
+session at 07:55, after 182 was pushed (07:54). 182 stays on the branch, not to be installed. Its logging
+goes out in the next build, with whatever the 181 results ask for.
+
 Brief: `tasks/STEP2b-fix3.md`. Asked for in 181, but 181 was already pushed (`8db28c0`), so it is 182,
 on top of 181. Exactly the two items: the investigation, and the check's explanation when it fails.
 Nothing in the app's behaviour changes: one recorder line is added, and the button test reports more.

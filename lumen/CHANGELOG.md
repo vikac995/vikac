@@ -4,7 +4,9 @@
 
 **File:** `releases/prism-build-182.apk`
 
-Needs Play Protect paused to install. Can be installed over build 181. It is build 181 with two small changes to the button test and the recorder. Nothing you see in Prism or the Sidekick changes.
+**On hold: please don't install it.** Keep testing 181. The review chat asked to hold it while you test 181, but its message reached me after 182 was pushed. What 182 adds goes out in the next build, with whatever your 181 results ask for.
+
+It is build 181 with two small changes to the button test and the recorder. Nothing you see in Prism or the Sidekick changes.
 
 **Your S26 run of 180:** in one of its four rounds, a tap on the Sidekick didn't open its blobs, and the checks after it in that round went wrong too.
 
