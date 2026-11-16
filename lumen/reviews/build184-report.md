@@ -220,7 +220,7 @@ long test:    CHECKS: 62 right, 4 wrong, of 66 (the usual 4)
 - Its `classes.dex` has `chargeUah`. Its `libapp.so` has "Prism build 184", "THE GLASS, MEASURED" and
   `closePanelToBlobs`.
 - sha256 `487f70b43ffb4aa1c76879d86c2f994cd0e104078442fbdfce2319cc12c1807b`, 18,797,002 bytes.
-- Link: LINK_RESULT
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/9015d36ec307c1ae8f5aa74f5a2f91cb7277ccb2/lumen/releases/prism-build-184.apk
 
 ## Where I could be wrong
 
