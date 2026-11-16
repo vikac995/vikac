@@ -1532,6 +1532,14 @@ class Floater(val timer: Boolean) {
      * out of it, going back in, or lying over it). It is the Sidekick's own drawing, scaled and
      * faded as its window shows it. False if it is not on the screen.
      */
+    /** For the button test: the Sidekick's window on the screen, [x, y, width, height], in pixels. */
+    fun lensWindow(): IntArray? {
+        val v = view ?: return null
+        val at = IntArray(2)
+        v.getLocationOnScreen(at)
+        return intArrayOf(at[0], at[1], v.width, v.height)
+    }
+
     fun drawLensInto(canvas: android.graphics.Canvas, ox: Int, oy: Int): Boolean {
         val v = view ?: return false
         if (!guest || !v.isAttachedToWindow) return false
@@ -2215,6 +2223,13 @@ class Floater(val timer: Boolean) {
         m.putAll(SidekickPanel.testState())
         m["lensAdds"] = lensAdds
         m["lensRemoves"] = lensRemoves
+        // (Where the Sidekick really is on the screen, in points: its middle and its glass's radius,
+        // from its window's place, as its panel's hole and stand-in use it. The test's other
+        // figure, x and y, comes from where its window was asked to be.)
+        lensOnScreen()?.let {
+            m["lensMid"] = listOf((it[0] / d.density).toDouble(), (it[1] / d.density).toDouble())
+            m["lensRadius"] = (it[2] / d.density).toDouble()
+        }
         m["forwards"] = PrismScreen.forwards
         // (What Android's side keeps that could grow: the blobs' pictures decoded, and the recorder's lines.)
         m["iconsCached"] = icons.size
@@ -2523,7 +2538,13 @@ class Floater(val timer: Boolean) {
                         // way), into a few pixels at the Sidekick's middle: is the stand-in there?
                         "sample" -> {
                             val m = state(context)
-                            SidekickPanel.testSample(((a["at"] as? Number)?.toFloat()) ?: 0.12f)?.let { m.putAll(it) }
+                            // One moment ("at"), or several ("stages"), each its own map.
+                            val stages = (a["stages"] as? List<*>)?.mapNotNull { (it as? Number)?.toFloat() }
+                            if (stages != null) {
+                                m["samples"] = stages.mapNotNull { SidekickPanel.testSample(it) }
+                            } else {
+                                SidekickPanel.testSample(((a["at"] as? Number)?.toFloat()) ?: 0.12f)?.let { m.putAll(it) }
+                            }
                             done(m)
                         }
                         "home" -> {

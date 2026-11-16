@@ -8,6 +8,7 @@ import '../core/haptics.dart';
 import '../core/theme.dart';
 import '../widgets/pressable.dart';
 import 'diag.dart';
+import 'past_reports.dart';
 
 /// Prism's flight recorder. It quietly keeps the last few hundred things that happened: what
 /// was done, slow frames and what was on screen when they came, memory warnings, errors, Prism
@@ -255,6 +256,8 @@ void showRecorderExport(BuildContext context) {
                       final String text = await Recorder.instance.export(
                         note.text,
                       );
+                      // Kept among the past reports, as every finished test is.
+                      PastReports.instance.save('recorder export', text);
                       await Diag.instance.copy(text);
                       Haptics.settle();
                       if (context.mounted) {

@@ -580,8 +580,13 @@ internal class PanelView(
         private set
     private var noStandIn = false
 
+    // (For the test: what the last frame asked of the stand-in, and whether it was drawn.)
+    private var lastAsked = false
+    private var lastDrew = false
+
     private fun standIn(canvas: Canvas, needed: Boolean) {
         var drew = false
+        lastAsked = needed && !noStandIn
         if (needed && !noStandIn) {
             SidekickPanel.drawingStandIn = true
             try {
@@ -590,6 +595,7 @@ internal class PanelView(
                 SidekickPanel.drawingStandIn = false
             }
         }
+        lastDrew = drew
         if (drew != standingIn && !sampling) {
             standingIn = drew
             if (drew) standIns++
@@ -1100,8 +1106,20 @@ internal class PanelView(
         try {
             g.value = at
             val rect = RectF(lerp(lx - sr, box.left, at), lerp(ly - sr, box.top, at), lerp(lx + sr, box.right, at), lerp(ly + sr, box.bottom, at))
+            m["sampleAt"] = at.toDouble()
             m["sampleCovers"] = covers(rect)
+            lastAsked = false
+            lastDrew = false
             m["sampleWith"] = pixel { draw(it) }
+            // What drawing the panel just now asked of the stand-in, and whether it was drawn; and
+            // where the Sidekick's window was, from this window's corner, against the sampled point.
+            m["sampleAsked"] = lastAsked
+            m["sampleDrew"] = lastDrew
+            RestBubble.lensWindow()?.let { w ->
+                m["sampleDot"] = listOf(w[0] - origin[0], w[1] - origin[1], w[2], w[3])
+            }
+            m["sampleOrigin"] = listOf(origin[0], origin[1])
+            m["samplePoint"] = listOf(lx.toDouble(), ly.toDouble())
             noStandIn = true
             m["sampleWithout"] = pixel { draw(it) }
             noStandIn = false

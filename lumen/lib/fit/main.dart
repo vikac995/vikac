@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -89,7 +90,19 @@ class PrismApp extends StatelessWidget {
               type: MaterialType.transparency,
               child: Stack(
                 children: <Widget>[
-                  child!,
+                  // (In the preview only: a larger system text size, to look at everything as a
+                  // phone set to large text shows it. PRISM_TEXT_SCALE=1.3, or 2 for the largest.)
+                  if (double.tryParse(
+                        Platform.environment['PRISM_TEXT_SCALE'] ?? '',
+                      )
+                      case final double scale?)
+                    MediaQuery(
+                      data: MediaQuery.of(context)
+                          .copyWith(textScaler: TextScaler.linear(scale)),
+                      child: child!,
+                    )
+                  else
+                    child!,
                   if (settings.showFps) const FpsMeter(),
                   // While a guided test runs, a small banner says which setting is being tried.
                   ValueListenableBuilder<String?>(

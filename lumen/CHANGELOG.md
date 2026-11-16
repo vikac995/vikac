@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Prism, build 183 (16 November 2026)
+
+**File:** `releases/prism-build-183.apk`
+
+Needs Play Protect paused to install. Can be installed over build 182. Testing tools only: nothing you use in Prism or the Sidekick changes.
+
+- **The test area shows which build you're testing:** a gold badge at the top with the build's number, its date and what it's for, in place of the small grey "Testing · build" line.
+- **The test a build asks for is green,** with a "Test this one" tag. This one asks for the button test.
+- **Past reports:** every finished test's report (and every "Send what just happened") is kept on the phone the moment it ends.
+  - The last 20 are listed under "Copy the last report", newest first, each with its date and time, the test, the build and its result.
+  - A tap copies the whole report, exactly as "Copy the last report" does.
+  - They stay through closing Prism, restarting the phone and installing a new build. Only uninstalling Prism clears them.
+- **The button test's own fixes** (from your 182 reports):
+  - It waits for Prism's pictures before tapping the Sidekick, and notes how long they took.
+  - "At its spot" compares the Sidekick's real place on the screen.
+  - The panel beside the Sidekick may now lie over it (the Sidekick always on top), and the check says which side it's on and how far it hovers.
+  - The check of the Sidekick drawn on top of its panel looks at five moments and says, for each, whether it was drawn and what the screen showed there.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 69 of 70 (the Android-only miss), with both new past-report checks right; the long test, 62 of 66 with the usual 4 misses; the test area at normal, 1.3× and the largest text size (pictures in the report).
+**Not checked:** on a phone.
+
 ## Prism, build 182 (16 November 2026)
 
 **File:** `releases/prism-build-182.apk`

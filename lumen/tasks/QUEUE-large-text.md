@@ -29,3 +29,9 @@ system text sizes, not only the default."
 **Note (16 November 2026, from the review chat):** labels that are too long are shortened with "…" by
 the one shortening rule of the blob-label item (`QUEUE-next-build.md`, item 4): about 1.5× the blob's
 diameter, the same on the Kotlin and the Dart side. Use the same function here.
+
+**Seen in build 183's preview (largest text size, 2×):**
+- In the test area, "Copy test report" and "Start over" (two buttons side by side, fixed height 52) clip their words. They are unchanged from before 183.
+- The home screen's workout card breaks words letter by letter ("Pu / sh / da / y").
+- Pictures: `reviews/shots183/`.
+

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -22,6 +23,7 @@ import 'gestures.dart';
 import 'home_page.dart';
 import 'lens.dart';
 import 'long_test.dart';
+import 'past_reports.dart';
 import 'look.dart';
 import 'main.dart' show PanelWatch;
 import 'apps.dart';
@@ -4799,6 +4801,27 @@ class _ShellState extends State<Shell>
               'Prism in front ${yn('fg')}; its last touch: ${m['touch'] ?? '?'}';
         }
 
+        // The Sidekick shows a new blob only once Prism has sent its picture. After its menu has
+        // been changed, the test waits for all of them before it taps (182's one miss on the S26
+        // was a tap that came first). Null once they have all come; otherwise, why not.
+        Future<String?> picturesIn(String after) async {
+          final Stopwatch w = Stopwatch()..start();
+          String said = '?';
+          while (w.elapsedMilliseconds < 6000) {
+            final Map<String, Object?> m = await where();
+            said = '${m['sidekickPicturesFor'] ?? '?'}';
+            final List<String> of = said.split(' of ');
+            if (of.length == 2 && of[0] == of[1]) {
+              t.note(
+                'the Sidekick\'s pictures for its menu had all come ${w.elapsedMilliseconds} ms after $after',
+              );
+              return null;
+            }
+            await Robot.wait(150);
+          }
+          return 'Prism\'s pictures had not all come 6 s after $after: pictures for $said of its blobs';
+        }
+
         if (!mine) {
           t.note(
             'the Sidekick\'s Remove, Change and Add were not tried: its menu is not yet Android\'s own, and the test must not change it before the one-time move',
@@ -4814,12 +4837,12 @@ class _ShellState extends State<Shell>
             'screen:0',
           ];
           await t.lens(<String, Object?>{'op': 'sidekick', 'keys': sideTest});
-          await Robot.wait(600);
+          final String? late = await picturesIn('the test\'s menu was set');
           final bool opened = await openMenu();
           t.check(
             'sidekick: a tap opens its blobs',
             opened,
-            opened ? '' : whyNot(),
+            opened ? '' : (late ?? whyNot()),
           );
           s = await where();
           t.check(
@@ -5046,6 +5069,7 @@ class _ShellState extends State<Shell>
                 'empty:',
               ],
             });
+            await picturesIn('the round trip\'s menu was set');
             // One trip: over the other app, the held blob's part [which] (0 Change, 2 Add),
             // then [choose] or close the list. Answers what Android keeps afterwards, or null if
             // the trip could not be made.
@@ -5239,16 +5263,45 @@ class _ShellState extends State<Shell>
         bool lensUntouched(Map<String, Object?> m) =>
             numOf(m['lensAdds']) == addsWas &&
             numOf(m['lensRemoves']) == removesWas;
-        // Its middle, and the shade's hole, in points.
+        // Its middle where it really is on the screen ("lensMid", from its window's place, as the
+        // shade's hole and the stand-in find it), in points. (Build 182 compared the hole with the
+        // middle worked out from where its window was asked to be, x and y: on both phones that
+        // was off by some way, while the hole was on the Sidekick.)
+        List<double> midOf(Map<String, Object?> m) {
+          final List<Object?> l =
+              (m['lensMid'] as List<Object?>?) ?? const <Object?>[];
+          return l.length == 2
+              ? <double>[numOf(l[0]), numOf(l[1])]
+              : <double>[double.nan, double.nan];
+        }
+
+        List<double> askedMid(Map<String, Object?> m) => <double>[
+          (numOf(m['x']) + numOf(m['size']) / 2) / dp,
+          (numOf(m['y']) + numOf(m['size']) / 2) / dp,
+        ];
+        String pts(List<Object?> l) =>
+            l.map((Object? v) => numOf(v).toStringAsFixed(1)).join(', ');
         bool atItsSpot(Map<String, Object?> m) {
           final List<Object?> hole =
               (m['panelHole'] as List<Object?>?) ?? const <Object?>[];
-          final double x = (numOf(m['x']) + numOf(m['size']) / 2) / dp;
-          final double y = (numOf(m['y']) + numOf(m['size']) / 2) / dp;
+          final List<double> c = midOf(m);
           return m['lens'] == true &&
               hole.length == 2 &&
-              (numOf(hole[0]) - x).abs() < 4 &&
-              (numOf(hole[1]) - y).abs() < 4;
+              (numOf(hole[0]) - c[0]).abs() < 4 &&
+              (numOf(hole[1]) - c[1]).abs() < 4;
+        }
+
+        String spotSaid(Map<String, Object?> m) =>
+            'the hole at [${pts((m['panelHole'] as List<Object?>?) ?? const <Object?>[])}], the Sidekick\'s middle on the screen at [${pts(midOf(m))}] (from where its window was asked to be: [${pts(askedMid(m))}])${m['roaming'] == true ? ', roaming' : ''}, its window ${m['window']} px';
+        // Where the two figures for its middle differ, every check that uses x and y is off by as much.
+        void noteOffset(Map<String, Object?> m) {
+          final List<double> c = midOf(m), a = askedMid(m);
+          if (!c.any((double v) => v.isNaN) &&
+              ((c[0] - a[0]).abs() > 4 || (c[1] - a[1]).abs() > 4)) {
+            t.note(
+              'the Sidekick\'s middle worked out from where its window was asked to be (x, y) is ${(a[0] - c[0]).toStringAsFixed(1)}, ${(a[1] - c[1]).toStringAsFixed(1)} points from where it is on the screen: checks that use x and y are off by as much',
+            );
+          }
         }
 
         heard(
@@ -5260,8 +5313,9 @@ class _ShellState extends State<Shell>
               atItsSpot(s) &&
               numOf(s['panelLeastSinceOpen']) >= 0.999 &&
               (numOf(s['panelShade']) - 0.4).abs() < 0.02,
-          'open ${s['panelOpen']}, opened ${numOf(s['panelOpened']) - openedWas} time(s), last closed "${s['panelClosed']}" (before: "$closedWas"), its window added ${numOf(s['lensAdds']) - addsWas} and taken off ${numOf(s['lensRemoves']) - removesWas} times, the hole ${s['panelHole']}, the panel at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, shade ${numOf(s['panelShade']).toStringAsFixed(2)}',
+          'open ${s['panelOpen']}, opened ${numOf(s['panelOpened']) - openedWas} time(s), last closed "${s['panelClosed']}" (before: "$closedWas"), its window added ${numOf(s['lensAdds']) - addsWas} and taken off ${numOf(s['lensRemoves']) - removesWas} times, ${spotSaid(s)}, the panel at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, shade ${numOf(s['panelShade']).toStringAsFixed(2)}',
         );
+        noteOffset(s);
         heard(
           'sidekick panel: held, its own settings come up, over the app it is in',
           opened,
@@ -5284,18 +5338,30 @@ class _ShellState extends State<Shell>
         );
         final List<Object?> pbox =
             (s['panelBox'] as List<Object?>?) ?? const <Object?>[];
-        final double sidekickX =
-            (numOf(s['x']) + numOf(s['size']) / 2) /
-            dp; // its middle, in points
+        // Its middle, in points, where it is on the screen.
+        final double sidekickX = midOf(s)[0];
+        final double sidekickR = numOf(s['lensRadius']);
+        final bool sidekickRight = s['panelOnRight'] == true;
+        // How far the open panel reaches over the Sidekick's glass, sideways, in points (0 or less:
+        // clear of it). The panel's place depends only on the Sidekick's side, so a Sidekick that
+        // hovers further in lies partly under it (the S25, 182): that is allowed, as long as the
+        // Sidekick stays on top and is never hidden (checked with the samples below).
+        final double over = pbox.length != 4
+            ? double.nan
+            : (sidekickRight
+                  ? numOf(pbox[0]) + numOf(pbox[2]) - (sidekickX - sidekickR)
+                  : sidekickX + sidekickR - numOf(pbox[0]));
+        final String sideSaid =
+            'the Sidekick on the ${sidekickRight ? 'right' : 'left'}, its middle at ${sidekickX.toStringAsFixed(1)}, its glass ${sidekickR.toStringAsFixed(1)} across from it, Hovering ${numOf(kept(s)?['gap']).toStringAsFixed(1)}; the panel ${over > 0 ? 'over its glass by ${over.toStringAsFixed(1)} points' : 'clear of it by ${(-over).toStringAsFixed(1)} points'}; box ${pbox.map((Object? v) => numOf(v).round()).join(', ')}';
         inPanel(
-          'sidekick panel: beside the Sidekick, on the side away from it, about 330 points wide',
+          'sidekick panel: about 330 points wide, on the side away from the Sidekick',
           pbox.length == 4 &&
               numOf(pbox[2]) <= 330.5 &&
               numOf(pbox[2]) >= 280 &&
-              (s['panelOnRight'] == true
-                  ? numOf(pbox[0]) + numOf(pbox[2]) < sidekickX
-                  : numOf(pbox[0]) > sidekickX),
-          'box ${pbox.map((Object? v) => numOf(v).round()).join(', ')}; the Sidekick\'s middle at ${sidekickX.round()}',
+              (sidekickRight
+                  ? numOf(pbox[0]) + numOf(pbox[2]) / 2 < sidekickX
+                  : numOf(pbox[0]) + numOf(pbox[2]) / 2 > sidekickX),
+          sideSaid,
         );
         inPanel('sidekick panel: it grew out of the Sidekick, where it is', () {
           final List<Object?> from =
@@ -5305,33 +5371,111 @@ class _ShellState extends State<Shell>
         inPanel(
           'sidekick panel: the Sidekick stays in sight at its spot, its window never taken off',
           atItsSpot(s) && lensUntouched(s) && s['covered'] != true,
-          'shown ${s['lens']}, the hole ${s['panelHole']}, its window added ${numOf(s['lensAdds']) - addsWas} and taken off ${numOf(s['lensRemoves']) - removesWas} times, hidden ${s['covered']}',
+          'shown ${s['lens']}, ${spotSaid(s)}, its window added ${numOf(s['lensAdds']) - addsWas} and taken off ${numOf(s['lensRemoves']) - removesWas} times, hidden ${s['covered']}',
         );
-        // Where the panel covers it (a moment into growing), the panel draws the Sidekick itself:
-        // the pixel at its middle is the Sidekick's, not the panel's.
+        // Where the panel covers it, the panel draws the Sidekick itself on top (its stand-in): the
+        // pixel at its middle is the Sidekick's, not the panel's. Sampled at several moments of its
+        // growing (closing passes through the same ones), and open. Each moment is written into the
+        // report in words: whether the panel covers it, whether the stand-in was asked for and
+        // drawn, and what the pixel shows. (182 found only the panel's colour at 12%, on both
+        // phones, without saying why.)
         if (opened) {
-          final Map<String, Object?> m = await panel('sample');
-          final int withIt = numOf(m['sampleWith']).toInt(),
-              without = numOf(m['sampleWithout']).toInt(),
-              lens = numOf(m['sampleLens']).toInt();
+          const String drawsIt =
+              'sidekick panel: where it covers the Sidekick, the panel draws the Sidekick (its stand-in)';
+          const String neverHides =
+              'sidekick panel: open, the panel never hides the Sidekick';
+          final Map<String, Object?> m = await t.lens(<String, Object?>{
+            'op': 'panel',
+            'what': 'sample',
+            'stages': <double>[0.06, 0.12, 0.25, 0.5, 1.0],
+          }, extraMs: 4000);
+          final List<Map<String, Object?>> stages = <Map<String, Object?>>[
+            for (final Object? x
+                in (m['samples'] as List<Object?>?) ?? const <Object?>[])
+              if (x is Map) x.cast<String, Object?>(),
+          ];
           int far(int a, int b) => <int>[24, 16, 8, 0]
               .map((int k) => (((a >> k) & 0xFF) - ((b >> k) & 0xFF)).abs())
               .reduce(math.max);
-          String hex(int v) =>
-              v.toUnsigned(32).toRadixString(16).padLeft(8, '0');
-          if (m['sampleCovers'] != true || far(lens, without) < 24) {
-            t.skip(
-              'sidekick panel: where it covers the Sidekick, the panel draws the Sidekick (its stand-in)',
-              m['sampleCovers'] != true
-                  ? 'the sampled moment did not cover it'
-                  : 'the Sidekick\'s middle is the panel\'s colour, so it cannot tell (${hex(lens)})',
-            );
+          String hex(Object? v) => numOf(v).isNaN
+              ? '?'
+              : numOf(v)
+                    .toInt()
+                    .toUnsigned(32)
+                    .toRadixString(16)
+                    .padLeft(8, '0');
+          bool covers(Map<String, Object?> st) => st['sampleCovers'] == true;
+          // (Where the Sidekick's middle is the panel's own colour, the pixel cannot tell.)
+          bool telling(Map<String, Object?> st) =>
+              covers(st) &&
+              far(
+                    numOf(st['sampleLens']).toInt(),
+                    numOf(st['sampleWithout']).toInt(),
+                  ) >=
+                  24;
+          bool shows(Map<String, Object?> st) =>
+              far(
+                numOf(st['sampleWith']).toInt(),
+                numOf(st['sampleLens']).toInt(),
+              ) <
+              24;
+          String said(Map<String, Object?> st) {
+            final String at = '${(numOf(st['sampleAt']) * 100).round()}% open';
+            if (!covers(st)) {
+              return '$at: the panel is clear of it, no stand-in needed';
+            }
+            final String drawn =
+                'the stand-in asked for: ${st['sampleAsked'] == true ? 'yes' : 'no'}, drawn: ${st['sampleDrew'] == true ? 'yes' : 'no'}';
+            final String pixel = !telling(st)
+                ? 'the Sidekick\'s middle is the panel\'s own colour here, so the pixel cannot tell'
+                : (shows(st)
+                      ? 'the pixel at its middle is the Sidekick\'s'
+                      : 'the pixel at its middle is the panel\'s: the Sidekick is hidden there');
+            return '$at: the panel covers it; $drawn; $pixel (with ${hex(st['sampleWith'])}, the Sidekick alone ${hex(st['sampleLens'])}, the panel without it ${hex(st['sampleWithout'])}; its window at ${st['sampleDot']} px from the panel\'s corner, the point sampled at [${pts((st['samplePoint'] as List<Object?>?) ?? const <Object?>[])}] px)';
+          }
+
+          if (stages.isEmpty) {
+            t.check(drawsIt, false, 'no samples: ${m['note'] ?? 'no answer'}');
           } else {
-            t.check(
-              'sidekick panel: where it covers the Sidekick, the panel draws the Sidekick (its stand-in)',
-              withIt != without && far(withIt, lens) < 24,
-              'with the stand-in ${hex(withIt)}, without ${hex(without)}, the Sidekick alone ${hex(lens)}',
-            );
+            for (final Map<String, Object?> st in stages) {
+              t.note('the Sidekick under its panel, ${said(st)}');
+            }
+            final List<Map<String, Object?>> told = <Map<String, Object?>>[
+              for (final Map<String, Object?> st in stages)
+                if (telling(st)) st,
+            ];
+            if (told.isEmpty) {
+              t.skip(
+                drawsIt,
+                stages.any(covers)
+                    ? 'where the panel covers it, the Sidekick\'s middle is the panel\'s colour, so the pixels cannot tell'
+                    : 'at none of the sampled moments does the panel cover it',
+              );
+            } else {
+              t.check(
+                drawsIt,
+                told.every(shows),
+                told
+                    .where((Map<String, Object?> st) => !shows(st))
+                    .map(said)
+                    .join(' | '),
+              );
+            }
+            // Open, the panel may lie over the Sidekick (a Sidekick hovering further in, on a
+            // narrow screen), but the Sidekick is always on top.
+            final Map<String, Object?> open = stages.last;
+            if (covers(open) && !telling(open)) {
+              t.skip(
+                neverHides,
+                'the panel lies over it, and its middle is the panel\'s colour, so the pixel cannot tell ($sideSaid)',
+              );
+            } else {
+              t.check(
+                neverHides,
+                !covers(open) || shows(open),
+                '${said(open)}; $sideSaid',
+              );
+            }
           }
         }
         inPanel(
@@ -5901,6 +6045,63 @@ class _ShellState extends State<Shell>
               rec.contains('SETTINGS:'),
           '${rec.split('\n').length} lines',
         );
+      }
+      if (buttons) {
+        // Past reports (183), in a folder of the test's own, so the owner's list is not touched:
+        // one kept and read back as Prism would after a restart (a new reader, from storage),
+        // byte for byte; then more than can be kept, and only the newest 20 are left.
+        final Directory tmp = Directory(
+          '${Directory.systemTemp.path}/prism_reports_test_${DateTime.now().microsecondsSinceEpoch}',
+        );
+        try {
+          const String title = 'button test (Prism and the Sidekick)';
+          const String sample =
+              'Prism build 183  ·  button test\r\nCHECKS: 605 right, 12 wrong, of 617\n½ · “quotes” · 🙂\n\n';
+          final DateTime at = DateTime(2026, 11, 16, 12, 33);
+          PastReports(tmp).save(title, sample, at: at);
+          final List<PastReport> back = PastReports(tmp).list();
+          final String read = back.isEmpty ? '' : back.first.text();
+          t.check(
+            'past reports: one kept is read back after a restart, byte for byte',
+            back.length == 1 &&
+                _sameBytes(utf8.encode(read), utf8.encode(sample)) &&
+                back.first.title == title &&
+                back.first.name == 'Button test' &&
+                back.first.when == at &&
+                back.first.build(read) == '183' &&
+                back.first.result(read) == '605 right, 12 wrong',
+            back.isEmpty
+                ? 'nothing read back'
+                : '${utf8.encode(read).length} bytes back of ${utf8.encode(sample).length}; "${back.first.name}", build ${back.first.build(read)}, "${back.first.result(read)}", ${back.first.when}',
+          );
+          for (int k = 1; k <= PastReports.keep + 2; k++) {
+            PastReports(tmp).save(
+              'leak test',
+              'Prism build 183  ·  leak test $k',
+              at: at.add(Duration(minutes: k)),
+            );
+          }
+          final List<PastReport> kept = PastReports(tmp).list();
+          t.check(
+            'past reports: only the newest 20 are kept, newest first',
+            kept.length == PastReports.keep &&
+                kept.first.text().endsWith(
+                  'leak test ${PastReports.keep + 2}',
+                ) &&
+                kept.last.text().endsWith('leak test 3'),
+            '${kept.length} kept, newest "${kept.isEmpty ? '' : kept.first.text()}", oldest "${kept.isEmpty ? '' : kept.last.text()}"',
+          );
+        } catch (e) {
+          t.check(
+            'past reports: one kept is read back after a restart, byte for byte',
+            false,
+            '$e',
+          );
+        } finally {
+          try {
+            tmp.deleteSync(recursive: true);
+          } catch (_) {}
+        }
       }
       roundsTook.start();
       for (int n = 1; n <= rounds; n++) {
@@ -6588,6 +6789,8 @@ class _ShellState extends State<Shell>
             '  $e',
         ],
       ]);
+      // Kept among the past reports first of all: a crash from here on still leaves it.
+      PastReports.instance.save(title, text);
       if (Platform.environment['PRISM_LONG_TEST'] != null) {
         // ignore: avoid_print
         print(text);
@@ -6699,8 +6902,10 @@ class _ShellState extends State<Shell>
                     Pressable(
                       onTap: () async {
                         final String text = withNote();
-                        // Kept with the note, so "Copy the last report" has it too.
+                        // Kept with the note, so "Copy the last report" has it too, and
+                        // the past report that was just kept.
                         TestRun.keep(text);
+                        PastReports.instance.update(text);
                         await Diag.instance.copy(text);
                         Haptics.settle();
                         if (context.mounted) {
@@ -9334,6 +9539,17 @@ class _ShellState extends State<Shell>
 
 /// Opens Prism's settings as a glass sheet. Used by the round button at the top of Home.
 void showPrismSettings(BuildContext context) {
+  // (In the preview only: opened already scrolled to one of its parts, by its test key, to
+  // take its picture: PRISM_PANEL_SHOW=buildName.)
+  final String? show = Platform.environment['PRISM_PANEL_SHOW'];
+  if (show != null) {
+    Future<void>.delayed(const Duration(milliseconds: 900), () {
+      final BuildContext? at = Robot.key(show).currentContext;
+      if (at != null && at.mounted) {
+        Scrollable.ensureVisible(at, alignment: 0.02);
+      }
+    });
+  }
   showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
@@ -9652,11 +9868,7 @@ void showPrismSettings(BuildContext context) {
                       ),
                       const SizedBox(height: 18),
                       // (With which build this is, so there is never a doubt which one is installed.)
-                      Text(
-                        'Testing  ·  ${Diag.build}',
-                        key: Robot.key('buildName'),
-                        style: LumenType.label(color: c.inkMuted),
-                      ),
+                      _buildBadge(),
                       const SizedBox(height: 8),
                       Row(
                         children: <Widget>[
@@ -9720,204 +9932,68 @@ void showPrismSettings(BuildContext context) {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      Pressable(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Diag.instance.startGuided();
-                          Haptics.settle();
-                        },
-                        child: Container(
-                          height: 52,
-                          alignment: Alignment.center,
-                          decoration: ShapeDecoration(
-                            color: c.ink.withValues(alpha: 0.08),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Run the test (about ${(Diag.testSeconds / 60).toStringAsFixed(1)} min)',
-                            style: LumenType.text(
-                              15,
-                              weight: 700,
-                              color: c.ink,
-                              height: 1,
-                            ),
-                          ),
-                        ),
+                      _testButton(
+                        context,
+                        c,
+                        'guided',
+                        'Run the test (about ${(Diag.testSeconds / 60).toStringAsFixed(1)} min)',
+                        Diag.instance.startGuided,
                       ),
                       const SizedBox(height: 10),
-                      Pressable(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Haptics.settle();
-                          Diag.instance.longTest?.call();
-                        },
-                        child: Container(
-                          height: 52,
-                          alignment: Alignment.center,
-                          decoration: ShapeDecoration(
-                            color: c.ink.withValues(alpha: 0.08),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Run the long test (about 20 min, hands off)',
-                            style: LumenType.text(
-                              15,
-                              weight: 700,
-                              color: c.ink,
-                              height: 1,
-                            ),
-                          ),
-                        ),
+                      _testButton(
+                        context,
+                        c,
+                        'long',
+                        'Run the long test (about 20 min, hands off)',
+                        () => Diag.instance.longTest?.call(),
                       ),
                       const SizedBox(height: 10),
-                      Pressable(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Haptics.settle();
-                          Diag.instance.glassTest?.call();
-                        },
-                        child: Container(
-                          height: 52,
-                          alignment: Alignment.center,
-                          decoration: ShapeDecoration(
-                            color: c.ink.withValues(alpha: 0.08),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Run the glass settings test (about 20 min)',
-                            style: LumenType.text(
-                              15,
-                              weight: 700,
-                              color: c.ink,
-                              height: 1,
-                            ),
-                          ),
-                        ),
+                      _testButton(
+                        context,
+                        c,
+                        'glass',
+                        'Run the glass settings test (about 20 min)',
+                        () => Diag.instance.glassTest?.call(),
                       ),
                       const SizedBox(height: 10),
-                      Pressable(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Haptics.settle();
-                          Diag.instance.drainTest?.call();
-                        },
-                        child: Container(
-                          height: 52,
-                          alignment: Alignment.center,
-                          decoration: ShapeDecoration(
-                            color: c.ink.withValues(alpha: 0.08),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Run the chat-head battery test (about 35 min)',
-                            style: LumenType.text(
-                              15,
-                              weight: 700,
-                              color: c.ink,
-                              height: 1,
-                            ),
-                          ),
-                        ),
+                      _testButton(
+                        context,
+                        c,
+                        'battery',
+                        'Run the chat-head battery test (about 35 min)',
+                        () => Diag.instance.drainTest?.call(),
                       ),
                       const SizedBox(height: 10),
-                      Pressable(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Haptics.settle();
-                          Diag.instance.leakTest?.call();
-                        },
-                        child: Container(
-                          height: 52,
-                          alignment: Alignment.center,
-                          decoration: ShapeDecoration(
-                            color: c.ink.withValues(alpha: 0.08),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Run the leak test (about 11 min, hands off)',
-                            style: LumenType.text(
-                              15,
-                              weight: 700,
-                              color: c.ink,
-                              height: 1,
-                            ),
-                          ),
-                        ),
+                      _testButton(
+                        context,
+                        c,
+                        'leak',
+                        'Run the leak test (about 11 min, hands off)',
+                        () => Diag.instance.leakTest?.call(),
                       ),
                       const SizedBox(height: 10),
-                      Pressable(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Haptics.settle();
-                          Diag.instance.buttonTest?.call();
-                        },
-                        child: Container(
-                          height: 52,
-                          alignment: Alignment.center,
-                          decoration: ShapeDecoration(
-                            color: c.ink.withValues(alpha: 0.08),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Run the button test (about 14 min, hands off)',
-                            style: LumenType.text(
-                              15,
-                              weight: 700,
-                              color: c.ink,
-                              height: 1,
-                            ),
-                          ),
-                        ),
+                      _testButton(
+                        context,
+                        c,
+                        'button',
+                        'Run the button test (about 14 min, hands off)',
+                        () => Diag.instance.buttonTest?.call(),
                       ),
                       const SizedBox(height: 10),
-                      Pressable(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Haptics.settle();
-                          Diag.instance.hourTest?.call();
-                        },
-                        child: Container(
-                          height: 52,
-                          alignment: Alignment.center,
-                          decoration: ShapeDecoration(
-                            color: c.ink.withValues(alpha: 0.08),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Run the hour-long test (overnight, silent)',
-                            style: LumenType.text(
-                              15,
-                              weight: 700,
-                              color: c.ink,
-                              height: 1,
-                            ),
-                          ),
-                        ),
+                      _testButton(
+                        context,
+                        c,
+                        'hour',
+                        'Run the hour-long test (overnight, silent)',
+                        () => Diag.instance.hourTest?.call(),
                       ),
                       const SizedBox(height: 10),
-                      Pressable(
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Haptics.settle();
-                          Diag.instance.soakTest?.call();
-                        },
-                        child: Container(
-                          height: 52,
-                          alignment: Alignment.center,
-                          decoration: ShapeDecoration(
-                            color: c.ink.withValues(alpha: 0.08),
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Run the 2½-hour stability test (silent)',
-                            style: LumenType.text(
-                              15,
-                              weight: 700,
-                              color: c.ink,
-                              height: 1,
-                            ),
-                          ),
-                        ),
+                      _testButton(
+                        context,
+                        c,
+                        'stability',
+                        'Run the 2½-hour stability test (silent)',
+                        () => Diag.instance.soakTest?.call(),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -9970,6 +10046,7 @@ void showPrismSettings(BuildContext context) {
                           ),
                         ),
                       ],
+                      ..._pastReports(c),
                       const SizedBox(height: 14),
                       Text(
                         'The test runs in two parts under each glass setting: first the app drives itself (hands off), then you use it. One report at the end covers both.',
@@ -11248,4 +11325,254 @@ class _SpringPanelState extends State<_SpringPanel>
       ),
     );
   }
+}
+
+// ---- The test area (183): the build being tested, the test it asks for, and the past reports.
+
+// The colours of the mock-up the owner approved: gold for the build, green for the test it
+// asks for. The badge keeps its own light text, so it reads the same in a light theme.
+const Color _gold = Color(0xFFE3AD55);
+const Color _go = Color(0xFF3FCF8E);
+const Color _goInk = Color(0xFF06231A);
+
+/// At the top of the test area: which build this is, big, its date and what it is for.
+Widget _buildBadge() => Container(
+  key: Robot.key('buildName'),
+  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(18),
+    border: Border.all(color: _gold, width: 1.5),
+    gradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[Color(0xFF3A2C12), Color(0xFF2A2416)],
+    ),
+  ),
+  child: Row(
+    children: <Widget>[
+      Text(
+        '${Diag.buildNumber}',
+        style: LumenType.display(26, color: _gold, height: 1),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              "You're testing build ${Diag.buildNumber}",
+              style: LumenType.text(
+                14.5,
+                weight: 600,
+                color: const Color(0xFFF1EEE8),
+                height: 1.3,
+              ),
+            ),
+            Text(
+              '${Diag.buildDate}  ·  ${Diag.buildTitle}',
+              style: LumenType.text(
+                12.5,
+                color: const Color(0xFFA19D95),
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+);
+
+/// One of the test area's buttons. The one this build asks for ([Diag.askedTest]) is green,
+/// with a "Test this one" tag; if it asks for none, none is.
+Widget _testButton(
+  BuildContext context,
+  LumenColors c,
+  String id,
+  String label,
+  VoidCallback run,
+) {
+  final bool asked = Diag.askedTest == id;
+  final Widget button = Pressable(
+    key: Robot.key('test:$id'),
+    onTap: () {
+      Navigator.of(context).pop();
+      Haptics.settle();
+      run();
+    },
+    child: Container(
+      constraints: const BoxConstraints(minHeight: 52),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      alignment: Alignment.center,
+      decoration: ShapeDecoration(
+        color: asked ? _go : c.ink.withValues(alpha: 0.08),
+        shape: const StadiumBorder(),
+        shadows: asked
+            ? <BoxShadow>[
+                BoxShadow(color: _go.withValues(alpha: 0.25), spreadRadius: 3),
+              ]
+            : null,
+      ),
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        style: LumenType.text(
+          15,
+          weight: 700,
+          color: asked ? _goInk : c.ink,
+          height: 1.15,
+        ),
+      ),
+    ),
+  );
+  if (!asked) {
+    return button;
+  }
+  return Stack(
+    clipBehavior: Clip.none,
+    children: <Widget>[
+      button,
+      Positioned(
+        top: -9,
+        right: 14,
+        child: IgnorePointer(
+          child: Container(
+            key: Robot.key('askedTag'),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: const ShapeDecoration(
+              color: Color(0xFFF1EEE8),
+              shape: StadiumBorder(),
+            ),
+            child: Text(
+              'TEST THIS ONE',
+              style: LumenType.text(
+                10.5,
+                weight: 700,
+                color: const Color(0xFF111111),
+                height: 1.1,
+                spacing: 0.6,
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+/// Under "Copy the last report": every finished test's report that is kept, newest first. A
+/// tap copies it whole, as "Copy the last report" does.
+List<Widget> _pastReports(LumenColors c) {
+  final List<PastReport> all = PastReports.instance.list();
+  if (all.isEmpty) {
+    return const <Widget>[];
+  }
+  return <Widget>[
+    const SizedBox(height: 16),
+    Text(
+      'Past reports',
+      key: Robot.key('pastReports'),
+      style: LumenType.label(color: c.inkMuted),
+    ),
+    const SizedBox(height: 2),
+    for (final (int i, PastReport r) in all.indexed)
+      Builder(
+        builder: (BuildContext context) {
+          String text;
+          try {
+            text = r.text();
+          } catch (_) {
+            text = '';
+          }
+          final String? build = r.build(text);
+          final String result = r.result(text);
+          return Pressable(
+            onTap: () async {
+              await Diag.instance.copy(text);
+              Haptics.settle();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+              decoration: i == 0
+                  ? null
+                  : BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: c.ink.withValues(alpha: 0.1)),
+                      ),
+                    ),
+              child: Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          build == null ? r.name : '${r.name}  ·  build $build',
+                          style: LumenType.text(
+                            13.5,
+                            weight: 600,
+                            color: c.ink,
+                            height: 1.3,
+                          ),
+                        ),
+                        Text(
+                          <String>[
+                            PastReports.whenSaid(r.when),
+                            if (result.isNotEmpty) result,
+                          ].join('  ·  '),
+                          style: LumenType.text(
+                            12,
+                            color: c.inkMuted,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Container(
+                    constraints: const BoxConstraints(minHeight: 36),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    alignment: Alignment.center,
+                    decoration: ShapeDecoration(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: c.ink.withValues(alpha: 0.2)),
+                      ),
+                    ),
+                    child: Text(
+                      'Copy',
+                      style: LumenType.text(
+                        13,
+                        weight: 600,
+                        color: c.ink,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+  ];
+}
+
+/// Whether two byte lists are the same, byte for byte.
+bool _sameBytes(List<int> a, List<int> b) {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (int i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+  return true;
 }
