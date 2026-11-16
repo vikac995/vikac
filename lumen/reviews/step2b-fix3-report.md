@@ -138,7 +138,7 @@ long test:    CHECKS: 62 right, 4 wrong, of 66 (the usual 4)
 **Build 182:** `Prism build 182`, `0.143.0+210`, built from the final code. Name `Prism`, package
 `dev.lumen.prism`. Its `classes.dex` has the new recorder line ("pictures came"), and its `libapp.so`
 has the new explanation ("pictures last came"). sha256
-`fc413fa5dc7143c0fdcfe9c0d9857b2fbf71e61b88f341210d0f59e42144f436`, 18,665,722 bytes. Link: LINK_RESULT
+`fc413fa5dc7143c0fdcfe9c0d9857b2fbf71e61b88f341210d0f59e42144f436`, 18,665,722 bytes. Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/5eaf4af9ea1482347f621e5dac0797c0961a5171/lumen/releases/prism-build-182.apk
 
 ## For the owner on the phone
 
