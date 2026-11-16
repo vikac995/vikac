@@ -142,7 +142,51 @@ near-critically damped.
      - Repeat with large text if part 5 can set it. Otherwise, check that the shortening function
        shortens a long name at 1.5× text scale.
    - **For the large-text item** (`QUEUE-large-text.md`): use the same shortening function there.
-5. Whatever the 182 phone results ask for. The review chat adds it here.
+5. **182's three wrong checks on the S26** (605 of 617; each wrong 4 of 4; from the review chat,
+   16 November 2026). Diagnosed from the code, not on a phone.
+   - **1 and 2 ("still open 1.5 s … at its spot" and "stays in sight at its spot …"):** everything
+     passes but `atItsSpot`, the hole against the Sidekick's middle. Most likely the test is wrong.
+     - **The hole** is `RestBubble.lensOnScreen()` in points: the Sidekick's window as it really is
+       on the screen (`getLocationOnScreen`, plus half its drawn size).
+     - **The test's middle** is `(x + size / 2) / dp`, where `x` and `y` are `lp.x/lp.y` (where the
+       window was asked to be) plus `lensOffX/lensOffY`, a correction remembered from an earlier
+       measurement. That's two sources.
+     - **The hole looks right:**
+       - the stand-in sample (3 below) drew the Sidekick on its own at exactly the hole's point and
+         found its colour there (ff885dca);
+       - in the owner's video, the Sidekick is undimmed with the panel open;
+       - in the same run, "grew out of the Sidekick", which compares x only with the same test
+         formula, passes.
+       So the test's vertical figure, `lp.y + lensOffY`, is the suspect.
+     - **The check never printed the test's own middle,** so how far it was off is unknown. (The
+       "626 points" was the top of the Sidekick in part 4's blob check, from the same lp-based `y`,
+       and maybe at another place.)
+     - **Fix (test):**
+       - the state gives `lensMid`, the Sidekick's middle from `lensOnScreen`, in points;
+       - `atItsSpot` compares the hole with `lensMid`;
+       - the check prints the hole, `lensMid` and the old lp-based middle, plus `roaming` and
+         `window`.
+       - If `lensMid` and the lp-based middle differ, a note says by how much: that offset would
+         also be wrong in the other checks that use `x`/`y`.
+   - **3 ("where it covers the Sidekick, the panel draws the Sidekick"):** with = without = ff1a1814
+     (the panel), and the Sidekick alone is ff885dca. So the Sidekick is at the sampled point, the
+     panel covers it there (`sampleCovers` was true, or it would have been SKIPPED), and the stand-in
+     isn't in the pixel.
+     - **I can't find the cause in the code.** In `testSample`, "with" draws the panel by `draw()`.
+       Its `onDraw` ends with `standIn(canvas, covers(rr))`, which calls the same
+       `drawLensInto(canvas, origin…)` that drew "the Sidekick alone" correctly a moment later. The
+       saves and restores in `onDraw` and `drawPart` are balanced. `noStandIn` is false there.
+     - **App or test:** it may be the app. If the stand-in really isn't drawn where the panel covers
+       the Sidekick, that, more than the see-through glass, would explain the owner's dark box when
+       closing. Until 183 shows which, both explanations stand.
+     - **Fix (183):**
+       - the sample op records, for each sampled stage, what `standIn` was asked (`needed`) and what
+         `drawLensInto` returned;
+       - it records where the Dot was drawn (its `getLocationOnScreen` against `origin`);
+       - a wrong check then says why.
+       Item 3's rewrite changes this drawing anyway (panel clipped outside the lens, inside at 0.3,
+       stand-in last), and its tests sample the centre and a ring at several stages.
+6. Whatever else the 182 phone results ask for. The review chat adds it here.
 
 **Later, for step 3's brief (the Sidekick's own app chooser),** not for 183: after a Change or Add, the new
 blob shows only once Prism has sent its picture. Only a menu where every blob is new has nothing to open
