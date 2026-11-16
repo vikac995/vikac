@@ -217,7 +217,20 @@ near-critically damped.
        "the last". Only a finished test adds a past report.
      - The cleanup that removes Prism's old files (`_forgetOldFiles` in `bubble.dart`) must never
        touch the folder.
-7. Whatever else the 182 phone results ask for. The review chat adds it here.
+7. **Test area** (approved by the owner; from the review chat, 16 November 2026). Mock-up:
+   https://claude.ai/artifact/8RPXZ6mvXDAijEn4a8Y9Cv. Goes together with item 6, "Past reports".
+   - **The top of the test section:**
+     - a gold badge with the build number, big ("182");
+     - then "You're testing build 182", the date, and a one-line build title.
+     - It replaces the grey "Testing · build" line.
+   - **The asked-for test:**
+     - Each build carries which test it asks for (for example `askedTest = 'button'`), set by me when
+       I build.
+     - That test's button is green, with a "Test this one" tag. If nothing is asked, none is green.
+   - **For building:** next to `Diag.build` in `lib/fit/diag.dart`, constants for the build's date,
+     its one-line title and `askedTest`, set with every build. The release checklist gains "set
+     `askedTest`".
+8. Whatever else the 182 phone results ask for. The review chat adds it here.
 
 **Later, for step 3's brief (the Sidekick's own app chooser),** not for 183: after a Change or Add, the new
 blob shows only once Prism has sent its picture. Only a menu where every blob is new has nothing to open
