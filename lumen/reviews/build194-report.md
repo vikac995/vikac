@@ -104,7 +104,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
   going". Its `libapp.so` has "Prism build 194", "Safe from Back, and quicker blobs" and the new checks.
   The safe-zone check's name has a true minus sign, so it's stored as UTF-16, and was found that way.
 - sha256 `4d48373cfeb61d314f77314d3ecdc8959560887d18799abb92037cfa8daec31e`, 18,878,922 bytes.
-- Link: in the next commit.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/fdb124498e287dbc064c615b82e7a0f4ec8b4a56/lumen/releases/prism-build-194.apk
 
 ## Where I could be wrong
 
