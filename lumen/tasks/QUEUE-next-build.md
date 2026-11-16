@@ -186,6 +186,9 @@ near-critically damped.
        - a wrong check then says why.
        Item 3's rewrite changes this drawing anyway (panel clipped outside the lens, inside at 0.3,
        stand-in last), and its tests sample the centre and a ring at several stages.
+     - **The 183 report** says plainly, for each sampled stage, whether the stand-in was drawn, with
+       the reason (review chat, 11:49). The owner's eye on closing is the final judge, so the
+       per-stage reasons are kept.
 6. **Past reports** (approved by the owner; from the review chat, 16 November 2026). Board card: "Test
    reports are kept: every past report, ready to copy".
    - **What's kept:**
