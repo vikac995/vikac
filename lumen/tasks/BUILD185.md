@@ -46,3 +46,6 @@ motion).
 - The grab area adapts per setting, with a back-gesture exclusion strip that moves with the Sidekick
   (≤ 200 dp).
 - It starts with a short measurement of grab-area sizes before choosing.
+- **The default doesn't change** (the review chat, 15:07): the wide range is on purpose, so users can set
+  it as they like, but the default stays neutral as today: the Sidekick fully on screen with the
+  current small gap (8 pt).
