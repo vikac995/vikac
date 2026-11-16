@@ -1532,6 +1532,11 @@ class Floater(val timer: Boolean) {
      * out of it, going back in, or lying over it). It is the Sidekick's own drawing, scaled and
      * faded as its window shows it. False if it is not on the screen.
      */
+    /** A touch that began on the Sidekick through its open panel: the Sidekick's, as the grip's are. */
+    fun touchLens(e: android.view.MotionEvent) {
+        view?.onTouchEvent(e)
+    }
+
     /** For the button test: the Sidekick's window on the screen, [x, y, width, height], in pixels. */
     fun lensWindow(): IntArray? {
         val v = view ?: return null
@@ -2554,6 +2559,20 @@ class Floater(val timer: Boolean) {
                         "home" -> {
                             SidekickPanel.testHome()
                             watcher.postDelayed({ done(state(context)) }, num("settleMs", 700))
+                        }
+                        // Hovering set as the dial would set it, the Sidekick going to its new place.
+                        "gap" -> {
+                            SidekickSettings.set(context, mapOf("gap" to num("value", 8).toFloat()), "rest", keep = true, fromPanel = true)
+                            watcher.postDelayed({ done(state(context)) }, num("settleMs", 900))
+                        }
+                        // A finger on the Sidekick, through its panel, dragging it [dy] points down.
+                        "dragLens" -> {
+                            val lens = RestBubble.lensOnScreen() ?: return fail("the Sidekick is not on the screen")
+                            val from = local(floatArrayOf(lens[0], lens[1]))
+                            val to = floatArrayOf(from[0], from[1] + num("dy", 120).toFloat() * dp)
+                            watcher.postDelayed({
+                                finger(pv, listOf(from, to), true, 60, num("legMs", 700), 120, false, num("settleMs", 1500), { true }, { done(state(context)) })
+                            }, 80)
                         }
                         "tap" -> {
                             val spot = SidekickPanel.testSpot(part) ?: return fail("no part $part in the panel")
@@ -5704,6 +5723,36 @@ class Floater(val timer: Boolean) {
             }
         }
 
+        /** A finger comes down on it at [rx], [ry] (on the screen): pressed, and from here a tap, a hold or a drag. */
+        private fun pressAt(rx: Float, ry: Float) {
+            closeTray(context)
+            spot = 0
+            target?.which = 0
+            pressed = true
+            sizing = false
+            atEnd = false
+            menuTouch = false
+            settingsHeld = false
+            adopted = false
+            reachDown = false
+            if (container) {
+                postDelayed(holder, holdTime())
+            }
+            // From now until the finger lifts, a second finger anywhere resizes the lens.
+            openReach(context)
+            springing = false
+            leaving = false
+            wouldTuck = false
+            glide?.cancel()
+            catching?.cancel()
+            catchX = 0f; catchY = 0f; catchUp = 0f
+            tracker?.recycle()
+            tracker = android.view.VelocityTracker.obtain()
+            downX = rx; downY = ry; startX = lp.x; startY = lp.y; dragged = false; snapped = false
+            if (!roaming) { homeX = lp.x; homeY = lp.y; homeTucked = false }
+            animate().scaleX(0.9f).scaleY(0.9f).setDuration(90).start()
+        }
+
         private var panelDownX = 0f
         private var panelDownY = 0f
 
@@ -5720,16 +5769,29 @@ class Floater(val timer: Boolean) {
             val ending = e.actionMasked == android.view.MotionEvent.ACTION_UP || e.actionMasked == android.view.MotionEvent.ACTION_CANCEL
             if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) panelTouch = guest && SidekickPanel.isOpen
             if (panelTouch) {
-                // Its own settings are open: a tap on it closes them, and it does nothing else meanwhile.
+                // Its own settings are open: a tap on it closes them. A drag moves it, as at any
+                // other time (build 185); the panel stays open and follows it up and down.
                 when (e.actionMasked) {
                     android.view.MotionEvent.ACTION_DOWN -> { panelDownX = e.rawX; panelDownY = e.rawY }
+                    android.view.MotionEvent.ACTION_MOVE ->
+                        if (!tucked && Math.hypot((e.rawX - panelDownX).toDouble(), (e.rawY - panelDownY).toDouble()) > 10 * resources.displayMetrics.density) {
+                            // (From here on it is the Sidekick picked up where the finger came down:
+                            // this movement, and the rest, move it.)
+                            panelTouch = false
+                            ignoring = false
+                            if (roaming) rest()
+                            pressAt(panelDownX, panelDownY)
+                            Trail.add("$who: dragged with its own settings open")
+                        }
                     android.view.MotionEvent.ACTION_UP ->
                         if (Math.hypot((e.rawX - panelDownX).toDouble(), (e.rawY - panelDownY).toDouble()) < 14 * resources.displayMetrics.density) {
-                            SidekickPanel.close("a tap on the Sidekick's own window, ${e.eventTime - e.downTime} ms long")
+                            SidekickPanel.close("a tap on the Sidekick, ${e.eventTime - e.downTime} ms long")
                         }
                 }
-                if (ending) panelTouch = false
-                return true
+                if (panelTouch) {
+                    if (ending) panelTouch = false
+                    return true
+                }
             }
             if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
                 lastTouch = "down at ${e.rawX.toInt()},${e.rawY.toInt()}; lens at ${posX().toInt()},${posY().toInt()} size ${sizeNow().toInt()}" +
@@ -5834,34 +5896,7 @@ class Floater(val timer: Boolean) {
                 return true
             }
             when (e.actionMasked) {
-                android.view.MotionEvent.ACTION_DOWN -> {
-                    closeTray(context)
-                    spot = 0
-                    target?.which = 0
-                    pressed = true
-                    sizing = false
-                    atEnd = false
-                    menuTouch = false
-                    settingsHeld = false
-                    adopted = false
-                    reachDown = false
-                    if (container) {
-                        postDelayed(holder, holdTime())
-                    }
-                    // From now until the finger lifts, a second finger anywhere resizes the lens.
-                    openReach(context)
-                    springing = false
-                    leaving = false
-                    wouldTuck = false
-                    glide?.cancel()
-                    catching?.cancel()
-                    catchX = 0f; catchY = 0f; catchUp = 0f
-                    tracker?.recycle()
-                    tracker = android.view.VelocityTracker.obtain()
-                    downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y; dragged = false; snapped = false
-                    if (!roaming) { homeX = lp.x; homeY = lp.y; homeTucked = false }
-                    animate().scaleX(0.9f).scaleY(0.9f).setDuration(90).start()
-                }
+                android.view.MotionEvent.ACTION_DOWN -> pressAt(e.rawX, e.rawY)
                 android.view.MotionEvent.ACTION_MOVE -> {
                     // (The hold has done its work: moving on does not pick the Sidekick up.)
                     if (settingsHeld) return true

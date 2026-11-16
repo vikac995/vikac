@@ -56,7 +56,7 @@ object SidekickPanel {
 
     /** The Sidekick has been drawn again, or its window has moved: the panel draws its hole, and its stand-in, anew. */
     fun lensChanged() {
-        view?.invalidate()
+        view?.follow()
     }
 
     /** Opens it beside the Sidekick ([how]: which of the three ways, for the recorder). */
@@ -263,7 +263,8 @@ internal class PanelView(
     private val fs = resources.configuration.fontScale
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val text = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val onRight = sx > resources.displayMetrics.widthPixels / 2f
+    // Which side the Sidekick is on (the panel is on the other). Worked out again as it moves.
+    private var onRight = sx > resources.displayMetrics.widthPixels / 2f
 
     // ---- Colours: Prism's panel colours, light or dark as Prism was last.
     private fun col(name: String, light: Int, dark: Int): Int {
@@ -292,15 +293,44 @@ internal class PanelView(
     private var topInset = 0f
     private var bottomInset = 0f
 
+    /**
+     * The panel's place (build 185, the owner's rule): it ends, on the Sidekick's side, before the
+     * Sidekick's furthest Hovering spot ([SidekickSettings.GAP_MAX] from the edge, plus the
+     * Sidekick's own width) with 8 points to spare, so the Sidekick never reaches it, whatever
+     * its Hovering. 8 points from the far edge. As tall as its contents, at the Sidekick's
+     * height, kept on the screen; taller than the screen allows, it fills the height and scrolls.
+     */
     private fun layoutBox() {
         val w = width.toFloat()
         val h = height.toFloat()
-        val pw = Math.min(330 * dp, w - 16 * dp - 56 * dp)
+        if (w <= 0f || h <= 0f) return
+        val mid = lensX()
+        onRight = mid > w / 2f
+        // The Sidekick's window is its glass and 5 points round it.
+        val reach = SidekickSettings.GAP_MAX * dp + 2 * (sr + 5 * dp) + 8 * dp
+        // (Never narrower than its contents allow: three looks in a row. On a screen too narrow
+        // for both, the furthest Hovering can then reach it.)
+        val pw = Math.max(250 * dp, w - 8 * dp - reach)
         val left = if (onRight) 8 * dp else w - 8 * dp - pw
-        val top = Math.max(56 * dp, topInset + 8 * dp)
-        val bottom = h - Math.max(42 * dp, bottomInset + 8 * dp)
-        box.set(left, top, left + pw, Math.max(top + 200 * dp, bottom))
+        val topLimit = Math.max(56 * dp, topInset + 8 * dp)
+        val bottomLimit = h - Math.max(42 * dp, bottomInset + 8 * dp)
+        box.set(left, topLimit, left + pw, Math.max(topLimit + 200 * dp, bottomLimit))
         layOut()
+        val ph = Math.min(contentH, box.height())
+        val top = (lensY() - ph / 2f).coerceIn(topLimit, Math.max(topLimit, bottomLimit - ph))
+        box.set(left, top, left + pw, top + ph)
+        scroll = scroll.coerceIn(0f, maxScroll())
+        laidFor = floatArrayOf(lensX(), lensY())
+    }
+
+    // Where the Sidekick was when the panel was last laid out: it follows when that changes.
+    private var laidFor = floatArrayOf(Float.NaN, Float.NaN)
+
+    /** The Sidekick moved (dragged by hand, or a dial): the panel follows it up and down. */
+    fun follow() {
+        if (width == 0) return
+        if (Math.abs(lensX() - laidFor[0]) > 0.5f || Math.abs(lensY() - laidFor[1]) > 0.5f) layoutBox()
+        invalidate()
     }
 
     override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
@@ -503,34 +533,54 @@ internal class PanelView(
     private val rr = RectF()
     private val clip = Path()
 
+    // (What the panel drew, for the recorder and the button test: how many frames, and the last
+    // one's rectangle, whether it lay over the Sidekick's glass, and how faded it was.)
+    var draws = 0
+        private set
+    private val lastRect = RectF()
+    private var lastCovers = false
+    private var lastFade = 1f
+
+    private fun clipOut(canvas: Canvas, path: Path) {
+        if (Build.VERSION.SDK_INT >= 26) canvas.clipOutPath(path) else {
+            @Suppress("DEPRECATION")
+            canvas.clipPath(path, android.graphics.Region.Op.DIFFERENCE)
+        }
+    }
+
+    private fun smooth(t: Float) = t * t * (3 - 2 * t)
+
     override fun onDraw(canvas: Canvas) {
         if (width == 0) return
+        draws++
         val t = g.value.coerceIn(0f, 1.2f)
-        // The shade over the app, with a hole where the Sidekick is; it lifts while a dial is held.
-        val shade = 0.4f * t.coerceIn(0f, 1f) * (1f - clear.value.coerceIn(0f, 1f))
-        if (shade > 0.002f) {
-            canvas.save()
-            clip.reset()
-            clip.addCircle(lensX(), lensY(), sr + 6 * dp, Path.Direction.CW)
-            if (Build.VERSION.SDK_INT >= 26) canvas.clipOutPath(clip) else {
-                @Suppress("DEPRECATION")
-                canvas.clipPath(clip, android.graphics.Region.Op.DIFFERENCE)
-            }
-            canvas.drawColor(alpha(0xFF000000.toInt(), shade))
-            canvas.restore()
-        }
+        // (No shade: from build 185 nothing is drawn round the Sidekick or the panel.)
         // The panel, from the Sidekick's circle to its own place.
         val tt = t.coerceAtLeast(0f)
-        val l = lerp(lensX() - sr, box.left, tt)
-        val top = lerp(lensY() - sr, box.top, tt)
-        val r = lerp(lensX() + sr, box.right, tt)
-        val b = lerp(lensY() + sr, box.bottom, tt)
-        if (tt < 0.002f) {
-            standIn(canvas, false)
-            return
-        }
-        val corner = lerp(sr, 36 * dp, tt.coerceIn(0f, 1f))
+        val lx = lensX()
+        val ly = lensY()
+        val l = lerp(lx - sr, box.left, tt)
+        val top = lerp(ly - sr, box.top, tt)
+        val r = lerp(lx + sr, box.right, tt)
+        val b = lerp(ly + sr, box.bottom, tt)
         rr.set(l, top, r, b)
+        lastRect.set(rr)
+        lastCovers = covers(rr)
+        // It fades in as it grows out of the Sidekick and out as it shrinks back in: while it is
+        // small it is all but clear, so no dark box is ever seen round the Sidekick. While a dial
+        // is held it is half see-through, to see where the Sidekick goes; on the dial's spring.
+        val fade = smooth((tt / 0.4f).coerceIn(0f, 1f)) * (1f - 0.5f * clear.value.coerceIn(0f, 1f))
+        lastFade = fade
+        if (tt < 0.002f || fade < 0.004f) return
+        val corner = lerp(sr, 36 * dp, tt.coerceIn(0f, 1f))
+        val outer = canvas.save()
+        // The Sidekick's glass is never drawn over: the panel has a hole where the Sidekick is,
+        // through which the Sidekick (its own window, under this one) shows on every frame,
+        // whether the panel is growing, shrinking, open, or the Sidekick is dragged across it.
+        clip.reset()
+        clip.addCircle(lx, ly, sr, Path.Direction.CW)
+        clipOut(canvas, clip)
+        if (fade < 0.999f) canvas.saveLayerAlpha(rr, (fade * 255).toInt())
         paint.style = Paint.Style.FILL
         paint.color = cSurface
         canvas.drawRoundRect(rr, corner, corner, paint)
@@ -543,25 +593,23 @@ internal class PanelView(
         // size, scaled with the panel, as Prism's transform does.
         val a = ((tt - 0.05f) / 0.25f).coerceIn(0f, 1f)
         if (opened && !closing && !sampling) leastSinceOpen = Math.min(leastSinceOpen, a)
-        if (a <= 0.001f) {
-            standIn(canvas, covers(rr))
-            return
+        if (a > 0.001f) {
+            canvas.save()
+            clip.reset()
+            clip.addRoundRect(rr, corner, corner, Path.Direction.CW)
+            canvas.clipPath(clip)
+            val sxk = (r - l) / box.width()
+            val syk = (b - top) / box.height()
+            canvas.translate(l, top)
+            canvas.scale(sxk, syk)
+            canvas.translate(-box.left, -box.top)
+            val layer = canvas.saveLayerAlpha(box.left, box.top, box.right, box.bottom, (a * 255).toInt())
+            canvas.translate(box.left, box.top - scroll)
+            for (p in parts) drawPart(canvas, p)
+            canvas.restoreToCount(layer)
+            canvas.restore()
         }
-        canvas.save()
-        clip.reset()
-        clip.addRoundRect(rr, corner, corner, Path.Direction.CW)
-        canvas.clipPath(clip)
-        val sxk = (r - l) / box.width()
-        val syk = (b - top) / box.height()
-        canvas.translate(l, top)
-        canvas.scale(sxk, syk)
-        canvas.translate(-box.left, -box.top)
-        val layer = canvas.saveLayerAlpha(box.left, box.top, box.right, box.bottom, (a * 255).toInt())
-        canvas.translate(box.left, box.top - scroll)
-        for (p in parts) drawPart(canvas, p)
-        canvas.restoreToCount(layer)
-        canvas.restore()
-        standIn(canvas, covers(rr))
+        canvas.restoreToCount(outer)
     }
 
     // Whether the panel, where it is now, lies over the Sidekick (any of its glass).
@@ -571,36 +619,6 @@ internal class PanelView(
         val nx = x.coerceIn(panel.left, panel.right)
         val ny = y.coerceIn(panel.top, panel.bottom)
         return Math.hypot((x - nx).toDouble(), (y - ny).toDouble()) < sr + 2 * dp
-    }
-
-    // The stand-in: the Sidekick's own drawing, over the panel, only while the panel covers it,
-    // so that the Sidekick is always seen above its panel without its window ever moving.
-    private var standingIn = false
-    var standIns = 0
-        private set
-    private var noStandIn = false
-
-    // (For the test: what the last frame asked of the stand-in, and whether it was drawn.)
-    private var lastAsked = false
-    private var lastDrew = false
-
-    private fun standIn(canvas: Canvas, needed: Boolean) {
-        var drew = false
-        lastAsked = needed && !noStandIn
-        if (needed && !noStandIn) {
-            SidekickPanel.drawingStandIn = true
-            try {
-                drew = RestBubble.drawLensInto(canvas, origin[0], origin[1])
-            } finally {
-                SidekickPanel.drawingStandIn = false
-            }
-        }
-        lastDrew = drew
-        if (drew != standingIn && !sampling) {
-            standingIn = drew
-            if (drew) standIns++
-            Trail.add("Sidekick: stand-in ${if (drew) "drawn" else "stopped"} (the panel ${if (drew) "covers it" else "is clear of it"}, ${(g.value * 100).toInt()}% open)")
-        }
     }
 
     private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
@@ -841,7 +859,18 @@ internal class PanelView(
         return ""
     }
 
+    // A gesture that began on the Sidekick (its window lies under this one): all of it is the
+    // Sidekick's, handed on as the grip hands on its touches. A tap closes the panel; a drag
+    // moves the Sidekick, and the panel follows it (build 185).
+    private var toLens = false
+
     override fun onTouchEvent(e: MotionEvent): Boolean {
+        if (e.actionMasked == MotionEvent.ACTION_DOWN) toLens = !closing && hit(e.x, e.y) == "sidekick"
+        if (toLens) {
+            RestBubble.touchLens(e)
+            if (e.actionMasked == MotionEvent.ACTION_UP || e.actionMasked == MotionEvent.ACTION_CANCEL) toLens = false
+            return true
+        }
         if (closing || g.value < 0.3f && !opened) return true
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -1060,7 +1089,10 @@ internal class PanelView(
     // ---- For the test.
     fun testState(): HashMap<String, Any?> = hashMapOf(
         "panelProgress" to g.value.toDouble(),
-        "panelShade" to (0.4f * g.value.coerceIn(0f, 1f) * (1f - clear.value.coerceIn(0f, 1f))).toDouble(),
+        // (No shade from build 185: always 0, kept so the test can say so.)
+        "panelShade" to 0.0,
+        // How opaque the panel's body and contents are: 1, or about 0.5 while a dial is held.
+        "panelAlpha" to (1f - 0.5f * clear.value.coerceIn(0f, 1f)).toDouble(),
         "panelLifted" to clear.target.toDouble(),
         "panelLeastSinceOpen" to leastSinceOpen.toDouble(),
         "panelOpenFully" to opened,
@@ -1075,60 +1107,63 @@ internal class PanelView(
         "panelFocusable" to ((layoutParams as? WindowManager.LayoutParams)?.flags?.and(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) == 0),
         "panelFontScale" to fs.toDouble(),
         "panelHole" to listOf((lensX() + origin[0]) / dp, (lensY() + origin[1]) / dp).map { it.toDouble() },
-        "panelStandIn" to standingIn,
-        "panelStandIns" to standIns,
+        // What the panel last drew: how many frames so far, its rectangle, whether it lay over the
+        // Sidekick's glass, and how faded it was (with a hole where the Sidekick is, always).
+        "panelDraws" to draws,
+        "panelRect" to listOf((lastRect.left + origin[0]) / dp, (lastRect.top + origin[1]) / dp, lastRect.width() / dp, lastRect.height() / dp).map { it.toDouble() },
+        "panelCovers" to lastCovers,
+        "panelFade" to lastFade.toDouble(),
+        "panelSr" to (sr / dp).toDouble(),
     )
 
-    // ---- For the test: is the stand-in really drawn where the panel covers the Sidekick?
+    // ---- For the test: does the panel ever draw over the Sidekick's glass?
     private var sampling = false
 
     /**
-     * Draws the panel as it is at [at] of the way open (a moment of its growing, when it covers the
-     * Sidekick) into a few pixels round the Sidekick's middle, and reads the middle one three ways:
-     * the panel with its stand-in, the panel without it, and the Sidekick alone. The first must be
-     * the Sidekick's, not the panel's. (Drawn in software, off the screen: nothing is seen.)
+     * Draws the panel as it is at [at] of the way open (closing passes through the same moments)
+     * into a picture of the Sidekick's glass and a little round it, and reads what the panel put
+     * there: at the glass's middle, and at 16 points round it at 85% of its radius. Both must be
+     * empty (the Sidekick, in its own window under this one, shows there). And one point just
+     * outside the glass, towards the panel, to show the panel itself was drawn. (Drawn in
+     * software, off the screen: nothing is seen.)
      */
     fun testSample(at: Float): HashMap<String, Any?> {
         val was = g.value
         sampling = true
         val lx = lensX()
         val ly = lensY()
-        fun pixel(draw: (Canvas) -> Unit): Int {
-            val bmp = android.graphics.Bitmap.createBitmap(3, 3, android.graphics.Bitmap.Config.ARGB_8888)
-            val c = Canvas(bmp)
-            c.translate(-lx + 1, -ly + 1)
-            draw(c)
-            val p = bmp.getPixel(1, 1)
-            bmp.recycle()
-            return p
-        }
+        val n = Math.ceil(1.5 * sr).toInt()
         val m = HashMap<String, Any?>()
         try {
             g.value = at
             val rect = RectF(lerp(lx - sr, box.left, at), lerp(ly - sr, box.top, at), lerp(lx + sr, box.right, at), lerp(ly + sr, box.bottom, at))
             m["sampleAt"] = at.toDouble()
             m["sampleCovers"] = covers(rect)
-            lastAsked = false
-            lastDrew = false
-            m["sampleWith"] = pixel { draw(it) }
-            // What drawing the panel just now asked of the stand-in, and whether it was drawn; and
-            // where the Sidekick's window was, from this window's corner, against the sampled point.
-            m["sampleAsked"] = lastAsked
-            m["sampleDrew"] = lastDrew
-            RestBubble.lensWindow()?.let { w ->
-                m["sampleDot"] = listOf(w[0] - origin[0], w[1] - origin[1], w[2], w[3])
+            m["sampleRect"] = listOf((rect.left + origin[0]) / dp, (rect.top + origin[1]) / dp, rect.width() / dp, rect.height() / dp).map { it.toDouble() }
+            m["sampleLens"] = listOf((lx + origin[0]) / dp, (ly + origin[1]) / dp).map { it.toDouble() }
+            m["sampleSr"] = (sr / dp).toDouble()
+            val bmp = android.graphics.Bitmap.createBitmap(2 * n + 1, 2 * n + 1, android.graphics.Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp)
+            c.translate(-lx + n, -ly + n)
+            val before = draws
+            draw(c)
+            m["sampleDraws"] = draws - before
+            m["sampleFade"] = lastFade.toDouble()
+            m["sampleMiddle"] = (bmp.getPixel(n, n) ushr 24) and 0xFF
+            var ring = 0
+            for (k in 0 until 16) {
+                val a = 2 * Math.PI * k / 16
+                val x = (n + 0.85 * sr * Math.cos(a)).toInt().coerceIn(0, 2 * n)
+                val y = (n + 0.85 * sr * Math.sin(a)).toInt().coerceIn(0, 2 * n)
+                ring = Math.max(ring, (bmp.getPixel(x, y) ushr 24) and 0xFF)
             }
-            m["sampleOrigin"] = listOf(origin[0], origin[1])
-            m["samplePoint"] = listOf(lx.toDouble(), ly.toDouble())
-            noStandIn = true
-            m["sampleWithout"] = pixel { draw(it) }
-            noStandIn = false
-            m["sampleLens"] = pixel {
-                SidekickPanel.drawingStandIn = true
-                try { RestBubble.drawLensInto(it, origin[0], origin[1]) } finally { SidekickPanel.drawingStandIn = false }
-            }
+            m["sampleRing"] = ring
+            // (Just outside the glass, towards the middle of the screen, where the panel lies.)
+            val toward = if (onRight) -1 else 1
+            val cx = (n + toward * 1.3 * sr).toInt().coerceIn(0, 2 * n)
+            m["sampleBeside"] = (bmp.getPixel(cx, n) ushr 24) and 0xFF
+            bmp.recycle()
         } finally {
-            noStandIn = false
             g.value = was
             sampling = false
             invalidate()

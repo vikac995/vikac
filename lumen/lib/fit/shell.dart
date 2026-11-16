@@ -5577,7 +5577,7 @@ class _ShellState extends State<Shell>
               lensUntouched(s) &&
               atItsSpot(s) &&
               numOf(s['panelLeastSinceOpen']) >= 0.999 &&
-              (numOf(s['panelShade']) - 0.4).abs() < 0.02,
+              numOf(s['panelShade']) == 0,
           'open ${s['panelOpen']}, opened ${numOf(s['panelOpened']) - openedWas} time(s), last closed "${s['panelClosed']}" (before: "$closedWas"), its window added ${numOf(s['lensAdds']) - addsWas} and taken off ${numOf(s['lensRemoves']) - removesWas} times, ${spotSaid(s)}, the panel at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, shade ${numOf(s['panelShade']).toStringAsFixed(2)}',
         );
         noteOffset(s);
@@ -5608,25 +5608,43 @@ class _ShellState extends State<Shell>
         final double sidekickR = numOf(s['lensRadius']);
         final bool sidekickRight = s['panelOnRight'] == true;
         // How far the open panel reaches over the Sidekick's glass, sideways, in points (0 or less:
-        // clear of it). The panel's place depends only on the Sidekick's side, so a Sidekick that
-        // hovers further in lies partly under it (the S25, 182): that is allowed, as long as the
-        // Sidekick stays on top and is never hidden (checked with the samples below).
-        final double over = pbox.length != 4
-            ? double.nan
-            : (sidekickRight
-                  ? numOf(pbox[0]) + numOf(pbox[2]) - (sidekickX - sidekickR)
-                  : sidekickX + sidekickR - numOf(pbox[0]));
-        final String sideSaid =
-            'the Sidekick on the ${sidekickRight ? 'right' : 'left'}, its middle at ${sidekickX.toStringAsFixed(1)}, its glass ${sidekickR.toStringAsFixed(1)} across from it, Hovering ${numOf(kept(s)?['gap']).toStringAsFixed(1)}; the panel ${over > 0 ? 'over its glass by ${over.toStringAsFixed(1)} points' : 'clear of it by ${(-over).toStringAsFixed(1)} points'}; box ${pbox.map((Object? v) => numOf(v).round()).join(', ')}';
+        // clear of it). From build 185 the panel ends before the Sidekick's furthest Hovering spot,
+        // so this is never more than 0, whatever its Hovering (the owner's rule).
+        double overOf(Map<String, Object?> m) {
+          final List<Object?> b =
+              (m['panelBox'] as List<Object?>?) ?? const <Object?>[];
+          final double x = midOf(m)[0], r = numOf(m['lensRadius']);
+          return b.length != 4
+              ? double.nan
+              : (m['panelOnRight'] == true
+                    ? numOf(b[0]) + numOf(b[2]) - (x - r)
+                    : x + r - numOf(b[0]));
+        }
+
+        String sideOf(Map<String, Object?> m) {
+          final double o = overOf(m);
+          final List<Object?> b =
+              (m['panelBox'] as List<Object?>?) ?? const <Object?>[];
+          return 'the Sidekick on the ${m['panelOnRight'] == true ? 'right' : 'left'}, its middle at ${midOf(m)[0].toStringAsFixed(1)}, its glass ${numOf(m['lensRadius']).toStringAsFixed(1)} across from it, Hovering ${numOf(kept(m)?['gap']).toStringAsFixed(1)}; the panel ${o > 0 ? 'over its glass by ${o.toStringAsFixed(1)} points' : 'clear of it by ${(-o).toStringAsFixed(1)} points'}; box ${b.map((Object? v) => numOf(v).round()).join(', ')}';
+        }
+
+        final String sideSaid = sideOf(s);
+        // Its width: the screen, less 8 points at the far edge, the Sidekick's furthest Hovering
+        // (36), its window (its glass and 5 points round it) and 8 points to spare.
+        final double screenW = numOf(s['w']) / dp;
+        final double wantW = math.max(
+          250,
+          screenW - 8 - (36 + 2 * (sidekickR + 5) + 8),
+        );
         inPanel(
-          'sidekick panel: about 330 points wide, on the side away from the Sidekick',
+          'sidekick panel: it ends before the Sidekick\'s furthest Hovering spot, on the side away from it',
           pbox.length == 4 &&
-              numOf(pbox[2]) <= 330.5 &&
-              numOf(pbox[2]) >= 280 &&
+              (numOf(pbox[2]) - wantW).abs() < 2 &&
               (sidekickRight
                   ? numOf(pbox[0]) + numOf(pbox[2]) / 2 < sidekickX
-                  : numOf(pbox[0]) + numOf(pbox[2]) / 2 > sidekickX),
-          sideSaid,
+                  : numOf(pbox[0]) + numOf(pbox[2]) / 2 > sidekickX) &&
+              overOf(s) <= 0.5,
+          '$sideSaid; width ${pbox.length == 4 ? numOf(pbox[2]).toStringAsFixed(1) : '?'} (want ${wantW.toStringAsFixed(1)} on a ${screenW.toStringAsFixed(0)}-point screen)',
         );
         inPanel('sidekick panel: it grew out of the Sidekick, where it is', () {
           final List<Object?> from =
@@ -5638,114 +5656,125 @@ class _ShellState extends State<Shell>
           atItsSpot(s) && lensUntouched(s) && s['covered'] != true,
           'shown ${s['lens']}, ${spotSaid(s)}, its window added ${numOf(s['lensAdds']) - addsWas} and taken off ${numOf(s['lensRemoves']) - removesWas} times, hidden ${s['covered']}',
         );
-        // Where the panel covers it, the panel draws the Sidekick itself on top (its stand-in): the
-        // pixel at its middle is the Sidekick's, not the panel's. Sampled at several moments of its
-        // growing (closing passes through the same ones), and open. Each moment is written into the
-        // report in words: whether the panel covers it, whether the stand-in was asked for and
-        // drawn, and what the pixel shows. (182 found only the panel's colour at 12%, on both
-        // phones, without saying why.)
+        // Opening and closing (the same moments, both ways), and open: the panel draws nothing
+        // over the Sidekick's glass, so the Sidekick (its own window, under the panel's) shows on
+        // every frame. Each moment is written into the report in words, with what the panel drew
+        // there: whether it ran, its rectangle, the Sidekick's place and size, how faded it was.
         if (opened) {
-          const String drawsIt =
-              'sidekick panel: where it covers the Sidekick, the panel draws the Sidekick (its stand-in)';
-          const String neverHides =
-              'sidekick panel: open, the panel never hides the Sidekick';
+          const String clearOfIt =
+              'sidekick panel: growing, shrinking and open, the panel never draws over the Sidekick\'s glass';
           final Map<String, Object?> m = await t.lens(<String, Object?>{
             'op': 'panel',
             'what': 'sample',
-            'stages': <double>[0.06, 0.12, 0.25, 0.5, 1.0],
+            'stages': <double>[0.03, 0.06, 0.12, 0.25, 0.5, 0.8, 1.0],
           }, extraMs: 4000);
           final List<Map<String, Object?>> stages = <Map<String, Object?>>[
             for (final Object? x
                 in (m['samples'] as List<Object?>?) ?? const <Object?>[])
               if (x is Map) x.cast<String, Object?>(),
           ];
-          int far(int a, int b) => <int>[24, 16, 8, 0]
-              .map((int k) => (((a >> k) & 0xFF) - ((b >> k) & 0xFF)).abs())
-              .reduce(math.max);
-          String hex(Object? v) => numOf(v).isNaN
-              ? '?'
-              : numOf(v)
-                    .toInt()
-                    .toUnsigned(32)
-                    .toRadixString(16)
-                    .padLeft(8, '0');
-          bool covers(Map<String, Object?> st) => st['sampleCovers'] == true;
-          // (Where the Sidekick's middle is the panel's own colour, the pixel cannot tell.)
-          bool telling(Map<String, Object?> st) =>
-              covers(st) &&
-              far(
-                    numOf(st['sampleLens']).toInt(),
-                    numOf(st['sampleWithout']).toInt(),
-                  ) >=
-                  24;
-          bool shows(Map<String, Object?> st) =>
-              far(
-                numOf(st['sampleWith']).toInt(),
-                numOf(st['sampleLens']).toInt(),
-              ) <
-              24;
-          String said(Map<String, Object?> st) {
-            final String at = '${(numOf(st['sampleAt']) * 100).round()}% open';
-            if (!covers(st)) {
-              return '$at: the panel is clear of it, no stand-in needed';
-            }
-            final String drawn =
-                'the stand-in asked for: ${st['sampleAsked'] == true ? 'yes' : 'no'}, drawn: ${st['sampleDrew'] == true ? 'yes' : 'no'}';
-            final String pixel = !telling(st)
-                ? 'the Sidekick\'s middle is the panel\'s own colour here, so the pixel cannot tell'
-                : (shows(st)
-                      ? 'the pixel at its middle is the Sidekick\'s'
-                      : 'the pixel at its middle is the panel\'s: the Sidekick is hidden there');
-            return '$at: the panel covers it; $drawn; $pixel (with ${hex(st['sampleWith'])}, the Sidekick alone ${hex(st['sampleLens'])}, the panel without it ${hex(st['sampleWithout'])}; its window at ${st['sampleDot']} px from the panel\'s corner, the point sampled at [${pts((st['samplePoint'] as List<Object?>?) ?? const <Object?>[])}] px)';
-          }
-
+          bool clear(Map<String, Object?> st) =>
+              numOf(st['sampleDraws']) >= 1 &&
+              numOf(st['sampleMiddle']) == 0 &&
+              numOf(st['sampleRing']) <= 8;
+          String said(Map<String, Object?> st) =>
+              '${(numOf(st['sampleAt']) * 100).round()}% open: the panel ${numOf(st['sampleDraws']) >= 1 ? 'drawn' : 'NOT drawn'}${st['sampleCovers'] == true ? ', its rectangle over the glass' : ', clear of the glass'}, faded to ${numOf(st['sampleFade']).toStringAsFixed(2)}; over the glass: middle ${numOf(st['sampleMiddle']).toInt()}, ring ${numOf(st['sampleRing']).toInt()} (of 255); just beside it ${numOf(st['sampleBeside']).toInt()}; rectangle ${st['sampleRect']}, the Sidekick at ${st['sampleLens']}, glass ${numOf(st['sampleSr']).toStringAsFixed(1)}';
           if (stages.isEmpty) {
-            t.check(drawsIt, false, 'no samples: ${m['note'] ?? 'no answer'}');
+            t.check(
+              clearOfIt,
+              false,
+              'no samples: ${m['note'] ?? 'no answer'}',
+            );
           } else {
             for (final Map<String, Object?> st in stages) {
               t.note('the Sidekick under its panel, ${said(st)}');
             }
-            final List<Map<String, Object?>> told = <Map<String, Object?>>[
-              for (final Map<String, Object?> st in stages)
-                if (telling(st)) st,
-            ];
-            if (told.isEmpty) {
-              t.skip(
-                drawsIt,
-                stages.any(covers)
-                    ? 'where the panel covers it, the Sidekick\'s middle is the panel\'s colour, so the pixels cannot tell'
-                    : 'at none of the sampled moments does the panel cover it',
-              );
-            } else {
-              t.check(
-                drawsIt,
-                told.every(shows),
-                told
-                    .where((Map<String, Object?> st) => !shows(st))
-                    .map(said)
-                    .join(' | '),
-              );
-            }
-            // Open, the panel may lie over the Sidekick (a Sidekick hovering further in, on a
-            // narrow screen), but the Sidekick is always on top.
-            final Map<String, Object?> open = stages.last;
-            if (covers(open) && !telling(open)) {
-              t.skip(
-                neverHides,
-                'the panel lies over it, and its middle is the panel\'s colour, so the pixel cannot tell ($sideSaid)',
-              );
-            } else {
-              t.check(
-                neverHides,
-                !covers(open) || shows(open),
-                '${said(open)}; $sideSaid',
+            t.check(
+              clearOfIt,
+              stages.every(clear),
+              stages
+                  .where((Map<String, Object?> st) => !clear(st))
+                  .map(said)
+                  .join(' | '),
+            );
+          }
+          // Hovering at its nearest, half way and furthest: the panel never reaches the glass, and
+          // does not move.
+          final Object? gapWas = kept(await where())?['gap'];
+          final List<String> wrongs = <String>[];
+          final List<Object?> boxWas = pbox;
+          for (final int g in <int>[0, 18, 36]) {
+            final Map<String, Object?> h = await t.lens(<String, Object?>{
+              'op': 'panel',
+              'what': 'gap',
+              'value': g,
+              'settleMs': 1000,
+            }, extraMs: 3000);
+            final List<Object?> b =
+                (h['panelBox'] as List<Object?>?) ?? const <Object?>[];
+            final bool still =
+                b.length == 4 &&
+                boxWas.length == 4 &&
+                (numOf(b[0]) - numOf(boxWas[0])).abs() < 1 &&
+                (numOf(b[2]) - numOf(boxWas[2])).abs() < 1;
+            if (!(overOf(h) <= 0.5) || !still) {
+              wrongs.add(
+                'Hovering $g: ${sideOf(h)}${still ? '' : ' (the panel moved)'}',
               );
             }
           }
+          await t.lens(<String, Object?>{
+            'op': 'panel',
+            'what': 'gap',
+            'value': numOf(gapWas).isNaN ? 8 : numOf(gapWas),
+            'settleMs': 900,
+          }, extraMs: 3000);
+          t.check(
+            'sidekick panel: at Hovering 0, 18 and 36 the panel never reaches the Sidekick\'s glass, and stays put',
+            wrongs.isEmpty,
+            wrongs.isEmpty ? 'clear at all three' : wrongs.join(' | '),
+          );
+          // Dragged by hand while the panel is open: the Sidekick moves, the panel stays open and
+          // follows it up and down (when it is short enough to move; a panel as tall as the screen
+          // stays where it is).
+          final Map<String, Object?> d0 = await where();
+          final Map<String, Object?> d1 = await t.lens(<String, Object?>{
+            'op': 'panel',
+            'what': 'dragLens',
+            'dy': -120,
+            'settleMs': 1500,
+          }, extraMs: 5000);
+          final double moved = midOf(d1)[1] - midOf(d0)[1];
+          final List<Object?> b0 =
+                  (d0['panelBox'] as List<Object?>?) ?? const <Object?>[],
+              b1 = (d1['panelBox'] as List<Object?>?) ?? const <Object?>[];
+          final bool tall =
+              b0.length == 4 &&
+              numOf(b0[3]) >= numOf(d0['h']) / dp - 56 - 42 - 60;
+          final double boxMoved = b0.length == 4 && b1.length == 4
+              ? (numOf(b1[1]) + numOf(b1[3]) / 2) -
+                    (numOf(b0[1]) + numOf(b0[3]) / 2)
+              : double.nan;
+          t.check(
+            'sidekick panel: dragged by hand with the panel open, the Sidekick moves and the panel follows it',
+            d1['panelOpen'] == true &&
+                (moved + 120).abs() < 40 &&
+                (tall
+                    ? boxMoved.abs() < 2 || (boxMoved - moved).abs() < 30
+                    : (boxMoved - moved).abs() < 30),
+            'the Sidekick moved ${moved.toStringAsFixed(0)} points (dragged -120), the panel ${boxMoved.toStringAsFixed(0)}${tall ? ' (as tall as the screen allows: it may only stay or follow)' : ''}; open ${d1['panelOpen']}',
+          );
+          // Back to where it was, for what follows.
+          await t.lens(<String, Object?>{
+            'op': 'panel',
+            'what': 'dragLens',
+            'dy': -moved.round(),
+            'settleMs': 1500,
+          }, extraMs: 5000);
         }
         inPanel(
-          'sidekick panel: the shade is over the app',
-          (numOf(s['panelShade']) - 0.4).abs() < 0.02,
+          'sidekick panel: no shade: nothing is drawn around the Sidekick or the panel',
+          numOf(s['panelShade']) == 0,
           'shade ${numOf(s['panelShade']).toStringAsFixed(2)}',
         );
         // Each two-way choice, changed in the panel and put back: kept by Android, and Prism's
@@ -5863,7 +5892,7 @@ class _ShellState extends State<Shell>
         Future<void> dial(String id, String name, bool tucks) async {
           if (!opened) {
             t.skip(
-              'sidekick panel: $name touched, the Sidekick goes there, only the shade lifts',
+              'sidekick panel: $name touched, the Sidekick goes there, the panel half see-through',
               'its own settings did not come up',
             );
             return;
@@ -5871,21 +5900,22 @@ class _ShellState extends State<Shell>
           final double was = numOf(kept(await where())?[id]);
           s = await panel('press', part: 'ruler.$id', holdMs: 900);
           t.check(
-            'sidekick panel: $name touched, the Sidekick goes there, only the shade lifts',
+            'sidekick panel: $name touched, the Sidekick goes there, the panel half see-through',
             (s['tucked'] == true) == tucks &&
-                numOf(s['panelShade']) < 0.25 &&
+                (numOf(s['panelAlpha']) - 0.5).abs() < 0.08 &&
+                numOf(s['panelShade']) == 0 &&
                 numOf(s['panelLeastSinceOpen']) >= 0.999 &&
                 s['lens'] == true,
-            'tucked ${s['tucked']}, shade ${numOf(s['panelShade']).toStringAsFixed(2)}, the panel at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}',
+            'tucked ${s['tucked']}, the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque, shade ${numOf(s['panelShade']).toStringAsFixed(2)}, its contents at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}',
           );
           await Robot.wait(900);
           s = await where();
           t.check(
-            'sidekick panel: $name let go, the shade is back with no flash, the Sidekick as it was',
-            (numOf(s['panelShade']) - 0.4).abs() < 0.02 &&
+            'sidekick panel: $name let go, the panel is solid again, the Sidekick as it was',
+            numOf(s['panelAlpha']) > 0.97 &&
                 numOf(s['panelLeastSinceOpen']) >= 0.999 &&
                 (s['tucked'] == true) == wasTucked,
-            'shade ${numOf(s['panelShade']).toStringAsFixed(2)}, the panel at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, tucked ${s['tucked']} (was $wasTucked)',
+            'the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque, its contents at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, tucked ${s['tucked']} (was $wasTucked)',
           );
           // Slid toward the middle by 4 points' worth (16 points of finger a point), then back.
           final double max = id == 'gap'
@@ -9600,6 +9630,10 @@ class _ShellState extends State<Shell>
                             onPanCancel: _pillDrop,
                             child: Glass(
                               radius: lh / 2,
+                              // Always the full glass, whatever the glass quality setting or what
+                              // Auto has stepped down to (the owner's rule, DESIGN §8). Android's
+                              // "reduce transparency" still makes it solid (inside [Glass]).
+                              quality: GlassQuality.full,
                               // Clear and magnifying while it only looks; coloured and calm once it holds actions.
                               style: GlassStyle(
                                 blur: 0.8 + 11 * mm,

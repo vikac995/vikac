@@ -1,5 +1,22 @@
 # Lumen changelog
 
+## Prism, build 185 (16 November 2026)
+
+**File:** `releases/prism-build-185.apk`
+
+Needs Play Protect paused to install. Can be installed over build 184.
+
+**The Sidekick's own settings panel, simplified, as you approved it in the mock-up:**
+- **No dimming:** nothing is drawn around the Sidekick or the panel. The dark layer with the round hole is gone, and with it the dark edge the Sidekick used to slide over.
+- **Narrower:** the panel ends before the furthest the Sidekick can hover, with a little room to spare, so the Sidekick never reaches it, whatever the Hovering dial says. On your phones it's about 275 points wide instead of 330.
+- **The Sidekick always shows:** the panel never draws over it, while it opens, while it's open, or while it closes. It grows out of the Sidekick and shrinks back in, faint while it's small.
+- **While a finger is on a dial,** the panel goes half see-through, so you see where the Sidekick goes. It comes back when you let go.
+- **You can drag the Sidekick while its panel is open.** The panel follows it up and down when it's short enough to. On your phones it's as tall as the screen, so it stays where it is. A tap on the Sidekick still closes the panel.
+- **The magnifying glass you carry is always the full glass,** whatever the glass setting. Only Android's "reduce transparency" makes it solid.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 80 of 82, the same as before (the Sidekick's panel is Android's, so its checks run only on a phone); the long test, 62 of 66 with the usual 4 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 184 (16 November 2026)
 
 **File:** `releases/prism-build-184.apk`
