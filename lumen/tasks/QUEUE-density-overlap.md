@@ -10,3 +10,5 @@ frame (`out = 1 - t*2.4`, `up` starting at t=0.3). DESIGN: "Nothing is ever draw
 
 **Fix:** each app moves straight from its old rect to its new one, one copy, no cross-fade (the mock-up
 does exactly this). Also the interrupted-retarget jump (A4's second half).
+
+**Status (16 November 2026):** pending. The owner has not yet seen the density mock-up (version 2); its motion and the dial wait for the review chat to confirm the owner's OK. Order: after build 179 (large text), the overlap fix, then the dial; all after build 178's phone run.

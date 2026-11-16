@@ -23,3 +23,5 @@ about 412 pt.
 **Also, a standing test from now on:** a large-text pass in the preview (textScaler about 1.3 and the
 maximum), with screenshots of each panel in the report. LESSONS.md entry: "Everything is checked at large
 system text sizes, not only the default."
+
+**Status (16 November 2026):** next, as build 179, once build 178's phone run is back clean. It fixes layout without changing the design, so it needs no mock-up approval.

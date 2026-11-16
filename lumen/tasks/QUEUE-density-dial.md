@@ -17,3 +17,5 @@ owner's final look. Build nothing until build 178's phone run is back. Goes with
 - The grid re-lays out live per step, with fix 1's single-copy motion.
 
 (The idea first noted in HANDOVER's roadmap, item 3: "the app list's Density control as a dial".)
+
+**Status (16 November 2026):** pending. The owner has not yet seen the density mock-up (version 2); its motion and the dial wait for the review chat to confirm the owner's OK. Order: after build 179 (large text), the overlap fix, then the dial; all after build 178's phone run.
