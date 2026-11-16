@@ -83,7 +83,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
 - Its `classes.dex` has `sidekickDismissals` and "sent away from its settings (Dismiss)". Its `libapp.so`
   has "Prism build 193", "Dismiss only from its menu", `close.dismiss` and the new checks.
 - sha256 `f86fb8572d80f0f274ab1c4a1b7436d537e86009c4ed1f53d660b126ff523d6d`, 18,878,922 bytes.
-- Link: in the next commit.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/c48fdeb11160d5bc7c7bae07a7f2b2bfda177546/lumen/releases/prism-build-193.apk
 
 ## Where I could be wrong
 
