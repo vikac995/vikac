@@ -41,7 +41,7 @@ All motion uses the named springs in `lib/core/springs.dart`. No new timings: pi
 |---|---|---|
 | Something opening from Prism's button (app list, Prism's settings) | `Motions.snappy` | Quick, with only a hint of give. It is done all day: never slow. |
 | The same closing | `Motions.spatialFast` | Quick, no bounce. Closing is as fast as opening, never slower. |
-| The sign turning (triangle) | `Motions.spatial` until 183; from 183 a stiff, critically damped one (see `tasks/QUEUE-next-build.md`) | Lands in about 0.2 s. Never past its stop, never back. |
+| The sign turning (triangle) | `Motions.effects` (1600, ζ 1), from 184 | Lands in about 0.15 s. Never past its stop, never back: it turns only clockwise. It points down when the next tap on the button leaves nothing open, and up otherwise. |
 | Values settling (sliders, density) | `Motions.effects` family | No bounce at all. |
 
 - **What opens from a button grows out of that button and goes back into it.** The app list and

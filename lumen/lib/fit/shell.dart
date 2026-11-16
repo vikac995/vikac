@@ -210,8 +210,9 @@ class _ShellState extends State<Shell>
     value: 1,
   );
 
-  // How far the button's sign has turned, in radians: see [_ButtonSign].
-  late final SpringValue _signTurn = SpringValue(this, spring: Motions.snappy);
+  // How far the button's sign has turned, in radians: see [_ButtonSign]. For a look that turns
+  // (Window) it only ever increases: see [_signSync]. One stiff spring that never goes past.
+  late final SpringValue _signTurn = SpringValue(this, spring: Motions.effects);
 
   // The bouncy shot of a sign that does not turn: how far it has jumped up out of its place
   // (it starts with a kick and springs back, a little past). At rest 0, and nothing runs.
@@ -223,34 +224,151 @@ class _ShellState extends State<Shell>
   // What was open when the sign was last told: 0 nothing, 1 the blobs, 2 the app list.
   int _signWas = 0;
 
-  /// The cog is the button's sign only while the blobs are out and being changed.
+  // The triangle (the owner's rule, build 184): it points down when the next tap on the button
+  // leaves nothing open, and up otherwise. Window is drawn pointing down at angle 0, so up at
+  // rest is a sixth of a turn on. On every change of what a tap would do it turns clockwise,
+  // and only ever clockwise: a sixth to change the way it points, [sameMeaningTurn] when the
+  // tap would do something else but it points the same way.
+  double _signAt = math.pi / 3;
+  TapOutcome? _signOutcome;
+  bool? _signLookTurned;
+
+  // A finger on the button that has started to move: what it will be (a flick for the app list,
+  // a carry, a tap) is not known until it lifts. The sign waits for that, so a flick from the
+  // blobs never turns it towards "closed" on the way (the blobs go in at the first movement).
+  bool _signHeld = false;
+
+  // Each tap on the button: whether the triangle pointed down before it, and whether the tap
+  // left nothing open. (For the button test: they must always agree.)
+  final List<(String, bool, bool)> _signTaps = <(String, bool, bool)>[];
+
+  /// What a tap on Prism's button would do now (a hold, a flick or a carry is not a tap). The
+  /// one place this is decided: the button's tap ([_buttonUp]) does what this says, and the
+  /// sign shows it.
+  TapOutcome _tapOutcome() {
+    // (Prism's settings close on a tap anywhere beside them, the button included.)
+    if (_panelOpen) {
+      return _open ? TapOutcome.closePanelToBlobs : TapOutcome.closePanel;
+    }
+    if (_drawerOpen) {
+      final int? slot = _editSlot;
+      if (slot != null) {
+        // Up to choose something: what closing it leads to (see [_setDrawer]).
+        if (_pickBack) {
+          return TapOutcome.closeDrawerToBack;
+        }
+        if (_isSwipe(slot)) {
+          return TapOutcome.closeDrawerToSettings;
+        }
+        if (slot != _sideSlot) {
+          return TapOutcome.closeDrawerToBlobs;
+        }
+      }
+      return TapOutcome.closeDrawer;
+    }
+    if (_open && _editing) {
+      return TapOutcome.openSettings;
+    }
+    if (_parked) {
+      return TapOutcome.callGlassHome;
+    }
+    return _open ? TapOutcome.closeBlobs : TapOutcome.openBlobs;
+  }
+
+  /// Whether the triangle, turned [a], points down (Window is the same every 120°: a sixth of a
+  /// turn on from pointing down, it points up).
+  static bool _pointsDown(double a) => (a / (math.pi / 3)).round().isEven;
+
+  /// Nothing of Prism's is open: no blobs, no app list, no settings, no magnifying glass out.
+  bool _nothingOpen() =>
+      !_open && !_drawerOpen && !_panelOpen && !_parked && !_carrying;
+
+  /// Does what a tap on the button does now ([_tapOutcome]).
+  void _doTap(TapOutcome o) {
+    switch (o) {
+      case TapOutcome.openBlobs:
+      case TapOutcome.closeBlobs:
+        _setOpen(o == TapOutcome.openBlobs);
+      case TapOutcome.openSettings:
+        _showFloating();
+      case TapOutcome.callGlassHome:
+        _lensHome();
+      case TapOutcome.closeDrawer:
+      case TapOutcome.closeDrawerToBlobs:
+      case TapOutcome.closeDrawerToSettings:
+      case TapOutcome.closeDrawerToBack:
+        _setDrawer(false);
+      case TapOutcome.closePanel:
+      case TapOutcome.closePanelToBlobs:
+        _closePanel?.call();
+    }
+  }
+
+  // A sign update asked for and not yet made: made once, when what is being done now has
+  // finished, so that the states it passes through on the way do not count (closing the app
+  // list after choosing for a blob passes through "nothing open" before the blobs come back:
+  // counted, that was two turns at once, 180°).
+  bool _signDue = false;
+
+  /// The sign is told that something may have changed: it shows what a tap would do once the
+  /// change is complete.
   void _signSync() {
+    if (_signDue) {
+      return;
+    }
+    _signDue = true;
+    scheduleMicrotask(() {
+      _signDue = false;
+      if (mounted) {
+        _signApply();
+      }
+    });
+  }
+
+  /// The sign: the cog no more, the triangle turned to say what a tap would do, or the shot.
+  void _signApply() {
     // (Should the settings' flag ever outlive the panel, the panel's absence wins.)
     if (_panelOpen && !PanelWatch.instance.anyOpen) {
       _panelOpen = false;
     }
-    // (The app list up only to choose for the Sidekick does not turn Prism's triangle: it is
-    // not Prism's own list being opened.)
     final int now = (_drawerOpen && _editSlot != _sideSlot) || _panelOpen
         ? 2
         : (_open ? 1 : 0);
-    if (BlobSign.of(Apps.instance.blobLook).turns) {
-      // Half a turn for the app list and for the button's settings, a sixth for the blobs.
-      // (Settling without overshoot: it turns and stops, and never spins past.)
-      _signTurn.animateTo(
-        now == 2 || _panelOpen ? math.pi : (now == 1 ? math.pi / 3 : 0),
-        // (Unhurried: half a turn in about a fifth of a second, read as a turn and not a jump.)
-        spring: Motions.spatial,
-      );
+    final bool turns = BlobSign.of(Apps.instance.blobLook).turns;
+    if (turns) {
+      if (!_signHeld) {
+        final TapOutcome o = _tapOutcome();
+        final TapOutcome? was = _signOutcome;
+        if (was != null && was != o) {
+          _signAt += was.closesAll != o.closesAll
+              ? math.pi / 3
+              : sameMeaningTurn * math.pi / 180;
+        } else if (was == null && o.closesAll) {
+          // (The first time, already where a tap closes everything: down, a sixth on.)
+          _signAt += math.pi / 3;
+        }
+        _signOutcome = o;
+        if (_signLookTurned != true) {
+          // Just become a look that turns (or the first time): it is simply there, no spin.
+          _signTurn.jumpTo(_signAt);
+        } else {
+          _signTurn.animateTo(_signAt);
+        }
+      }
     } else {
       // The others stay pointing up, and shoot out a little as something opens.
-      _signTurn.animateTo(0);
+      if (_signLookTurned != false) {
+        _signTurn.jumpTo(0);
+      } else {
+        _signTurn.animateTo(0);
+      }
       if (now != 0 && now != _signWas) {
         _signShot.animateTo(0, velocity: 14);
       }
     }
+    _signLookTurned = turns;
     _signWas = now;
-    // (No cog any more: the settings turn the sign half a turn, as the app list does.)
+    // (No cog any more: the settings turn the sign as the app list does.)
     _cog.animateTo(0);
   }
 
@@ -2321,6 +2439,12 @@ class _ShellState extends State<Shell>
   @override
   void initState() {
     super.initState();
+    // The sign as it is at rest from the first frame (the triangle up: a tap opens the blobs).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _signSync();
+      }
+    });
     // How long a hold is on this phone, the same as the Sidekick's. (Not on a phone: 450 ms.)
     const MethodChannel('lumen/device')
         .invokeMethod<int>('holdMs')
@@ -2758,6 +2882,57 @@ class _ShellState extends State<Shell>
     // Which round is running (0 while getting ready; past [rounds] afterwards), and how long
     // the rounds have taken so far: for the progress line under the banner.
     int roundNow = 0;
+    // The triangle's turn, every frame of the button test (build 184): when, where it was, and
+    // where it was going. (A jump, when the look changes, starts a new stretch.)
+    final List<(int, double, double)> signPath = <(int, double, double)>[];
+    void signFrame() => signPath.add((
+      t.clock.elapsedMicroseconds,
+      _signTurn.value,
+      _signTurn.target,
+    ));
+    const double degree = math.pi / 180;
+    // Stretches of the path between jumps (a jump: the target went down, which only a change of
+    // look does).
+    List<List<(int, double, double)>> stretches(
+      List<(int, double, double)> path,
+    ) {
+      final List<List<(int, double, double)>> all =
+          <List<(int, double, double)>>[];
+      List<(int, double, double)> now = <(int, double, double)>[];
+      for (final (int, double, double) p in path) {
+        if (now.isNotEmpty && p.$3 < now.last.$3 - 1e-6) {
+          all.add(now);
+          now = <(int, double, double)>[];
+        }
+        now.add(p);
+      }
+      if (now.isNotEmpty) {
+        all.add(now);
+      }
+      return all;
+    }
+
+    // Never back (more than half a degree below where it had got to), never past its target
+    // (more than a degree): the first frame that is either, or null.
+    String? signWrong(List<(int, double, double)> path) {
+      for (final List<(int, double, double)> st in stretches(path)) {
+        double most = -double.infinity;
+        for (final (int us, double v, double to) in st) {
+          if (v < most - 0.5 * degree) {
+            return 'turned back at ${(us / 1000).round()} ms: ${(v / degree).toStringAsFixed(1)}° after ${(most / degree).toStringAsFixed(1)}°';
+          }
+          if (v > to + degree) {
+            return 'went past at ${(us / 1000).round()} ms: ${(v / degree).toStringAsFixed(1)}° for ${(to / degree).toStringAsFixed(1)}°';
+          }
+          most = math.max(most, v);
+        }
+      }
+      return null;
+    }
+
+    String signSaid(List<(int, double, double)> path) => path.isEmpty
+        ? 'no frames'
+        : '${path.length} frames, ${path.map(((int, double, double) p) => (p.$2 / degree).toStringAsFixed(0)).join(' ')}° (to ${(path.last.$3 / degree).toStringAsFixed(0)}°)';
     final Stopwatch roundsTook = Stopwatch();
     void progress(String what) {
       final RegExpMatch? part = RegExp(r'^(\d+) of (\d+), ').firstMatch(what);
@@ -3180,8 +3355,9 @@ class _ShellState extends State<Shell>
           !_carrying && !_open && !_drawerOpen,
         );
         t.check(
-          'sign: while its settings are open it has turned half way, as for the app list',
-          (_signTurn.target - math.pi).abs() < 0.01 && _cog.target == 0,
+          'sign: while its settings are open it points down (a tap closes them), as for the app list',
+          _pointsDown(_signTurn.target) && _cog.target == 0,
+          'turned ${(_signTurn.target * 180 / math.pi).toStringAsFixed(0)}°',
         );
         // (From build 178 the Sidekick's settings are its own, over the app it is in: Prism's
         // have no Sidekick part at all. The Sidekick's own panel is checked in the button test.)
@@ -3214,10 +3390,10 @@ class _ShellState extends State<Shell>
           await Robot.tap(shut, after: 900);
         }
         t.check(
-          'settings: the X closes them, and the sign turns back',
+          'settings: the X closes them, and the sign points up again',
           !_panelOpen &&
               Robot.spot('names') == null &&
-              _signTurn.target.abs() < 0.01,
+              !_pointsDown(_signTurn.target),
         );
         // The button itself, still in sight below them, closes them too.
         await Robot.hold(_home, ms: 650, after: 900);
@@ -3228,8 +3404,8 @@ class _ShellState extends State<Shell>
         );
         await Robot.tap(_home, after: 900);
         t.check(
-          'settings: a tap on the button closes them, and the sign turns back',
-          !_panelOpen && _signTurn.target.abs() < 0.01 && !_open,
+          'settings: a tap on the button closes them, and the sign points up again',
+          !_panelOpen && !_pointsDown(_signTurn.target) && !_open,
         );
         BlobSlots.instance.putAll(five);
         await Robot.wait(500);
@@ -4049,11 +4225,15 @@ class _ShellState extends State<Shell>
       // before or could: holds that are not quite holds, holds that turn into drags, taps that
       // land while something is still moving, panels left behind, and menus emptied and refilled.
       final bool turns = BlobSign.of(Apps.instance.blobLook).turns;
-      // Whether the sign has turned the way it should for what is open, and is not the cog.
-      void signIs(String when, double want) => t.check(
+      // Whether the triangle points the way it should (down when a tap would leave nothing
+      // open, the owner's rule from build 184), agrees with what a tap would do, and is not the cog.
+      void signIs(String when, {required bool down}) => t.check(
         'sign: $when',
-        _cog.target == 0 && (!turns || (_signTurn.target - want).abs() < 0.01),
-        'turned ${_signTurn.target.toStringAsFixed(2)} (want ${turns ? want.toStringAsFixed(2) : 'any'}), cog ${_cog.target}',
+        _cog.target == 0 &&
+            (!turns ||
+                (_pointsDown(_signTurn.target) == down &&
+                    _tapOutcome().closesAll == down)),
+        'points ${_pointsDown(_signTurn.target) ? 'down' : 'up'} (want ${turns ? (down ? 'down' : 'up') : 'any'}), turned ${(_signTurn.target * 180 / math.pi).toStringAsFixed(0)}°, a tap would: ${_tapOutcome().name}, cog ${_cog.target}',
       );
       // Nothing left behind: no panel, no small menu, no list, no blob being chosen for.
       void clean(String when) => t.check(
@@ -4114,6 +4294,76 @@ class _ShellState extends State<Shell>
       }
 
       Future<void> buttonRound() async {
+        // ---------------------------------------------------------------- the triangle (184)
+        if (buttons &&
+            roundNow == 1 &&
+            BlobSign.of(Apps.instance.blobLook).turns) {
+          say('the triangle');
+          if (_panelOpen) {
+            _closePanel?.call();
+            await Robot.wait(700);
+          }
+          if (_drawerOpen) {
+            _setDrawer(false);
+            await Robot.wait(700);
+          }
+          if (_open) {
+            _setOpen(false);
+            await Robot.wait(700);
+          }
+          // One real tap: which way the triangle pointed before it, and what was open after it.
+          // Down must mean the tap left nothing open (the owner's rule).
+          Future<void> tells(String state) async {
+            await Robot.wait(300);
+            final bool down = _pointsDown(_signTurn.target);
+            final String would = _tapOutcome().name;
+            await Robot.tap(_home, after: 900);
+            final bool none = _nothingOpen();
+            t.check(
+              'triangle: $state, it points ${down ? 'down' : 'up'}, and a tap there ${down ? 'leaves nothing open' : 'leaves something open'}',
+              down == none,
+              'a tap would: $would; after it: blobs $_open, app list $_drawerOpen, settings $_panelOpen, glass out ${_parked || _carrying}',
+            );
+          }
+
+          Future<void> flick() => Robot.drag(
+            <Offset>[_home, _home - const Offset(0, 90)],
+            legMs: 90,
+            flick: true,
+            after: 1000,
+          );
+          await tells('at rest');
+          await tells('with the blobs out');
+          await flick();
+          await tells('with the app list up');
+          // From the blobs: the blobs go in at the flick's first movement, but the triangle waits
+          // for the flick, so it never turns back on the way to "the app list is up".
+          await Robot.tap(_home, after: 900);
+          final int from = signPath.length;
+          await flick();
+          final List<(int, double, double)> seg = signPath.sublist(from);
+          t.check(
+            'triangle: a real flick from the blobs opens the app list, and the triangle never turns back or past on the way',
+            _drawerOpen &&
+                signWrong(seg) == null &&
+                _pointsDown(_signTurn.target),
+            '${signWrong(seg) ?? 'steady'}; ${signSaid(seg)}; app list $_drawerOpen',
+          );
+          await tells('with the app list up from the blobs');
+          // Prism's settings from a hold: nothing under them, so a tap leaves nothing open.
+          await Robot.hold(_home, ms: _holdMs + 250, after: 900);
+          await tells('with Prism\'s settings open from a hold');
+          // The blobs being changed: a tap opens Prism's settings over them, and a tap then
+          // closes the settings with the blobs still out.
+          await Robot.tap(_home, after: 900);
+          _setEditing(true);
+          await Robot.wait(600);
+          await tells('with the blobs being changed');
+          await tells('with Prism\'s settings over the blobs being changed');
+          _setEditing(false);
+          _setOpen(false);
+          await Robot.wait(700);
+        }
         // ------------------------------------------------ the button: taps
         say('1 of 6, the button: taps');
         await memoryAt('part 1 of 6');
@@ -4130,10 +4380,16 @@ class _ShellState extends State<Shell>
           'button: six quick taps leave the blobs closed',
           !_open && !_panelOpen,
         );
-        signIs('closed after quick taps, it points as at rest', 0);
+        signIs(
+          'closed after quick taps, it points up, as at rest',
+          down: false,
+        );
         await Robot.tap(_home, after: 900);
         t.check('button: a tap opens the blobs', _open && shown() == 5);
-        signIs('with the blobs out it has turned a sixth', math.pi / 3);
+        signIs(
+          'with the blobs out it points down (a tap closes them)',
+          down: true,
+        );
         await Robot.tap(_home, after: 900);
         t.check('button: a tap closes them', !_open);
         // A press a little shorter than a hold is a tap, not the settings.
@@ -4160,7 +4416,10 @@ class _ShellState extends State<Shell>
           'hold: and neither the glass nor the blobs came out',
           !_carrying && !_parked && !_open && !_drawerOpen,
         );
-        signIs('with the settings open it has turned half way', math.pi);
+        signIs(
+          'with the settings open it points down (a tap closes them)',
+          down: true,
+        );
         final Offset? closeAt = Robot.spot('floatClose');
         t.check(
           'settings: they sit above the button',
@@ -4168,7 +4427,7 @@ class _ShellState extends State<Shell>
         );
         await Robot.tap(_home, after: 900);
         t.check('settings: a tap on the button closes them', !_panelOpen);
-        signIs('settings closed, it has turned back', 0);
+        signIs('settings closed, it points up again', down: false);
         clean('after the settings, closed by the button');
         // The same, five times quickly, closed each way in turn: nothing may be left behind.
         await t.scene('settings opened and closed five times', () async {
@@ -4182,7 +4441,7 @@ class _ShellState extends State<Shell>
           }
         });
         clean('after the settings five times');
-        signIs('after the settings five times, at rest', 0);
+        signIs('after the settings five times, at rest, up', down: false);
         // Closed as the phone's back gesture would.
         await holdButton();
         await Navigator.of(context).maybePop();
@@ -4191,7 +4450,7 @@ class _ShellState extends State<Shell>
           'settings: back closes them',
           !_panelOpen && !PanelWatch.instance.anyOpen,
         );
-        signIs('closed by back, it has turned back', 0);
+        signIs('closed by back, it points up again', down: false);
         // Held with the blobs out: the blobs go in and the settings come up.
         await Robot.tap(_home, after: 900);
         await holdButton();
@@ -4254,7 +4513,10 @@ class _ShellState extends State<Shell>
           _setDrawer(true);
           await Robot.wait(900);
         }
-        signIs('with the app list up it has turned half way', math.pi);
+        signIs(
+          'with the app list up it points down (a tap closes it)',
+          down: true,
+        );
         // Held with the app list up: the button only closes it.
         await holdButton();
         t.check(
@@ -4263,7 +4525,7 @@ class _ShellState extends State<Shell>
           'list ${_drawerOpen ? 'up' : 'down'}, settings ${_panelOpen ? 'open' : 'closed'}',
         );
         await calm();
-        signIs('after the app list, at rest', 0);
+        signIs('after the app list, at rest, up', down: false);
         clean('after the app list');
 
         // ------------------------------------------------ the blobs: the small menu
@@ -4395,7 +4657,7 @@ class _ShellState extends State<Shell>
                   keys().join(' ') == before.join(' '),
               keys().join(' '),
             );
-            signIs('back at the blobs, turned a sixth', math.pi / 3);
+            signIs('back at the blobs, it points down', down: true);
           }
         }
         // Remove: with five there is no Add, and Remove leaves four, together in the middle.
@@ -4469,7 +4731,10 @@ class _ShellState extends State<Shell>
           _allEmpty && Robot.spot('plus0') != null,
           keys().join(' '),
         );
-        signIs('with only the plus, it still turns', math.pi / 3);
+        signIs(
+          'with only the plus, it still points down with the blobs out',
+          down: true,
+        );
         // The plus, alone.
         await ready(want: List<String>.filled(_n, 'empty:'));
         await Robot.hold(seat(0), ms: _holdMs + 260, after: 600);
@@ -4959,9 +5224,9 @@ class _ShellState extends State<Shell>
               'list $_drawerOpen, place $_editSlot, asked for ${_sideAsk?.slot} (add ${_sideAsk?.add})',
             );
             heard(
-              'sidekick: while Prism\'s list is up for it, Prism\'s triangle does not turn',
-              !turns || _signTurn.target.abs() < 0.01,
-              'turned ${_signTurn.target.toStringAsFixed(2)}',
+              'sidekick: while Prism\'s list is up for it, Prism\'s triangle points down (a tap closes the list)',
+              !turns || _pointsDown(_signTurn.target),
+              'turned ${(_signTurn.target * 180 / math.pi).toStringAsFixed(0)}°, a tap would: ${_tapOutcome().name}',
             );
             await Robot.tap(_home, after: 1300);
             s = await where();
@@ -5328,7 +5593,7 @@ class _ShellState extends State<Shell>
           'sidekick panel: Prism did not come forward, and its own settings stayed shut',
           numOf(s['forwards']).toInt() == forwardsWas &&
               !_panelOpen &&
-              _signTurn.target.abs() < 0.01,
+              !_pointsDown(_signTurn.target),
           'brought forward ${numOf(s['forwards']).toInt() - forwardsWas} times, Prism\'s settings ${_panelOpen ? 'open' : 'shut'}',
         );
         inPanel(
@@ -6029,7 +6294,7 @@ class _ShellState extends State<Shell>
         });
         await Robot.wait(900);
         clean('after everything in a row');
-        signIs('after everything in a row, at rest', 0);
+        signIs('after everything in a row, at rest, up', down: false);
       }
 
       if (rounds > 0) {
@@ -6102,6 +6367,11 @@ class _ShellState extends State<Shell>
             tmp.deleteSync(recursive: true);
           } catch (_) {}
         }
+      }
+      if (buttons) {
+        signPath.clear();
+        _signTaps.clear();
+        _signTurn.addListener(signFrame);
       }
       roundsTook.start();
       for (int n = 1; n <= rounds; n++) {
@@ -6579,6 +6849,166 @@ class _ShellState extends State<Shell>
         }
         Diag.instance.progress.value = ('Leak test  ·  done', 1);
       } else if (buttons) {
+        _signTurn.removeListener(signFrame);
+        if (BlobSign.of(Apps.instance.blobLook).turns || signPath.isNotEmpty) {
+          // Every tap on Prism's button in the whole test: the triangle pointed down exactly when
+          // the tap left nothing open.
+          final List<(String, bool, bool)> off = <(String, bool, bool)>[
+            for (final (String, bool, bool) x in _signTaps)
+              if (x.$2 != x.$3) x,
+          ];
+          t.check(
+            'triangle: at every tap on Prism\'s button in the test, it pointed down exactly when the tap left nothing open',
+            _signTaps.isNotEmpty && off.isEmpty,
+            '${_signTaps.length} taps${off.isEmpty ? '' : '; wrong: ${off.map(((String, bool, bool) x) => '${x.$1} (pointed ${x.$2 ? 'down' : 'up'}, ${x.$3 ? 'nothing' : 'something'} open after)').join(', ')}'}',
+          );
+          // Every frame of the whole test: never back, never past.
+          final String? wrong = signWrong(signPath);
+          t.check(
+            'triangle: every frame of the test, it never turned back or past where it was going',
+            wrong == null,
+            wrong ?? '${signPath.length} frames',
+          );
+          // No single turn of more than a third of a turn: past that, it would show the way it
+          // ends up pointing before it gets there.
+          double most = 0;
+          for (final List<(int, double, double)> st in stretches(signPath)) {
+            for (int i = 1; i < st.length; i++) {
+              most = math.max(most, st[i].$3 - st[i - 1].$3);
+            }
+          }
+          t.check(
+            'triangle: no single turn of more than 120°',
+            most <= 120.1 * degree,
+            'the largest turn ${(most / degree).toStringAsFixed(0)}°',
+          );
+          // How far one frame turned it at most (only a phone's frames mean anything).
+          if (Platform.isAndroid) {
+            double step = 0;
+            for (final List<(int, double, double)> st in stretches(signPath)) {
+              for (int i = 1; i < st.length; i++) {
+                step = math.max(step, (st[i].$2 - st[i - 1].$2).abs());
+              }
+            }
+            t.note(
+              'the triangle turned at most ${(step / degree).toStringAsFixed(1)}° in one frame',
+            );
+          } else {
+            t.skip(
+              'triangle: the largest turn in one frame',
+              'the preview draws a frame only every 120 to 150 ms, so it means nothing here',
+            );
+          }
+        }
+        // ---------------------------------------------------------- the glass, measured (184)
+        // Colourful things scroll behind the bar at a steady pace, about 30 s for each level of
+        // glass; then the magnifying glass alone, carried about at full quality. Today's styles
+        // stand in for the three levels (no other way of drawing the bar exists yet):
+        // Frosted ≈ "Event" (still glass, a tint over what is behind, nothing blurred),
+        // Clear ≈ "Frosted" (a live blur at low quality: no bending, no edges),
+        // Liquid ≈ "Original" (a live blur, bending at the edges, the rim).
+        say('the glass, measured');
+        final int modeWas = Diag.instance.glassMode.value;
+        final GlassQuality qualityWas = settings.quality;
+        if (_drawerOpen) {
+          _setDrawer(false);
+        }
+        if (_open) {
+          _setOpen(false);
+        }
+        _go(0);
+        await Robot.wait(800);
+        double num0(Map<String, Object?> m, String k) =>
+            (m[k] as num?)?.toDouble() ?? double.nan;
+        Future<void> measureGlass(
+          String label,
+          Future<void> Function() moving,
+        ) async {
+          await calm();
+          final Map<String, Object?> s0 = await t.lens(<String, Object?>{
+            'op': 'state',
+          });
+          final int at0 = t.clock.elapsedMilliseconds;
+          await t.scene('glass level $label: moving', moving);
+          final Map<String, Object?> s1 = await t.lens(<String, Object?>{
+            'op': 'state',
+          });
+          final Map<String, Object?> mem = await t.lens(<String, Object?>{
+            'op': 'memory',
+          });
+          t.glassLevels.add((
+            label,
+            <String, double>{
+              'ms': (t.clock.elapsedMilliseconds - at0).toDouble(),
+              'cpu': num0(s1, 'cpu') - num0(s0, 'cpu'),
+              'graphics': num0(mem, 'mem_graphics') / 1024,
+              'battery': num0(s0, 'level') - num0(s1, 'level'),
+              'charge': (num0(s0, 'chargeUah') - num0(s1, 'chargeUah')) / 1000,
+              'plugged': s0['plugged'] == true || s1['plugged'] == true ? 1 : 0,
+            },
+          ));
+        }
+
+        Future<void> scrollFor(int seconds) async {
+          final Offset mid = Offset(sc.width / 2, sc.height * 0.5);
+          final Stopwatch w = Stopwatch()..start();
+          bool up = true;
+          while (w.elapsed.inSeconds < seconds) {
+            await Robot.drag(
+              up
+                  ? <Offset>[
+                      mid + const Offset(0, 200),
+                      mid - const Offset(0, 200),
+                    ]
+                  : <Offset>[
+                      mid - const Offset(0, 200),
+                      mid + const Offset(0, 200),
+                    ],
+              legMs: 1200,
+              after: 50,
+            );
+            up = !up;
+          }
+        }
+
+        for (final (String label, int mode) in <(String, int)>[
+          ('Frosted (today\'s Event)', 3),
+          ('Clear (today\'s Frosted)', 2),
+          ('Liquid (today\'s Original)', 0),
+        ]) {
+          Diag.instance.glassMode.value = mode;
+          settings.quality = GlassQuality.full;
+          await Robot.wait(1500);
+          await measureGlass(label, () => scrollFor(30));
+        }
+        // The magnifying glass alone, carried about, at full quality. (Today it follows the
+        // glass quality setting: the owner's rule that it is always at full quality is not in
+        // the code yet, so the test sets Full for it.)
+        Diag.instance.glassMode.value = 0;
+        settings.quality = GlassQuality.full;
+        await Robot.wait(1000);
+        await measureGlass(
+          'the magnifying glass, carried, full quality',
+          () => Robot.drag(
+            <Offset>[
+              _home,
+              for (int k = 0; k < 12; k++)
+                Offset(
+                  sc.width * (k.isEven ? 0.25 : 0.75),
+                  sc.height * (0.2 + 0.05 * k),
+                ),
+              Offset(sc.width / 2, top + 60),
+            ],
+            legMs: 1500,
+            after: 1000,
+          ),
+        );
+        if (_carrying || _parked) {
+          _lensHome();
+        }
+        Diag.instance.glassMode.value = modeWas;
+        settings.quality = qualityWas;
+        await Robot.wait(1000);
         // A little while of nothing being touched, to see that the buttons leave nothing running.
         say('sitting still for a minute');
         await t.phase('Home, nothing open, after the button test', 60);
@@ -7132,6 +7562,8 @@ class _ShellState extends State<Shell>
       _moved = true;
       _movedAt = _held.elapsedMilliseconds;
       _holdTimer?.cancel();
+      // (A flick, a carry or a nudge: not known yet. The sign waits for the finger to lift.)
+      _signHeld = true;
       _setOpen(false);
     }
     if (_heldEdit) {
@@ -7195,6 +7627,15 @@ class _ShellState extends State<Shell>
   }
 
   void _buttonUp() {
+    _buttonLet();
+    // (The gesture is decided and done: the sign shows what a tap would do now.)
+    if (_signHeld) {
+      _signHeld = false;
+      _signSync();
+    }
+  }
+
+  void _buttonLet() {
     _liftTimer?.cancel();
     _holdTimer?.cancel();
     _kick.animateTo(1);
@@ -7217,7 +7658,13 @@ class _ShellState extends State<Shell>
       if (_lifted) {
         _lensQuiet();
       }
+      final TapOutcome o = _tapOutcome();
+      final bool turns = BlobSign.of(Apps.instance.blobLook).turns;
+      final bool down = _pointsDown(_signTurn.target);
       _setDrawer(false);
+      if (turns && !_moved && !_lifted && _signTaps.length < 400) {
+        _signTaps.add((o.name, down, _nothingOpen()));
+      }
     } else if (_moved &&
         !_lifted &&
         travel.dy < -26 &&
@@ -7233,17 +7680,17 @@ class _ShellState extends State<Shell>
       // It was a flick all the same, so the lens is put away and the app drawer comes up.
       _lensQuiet();
       _setDrawer(true);
-    } else if (!_lifted && _open && _editing) {
-      // While the blobs are being changed the button shows a cog, and a tap on it is for
-      // the floating elements. (A tap beside the blobs, or back, ends the changing.)
-      _showFloating();
-    } else if (!_lifted && _parked) {
-      // The magnifying glass is out and put down somewhere. A tap on the place it lives
-      // calls it home; the next tap is for the blobs.
-      _lensHome();
     } else if (!_lifted) {
-      // A tap, or a small nudge that was neither a flick nor a carry.
-      _setOpen(!_open);
+      // A tap, or a small nudge that was neither a flick nor a carry: what [_tapOutcome] says.
+      // (While the blobs are being changed, Prism's settings; with the magnifying glass put
+      // down somewhere, it is called home; otherwise the blobs come out or go in.)
+      final TapOutcome o = _tapOutcome();
+      final bool turns = BlobSign.of(Apps.instance.blobLook).turns;
+      final bool down = _pointsDown(_signTurn.target);
+      _doTap(o);
+      if (turns && _signTaps.length < 400) {
+        _signTaps.add((o.name, down, _nothingOpen()));
+      }
     } else if (_target != null && _target!.widget.actions.isNotEmpty) {
       // Put down on something you can act on: the pill stays and is the buttons.
       setState(() {
@@ -8759,6 +9206,7 @@ class _ShellState extends State<Shell>
                           ..start();
                         _moved = false;
                         _lifted = false;
+                        _signHeld = false;
                         // Held still while the blobs are out: the same as holding a blob.
                         _heldEdit = false;
                         _holdTimer?.cancel();
@@ -9588,309 +10036,344 @@ void showPrismSettings(BuildContext context) {
                   Diag.instance.wallpaperOn,
                   Look.instance,
                 ]),
-                builder: (BuildContext context, Widget? _) => SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      Text(
-                        'Prism',
-                        style: LumenType.display(26, weight: 700, color: c.ink),
-                      ),
-                      const SizedBox(height: 16),
-                      Text('Colour', style: LumenType.label(color: c.inkMuted)),
-                      const SizedBox(height: 8),
-                      // Room at both ends for the ring around the chosen colour, which sits outside its circle.
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 3,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: <Widget>[
-                            for (final double h in Look.hues)
-                              Pressable(
-                                onTap: () {
-                                  Look.instance.choose(hue: h);
-                                  Haptics.tick();
-                                },
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: ShapeDecoration(
-                                    color: Look.accentFor(h, c.dark),
-                                    shape: CircleBorder(
-                                      side: BorderSide(
-                                        color: Look.instance.hue == h
-                                            ? c.ink
-                                            : Colors.transparent,
-                                        width: 2.5,
-                                        strokeAlign:
-                                            BorderSide.strokeAlignOutside,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      // How strong the colours are, for every colour above: a matter of taste.
-                      Segmented<int>(
-                        values: const <int>[0, 1, 2],
-                        labels: Look.strengths,
-                        value: Look.instance.strength,
-                        onChanged: (int v) => Look.instance.choose(strength: v),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        'Background',
-                        style: LumenType.label(color: c.inkMuted),
-                      ),
-                      const SizedBox(height: 8),
-                      Segmented<int>(
-                        values: const <int>[0, 1, 2],
-                        labels: Look.vibes,
-                        value: Look.instance.vibe,
-                        onChanged: (int v) => Look.instance.choose(vibe: v),
-                      ),
-                      if (Look.instance.vibe != 0) ...<Widget>[
-                        const SizedBox(height: 10),
-                        Segmented<int>(
-                          values: const <int>[0, 1, 2, 3, 4],
-                          labels: Look.patterns,
-                          value: Look.instance.pattern,
-                          onChanged: (int v) =>
-                              Look.instance.choose(pattern: v),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      Text('Theme', style: LumenType.label(color: c.inkMuted)),
-                      const SizedBox(height: 8),
-                      // System follows the phone: light by day and dark by night, if that is how the phone is set.
-                      Segmented<ThemeMode>(
-                        values: const <ThemeMode>[
-                          ThemeMode.system,
-                          ThemeMode.light,
-                          ThemeMode.dark,
-                        ],
-                        labels: const <String>['System', 'Light', 'Dark'],
-                        value: settings.themeMode,
-                        onChanged: (ThemeMode v) => Look.instance.theme(v),
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchLine(
-                        label: 'Frame-rate readout',
-                        value: settings.showFps,
-                        onChanged: (bool v) => settings.showFps = v,
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchLine(
-                        label: 'Haptics',
-                        value: settings.haptics,
-                        onChanged: (bool v) => settings.haptics = v,
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchLine(
-                        label: 'Reduce transparency',
-                        value: settings.reduceTransparency,
-                        onChanged: (bool v) => settings.reduceTransparency = v,
-                      ),
-                      const SizedBox(height: 12),
-                      SwitchLine(
-                        label: 'Background lights',
-                        value: Diag.instance.wallpaperOn.value,
-                        onChanged: (bool v) =>
-                            Diag.instance.wallpaperOn.value = v,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Glass style',
-                        style: LumenType.label(color: c.inkMuted),
-                      ),
-                      const SizedBox(height: 8),
-                      ListenableBuilder(
-                        listenable: Diag.instance.glassMode,
-                        builder: (BuildContext context, Widget? _) =>
-                            Segmented<int>(
-                              values: const <int>[4, 0, 1, 2, 3],
-                              labels: const <String>[
-                                'Auto',
-                                'Orig.',
-                                'One',
-                                'Frost',
-                                'Event',
-                              ],
-                              value: Diag.instance.glassMode.value,
-                              onChanged: (int v) =>
-                                  Diag.instance.glassMode.value = v,
+                builder: (BuildContext context, Widget? _) =>
+                    SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Text(
+                            'Prism',
+                            style: LumenType.display(
+                              26,
+                              weight: 700,
+                              color: c.ink,
                             ),
-                      ),
-                      const SizedBox(height: 12),
-                      ListenableBuilder(
-                        listenable: RestBubble.instance.allowed,
-                        builder: (BuildContext context, Widget? _) =>
-                            SwitchLine(
-                              label: 'Workout floats over other apps',
-                              value: RestBubble.instance.allowed.value,
-                              // Android decides this, on its own screen. The switch only takes you there.
-                              onChanged: (bool _) => RestBubble.instance.ask(),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Colour',
+                            style: LumenType.label(color: c.inkMuted),
+                          ),
+                          const SizedBox(height: 8),
+                          // Room at both ends for the ring around the chosen colour, which sits outside its circle.
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 3,
                             ),
-                      ),
-                      const SizedBox(height: 12),
-                      ListenableBuilder(
-                        listenable: Notes.instance.allowed,
-                        builder: (BuildContext context, Widget? _) =>
-                            SwitchLine(
-                              label: 'Notification counts on icons',
-                              value: Notes.instance.allowed.value,
-                              // Android decides this too, on its own screen.
-                              onChanged: (bool _) => Notes.instance.ask(),
-                            ),
-                      ),
-                      const SizedBox(height: 12),
-                      ListenableBuilder(
-                        listenable: BlobApps.instance.on,
-                        builder: (BuildContext context, Widget? _) =>
-                            SwitchLine(
-                              label: 'Blobs open real apps',
-                              value: BlobApps.instance.on.value,
-                              onChanged: (bool v) =>
-                                  BlobApps.instance.on.value = v,
-                            ),
-                      ),
-                      // The Sidekick switched off everywhere has nowhere to be held, so its own
-                      // settings can't be reached: only then, this one line brings it back.
-                      // (Nothing else about the Sidekick is here: its settings are its own.)
-                      ListenableBuilder(
-                        listenable: Listenable.merge(<Listenable>[
-                          RestBubble.instance.floatIn,
-                          RestBubble.instance.floatOut,
-                        ]),
-                        builder: (BuildContext context, Widget? _) =>
-                            RestBubble.instance.canFloat
-                            ? const SizedBox.shrink()
-                            : Padding(
-                                padding: const EdgeInsets.only(top: 12),
-                                child: Row(
-                                  children: <Widget>[
-                                    Expanded(
-                                      child: Text(
-                                        'Bring back the Sidekick',
-                                        style: LumenType.text(
-                                          15,
-                                          weight: 560,
-                                          color: c.ink,
-                                        ),
-                                      ),
-                                    ),
-                                    Pressable(
-                                      key: Robot.key('bringBack'),
-                                      onTap: () {
-                                        Haptics.tick();
-                                        Diag.instance.event(
-                                          'settings page: the Sidekick brought back',
-                                        );
-                                        RestBubble.instance.setFloating(
-                                          inPrism: true,
-                                          overApps: true,
-                                        );
-                                        RestBubble.instance.bringSide();
-                                      },
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 16,
-                                          vertical: 10,
-                                        ),
-                                        decoration: ShapeDecoration(
-                                          color: c.accent,
-                                          shape: const StadiumBorder(),
-                                        ),
-                                        child: Text(
-                                          'Bring back',
-                                          style: LumenType.text(
-                                            14,
-                                            weight: 650,
-                                            color: c.onAccent,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: <Widget>[
+                                for (final double h in Look.hues)
+                                  Pressable(
+                                    onTap: () {
+                                      Look.instance.choose(hue: h);
+                                      Haptics.tick();
+                                    },
+                                    child: Container(
+                                      width: 32,
+                                      height: 32,
+                                      decoration: ShapeDecoration(
+                                        color: Look.accentFor(h, c.dark),
+                                        shape: CircleBorder(
+                                          side: BorderSide(
+                                            color: Look.instance.hue == h
+                                                ? c.ink
+                                                : Colors.transparent,
+                                            width: 2.5,
+                                            strokeAlign:
+                                                BorderSide.strokeAlignOutside,
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ],
-                                ),
-                              ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Glass quality',
-                        style: LumenType.label(color: c.inkMuted),
-                      ),
-                      const SizedBox(height: 8),
-                      Segmented<GlassQuality>(
-                        values: const <GlassQuality>[
-                          GlassQuality.auto,
-                          GlassQuality.full,
-                          GlassQuality.medium,
-                          GlassQuality.low,
-                        ],
-                        labels: const <String>['Auto', 'Full', 'Medium', 'Low'],
-                        value: settings.quality,
-                        onChanged: (GlassQuality v) => settings.quality = v,
-                      ),
-                      const SizedBox(height: 18),
-                      // The flight recorder: what just happened, to send with a video or without.
-                      Pressable(
-                        key: Robot.key('recorder'),
-                        onTap: () {
-                          Navigator.of(context).pop();
-                          Haptics.settle();
-                          showRecorderExport(context);
-                        },
-                        child: Container(
-                          height: 52,
-                          alignment: Alignment.center,
-                          decoration: ShapeDecoration(
-                            color: c.accent,
-                            shape: const StadiumBorder(),
-                          ),
-                          child: Text(
-                            'Send what just happened',
-                            style: LumenType.text(
-                              15,
-                              weight: 700,
-                              color: c.onAccent,
-                              height: 1,
+                                  ),
+                              ],
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      // (With which build this is, so there is never a doubt which one is installed.)
-                      _buildBadge(),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            flex: 3,
-                            child: Pressable(
+                          const SizedBox(height: 10),
+                          // How strong the colours are, for every colour above: a matter of taste.
+                          Segmented<int>(
+                            values: const <int>[0, 1, 2],
+                            labels: Look.strengths,
+                            value: Look.instance.strength,
+                            onChanged: (int v) =>
+                                Look.instance.choose(strength: v),
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            'Background',
+                            style: LumenType.label(color: c.inkMuted),
+                          ),
+                          const SizedBox(height: 8),
+                          Segmented<int>(
+                            values: const <int>[0, 1, 2],
+                            labels: Look.vibes,
+                            value: Look.instance.vibe,
+                            onChanged: (int v) => Look.instance.choose(vibe: v),
+                          ),
+                          if (Look.instance.vibe != 0) ...<Widget>[
+                            const SizedBox(height: 10),
+                            Segmented<int>(
+                              values: const <int>[0, 1, 2, 3, 4],
+                              labels: Look.patterns,
+                              value: Look.instance.pattern,
+                              onChanged: (int v) =>
+                                  Look.instance.choose(pattern: v),
+                            ),
+                          ],
+                          const SizedBox(height: 16),
+                          Text(
+                            'Theme',
+                            style: LumenType.label(color: c.inkMuted),
+                          ),
+                          const SizedBox(height: 8),
+                          // System follows the phone: light by day and dark by night, if that is how the phone is set.
+                          Segmented<ThemeMode>(
+                            values: const <ThemeMode>[
+                              ThemeMode.system,
+                              ThemeMode.light,
+                              ThemeMode.dark,
+                            ],
+                            labels: const <String>['System', 'Light', 'Dark'],
+                            value: settings.themeMode,
+                            onChanged: (ThemeMode v) => Look.instance.theme(v),
+                          ),
+                          const SizedBox(height: 12),
+                          SwitchLine(
+                            label: 'Frame-rate readout',
+                            value: settings.showFps,
+                            onChanged: (bool v) => settings.showFps = v,
+                          ),
+                          const SizedBox(height: 12),
+                          SwitchLine(
+                            label: 'Haptics',
+                            value: settings.haptics,
+                            onChanged: (bool v) => settings.haptics = v,
+                          ),
+                          const SizedBox(height: 12),
+                          SwitchLine(
+                            label: 'Reduce transparency',
+                            value: settings.reduceTransparency,
+                            onChanged: (bool v) =>
+                                settings.reduceTransparency = v,
+                          ),
+                          const SizedBox(height: 12),
+                          SwitchLine(
+                            label: 'Background lights',
+                            value: Diag.instance.wallpaperOn.value,
+                            onChanged: (bool v) =>
+                                Diag.instance.wallpaperOn.value = v,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Glass style',
+                            style: LumenType.label(color: c.inkMuted),
+                          ),
+                          const SizedBox(height: 8),
+                          ListenableBuilder(
+                            listenable: Diag.instance.glassMode,
+                            builder: (BuildContext context, Widget? _) =>
+                                Segmented<int>(
+                                  values: const <int>[4, 0, 1, 2, 3],
+                                  labels: const <String>[
+                                    'Auto',
+                                    'Orig.',
+                                    'One',
+                                    'Frost',
+                                    'Event',
+                                  ],
+                                  value: Diag.instance.glassMode.value,
+                                  onChanged: (int v) =>
+                                      Diag.instance.glassMode.value = v,
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          ListenableBuilder(
+                            listenable: RestBubble.instance.allowed,
+                            builder: (BuildContext context, Widget? _) =>
+                                SwitchLine(
+                                  label: 'Workout floats over other apps',
+                                  value: RestBubble.instance.allowed.value,
+                                  // Android decides this, on its own screen. The switch only takes you there.
+                                  onChanged: (bool _) =>
+                                      RestBubble.instance.ask(),
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          ListenableBuilder(
+                            listenable: Notes.instance.allowed,
+                            builder: (BuildContext context, Widget? _) =>
+                                SwitchLine(
+                                  label: 'Notification counts on icons',
+                                  value: Notes.instance.allowed.value,
+                                  // Android decides this too, on its own screen.
+                                  onChanged: (bool _) => Notes.instance.ask(),
+                                ),
+                          ),
+                          const SizedBox(height: 12),
+                          ListenableBuilder(
+                            listenable: BlobApps.instance.on,
+                            builder: (BuildContext context, Widget? _) =>
+                                SwitchLine(
+                                  label: 'Blobs open real apps',
+                                  value: BlobApps.instance.on.value,
+                                  onChanged: (bool v) =>
+                                      BlobApps.instance.on.value = v,
+                                ),
+                          ),
+                          // The Sidekick switched off everywhere has nowhere to be held, so its own
+                          // settings can't be reached: only then, this one line brings it back.
+                          // (Nothing else about the Sidekick is here: its settings are its own.)
+                          ListenableBuilder(
+                            listenable: Listenable.merge(<Listenable>[
+                              RestBubble.instance.floatIn,
+                              RestBubble.instance.floatOut,
+                            ]),
+                            builder: (BuildContext context, Widget? _) =>
+                                RestBubble.instance.canFloat
+                                ? const SizedBox.shrink()
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 12),
+                                    child: Row(
+                                      children: <Widget>[
+                                        Expanded(
+                                          child: Text(
+                                            'Bring back the Sidekick',
+                                            style: LumenType.text(
+                                              15,
+                                              weight: 560,
+                                              color: c.ink,
+                                            ),
+                                          ),
+                                        ),
+                                        Pressable(
+                                          key: Robot.key('bringBack'),
+                                          onTap: () {
+                                            Haptics.tick();
+                                            Diag.instance.event(
+                                              'settings page: the Sidekick brought back',
+                                            );
+                                            RestBubble.instance.setFloating(
+                                              inPrism: true,
+                                              overApps: true,
+                                            );
+                                            RestBubble.instance.bringSide();
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 10,
+                                            ),
+                                            decoration: ShapeDecoration(
+                                              color: c.accent,
+                                              shape: const StadiumBorder(),
+                                            ),
+                                            child: Text(
+                                              'Bring back',
+                                              style: LumenType.text(
+                                                14,
+                                                weight: 650,
+                                                color: c.onAccent,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Glass quality',
+                            style: LumenType.label(color: c.inkMuted),
+                          ),
+                          const SizedBox(height: 8),
+                          Segmented<GlassQuality>(
+                            values: const <GlassQuality>[
+                              GlassQuality.auto,
+                              GlassQuality.full,
+                              GlassQuality.medium,
+                              GlassQuality.low,
+                            ],
+                            labels: const <String>[
+                              'Auto',
+                              'Full',
+                              'Medium',
+                              'Low',
+                            ],
+                            value: settings.quality,
+                            onChanged: (GlassQuality v) => settings.quality = v,
+                          ),
+                          const SizedBox(height: 18),
+                          // The flight recorder: what just happened, to send with a video or without.
+                          Pressable(
+                            key: Robot.key('recorder'),
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              Haptics.settle();
+                              showRecorderExport(context);
+                            },
+                            child: Container(
+                              height: 52,
+                              alignment: Alignment.center,
+                              decoration: ShapeDecoration(
+                                color: c.accent,
+                                shape: const StadiumBorder(),
+                              ),
+                              child: Text(
+                                'Send what just happened',
+                                style: LumenType.text(
+                                  15,
+                                  weight: 700,
+                                  color: c.onAccent,
+                                  height: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          // (With which build this is, so there is never a doubt which one is installed.)
+                          _buildBadge(),
+                          // The test this build asks for first, right under the badge; then the others.
+                          // (Since 184 only these four: the owner had the short guided test, the
+                          // 20-minute long test, the glass settings test and the chat-head battery
+                          // test taken off. Their code stays, reachable from the preview only.)
+                          for (final Widget w in _testList(context, c)) w,
+                          if (TestRun.last()
+                              case final String report?) ...<Widget>[
+                            const SizedBox(height: 14),
+                            Text(
+                              'Last test report',
+                              style: LumenType.label(color: c.inkMuted),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              report.split('\n').take(4).join('\n'),
+                              style: LumenType.text(
+                                12.5,
+                                color: c.ink.withValues(alpha: 0.84),
+                                height: 1.35,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Pressable(
                               onTap: () async {
-                                await Diag.instance.copy();
+                                await Clipboard.setData(
+                                  ClipboardData(text: report),
+                                );
                                 Haptics.settle();
-                                if (context.mounted) {
-                                  Navigator.of(context).pop();
-                                }
                               },
                               child: Container(
-                                height: 52,
+                                height: 48,
                                 alignment: Alignment.center,
                                 decoration: ShapeDecoration(
                                   color: c.accent,
                                   shape: const StadiumBorder(),
                                 ),
                                 child: Text(
-                                  'Copy test report',
+                                  'Copy the last report',
                                   style: LumenType.text(
                                     15,
                                     weight: 700,
@@ -9900,165 +10383,11 @@ void showPrismSettings(BuildContext context) {
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            flex: 2,
-                            child: Pressable(
-                              onTap: () {
-                                Diag.instance.reset();
-                                Haptics.tick();
-                              },
-                              child: Container(
-                                height: 52,
-                                alignment: Alignment.center,
-                                decoration: ShapeDecoration(
-                                  shape: StadiumBorder(
-                                    side: BorderSide(color: c.inkFaint),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Start over',
-                                  style: LumenType.text(
-                                    15,
-                                    weight: 650,
-                                    color: c.ink,
-                                    height: 1,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                          ],
+                          ..._pastReports(c),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      _testButton(
-                        context,
-                        c,
-                        'guided',
-                        'Run the test (about ${(Diag.testSeconds / 60).toStringAsFixed(1)} min)',
-                        Diag.instance.startGuided,
-                      ),
-                      const SizedBox(height: 10),
-                      _testButton(
-                        context,
-                        c,
-                        'long',
-                        'Run the long test (about 20 min, hands off)',
-                        () => Diag.instance.longTest?.call(),
-                      ),
-                      const SizedBox(height: 10),
-                      _testButton(
-                        context,
-                        c,
-                        'glass',
-                        'Run the glass settings test (about 20 min)',
-                        () => Diag.instance.glassTest?.call(),
-                      ),
-                      const SizedBox(height: 10),
-                      _testButton(
-                        context,
-                        c,
-                        'battery',
-                        'Run the chat-head battery test (about 35 min)',
-                        () => Diag.instance.drainTest?.call(),
-                      ),
-                      const SizedBox(height: 10),
-                      _testButton(
-                        context,
-                        c,
-                        'leak',
-                        'Run the leak test (about 11 min, hands off)',
-                        () => Diag.instance.leakTest?.call(),
-                      ),
-                      const SizedBox(height: 10),
-                      _testButton(
-                        context,
-                        c,
-                        'button',
-                        'Run the button test (about 14 min, hands off)',
-                        () => Diag.instance.buttonTest?.call(),
-                      ),
-                      const SizedBox(height: 10),
-                      _testButton(
-                        context,
-                        c,
-                        'hour',
-                        'Run the hour-long test (overnight, silent)',
-                        () => Diag.instance.hourTest?.call(),
-                      ),
-                      const SizedBox(height: 10),
-                      _testButton(
-                        context,
-                        c,
-                        'stability',
-                        'Run the 2½-hour stability test (silent)',
-                        () => Diag.instance.soakTest?.call(),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Both drive everything by themselves, the floating lens included, check each step, and then sit still to measure power. The hour-long one does it all four times, sits still for longer, and makes no buzz. Unplug the phone, start one, and leave the phone alone. The report is kept below, whenever you come back.',
-                        style: LumenType.text(
-                          12.5,
-                          color: c.inkMuted,
-                          height: 1.35,
-                        ),
-                      ),
-                      if (TestRun.last() case final String report?) ...<Widget>[
-                        const SizedBox(height: 14),
-                        Text(
-                          'Last test report',
-                          style: LumenType.label(color: c.inkMuted),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          report.split('\n').take(4).join('\n'),
-                          style: LumenType.text(
-                            12.5,
-                            color: c.ink.withValues(alpha: 0.84),
-                            height: 1.35,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Pressable(
-                          onTap: () async {
-                            await Clipboard.setData(
-                              ClipboardData(text: report),
-                            );
-                            Haptics.settle();
-                          },
-                          child: Container(
-                            height: 48,
-                            alignment: Alignment.center,
-                            decoration: ShapeDecoration(
-                              color: c.accent,
-                              shape: const StadiumBorder(),
-                            ),
-                            child: Text(
-                              'Copy the last report',
-                              style: LumenType.text(
-                                15,
-                                weight: 700,
-                                color: c.onAccent,
-                                height: 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                      ..._pastReports(c),
-                      const SizedBox(height: 14),
-                      Text(
-                        'The test runs in two parts under each glass setting: first the app drives itself (hands off), then you use it. One report at the end covers both.',
-                        style: LumenType.text(
-                          12.5,
-                          color: c.inkMuted,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
               ),
             ),
           ),
@@ -11386,13 +11715,62 @@ Widget _buildBadge() => Container(
 
 /// One of the test area's buttons. The one this build asks for ([Diag.askedTest]) is green,
 /// with a "Test this one" tag; if it asks for none, none is.
+/// The test area's tests, the one this build asks for ([Diag.askedTest]) first, each with one
+/// short line of what it is.
+List<Widget> _testList(BuildContext context, LumenColors c) {
+  final List<(String, String, String, VoidCallback)> all =
+      <(String, String, String, VoidCallback)>[
+        (
+          'leak',
+          'Run the leak test',
+          'About 9 min · unplugged, hands off',
+          () => Diag.instance.leakTest?.call(),
+        ),
+        (
+          'button',
+          'Run the button test',
+          'About 17 min · unplugged, hands off',
+          () => Diag.instance.buttonTest?.call(),
+        ),
+        (
+          'hour',
+          'Run the hour-long test',
+          'About an hour · unplugged, silent',
+          () => Diag.instance.hourTest?.call(),
+        ),
+        (
+          'stability',
+          'Run the 2½-hour stability test',
+          '2½ hours · unplugged, silent',
+          () => Diag.instance.soakTest?.call(),
+        ),
+      ];
+  final List<(String, String, String, VoidCallback)> ordered =
+      <(String, String, String, VoidCallback)>[
+        ...all.where(
+          ((String, String, String, VoidCallback) x) => x.$1 == Diag.askedTest,
+        ),
+        ...all.where(
+          ((String, String, String, VoidCallback) x) => x.$1 != Diag.askedTest,
+        ),
+      ];
+  return <Widget>[
+    for (final (String id, String label, String note, VoidCallback run)
+        in ordered) ...<Widget>[
+      const SizedBox(height: 10),
+      _testButton(context, c, id, label, run, note: note),
+    ],
+  ];
+}
+
 Widget _testButton(
   BuildContext context,
   LumenColors c,
   String id,
   String label,
-  VoidCallback run,
-) {
+  VoidCallback run, {
+  String note = '',
+}) {
   final bool asked = Diag.askedTest == id;
   final Widget button = Pressable(
     key: Robot.key('test:$id'),
@@ -11403,7 +11781,9 @@ Widget _testButton(
     },
     child: Container(
       constraints: const BoxConstraints(minHeight: 52),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      // (The asked-for test has a little more room at the top: its tag sits on its edge, and at a
+      // large text size it would touch the label.)
+      padding: EdgeInsets.fromLTRB(18, asked ? 13 : 8, 18, 8),
       alignment: Alignment.center,
       decoration: ShapeDecoration(
         color: asked ? _go : c.ink.withValues(alpha: 0.08),
@@ -11414,15 +11794,33 @@ Widget _testButton(
               ]
             : null,
       ),
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: LumenType.text(
-          15,
-          weight: 700,
-          color: asked ? _goInk : c.ink,
-          height: 1.15,
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: LumenType.text(
+              15,
+              weight: 700,
+              color: asked ? _goInk : c.ink,
+              height: 1.15,
+            ),
+          ),
+          if (note.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 3),
+              child: Text(
+                note,
+                textAlign: TextAlign.center,
+                style: LumenType.text(
+                  12.5,
+                  color: asked ? _goInk.withValues(alpha: 0.75) : c.inkMuted,
+                  height: 1.25,
+                ),
+              ),
+            ),
+        ],
       ),
     ),
   );
@@ -11576,3 +11974,50 @@ bool _sameBytes(List<int> a, List<int> b) {
   }
   return true;
 }
+
+/// What a tap on Prism's button would do (see `_ShellState._tapOutcome`).
+enum TapOutcome {
+  /// Nothing is open: the blobs come out.
+  openBlobs,
+
+  /// The blobs are out: they go in.
+  closeBlobs,
+
+  /// The blobs are being changed: Prism's settings (the blobs stay out under them).
+  openSettings,
+
+  /// The app list closes, and nothing comes back.
+  closeDrawer,
+
+  /// The app list was up to choose for a blob: it closes and the blobs come back out.
+  closeDrawerToBlobs,
+
+  /// The app list was up to choose a two-finger swipe: it closes and Prism's settings come back.
+  closeDrawerToSettings,
+
+  /// The app list was up to choose from another app: it closes and Prism goes back to that app.
+  closeDrawerToBack,
+
+  /// The magnifying glass is out, put down somewhere: it comes home.
+  callGlassHome,
+
+  /// Prism's settings close, and nothing is left open.
+  closePanel,
+
+  /// Prism's settings close, and the blobs are still out under them.
+  closePanelToBlobs;
+
+  /// Whether the tap leaves nothing of Prism's open: then the triangle points down.
+  bool get closesAll => switch (this) {
+    closeBlobs ||
+    closeDrawer ||
+    closeDrawerToBack ||
+    callGlassHome ||
+    closePanel => true,
+    _ => false,
+  };
+}
+
+/// How far the triangle turns, in degrees, when what a tap would do changes but it points the
+/// same way as before (the owner's choice: 120, a third of a turn, so the change is seen; or 0).
+const double sameMeaningTurn = 120;

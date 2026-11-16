@@ -2250,8 +2250,12 @@ class Floater(val timer: Boolean) {
             val sticky = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
             m["plugged"] = (sticky?.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) ?: 0) != 0
             m["temp"] = sticky?.getIntExtra(android.os.BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
-            m["level"] = (context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager)
-                .getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            val bm = context.getSystemService(Context.BATTERY_SERVICE) as android.os.BatteryManager
+            m["level"] = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            // (Finer than the level, where the phone reports it: the charge left in µAh, and the
+            // current now in µA. For the glass, measured, over half a minute at a time.)
+            m["chargeUah"] = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
+            m["currentUa"] = bm.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
         } catch (e: Exception) {
             m["plugged"] = false
         }

@@ -1,5 +1,27 @@
 # Lumen changelog
 
+## Prism, build 184 (16 November 2026)
+
+**File:** `releases/prism-build-184.apk`
+
+Needs Play Protect paused to install. Can be installed over build 183.
+
+- **The rainbow triangle says what your next tap will do:** pointing up, a tap opens something; pointing down, a tap leaves nothing open.
+  - At rest it points up; with the blobs out, the app list or Prism's settings up, it points down.
+  - It only ever turns clockwise, lands in about a seventh of a second, and never swings past or back.
+  - When what a tap would do changes but the way it points doesn't (the blobs out, then the app list), it turns a third of the way, so you see the change.
+  - A flick up from the blobs no longer turns it backwards on the way: it waits for the flick.
+  - Petals no longer turns; only the rainbow triangle does.
+  - Why it seemed to spin past and back before: in `reviews/build184-report.md`.
+- **The test area:**
+  - The test this build asks for is first, under the badge.
+  - The short guided test, the 20-minute long test, the glass settings test and the chat-head battery test are gone from it.
+  - Each test has one short line instead of the two long paragraphs.
+- **The button test measures the glass** at its end (about 2½ minutes): the home screen scrolls behind the bar under each kind of glass, then the magnifying glass is carried about. The report gets a small table of how each one runs.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 80 of 82 (the usual Android-only miss, and one check that only a phone can make); the long test, 62 of 66 with the usual 4 misses; the test area at normal, 1.3× and the largest text size.
+**Not checked:** on a phone.
+
 ## Prism, build 183 (16 November 2026)
 
 **File:** `releases/prism-build-183.apk`

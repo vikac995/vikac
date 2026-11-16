@@ -157,6 +157,44 @@ class TestRun {
   /// The glass settings test: for each setting, Prism's processor time and the time it took.
   final List<(String, double, double)> glassRows = <(String, double, double)>[];
 
+  /// The glass, measured (184): for each level, what it cost while things moved behind the bar
+  /// (or the magnifying glass was carried): the time it took, the processor, graphics memory and
+  /// the battery.
+  final List<(String, Map<String, double>)> glassLevels =
+      <(String, Map<String, double>)>[];
+
+  void _glassLevels(StringBuffer o) {
+    o
+      ..writeln()
+      ..writeln(
+        'THE GLASS, MEASURED. About 30 s of steady scrolling behind the bar under each level, then the magnifying glass carried about on its own at full quality. "work" is building and drawing each frame; the screen can do ${_f(1000 / budget, 0)} frames a second, ${_f(budget)} ms each. Battery: the level\'s drop, and the charge used in mAh where the phone reports it${glassLevels.any(((String, Map<String, double>) r) => r.$2['plugged'] == 1) ? ' (the phone was charging, so the battery figures mean little)' : ''}.',
+      )
+      ..writeln(
+        '${'level'.padRight(46)} ${'fps'.padLeft(6)} ${'late %'.padLeft(7)} ${'work usual'.padLeft(11)} ${'1 in 20'.padLeft(8)} ${'worst'.padLeft(7)} ${'processor'.padLeft(10)} ${'graphics MB'.padLeft(12)} ${'battery'.padLeft(14)}',
+      );
+    for (final (String label, Map<String, double> m) in glassLevels) {
+      final Iterable<(String, List<FrameTiming>, int)> mine = scenes.where(
+        ((String, List<FrameTiming>, int) s) =>
+            s.$1.startsWith('glass level $label:'),
+      );
+      final (double fps, double late, double worst, int _) = _smooth(mine);
+      final List<double> work = <double>[
+        for (final (String _, List<FrameTiming> fs, int _) in mine)
+          for (final FrameTiming f in fs)
+            (f.buildDuration.inMicroseconds + f.rasterDuration.inMicroseconds) /
+                1000,
+      ]..sort();
+      double pct(double p) =>
+          work.isEmpty ? 0 : work[((work.length - 1) * p).round()];
+      String v(double? x, [int d = 1]) => x == null || x.isNaN ? '-' : _f(x, d);
+      final double ms = m['ms'] ?? double.nan;
+      final double cpu = m['cpu'] ?? double.nan;
+      o.writeln(
+        '${label.padRight(46)} ${_f(fps).padLeft(6)} ${_f(late).padLeft(7)} ${_f(pct(0.5)).padLeft(11)} ${_f(pct(0.95)).padLeft(8)} ${_f(worst).padLeft(7)} ${(ms > 0 && !cpu.isNaN ? '${_f(cpu / ms * 100, 0)}%' : '-').padLeft(10)} ${v(m['graphics'], 0).padLeft(12)} ${'${v(m['battery'], 0)}% ${v(m['charge'], 0)} mAh'.padLeft(14)}',
+      );
+    }
+  }
+
   /// The glass settings test: Prism's memory after each setting, in MB.
   final List<(String, Map<String, double>)> glassMemory =
       <(String, Map<String, double>)>[];
@@ -837,6 +875,9 @@ class TestRun {
     }
     if (glassRows.isNotEmpty) {
       _glass(o);
+    }
+    if (glassLevels.isNotEmpty) {
+      _glassLevels(o);
     }
     if (notes.isNotEmpty) {
       o

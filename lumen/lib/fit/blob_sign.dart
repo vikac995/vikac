@@ -46,7 +46,8 @@ class BlobLook {
 abstract final class BlobSign {
   static const List<BlobLook> looks = <BlobLook>[
     BlobLook('pearls', 'Pearls', _pearls),
-    BlobLook('petals', 'Petals', _petals, turns: true),
+    // (Petals no longer turns, from build 184: only Window does.)
+    BlobLook('petals', 'Petals', _petals),
     BlobLook('lotus', 'Lotus', _lotus),
     BlobLook('beam', 'Beam', _beam, spectrum: true),
     BlobLook('halo', 'Halo', _halo, spectrum: true),
