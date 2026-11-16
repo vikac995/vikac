@@ -2185,6 +2185,7 @@ class Floater(val timer: Boolean) {
             m["roaming"] = v.roamingNow()
             m["moving"] = v.movingNow()
             m["seen"] = v.alpha.toDouble()
+            v.testTouch(m)
         }
         m["tucked"] = tucked
         m["guest"] = guest
@@ -4720,6 +4721,17 @@ class Floater(val timer: Boolean) {
         fun lensLeft() = posX()
         fun lensTop() = posY()
         fun movingNow() = springing || roaming || (glide?.isRunning ?: false)
+
+        /** For the button test: what the finger last left it as (a touch that never ended would show here). */
+        fun testTouch(into: HashMap<String, Any?>) {
+            into["attached"] = isAttachedToWindow
+            into["pressed"] = pressed
+            into["menuTouch"] = menuTouch
+            into["sized"] = sized
+            into["settingsHeld"] = settingsHeld
+            into["ignoring"] = ignoring
+            into["panelTouch"] = panelTouch
+        }
 
         override fun onDraw(canvas: android.graphics.Canvas) {
             // (Drawn into its panel as the stand-in, it is not a frame of its own: not counted, and

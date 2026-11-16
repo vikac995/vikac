@@ -39,6 +39,11 @@ object SidekickMenu {
     /** The pictures Prism last sent, by key. */
     private val pictures = HashMap<String, Floater.Pin>()
 
+    // (For the recorder and the button test: when Prism was last told the keys, and when its
+    // pictures last came. A menu just changed shows only the blobs whose pictures have come.)
+    private var toldAt = 0L
+    private var cameAt = 0L
+
     /** The plus that stands alone in a menu with nothing in it. */
     private val plus = Floater.Pin("empty:0", "empty", 0, "", "", 0x00FFFFFF, null, false, 0, "", 0)
 
@@ -150,6 +155,10 @@ object SidekickMenu {
         load(context)
         pictures.clear()
         for (p in from) pictures[p.key] = p
+        cameAt = android.os.SystemClock.uptimeMillis()
+        val wanted = keys.filter { it != EMPTY }
+        Trail.add("Sidekick: Prism's pictures came, for ${wanted.count { pictures.containsKey(it) }} of its ${wanted.size} blobs" +
+            if (toldAt > 0) ", ${cameAt - toldAt} ms after it was last told the keys" else "")
         show()
     }
 
@@ -168,6 +177,11 @@ object SidekickMenu {
         into["sidekickOwn"] = own
         into["sidekickMoved"] = moved
         into["sidekickPictures"] = pictures.size
+        val now = android.os.SystemClock.uptimeMillis()
+        val wanted = keys.filter { it != EMPTY }
+        into["sidekickPicturesFor"] = "${wanted.count { pictures.containsKey(it) }} of ${wanted.size}"
+        into["sidekickToldAgo"] = if (toldAt > 0) now - toldAt else -1L
+        into["sidekickCameAgo"] = if (cameAt > 0) now - cameAt else -1L
     }
 
     /** Saved, shown, and Prism told the keys, so that it sends their pictures. */
@@ -175,6 +189,7 @@ object SidekickMenu {
         save(context, now)
         show()
         // (Written down in the flight recorder: sent, to which Prism, and whether it answered.)
+        toldAt = android.os.SystemClock.uptimeMillis()
         RestBubble.toPrism("sidekickKeys", keys.toList())
     }
 

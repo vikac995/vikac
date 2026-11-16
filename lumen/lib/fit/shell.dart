@@ -4758,6 +4758,8 @@ class _ShellState extends State<Shell>
           return m;
         }
 
+        // What the last tap left the Sidekick as, for a tap that did not open its blobs.
+        Map<String, Object?> tapped = const <String, Object?>{};
         Future<bool> openMenu() async {
           final Map<String, Object?> m = await press(
             'sidekick tapped',
@@ -4765,7 +4767,36 @@ class _ShellState extends State<Shell>
             holdMs: 60,
             settleMs: 1100,
           );
+          tapped = m;
           return m['menu'] == true;
+        }
+
+        // Why a tap did not open the blobs, as far as Android can say: whether its window is on
+        // the screen, what the finger left it as, whether it has blobs to open (a menu just
+        // changed shows only the blobs whose pictures Prism has sent), and its own last touch.
+        String whyNot() {
+          final Map<String, Object?> m = tapped;
+          String yn(String k) =>
+              m[k] == null ? '?' : (m[k] == true ? 'yes' : 'no');
+          String ago(String k) {
+            final num? v = m[k] as num?;
+            return v == null || v < 0 ? 'never' : '${v.round()} ms ago';
+          }
+
+          if (m['ok'] != true) {
+            return 'Android could not tap it: ${m['note'] ?? 'no answer'}';
+          }
+          return 'menu open ${yn('menu')} (${m['menuCount'] ?? '?'} blobs in it); '
+              'window on the screen ${yn('attached')}, shown ${m['seen'] ?? '?'}; '
+              'guest ${yn('guest')}, pressed ${yn('pressed')}, menu touch ${yn('menuTouch')}, '
+              'two-finger size ${yn('sized')}, held for settings ${yn('settingsHeld')}, '
+              'ignoring ${yn('ignoring')}, panel touch ${yn('panelTouch')}, panel open ${yn('panelOpen')}; '
+              'tucked ${yn('tucked')}, roaming ${yn('roaming')}, moving ${yn('moving')}, docked ${yn('docked')}, '
+              'closing ${yn('closing')}; '
+              'blobs to open ${m['blobs'] ?? '?'} (${m['sideKeys'] ?? '?'}), '
+              'pictures for ${m['sidekickPicturesFor'] ?? '?'} of its blobs, '
+              'keys last sent to Prism ${ago('sidekickToldAgo')}, pictures last came ${ago('sidekickCameAgo')}; '
+              'Prism in front ${yn('fg')}; its last touch: ${m['touch'] ?? '?'}';
         }
 
         if (!mine) {
@@ -4784,7 +4815,12 @@ class _ShellState extends State<Shell>
           ];
           await t.lens(<String, Object?>{'op': 'sidekick', 'keys': sideTest});
           await Robot.wait(600);
-          t.check('sidekick: a tap opens its blobs', await openMenu());
+          final bool opened = await openMenu();
+          t.check(
+            'sidekick: a tap opens its blobs',
+            opened,
+            opened ? '' : whyNot(),
+          );
           s = await where();
           t.check(
             'sidekick: as many blobs as its menu has',
@@ -4833,9 +4869,11 @@ class _ShellState extends State<Shell>
             left = s['ok'] != false;
             over = left && s['fg'] == false;
             if (over) {
+              final bool opened = await openMenu();
               t.check(
                 'sidekick: over another app, a tap opens its blobs',
-                await openMenu(),
+                opened,
+                opened ? '' : whyNot(),
               );
             }
           }

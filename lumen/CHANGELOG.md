@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 182 (16 November 2026)
+
+**File:** `releases/prism-build-182.apk`
+
+Needs Play Protect paused to install. Can be installed over build 181. It is build 181 with two small changes to the button test and the recorder. Nothing you see in Prism or the Sidekick changes.
+
+**Your S26 run of 180:** in one of its four rounds, a tap on the Sidekick didn't open its blobs, and the checks after it in that round went wrong too.
+
+- **The most likely cause:** the test's own timing. The test gives the Sidekick a menu of its own for the checks, and the Sidekick shows each new blob only once Prism has sent its picture. With a menu where every blob is new, it has nothing to open until the pictures come. The test tapped 1.5 s after the change. The S25 always had the pictures by then; that once, the S26 probably hadn't. What I found, and why it isn't the old "put above" step of 180, is in the report.
+- **Now, if that tap ever fails again,** the report says why: whether the Sidekick's window is on the screen, what the last touch left it as, whether it had blobs to open, when Prism was last told its blobs and when the pictures came.
+- **The recorder** now notes when Prism's pictures come, and how long after the Sidekick asked.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 67 of 68 (the Android-only miss); the long test, 62 of 66 with the usual 4 misses.
+**Not checked:** on a phone. The check that went wrong runs only on Android.
+
 ## Prism, build 181 (16 November 2026)
 
 **File:** `releases/prism-build-181.apk`
