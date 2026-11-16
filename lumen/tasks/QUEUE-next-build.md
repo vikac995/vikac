@@ -88,6 +88,18 @@ review chat's go (see LESSONS.md: no new build while the owner is testing).
      - (Today's `testSample` samples one stage, 12% open, as the opening. It needs the closing's
        stages too, including the last 20%. It should also check a ring just inside the glass's edge,
        where the dark box showed, not only the middle.)
+   - **Decided** (review chat, 10:59, matching the mock-up):
+     1. **Inside the lens circle, the panel is drawn at about 30% strength** (faint), never at full.
+        Simplest way: clip the panel's drawing to "outside the lens", then draw it again clipped to
+        "inside the lens" at 0.3 alpha, then the stand-in on top.
+     2. **The panel shrinks to a point at the lens centre** (size → 0), not to a lens-sized box. It
+        then disappears completely inside the glass, with no box sticking out at the end. (Today it
+        lerps from the lens's box, `lensX() ± sr`, to its own box; that start becomes the centre
+        point.)
+     3. **The close spring:** keep `spatialFast` if the tail looks fine once 1 and 2 are done;
+        otherwise a slightly faster tail. My call; the report notes which, and why.
+     4. **Tests:** sample at the centre and on a ring just inside the glass edge, at several closing
+        stages including the last 20%, and the same for opening.
    - **Later, not 183:** Prism's own panels will go into and come out of Prism's button the same way,
      as part of the panel-family redesign.
 4. Whatever the 182 phone results ask for. The review chat adds it here.
