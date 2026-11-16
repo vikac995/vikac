@@ -3,6 +3,12 @@
 From the review chat, 16 November 2026. Don't build before the owner's phone results for 182 and the
 review chat's go (see LESSONS.md: no new build while the owner is testing).
 
+**The proposed split** (the review chat, 12:39, pending the owner's OK; don't start before its go):
+- **183 = items 1, 5, 6, 7:** testing tools, no behaviour change for the owner;
+- **184 = items 2 + 8:** the triangle, with the glass measurement as the investigation;
+- **185 = item 3:** under the glass;
+- **186 = item 4:** the labels.
+
 **For every item: "Snappy: almost instant, but beautiful."** (The owner's rule, DESIGN.md §3.) Every
 animation lands in about 0.2 s, with at most a tiny settle and never a long wobble. Springs are stiff and
 near-critically damped.
@@ -189,6 +195,26 @@ near-critically damped.
      - **The 183 report** says plainly, for each sampled stage, whether the stand-in was drawn, with
        the reason (review chat, 11:49). The owner's eye on closing is the final judge, so the
        per-stage reasons are kept.
+   - **The S25 (182, 603 of 617):** the same three, 4 of 4. Its hole was at [341.7, 222.9], and "last
+     closed" was "" before and after.
+   - **New on the S25, 2 of 4: "beside the Sidekick, on the side away from it, about 330 points
+     wide"** [box 73, 56, 330, 745; the Sidekick's middle at 75]. **A real overlap, not the test.**
+     - **The panel's place doesn't depend on where the Sidekick is,** only on its side
+       (`layoutBox`): width `min(330, w − 72)`, 8 points from the far edge. On this 411-point screen
+       that's left 73, which leaves 65 points on the Sidekick's side.
+     - **The Sidekick's middle at 75** is the lp-based x. But x is the part that agrees: "grew out of
+       the Sidekick" compares the same x with `lensOnScreen` within 6, and passes. So the Sidekick
+       really is there.
+     - At a radius of about 31, its right half (to about 106) lies under the panel. It fits beside a
+       330-point panel only when it hovers within about 10 points of the edge. 2 of 4 is likely the
+       rounds where its Hovering distance, or its side, put it further in. The check doesn't print
+       either; it should.
+     - **This is the case the stand-in was for** ("at a large Hovering, it lies over it", 181). So
+       it's tied to item 3, and to the check 3 question of whether the stand-in is really drawn.
+     - **A spec question, for the review chat and the owner:**
+       - (a) the panel narrows to the space beside the Sidekick (less its gap), so it never overlaps;
+       - (b) it may overlap, the Sidekick always on top (item 3), and the check becomes "the panel
+         never hides the Sidekick" instead of "left of its middle".
 6. **Past reports** (approved by the owner; from the review chat, 16 November 2026). Board card: "Test
    reports are kept: every past report, ready to copy".
    - **What's kept:**
