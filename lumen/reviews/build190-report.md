@@ -167,7 +167,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
 - Its `classes.dex` has `gripCancels`, `edgeAskedDp`, `menuTap`, `crossFirst`, `topClear` and the
   "probably Back" line. Its `libapp.so` has "Prism build 190", "Dismiss at the top" and the new checks.
 - sha256 `e20b7266eb1a3013b46090893f22faef6ddd96fecccc34ccbc0ea38991683f54`, 18,878,922 bytes.
-- Link: in the next commit.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/9aa2527f76f22a8a6c297bf0b5aa7c981e7c18ff/lumen/releases/prism-build-190.apk
 
 ## Where I could be wrong
 
