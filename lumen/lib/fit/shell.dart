@@ -5,6 +5,8 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart' show LongPressGestureRecognizer;
+import 'package:flutter/rendering.dart'
+    show ContainerLayer, OffsetLayer, RenderView, RendererBinding;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -273,6 +275,44 @@ class _ShellState extends State<Shell>
       return TapOutcome.callGlassHome;
     }
     return _open ? TapOutcome.closeBlobs : TapOutcome.openBlobs;
+  }
+
+  /// How light (0 to 1, the average of its pixels) a strip across the whole screen is, from [y0]
+  /// to [y1] in points, as it is drawn now: everything in Prism's window, its panels included.
+  /// (For the button test: read from the screen's own layer, so nothing has to be added to the
+  /// app to read it.) Null if it cannot be read.
+  Future<double?> _screenLight(double y0, double y1) async {
+    try {
+      final RenderView view = RendererBinding.instance.renderViews.first;
+      // ignore: invalid_use_of_protected_member
+      final ContainerLayer? layer = view.layer;
+      if (layer is! OffsetLayer) {
+        return null;
+      }
+      final ui.Image img = await layer.toImage(
+        Rect.fromLTWH(0, y0, view.size.width, y1 - y0),
+        pixelRatio: 0.5,
+      );
+      final ByteData? data = await img.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
+      img.dispose();
+      if (data == null || data.lengthInBytes < 4) {
+        return null;
+      }
+      double sum = 0;
+      int n = 0;
+      for (int i = 0; i + 3 < data.lengthInBytes; i += 4) {
+        sum +=
+            0.2126 * data.getUint8(i) +
+            0.7152 * data.getUint8(i + 1) +
+            0.0722 * data.getUint8(i + 2);
+        n++;
+      }
+      return n == 0 ? null : sum / n / 255;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Whether the triangle, turned [a], points down (Window is the same every 120°: a sixth of a
@@ -939,7 +979,12 @@ class _ShellState extends State<Shell>
   void _tellFan() {
     final double dpr = MediaQuery.devicePixelRatioOf(context);
     // (And where the button itself is, always: the side Blob dropped on it fuses with it.)
-    RestBubble.instance.tellButton(_home * dpr);
+    // (And where its bar and button begin, as Prism's own panels end: the Sidekick's panel ends
+    // above them too, from build 186.)
+    RestBubble.instance.tellButton(
+      _home * dpr,
+      barTop: (_home.dy - _button * 0.62) * dpr,
+    );
     RestBubble.instance.tellFan(
       _open
           ? <double>[
@@ -3343,6 +3388,9 @@ class _ShellState extends State<Shell>
         if (_open) {
           await Robot.tap(_home, after: 800);
         }
+        // (How light a strip across the top of the screen is, above where the panel comes: before
+        // and after it opens, for "nothing dims the screen behind it".)
+        final double? lightBefore = await _screenLight(70, 110);
         await t.scene('holding the closed button', () async {
           await Robot.hold(_home, ms: 650, after: 900);
         });
@@ -3350,6 +3398,21 @@ class _ShellState extends State<Shell>
           'settings: holding the closed button opens them, for Prism',
           _panelOpen && Robot.spot('names') != null,
         );
+        final double? lightAfter = await _screenLight(70, 110);
+        if (lightBefore == null || lightAfter == null || lightBefore < 0.05) {
+          t.skip(
+            'settings: with Prism\'s panel open, nothing dims the screen behind it',
+            lightBefore == null || lightAfter == null
+                ? 'the screen could not be read'
+                : 'the strip read is too dark to tell',
+          );
+        } else {
+          t.check(
+            'settings: with Prism\'s panel open, nothing dims the screen behind it',
+            lightAfter >= lightBefore * 0.9,
+            'a strip above the panel: ${(lightBefore * 100).toStringAsFixed(1)}% light before, ${(lightAfter * 100).toStringAsFixed(1)}% with the panel open (a 40% shade would be about ${(lightBefore * 60).toStringAsFixed(1)}%)',
+          );
+        }
         t.check(
           'settings: the hold brought out neither the glass nor the blobs',
           !_carrying && !_open && !_drawerOpen,
@@ -5103,6 +5166,20 @@ class _ShellState extends State<Shell>
           ];
           await t.lens(<String, Object?>{'op': 'sidekick', 'keys': sideTest});
           final String? late = await picturesIn('the test\'s menu was set');
+          // (Test only.) The test starts from a known state: if the Sidekick is tucked away, it
+          // is brought out to rest at its side first, and settles. Tucked, the test's tap only
+          // brought it out (185 on the S25: "ignoring yes", its last touch "…, tucked").
+          final Map<String, Object?> out = await t.lens(<String, Object?>{
+            'op': 'untuck',
+            'settleMs': 700,
+          });
+          t.lensRun('untuck', out);
+          if (out['wasTucked'] == true) {
+            t.note(
+              'the Sidekick was tucked away before the test\'s first tap: brought out first '
+              '(tucked now ${out['tucked'] == true ? 'yes' : 'no'})',
+            );
+          }
           final bool opened = await openMenu();
           t.check(
             'sidekick: a tap opens its blobs',
@@ -5772,6 +5849,47 @@ class _ShellState extends State<Shell>
             'settleMs': 1500,
           }, extraMs: 5000);
         }
+        // Both dials on the screen as it opens, without scrolling; and its bottom at least 8 points
+        // above Prism's bar (in Prism) and above Android's own bar (build 186).
+        bool dialsShown(Map<String, Object?> m) {
+          final List<Object?> b =
+              (m['panelBox'] as List<Object?>?) ?? const <Object?>[];
+          final List<Object?> dials =
+              (m['panelDials'] as List<Object?>?) ?? const <Object?>[];
+          if (b.length != 4 || dials.length != 2) {
+            return false;
+          }
+          final double top = numOf(b[1]), bottom = numOf(b[1]) + numOf(b[3]);
+          return dials.every((Object? d) {
+            final List<Object?> r = d is List ? d : const <Object?>[];
+            return r.length == 4 &&
+                numOf(r[1]) >= top - 0.5 &&
+                numOf(r[1]) + numOf(r[3]) <= bottom + 0.5;
+          });
+        }
+
+        double bottomOf(Map<String, Object?> m) {
+          final List<Object?> b =
+              (m['panelBox'] as List<Object?>?) ?? const <Object?>[];
+          return b.length == 4 ? numOf(b[1]) + numOf(b[3]) : double.nan;
+        }
+
+        final double screenH = numOf(s['h']) / dp;
+        final ui.FlutterView view0 =
+            WidgetsBinding.instance.platformDispatcher.views.first;
+        final double navTop =
+            screenH - view0.padding.bottom / view0.devicePixelRatio;
+        final double barTop = _home.dy - _button * 0.62;
+        inPanel(
+          'sidekick panel: both dials on the screen as it opens, without scrolling',
+          dialsShown(s) && numOf(s['panelScroll']) == 0,
+          'box ${s['panelBox']}, dials ${s['panelDials']}, scrolled ${s['panelScroll']}',
+        );
+        inPanel(
+          'sidekick panel: in Prism, its bottom at least 8 points above Prism\'s bar',
+          bottomOf(s) <= math.min(barTop, navTop) - 8 + 0.5,
+          'its bottom at ${bottomOf(s).toStringAsFixed(1)}, Prism\'s bar from ${barTop.toStringAsFixed(1)} (Android was told ${s['panelBarTop']}), Android\'s bar from ${navTop.toStringAsFixed(1)}; in Prism ${s['panelInPrism']}',
+        );
         inPanel(
           'sidekick panel: no shade: nothing is drawn around the Sidekick or the panel',
           numOf(s['panelShade']) == 0,
@@ -5892,7 +6010,7 @@ class _ShellState extends State<Shell>
         Future<void> dial(String id, String name, bool tucks) async {
           if (!opened) {
             t.skip(
-              'sidekick panel: $name touched, the Sidekick goes there, the panel half see-through',
+              'sidekick panel: $name touched, the Sidekick goes there, the rest of the panel see-through, the dial solid',
               'its own settings did not come up',
             );
             return;
@@ -5900,15 +6018,18 @@ class _ShellState extends State<Shell>
           final double was = numOf(kept(await where())?[id]);
           s = await panel('press', part: 'ruler.$id', holdMs: 900);
           t.check(
-            'sidekick panel: $name touched, the Sidekick goes there, the panel half see-through',
+            'sidekick panel: $name touched, the Sidekick goes there, the rest of the panel see-through, the dial solid',
             (s['tucked'] == true) == tucks &&
-                (numOf(s['panelAlpha']) - 0.5).abs() < 0.08 &&
+                (numOf(s['panelAlpha']) - 0.4).abs() < 0.08 &&
+                s['panelSolidDial'] == id &&
+                numOf(s['panelDialAlpha']) == 1 &&
                 numOf(s['panelShade']) == 0 &&
                 numOf(s['panelLeastSinceOpen']) >= 0.999 &&
                 s['lens'] == true,
-            'tucked ${s['tucked']}, the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque, shade ${numOf(s['panelShade']).toStringAsFixed(2)}, its contents at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}',
+            'tucked ${s['tucked']}, the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque, the solid dial "${s['panelSolidDial']}" at ${numOf(s['panelDialAlpha']).toStringAsFixed(2)}, shade ${numOf(s['panelShade']).toStringAsFixed(2)}, its contents at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}',
           );
-          await Robot.wait(900);
+          // (A moment after the let-go, in case another stroke follows: then solid again.)
+          await Robot.wait(1600);
           s = await where();
           t.check(
             'sidekick panel: $name let go, the panel is solid again, the Sidekick as it was',
@@ -5966,6 +6087,55 @@ class _ShellState extends State<Shell>
 
         await dial('gap', 'Hovering', false);
         await dial('tuck', 'Tucked in', true);
+        // A dial turned in one long drag, then in a second stroke straight after: the panel stays
+        // half see-through the whole time (185 went solid between strokes, in the owner's video),
+        // and is solid again a moment after the last stroke.
+        if (opened) {
+          final double was = numOf(kept(await where())?['gap']);
+          final double way = RestBubble.gapMax - was >= 6 ? 1 : -1;
+          Map<String, Object?> d = await panel(
+            'drag',
+            part: 'ruler.gap',
+            dx: <double>[
+              inward * way * 30,
+              -inward * way * 30,
+              inward * way * 30,
+            ],
+            legMs: 500,
+            settleMs: 200,
+          );
+          final double most = numOf(d['panelHeldAlphaMost']);
+          final int frames = numOf(d['panelHeldFrames']).isNaN
+              ? 0
+              : numOf(d['panelHeldFrames']).toInt();
+          t.check(
+            'sidekick panel: a dial dragged for 1.5 s, the rest of the panel stays see-through the whole time',
+            frames >= 3 && most <= 0.45,
+            'the most opaque it was drawn ${most.toStringAsFixed(2)}, over $frames frames',
+          );
+          d = await panel(
+            'drag',
+            part: 'ruler.gap',
+            dx: <double>[-inward * way * 30],
+            legMs: 400,
+            settleMs: 200,
+          );
+          t.check(
+            'sidekick panel: a second stroke straight after, it stays see-through in between',
+            numOf(d['panelHeldAlphaMost']) <= 0.45 &&
+                numOf(d['panelHeldFrames']) > frames,
+            'the most opaque it was drawn ${numOf(d['panelHeldAlphaMost']).toStringAsFixed(2)}, over ${numOf(d['panelHeldFrames']).isNaN ? 0 : numOf(d['panelHeldFrames']).toInt()} frames (the first stroke: $frames)',
+          );
+          await Robot.wait(1300);
+          s = await where();
+          t.check(
+            'sidekick panel: a moment after the last stroke, the panel is solid again',
+            numOf(s['panelAlpha']) > 0.97 && s['panelSettling'] != true,
+            'the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque, settling ${s['panelSettling']}',
+          );
+          await lensOf.testPut(<String, Object>{'gap': was});
+          await Robot.wait(400);
+        }
         // A flick: it coasts on past where the finger stopped, and lands on a whole point.
         if (opened) {
           final double was = numOf(kept(await where())?['gap']);
@@ -6002,6 +6172,34 @@ class _ShellState extends State<Shell>
                 (s['tucked'] == true) == wasTucked,
             'open ${s['panelOpen']}, shown ${s['lens']}, tucked ${s['tucked']}',
           );
+        }
+        // Over another app: the panel ends above Android's own bar, and its dials are on the screen.
+        if (opened && t.other != null) {
+          const String outside =
+              'sidekick panel: over another app, its bottom at least 8 points above Android\'s bar, its dials on the screen';
+          await shut();
+          final Map<String, Object?> lv = await t.lens(<String, Object?>{
+            'op': 'leave',
+            'pkg': otherPkg,
+          }, extraMs: 3000);
+          if (lv['ok'] != false && lv['fg'] == false) {
+            final bool up = await holdOpen('sidekick held over another app');
+            final Map<String, Object?> o = await where();
+            t.check(
+              outside,
+              up &&
+                  o['panelInPrism'] != true &&
+                  bottomOf(o) <= navTop - 8 + 0.5 &&
+                  dialsShown(o),
+              'open $up, in Prism ${o['panelInPrism']}, its bottom at ${bottomOf(o).toStringAsFixed(1)}, Android\'s bar from ${navTop.toStringAsFixed(1)}; box ${o['panelBox']}, dials ${o['panelDials']}',
+            );
+            await shut();
+          } else {
+            t.skip(outside, 'the other app did not come to the front');
+          }
+          if (lv['ok'] != false) {
+            await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
+          }
         }
         // Closed by a tap on the shade, by a tap on the Sidekick (which then does nothing else),
         // and by Home.
@@ -11632,25 +11830,8 @@ class _SpringPanelState extends State<_SpringPanel>
               onTap: _close,
             ),
           ),
-          // The shade, above the bar only: the button stays in sight.
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: widget.above,
-            child: IgnorePointer(
-              child: ListenableBuilder(
-                listenable: Listenable.merge(<Listenable>[_g, widget.clear]),
-                builder: (BuildContext context, Widget? _) => ColoredBox(
-                  color: Colors.black.withValues(
-                    alpha: widget.clear.value == null
-                        ? 0.4 * _g.value.clamp(0.0, 1.0)
-                        : 0,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // (No shade from build 186: nothing dims the screen behind Prism's panels, as with the
+          // Sidekick's. A tap anywhere beside the panel still closes it, above.)
           ListenableBuilder(
             listenable: _g,
             child: Align(

@@ -110,7 +110,11 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   the finger goes, on either edge; let go, it goes back to the state it was in.
 - **Its own settings panel** (Android's, over the app it is in; the owner's rule from build 185):
   - **Where:** beside it, on the side away from it, at its height (kept on the screen), as tall as
-    its contents allow.
+    its contents allow. It ends 8 points above Prism's bar (in Prism) or Android's own bar (outside),
+    and never covers either (from 186).
+  - **Its order:** Labels, Icons, Colours, Look, then where it rests (the two dials, in reach without
+    scrolling), and the two switches (In Prism, Over other apps) last, as they are rarely used (from
+    186).
   - **How wide:** it ends before the Sidekick's furthest Hovering spot, with 8 points to spare, so
     the Sidekick never reaches it.
   - **Nothing around them:** no shade, no shadow, no dark layer round the Sidekick or the panel. The
@@ -119,7 +123,9 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
     overshoot), faint while it is small.
   - **While it is open:** the Sidekick stays put and on top. It can still be dragged by hand, and the
     panel follows it up and down. A tap on the Sidekick closes the panel.
-  - **While a finger is on a dial:** the panel goes half see-through, and comes back on release.
+  - **While a finger is on a dial:** the rest of the panel goes see-through (drawn at 0.4), and the dial
+    being held stays solid, its value readable (from 186). Let go, both stay so for a moment (0.6 s),
+    so a dial turned in several strokes doesn't flash between them; then the panel is solid again.
   - **Focus:** it never takes it; Back goes to the app underneath.
   - **Closing:** the ✕, a tap beside it, a tap on the Sidekick, or Home.
 
@@ -137,9 +143,13 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   time. If a panel hides it, the panel makes way while the control is held. If it's already in sight
   (like the Sidekick beside its panel), nothing extra happens: no added animation." So the app list's
   Density (its grid is behind its panel) makes the panel step aside while it is held. The Sidekick's
-  dials leave its panel where it is; it goes half see-through while a dial is held (from 185).
+  dials leave its panel where it is; the rest of it goes see-through while a dial is held, the dial
+  itself solid (from 186).
 - **Panels opened from the button sit above it**; the button stays in sight, and a tap on it, beside
   the panel, the X or back closes the panel, all at the same speed.
+- **No dimming around panels** (from 186): nothing darkens the screen behind Prism's settings panel or
+  the Sidekick's. A tap beside a panel still closes it. (Dialogs such as the test report, the recorder's
+  export and the settings sheet still have their dim backdrop.)
 - Back undoes the most recent thing opened, one step per press (the table in `PRISM.md`). Every new
   element says where it sits in that table before it is built.
 

@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 186 (16 November 2026)
+
+**File:** `releases/prism-build-186.apk`
+
+Needs Play Protect paused to install. Can be installed over build 185.
+
+**The Sidekick's panel, fixed up:**
+- **No more flashing while you turn a dial.** Turning a dial in several short strokes used to make the panel go solid, and the Sidekick jump back, between every two strokes. Now, when you let go, both stay as they are for a moment (0.6 s), so a finger straight back on the dial carries on smoothly. Then the panel is solid again and the Sidekick goes back to where it was.
+- **Android's back gesture can't take a dial away from you:** the two dials are kept out of it, as the outer one is near the screen's edge.
+- **The dial you're holding stays solid,** its value easy to read. The rest of the panel goes more see-through than before (drawn at 0.4 instead of 0.5), so it clearly reads as background.
+- **The panel never covers the bottom bar:** in Prism it ends above Prism's own bar (Home, Train, the triangle, Food, Progress); over other apps, above Android's navigation bar.
+- **A new order, the dials first:** Labels, Icons, Colours, Look, then the Hovering and Tucked in dials, which are now on the screen without scrolling, and the In Prism / Over other apps switches last.
+- **No dimming behind Prism's own settings panel either,** to match the Sidekick's. A tap beside it still closes it. Other dialogs (the test report, the settings sheet, the recorder's export) keep their dim backdrop.
+- **The button test (test kit only):** before its first tap on the Sidekick, the test now brings it out if it's tucked away, so the tap opens its blobs. (On the S25 in 185, the tap only brought it out, and 10 checks after it went wrong.)
+
+**Checked:** it compiles, both sides; in my preview: the button test, 80 of 82, the same as before (the Sidekick's panel is Android's, so its checks run only on a phone); the long test, 64 of 67 with the usual 3 misses, and the new "nothing dims" check passes.
+**Not checked:** on a phone.
+
 ## Prism, build 185 (16 November 2026)
 
 **File:** `releases/prism-build-185.apk`

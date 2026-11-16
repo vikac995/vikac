@@ -418,6 +418,9 @@ class MainActivity : FlutterActivity() {
                 // on it fuses with it.
                 val at = (call.arguments as? List<*>)?.map { (it as Number).toFloat() }
                 RestBubble.buttonAt = if (at != null && at.size >= 2) floatArrayOf(at[0], at[1]) else null
+                // (And, from build 186, the top of Prism's bar and button, for the Sidekick's panel to
+                // end above.)
+                RestBubble.barTop = at?.getOrNull(2)
                 result.success(null)
             } else if (call.method == "land") {
                 // A blob has been shot out of Prism's button to become the lens. The lens is put in
@@ -1279,6 +1282,10 @@ class Floater(val timer: Boolean) {
 
     /** Where Prism's own button is on the screen (its middle, in real pixels), as Prism last said. */
     var buttonAt: FloatArray? = null
+
+    // Where Prism's bar (its button included) begins, from the top of the screen, in real pixels;
+    // null until Prism has said.
+    var barTop: Float? = null
     private val frontHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var frontChecks = 0
 
@@ -2611,6 +2618,23 @@ class Floater(val timer: Boolean) {
                     SidekickMenu.testPut(context, (a["keys"] as? List<*>)?.map { "$it" } ?: emptyList())
                     // (Long enough for Prism to send the pictures.)
                     watcher.postDelayed({ done(state(context)) }, num("settleMs", 900))
+                }
+                // (Test only.) Before the test's first tap: if the Sidekick is tucked away, it comes
+                // out to rest at its side, as a tap on it would bring it, and settles. So the tap
+                // that follows starts from a known state and opens its blobs, instead of only
+                // bringing it out. Says whether it was tucked.
+                "untuck" -> {
+                    val v = view ?: return fail("there is no lens")
+                    val was = tucked
+                    if (was) {
+                        v.comeOut()
+                        closeGrip(context)
+                    }
+                    watcher.postDelayed({
+                        val m = state(context)
+                        m["wasTucked"] = was
+                        done(m)
+                    }, if (was) num("settleMs", 700) else 0L)
                 }
                 // Another app put in front, and left there: the test does things over it, and then
                 // brings Prism back ("front").

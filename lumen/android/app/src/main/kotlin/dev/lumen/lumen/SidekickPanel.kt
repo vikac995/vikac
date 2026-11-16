@@ -313,7 +313,12 @@ internal class PanelView(
         val pw = Math.max(250 * dp, w - 8 * dp - reach)
         val left = if (onRight) 8 * dp else w - 8 * dp - pw
         val topLimit = Math.max(56 * dp, topInset + 8 * dp)
-        val bottomLimit = h - Math.max(42 * dp, bottomInset + 8 * dp)
+        var bottomLimit = h - Math.max(42 * dp, bottomInset + 8 * dp)
+        // In Prism, it ends 8 points above Prism's own bar (where the button's top is: Prism says).
+        // Outside Prism, above Android's navigation or gesture bar (the inset above). (Build 186.)
+        val bar = RestBubble.barTop
+        if (RestBubble.foreground && bar != null) bottomLimit = Math.min(bottomLimit, bar - origin[1] - 8 * dp)
+        limitBottom = bottomLimit
         box.set(left, topLimit, left + pw, Math.max(topLimit + 200 * dp, bottomLimit))
         layOut()
         val ph = Math.min(contentH, box.height())
@@ -322,6 +327,9 @@ internal class PanelView(
         scroll = scroll.coerceIn(0f, maxScroll())
         laidFor = floatArrayOf(lensX(), lensY())
     }
+
+    // (The lowest the panel may reach, on the screen, as it was last laid out: for the test.)
+    private var limitBottom = 0f
 
     // Where the Sidekick was when the panel was last laid out: it follows when that changes.
     private var laidFor = floatArrayOf(Float.NaN, Float.NaN)
@@ -388,10 +396,8 @@ internal class PanelView(
         fun label(t: String) = parts.add(Part(Kind.LABEL, "", t, 20 * dp * fs))
         parts.add(Part(Kind.TITLE, "close", "Sidekick", 44 * dp))
         gap(14f)
-        parts.add(Part(Kind.SWITCH, "inApp", "In Prism", 48 * dp))
-        gap(12f)
-        parts.add(Part(Kind.SWITCH, "overApps", "Over other apps", 48 * dp))
-        gap(14f)
+        // (From build 186 the dials come before the two switches, so that they are on the screen
+        // without scrolling, within the thumb's reach; the switches, rarely used, are at the end.)
         label("Labels"); gap(8f)
         parts.add(Part(Kind.PICKER, "names", "", 48 * dp, listOf("Show", "Hide")))
         gap(14f)
@@ -406,6 +412,10 @@ internal class PanelView(
         gap(16f)
         label("Where it rests, in points"); gap(8f)
         parts.add(Part(Kind.RULERS, "rulers", "", (18 * fs + 6 + 52) * dp))
+        gap(16f)
+        parts.add(Part(Kind.SWITCH, "inApp", "In Prism", 48 * dp))
+        gap(12f)
+        parts.add(Part(Kind.SWITCH, "overApps", "Over other apps", 48 * dp))
         var y = pad
         for (p in parts) {
             p.y = y
@@ -477,7 +487,9 @@ internal class PanelView(
         closing = true
         why = reason
         Trail.add("Sidekick: its own settings closing, ${age()} ms after they opened: $reason")
-        endRuler(save = true, back = false)
+        endRuler(save = true, back = false, why = "let go as the panel closed")
+        removeCallbacks(settle)
+        settling = false
         coasting = null
         // Back into the Sidekick, as fast as it came out: and the Sidekick to its state of before.
         g.set(Springs.spatialFast.first, Springs.spatialFast.second)
@@ -550,6 +562,32 @@ internal class PanelView(
 
     private fun smooth(t: Float) = t * t * (3 - 2 * t)
 
+    // While a dial is held, how see-through the rest of the panel goes (0.6: it is drawn at 0.4,
+    // clearly background); the dial being held stays solid, its value readable. (Build 186.)
+    private val REST_SEE = 0.6f
+
+    // The dial drawn solid over the see-through panel: the one held, and for the moment after it
+    // is let go; "" when none.
+    private var solidDial = ""
+
+    // The two dials are kept out of Android's back gesture: the outer one lies within a few dozen
+    // points of the screen's edge, where a sideways stroke could otherwise be taken away from it.
+    private var excluded: List<android.graphics.Rect> = emptyList()
+
+    private fun excludeDials() {
+        if (Build.VERSION.SDK_INT < 29) return
+        val part = parts.firstOrNull { it.kind == Kind.RULERS }
+        val want = if (part == null || !opened || closing) emptyList() else listOf("gap", "tuck").map {
+            val b = rulerBox(it, box.left + pad, box.top + part.y - scroll)
+            b.inset(-4 * dp, -10 * dp)
+            android.graphics.Rect(b.left.toInt(), b.top.toInt(), b.right.toInt(), b.bottom.toInt())
+        }
+        if (want != excluded) {
+            excluded = want
+            systemGestureExclusionRects = want
+        }
+    }
+
     override fun onDraw(canvas: Canvas) {
         if (width == 0) return
         draws++
@@ -569,8 +607,16 @@ internal class PanelView(
         // It fades in as it grows out of the Sidekick and out as it shrinks back in: while it is
         // small it is all but clear, so no dark box is ever seen round the Sidekick. While a dial
         // is held it is half see-through, to see where the Sidekick goes; on the dial's spring.
-        val fade = smooth((tt / 0.4f).coerceIn(0f, 1f)) * (1f - 0.5f * clear.value.coerceIn(0f, 1f))
+        val grown = smooth((tt / 0.4f).coerceIn(0f, 1f))
+        val fade = grown * (1f - REST_SEE * clear.value.coerceIn(0f, 1f))
         lastFade = fade
+        val bodyAlpha = 1f - REST_SEE * clear.value.coerceIn(0f, 1f)
+        if (clear.value >= 0.98f) holding = true
+        if (holding && (ruler.isNotEmpty() || settling)) {
+            heldAlphaMost = Math.max(heldAlphaMost, bodyAlpha)
+            heldFrames++
+        }
+        excludeDials()
         if (tt < 0.002f || fade < 0.004f) return
         val corner = lerp(sr, 36 * dp, tt.coerceIn(0f, 1f))
         val outer = canvas.save()
@@ -608,6 +654,33 @@ internal class PanelView(
             for (p in parts) drawPart(canvas, p)
             canvas.restoreToCount(layer)
             canvas.restore()
+        }
+        // The dial being held (or just let go): solid over the see-through panel, on a backing of the
+        // panel's own colour, so its value reads clearly whatever is behind.
+        if (solidDial.isNotEmpty() && a > 0.001f && grown > 0.004f) {
+            val part = parts.firstOrNull { it.kind == Kind.RULERS }
+            if (part != null) {
+                canvas.restoreToCount(outer)
+                val keep = canvas.save()
+                clip.reset()
+                clip.addCircle(lx, ly, sr, Path.Direction.CW)
+                clipOut(canvas, clip)
+                clip.reset()
+                clip.addRoundRect(rr, corner, corner, Path.Direction.CW)
+                canvas.clipPath(clip)
+                canvas.translate(l, top)
+                canvas.scale((r - l) / box.width(), (b - top) / box.height())
+                canvas.translate(0f, -scroll)
+                if (grown < 0.999f) canvas.saveLayerAlpha(0f, scroll, box.width(), scroll + box.height(), (grown * 255).toInt())
+                val db = rulerBox(solidDial, pad, part.y)
+                val back = RectF(db.left - 6 * dp, part.y - 2 * dp, db.right + 6 * dp, db.bottom + 6 * dp)
+                paint.style = Paint.Style.FILL
+                paint.color = cSurface
+                canvas.drawRoundRect(back, 22 * dp, 22 * dp, paint)
+                drawRulers(canvas, pad, part.y, only = solidDial)
+                canvas.restoreToCount(keep)
+                return
+            }
         }
         canvas.restoreToCount(outer)
     }
@@ -665,7 +738,7 @@ internal class PanelView(
             }
             Kind.PICKER -> drawPicker(canvas, p, x0, y)
             Kind.LOOKS -> drawLooks(canvas, x0, y)
-            Kind.RULERS -> drawRulers(canvas, x0, y)
+            Kind.RULERS -> drawRulers(canvas, x0, y, skip = solidDial)
         }
     }
 
@@ -756,8 +829,9 @@ internal class PanelView(
         return RectF(left, top, left + w, top + 52 * dp)
     }
 
-    private fun drawRulers(canvas: Canvas, x: Float, y: Float) {
+    private fun drawRulers(canvas: Canvas, x: Float, y: Float, skip: String = "", only: String = "") {
         for ((id, name) in listOf("gap" to "Hovering", "tuck" to "Tucked in")) {
+            if (id == skip || (only.isNotEmpty() && id != only)) continue
             val b = rulerBox(id, x, y)
             drawText(canvas, name, b.centerX(), y + 13 * dp * fs, 13f, 560, cInkMuted, center = true)
             val lift = lifts[id]?.value ?: 0f
@@ -923,7 +997,7 @@ internal class PanelView(
                 scrolling = false
             }
             MotionEvent.ACTION_CANCEL -> {
-                if (ruler.isNotEmpty()) endRuler(save = true, back = true)
+                if (ruler.isNotEmpty()) endRuler(save = true, back = true, why = "taken away by Android (cancel)")
                 unpress()
                 scrolling = false
             }
@@ -986,6 +1060,14 @@ internal class PanelView(
 
     // ---- The two dials.
     private fun startRuler(id: String) {
+        removeCallbacks(settle)
+        settling = false
+        if (!holding) {
+            heldAlphaMost = 0f
+            heldFrames = 0
+        }
+        Trail.add("Sidekick: its panel's dial ($id) held")
+        solidDial = id
         ruler = id
         coasting = null
         raw = if (id == "gap") SidekickSettings.gap else SidekickSettings.tuck
@@ -1059,20 +1141,52 @@ internal class PanelView(
         return true
     }
 
-    /** The dial let go: kept, the shade back, and the Sidekick back to the state it was in. */
-    private fun endRuler(save: Boolean, back: Boolean) {
+    /** The dial let go: kept; a moment later, the panel solid again and the Sidekick back to the state it was in. */
+    private fun endRuler(save: Boolean, back: Boolean, why: String = "let go") {
         val id = ruler
         if (id.isEmpty()) return
         ruler = ""
         lifts[id]?.to(0f)
-        clear.to(0f)
         if (save) {
             val v = Math.round(raw).toFloat()
             SidekickSettings.set(context, mapOf(id to v), null, keep = true, fromPanel = true)
         }
-        if (back) RestBubble.showSpot(wasTucked)
+        Trail.add("Sidekick: its panel's dial ($id) $why")
+        if (back) {
+            // A dial is often turned in several short strokes. Let go, the panel stays see-through,
+            // and the Sidekick where the dial put it, for a moment: a finger straight back on a dial
+            // carries on without a flash in between (build 185 went solid, and the Sidekick back,
+            // between every two strokes). Then both come back.
+            removeCallbacks(settle)
+            postDelayed(settle, SETTLE_MS)
+            settling = true
+        } else {
+            clear.to(0f)
+            holding = false
+            solidDial = ""
+        }
         run()
     }
+
+    // (How long after a dial is let go before the panel is solid again and the Sidekick back.)
+    private val SETTLE_MS = 600L
+    private var settling = false
+    private val settle = Runnable {
+        settling = false
+        if (ruler.isEmpty() && !closing) {
+            clear.to(0f)
+            holding = false
+            solidDial = ""
+            RestBubble.showSpot(wasTucked)
+            run()
+        }
+    }
+
+    // (For the test: from the moment the panel is see-through for a dial until it is solid again,
+    // the most opaque it was drawn, and in how many frames. It must stay about half.)
+    private var holding = false
+    private var heldAlphaMost = 0f
+    private var heldFrames = 0
 
     private fun fling(dt: Float): Boolean {
         val v = flinging ?: return false
@@ -1092,7 +1206,10 @@ internal class PanelView(
         // (No shade from build 185: always 0, kept so the test can say so.)
         "panelShade" to 0.0,
         // How opaque the panel's body and contents are: 1, or about 0.5 while a dial is held.
-        "panelAlpha" to (1f - 0.5f * clear.value.coerceIn(0f, 1f)).toDouble(),
+        "panelAlpha" to (1f - REST_SEE * clear.value.coerceIn(0f, 1f)).toDouble(),
+        // The dial drawn solid over it ("" for none), and its alpha (always 1: it is never faded).
+        "panelSolidDial" to solidDial,
+        "panelDialAlpha" to if (solidDial.isEmpty()) 0.0 else 1.0,
         "panelLifted" to clear.target.toDouble(),
         "panelLeastSinceOpen" to leastSinceOpen.toDouble(),
         "panelOpenFully" to opened,
@@ -1114,6 +1231,21 @@ internal class PanelView(
         "panelCovers" to lastCovers,
         "panelFade" to lastFade.toDouble(),
         "panelSr" to (sr / dp).toDouble(),
+        // A dial's see-through, from the moment it is half until it is solid again: the most opaque
+        // it was drawn, over how many frames, and whether it is in the moment after a let-go.
+        "panelHeldAlphaMost" to heldAlphaMost.toDouble(),
+        "panelHeldFrames" to heldFrames,
+        "panelSettling" to settling,
+        // Where the panel may reach down to, and where the dials are now (on the screen, in points).
+        "panelBottomLimit" to ((limitBottom + origin[1]) / dp).toDouble(),
+        "panelBarTop" to (RestBubble.barTop?.let { (it / dp).toDouble() }),
+        "panelInPrism" to RestBubble.foreground,
+        "panelDials" to (parts.firstOrNull { it.kind == Kind.RULERS }?.let { part ->
+            listOf("gap", "tuck").map {
+                val d = rulerBox(it, box.left + pad, box.top + part.y - scroll)
+                listOf((d.left + origin[0]) / dp, (d.top + origin[1]) / dp, d.width() / dp, d.height() / dp).map { v -> v.toDouble() }
+            }
+        } ?: emptyList<List<Double>>()),
     )
 
     // ---- For the test: does the panel ever draw over the Sidekick's glass?

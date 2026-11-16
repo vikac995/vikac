@@ -116,9 +116,9 @@ class RestBubble with WidgetsBindingObserver {
 
   /// Tells Android where Prism's own button is on the screen (its middle, in real pixels).
   /// The side Blob dropped on it fuses with it.
-  void tellButton(Offset at) {
+  void tellButton(Offset at, {double? barTop}) {
     _device
-        .invokeMethod<void>('button', <double>[at.dx, at.dy])
+        .invokeMethod<void>('button', <double>[at.dx, at.dy, ?barTop])
         .catchError((Object _) {});
   }
 
