@@ -25,3 +25,7 @@ maximum), with screenshots of each panel in the report. LESSONS.md entry: "Every
 system text sizes, not only the default."
 
 **Status (16 November 2026):** next, as build 179, once build 178's phone run is back clean. It fixes layout without changing the design, so it needs no mock-up approval.
+
+**Note (16 November 2026, from the review chat):** labels that are too long are shortened with "…" by
+the one shortening rule of the blob-label item (`QUEUE-next-build.md`, item 4): about 1.5× the blob's
+diameter, the same on the Kotlin and the Dart side. Use the same function here.

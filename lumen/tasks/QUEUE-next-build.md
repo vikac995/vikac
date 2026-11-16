@@ -102,7 +102,33 @@ review chat's go (see LESSONS.md: no new build while the owner is testing).
         stages including the last 20%, and the same for opening.
    - **Later, not 183:** Prism's own panels will go into and come out of Prism's button the same way,
      as part of the panel-family redesign.
-4. Whatever the 182 phone results ask for. The review chat adds it here.
+4. **Blob labels never cover an icon or a badge** (approved by the owner; from the review chat,
+   16 November 2026).
+   - **The bug:** with the Sidekick's blobs open over WhatsApp, the "Facebook" label is drawn over
+     WhatsApp's "4" notification badge.
+   - **What the code shows** (read, not seen on a phone): the Sidekick's menu (`Menu.onDraw` in
+     `MainActivity.kt`) draws blob by blob in one loop: the picture (`paintBlob`), then its badge
+     (`paintBadge`), then its name (`canvas.drawText(items[i].name, …)`), at full length with no
+     width limit. So a later blob's name is drawn over an earlier blob's badge. Prism's own blobs are
+     drawn in `shell.dart`; where their labels are drawn is to be found when building.
+   - **Spec, for Sidekick and Prism blobs alike:**
+     1. **Draw order:** all labels first, then all icons, then all badges. A label may be covered; an
+        icon or badge never.
+     2. **Label max width:** about 1.5× the blob's diameter. Longer names are shortened with "…" (the
+        ellipsis at the end), using one shared function on both sides (Kotlin and Dart), at whatever
+        text size the phone uses.
+        - (Kotlin and Dart can't share one function. So it's the same rule, under the same name, on
+          each side. A test op asks Android to shorten the test's names, and the test checks that both
+          sides give the same result.)
+   - **Test:**
+     - With a long app name and an app with a badge as neighbours, open at the top, middle and bottom.
+     - Check that no label's box overlaps any icon or badge drawn after it, that is, badges and icons
+       are on top.
+     - Check that every label fits within its maximum width.
+     - Repeat with large text if part 5 can set it. Otherwise, check that the shortening function
+       shortens a long name at 1.5× text scale.
+   - **For the large-text item** (`QUEUE-large-text.md`): use the same shortening function there.
+5. Whatever the 182 phone results ask for. The review chat adds it here.
 
 **Later, for step 3's brief (the Sidekick's own app chooser),** not for 183: after a Change or Add, the new
 blob shows only once Prism has sent its picture. Only a menu where every blob is new has nothing to open
