@@ -114,7 +114,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
   `holdBubbleBox` and `holdAt500`.
 - **Its `libapp.so` has:** "Prism build 195", "Hold to dismiss" and the new checks.
 - sha256 `69a61f8aa3e69483d7de0706da43bfbc99aff71e25719ca72590a029e2cfd078`, 18,878,922 bytes.
-- Link: added once it is pushed and checked.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/94a1735694dc749c15e343c604e0aedfd0c98c35/lumen/releases/prism-build-195.apk
 
 ## Where I could be wrong
 
