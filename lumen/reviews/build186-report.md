@@ -137,7 +137,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
   untuck note.
 - sha256 `074318772efb9570575af12cfb85fcd23212e3c06df4488cc498e3b08d8380a3`, 18,797,002 bytes (by chance
   the same size as 185: its biggest parts are stored unpacked, in whole blocks; the contents differ).
-- Link: in the next commit.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/23eb1bbabede0a743500a0eb8e63d8c8a6319300/lumen/releases/prism-build-186.apk
 
 ## Where I could be wrong
 
