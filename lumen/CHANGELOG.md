@@ -4,7 +4,7 @@
 
 **File:** `releases/prism-build-182.apk`
 
-**On hold: please don't install it.** Keep testing 181. The review chat asked to hold it while you test 181, but its message reached me after 182 was pushed. What 182 adds goes out in the next build, with whatever your 181 results ask for.
+182 is fine to install: it's 181 plus a better test report. If you're already testing 181, finish with 181.
 
 It is build 181 with two small changes to the button test and the recorder. Nothing you see in Prism or the Sidekick changes.
 

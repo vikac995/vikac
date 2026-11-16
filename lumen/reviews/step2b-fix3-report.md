@@ -1,9 +1,10 @@
 # Step 2b fix 3 report: the S26's one missed tap (build 182)
 
-**On hold.** The review chat asked to hold 182 and send only the investigation. The owner is testing 181,
-and a new build in the middle of that confuses things. Its message was sent at 07:42 but reached this
-session at 07:55, after 182 was pushed (07:54). 182 stays on the branch, not to be installed. Its logging
-goes out in the next build, with whatever the 181 results ask for.
+182 is fine to install: it's 181 plus a better test report. If you're already testing 181, finish with 181.
+
+(The review chat's "hold 182" crossed it: sent at 07:42, it reached this session at 07:55, after 182 was
+pushed at 07:54. The review chat then kept it: option (a). From now on, no new build while the owner is
+testing unless the review chat asks, and install instructions go only through its board; see LESSONS.md.)
 
 Brief: `tasks/STEP2b-fix3.md`. Asked for in 181, but 181 was already pushed (`8db28c0`), so it is 182,
 on top of 181. Exactly the two items: the investigation, and the check's explanation when it fails.
@@ -145,8 +146,7 @@ long test:    CHECKS: 62 right, 4 wrong, of 66 (the usual 4)
 has the new explanation ("pictures last came"). sha256
 `fc413fa5dc7143c0fdcfe9c0d9857b2fbf71e61b88f341210d0f59e42144f436`, 18,665,722 bytes. Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/5eaf4af9ea1482347f621e5dac0797c0961a5171/lumen/releases/prism-build-182.apk
 
-## For the owner on the phone
+## On the phone
 
-- **Install 182 over 181.** It looks and behaves the same: 181's no-blink fix is in it.
-- **Run the button test** on both phones, and send the reports and the recorders.
-- **If "a tap opens its blobs" is wrong again,** its line now says why.
+- **What it looks like:** 182 looks and behaves the same as 181, and has 181's no-blink fix.
+- **What's new in its report:** if "a tap opens its blobs" is wrong again, its line now says why.
