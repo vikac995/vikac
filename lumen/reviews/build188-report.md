@@ -131,7 +131,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
 - Its `classes.dex` has `sidekickOpened`, `buttonTap`, `pixBlockLeast`, `pixSurfaceAlpha` and
   `TickOutside`. Its `libapp.so` has "Prism build 188", the one-menu checks and the ticks check.
 - sha256 `c92653745147093202cb0017a5a054b3e9f5a987826ec47b03a51485ece488d2`, 18,878,922 bytes.
-- Link: in the next commit.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/250e46d9ed8a3629f82bcc8ea8fe5c61bd9d8a49/lumen/releases/prism-build-188.apk
 
 ## Where I could be wrong
 
