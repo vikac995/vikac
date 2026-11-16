@@ -4645,6 +4645,26 @@ class _ShellState extends State<Shell>
           return;
         }
         say('5 of 6, the Sidekick');
+        // A tap only where it can land: on the screen. Off it, that is WRONG, with where.
+        Future<bool> seenTap(String what, Offset at, {int after = 900}) async {
+          final ui.FlutterView v =
+              WidgetsBinding.instance.platformDispatcher.views.first;
+          final Size screen = v.physicalSize / v.devicePixelRatio;
+          if (at.dx < 0 ||
+              at.dy < 0 ||
+              at.dx > screen.width ||
+              at.dy > screen.height) {
+            t.check(
+              '$what: on the screen to be tapped',
+              false,
+              'off screen at ${at.dx.round()},${at.dy.round()} (the screen is ${screen.width.round()} × ${screen.height.round()})',
+            );
+            return false;
+          }
+          await Robot.tap(at, after: after);
+          return true;
+        }
+
         await memoryAt('part 5 of 6');
         await t.lens(<String, Object?>{'op': 'side', 'on': true});
         await Robot.wait(1200);
@@ -4912,7 +4932,11 @@ class _ShellState extends State<Shell>
             );
             final Offset? first = Robot.spot('choice0');
             if (first != null) {
-              await Robot.tap(first, after: 1700);
+              await seenTap(
+                'Prism\'s list: its first choice',
+                first,
+                after: 1700,
+              );
             }
             s = await where();
             afterChange = <String>[...afterRemove]..[0] = 'action:0';
@@ -4936,7 +4960,11 @@ class _ShellState extends State<Shell>
             await Robot.wait(1200);
             final Offset? first = Robot.spot('choice0');
             if (first != null) {
-              await Robot.tap(first, after: 1700);
+              await seenTap(
+                'Prism\'s list: its first choice',
+                first,
+                after: 1700,
+              );
             }
             s = await where();
             final List<String> want = together(
@@ -5026,7 +5054,11 @@ class _ShellState extends State<Shell>
               }
               final Offset? first = choose ? Robot.spot('choice0') : null;
               if (choose && first != null) {
-                await Robot.tap(first, after: 2000);
+                await seenTap(
+                  'Prism\'s list: its first choice',
+                  first,
+                  after: 2000,
+                );
               } else {
                 await Robot.tap(_home, after: 2000);
               }
@@ -5149,6 +5181,10 @@ class _ShellState extends State<Shell>
           }
         }
 
+        // (Read now: the round trips just before bring Prism forward on purpose.)
+        s = await where();
+        final double addsWas = numOf(s['lensAdds']),
+            removesWas = numOf(s['lensRemoves']);
         final int forwardsWas = numOf(s['forwards']).isNaN
             ? -1
             : numOf(s['forwards']).toInt();
@@ -5161,15 +5197,32 @@ class _ShellState extends State<Shell>
         // 0.6 to 1 s after the opening hold was let go, on the owner's phones).
         await Robot.wait(900);
         s = await where();
+        // (Its window is never taken off or put back for its panel: build 180's blink.)
+        bool lensUntouched(Map<String, Object?> m) =>
+            numOf(m['lensAdds']) == addsWas &&
+            numOf(m['lensRemoves']) == removesWas;
+        // Its middle, and the shade's hole, in points.
+        bool atItsSpot(Map<String, Object?> m) {
+          final List<Object?> hole =
+              (m['panelHole'] as List<Object?>?) ?? const <Object?>[];
+          final double x = (numOf(m['x']) + numOf(m['size']) / 2) / dp;
+          final double y = (numOf(m['y']) + numOf(m['size']) / 2) / dp;
+          return m['lens'] == true &&
+              hole.length == 2 &&
+              (numOf(hole[0]) - x).abs() < 4 &&
+              (numOf(hole[1]) - y).abs() < 4;
+        }
+
         heard(
-          'sidekick panel: still open 1.5 s after the hold is let go, never closed, the Sidekick above it, the panel unchanged',
+          'sidekick panel: still open 1.5 s after the hold is let go, never closed, the Sidekick at its spot, the panel unchanged',
           s['panelOpen'] == true &&
               numOf(s['panelOpened']) == openedWas + 1 &&
               s['panelClosed'] == closedWas &&
-              s['lensAbove'] == true &&
+              lensUntouched(s) &&
+              atItsSpot(s) &&
               numOf(s['panelLeastSinceOpen']) >= 0.999 &&
               (numOf(s['panelShade']) - 0.4).abs() < 0.02,
-          'open ${s['panelOpen']}, opened ${numOf(s['panelOpened']) - openedWas} time(s), last closed "${s['panelClosed']}" (before: "$closedWas"), above ${s['lensAbove']}, the panel at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, shade ${numOf(s['panelShade']).toStringAsFixed(2)}',
+          'open ${s['panelOpen']}, opened ${numOf(s['panelOpened']) - openedWas} time(s), last closed "${s['panelClosed']}" (before: "$closedWas"), its window added ${numOf(s['lensAdds']) - addsWas} and taken off ${numOf(s['lensRemoves']) - removesWas} times, the hole ${s['panelHole']}, the panel at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, shade ${numOf(s['panelShade']).toStringAsFixed(2)}',
         );
         heard(
           'sidekick panel: held, its own settings come up, over the app it is in',
@@ -5212,10 +5265,37 @@ class _ShellState extends State<Shell>
           return from.length == 3 && (numOf(from[0]) - sidekickX).abs() < 6;
         }(), 'from ${s['panelFrom']}');
         inPanel(
-          'sidekick panel: the Sidekick stays in sight, above the panel',
-          s['lens'] == true && s['lensAbove'] == true && s['covered'] != true,
-          'shown ${s['lens']}, above ${s['lensAbove']}, hidden ${s['covered']}',
+          'sidekick panel: the Sidekick stays in sight at its spot, its window never taken off',
+          atItsSpot(s) && lensUntouched(s) && s['covered'] != true,
+          'shown ${s['lens']}, the hole ${s['panelHole']}, its window added ${numOf(s['lensAdds']) - addsWas} and taken off ${numOf(s['lensRemoves']) - removesWas} times, hidden ${s['covered']}',
         );
+        // Where the panel covers it (a moment into growing), the panel draws the Sidekick itself:
+        // the pixel at its middle is the Sidekick's, not the panel's.
+        if (opened) {
+          final Map<String, Object?> m = await panel('sample');
+          final int withIt = numOf(m['sampleWith']).toInt(),
+              without = numOf(m['sampleWithout']).toInt(),
+              lens = numOf(m['sampleLens']).toInt();
+          int far(int a, int b) => <int>[24, 16, 8, 0]
+              .map((int k) => (((a >> k) & 0xFF) - ((b >> k) & 0xFF)).abs())
+              .reduce(math.max);
+          String hex(int v) =>
+              v.toUnsigned(32).toRadixString(16).padLeft(8, '0');
+          if (m['sampleCovers'] != true || far(lens, without) < 24) {
+            t.skip(
+              'sidekick panel: where it covers the Sidekick, the panel draws the Sidekick (its stand-in)',
+              m['sampleCovers'] != true
+                  ? 'the sampled moment did not cover it'
+                  : 'the Sidekick\'s middle is the panel\'s colour, so it cannot tell (${hex(lens)})',
+            );
+          } else {
+            t.check(
+              'sidekick panel: where it covers the Sidekick, the panel draws the Sidekick (its stand-in)',
+              withIt != without && far(withIt, lens) < 24,
+              'with the stand-in ${hex(withIt)}, without ${hex(without)}, the Sidekick alone ${hex(lens)}',
+            );
+          }
+        }
         inPanel(
           'sidekick panel: the shade is over the app',
           (numOf(s['panelShade']) - 0.4).abs() < 0.02,
@@ -5600,13 +5680,18 @@ class _ShellState extends State<Shell>
             showPrismSettings(context);
           }
           await Robot.wait(1200);
+          final BuildContext? line = Robot.key('bringBack').currentContext;
+          if (line != null && line.mounted) {
+            await Scrollable.ensureVisible(line, alignment: 0.5);
+            await Robot.wait(500);
+          }
           final Offset? bring = Robot.spot('bringBack');
           t.check(
             'settings page: off everywhere, "Bring back the Sidekick" is there',
             bring != null,
           );
           if (bring != null) {
-            await Robot.tap(bring, after: 1200);
+            await seenTap('settings page: "Bring back"', bring, after: 1200);
           }
           s = await where();
           t.check(

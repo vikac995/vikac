@@ -1,5 +1,25 @@
 # Lumen changelog
 
+## Prism, build 181 (16 November 2026)
+
+**File:** `releases/prism-build-181.apk`
+
+Needs Play Protect paused to install. Can be installed over build 180.
+
+**Your S25 run of 180: 605 right, 8 wrong; the panel now stays open.** This build fixes the blink you saw, and the two test checks that went wrong. Nothing else.
+
+- **No more blink when the panel opens:**
+  - **What blinked:** to keep the Sidekick on top of its panel, 180 took the Sidekick's window off the screen and put it straight back a moment after you let go. That was the blink (the halo, the labels redrawn).
+  - **Now:** the Sidekick's window stays where it is. Beside the panel it shows through the shade's hole as before. In the moments the panel covers it (growing out of it, going back in, or wherever it lies over it), the panel draws the Sidekick itself, from the Sidekick's own drawing, so it looks exactly the same.
+  - **Taps:** a tap on the Sidekick still closes the panel.
+- **The two wrong checks were the test's own mistakes, not Prism's:**
+  - **"Prism did not come forward":** it counted from too early. The Change and Add round trips just before bring Prism forward on purpose, and they were counted. It now counts from just before the hold.
+  - **"Bring back brings it back":** its tap missed. The line was below what the settings page showed, and the test tapped where it was, off the screen. It now scrolls the line into sight first, and any tap that would land off the screen is reported as wrong, with where, instead of being made.
+- **The test also checks** that the Sidekick's window is never taken off or put back for its panel, that the Sidekick is at its spot, and that the panel really draws the Sidekick where it covers it.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 67 of 68 (the Android-only miss); the long test, 62 of 66 with the usual 4 misses.
+**Not checked:** on a phone. Please look at the moment the panel opens and closes: the Sidekick should not blink or change at all.
+
 ## Prism, build 180 (16 November 2026)
 
 **File:** `releases/prism-build-180.apk`
