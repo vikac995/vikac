@@ -215,7 +215,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
   "Prism build 191", "The fan and its names", "its fan at six places", "not applicable" and the header's
   "navigation:".
 - sha256 `0d5a41b58e555fc8074b8d0d99460d031c0f640620a1458b82b93f841db1a746`, 18,878,922 bytes.
-- Link: in the next commit.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/922a6c48555905a6fcd4734ebd9f380f9fa03cc0/lumen/releases/prism-build-191.apk
 
 ## Where I could be wrong
 
