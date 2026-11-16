@@ -411,9 +411,11 @@ internal class PanelView(
         // Nothing is smaller; only the space between.)
         val section = 10f
         val under = 6f
-        // (The header: "Sidekick", then "Dismiss" and the X at its right, 193. If a large text size
-        // leaves no room for "Dismiss" beside the title, it goes on a line of its own under it.)
-        dismissBelow = measure("Sidekick", 22f, 700, true) + 8 * dp + dismissW() + 10 * dp + 44 * dp > innerW
+        // (The header: "Sidekick", then "Dismiss" right after it, and the X at the right, 194. If a
+        // large text size leaves no room for "Dismiss" there, clear of the X's touch, it goes on a
+        // line of its own under the title.)
+        titleW = measure("Sidekick", 22f, 700, true)
+        dismissBelow = titleW + DISMISS_GAP * dp + dismissW() + DISMISS_SLACK * dp > innerW - 50 * dp
         parts.add(Part(Kind.TITLE, "close", "Sidekick", (if (dismissBelow) 88 else 44) * dp))
         gap(8f)
         // (From build 186 the dials come before the two switches, so that they are on the screen
@@ -612,10 +614,26 @@ internal class PanelView(
     private fun excludeDials() {
         if (Build.VERSION.SDK_INT < 29) return
         val part = parts.firstOrNull { it.kind == Kind.RULERS }
-        val want = if (part == null || !opened || closing) emptyList() else listOf("gap", "tuck").map {
+        val want = ArrayList<android.graphics.Rect>()
+        if (part != null && opened && !closing) for (it in listOf("gap", "tuck")) {
             val b = rulerBox(it, box.left + pad, box.top + part.y - scroll)
             b.inset(-4 * dp, -10 * dp)
-            android.graphics.Rect(b.left.toInt(), b.top.toInt(), b.right.toInt(), b.bottom.toInt())
+            want.add(android.graphics.Rect(b.left.toInt(), b.top.toInt(), b.right.toInt(), b.bottom.toInt()))
+        }
+        // (194) The Sidekick's spot too, at its edge: this window covers the whole screen, and
+        // Android honours the Sidekick's own exclusion only where no touchable window lies over it.
+        // Its window and 24 points above and below, from the edge, at least 80 points wide.
+        if (!closing && g.value > 0.02f) {
+            val x = lensX()
+            val y = lensY()
+            val half = sr + 5 * dp
+            val left = x < width / 2f
+            want.add(android.graphics.Rect(
+                if (left) 0 else Math.min(x - half, width - 80 * dp).toInt(),
+                (y - half - 24 * dp).toInt(),
+                if (left) Math.max(x + half, 80 * dp).toInt() else width,
+                (y + half + 24 * dp).toInt(),
+            ))
         }
         if (want != excluded) {
             excluded = want
@@ -773,13 +791,28 @@ internal class PanelView(
 
     private fun dismissW(): Float = measure("Dismiss", 15f, 600) + 2 * 16 * dp
 
+    // (Its place, 194: right after the title, 12 points from it; its touch reaches 6 points round
+    // the 36-point pill, so 48 points tall, and stops short of the X's, which reaches 50 points in
+    // from the right.)
+    private var titleW = 0f
+    private val DISMISS_GAP = 12f
+    private val DISMISS_SLACK = 6f
+
     /** Where "Dismiss" is, in the panel's contents, for the header part [p]. */
     private fun dismissBox(p: Part): RectF {
         val w = dismissW()
         val h = 36 * dp
-        val right = if (dismissBelow) pad + innerW else pad + innerW - 44 * dp - 10 * dp
+        val left = if (dismissBelow) pad else pad + titleW + DISMISS_GAP * dp
         val cy = if (dismissBelow) p.y + 44 * dp + 22 * dp else p.y + 22 * dp
-        return RectF(right - w, cy - h / 2, right, cy + h / 2)
+        return RectF(left, cy - h / 2, left + w, cy + h / 2)
+    }
+
+    /** Where a finger counts as on "Dismiss": the pill and 6 points round it (48 tall), never reaching the X's touch. */
+    private fun dismissTouch(p: Part): RectF {
+        val b = dismissBox(p)
+        val t = RectF(b.left - DISMISS_SLACK * dp, b.top - DISMISS_SLACK * dp, b.right + DISMISS_SLACK * dp, b.bottom + DISMISS_SLACK * dp)
+        if (!dismissBelow) t.right = Math.min(t.right, pad + innerW - 50 * dp)
+        return t
     }
 
     private fun drawText(canvas: Canvas, s: String, x: Float, baseline: Float, size: Float, weight: Int, color: Int, center: Boolean = false, display: Boolean = false) {
@@ -1011,8 +1044,7 @@ internal class PanelView(
                 Kind.TITLE -> {
                     val bx = pad + innerW - 22 * dp
                     if (Math.hypot((cx - bx).toDouble(), (cy - p.y - 22 * dp).toDouble()) < 28 * dp) return "close"
-                    val db = dismissBox(p)
-                    if (cx >= db.left - 4 * dp && cx <= db.right + 4 * dp && cy >= db.top - 4 * dp && cy <= db.bottom + 4 * dp) return "dismiss"
+                    if (dismissTouch(p).contains(cx, cy)) return "dismiss"
                 }
                 Kind.SWITCH -> return p.id
                 Kind.PICKER -> {
@@ -1375,6 +1407,20 @@ internal class PanelView(
         "panelSettling" to settling,
         // How long after the last let-go the panel was drawn solid again (over 0.97); -1 if not yet.
         "panelSolidAfterMs" to solidAfterMs,
+        // The header (194): where "Dismiss" and its touch are, where the title ends and the X's
+        // touch begins, on the screen, in points.
+        "panelHeader" to (parts.firstOrNull { it.kind == Kind.TITLE }?.let { p ->
+            val ox = box.left + origin[0]
+            val oy = box.top - scroll + origin[1]
+            fun pts(r: RectF) = listOf((r.left + ox) / dp, (r.top + oy) / dp, r.width() / dp, r.height() / dp).map { it.toDouble() }
+            hashMapOf(
+                "dismiss" to pts(dismissBox(p)),
+                "dismissTouch" to pts(dismissTouch(p)),
+                "titleRight" to ((pad + titleW + ox) / dp).toDouble(),
+                "closeTouchLeft" to ((pad + innerW - 50 * dp + ox) / dp).toDouble(),
+                "below" to dismissBelow,
+            )
+        }),
         "panelCarriedOn" to carriedOn,
         // Where the panel may reach down to, and where the dials are now (on the screen, in points).
         "panelBottomLimit" to ((limitBottom + origin[1]) / dp).toDouble(),

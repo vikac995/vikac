@@ -115,14 +115,20 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
 - **The Sidekick can be dragged with its blobs out** (from 192, the owner's request): a drag that
   begins on it (its glass and 6 points round it) folds the blobs back in at once, the usual close,
   and carries it, following the finger exactly as at any other time. Let go, it settles as always;
-  once still, its blobs come out again round it where it is. Not if it was tucked away (a tucked
-  Sidekick has no fan). A tap still only closes them.
+  as soon as it is let go, its blobs come out again round where it is going, while it glides there
+  (from 194; 192 waited until it was still). Not if it was tucked away (a tucked Sidekick has no
+  fan). A tap still only closes them.
+- **Its spot is always kept from Android's Back swipe** at the edge (from 194): its own window and
+  strip ask for it, and so do its menu and its panel while they are open (Android ignores a window's
+  request where another touchable window lies over it, and these cover the whole screen): its window
+  and 24 points above and below, from the edge, at least 80 points wide.
 - **The button never goes bare.** With an empty menu it keeps its look, in the light's own colours.
 - **Change** opens the list titled "Change ..." with a red Remove in it; while it is up, the button
   becomes the blob being changed, and goes back after.
 - **The Sidekick never takes the keyboard or the focus** of the app underneath.
 - **The Sidekick is sent away only from its settings panel** (the owner's decision, from 193): hold
-  it, and its panel has a "Dismiss" pill in its header, left of the ✕ (which only closes the panel).
+  it, and its panel has a "Dismiss" pill in its header, right after the "Sidekick" title (from 194;
+  next to the ✕ in 193), with the ✕ (which only closes the panel) on the right.
   "Dismiss" closes the panel and the Sidekick shrinks away where it rests; it stays away until the
   next app is opened from Prism. Carried or flung anywhere, the Sidekick only moves: there is no cross
   for it, nothing pulls it, no fling sends it away (190 to 192 had a cross at the top, which the owner
@@ -142,8 +148,9 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   - **Where:** beside it, on the side away from it, at its height (kept on the screen), as tall as
     its contents allow. It ends 8 points above Prism's bar (in Prism) or Android's own bar (outside),
     and never covers either (from 186).
-  - **Its header:** "Sidekick", then a "Dismiss" pill and the ✕ at the right (from 193). At a large
-    text size, if "Dismiss" doesn't fit beside the title, it goes on a line of its own under it.
+  - **Its header:** "Sidekick", then a "Dismiss" pill 12 points after it, and the ✕ at the right (from
+    194). Its touch is 48 points tall and stops short of the ✕'s. At a large text size, if "Dismiss"
+    doesn't fit there, it goes on a line of its own under the title.
   - **Its order:** Labels, Icons, Colours, Look, then where it rests (the two dials, in reach without
     scrolling), and the two switches (In Prism, Over other apps) last, as they are rarely used (from
     186).

@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 194 (16 November 2026)
+
+**File:** `releases/prism-build-194.apk`
+
+Needs Play Protect paused to install. Can be installed over build 193.
+
+**From your video of 192:**
+- **No more accidental Back when you grab the Sidekick at the edge.** With its blobs out (or its settings open), the full-screen menu was in the way of the Sidekick's own protection from Android's Back swipe. Now the menu and the panel protect the Sidekick's spot themselves, and the spot follows it while you drag.
+- **Its blobs come back sooner after a drag:** as soon as you let go, they fan out around where it's going, while it glides there, instead of waiting until it has settled.
+
+**Dismiss moved next to the title:** the panel's header reads "Sidekick", then "Dismiss", with the ✕ on the right, so Dismiss and close are well apart.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 193 (16 November 2026)
 
 **File:** `releases/prism-build-193.apk`

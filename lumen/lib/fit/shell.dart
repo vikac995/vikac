@@ -5335,6 +5335,18 @@ class _ShellState extends State<Shell>
             final double sizePt = numIn(m0['size']) / dp;
             final double y0 = mid0.length == 2 ? numIn(mid0[1]) : hPt / 2;
             final int dy = y0 > hPt / 2 ? -120 : 120;
+            // (194: round the spot it was going to, which is where it rests now, within 6 points.)
+            bool reopenedRound(Map<String, Object?> m) {
+              final List<Object?> a =
+                  (m['menuReopenAt'] as List<Object?>?) ?? const <Object?>[];
+              final List<Object?> b =
+                  (m['lensMid'] as List<Object?>?) ?? const <Object?>[];
+              return a.length == 2 &&
+                  b.length == 2 &&
+                  (numIn(a[0]) - numIn(b[0])).abs() < 6 &&
+                  (numIn(a[1]) - numIn(b[1])).abs() < 6;
+            }
+
             final double want =
                 (y0 + dy).clamp(48 + sizePt / 2, hPt - 48 - sizePt / 2) - y0;
             final int dragsWas = numIn(m0['menuDrags']).isNaN
@@ -5367,9 +5379,13 @@ class _ShellState extends State<Shell>
               'its blobs all in ${foldMs.isNaN || foldMs < 0 ? '?' : foldMs.round()} ms after it was picked up; it moved ${moved.isNaN ? '?' : moved.toStringAsFixed(0)} points (dragged $dy from ${y0.toStringAsFixed(0)}, ${want.toStringAsFixed(0)} meant)',
             );
             t.check(
-              'sidekick: dragged with its blobs out, once it is still its blobs come out again round it',
-              m1['menu'] == true && numIn(m1['menuReopens']) == reopensWas + 1,
-              'its blobs ${m1['menu'] == true ? 'out' : 'in'}, opened again ${numIn(m1['menuReopens']).isNaN ? '?' : numIn(m1['menuReopens']).toInt() - reopensWas} time(s); its last touch: ${m1['touch'] ?? '?'}',
+              'sidekick: dragged with its blobs out, let go, its blobs come out again at once, round where it comes to rest',
+              m1['menu'] == true &&
+                  numIn(m1['menuReopens']) == reopensWas + 1 &&
+                  numIn(m1['menuReopenLagMs']) >= 0 &&
+                  numIn(m1['menuReopenLagMs']) <= 120 &&
+                  reopenedRound(m1),
+              'its blobs ${m1['menu'] == true ? 'out' : 'in'}, opened again ${numIn(m1['menuReopens']).isNaN ? '?' : numIn(m1['menuReopens']).toInt() - reopensWas} time(s), ${numIn(m1['menuReopenLagMs']).isNaN ? '?' : numIn(m1['menuReopenLagMs']).round()} ms after the let-go, round ${m1['menuReopenAt'] ?? 'where it was still'} (it rests at ${m1['lensMid']}); its last touch: ${m1['touch'] ?? '?'}',
             );
             if (m1['menu'] == true) {
               final Map<String, Object?> geo = await menu('geometry');
@@ -6205,6 +6221,33 @@ class _ShellState extends State<Shell>
           numOf(s['panelShade']) == 0,
           'shade ${numOf(s['panelShade']).toStringAsFixed(2)}',
         );
+        // "Dismiss" right after the title (194): 12 points from it at least, its touch 48 tall and
+        // short of the X's.
+        {
+          final Map<Object?, Object?> hd = s['panelHeader'] is Map
+              ? s['panelHeader']! as Map<Object?, Object?>
+              : const <Object?, Object?>{};
+          final List<Object?> pill =
+              (hd['dismiss'] as List<Object?>?) ?? const <Object?>[];
+          final List<Object?> touch =
+              (hd['dismissTouch'] as List<Object?>?) ?? const <Object?>[];
+          final bool below = hd['below'] == true;
+          final double gapToTitle = pill.length == 4
+              ? numOf(pill[0]) - numOf(hd['titleRight'])
+              : double.nan;
+          final double touchH = touch.length == 4 ? numOf(touch[3]) : 0;
+          final double touchRight = touch.length == 4
+              ? numOf(touch[0]) + numOf(touch[2])
+              : double.nan;
+          inPanel(
+            'sidekick panel: "Dismiss" right after the title, its touch 48 tall and clear of the X\'s',
+            pill.length == 4 &&
+                (below || gapToTitle >= 11.5) &&
+                touchH >= 47.5 &&
+                (below || touchRight <= numOf(hd['closeTouchLeft']) + 0.5),
+            '${below ? 'on its own line under the title (large text)' : '${gapToTitle.toStringAsFixed(1)} points after the title'}; its touch ${touchH.toStringAsFixed(1)} tall, ending at ${touchRight.toStringAsFixed(1)}, the X\'s from ${numOf(hd['closeTouchLeft']).toStringAsFixed(1)}',
+          );
+        }
         // Each two-way choice, changed in the panel and put back: kept by Android, and Prism's
         // copy follows; Prism's own choice is not touched.
         Future<void> choice(
@@ -6777,6 +6820,87 @@ class _ShellState extends State<Shell>
               pastShare == 0 && s['gripOpen'] != true,
               '${(pastShare * 100).toStringAsFixed(1)}% past the edge, grip ${s['gripOpen'] == true ? 'open' : 'none'}',
             );
+          }
+        }
+        // Safe from Back with its blobs out (194): at Hovering −48 on each side, with its blobs
+        // out, its spot is kept from Android's Back gesture (the menu covers the whole screen, so
+        // it asks for it): its glass and at least 24 points above and below, from the edge.
+        {
+          const String safe =
+              'sidekick: at Hovering −48 with its blobs out, on each side, its spot is kept from Back (its glass and 24 points above and below)';
+          final String nav = '${(await where())['nav'] ?? '?'}';
+          if (!nav.startsWith('gestures') && nav != '?' && nav != 'unknown') {
+            t.skip(
+              safe,
+              'not applicable: $nav navigation (no Back swipe at the sides)',
+            );
+          } else {
+            final List<String> said = <String>[];
+            bool all = true;
+            await lensOf.testPut(<String, Object>{
+              'gap': RestBubble.gapMin,
+            }, show: 'rest');
+            await Robot.wait(900);
+            for (final bool right in <bool>[false, true]) {
+              // Carried to that side, halfway down; let go, it rests there.
+              await press(
+                'sidekick carried to the ${right ? 'right' : 'left'}',
+                <Offset>[
+                  Offset(sc.width * (right ? 0.9 : 0.1), sc.height * 0.5),
+                ],
+                legMs: 600,
+                endMs: 200,
+                settleMs: 1200,
+              );
+              await Robot.wait(700);
+              // Its blobs out.
+              await press(
+                'sidekick tapped',
+                <Offset>[],
+                holdMs: 60,
+                settleMs: 1100,
+              );
+              await Robot.wait(500);
+              final Map<String, Object?> m = await where();
+              final List<Object?> ex =
+                  (m['menuExcluded'] as List<Object?>?) ?? const <Object?>[];
+              final List<Object?> mid =
+                  (m['lensMid'] as List<Object?>?) ?? const <Object?>[];
+              final double r = numOf(m['lensRadius']);
+              bool ok = false;
+              String how =
+                  'its blobs ${m['menu'] == true ? 'out' : 'in'}, nothing kept from Back';
+              if (m['menu'] == true &&
+                  ex.length == 4 &&
+                  mid.length == 2 &&
+                  !r.isNaN) {
+                final double l = numOf(ex[0]) / dp, tp = numOf(ex[1]) / dp;
+                final double rr = l + numOf(ex[2]) / dp,
+                    bt = tp + numOf(ex[3]) / dp;
+                final double gx = numOf(mid[0]), gy = numOf(mid[1]);
+                final bool atEdge = right ? rr >= wPx / dp - 1 : l <= 1;
+                final bool across = right ? l <= gx - r : rr >= gx + r;
+                ok =
+                    atEdge &&
+                    across &&
+                    tp <= gy - r - 23.5 &&
+                    bt >= gy + r + 23.5;
+                how =
+                    'kept ${l.toStringAsFixed(0)}–${rr.toStringAsFixed(0)} across, ${tp.toStringAsFixed(0)}–${bt.toStringAsFixed(0)} down; its glass ${(gx - r).toStringAsFixed(0)}–${(gx + r).toStringAsFixed(0)} across, ${(gy - r).toStringAsFixed(0)}–${(gy + r).toStringAsFixed(0)} down';
+              }
+              all = all && ok;
+              said.add(
+                '${right ? 'right' : 'left'}: ${ok ? 'kept' : 'NOT kept'} ($how)',
+              );
+              // Its blobs in again.
+              await t.lens(<String, Object?>{
+                'op': 'menu',
+                'what': 'outside',
+                'settleMs': 700,
+              });
+              await Robot.wait(600);
+            }
+            t.check(safe, all, '${said.join('; ')}; navigation $nav');
           }
         }
         for (final double k in <double>[

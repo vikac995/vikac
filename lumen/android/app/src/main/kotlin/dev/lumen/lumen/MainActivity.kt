@@ -2189,17 +2189,22 @@ class Floater(val timer: Boolean) {
         }
     }
 
-    private fun openMenu(context: Context) {
-        Trail.add("blob menu opened")
+    /**
+     * Opens its blobs' menu round it; or, with [centre] (on the screen), round the spot it is on its
+     * way to (194: let go after a drag with its blobs out, they come out at once round where it
+     * will rest, while it glides there).
+     */
+    private fun openMenu(context: Context, centre: FloatArray? = null) {
+        Trail.add("blob menu opened${if (centre != null) " where it is going" else ""}")
         val v = view ?: return
         if (menu != null || blobs.isEmpty()) return
-        v.rest()
+        if (centre == null) v.rest()
         try {
             val dp = context.resources.displayMetrics.density
             val at = IntArray(2)
             v.getLocationOnScreen(at)
             // The lens is still pressed in a little; its middle is found from the size it is drawn at.
-            val m = Menu(context, at[0] + v.width * v.scaleX / 2f, at[1] + v.height * v.scaleY / 2f, v.width / 2f - 5 * dp)
+            val m = Menu(context, centre?.get(0) ?: (at[0] + v.width * v.scaleX / 2f), centre?.get(1) ?: (at[1] + v.height * v.scaleY / 2f), (if (centre != null) v.lp.width else v.width) / 2f - 5 * dp)
             // (It never takes the focus: see the flags.)
             val lp = android.view.WindowManager.LayoutParams(
                 android.view.WindowManager.LayoutParams.MATCH_PARENT, android.view.WindowManager.LayoutParams.MATCH_PARENT,
@@ -2273,6 +2278,40 @@ class Floater(val timer: Boolean) {
     private var reopenAfterDrag = false
 
     /**
+     * (194) Let go after a drag begun with its blobs out: as soon as where it will rest is decided,
+     * its blobs come out round that spot, while it glides there, so they are out about as it
+     * arrives (192 waited until it was still, a visible pause). Not if it was tucked away or sent
+     * away. If where it is going can't be told, as in 192: once it is still.
+     */
+    private fun reopenSoon(context: Context, before: FloatArray?, fromX: Int, fromY: Int) {
+        if (!reopenAfterDrag) return
+        val v = view
+        if (v == null || !v.isAttachedToWindow || swallowing || dismissed || tucked) {
+            reopenAfterDrag = false
+            Trail.add("$who: after the drag, its blobs stay in (${if (tucked) "tucked away" else "sent away"})")
+            return
+        }
+        val to = v.restTarget()
+        if (before == null || to == null) {
+            reopenWhenStill(context)
+            return
+        }
+        reopenAfterDrag = false
+        if (blobs.isEmpty()) return
+        val centre = floatArrayOf(before[0] + (to[0] - fromX), before[1] + (to[1] - fromY))
+        menuReopens++
+        menuReopenLagMs = 0L
+        menuReopenAt = centre
+        Trail.add("$who: let go after the drag: its blobs come out at once where it is going")
+        openMenu(context, centre)
+    }
+
+    // (For the test, 194: how long after the let-go its blobs began to come out again, and round
+    // which spot on the screen.)
+    var menuReopenLagMs = -1L
+    var menuReopenAt: FloatArray? = null
+
+    /**
      * After a drag begun with its blobs out: once the Sidekick has come to rest, its blobs come out
      * again where it is. Not if it was dropped on the cross (it is gone) or tucked away (a tucked
      * Sidekick has no fan); not if it never comes to rest within 3 s.
@@ -2295,6 +2334,8 @@ class Floater(val timer: Boolean) {
                 reopenAfterDrag = false
                 if (blobs.isEmpty()) return
                 menuReopens++
+                menuReopenLagMs = android.os.SystemClock.uptimeMillis() - (until - 3000)
+                menuReopenAt = null
                 Trail.add("$who: come to rest after the drag: its blobs come out again here")
                 openMenu(context)
             }
@@ -2413,7 +2454,17 @@ class Floater(val timer: Boolean) {
         m["menuDrags"] = menuDrags
         m["menuFoldMs"] = if (menuInAt > menuDragAt && menuDragAt > 0L) menuInAt - menuDragAt else -1L
         m["menuReopens"] = menuReopens
+        m["menuReopenLagMs"] = menuReopenLagMs
+        m["menuReopenAt"] = menuReopenAt?.let { listOf((it[0] / context.resources.displayMetrics.density).toDouble(), (it[1] / context.resources.displayMetrics.density).toDouble()) }
         m["sidekickDismissals"] = sidekickDismissals
+        // What the open menu keeps from Back (194), on the screen, in pixels.
+        m["menuExcluded"] = menu?.let { mv ->
+            mv.spotExcluded?.let { r ->
+                val at = IntArray(2)
+                mv.getLocationOnScreen(at)
+                listOf(r.left + at[0], r.top + at[1], r.width(), r.height())
+            }
+        }
         m["sideGone"] = sideGone
         // Whether Prism has the focus (the notification shade, pulled down, would take it) (190).
         m["prismFocus"] = PrismScreen.alive()?.hasWindowFocus()
@@ -3714,6 +3765,7 @@ class Floater(val timer: Boolean) {
             cx = ox - at[0]
             cy = oy - at[1]
             offY = at[1]
+            keepSpotFromBack(cx, cy)
             if (!laid) {
                 fan()
                 laid = true
@@ -3759,6 +3811,41 @@ class Floater(val timer: Boolean) {
         private var grown = 1f
         // Where the menu's view is on the screen, up and down (Prism's bar is told in the screen's).
         private var offY = 0
+
+        // ---- (194) The Sidekick's spot kept from Android's Back gesture while this menu is up. Android
+        // honours a window's exclusion only where no touchable window lies over it, and this one
+        // covers the whole screen: so the Sidekick's own (and its strip's) count for nothing while
+        // it is up, and a grab at the edge went to Back (the owner's video of 192). This window asks
+        // for the same spot: the Sidekick's window and 24 points above and below it, from the edge,
+        // at least 80 points wide (as its strip). Following it while it is dragged, at most every
+        // 50 ms.
+        private var spotSetAt = 0L
+        var spotExcluded: android.graphics.Rect? = null
+            private set
+
+        private fun keepSpotFromBack(x: Float, y: Float) {
+            if (Build.VERSION.SDK_INT < 29 || !guest) return
+            val half = (view?.lp?.width ?: (84 * dp).toInt()) / 2f
+            val left = x < width / 2f
+            val r = android.graphics.Rect(
+                if (left) 0 else Math.min(x - half, width - 80 * dp).toInt(),
+                (y - half - 24 * dp).toInt(),
+                if (left) Math.max(x + half, 80 * dp).toInt() else width,
+                (y + half + 24 * dp).toInt(),
+            )
+            spotExcluded = r
+            spotSetAt = android.os.SystemClock.uptimeMillis()
+            systemGestureExclusionRects = listOf(r)
+        }
+
+        /** While a drag handed on to the Sidekick goes on: its spot follows it (at most every 50 ms). */
+        private fun followSpot() {
+            if (android.os.SystemClock.uptimeMillis() - spotSetAt < 50) return
+            val o = lensOnScreen() ?: return
+            val at = IntArray(2)
+            getLocationOnScreen(at)
+            keepSpotFromBack(o[0] - at[0], o[1] - at[1])
+        }
 
         /** Prism's bar's top in this view, when the Sidekick is in Prism; null otherwise. */
         private fun barHere(): Float? {
@@ -3905,8 +3992,11 @@ class Floater(val timer: Boolean) {
                         running = false
                         if (menuInAt == 0L) menuInAt = android.os.SystemClock.uptimeMillis()
                         // (While a drag begun on the Sidekick is handed on to it, 192, this window
-                        // keeps the finger until it lifts: taken away now, the drag would end.)
-                        if (handing) removeLater = true else removeMenu(context)
+                        // keeps the finger until it lifts: taken away now, the drag would end. And
+                        // only ever itself: taken away already, a new menu may be up, 194.)
+                        if (this@Floater.menu === this@Menu) {
+                            if (handing) removeLater = true else removeMenu(context)
+                        }
                         return
                     }
                     moving = true
@@ -4266,16 +4356,21 @@ class Floater(val timer: Boolean) {
                 handing = false
                 return
             }
+            val ending = e.actionMasked == android.view.MotionEvent.ACTION_UP || e.actionMasked == android.view.MotionEvent.ACTION_CANCEL
+            // (Where it is on the screen and in its window's own place, just before it is let go:
+            // to find where on the screen it is going, 194.)
+            val before = if (ending) lensOnScreen() else null
+            val fromX = v.lp.x
+            val fromY = v.lp.y
             v.onTouchEvent(e)
-            if (e.actionMasked == android.view.MotionEvent.ACTION_UP || e.actionMasked == android.view.MotionEvent.ACTION_CANCEL) {
+            if (e.actionMasked == android.view.MotionEvent.ACTION_MOVE) followSpot()
+            if (ending) {
                 handing = false
-                // Once it has come to rest, its blobs come out again where it is (not if it was
-                // sent away, or tucked away: see [reopenWhenStill]).
-                reopenWhenStill(context)
-                if (removeLater) {
-                    removeLater = false
-                    removeMenu(context)
-                }
+                removeLater = false
+                val c = context
+                // This menu goes now (its blobs are in), and the new one can open at once.
+                removeMenu(c)
+                reopenSoon(c, before, fromX, fromY)
             }
         }
 
@@ -6042,6 +6137,9 @@ class Floater(val timer: Boolean) {
         }
 
         fun pressedNow() = pressed
+
+        /** Where it is going, in its window's own place, while it springs there after a let-go; null otherwise (194). */
+        fun restTarget(): FloatArray? = if (springing && !leaving) floatArrayOf(tx, ty) else null
 
         /** Where its window's left edge is when it rests at that side (for the fan's test, 191). */
         fun restLeft(right: Boolean): Float =
