@@ -414,8 +414,9 @@ class MainActivity : FlutterActivity() {
                 RestBubble.refresh(applicationContext)
                 result.success(null)
             } else if (call.method == "button") {
-                // Where Prism's own button is on the screen, in real pixels: the side Blob dropped
-                // on it fuses with it.
+                // Where Prism's own button is on the screen, in real pixels: a tap there on the
+                // Sidekick's open menu is handed to Prism (188). (Until 190 the Sidekick dropped on
+                // it fused with it; its way out is now the cross at the top.)
                 val at = (call.arguments as? List<*>)?.map { (it as Number).toFloat() }
                 RestBubble.buttonAt = if (at != null && at.size >= 2) floatArrayOf(at[0], at[1]) else null
                 // (And, from build 186, the top of Prism's bar and button, for the Sidekick's panel to
@@ -941,6 +942,8 @@ class Floater(val timer: Boolean) {
         fun holdTime(): Long = (android.view.ViewConfiguration.getLongPressTimeout().coerceIn(300, 600) * 0.85).toLong()
         const val OPEN_ACTION = "dev.lumen.OPEN_ACTION"
         private const val WHITE = 0xFFFFFFFF.toInt()
+        // How much the Sidekick's cross shows as it is first picked up (190).
+        private const val FAINT = 0.3f
         private const val GREY = 0xFFA9ACB6.toInt()
         private const val GREEN = 0xFF2FA84F.toInt()
         private const val SHEET_AUTO = -1
@@ -2161,6 +2164,8 @@ class Floater(val timer: Boolean) {
     // tap on Prism's button was handed on to Prism from the Sidekick's menu.)
     var swaps = 0
     var buttonTaps = 0
+    // What the Sidekick's menu did with its last tap, in words (190).
+    var menuTap = ""
 
     // While the lens's own menu is open, and only then, this hears Android announce that the
     // person is heading for the home screen or the recent apps, and closes the menu. The menu
@@ -2241,6 +2246,14 @@ class Floater(val timer: Boolean) {
         // The grip beside it (tucked, or resting past the edge, 189), and where it is, in pixels.
         m["gripOpen"] = grip != null
         m["gripHover"] = hoverGrip
+        // What the strip and the Sidekick ask Android to keep from its Back gesture, in points of
+        // height at the edge (Android grants at most 200 per edge, 190).
+        m["gripExcluded"] = grip?.let { g -> if (Build.VERSION.SDK_INT >= 29) g.systemGestureExclusionRects.map { r -> listOf(r.left, r.top, r.width(), r.height()) } else null }
+        m["edgeAskedDp"] = if (Build.VERSION.SDK_INT >= 29) {
+            val dp = d.density
+            ((grip?.systemGestureExclusionRects?.sumOf { it.height() } ?: 0) + (view?.systemGestureExclusionRects?.sumOf { it.height() } ?: 0)) / dp.toDouble()
+        } else null
+        m["gripCancels"] = gripCancels
         m["gripBox"] = grip?.let { g ->
             val at = IntArray(2)
             g.getLocationOnScreen(at)
@@ -2249,6 +2262,17 @@ class Floater(val timer: Boolean) {
         // Only one menu open at a time (188): how often Prism was told, and taps handed to Prism.
         m["swaps"] = swaps
         m["buttonTaps"] = buttonTaps
+        m["menuTap"] = menuTap
+        // Where the cross is on the screen, in pixels, and how far down the status bar and the
+        // camera reach; how it showed while the Sidekick was last carried; whether Prism has the
+        // focus (the notification shade, pulled down, would take it) (190).
+        val cross = crossAt(context)
+        m["crossX"] = cross[0].toDouble()
+        m["crossY"] = (cross[1] + crossOff).toDouble()
+        m["topClear"] = topClear(context).toDouble()
+        m["crossFirst"] = crossFirst.toDouble()
+        m["crossMost"] = crossMost.toDouble()
+        m["prismFocus"] = PrismScreen.alive()?.hasWindowFocus()
         m["prismFanOut"] = fan != null
         m["menuCount"] = menu?.testCount() ?: 0
         m["menuEditing"] = menu?.testEditing() ?: false
@@ -3508,7 +3532,15 @@ class Floater(val timer: Boolean) {
             val left = 45 * dp
             val right = Math.max(left, w - 45 * dp)
             val top = 78 * dp
-            val bottom = Math.max(top, h - 100 * dp)
+            var bottom = Math.max(top, h - 100 * dp)
+            // In Prism, its blobs and their names keep above Prism's bar, so a tap on Prism's
+            // button is never one of theirs (190: on the S26, a Sidekick resting low fanned a blob
+            // whose name lay over the button, and the tap that should have swapped to Prism's
+            // blobs used that blob).
+            val bar = barTop
+            if (guest && this@Floater.foreground && bar != null) {
+                bottom = Math.max(top, Math.min(bottom, bar - (if (blobNames) 66 else 44) * dp))
+            }
             val onRight = cx > w / 2f
             val inward = if (onRight) Math.PI else 0.0
             // Which way the fan turns to point further down the screen, and which way to try first.
@@ -3858,13 +3890,18 @@ class Floater(val timer: Boolean) {
         private fun at(x: Float, y: Float): Int {
             var best = -1
             var nearest = Float.MAX_VALUE
+            // (On Prism's own button, with Prism in front, a blob's name is not the blob: the
+            // button is Prism's, 190. A blob itself still is, should one ever sit there.)
+            val b = buttonAt
+            val onButton = guest && this@Floater.foreground && b != null &&
+                Math.hypot((x - b[0]).toDouble(), (y - b[1]).toDouble()) < 40 * dp
             for (i in 0 until n) {
                 if (out[i] < 0.5f) continue
                 val dx = x - restX[i]
                 val dy = y - restY[i]
                 val d = if (dx * dx + dy * dy < (40 * dp) * (40 * dp)) {
                     Math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
-                } else if (blobNames && Math.abs(dx) < 40 * dp && dy > 0 && dy < 62 * dp) {
+                } else if (blobNames && !onButton && Math.abs(dx) < 40 * dp && dy > 0 && dy < 62 * dp) {
                     // (On its name: measured from where the name is drawn.)
                     Math.hypot(dx.toDouble(), (dy - 50 * dp).toDouble()).toFloat()
                 } else {
@@ -4102,6 +4139,7 @@ class Floater(val timer: Boolean) {
                         // Held: its small menu is up, and stays up.
                     } else if (i >= 0) {
                         // (A plus is given something; a blob is used.)
+                        menuTap = "on blob ${i + 1} of $n"
                         if (editing || items[i].kind == "empty") change(i) else choose(i)
                     } else if (!moved) {
                         // A tap beside the blobs closes the menu. A tap on the lens itself, in
@@ -4113,6 +4151,12 @@ class Floater(val timer: Boolean) {
                         val b = buttonAt
                         val onButton = guest && this@Floater.foreground && !onLens && b != null &&
                             Math.hypot((e.rawX - b[0]).toDouble(), (e.rawY - b[1]).toDouble()) < 40 * dp
+                        menuTap = when {
+                            onLens -> "on the Sidekick"
+                            onButton -> "beside the blobs, on Prism's button: handed to Prism"
+                            b != null -> "beside the blobs, ${(Math.hypot((e.rawX - b[0]).toDouble(), (e.rawY - b[1]).toDouble()) / dp).toInt()} points from Prism's button${if (!this@Floater.foreground) " (Prism not in front)" else ""}"
+                            else -> "beside the blobs (Prism has not said where its button is)"
+                        }
                         close()
                         if (onButton) {
                             buttonTaps++
@@ -4268,10 +4312,22 @@ class Floater(val timer: Boolean) {
         }
 
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            if (e.actionMasked == android.view.MotionEvent.ACTION_CANCEL) {
+                // A touch that began here, taken away by Android: most likely its Back gesture won
+                // (190: the owner went Back by accident at Hovering −60). Where, for the report.
+                gripCancels++
+                val at = IntArray(2)
+                getLocationOnScreen(at)
+                val dp = resources.displayMetrics.density
+                Trail.add("$who: a touch on its grab strip was taken by Android (probably Back), at y ${(e.rawY / dp).toInt()} points; the strip ${(at[0] / dp).toInt()},${(at[1] / dp).toInt()} ${(width / dp).toInt()} × ${(height / dp).toInt()} points (${if (hoverGrip) "resting past the edge" else "tucked"})")
+            }
             view?.onTouchEvent(e)
             return true
         }
     }
+
+    // (How many touches on a grab strip Android has taken away: for the report, 190.)
+    var gripCancels = 0
 
     // (Whether the grip is the one for resting past the edge (189), not the tucked one; and where
     // the Sidekick was when it was fitted.)
@@ -4281,7 +4337,7 @@ class Floater(val timer: Boolean) {
     private var hoverGripW = 0
 
     /** Puts the handle beside the tucked lens (or one resting past the edge), whose top is at [y], [wideDp] points wide from the edge. */
-    private fun openGrip(context: Context, y: Int, right: Boolean = tuckRight, wideDp: Float = 76f) {
+    private fun openGrip(context: Context, y: Int, right: Boolean = tuckRight, wideDp: Float = 76f, padDp: Float = 8f) {
         val v = view ?: return
         closeGrip(context)
         hoverGrip = false
@@ -4290,14 +4346,14 @@ class Floater(val timer: Boolean) {
             val dp = d.density
             val wide = (wideDp * dp).toInt()
             val lp = android.view.WindowManager.LayoutParams(
-                wide, v.ownSize() + (16 * dp).toInt(),
+                wide, v.ownSize() + (2 * padDp * dp).toInt(),
                 android.view.WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 android.graphics.PixelFormat.TRANSLUCENT,
             )
             lp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
             lp.x = if (right) d.widthPixels - wide else 0
-            lp.y = y - (8 * dp).toInt()
+            lp.y = y - (padDp * dp).toInt()
             val g = Grip(context)
             wm(context).addView(g, lp)
             grip = g
@@ -4307,6 +4363,7 @@ class Floater(val timer: Boolean) {
     }
 
     private fun closeGrip(context: Context) {
+        if (hoverGrip) view?.excludeSelf(true)
         hoverGrip = false
         val g = grip ?: return
         grip = null
@@ -4412,6 +4469,48 @@ class Floater(val timer: Boolean) {
      * lens falls in, the cross takes its colour for a moment, gives once, and sinks out of sight.
      * Its window counts for nothing except while a lens is being carried.
      */
+    // How far a floating window's own place is from its place on the screen, up and down (the
+    // status bar, a camera cut-out), as the cross's window found it: so that the Sidekick's cross is
+    // put where it is meant to be on the screen.
+    private var crossOff = 0
+
+    /**
+     * Where the cross is (its middle, in the floating windows' own places). The Sidekick's is at the
+     * top in the middle, below the status bar and the camera (from build 190), in Prism and over
+     * other apps alike: dropping it on Prism's button is gone. The workout timer's, and a lens of a
+     * pinned thing, stay at the bottom, exactly as before.
+     */
+    private fun crossAt(context: Context): FloatArray {
+        val d = context.resources.displayMetrics
+        val dp = d.density
+        return if (!timer && guest) floatArrayOf(d.widthPixels / 2f, topClear(context) + CROSS_BELOW * dp - crossOff)
+        else floatArrayOf(d.widthPixels / 2f, d.heightPixels - 104 * dp)
+    }
+
+    // (How far below the status bar and the camera the Sidekick's cross is, middle to their edge,
+    // in points: the ring swollen round the Sidekick, 38 points and drawn 1.22 times larger, is 46,
+    // and 6 more to spare.)
+    private val CROSS_BELOW = 52f
+
+    /** How far down the status bar and the camera cut-out reach, on the screen, in pixels. */
+    private fun topClear(context: Context): Float {
+        try {
+            if (Build.VERSION.SDK_INT >= 30) {
+                val i = wm(context).currentWindowMetrics.windowInsets.getInsets(
+                    android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.displayCutout(),
+                )
+                if (i.top > 0) return i.top.toFloat()
+            }
+        } catch (e: Exception) {}
+        val id = context.resources.getIdentifier("status_bar_height", "dimen", "android")
+        return if (id > 0) context.resources.getDimensionPixelSize(id).toFloat() else 24 * context.resources.displayMetrics.density
+    }
+
+    // (For the test: how the cross showed while the Sidekick was carried: as it was first picked
+    // up, and the most it showed.)
+    var crossFirst = -1f
+    var crossMost = 0f
+
     private inner class Target(context: Context) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val dp = resources.displayMetrics.density
@@ -4441,10 +4540,37 @@ class Floater(val timer: Boolean) {
             try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, l) } catch (e: Exception) {}
         }
 
-        /** The Sidekick (not the timer) is dismissed quietly: nothing shows until it is carried low. */
+        override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+            super.onLayout(changed, left, top, right, bottom)
+            // (How its window's own place and its place on the screen differ: see [crossOff].)
+            val l = lp ?: return
+            post {
+                if (!isAttachedToWindow) return@post
+                val at = IntArray(2)
+                getLocationOnScreen(at)
+                if (scaleY == 1f && translationY == 0f) crossOff = at[1] - l.y
+            }
+        }
+
+        /** Its window put where the cross is now (the Sidekick's at the top, 190). */
+        private fun goWhereTheCrossIs() {
+            val l = lp ?: return
+            val c = crossAt(context)
+            val x = Math.round(c[0] - l.width / 2f)
+            val y = Math.round(c[1] - l.height / 2f)
+            if (l.x == x && l.y == y) return
+            l.x = x; l.y = y
+            try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, l) } catch (e: Exception) {}
+        }
+
+        /** The Sidekick (not the timer) is dismissed quietly: a thin ring at the top, faint until it nears. */
         private fun quiet() = !timer && guest
 
-        /** How near the bottom the Sidekick is being carried: 0 not yet, 1 down there. It fades in with it. */
+        /**
+         * How near the cross the Sidekick is being carried: from [FAINT] as it is picked up, to 1
+         * there. It shows that much (190: at once, faintly, since nobody expects a way out at the
+         * top; it was hidden until the Sidekick was carried into the bottom quarter).
+         */
         var near = 0f
             set(v) {
                 val n = v.coerceIn(0f, 1f)
@@ -4453,21 +4579,27 @@ class Floater(val timer: Boolean) {
                 if (quiet() && up && gulp < 0f) {
                     animate().cancel()
                     alpha = n
+                    crossMost = Math.max(crossMost, n)
                     invalidate()
                 }
             }
 
-        /** A lens has been picked up: the cross shows. (The Sidekick's only as it comes near.) */
+        /** A lens has been picked up: the cross shows. (The Sidekick's faintly at first, clearer as it nears.) */
         fun rise() {
             if (!up) {
                 up = true
                 gulp = -1f
                 translationY = 0f
+                crossMost = 0f
+                goWhereTheCrossIs()
                 window(1f)
             }
             if (quiet()) {
                 animate().cancel()
+                if (near < FAINT) near = FAINT
                 alpha = near
+                crossFirst = near
+                crossMost = Math.max(crossMost, near)
             } else {
                 animate().alpha(1f).setDuration(160).start()
             }
@@ -4516,8 +4648,8 @@ class Floater(val timer: Boolean) {
         }
 
         override fun onDraw(canvas: android.graphics.Canvas) {
-            // In Prism the side Blob is dropped on Prism's own button, which is there to be seen: no cross.
-            if (!timer && guest && this@Floater.foreground && buttonAt != null) return
+            // (Until 190, in Prism the Sidekick was dropped on Prism's own button and no cross was
+            // drawn. Now its cross is at the top in Prism too.)
             val c = width / 2f
             val cy = height / 2f
             // The small timer has a place either side of the cross. (Not while the cross is swallowing.)
@@ -4610,8 +4742,6 @@ class Floater(val timer: Boolean) {
         // Where it stood, and whether tucked in, when it was last picked up: where it is back if sent away.
         private var homeX = -1; private var homeY = -1; private var homeTucked = false
 
-        /** In Prism, the side Blob is sent away by dropping it on Prism's own button, where the two fuse. No cross is shown. */
-        private fun fusing() = !timer && guest && this@Floater.foreground && buttonAt != null
         private var dragged = false
         private var snapped = false
 
@@ -4877,7 +5007,8 @@ class Floater(val timer: Boolean) {
             if (body == null) shaders()
             // All of it is the lens's to touch, even where it lies over the phone's own
             // swipe-in-from-the-edge zone: a touch there is for the lens and is not a "back".
-            if (Build.VERSION.SDK_INT >= 29) systemGestureExclusionRects = listOf(android.graphics.Rect(0, 0, w, h))
+            // (Not while its grab strip covers it, 190: the strip asks for it.)
+            if (Build.VERSION.SDK_INT >= 29) systemGestureExclusionRects = if (hoverGrip) emptyList() else listOf(android.graphics.Rect(0, 0, w, h))
         }
 
         /** For the long test: where the lens itself is, and whether it is on its way anywhere. */
@@ -5304,12 +5435,14 @@ class Floater(val timer: Boolean) {
             }
             val was = snapped
             val wasSpot = spot
-            // The Sidekick's way out shows only once it is carried into the bottom quarter, more
-            // the lower it goes; and only there does it pull.
+            // The Sidekick's way out, at the top (190), shows faintly as soon as it is picked up,
+            // clearer the nearer it is carried (fully within its pull, nearly half the screen away
+            // at its faintest); it pulls only when near.
             val quiet = !timer && guest
             if (quiet) {
                 val h = resources.displayMetrics.heightPixels
-                target?.near = ((cy - h * 0.74f) / (h * 0.12f))
+                val far = 1f - ((dist - 60 * dp) / (h * 0.45f)).coerceIn(0f, 1f)
+                target?.near = FAINT + (1f - FAINT) * far
             }
             // (With three side by side each one's pull reaches less far, so that they do not fight.)
             val reach = if (three) (if (snapped && spot == near) 66 else 52) else if (quiet) (if (snapped) 84 else 60) else (if (snapped) 118 else 92)
@@ -5731,7 +5864,9 @@ class Floater(val timer: Boolean) {
         // least [GRAB] points wide and a little taller than it, takes its touches (as the tucked
         // Sidekick's grip does) and keeps them from Android's back gesture. It follows the Sidekick:
         // taken away as soon as it moves, put back where it comes to rest.
-        private val GRAB = 56f
+        private val GRAB = 80f
+        // (Reaching 24 points above and below it: 190, as the owner asked for more room.)
+        private val GRAB_PAD = 24f
         private val gripCheck = Runnable { fitGrip() }
 
         /** Fits the grab area again in a moment (it rests past the edge, or its menu has closed). */
@@ -5758,8 +5893,11 @@ class Floater(val timer: Boolean) {
             }
             if (hoverGrip && hoverGripX == lp.x && hoverGripY == lp.y && hoverGripW == lp.width) return
             val right = lp.x + lp.width / 2 > screen / 2
-            openGrip(context, lp.y, right, GRAB)
+            openGrip(context, lp.y, right, GRAB, GRAB_PAD)
             hoverGrip = grip != null
+            // (The strip covers the Sidekick's own window: its own exclusion is given up meanwhile,
+            // so that the two together never ask Android for more than its 200 points per edge.)
+            if (hoverGrip) excludeSelf(false)
             hoverGripX = lp.x; hoverGripY = lp.y; hoverGripW = lp.width
             if (hoverGrip) Trail.add("$who: resting past the edge, ${(shows / dp).toInt()} points of it showing: a grab area ${GRAB.toInt()} points wide beside it")
         }
@@ -5767,14 +5905,21 @@ class Floater(val timer: Boolean) {
         private fun dropHoverGrip() {
             hoverGrip = false
             if (!tucked) closeGrip(context)
+            excludeSelf(true)
+        }
+
+        /** Whether its own window is kept from Android's Back gesture (all of it), or not. */
+        fun excludeSelf(on: Boolean) {
+            if (Build.VERSION.SDK_INT < 29) return
+            systemGestureExclusionRects = if (on) listOf(android.graphics.Rect(0, 0, width, height)) else emptyList()
         }
 
         /** The middle of each of the timer's places at the foot: 0 the cross, 1 pause to its left, 2 count up to its right. */
         private fun placeX(k: Int) = crossX() + (if (k == 1) -SIDE else if (k == 2) SIDE else 0) * dp
 
         /** The middle of the cross, on the screen. In Prism, for the side Blob, that is Prism's own button. */
-        private fun crossX() = if (fusing()) buttonAt!![0] else resources.displayMetrics.widthPixels / 2f
-        private fun crossY() = if (fusing()) buttonAt!![1] else resources.displayMetrics.heightPixels - 104 * dp
+        private fun crossX() = crossAt(context)[0]
+        private fun crossY() = crossAt(context)[1]
 
         // A firm spring for a thrown lens: it carries on a little with the throw and comes to rest
         // without bouncing.
@@ -5807,10 +5952,8 @@ class Floater(val timer: Boolean) {
          * then stays away until the workout page is opened; a pinned thing is unpinned.
          */
         private fun close() {
-            val fused = fusing()
-            Trail.add(if (fused) "$who dropped on Prism's button: they fuse" else "$who dropped on the cross")
-            // (Prism's button answers for itself as it takes the Blob in.)
-            if (fused) channel?.invokeMethod("fused", null) else haptic(context, "thud")
+            Trail.add("$who dropped on the cross")
+            haptic(context, "thud")
             val c = context
             val wasWorkout = mode() == 1
             val colour = lensColor()
@@ -5867,9 +6010,14 @@ class Floater(val timer: Boolean) {
             // Where it would coast to decides where it ends up, so a flick carries it.
             val coastX = px + velX * 0.16f
             val coastY = py + velY * 0.18f
-            // A flick down toward the middle is a throw at the cross.
+            // A flick toward the cross is a throw at it: the Sidekick's up toward the top (190), the
+            // timer's (and a pinned thing's) down toward the bottom, as before.
             val w = lp.width; val h = lp.height
-            val atCross = velY > 700 && coastY + h / 2f > screen.heightPixels * 0.70f && Math.abs(coastX + w / 2f - crossX()) < 120 * dp
+            val atCross = if (!timer && guest) {
+                velY < -700 && coastY + h / 2f < screen.heightPixels * 0.30f && Math.abs(coastX + w / 2f - crossX()) < 120 * dp
+            } else {
+                velY > 700 && coastY + h / 2f > screen.heightPixels * 0.70f && Math.abs(coastX + w / 2f - crossX()) < 120 * dp
+            }
             leaving = snapped || atCross
             if (leaving) {
                 tx = crossX() - w / 2f; ty = crossY() - h / 2f

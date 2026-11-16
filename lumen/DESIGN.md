@@ -106,17 +106,22 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
 - **Change** opens the list titled "Change ..." with a red Remove in it; while it is up, the button
   becomes the blob being changed, and goes back after.
 - **The Sidekick never takes the keyboard or the focus** of the app underneath.
-- **Dismissing the Sidekick is quiet**: nothing shows while it is moved; a thin ring fades in only
-  when it is carried into the bottom quarter, and lights up when it would be dismissed there.
+- **Dismissing the Sidekick is at the top** (from 190), in Prism and over other apps alike: a thin
+  ring with a small cross, in the middle below the status bar and the camera. It shows faintly as soon
+  as the Sidekick is picked up (nobody expects a way out at the top), clearer as it nears, and lights
+  up when letting go would dismiss it. A fling up toward it dismisses it too. Dropping the Sidekick
+  on Prism's button no longer sends it away. (The workout timer's cross, with Pause and Count up,
+  stays at the bottom.)
 - Its two places at a screen edge are two dials side by side in its own panel, **Hovering** (how far
   from the edge it rests) and **Tucked in** (how much of it shows), in whole points, like the Train
   page's kg and reps. **Hovering** goes from 60 points past the edge (75% of the Sidekick past it,
   shown as −60) to 36 from it; the default stays 8. **Tucked in** shows from 18 to 40 points (from
   189).
-- **Resting past the edge, it is still easy to take hold of** (from 189): when less than 56 points
-  of it shows, a strip 56 points wide beside it, from the edge, takes its touches and keeps them from
-  Android's back gesture, as the tucked Sidekick's grip does. The strip follows it: gone while it
-  moves, back where it comes to rest. Touching one puts the Sidekick in that state at once; sliding moves it the way
+- **Resting past the edge, it is still easy to take hold of** (from 189; larger from 190, as the
+  owner asked): when less than 80 points of it shows, a strip 80 points wide from the edge, reaching
+  24 points above and below it, takes its touches and keeps them from Android's Back gesture, as the
+  tucked Sidekick's grip does. The strip follows it: gone while it moves, back where it comes to
+  rest. Touching one puts the Sidekick in that state at once; sliding moves it the way
   the finger goes, on either edge; let go, it goes back to the state it was in.
 - **Its own settings panel** (Android's, over the app it is in; the owner's rule from build 185):
   - **Where:** beside it, on the side away from it, at its height (kept on the screen), as tall as

@@ -139,9 +139,6 @@ class RestBubble with WidgetsBindingObserver {
     }
   }
 
-  /// The side Blob was dropped on Prism's button and is fusing with it. Set by the shell.
-  VoidCallback? onFused;
-
   /// Whether there can be floating elements at all.
   bool get canFloat => floatIn.value || floatOut.value;
 
@@ -552,8 +549,6 @@ class RestBubble with WidgetsBindingObserver {
         onTimer?.call('off');
       case 'pinned':
         onPinned?.call(call.arguments as String?);
-      case 'fused':
-        onFused?.call();
       case 'sidekickOpened':
         onSidekickOpened?.call('${call.arguments}');
       case 'buttonTap':

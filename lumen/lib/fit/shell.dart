@@ -963,17 +963,8 @@ class _ShellState extends State<Shell>
     setState(() {});
   }
 
-  /// The side Blob was dropped on the button: the button takes it in, with one small gulp.
-  void _fused() {
-    if (!mounted) {
-      return;
-    }
-    Haptics.thud();
-    Diag.instance.event('side blob fused with the button');
-    _kick
-      ..jumpTo(0.8)
-      ..animateTo(1, spring: Motions.expressiveFast);
-  }
+  // (Until 190 the Sidekick could be dropped on the button to send it away, and the button took
+  // it in with a small gulp. Its way out is now the cross at the top, in Prism too.)
 
   /// Only one menu open at a time (188, the owner's choice): the Sidekick's own menu or panel has
   /// just opened, so Prism's blobs close (the triangle follows its rule).
@@ -1006,7 +997,7 @@ class _ShellState extends State<Shell>
   /// While the blobs are out Android knows where they sit, so a lens let go among them is put back.
   void _tellFan() {
     final double dpr = MediaQuery.devicePixelRatioOf(context);
-    // (And where the button itself is, always: the side Blob dropped on it fuses with it.)
+    // (And where the button itself is, always: a tap there on the Sidekick's open menu is Prism's, 188.)
     // (And where its bar and button begin, as Prism's own panels end: the Sidekick's panel ends
     // above them too, from build 186.)
     RestBubble.instance.tellButton(
@@ -2590,7 +2581,6 @@ class _ShellState extends State<Shell>
         }
         _run(action);
       }
-      ..onFused = _fused
       ..onPinned = (String? key) {
         // Put in the floating lens from its own menu: Prism keeps it, and it leaves the menu.
         RestBubble.instance.setPin(key);
@@ -5256,7 +5246,7 @@ class _ShellState extends State<Shell>
                   _open &&
                   _buttonTapsFromSidekick == tapsWas + 1 &&
                   _pointsDown(_signTurn.target),
-              '${both(s)}; Prism was given ${_buttonTapsFromSidekick - tapsWas} tap(s); its last touch: ${s['touch'] ?? '?'}',
+              '${both(s)}; Prism was given ${_buttonTapsFromSidekick - tapsWas} tap(s); the Sidekick\'s menu took the tap ${s['menuTap'] ?? '?'}',
             );
             final int openingsWas = _sidekickOpenings;
             final bool swapped = await openMenu();
@@ -6561,14 +6551,32 @@ class _ShellState extends State<Shell>
               (pastShare - 0.75).abs() < 0.04,
               '${(pastShare * 100).toStringAsFixed(1)}% of its glass past the edge',
             );
+            // (190: the owner asked for more room, 80 wide and the Sidekick + 48 tall; and it must
+            // be kept from Back, within Android's 200 points per edge.)
+            final double gripH = gb.length == 4 ? numOf(gb[3]) / dp : 0;
+            final List<Object?> ex =
+                (s['gripExcluded'] as List<Object?>?) ?? const <Object?>[];
+            final bool exAll = ex.any((Object? r) {
+              final List<Object?> q = r is List ? r : const <Object?>[];
+              return q.length == 4 &&
+                  numOf(q[0]) <= 0 &&
+                  numOf(q[1]) <= 0 &&
+                  numOf(q[2]) >= numOf(gb.length == 4 ? gb[2] : 0) &&
+                  numOf(q[3]) >= numOf(gb.length == 4 ? gb[3] : 0);
+            });
+            final double asked = numOf(s['edgeAskedDp']);
             t.check(
-              'sidekick: resting past the edge, a grab area at least 56 points wide beside it, at the edge, kept from the back gesture',
+              'sidekick: resting past the edge, a grab strip 80 points wide and 48 taller than it, at the edge, kept from Back within Android\'s 200 per edge',
               s['gripOpen'] == true &&
                   s['gripHover'] == true &&
-                  gripW >= 55.5 &&
+                  gripW >= 79.5 &&
+                  gripH >= numOf(s['size']) / dp + 47.5 &&
                   gripAtEdge &&
-                  gripBeside,
-              'grip ${s['gripOpen'] == true ? 'open' : 'none'} (for resting past the edge: ${s['gripHover']}), ${gripW.toStringAsFixed(1)} points wide, at the edge $gripAtEdge, beside it $gripBeside; ${showing(s).toStringAsFixed(1)} points of the Sidekick showing',
+                  gripBeside &&
+                  (s['gripExcluded'] == null || (exAll && asked <= 200.5)),
+              'grip ${s['gripOpen'] == true ? 'open' : 'none'} (for resting past the edge: ${s['gripHover']}), ${gripW.toStringAsFixed(1)} × ${gripH.toStringAsFixed(1)} points (the Sidekick ${(numOf(s['size']) / dp).toStringAsFixed(1)}), at the edge $gripAtEdge, beside it $gripBeside; '
+              '${s['gripExcluded'] == null ? 'this Android cannot keep it from Back' : 'kept from Back: all of it $exAll, ${asked.toStringAsFixed(0)} of the 200 points Android allows at that edge${asked > 200.5 ? ' (OVER: Android will cut it short)' : ''}'}; '
+              '${showing(s).toStringAsFixed(1)} points of the Sidekick showing; touches on a strip taken by Android so far: ${s['gripCancels']}',
             );
           } else {
             t.check(
@@ -6695,14 +6703,26 @@ class _ShellState extends State<Shell>
           s['lens'] == true && s['guest'] == true,
           'shown ${s['lens']}',
         );
-        // Carried down to the middle at the bottom, and the touch taken away there by Android
-        // (a cancel, not a finger let go): it is not dismissed, and goes back where it began.
+        // The Sidekick's way out is at the top, in the middle (190): where Android says it is.
         s = await where();
+        final Offset sideCross = Offset(
+          numOf(s['crossX']) / dpr,
+          numOf(s['crossY']) / dpr,
+        );
+        t.check(
+          'sidekick: its cross is at the top in the middle, clear of the status bar and the camera',
+          (numOf(s['crossX']) / dpr - sc.width / 2).abs() < 2 &&
+              numOf(s['crossY']) - 46 * dp >= numOf(s['topClear']) &&
+              numOf(s['crossY']) < h * 0.2,
+          'its middle at ${sideCross.dx.toStringAsFixed(0)},${sideCross.dy.toStringAsFixed(0)} points; swollen, its top at ${((numOf(s['crossY']) - 46 * dp) / dpr).toStringAsFixed(1)}; the status bar and camera reach ${(numOf(s['topClear']) / dpr).toStringAsFixed(1)}',
+        );
+        // Carried up to the middle at the top, and the touch taken away there by Android (a
+        // cancel, not a finger let go): it is not dismissed, and goes back where it began.
         final double fromX = (s['x'] as num?)?.toDouble() ?? -1,
             fromY = (s['y'] as num?)?.toDouble() ?? -1;
         s = await press(
-          'sidekick carried to the bottom, the touch cancelled',
-          <Offset>[cross],
+          'sidekick carried to the top, the touch cancelled',
+          <Offset>[sideCross],
           legMs: 700,
           endMs: 300,
           settleMs: 1500,
@@ -6711,16 +6731,25 @@ class _ShellState extends State<Shell>
         await Robot.wait(900);
         s = await where();
         t.check(
-          'sidekick: carried to the bottom and the touch cancelled, it is not dismissed and goes back where it began',
+          'sidekick: carried to the top and the touch cancelled, it is not dismissed and goes back where it began',
           s['lens'] == true &&
               (((s['x'] as num?)?.toDouble() ?? -99) - fromX).abs() < 6 &&
               (((s['y'] as num?)?.toDouble() ?? -99) - fromY).abs() < 6,
           'shown ${s['lens']}, at ${s['x']},${s['y']} (began at ${fromX.round()},${fromY.round()})',
         );
-        // Carried right down to the middle at the bottom: it is dismissed.
+        // (The cross showed faintly as soon as it was picked up, and fully at the top.)
+        t.check(
+          'sidekick: picked up, its cross shows faintly at once, and fully when it is carried there',
+          numOf(s['crossFirst']) >= 0.25 &&
+              numOf(s['crossFirst']) <= 0.45 &&
+              numOf(s['crossMost']) >= 0.95,
+          'first ${numOf(s['crossFirst']).toStringAsFixed(2)}, at most ${numOf(s['crossMost']).toStringAsFixed(2)}',
+        );
+        // Carried right up to the middle at the top: it is dismissed; and the notification shade
+        // never came down (Prism keeps the focus).
         s = await press(
-          'sidekick carried to the bottom',
-          <Offset>[cross],
+          'sidekick carried to the top',
+          <Offset>[sideCross],
           legMs: 700,
           endMs: 300,
           settleMs: 1500,
@@ -6728,9 +6757,41 @@ class _ShellState extends State<Shell>
         await Robot.wait(900);
         s = await where();
         t.check(
-          'sidekick: carried to the bottom middle and let go, it is dismissed',
+          'sidekick: carried to the top middle and let go, it is dismissed',
           s['lens'] != true,
           'shown ${s['lens']}',
+        );
+        t.check(
+          'sidekick: carried to the top, the notification shade never comes down',
+          s['prismFocus'] != false,
+          'Prism has the focus ${s['prismFocus']}',
+        );
+        await t.lens(<String, Object?>{'op': 'side', 'on': true});
+        await Robot.wait(1200);
+        // A fling up toward the top middle: it is thrown at the cross, and dismissed (190).
+        s = await where();
+        final Offset flingFrom = Offset(
+          (numOf(s['x']) + numOf(s['size']) / 2) / dpr,
+          (numOf(s['y']) + numOf(s['size']) / 2) / dpr,
+        );
+        s = await press(
+          'sidekick flung up',
+          <Offset>[
+            Offset(
+              flingFrom.dx + (sideCross.dx - flingFrom.dx) * 0.4,
+              flingFrom.dy - 160,
+            ),
+          ],
+          legMs: 120,
+          flick: true,
+          settleMs: 1500,
+        );
+        await Robot.wait(900);
+        s = await where();
+        t.check(
+          'sidekick: flung up toward the top middle, it is dismissed',
+          s['lens'] != true && s['prismFocus'] != false,
+          'shown ${s['lens']}, Prism has the focus ${s['prismFocus']}, flung from ${flingFrom.dx.round()},${flingFrom.dy.round()}',
         );
         await t.lens(<String, Object?>{'op': 'side', 'on': true});
         await Robot.wait(1200);

@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Prism, build 190 (16 November 2026)
+
+**File:** `releases/prism-build-190.apk`
+
+Needs Play Protect paused to install. Can be installed over build 189.
+
+**Easier to take hold of at Hovering past the edge,** as you asked after trying 189: the invisible strip that takes your touch for it is now 80 points wide (was 56) and reaches 24 points above and below it, all of it kept from Android's Back swipe. If Back still wins somewhere, "Send what just happened" now shows exactly where.
+
+**Dismiss the Sidekick at the top, as planned:**
+- **The Sidekick's way out is at the top now,** in the middle, below the status bar and the camera, in Prism and over other apps alike.
+- **The ring shows faintly as soon as you pick the Sidekick up,** so you know it's there, and grows clearer as you carry it nearer. Let go on it and the Sidekick goes.
+- **A fling up toward it** sends the Sidekick away too.
+- **Dropping the Sidekick on Prism's button** no longer sends it away.
+- **The workout timer** is unchanged: its cross, Pause and Count up stay at the bottom.
+- **Dragging the Sidekick up to the top** never pulls down the notification shade.
+
+**The swap fixed:** with the Sidekick resting low in Prism, one of its blobs (or the name under it) could sit over Prism's button, so a tap on the triangle used that blob instead of swapping to Prism's blobs. Its blobs now stay above Prism's bar.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone. The cross and the Sidekick's menu are Android's.
+
 ## Prism, build 189 (16 November 2026)
 
 **File:** `releases/prism-build-189.apk`
