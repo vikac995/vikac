@@ -102,6 +102,16 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
 - **Blobs always stand together in the middle.** Remove: the others close up at once. Add from a
   blob: the new one goes right after it. Add Blob: at the right end. Empty places are never shown.
   With nothing at all, one "+" blob.
+- **The Sidekick's fan and its names** (from 191, the owner's choice in the mock-up
+  https://claude.ai/artifact/7b5NvRHX4jVK8UVKfEQjoh):
+  - **The fan turns away from corners,** so its blobs keep their normal spacing, never overlap, and
+    stay clear of the screen's edges and of Prism's bar. Only where no turn fits is the arc made a
+    little larger (its blobs closer round it, so they keep their spacing).
+  - **Each name sits on the far side of its blob,** along the line from the Sidekick's middle
+    through the blob (left of it on the right side, right of it on the left), on a soft dark pill. At
+    most about one and a half blobs wide, ending in "…"; kept on the screen and off Prism's bar. A
+    name never covers a blob, a badge, the Sidekick or another name; blobs and badges are always
+    drawn over names.
 - **The button never goes bare.** With an empty menu it keeps its look, in the light's own colours.
 - **Change** opens the list titled "Change ..." with a red Remove in it; while it is up, the button
   becomes the blob being changed, and goes back after.
@@ -114,9 +124,9 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   stays at the bottom.)
 - Its two places at a screen edge are two dials side by side in its own panel, **Hovering** (how far
   from the edge it rests) and **Tucked in** (how much of it shows), in whole points, like the Train
-  page's kg and reps. **Hovering** goes from 60 points past the edge (75% of the Sidekick past it,
-  shown as −60) to 36 from it; the default stays 8. **Tucked in** shows from 18 to 40 points (from
-  189).
+  page's kg and reps. **Hovering** goes from 48 points past the edge (58% of the Sidekick's glass
+  past it, shown as −48) to 15 from it; the default stays 8 (the owner's range from 191; −60 to 36
+  in 189 and 190). **Tucked in** shows from 18 to 40 points (from 189).
 - **Resting past the edge, it is still easy to take hold of** (from 189; larger from 190, as the
   owner asked): when less than 80 points of it shows, a strip 80 points wide from the edge, reaching
   24 points above and below it, takes its touches and keeps them from Android's Back gesture, as the
@@ -144,9 +154,9 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
     overshoot), faint while it is small.
   - **While it is open:** the Sidekick stays put and on top. It can still be dragged by hand, and the
     panel follows it up and down. A tap on the Sidekick closes the panel.
-  - **While a finger is on a dial:** the rest of the panel goes see-through (drawn at 0.2, the
-    owner's number, from 189; 0.4 before). The whole "Where it rests" section, its title and both
-    dials, stays fully solid, on a backing of its own, so it reads as one block (from 187).
+  - **While a finger is on a dial:** the rest of the panel is gone, edge and all (the owner's choice,
+    from 191; 0.2 in 189 and 190, 0.4 before). Only the "Where it rests" section, its title and both
+    dials, stays, fully solid, on a backing of its own, so it reads as one block (from 187).
   - **Let go:** the panel is solid again right away, on the quick spring, and the Sidekick goes back
     with it. The only wait is a tenth of a second, too short to notice, so a finger straight back on
     the dial carries on without a flash (from 187; 186 waited 0.6 s, much too long).

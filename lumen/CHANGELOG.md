@@ -1,5 +1,26 @@
 # Lumen changelog
 
+## Prism, build 191 (16 November 2026)
+
+**File:** `releases/prism-build-191.apk`
+
+Needs Play Protect paused to install. Can be installed over build 190.
+
+**The Sidekick's fan and its names, as you chose in the mock-up ("Away from the Sidekick", and the turned fan):**
+- **No more pile-up in the corners.** With the Sidekick high or low at a side, its blobs used to be pushed into the corner one by one, and two could land on the same spot. Now the fan turns away from the corner, and if turning isn't enough, it spreads a little wider, always keeping the usual space between blobs.
+- **Each name sits beside its blob, on the side away from the Sidekick,** on a soft dark pill, so it never covers another blob, a badge or the Sidekick. Long names end in "…". Names stay on the screen and off Prism's bar.
+- **Blobs and their badges are always drawn over names.**
+- **A tap on a name still opens its blob.**
+
+**Your decisions from trying 190:**
+- **Hovering goes from −48 to 15** (was −60 to 36). At −48 a little over half of the Sidekick is past the edge, harder to flick away by accident. With 15 at most, its settings panel is about 21 points wider. The grab strip still comes at −48.
+- **While you hold a dial, the rest of the panel disappears completely,** edge and all. Only "Where it rests" stays, solid.
+
+**From the 189 test reports:** two checks on the S25 were wrong, not the app. One read a spot that the test had scrolled off the panel. The other measured the grab strip against a stale position. Both now read the right things. Every report now says how the phone is navigated (buttons or gestures), and checks that only matter with gestures say "not applicable" on button navigation.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses. The layout's arithmetic checked for both phones' screens at six places: nothing overlaps.
+**Not checked:** on a phone.
+
 ## Prism, build 190 (16 November 2026)
 
 **File:** `releases/prism-build-190.apk`

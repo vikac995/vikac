@@ -583,11 +583,11 @@ internal class PanelView(
 
     private fun smooth(t: Float) = t * t * (3 - 2 * t)
 
-    // While a dial is held, how see-through the rest of the panel goes (0.8: it is drawn at 0.2,
-    // the owner's number in 189; 0.4 in 186 to 188). The whole "Where it rests" section stays
-    // solid: its title and both dials, on a backing of its own (build 187; 186 kept only the dial
-    // held).
-    private val REST_SEE = 0.8f
+    // While a dial is held, how see-through the rest of the panel goes: all the way (1.0: it is
+    // not drawn at all, the owner's choice in 191; 0.2 in 189 and 190, 0.4 in 186 to 188). The
+    // whole "Where it rests" section stays solid: its title and both dials, on a backing of its own
+    // (build 187; 186 kept only the dial held).
+    private val REST_SEE = 1.0f
 
     // The dial held, or just let go ("" when none): while it is set, "Where it rests" is drawn
     // solid, apart from the see-through panel.
@@ -640,7 +640,8 @@ internal class PanelView(
         lastCovers = covers(outline)
         // It fades in as it grows out of the Sidekick and out as it shrinks back in: while it is
         // small it is all but clear, so no dark box is ever seen round the Sidekick. While a dial
-        // is held it is all but see-through (at 0.2), to see where the Sidekick goes; on the dial's spring.
+        // is held it is gone (191), but for "Where it rests", to see where the Sidekick goes; on the
+        // dial's spring.
         val grown = smooth((tt / 0.4f).coerceIn(0f, 1f))
         val fade = grown * (1f - REST_SEE * clear.value.coerceIn(0f, 1f))
         lastFade = fade
@@ -656,7 +657,10 @@ internal class PanelView(
             letGoAt = 0L
         }
         excludeDials()
-        if (tt < 0.002f || fade < 0.004f) return
+        // (Wholly see-through while a dial is held (191), the panel itself draws nothing, edge and
+        // hairline included; "Where it rests" is still drawn, solid, below.)
+        val body = fade >= 0.004f
+        if (tt < 0.002f || (!body && solidDial.isEmpty())) return
         val corner = lerp(sr, 36 * dp, tt.coerceIn(0f, 1f))
         val outer = canvas.save()
         // The Sidekick's glass is never drawn over: the panel has a hole where the Sidekick is,
@@ -665,20 +669,22 @@ internal class PanelView(
         clip.reset()
         clip.addCircle(lx, ly, sr, Path.Direction.CW)
         clipOut(canvas, clip)
-        if (fade < 0.999f) canvas.saveLayerAlpha(outline, (fade * 255).toInt())
-        paint.style = Paint.Style.FILL
-        paint.color = cSurface
-        canvas.drawRoundRect(outline, corner, corner, paint)
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 1 * dp
-        paint.color = cHairline
-        canvas.drawRoundRect(outline, corner, corner, paint)
-        paint.style = Paint.Style.FILL
+        if (body && fade < 0.999f) canvas.saveLayerAlpha(outline, (fade * 255).toInt())
+        if (body) {
+            paint.style = Paint.Style.FILL
+            paint.color = cSurface
+            canvas.drawRoundRect(outline, corner, corner, paint)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1 * dp
+            paint.color = cHairline
+            canvas.drawRoundRect(outline, corner, corner, paint)
+            paint.style = Paint.Style.FILL
+        }
         // Its contents come in between 5% and 30% of the way, as in Prism; drawn at their own
         // size, scaled with the panel, as Prism's transform does.
         val a = ((tt - 0.05f) / 0.25f).coerceIn(0f, 1f)
         if (opened && !closing && !sampling) leastSinceOpen = Math.min(leastSinceOpen, a)
-        if (a > 0.001f) {
+        if (body && a > 0.001f) {
             canvas.save()
             clip.reset()
             clip.addRoundRect(outline, corner, corner, Path.Direction.CW)
@@ -1365,7 +1371,7 @@ internal class PanelView(
      * software three times, as it is, without the ticks and without the numbers, onto clear pixels;
      * the differences are the ticks and the numbers. Says:
      * - how opaque the section's own area is at its least (255 solid), and a point of the rest of
-     *   the panel (on the Labels row, right of its name: about 51 while a dial is held);
+     *   the panel (in its left margin, halfway down: 0 while a dial is held, solid otherwise);
      * - for each dial, how many pixels its number has and how opaque they are at the least;
      * - for each dial, how many pixels its ticks have, how many of those lie outside its pill (its
      *   rounded outline, 2 points in), and the room under the lowest, in points.
@@ -1428,12 +1434,15 @@ internal class PanelView(
                 if (a >= 0) least = Math.min(least, a)
             }
             m["pixBlockLeast"] = least
-            // A point of the rest of the panel, drawn on its own.
-            val labels = parts.firstOrNull { it.kind == Kind.LABEL && it.label == "Labels" }
-            if (labels != null) {
+            // A point of the rest of the panel, drawn on its own: in its left margin, 5 points in,
+            // halfway down. Nothing but the panel's own body is ever there (the "Where it rests"
+            // block starts 10 points in), it is inside the panel whatever the scroll, and it is solid
+            // when the panel is. (Until 191 it was on the Labels row, which on the S25 the test's
+            // earlier taps on the two switches had scrolled out above the panel's top: 189 read 0.)
+            run {
                 val one = android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888)
                 val c1 = Canvas(one)
-                c1.translate(-(box.left + pad + innerW - 4 * dp), -(box.top + labels.y - scroll + 10 * dp * fs))
+                c1.translate(-(box.left + 5 * dp), -(box.top + box.height() / 2f))
                 draw(c1)
                 m["pixRest"] = (one.getPixel(0, 0) ushr 24) and 0xFF
                 one.recycle()

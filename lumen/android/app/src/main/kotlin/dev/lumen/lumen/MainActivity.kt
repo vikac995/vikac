@@ -1815,6 +1815,96 @@ class Floater(val timer: Boolean) {
     private val badgePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
 
     /** The small number on an app: how many notifications it has. Drawn with its middle at the given place. */
+    /**
+     * For the button test (191): the Sidekick's fan and its names, laid out as its menu would lay
+     * them out with the Sidekick resting high, in the middle and low on each side, on this phone's
+     * screen, with its own blobs, names and badges, in Prism (above its bar) or not; and how clear
+     * of each other everything is in each, in points.
+     */
+    private fun fanCheck(context: Context): List<HashMap<String, Any?>> {
+        val v = view ?: return emptyList()
+        val d = context.resources.displayMetrics
+        val dp = d.density
+        var w = d.widthPixels.toFloat()
+        var h = d.heightPixels.toFloat()
+        if (Build.VERSION.SDK_INT >= 30) {
+            try {
+                val b = wm(context).currentWindowMetrics.bounds
+                w = b.width().toFloat(); h = b.height().toFloat()
+            } catch (e: Exception) {}
+        }
+        val win = v.lp.width.toFloat()
+        val lensR = win / 2f - 5 * dp
+        val paint = android.text.TextPaint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        paint.textSize = 13.5f * dp
+        try {
+            paint.typeface = android.graphics.Typeface.createFromAsset(context.assets, "flutter_assets/assets/fonts/Inter.ttf")
+            if (Build.VERSION.SDK_INT >= 26) paint.fontVariationSettings = "'wght' 650"
+        } catch (e: Exception) {}
+        val pillH = paint.fontMetrics.let { it.descent - it.ascent } + 6 * dp
+        val bar = if (guest && foreground) barTop else null
+        val items = blobs
+        val texts = items.map { if (it.kind == "empty") "" else it.name }
+        val out = ArrayList<HashMap<String, Any?>>()
+        for (right in listOf(false, true)) {
+            for ((where, f) in listOf("high" to 0.15f, "in the middle" to 0.5f, "low" to 0.8f)) {
+                val cx = v.restLeft(right) + win / 2f
+                val cy = (f * h).coerceIn(48 * dp + win / 2f, h - 48 * dp - win / 2f)
+                val fan = FanLayout.lay(w, h, cx, cy, lensR, dp, items.size, blobNames, bar)
+                val badges = items.mapIndexed { i, b -> if (b.kind == "empty") null else FanLayout.badgeRect(fan.x[i], fan.y[i], badgeHalf(b, dp), dp) }
+                val screen = android.graphics.RectF(6 * dp, 30 * dp, w - 6 * dp, (bar ?: (h - 6 * dp)) - 4 * dp)
+                val names = if (blobNames) FanLayout.names(cx, cy, lensR, fan.x, fan.y, texts, badges, screen, dp, pillH,
+                    { t, cap -> android.text.TextUtils.ellipsize(t, paint, Math.max(0f, cap), android.text.TextUtils.TruncateAt.END).toString() },
+                    { t -> paint.measureText(t) }) else Array(items.size) { FanLayout.Name("", null) }
+                val g = FanLayout.gaps(cx, cy, lensR, fan.x, fan.y, names, badges, w, h, bar, dp)
+                g["where"] = "${if (right) "right" else "left"}, $where"
+                g["turned"] = Math.round(fan.turned).toInt()
+                g["grown"] = Math.round(fan.grown * 100) / 100.0
+                g["names"] = names.map { it.text }
+                out.add(g)
+            }
+        }
+        return out
+    }
+
+    /**
+     * How the phone is navigated: "3-button", "2-button" or "gestures" (Android's own setting, as
+     * the system bar is drawn for it), or, if that can't be read, a guess from the insets.
+     */
+    fun navMode(context: Context): String {
+        try {
+            val id = context.resources.getIdentifier("config_navBarInteractionMode", "integer", "android")
+            if (id > 0) {
+                when (context.resources.getInteger(id)) {
+                    0 -> return "3-button"
+                    1 -> return "2-button"
+                    2 -> return "gestures"
+                }
+            }
+        } catch (e: Exception) {}
+        try {
+            val v = PrismScreen.alive()?.window?.decorView
+            val ins = v?.rootWindowInsets
+            if (ins != null && Build.VERSION.SDK_INT >= 30) {
+                val side = ins.getInsets(android.view.WindowInsets.Type.systemGestures()).left
+                val tap = ins.getInsets(android.view.WindowInsets.Type.tappableElement()).bottom
+                return if (tap > 0) "buttons (from the insets)" else if (side > 0) "gestures (from the insets)" else "unknown"
+            }
+        } catch (e: Exception) {}
+        return "unknown"
+    }
+
+    /** Half the width a blob's badge takes, its edge included (as [paintBadge] draws it); 0 with none. */
+    private fun badgeHalf(b: Pin, dp: Float): Float {
+        val count = if (b.kind == "app") notes[b.notesFor] ?: 0 else 0
+        if (count <= 0) return 0f
+        val text = if (count > 99) "99+" else count.toString()
+        val p = badgePaint
+        p.typeface = boldFace
+        p.textSize = 11.5f * dp
+        return Math.max(10.5f * dp, (p.measureText(text) + 9 * dp) / 2f) + 1.8f * dp
+    }
+
     private fun paintBadge(canvas: android.graphics.Canvas, b: Pin, cx: Float, cy: Float, dp: Float, scale: Float = 1f) {
         val count = if (b.kind == "app") notes[b.notesFor] ?: 0 else 0
         if (count <= 0) return
@@ -2254,6 +2344,16 @@ class Floater(val timer: Boolean) {
             ((grip?.systemGestureExclusionRects?.sumOf { it.height() } ?: 0) + (view?.systemGestureExclusionRects?.sumOf { it.height() } ?: 0)) / dp.toDouble()
         } else null
         m["gripCancels"] = gripCancels
+        // How the phone is navigated (191): 3-button, 2-button or gestures. Only with gestures is
+        // there a Back swipe at the sides.
+        m["nav"] = navMode(context)
+        // Where the Sidekick's own window is on the screen, as Android puts it (x, y, width,
+        // height, in pixels): to set the grab strip beside, measured the same way (191).
+        m["lensScreen"] = view?.takeIf { it.isAttachedToWindow && !it.roamingNow() }?.let { v ->
+            val at = IntArray(2)
+            v.getLocationOnScreen(at)
+            listOf(at[0], at[1], v.width, v.height)
+        }
         m["gripBox"] = grip?.let { g ->
             val at = IntArray(2)
             g.getLocationOnScreen(at)
@@ -2449,6 +2549,7 @@ class Floater(val timer: Boolean) {
                     // Which phone this is, so that reports from two phones can be set side by side.
                     val m = state(context)
                     m["model"] = "${Build.MANUFACTURER} ${Build.MODEL}"
+                    m["nav"] = navMode(context)
                     m["soc"] = if (Build.VERSION.SDK_INT >= 31) "${Build.SOC_MANUFACTURER} ${Build.SOC_MODEL}" else Build.HARDWARE
                     m["android"] = "${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
                     m["hz"] = try { activity.display?.refreshRate?.toDouble() ?: 0.0 } catch (e: Exception) { 0.0 }
@@ -2710,6 +2811,13 @@ class Floater(val timer: Boolean) {
                     // (Long enough for Prism to send the pictures.)
                     watcher.postDelayed({ done(state(context)) }, num("settleMs", 900))
                 }
+                // The Sidekick's fan and names, laid out for six places, and how clear they are (191).
+                "fan" -> {
+                    val m = state(context)
+                    m["fanCheck"] = fanCheck(context)
+                    m["blobNames"] = blobNames
+                    done(m)
+                }
                 // (Test only.) Before the test's first tap: if the Sidekick is tucked away, it comes
                 // out to rest at its side, as a tap on it would bring it, and settles. So the tap
                 // that follows starts from a known state and opens its blobs, instead of only
@@ -2850,6 +2958,14 @@ class Floater(val timer: Boolean) {
                         "back" -> {
                             m.testBack()
                             watcher.postDelayed({ after() }, num("settleMs", 600))
+                        }
+                        // How clear of each other the open menu's blobs, names, badges and the
+                        // Sidekick are (191).
+                        "geometry" -> {
+                            stamps = null
+                            val st = state(context)
+                            st.putAll(m.testGeometry())
+                            done(st)
                         }
                         // A tap on Prism's own button, where the menu lies over it (188: the menu
                         // closes and Prism is given the tap).
@@ -3434,12 +3550,16 @@ class Floater(val timer: Boolean) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
         private val hole = android.graphics.Path()
         private val thread = android.graphics.Path()
-        private val names = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        private val names = android.text.TextPaint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        // A name's pill (191, as in the mock-up): a soft dark ground, so it reads over anything.
+        private val pill = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        private val pillRect = android.graphics.RectF()
 
         init {
             names.color = WHITE
-            names.textAlign = android.graphics.Paint.Align.CENTER
+            names.textAlign = android.graphics.Paint.Align.LEFT
             names.textSize = 13.5f * dp
+            pill.color = 0x73000000
             // Prism's own lettering, at the weight the menu in Prism uses.
             try {
                 names.typeface = android.graphics.Typeface.createFromAsset(context.assets, "flutter_assets/assets/fonts/Inter.ttf")
@@ -3447,8 +3567,45 @@ class Floater(val timer: Boolean) {
             } catch (e: Exception) {
                 names.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
             }
-            // Over another app there is no telling what is behind the names.
-            names.setShadowLayer(5 * dp, 0f, 1 * dp, 0x99000000.toInt())
+            // (Over another app there is no telling what is behind the names: their pill sees to it,
+            // 191; until then a shadow did.)
+        }
+
+        // ---- The names (191): each on the far side of its blob, away from the Sidekick (see
+        // FanLayout.names). Laid out again only when the blobs' places change.
+        private var nameKey = FloatArray(0)
+        private var laidNames: Array<FanLayout.Name> = emptyArray()
+        private val pillH get() = (names.fontMetrics.let { it.descent - it.ascent } + 6 * dp)
+
+        private fun badgeRects(): List<android.graphics.RectF?> = (0 until n).map {
+            if (items[it].kind == "empty") null else FanLayout.badgeRect(restX[it], restY[it], badgeHalf(items[it], dp), dp)
+        }
+
+        private fun nameLayout(): Array<FanLayout.Name> {
+            if (!blobNames) return Array(n) { FanLayout.Name("", null) }
+            val key = FloatArray(2 * n + 2)
+            for (i in 0 until n) { key[2 * i] = restX[i]; key[2 * i + 1] = restY[i] }
+            key[2 * n] = width.toFloat(); key[2 * n + 1] = height.toFloat()
+            if (key.contentEquals(nameKey) && laidNames.size == n) return laidNames
+            nameKey = key
+            val bar = barHere()
+            val screen = android.graphics.RectF(6 * dp, 30 * dp, width - 6 * dp, (bar ?: (height - 6 * dp)) - 4 * dp)
+            laidNames = FanLayout.names(
+                cx, cy, lensR, restX.copyOf(), restY.copyOf(), (0 until n).map { if (items[it].kind == "empty") "" else items[it].name },
+                badgeRects(), screen, dp, pillH,
+                { t, w -> android.text.TextUtils.ellipsize(t, names, Math.max(0f, w), android.text.TextUtils.TruncateAt.END).toString() },
+                { t -> names.measureText(t) },
+            )
+            return laidNames
+        }
+
+        /** For the button test: how clear of each other the open menu's blobs, names, badges and the Sidekick are (191). */
+        fun testGeometry(): HashMap<String, Any?> {
+            val m = FanLayout.gaps(cx, cy, lensR, restX.copyOf(), restY.copyOf(), nameLayout(), badgeRects(), width.toFloat(), height.toFloat(), barHere(), dp)
+            m["turned"] = Math.round(turned).toInt()
+            m["grown"] = Math.round(grown * 100) / 100.0
+            m["names"] = nameLayout().map { it.text }
+            return m
         }
 
         override fun onAttachedToWindow() {
@@ -3502,6 +3659,7 @@ class Floater(val timer: Boolean) {
             getLocationOnScreen(at)
             cx = ox - at[0]
             cy = oy - at[1]
+            offY = at[1]
             if (!laid) {
                 fan()
                 laid = true
@@ -3519,54 +3677,21 @@ class Floater(val timer: Boolean) {
          * the next stays what it is with names. As in Prism.
          */
         private fun step(): Double =
-            if (blobNames || reach <= 0f) 0.155 else (0.155 * 178.0 * dp / reach).coerceIn(0.155, 0.1769)
+            if (stepNow > 0.0) stepNow else FanLayout.normalStep(reach, dp, blobNames)
 
         /**
          * Lays the fan out. It points straight into the screen from the side the lens is on, and
          * turns up or down only as far as it must for every blob and its name to be on the screen.
          */
         private fun fan() {
-            val w = width.toFloat()
-            val h = height.toFloat()
-            reach = if (blobNames) Math.max(178 * dp, lensR + 75 * dp) else Math.max(156 * dp, lensR + 58 * dp)
-            val left = 45 * dp
-            val right = Math.max(left, w - 45 * dp)
-            val top = 78 * dp
-            var bottom = Math.max(top, h - 100 * dp)
-            // In Prism, its blobs and their names keep above Prism's bar, so a tap on Prism's
-            // button is never one of theirs (190: on the S26, a Sidekick resting low fanned a blob
-            // whose name lay over the button, and the tap that should have swapped to Prism's
-            // blobs used that blob).
-            val bar = barTop
-            if (guest && this@Floater.foreground && bar != null) {
-                bottom = Math.max(top, Math.min(bottom, bar - (if (blobNames) 66 else 44) * dp))
-            }
-            val onRight = cx > w / 2f
-            val inward = if (onRight) Math.PI else 0.0
-            // Which way the fan turns to point further down the screen, and which way to try first.
-            val down = if (onRight) -1.0 else 1.0
-            val first = if (cy < h / 2f) down else -down
-            var best = inward
-            var least = Float.MAX_VALUE
-            search@ for (j in 0..11) {
-                for (way in doubleArrayOf(first, -first)) {
-                    val turned = inward + way * j * Math.toRadians(8.0)
-                    var over = 0f
-                    for (i in 0 until n) {
-                        val a = angle(turned, i - (n - 1) / 2f)
-                        val x = cx + reach * Math.cos(a).toFloat()
-                        val y = cy + reach * Math.sin(a).toFloat()
-                        over += Math.max(0f, left - x) + Math.max(0f, x - right) + Math.max(0f, top - y) + Math.max(0f, y - bottom)
-                    }
-                    if (over < least) {
-                        least = over
-                        best = turned
-                    }
-                    if (over == 0f) break@search
-                    if (j == 0) break
-                }
-            }
-            axis = best
+            // (191: the fan turns away from corners, and only if no turn fits is the arc made a
+            // little larger, its seats closer round it so they keep their spacing. See FanLayout.)
+            val f = FanLayout.lay(width.toFloat(), height.toFloat(), cx, cy, lensR, dp, n, blobNames, barHere())
+            axis = f.axis
+            reach = f.reach
+            stepNow = f.step
+            turned = f.turned
+            grown = f.grown
             seats(-1)
             for (i in 0 until n) {
                 restX[i] = seatX[i]
@@ -3574,15 +3699,30 @@ class Floater(val timer: Boolean) {
             }
         }
 
+        // (The fan as laid out: its seat-to-seat angle, and how far it was turned and grown.)
+        private var stepNow = 0.0
+        private var turned = 0.0
+        private var grown = 1f
+        // Where the menu's view is on the screen, up and down (Prism's bar is told in the screen's).
+        private var offY = 0
+
+        /** Prism's bar's top in this view, when the Sidekick is in Prism; null otherwise. */
+        private fun barHere(): Float? {
+            val bar = barTop ?: return null
+            return if (guest && this@Floater.foreground) bar - offY else null
+        }
+
         /**
          * Gives every blob but [without] its seat: the ones left sit evenly around the middle of
          * the fan, with the seat [open] among them left empty if there is one.
          */
         private fun seats(without: Int, open: Int = -1) {
-            val left = 45 * dp
-            val right = Math.max(left, width - 45 * dp)
-            val top = 78 * dp
-            val bottom = Math.max(top, height - 100 * dp)
+            // (Kept inside where a blob may be, as a last resort: the fan is laid out to fit, 191.)
+            val bounds = FanLayout.bounds(width.toFloat(), height.toFloat(), dp, barHere())
+            val left = bounds.left
+            val right = bounds.right
+            val top = bounds.top
+            val bottom = bounds.bottom
             val count = (if (without in 0 until n) n - 1 else n) + (if (open >= 0) 1 else 0)
             var j = 0
             for (i in 0 until n) {
@@ -3789,6 +3929,30 @@ class Floater(val timer: Boolean) {
                     canvas.restore()
                 }
             }
+            // The names first, so that every blob and badge lies over any name (191).
+            if (blobNames) {
+                val laid = nameLayout()
+                val metrics = names.fontMetrics
+                for (i in 0 until n) {
+                    val p = out[i]
+                    if (p <= 0.02f && i != flying) continue
+                    val nm = laid.getOrNull(i) ?: continue
+                    val r = nm.rect ?: continue
+                    // The name appears once the blob is nearly there, not while it is a speck.
+                    val show = if (i == dragging) 0f else if (i == flying) 1f - fly * 3f else (p - 0.6f) / 0.4f
+                    if (show <= 0f) continue
+                    // (It goes where its blob goes, while the blob is on its way.)
+                    val bx = if (i == flying) flyFromX + (cx - flyFromX) * EASE.getInterpolation(fly) else cx + (restX[i] - cx) * p
+                    val by = if (i == flying) flyFromY + (cy - flyFromY) * EASE.getInterpolation(fly) else cy + (restY[i] - cy) * p
+                    val a = show.coerceIn(0f, 1f) * (if (menuFor >= 0 && i != menuFor) 0.3f else 1f)
+                    pillRect.set(r)
+                    pillRect.offset(bx - restX[i], by - restY[i])
+                    pill.alpha = (0x73 * a).toInt()
+                    canvas.drawRoundRect(pillRect, pillRect.height() / 2, pillRect.height() / 2, pill)
+                    names.alpha = (a * 255).toInt()
+                    canvas.drawText(nm.text, pillRect.left + 7 * dp, pillRect.top + 3 * dp - metrics.ascent, names)
+                }
+            }
             for (i in 0 until n) {
                 val p = out[i]
                 if (p <= 0.02f && i != flying) continue
@@ -3868,15 +4032,15 @@ class Floater(val timer: Boolean) {
                 canvas.restore()
                 // Once it is out: how many notifications it has. Not while the blobs are being changed.
                 if (!editing && menuFor < 0 && p >= 0.9f && i != flying && i != dragging && items[i].kind != "empty") paintBadge(canvas, items[i], bx + 22 * dp, by - 22 * dp, dp)
-                // The name appears once the blob is nearly there, not while it is a speck.
-                val show = if (i == dragging) 0f else if (i == flying) 1f - fly * 3f else (p - 0.6f) / 0.4f
-                if (show > 0f && blobNames) {
-                    names.alpha = (show.coerceIn(0f, 1f) * (if (menuFor >= 0 && i != menuFor) 0.3f else 1f) * 255).toInt()
-                    canvas.drawText(items[i].name, bx, by + 50 * dp, names)
-                }
             }
             // A held blob's small menu, over everything.
             paintPop(canvas)
+        }
+
+        /** Whether [x], [y] is on blob [i]'s name (its pill, and 4 points round it). */
+        private fun nameHit(i: Int, x: Float, y: Float): Boolean {
+            val r = nameLayout().getOrNull(i)?.rect ?: return false
+            return x >= r.left - 4 * dp && x <= r.right + 4 * dp && y >= r.top - 4 * dp && y <= r.bottom + 4 * dp
         }
 
         /** Which blob is at this place in the view, or none. A blob's name counts as the blob. */
@@ -3901,9 +4065,10 @@ class Floater(val timer: Boolean) {
                 val dy = y - restY[i]
                 val d = if (dx * dx + dy * dy < (40 * dp) * (40 * dp)) {
                     Math.hypot(dx.toDouble(), dy.toDouble()).toFloat()
-                } else if (blobNames && !onButton && Math.abs(dx) < 40 * dp && dy > 0 && dy < 62 * dp) {
-                    // (On its name: measured from where the name is drawn.)
-                    Math.hypot(dx.toDouble(), (dy - 50 * dp).toDouble()).toFloat()
+                } else if (blobNames && !onButton && nameHit(i, x, y)) {
+                    // (On its name, wherever its name is, 191: measured from the name's middle.)
+                    val r = nameLayout()[i].rect!!
+                    Math.hypot((x - r.centerX()).toDouble(), (y - r.centerY()).toDouble()).toFloat()
                 } else {
                     continue
                 }
@@ -5868,6 +6033,10 @@ class Floater(val timer: Boolean) {
         // (Reaching 24 points above and below it: 190, as the owner asked for more room.)
         private val GRAB_PAD = 24f
         private val gripCheck = Runnable { fitGrip() }
+
+        /** Where its window's left edge is when it rests at that side (for the fan's test, 191). */
+        fun restLeft(right: Boolean): Float =
+            if (right) resources.displayMetrics.widthPixels - lp.width - edgeGap() else edgeGap()
 
         /** Fits the grab area again in a moment (it rests past the edge, or its menu has closed). */
         fun regrip() {
