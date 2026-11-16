@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 193 (16 November 2026)
+
+**File:** `releases/prism-build-193.apk`
+
+Needs Play Protect paused to install. Can be installed over build 192.
+
+**The Sidekick is sent away only from its menu, as you decided:**
+- **Dragging or flinging it never sends it away now,** anywhere on the screen. There's no cross at the top any more; a carry or a fling only moves it.
+- **To send it away:** hold the Sidekick, and tap **Dismiss** in its panel's header, next to the ✕ (the ✕ still only closes the panel). The panel closes, and the Sidekick shrinks away where it is. It comes back, where it was, the next time you open an app from Prism.
+- **The workout timer** is unchanged: its cross, Pause and Count up stay at the bottom.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 192 (16 November 2026)
 
 **File:** `releases/prism-build-192.apk`

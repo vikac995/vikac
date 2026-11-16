@@ -115,18 +115,18 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
 - **The Sidekick can be dragged with its blobs out** (from 192, the owner's request): a drag that
   begins on it (its glass and 6 points round it) folds the blobs back in at once, the usual close,
   and carries it, following the finger exactly as at any other time. Let go, it settles as always;
-  once still, its blobs come out again round it where it is. Not if it was sent away on the cross,
-  and not if it was tucked away (a tucked Sidekick has no fan). A tap still only closes them.
+  once still, its blobs come out again round it where it is. Not if it was tucked away (a tucked
+  Sidekick has no fan). A tap still only closes them.
 - **The button never goes bare.** With an empty menu it keeps its look, in the light's own colours.
 - **Change** opens the list titled "Change ..." with a red Remove in it; while it is up, the button
   becomes the blob being changed, and goes back after.
 - **The Sidekick never takes the keyboard or the focus** of the app underneath.
-- **Dismissing the Sidekick is at the top** (from 190), in Prism and over other apps alike: a thin
-  ring with a small cross, in the middle below the status bar and the camera. It shows faintly as soon
-  as the Sidekick is picked up (nobody expects a way out at the top), clearer as it nears, and lights
-  up when letting go would dismiss it. A fling up toward it dismisses it too. Dropping the Sidekick
-  on Prism's button no longer sends it away. (The workout timer's cross, with Pause and Count up,
-  stays at the bottom.)
+- **The Sidekick is sent away only from its settings panel** (the owner's decision, from 193): hold
+  it, and its panel has a "Dismiss" pill in its header, left of the ✕ (which only closes the panel).
+  "Dismiss" closes the panel and the Sidekick shrinks away where it rests; it stays away until the
+  next app is opened from Prism. Carried or flung anywhere, the Sidekick only moves: there is no cross
+  for it, nothing pulls it, no fling sends it away (190 to 192 had a cross at the top, which the owner
+  hit by accident). The workout timer's cross, with Pause and Count up, stays at the bottom.
 - Its two places at a screen edge are two dials side by side in its own panel, **Hovering** (how far
   from the edge it rests) and **Tucked in** (how much of it shows), in whole points, like the Train
   page's kg and reps. **Hovering** goes from 48 points past the edge (58% of the Sidekick's glass
@@ -142,6 +142,8 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   - **Where:** beside it, on the side away from it, at its height (kept on the screen), as tall as
     its contents allow. It ends 8 points above Prism's bar (in Prism) or Android's own bar (outside),
     and never covers either (from 186).
+  - **Its header:** "Sidekick", then a "Dismiss" pill and the ✕ at the right (from 193). At a large
+    text size, if "Dismiss" doesn't fit beside the title, it goes on a line of its own under it.
   - **Its order:** Labels, Icons, Colours, Look, then where it rests (the two dials, in reach without
     scrolling), and the two switches (In Prism, Over other apps) last, as they are rarely used (from
     186).

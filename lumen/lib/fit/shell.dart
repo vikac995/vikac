@@ -5391,26 +5391,25 @@ class _ShellState extends State<Shell>
                 'its blobs ${m1['menu'] == true ? 'out' : 'in'}, opened again ${numIn(m1['menuReopens']).isNaN ? '?' : numIn(m1['menuReopens']).toInt() - reopensWas} time(s) in all',
               );
             }
-            // Carried onto the cross at the top with its blobs out: sent away, its blobs stay in.
+            // Carried to the top in the middle with its blobs out (where its cross was in 190 to
+            // 192): from 193 it only moves, and its blobs come out again where it comes to rest.
             if (await openMenu()) {
               final Map<String, Object?> dc = await t.lens(<String, Object?>{
                 'op': 'menu',
                 'what': 'dragLens',
-                'toCross': true,
+                'toTop': true,
                 'settleMs': 1800,
               }, extraMs: 4000);
-              t.lensRun('menu dragLens to the cross', dc);
+              t.lensRun('menu dragLens to the top', dc);
               await Robot.wait(1200);
               m1 = await where();
               t.check(
-                'sidekick: carried onto the cross with its blobs out, it is sent away and its blobs stay in',
-                m1['lens'] != true &&
-                    m1['menu'] != true &&
-                    numIn(m1['menuReopens']) == reopensWas + 1,
+                'sidekick: carried to the top middle with its blobs out, it only moves, and its blobs come out again',
+                m1['lens'] == true &&
+                    m1['menu'] == true &&
+                    numIn(m1['menuReopens']) == reopensWas + 2,
                 'shown ${m1['lens']}, its blobs ${m1['menu'] == true ? 'out' : 'in'}, opened again ${numIn(m1['menuReopens']).isNaN ? '?' : numIn(m1['menuReopens']).toInt() - reopensWas} time(s) in all',
               );
-              await t.lens(<String, Object?>{'op': 'side', 'on': true});
-              await Robot.wait(1200);
             }
             // (Its blobs out again, for what follows.)
             if ((await where())['menu'] != true) {
@@ -6897,53 +6896,13 @@ class _ShellState extends State<Shell>
           s['lens'] == true && s['guest'] == true,
           'shown ${s['lens']}',
         );
-        // The Sidekick's way out is at the top, in the middle (190): where Android says it is.
-        s = await where();
-        final Offset sideCross = Offset(
-          numOf(s['crossX']) / dpr,
-          numOf(s['crossY']) / dpr,
-        );
-        t.check(
-          'sidekick: its cross is at the top in the middle, clear of the status bar and the camera',
-          (numOf(s['crossX']) / dpr - sc.width / 2).abs() < 2 &&
-              numOf(s['crossY']) - 46 * dp >= numOf(s['topClear']) &&
-              numOf(s['crossY']) < h * 0.2,
-          'its middle at ${sideCross.dx.toStringAsFixed(0)},${sideCross.dy.toStringAsFixed(0)} points; swollen, its top at ${((numOf(s['crossY']) - 46 * dp) / dpr).toStringAsFixed(1)}; the status bar and camera reach ${(numOf(s['topClear']) / dpr).toStringAsFixed(1)}',
-        );
-        // Carried up to the middle at the top, and the touch taken away there by Android (a
-        // cancel, not a finger let go): it is not dismissed, and goes back where it began.
-        final double fromX = (s['x'] as num?)?.toDouble() ?? -1,
-            fromY = (s['y'] as num?)?.toDouble() ?? -1;
+        // From 193 the Sidekick has no cross: carried or flung anywhere, it only moves. It is sent
+        // away only from its settings panel's "Dismiss". (Where its cross was in 190 to 192: the
+        // top, in the middle.)
+        final Offset topMiddle = Offset(sc.width / 2, 100);
         s = await press(
-          'sidekick carried to the top, the touch cancelled',
-          <Offset>[sideCross],
-          legMs: 700,
-          endMs: 300,
-          settleMs: 1500,
-          cancel: true,
-        );
-        await Robot.wait(900);
-        s = await where();
-        t.check(
-          'sidekick: carried to the top and the touch cancelled, it is not dismissed and goes back where it began',
-          s['lens'] == true &&
-              (((s['x'] as num?)?.toDouble() ?? -99) - fromX).abs() < 6 &&
-              (((s['y'] as num?)?.toDouble() ?? -99) - fromY).abs() < 6,
-          'shown ${s['lens']}, at ${s['x']},${s['y']} (began at ${fromX.round()},${fromY.round()})',
-        );
-        // (The cross showed faintly as soon as it was picked up, and fully at the top.)
-        t.check(
-          'sidekick: picked up, its cross shows faintly at once, and fully when it is carried there',
-          numOf(s['crossFirst']) >= 0.25 &&
-              numOf(s['crossFirst']) <= 0.45 &&
-              numOf(s['crossMost']) >= 0.95,
-          'first ${numOf(s['crossFirst']).toStringAsFixed(2)}, at most ${numOf(s['crossMost']).toStringAsFixed(2)}',
-        );
-        // Carried right up to the middle at the top: it is dismissed; and the notification shade
-        // never came down (Prism keeps the focus).
-        s = await press(
-          'sidekick carried to the top',
-          <Offset>[sideCross],
+          'sidekick carried to the top middle',
+          <Offset>[topMiddle],
           legMs: 700,
           endMs: 300,
           settleMs: 1500,
@@ -6951,8 +6910,8 @@ class _ShellState extends State<Shell>
         await Robot.wait(900);
         s = await where();
         t.check(
-          'sidekick: carried to the top middle and let go, it is dismissed',
-          s['lens'] != true,
+          'sidekick: carried to the top middle and let go, it only moves: it is still there',
+          s['lens'] == true && s['guest'] == true,
           'shown ${s['lens']}',
         );
         t.check(
@@ -6960,9 +6919,15 @@ class _ShellState extends State<Shell>
           s['prismFocus'] != false,
           'Prism has the focus ${s['prismFocus']}',
         );
-        await t.lens(<String, Object?>{'op': 'side', 'on': true});
-        await Robot.wait(1200);
-        // A fling up toward the top middle: it is thrown at the cross, and dismissed (190).
+        // A fast fling up, toward the top middle, from halfway down: it only moves.
+        s = await press(
+          'sidekick carried halfway down',
+          <Offset>[Offset(sc.width * 0.85, sc.height * 0.55)],
+          legMs: 600,
+          endMs: 200,
+          settleMs: 1200,
+        );
+        await Robot.wait(600);
         s = await where();
         final Offset flingFrom = Offset(
           (numOf(s['x']) + numOf(s['size']) / 2) / dpr,
@@ -6972,7 +6937,7 @@ class _ShellState extends State<Shell>
           'sidekick flung up',
           <Offset>[
             Offset(
-              flingFrom.dx + (sideCross.dx - flingFrom.dx) * 0.4,
+              flingFrom.dx + (topMiddle.dx - flingFrom.dx) * 0.4,
               flingFrom.dy - 160,
             ),
           ],
@@ -6983,12 +6948,43 @@ class _ShellState extends State<Shell>
         await Robot.wait(900);
         s = await where();
         t.check(
-          'sidekick: flung up toward the top middle, it is dismissed',
-          s['lens'] != true && s['prismFocus'] != false,
+          'sidekick: flung up fast toward the top middle, it only moves: it is still there',
+          s['lens'] == true && s['guest'] == true && s['prismFocus'] != false,
           'shown ${s['lens']}, Prism has the focus ${s['prismFocus']}, flung from ${flingFrom.dx.round()},${flingFrom.dy.round()}',
         );
-        await t.lens(<String, Object?>{'op': 'side', 'on': true});
-        await Robot.wait(1200);
+        // Held: its panel; "Dismiss": the panel closes and the Sidekick is sent away, until it is
+        // brought back (the next app opened from Prism, or here the test's own bring-back).
+        {
+          final int was = numOf(s['sidekickDismissals']).isNaN
+              ? 0
+              : numOf(s['sidekickDismissals']).toInt();
+          if (await holdOpen('sidekick held, to dismiss it')) {
+            await panel('tap', part: 'close.dismiss', settleMs: 900);
+            await Robot.wait(900);
+            s = await where();
+            t.check(
+              'sidekick: held, its panel\'s "Dismiss" sends it away, and the panel closes',
+              s['lens'] != true &&
+                  s['panelOpen'] != true &&
+                  s['sideGone'] == true &&
+                  numOf(s['sidekickDismissals']) == was + 1,
+              'shown ${s['lens']}, panel ${s['panelOpen']}, sent away ${s['sideGone']}, from its panel ${numOf(s['sidekickDismissals']).isNaN ? '?' : numOf(s['sidekickDismissals']).toInt() - was} time(s)',
+            );
+            await t.lens(<String, Object?>{'op': 'side', 'on': true});
+            await Robot.wait(1200);
+            s = await where();
+            t.check(
+              'sidekick: sent away from its panel, it comes back when brought back',
+              s['lens'] == true && s['guest'] == true,
+              'shown ${s['lens']}',
+            );
+          } else {
+            t.skip(
+              'sidekick: held, its panel\'s "Dismiss" sends it away, and the panel closes',
+              'its panel did not open',
+            );
+          }
+        }
         // An emptied Sidekick menu: one plus. Then the person's own menu, back as it was.
         final List<String>? back = sideWere;
         if (back != null) {

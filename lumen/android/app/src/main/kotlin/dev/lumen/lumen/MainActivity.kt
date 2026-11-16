@@ -942,8 +942,6 @@ class Floater(val timer: Boolean) {
         fun holdTime(): Long = (android.view.ViewConfiguration.getLongPressTimeout().coerceIn(300, 600) * 0.85).toLong()
         const val OPEN_ACTION = "dev.lumen.OPEN_ACTION"
         private const val WHITE = 0xFFFFFFFF.toInt()
-        // How much the Sidekick's cross shows as it is first picked up (190).
-        private const val FAINT = 0.3f
         private const val GREY = 0xFFA9ACB6.toInt()
         private const val GREEN = 0xFF2FA84F.toInt()
         private const val SHEET_AUTO = -1
@@ -2240,6 +2238,15 @@ class Floater(val timer: Boolean) {
         menu?.close()
     }
 
+    /** The Sidekick sent away from its settings panel's "Dismiss" (193). */
+    fun dismissSidekick() {
+        sidekickDismissals++
+        view?.dismissFromPanel()
+    }
+
+    // (For the test: how often the Sidekick was sent away from its panel.)
+    var sidekickDismissals = 0
+
     /**
      * Only one menu open at a time (build 188, the owner's choice): the Sidekick's own menu or
      * panel has just opened, so Prism closes its blobs if they are out. (Prism decides: it knows.)
@@ -2406,15 +2413,9 @@ class Floater(val timer: Boolean) {
         m["menuDrags"] = menuDrags
         m["menuFoldMs"] = if (menuInAt > menuDragAt && menuDragAt > 0L) menuInAt - menuDragAt else -1L
         m["menuReopens"] = menuReopens
-        // Where the cross is on the screen, in pixels, and how far down the status bar and the
-        // camera reach; how it showed while the Sidekick was last carried; whether Prism has the
-        // focus (the notification shade, pulled down, would take it) (190).
-        val cross = crossAt(context)
-        m["crossX"] = cross[0].toDouble()
-        m["crossY"] = (cross[1] + crossOff).toDouble()
-        m["topClear"] = topClear(context).toDouble()
-        m["crossFirst"] = crossFirst.toDouble()
-        m["crossMost"] = crossMost.toDouble()
+        m["sidekickDismissals"] = sidekickDismissals
+        m["sideGone"] = sideGone
+        // Whether Prism has the focus (the notification shade, pulled down, would take it) (190).
         m["prismFocus"] = PrismScreen.alive()?.hasWindowFocus()
         m["prismFanOut"] = fan != null
         m["menuCount"] = menu?.testCount() ?: 0
@@ -3003,14 +3004,12 @@ class Floater(val timer: Boolean) {
                             watcher.postDelayed({ after() }, num("settleMs", 600))
                         }
                         // A drag begun on the Sidekick in the middle of its blobs (192): [dy] points
-                        // down the screen, or onto the cross ("toCross").
+                        // down the screen, or to the top in the middle ("toTop": where its cross was
+                        // in 190 to 192).
                         "dragLens" -> {
-                            val at = IntArray(2)
-                            m.getLocationOnScreen(at)
                             val from = m.testMiddle()
-                            val to = if (a["toCross"] == true) {
-                                val c = crossAt(context)
-                                floatArrayOf(c[0] - at[0], c[1] + crossOff - at[1])
+                            val to = if (a["toTop"] == true) {
+                                floatArrayOf(m.width / 2f, 100 * context.resources.displayMetrics.density)
                             } else floatArrayOf(from[0], from[1] + num("dy", 120) * context.resources.displayMetrics.density)
                             finger(m, listOf(from, to), true, 60, num("legMs", 700), num("endMs", 120), false, num("settleMs", 1800), { true }, after)
                         }
@@ -4747,47 +4746,16 @@ class Floater(val timer: Boolean) {
      * lens falls in, the cross takes its colour for a moment, gives once, and sinks out of sight.
      * Its window counts for nothing except while a lens is being carried.
      */
-    // How far a floating window's own place is from its place on the screen, up and down (the
-    // status bar, a camera cut-out), as the cross's window found it: so that the Sidekick's cross is
-    // put where it is meant to be on the screen.
-    private var crossOff = 0
-
     /**
-     * Where the cross is (its middle, in the floating windows' own places). The Sidekick's is at the
-     * top in the middle, below the status bar and the camera (from build 190), in Prism and over
-     * other apps alike: dropping it on Prism's button is gone. The workout timer's, and a lens of a
-     * pinned thing, stay at the bottom, exactly as before.
+     * Where the cross is (its middle, in the floating windows' own places): at the bottom, in the
+     * middle. Only the workout timer's lens, and a lens of a pinned thing, have one. (The Sidekick
+     * had one too, at the top from 190, at the bottom before; from 193 it is sent away only from its
+     * settings panel, and carried anywhere it only moves.)
      */
     private fun crossAt(context: Context): FloatArray {
         val d = context.resources.displayMetrics
-        val dp = d.density
-        return if (!timer && guest) floatArrayOf(d.widthPixels / 2f, topClear(context) + CROSS_BELOW * dp - crossOff)
-        else floatArrayOf(d.widthPixels / 2f, d.heightPixels - 104 * dp)
+        return floatArrayOf(d.widthPixels / 2f, d.heightPixels - 104 * d.density)
     }
-
-    // (How far below the status bar and the camera the Sidekick's cross is, middle to their edge,
-    // in points: the ring swollen round the Sidekick, 38 points and drawn 1.22 times larger, is 46,
-    // and 6 more to spare.)
-    private val CROSS_BELOW = 52f
-
-    /** How far down the status bar and the camera cut-out reach, on the screen, in pixels. */
-    private fun topClear(context: Context): Float {
-        try {
-            if (Build.VERSION.SDK_INT >= 30) {
-                val i = wm(context).currentWindowMetrics.windowInsets.getInsets(
-                    android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.displayCutout(),
-                )
-                if (i.top > 0) return i.top.toFloat()
-            }
-        } catch (e: Exception) {}
-        val id = context.resources.getIdentifier("status_bar_height", "dimen", "android")
-        return if (id > 0) context.resources.getDimensionPixelSize(id).toFloat() else 24 * context.resources.displayMetrics.density
-    }
-
-    // (For the test: how the cross showed while the Sidekick was carried: as it was first picked
-    // up, and the most it showed.)
-    var crossFirst = -1f
-    var crossMost = 0f
 
     private inner class Target(context: Context) : android.view.View(context) {
         private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
@@ -4818,69 +4786,16 @@ class Floater(val timer: Boolean) {
             try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, l) } catch (e: Exception) {}
         }
 
-        override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-            super.onLayout(changed, left, top, right, bottom)
-            // (How its window's own place and its place on the screen differ: see [crossOff].)
-            val l = lp ?: return
-            post {
-                if (!isAttachedToWindow) return@post
-                val at = IntArray(2)
-                getLocationOnScreen(at)
-                if (scaleY == 1f && translationY == 0f) crossOff = at[1] - l.y
-            }
-        }
-
-        /** Its window put where the cross is now (the Sidekick's at the top, 190). */
-        private fun goWhereTheCrossIs() {
-            val l = lp ?: return
-            val c = crossAt(context)
-            val x = Math.round(c[0] - l.width / 2f)
-            val y = Math.round(c[1] - l.height / 2f)
-            if (l.x == x && l.y == y) return
-            l.x = x; l.y = y
-            try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, l) } catch (e: Exception) {}
-        }
-
-        /** The Sidekick (not the timer) is dismissed quietly: a thin ring at the top, faint until it nears. */
-        private fun quiet() = !timer && guest
-
-        /**
-         * How near the cross the Sidekick is being carried: from [FAINT] as it is picked up, to 1
-         * there. It shows that much (190: at once, faintly, since nobody expects a way out at the
-         * top; it was hidden until the Sidekick was carried into the bottom quarter).
-         */
-        var near = 0f
-            set(v) {
-                val n = v.coerceIn(0f, 1f)
-                if (field == n) return
-                field = n
-                if (quiet() && up && gulp < 0f) {
-                    animate().cancel()
-                    alpha = n
-                    crossMost = Math.max(crossMost, n)
-                    invalidate()
-                }
-            }
-
-        /** A lens has been picked up: the cross shows. (The Sidekick's faintly at first, clearer as it nears.) */
+        /** A lens has been picked up: the cross shows. (Never for the Sidekick: from 193 it has none.) */
         fun rise() {
+            if (!timer && guest) return
             if (!up) {
                 up = true
                 gulp = -1f
                 translationY = 0f
-                crossMost = 0f
-                goWhereTheCrossIs()
                 window(1f)
             }
-            if (quiet()) {
-                animate().cancel()
-                if (near < FAINT) near = FAINT
-                alpha = near
-                crossFirst = near
-                crossMost = Math.max(crossMost, near)
-            } else {
-                animate().alpha(1f).setDuration(160).start()
-            }
+            animate().alpha(1f).setDuration(160).start()
         }
 
         /** The lens was let go somewhere else: the cross goes, and its window counts for nothing again. */
@@ -4891,7 +4806,6 @@ class Floater(val timer: Boolean) {
 
         private fun rest() {
             up = false
-            near = 0f
             window(0f)
         }
 
@@ -4926,8 +4840,6 @@ class Floater(val timer: Boolean) {
         }
 
         override fun onDraw(canvas: android.graphics.Canvas) {
-            // (Until 190, in Prism the Sidekick was dropped on Prism's own button and no cross was
-            // drawn. Now its cross is at the top in Prism too.)
             val c = width / 2f
             val cy = height / 2f
             // The small timer has a place either side of the cross. (Not while the cross is swallowing.)
@@ -4945,29 +4857,6 @@ class Floater(val timer: Boolean) {
                     canvas.drawCircle(x, cy, r2 - paint.strokeWidth / 2, paint)
                     paintSign(canvas, k, x, cy, dp, paint)
                 }
-            }
-            if (quiet()) {
-                // A thin ring with a small cross, no disc. Over it, the ring opens out round the
-                // Sidekick and takes Prism's colour: let go here, and it goes.
-                val on = this.held && which == 0
-                val sw = if (gulp >= 0f) Math.max(0f, 1f - gulp / 0.6f) else 0f
-                val rr = (if (on) 38 else 22) * dp
-                paint.style = android.graphics.Paint.Style.FILL
-                paint.color = if (sw > 0f) mix.evaluate(sw, 0x00000000, tint(taken, 0x80)) as Int else (if (on) 0x33000000 else 0x22000000)
-                canvas.drawCircle(c, cy, rr, paint)
-                paint.style = android.graphics.Paint.Style.STROKE
-                paint.strokeWidth = (if (on) 2f else 1.3f) * dp
-                paint.color = if (on || gulp >= 0f) accent else 0x8CFFFFFF.toInt()
-                canvas.drawCircle(c, cy, rr - paint.strokeWidth / 2, paint)
-                val q = (if (on) 0f else 5.5f * dp) * (if (gulp >= 0f) 0f else 1f)
-                if (q > 0.5f) {
-                    paint.strokeWidth = 1.8f * dp
-                    paint.strokeCap = android.graphics.Paint.Cap.ROUND
-                    paint.color = 0xD9FFFFFF.toInt()
-                    canvas.drawLine(c - q, cy - q, c + q, cy + q, paint)
-                    canvas.drawLine(c - q, cy + q, c + q, cy - q, paint)
-                }
-                return
             }
             val r = 40 * dp
             val held = this.held && which == 0
@@ -5713,18 +5602,12 @@ class Floater(val timer: Boolean) {
             }
             val was = snapped
             val wasSpot = spot
-            // The Sidekick's way out, at the top (190), shows faintly as soon as it is picked up,
-            // clearer the nearer it is carried (fully within its pull, nearly half the screen away
-            // at its faintest); it pulls only when near.
-            val quiet = !timer && guest
-            if (quiet) {
-                val h = resources.displayMetrics.heightPixels
-                val far = 1f - ((dist - 60 * dp) / (h * 0.45f)).coerceIn(0f, 1f)
-                target?.near = FAINT + (1f - FAINT) * far
-            }
+            // (The Sidekick has no cross, from 193: carried anywhere it only moves; it is sent away
+            // from its settings panel.)
+            val sidekick = !timer && guest
             // (With three side by side each one's pull reaches less far, so that they do not fight.)
-            val reach = if (three) (if (snapped && spot == near) 66 else 52) else if (quiet) (if (snapped) 84 else 60) else (if (snapped) 118 else 92)
-            snapped = dist < reach * dp
+            val reach = if (three) (if (snapped && spot == near) 66 else 52) else (if (snapped) 118 else 92)
+            snapped = !sidekick && dist < reach * dp
             if (snapped) {
                 spot = near
                 x = placeX(near) - lp.width / 2f + (cx - placeX(near)) * 0.18f
@@ -6243,11 +6126,24 @@ class Floater(val timer: Boolean) {
         }
 
         /**
-         * Dropped on the cross. The lens falls into it and the cross swallows it. A workout's lens
-         * then stays away until the workout page is opened; a pinned thing is unpinned.
+         * Sent away from its settings panel's "Dismiss" (193, the only way for the Sidekick): it
+         * shrinks away where it rests, and stays away until the next app is opened from Prism; it
+         * comes back where it was.
          */
-        private fun close() {
-            Trail.add("$who dropped on the cross")
+        fun dismissFromPanel() {
+            if (swallowing || !guest) return
+            homeX = lp.x; homeY = lp.y; homeTucked = tucked
+            close(viaCross = false)
+        }
+
+        /**
+         * Dropped on the cross. The lens falls into it and the cross swallows it. A workout's lens
+         * then stays away until the workout page is opened; a pinned thing is unpinned. (With
+         * [viaCross] false, the Sidekick sent away from its panel: it shrinks away where it is, with
+         * no cross, 193.)
+         */
+        private fun close(viaCross: Boolean = true) {
+            Trail.add(if (viaCross) "$who dropped on the cross" else "$who sent away from its settings (Dismiss)")
             haptic(context, "thud")
             val c = context
             val wasWorkout = mode() == 1
@@ -6259,7 +6155,11 @@ class Floater(val timer: Boolean) {
             try { (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).updateViewLayout(this, lp) } catch (ex: Exception) {}
             SidekickPanel.lensChanged()
             animate().scaleX(0f).scaleY(0f).setDuration(150).setInterpolator(android.view.animation.AccelerateInterpolator(1.6f))
-                .withEndAction { dropLens(c) }.start()
+                .withEndAction {
+                    dropLens(c)
+                    // (No cross to finish it: done as soon as it has shrunk away.)
+                    if (!viaCross) afterSwallow?.invoke()
+                }.start()
             val finish: () -> Unit = {
                 if (swallowing) {
                     swallowing = false
@@ -6292,8 +6192,10 @@ class Floater(val timer: Boolean) {
                 }
             }
             afterSwallow = finish
-            val t = target
-            if (t != null) t.swallow(colour, finish) else finish()
+            if (viaCross) {
+                val t = target
+                if (t != null) t.swallow(colour, finish) else finish()
+            }
         }
 
         private fun throwIt(velX: Float, velY: Float) {
@@ -6305,14 +6207,10 @@ class Floater(val timer: Boolean) {
             // Where it would coast to decides where it ends up, so a flick carries it.
             val coastX = px + velX * 0.16f
             val coastY = py + velY * 0.18f
-            // A flick toward the cross is a throw at it: the Sidekick's up toward the top (190), the
-            // timer's (and a pinned thing's) down toward the bottom, as before.
+            // A flick down toward the middle is a throw at the cross: the timer's, and a pinned thing's.
+            // (Never the Sidekick's, from 193: a flick only moves it.)
             val w = lp.width; val h = lp.height
-            val atCross = if (!timer && guest) {
-                velY < -700 && coastY + h / 2f < screen.heightPixels * 0.30f && Math.abs(coastX + w / 2f - crossX()) < 120 * dp
-            } else {
-                velY > 700 && coastY + h / 2f > screen.heightPixels * 0.70f && Math.abs(coastX + w / 2f - crossX()) < 120 * dp
-            }
+            val atCross = !(!timer && guest) && velY > 700 && coastY + h / 2f > screen.heightPixels * 0.70f && Math.abs(coastX + w / 2f - crossX()) < 120 * dp
             leaving = snapped || atCross
             if (leaving) {
                 tx = crossX() - w / 2f; ty = crossY() - h / 2f

@@ -411,7 +411,10 @@ internal class PanelView(
         // Nothing is smaller; only the space between.)
         val section = 10f
         val under = 6f
-        parts.add(Part(Kind.TITLE, "close", "Sidekick", 44 * dp))
+        // (The header: "Sidekick", then "Dismiss" and the X at its right, 193. If a large text size
+        // leaves no room for "Dismiss" beside the title, it goes on a line of its own under it.)
+        dismissBelow = measure("Sidekick", 22f, 700, true) + 8 * dp + dismissW() + 10 * dp + 44 * dp > innerW
+        parts.add(Part(Kind.TITLE, "close", "Sidekick", (if (dismissBelow) 88 else 44) * dp))
         gap(8f)
         // (From build 186 the dials come before the two switches, so that they are on the screen
         // without scrolling, within the thumb's reach; the switches, rarely used, are at the end.)
@@ -757,6 +760,28 @@ internal class PanelView(
     private fun lensX(): Float = (RestBubble.lensOnScreen()?.get(0) ?: sx) - origin[0]
     private fun lensY(): Float = (RestBubble.lensOnScreen()?.get(1) ?: sy) - origin[1]
 
+    // ---- "Dismiss" (193): the only way to send the Sidekick away. A pill in the header, left of the
+    // X (which only closes the panel), in the style of the panel's own controls.
+    private var dismissBelow = false
+
+    private fun measure(s: String, size: Float, weight: Int, display: Boolean = false): Float {
+        text.typeface = if (display) PanelType.display(context, weight, size) else PanelType.inter(context, weight, size)
+        text.textSize = size * dp * fs
+        text.letterSpacing = if (display) -0.02f else (if (size < 13) 0.01f else -0.006f)
+        return text.measureText(s)
+    }
+
+    private fun dismissW(): Float = measure("Dismiss", 15f, 600) + 2 * 16 * dp
+
+    /** Where "Dismiss" is, in the panel's contents, for the header part [p]. */
+    private fun dismissBox(p: Part): RectF {
+        val w = dismissW()
+        val h = 36 * dp
+        val right = if (dismissBelow) pad + innerW else pad + innerW - 44 * dp - 10 * dp
+        val cy = if (dismissBelow) p.y + 44 * dp + 22 * dp else p.y + 22 * dp
+        return RectF(right - w, cy - h / 2, right, cy + h / 2)
+    }
+
     private fun drawText(canvas: Canvas, s: String, x: Float, baseline: Float, size: Float, weight: Int, color: Int, center: Boolean = false, display: Boolean = false) {
         text.typeface = if (display) PanelType.display(context, weight, size) else PanelType.inter(context, weight, size)
         text.textSize = size * dp * fs
@@ -775,6 +800,13 @@ internal class PanelView(
             Kind.GAP -> {}
             Kind.TITLE -> {
                 drawText(canvas, p.label, x0, y + 30 * dp, 22f, 700, cInk, display = true)
+                // "Dismiss": a pill, as the panel's other controls are, never round like the X.
+                val db = dismissBox(p)
+                val press = (presses["dismiss"]?.value ?: 0f).coerceIn(0f, 1f)
+                paint.style = Paint.Style.FILL
+                paint.color = mix(alpha(cInk, 0.08f), alpha(cInk, 0.16f), press)
+                canvas.drawRoundRect(db, db.height() / 2, db.height() / 2, paint)
+                drawText(canvas, "Dismiss", db.centerX(), db.centerY() + 5 * dp * fs, 15f, 600, cInk, center = true)
                 val cx = x0 + innerW - 22 * dp
                 val cy = y + 22 * dp
                 paint.color = alpha(cInk, 0.1f)
@@ -979,6 +1011,8 @@ internal class PanelView(
                 Kind.TITLE -> {
                     val bx = pad + innerW - 22 * dp
                     if (Math.hypot((cx - bx).toDouble(), (cy - p.y - 22 * dp).toDouble()) < 28 * dp) return "close"
+                    val db = dismissBox(p)
+                    if (cx >= db.left - 4 * dp && cx <= db.right + 4 * dp && cy >= db.top - 4 * dp && cy <= db.bottom + 4 * dp) return "dismiss"
                 }
                 Kind.SWITCH -> return p.id
                 Kind.PICKER -> {
@@ -1092,6 +1126,12 @@ internal class PanelView(
             id == "close" -> {
                 haptic("tick")
                 SidekickPanel.close("its X")
+            }
+            id == "dismiss" -> {
+                // The panel goes back into the Sidekick, and then the Sidekick is sent away (193).
+                haptic("tick")
+                SidekickPanel.close("Dismiss")
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ RestBubble.dismissSidekick() }, 280)
             }
             id == "inApp" || id == "overApps" -> {
                 val v = !switchValue(id)
@@ -1552,7 +1592,7 @@ internal class PanelView(
         val (part, sub) = if (id.contains('.')) id.substringBefore('.') to id.substringAfter('.') else id to ""
         val p = parts.firstOrNull { it.id == part || (part == "look" && it.kind == Kind.LOOKS) || (part == "ruler" && it.kind == Kind.RULERS) } ?: return null
         val local: FloatArray = when (p.kind) {
-            Kind.TITLE -> floatArrayOf(pad + innerW - 22 * dp, p.y + 22 * dp)
+            Kind.TITLE -> if (sub == "dismiss" || id == "dismiss") dismissBox(p).let { floatArrayOf(it.centerX(), it.centerY()) } else floatArrayOf(pad + innerW - 22 * dp, p.y + 22 * dp)
             Kind.SWITCH -> floatArrayOf(pad + innerW - 30 * dp, p.y + 24 * dp)
             Kind.PICKER -> {
                 val i = sub.toIntOrNull() ?: 0
