@@ -230,7 +230,40 @@ near-critically damped.
    - **For building:** next to `Diag.build` in `lib/fit/diag.dart`, constants for the build's date,
      its one-line title and `askedTest`, set with every build. The release checklist gains "set
      `askedTest`".
-8. Whatever else the 182 phone results ask for. The review chat adds it here.
+8. **Measure the glass** (approved by the owner; from the review chat, 16 November 2026).
+   - **Where:** a part of an existing test, preferably the button test's quiet end or a short extra
+     part. No new button.
+   - **What:** colourful content scrolls behind the bar at a steady speed, for about 30 s per level.
+     The test sets the levels:
+     - **Frosted:** a background blurred once;
+     - **Clear:** a live blur of what's behind, quarter resolution, no edge effects;
+     - **Liquid:** a live blur plus edge refraction, dispersion and rim.
+     If Clear doesn't exist as a separate mode today, map it to the nearest existing mode and say
+     which.
+   - **Recorded for each level:**
+     - fps and % late frames;
+     - work per frame (usual / 1 in 20 / worst);
+     - graphics memory;
+     - battery drop over the window.
+   - **Report:** a small table, Frosted / Clear / Liquid × those columns.
+   - **Also measured: the carried lens alone, at full quality, while it's dragged,** to know its real
+     cost. (The owner's rule, DESIGN.md §8: the carried magnifying lens always renders at full quality,
+     whatever the Glass setting or Auto's level; only Android's "reduce transparency" makes it solid.)
+   - **Today's modes vs these names** (from the code, to check when building; `Diag.glassModes`,
+     the bar in `shell.dart`):
+     - 0 "Original": live blur (4), the refraction shader, bevel. That's **Liquid**. Dispersion is on
+       the rider lens (0.2); whether the bar has it is to be checked.
+     - 1 "One at a time": Original, but still glass while the lens is out or moving.
+     - 2 "Frosted": live blur at `GlassQuality.low`, which skips the shader, so no refraction or
+       edges. That's nearest to **Clear**, but its blur is not quarter resolution. The name clashes
+       with the new "Frosted".
+     - 3 "Event": `StillGlass(clear: true)`, a tint over what's behind, no blur. A background blurred
+       once already exists (`Look.instance.frost`, used by `StillGlass` when not `clear`). So the new
+       **Frosted** is `StillGlass` with that image, which the bar doesn't use today.
+     - 4 "Auto": steps among 0–3.
+   - **The machinery exists:** the glass settings test (`PRISM_GLASS_TEST`, `Diag` `_Step`s,
+     `glassRows`, `glassMemory`) already measures processor time and memory per setting. Reuse it.
+9. Whatever else the 182 phone results ask for. The review chat adds it here.
 
 **Later, for step 3's brief (the Sidekick's own app chooser),** not for 183: after a Change or Add, the new
 blob shows only once Prism has sent its picture. Only a menu where every blob is new has nothing to open

@@ -138,6 +138,10 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
 - **Glass only on things that float over content**: the bar and its tab glass, Prism's button, the
   Sidekick, sheets. Cards, lists and buttons are solid.
 - **Glass rims are thin light, never thick tinted bands**, and there are no hard inner circles.
+- **The carried magnifying lens** (the one dragged over widgets) **always renders at full quality**:
+  the full glass (blur, refraction, dispersion and rim), whatever the Glass setting or Auto's current
+  level. The only exception is Android's "reduce transparency", which makes it solid. (The owner's rule,
+  16 November 2026.)
 - **The looks** (Pearls, Petals, Lotus, Beam, Halo, Window; Window is the default): each fills the
   glass and is balanced in it. Looks that turn keep their colours still while their shape turns
   (Window, Petals). Every look is easy to remove completely: one entry and one function in
