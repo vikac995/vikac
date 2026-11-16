@@ -123,7 +123,7 @@ long test:    CHECKS: 62 right, 4 wrong, of 66 (the usual 4)
 - Its `classes.dex` has `lensMid` and `sampleDrew`. Its `libapp.so` has "Prism build 183", "TEST THIS ONE"
   and `prism_reports`.
 - sha256 `0e9de9209c68215e539e6f3742ae04d7e2112f0e9266325897f891bf2c5237f6`, 18,731,258 bytes.
-- Link: LINK_RESULT
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/687ac2a51d34278ddc20d20342afc7f26435bc49/lumen/releases/prism-build-183.apk
 
 ## Where I could be wrong
 
