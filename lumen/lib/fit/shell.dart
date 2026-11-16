@@ -986,7 +986,9 @@ class _ShellState extends State<Shell>
       return;
     }
     _buttonTapsFromSidekick++;
-    Diag.instance.event('a tap on the button closed the Sidekick\'s menu: Prism takes it');
+    Diag.instance.event(
+      'a tap on the button closed the Sidekick\'s menu: Prism takes it',
+    );
     _doTap(_tapOutcome());
   }
 
@@ -4453,7 +4455,9 @@ class _ShellState extends State<Shell>
         {
           _setOpen(true);
           await Robot.wait(700);
-          RestBubble.instance.handle(const MethodCall('sidekickOpened', 'menu'));
+          RestBubble.instance.handle(
+            const MethodCall('sidekickOpened', 'menu'),
+          );
           await Robot.wait(700);
           final bool closed = !_open;
           final bool upAfterClose = !_pointsDown(_signTurn.target);
@@ -5314,6 +5318,105 @@ class _ShellState extends State<Shell>
               await openMenu();
             }
           }
+          // Dragged with its blobs out (192): a drag begun on the Sidekick in the middle of its
+          // blobs folds them away within 0.25 s and carries it, 1:1; once it has come to rest its
+          // blobs come out again round it, clear of each other. A tap still only closes them. Dropped
+          // on the cross at the top, it is sent away and its blobs stay in.
+          if (opened) {
+            double numIn(Object? v) => v is num ? v.toDouble() : double.nan;
+            Map<String, Object?> m0 = await where();
+            if (m0['menu'] != true) {
+              await openMenu();
+              m0 = await where();
+            }
+            final List<Object?> mid0 =
+                (m0['lensMid'] as List<Object?>?) ?? const <Object?>[];
+            final double hPt = numIn(m0['h']) / dp;
+            final double sizePt = numIn(m0['size']) / dp;
+            final double y0 = mid0.length == 2 ? numIn(mid0[1]) : hPt / 2;
+            final int dy = y0 > hPt / 2 ? -120 : 120;
+            final double want =
+                (y0 + dy).clamp(48 + sizePt / 2, hPt - 48 - sizePt / 2) - y0;
+            final int dragsWas = numIn(m0['menuDrags']).isNaN
+                ? 0
+                : numIn(m0['menuDrags']).toInt();
+            final int reopensWas = numIn(m0['menuReopens']).isNaN
+                ? 0
+                : numIn(m0['menuReopens']).toInt();
+            final Map<String, Object?> dr = await t.lens(<String, Object?>{
+              'op': 'menu',
+              'what': 'dragLens',
+              'dy': dy,
+              'settleMs': 1800,
+            }, extraMs: 4000);
+            t.lensRun('menu dragLens', dr);
+            await Robot.wait(900);
+            Map<String, Object?> m1 = await where();
+            final List<Object?> mid1 =
+                (m1['lensMid'] as List<Object?>?) ?? const <Object?>[];
+            final double moved = mid1.length == 2
+                ? numIn(mid1[1]) - y0
+                : double.nan;
+            final double foldMs = numIn(m1['menuFoldMs']);
+            t.check(
+              'sidekick: dragged with its blobs out, they fold away within 0.25 s and it is carried 1:1',
+              numIn(m1['menuDrags']) == dragsWas + 1 &&
+                  foldMs >= 0 &&
+                  foldMs <= 250 &&
+                  (moved - want).abs() < 24,
+              'its blobs all in ${foldMs.isNaN || foldMs < 0 ? '?' : foldMs.round()} ms after it was picked up; it moved ${moved.isNaN ? '?' : moved.toStringAsFixed(0)} points (dragged $dy from ${y0.toStringAsFixed(0)}, ${want.toStringAsFixed(0)} meant)',
+            );
+            t.check(
+              'sidekick: dragged with its blobs out, once it is still its blobs come out again round it',
+              m1['menu'] == true && numIn(m1['menuReopens']) == reopensWas + 1,
+              'its blobs ${m1['menu'] == true ? 'out' : 'in'}, opened again ${numIn(m1['menuReopens']).isNaN ? '?' : numIn(m1['menuReopens']).toInt() - reopensWas} time(s); its last touch: ${m1['touch'] ?? '?'}',
+            );
+            if (m1['menu'] == true) {
+              final Map<String, Object?> geo = await menu('geometry');
+              final List<Object?> w =
+                  (geo['wrong'] as List<Object?>?) ?? const <Object?>[];
+              t.check(
+                'sidekick: after the drag, its blobs out again clear of each other',
+                geo['least'] is num && w.isEmpty,
+                '${w.isEmpty ? 'clear' : w.join(', ')}; the smallest gap ${geo['least']} points; turned ${geo['turned']}°, ${geo['grown']}×',
+              );
+              // A tap on it with its blobs out: they close, and do not come out again.
+              await menu('middle', settleMs: 900);
+              await Robot.wait(1500);
+              m1 = await where();
+              t.check(
+                'sidekick: a tap on it with its blobs out closes them, and they stay in',
+                m1['menu'] != true &&
+                    numIn(m1['menuReopens']) == reopensWas + 1,
+                'its blobs ${m1['menu'] == true ? 'out' : 'in'}, opened again ${numIn(m1['menuReopens']).isNaN ? '?' : numIn(m1['menuReopens']).toInt() - reopensWas} time(s) in all',
+              );
+            }
+            // Carried onto the cross at the top with its blobs out: sent away, its blobs stay in.
+            if (await openMenu()) {
+              final Map<String, Object?> dc = await t.lens(<String, Object?>{
+                'op': 'menu',
+                'what': 'dragLens',
+                'toCross': true,
+                'settleMs': 1800,
+              }, extraMs: 4000);
+              t.lensRun('menu dragLens to the cross', dc);
+              await Robot.wait(1200);
+              m1 = await where();
+              t.check(
+                'sidekick: carried onto the cross with its blobs out, it is sent away and its blobs stay in',
+                m1['lens'] != true &&
+                    m1['menu'] != true &&
+                    numIn(m1['menuReopens']) == reopensWas + 1,
+                'shown ${m1['lens']}, its blobs ${m1['menu'] == true ? 'out' : 'in'}, opened again ${numIn(m1['menuReopens']).isNaN ? '?' : numIn(m1['menuReopens']).toInt() - reopensWas} time(s) in all',
+              );
+              await t.lens(<String, Object?>{'op': 'side', 'on': true});
+              await Robot.wait(1200);
+            }
+            // (Its blobs out again, for what follows.)
+            if ((await where())['menu'] != true) {
+              await openMenu();
+            }
+          }
           s = await menu('hold', i: 1);
           t.check(
             'sidekick: holding a blob brings its small menu',
@@ -5956,11 +6059,21 @@ class _ShellState extends State<Shell>
           // Dragged by hand while the panel is open: the Sidekick moves, the panel stays open and
           // follows it up and down (when it is short enough to move; a panel as tall as the screen
           // stays where it is).
+          // (Toward the middle of the screen, where there is room: let go, the Sidekick rests no
+          // nearer than 48 points to the top or the bottom, so dragged 120 up from high on the
+          // screen it would come to rest only part of the way: 190's one miss on the S26, which
+          // moved −60 of −120.)
           final Map<String, Object?> d0 = await where();
+          final double sizePt = numOf(d0['size']) / dp;
+          final double hPt = numOf(d0['h']) / dp;
+          final double from = midOf(d0)[1];
+          final int dy = from > hPt / 2 ? -120 : 120;
+          final double want =
+              (from + dy).clamp(48 + sizePt / 2, hPt - 48 - sizePt / 2) - from;
           final Map<String, Object?> d1 = await t.lens(<String, Object?>{
             'op': 'panel',
             'what': 'dragLens',
-            'dy': -120,
+            'dy': dy,
             'settleMs': 1500,
           }, extraMs: 5000);
           final double moved = midOf(d1)[1] - midOf(d0)[1];
@@ -5983,11 +6096,11 @@ class _ShellState extends State<Shell>
           t.check(
             'sidekick panel: dragged by hand with the panel open, the Sidekick moves and the panel follows it',
             d1['panelOpen'] == true &&
-                (moved + 120).abs() < 40 &&
+                (moved - want).abs() < 40 &&
                 (tall
                     ? boxMoved.abs() < 2 || (boxMoved - moved).abs() < 30
                     : (boxMoved - moved).abs() < 30),
-            'the Sidekick moved ${moved.toStringAsFixed(0)} points (dragged -120), the panel ${boxMoved.toStringAsFixed(0)}${tall ? ' (as tall as it may be: it may only stay or follow)' : ''}; open ${d1['panelOpen']}; the panel ${b0.length == 4 ? numOf(b0[3]).toStringAsFixed(0) : '?'} tall, may reach from ${numOf(d0['panelTopLimit']).toStringAsFixed(0)} to ${numOf(d0['panelBottomLimit']).toStringAsFixed(0)}, fills it ${d0['panelFills']}',
+            'the Sidekick moved ${moved.toStringAsFixed(0)} points (dragged $dy from ${from.toStringAsFixed(0)} down the screen, ${want.toStringAsFixed(0)} meant), the panel ${boxMoved.toStringAsFixed(0)}${tall ? ' (as tall as it may be: it may only stay or follow)' : ''}; open ${d1['panelOpen']}; the panel ${b0.length == 4 ? numOf(b0[3]).toStringAsFixed(0) : '?'} tall, may reach from ${numOf(d0['panelTopLimit']).toStringAsFixed(0)} to ${numOf(d0['panelBottomLimit']).toStringAsFixed(0)}, fills it ${d0['panelFills']}',
           );
           // Back to where it was, for what follows.
           await t.lens(<String, Object?>{
@@ -6236,6 +6349,7 @@ class _ShellState extends State<Shell>
                     numOf(m['pix${d}NumberLeast']) >= full - 5,
               );
         }
+
         String pixelsSaid(Map<String, Object?> m) => m['pixNote'] != null
             ? 'its pixels: ${m['pixNote']}'
             : 'its pixels: the section at least ${m['pixBlockLeast']} of 255, the rest ${m['pixRest']}; '
@@ -6262,7 +6376,12 @@ class _ShellState extends State<Shell>
             return;
           }
           final double was = numOf(kept(await where())?[id]);
-          s = await panel('press', part: 'ruler.$id', holdMs: 900, pixels: true);
+          s = await panel(
+            'press',
+            part: 'ruler.$id',
+            holdMs: 900,
+            pixels: true,
+          );
           t.check(
             'sidekick panel: $name touched, the Sidekick goes there, the rest of the panel see-through, "Where it rests" solid',
             (s['tucked'] == true) == tucks &&
@@ -6582,10 +6701,7 @@ class _ShellState extends State<Shell>
           final double pastShare = mid.length == 2 && r > 0
               ? math.max(
                       0,
-                      math.max(
-                        r - numOf(mid[0]),
-                        numOf(mid[0]) + r - screenW,
-                      ),
+                      math.max(r - numOf(mid[0]), numOf(mid[0]) + r - screenW),
                     ) /
                     (2 * r)
               : double.nan;
@@ -6594,8 +6710,7 @@ class _ShellState extends State<Shell>
           final double gripW = gb.length == 4 ? numOf(gb[2]) / dp : 0;
           final bool gripAtEdge =
               gb.length == 4 &&
-              (numOf(gb[0]) <= 1 ||
-                  numOf(gb[0]) + numOf(gb[2]) >= wPx - 1);
+              (numOf(gb[0]) <= 1 || numOf(gb[0]) + numOf(gb[2]) >= wPx - 1);
           // (Beside it: against where Android has put the Sidekick's own window on the screen,
           // measured as the strip's is. Until 191 this used its "y", which carries a stale offset
           // between a window's own place and the screen's (the 39 points in every report), so on
@@ -6640,7 +6755,7 @@ class _ShellState extends State<Shell>
                   gripAtEdge &&
                   gripBeside,
               'grip ${s['gripOpen'] == true ? 'open' : 'none'} (for resting past the edge: ${s['gripHover']}), ${gripW.toStringAsFixed(1)} × ${gripH.toStringAsFixed(1)} points (the Sidekick ${(numOf(s['size']) / dp).toStringAsFixed(1)}), at the edge $gripAtEdge, beside it $gripBeside (the strip ${gb.length == 4 ? '${(numOf(gb[1]) / dp).round()}–${((numOf(gb[1]) + numOf(gb[3])) / dp).round()}' : '?'}, the Sidekick ${ls.length == 4 ? '${(numOf(ls[1]) / dp).round()}–${((numOf(ls[1]) + numOf(ls[3])) / dp).round()}' : '?'} points down the screen); '
-              '${showing(s).toStringAsFixed(1)} points of the Sidekick showing',
+                  '${showing(s).toStringAsFixed(1)} points of the Sidekick showing',
             );
             // Kept from Back: only where there is a Back swipe at the sides (gesture navigation).
             const String kept =

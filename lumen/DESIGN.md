@@ -112,6 +112,11 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
     most about one and a half blobs wide, ending in "…"; kept on the screen and off Prism's bar. A
     name never covers a blob, a badge, the Sidekick or another name; blobs and badges are always
     drawn over names.
+- **The Sidekick can be dragged with its blobs out** (from 192, the owner's request): a drag that
+  begins on it (its glass and 6 points round it) folds the blobs back in at once, the usual close,
+  and carries it, following the finger exactly as at any other time. Let go, it settles as always;
+  once still, its blobs come out again round it where it is. Not if it was sent away on the cross,
+  and not if it was tucked away (a tucked Sidekick has no fan). A tap still only closes them.
 - **The button never goes bare.** With an empty menu it keeps its look, in the light's own colours.
 - **Change** opens the list titled "Change ..." with a red Remove in it; while it is up, the button
   becomes the blob being changed, and goes back after.

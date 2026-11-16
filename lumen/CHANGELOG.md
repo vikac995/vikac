@@ -1,5 +1,22 @@
 # Lumen changelog
 
+## Prism, build 192 (16 November 2026)
+
+**File:** `releases/prism-build-192.apk`
+
+Needs Play Protect paused to install. Can be installed over build 191.
+
+**Drag the Sidekick with its blobs out, as you asked:**
+- Put a finger on the Sidekick while its blobs are out and move it: the blobs fold away at once, and the Sidekick follows your finger, exactly as a normal drag.
+- Let go and it settles as always: at its side, tucked, or sent away on the cross at the top. Once it's still, its blobs fan out again around its new place.
+- Not if you sent it away, and not if it ended tucked (a tucked Sidekick has no fan).
+- A tap on it with its blobs out still just closes them; holding it still opens its settings.
+
+**The test kit:** the "dragged by hand with the panel open" check now drags toward the middle of the screen, so the Sidekick always has room to move. In 190 it once dragged up from near the top, and the Sidekick, which always rests at least 48 points from the top, could only come part of the way.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 191 (16 November 2026)
 
 **File:** `releases/prism-build-191.apk`

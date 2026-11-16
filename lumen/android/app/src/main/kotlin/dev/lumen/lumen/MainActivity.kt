@@ -2257,6 +2257,44 @@ class Floater(val timer: Boolean) {
     // What the Sidekick's menu did with its last tap, in words (190).
     var menuTap = ""
 
+    // (192) Dragged with its blobs out: how often, when the drag was handed on and when its blobs
+    // were all back in, and how often they came out again after.
+    var menuDrags = 0
+    var menuDragAt = 0L
+    var menuInAt = 0L
+    var menuReopens = 0
+    private var reopenAfterDrag = false
+
+    /**
+     * After a drag begun with its blobs out: once the Sidekick has come to rest, its blobs come out
+     * again where it is. Not if it was dropped on the cross (it is gone) or tucked away (a tucked
+     * Sidekick has no fan); not if it never comes to rest within 3 s.
+     */
+    private fun reopenWhenStill(context: Context) {
+        val until = android.os.SystemClock.uptimeMillis() + 3000
+        val check = object : Runnable {
+            override fun run() {
+                if (!reopenAfterDrag) return
+                val v = view
+                if (v == null || !v.isAttachedToWindow || swallowing || dismissed || tucked) {
+                    reopenAfterDrag = false
+                    Trail.add("$who: after the drag, its blobs stay in (${if (tucked) "tucked away" else "sent away"})")
+                    return
+                }
+                if (v.movingNow() || v.pressedNow() || menu != null) {
+                    if (android.os.SystemClock.uptimeMillis() < until) watcher.postDelayed(this, 50) else reopenAfterDrag = false
+                    return
+                }
+                reopenAfterDrag = false
+                if (blobs.isEmpty()) return
+                menuReopens++
+                Trail.add("$who: come to rest after the drag: its blobs come out again here")
+                openMenu(context)
+            }
+        }
+        watcher.postDelayed(check, 80)
+    }
+
     // While the lens's own menu is open, and only then, this hears Android announce that the
     // person is heading for the home screen or the recent apps, and closes the menu. The menu
     // holds the focus, so it is not told any other way.
@@ -2363,6 +2401,11 @@ class Floater(val timer: Boolean) {
         m["swaps"] = swaps
         m["buttonTaps"] = buttonTaps
         m["menuTap"] = menuTap
+        // Dragged with its blobs out (192): how often; how long after the drag was handed on its
+        // blobs were all back in (-1 if not yet); how often they came out again after.
+        m["menuDrags"] = menuDrags
+        m["menuFoldMs"] = if (menuInAt > menuDragAt && menuDragAt > 0L) menuInAt - menuDragAt else -1L
+        m["menuReopens"] = menuReopens
         // Where the cross is on the screen, in pixels, and how far down the status bar and the
         // camera reach; how it showed while the Sidekick was last carried; whether Prism has the
         // focus (the notification shade, pulled down, would take it) (190).
@@ -2958,6 +3001,18 @@ class Floater(val timer: Boolean) {
                         "back" -> {
                             m.testBack()
                             watcher.postDelayed({ after() }, num("settleMs", 600))
+                        }
+                        // A drag begun on the Sidekick in the middle of its blobs (192): [dy] points
+                        // down the screen, or onto the cross ("toCross").
+                        "dragLens" -> {
+                            val at = IntArray(2)
+                            m.getLocationOnScreen(at)
+                            val from = m.testMiddle()
+                            val to = if (a["toCross"] == true) {
+                                val c = crossAt(context)
+                                floatArrayOf(c[0] - at[0], c[1] + crossOff - at[1])
+                            } else floatArrayOf(from[0], from[1] + num("dy", 120) * context.resources.displayMetrics.density)
+                            finger(m, listOf(from, to), true, 60, num("legMs", 700), num("endMs", 120), false, num("settleMs", 1800), { true }, after)
                         }
                         // How clear of each other the open menu's blobs, names, badges and the
                         // Sidekick are (191).
@@ -3849,7 +3904,10 @@ class Floater(val timer: Boolean) {
                     for (i in 0 until n) if (out[i] > 0.03f) gone = false
                     if (gone) {
                         running = false
-                        removeMenu(context)
+                        if (menuInAt == 0L) menuInAt = android.os.SystemClock.uptimeMillis()
+                        // (While a drag begun on the Sidekick is handed on to it, 192, this window
+                        // keeps the finger until it lifts: taken away now, the drag would end.)
+                        if (handing) removeLater = true else removeMenu(context)
                         return
                     }
                     moving = true
@@ -4194,11 +4252,66 @@ class Floater(val timer: Boolean) {
             SidekickMenu.remove(c, slot)
         }
 
+        // (192) A drag begun on the Sidekick in the middle of its blobs: the blobs fold back in and
+        // the Sidekick is dragged, as at any other time. From the moment it is handed on, every
+        // touch of that finger goes to the Sidekick; this window waits for the finger to lift.
+        private var handing = false
+        private var removeLater = false
+        private var downRawX = 0f
+        private var downRawY = 0f
+        private var lensDown = false
+
+        private fun handOn(e: android.view.MotionEvent) {
+            val v = view
+            if (v == null) {
+                handing = false
+                return
+            }
+            v.onTouchEvent(e)
+            if (e.actionMasked == android.view.MotionEvent.ACTION_UP || e.actionMasked == android.view.MotionEvent.ACTION_CANCEL) {
+                handing = false
+                // Once it has come to rest, its blobs come out again where it is (not if it was
+                // sent away, or tucked away: see [reopenWhenStill]).
+                reopenWhenStill(context)
+                if (removeLater) {
+                    removeLater = false
+                    removeMenu(context)
+                }
+            }
+        }
+
         override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+            if (handing) {
+                handOn(e)
+                return true
+            }
+            if (opening && flying < 0 && dragging < 0 && menuFor == -1 && lensDown && e.actionMasked == android.view.MotionEvent.ACTION_MOVE &&
+                Math.hypot((e.rawX - downRawX).toDouble(), (e.rawY - downRawY).toDouble()) > 10 * dp) {
+                // Past the touch slop: picked up. (A tap still closes the blobs, and a hold still
+                // brings its settings: neither moves this far.)
+                handing = true
+                lensDown = false
+                removeCallbacks(keep)
+                removeCallbacks(lensHold)
+                removeCallbacks(spaceHold)
+                pressedAt = -1
+                menuDrags++
+                menuDragAt = android.os.SystemClock.uptimeMillis()
+                menuInAt = 0L
+                reopenAfterDrag = true
+                Trail.add("$who: dragged with its blobs out: they fold away, and it is carried")
+                close()
+                view?.pickUpAt(downRawX, downRawY)
+                handOn(e)
+                return true
+            }
             if (!opening || flying >= 0) return true
             when (e.actionMasked) {
                 android.view.MotionEvent.ACTION_DOWN -> {
                     downX = e.x; downY = e.y
+                    downRawX = e.rawX; downRawY = e.rawY
+                    // (On the Sidekick itself, in the middle of its blobs: a drag from here carries it, 192.)
+                    lensDown = guest && Math.hypot((e.x - cx).toDouble(), (e.y - cy).toDouble()) < lensR + 6 * dp
                     kept = false
                     moved = false
                     dragging = -1
@@ -6033,6 +6146,19 @@ class Floater(val timer: Boolean) {
         // (Reaching 24 points above and below it: 190, as the owner asked for more room.)
         private val GRAB_PAD = 24f
         private val gripCheck = Runnable { fitGrip() }
+
+        /**
+         * Picked up where the finger came down, at [rx], [ry] on the screen, as a touch-down on it
+         * would (192: a drag begun on it with its blobs out, handed on by its menu).
+         */
+        fun pickUpAt(rx: Float, ry: Float) {
+            panelTouch = false
+            ignoring = false
+            if (roaming) rest()
+            pressAt(rx, ry)
+        }
+
+        fun pressedNow() = pressed
 
         /** Where its window's left edge is when it rests at that side (for the fan's test, 191). */
         fun restLeft(right: Boolean): Float =
