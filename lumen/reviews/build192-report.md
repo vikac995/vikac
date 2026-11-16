@@ -85,7 +85,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
 - Its `classes.dex` has `menuFoldMs`, `menuReopens` and the drag's trail lines. Its `libapp.so` has "Prism
   build 192", "Drag it with its blobs out" and the new checks.
 - sha256 `4ef3f7e6e4385badc659696441ae58c54db4cc64bb6f4b0ab6a07079f210f51a`, 18,878,922 bytes.
-- Link: in the next commit.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/6066ee90032fa9991c5d771395e070d2a48ce008/lumen/releases/prism-build-192.apk
 
 ## Where I could be wrong
 
