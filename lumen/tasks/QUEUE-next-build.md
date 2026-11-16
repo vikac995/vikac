@@ -3,6 +3,10 @@
 From the review chat, 16 November 2026. Don't build before the owner's phone results for 182 and the
 review chat's go (see LESSONS.md: no new build while the owner is testing).
 
+**For every item: "Snappy: almost instant, but beautiful."** (The owner's rule, DESIGN.md §3.) Every
+animation lands in about 0.2 s, with at most a tiny settle and never a long wobble. Springs are stiff and
+near-critically damped.
+
 1. **The button test waits for the Sidekick's pictures before tapping.**
    - In part 4, after the test's menu is set (`op: 'sidekick'`), wait until `sidekickPicturesFor` reads
      "5 of 5" (up to a few seconds), then tap.
@@ -25,6 +29,12 @@ review chat's go (see LESSONS.md: no new build while the owner is testing).
        - same orientation, but the outcome changed → +120° (the owner's choice). This is one named
          constant or setting, `sameMeaningTurn` = 120 | 0, so it can be changed later in one place.
      - The angle only increases and is never re-based. One critically or over-damped spring.
+     - **Snappy:** it lands in about 0.2 s. It must also pass the test's 1° overshoot limit, so it is
+       critically damped (ζ 1), not the mock-up's 0.78 (that goes about 2% past: 1.2° on a 60° turn).
+       To within 2% of the stop:
+       - `Motions.effects` (1600, ζ 1): about 150 ms, an existing named spring;
+       - 1100 at ζ 1: about 175 ms, which would be a new named one;
+       - today's `Motions.spatial` (700, 0.9): about 180 ms, and not critically damped.
    - **Cases:**
      - the drawer chosen for a blob: up;
      - the drawer chosen for the Sidekick: down;
@@ -98,6 +108,10 @@ review chat's go (see LESSONS.md: no new build while the owner is testing).
         point.)
      3. **The close spring:** keep `spatialFast` if the tail looks fine once 1 and 2 are done;
         otherwise a slightly faster tail. My call; the report notes which, and why.
+        - **Snappy:** `spatialFast` (1400, 0.9) is within 2% of shut in about 130 ms, but its last
+          30% → 0.4% takes about 90 ms. With the panel shrinking to a point inside the glass, that
+          tail is hidden under the glass. If it still reads as slow, it gets a stiffer, critically
+          damped spring.
      4. **Tests:** sample at the centre and on a ring just inside the glass edge, at several closing
         stages including the last 20%, and the same for opening.
    - **Later, not 183:** Prism's own panels will go into and come out of Prism's button the same way,

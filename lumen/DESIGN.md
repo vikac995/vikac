@@ -26,13 +26,22 @@ answer here.
 
 ## 3. Motion
 
+**"Snappy: almost instant, but beautiful."** (The owner's rule, 16 November 2026. It applies to everything
+from build 183 on.)
+- **Every animation lands in about 0.2 s,** with at most a tiny settle. Never a long wobble.
+- **Springs are stiff and near-critically damped.** For reference, the owner's tuned Prism Shapes mock-up:
+  stiffness 1100, damping 52, mass 1 (ζ ≈ 0.78), visually done in about 0.2 s
+  (https://claude.ai/artifact/ULmc5XwopWThc87pLGC7tS).
+- **Where something must never go past its stop** (the triangle's turn), the spring is critically damped
+  (ζ 1). ζ 0.78 goes about 2% past: on a 60° turn, a degree.
+
 All motion uses the named springs in `lib/core/springs.dart`. No new timings: pick the spring.
 
 | What | Spring | Feel |
 |---|---|---|
 | Something opening from Prism's button (app list, Prism's settings) | `Motions.snappy` | Quick, with only a hint of give. It is done all day: never slow. |
 | The same closing | `Motions.spatialFast` | Quick, no bounce. Closing is as fast as opening, never slower. |
-| The sign turning (triangle) | `Motions.spatial` | A visible turn, about a fifth of a second for half a turn. No overshoot, never so fast it reads as a jump. |
+| The sign turning (triangle) | `Motions.spatial` until 183; from 183 a stiff, critically damped one (see `tasks/QUEUE-next-build.md`) | Lands in about 0.2 s. Never past its stop, never back. |
 | Values settling (sliders, density) | `Motions.effects` family | No bounce at all. |
 
 - **What opens from a button grows out of that button and goes back into it.** The app list and
