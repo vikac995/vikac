@@ -132,7 +132,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
 - Its `classes.dex` has `gripHover`, `gripBox` and the grab area's trail line. Its `libapp.so` has "Prism
   build 189", "The Hovering range" and the new checks.
 - sha256 `a2c54ce943ee185e5620ee3f8e3991167dd81ebdf105daf2b6d01b5d97cf5adf`, 18,878,922 bytes.
-- Link: in the next commit.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/7b9c0e2d1703433bd00231cae2cf9d7db0b7c293/lumen/releases/prism-build-189.apk
 
 ## Where I could be wrong
 
