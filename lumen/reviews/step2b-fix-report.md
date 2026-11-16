@@ -105,3 +105,22 @@ downloaded file has the same sha256 as the one built.
 2. Hold the Sidekick, let go, and wait. The panel should stay open. Then close it with the ✕.
 3. Send the flight recorder right after.
 4. Then the button test.
+
+## Build 180: the same fix, made exactly as the brief says
+
+- **Why:** the review's message of 00:13 (sent while 179 was being built) asks for close on "homekey"
+  or "recentapps" only, and for the panel's age in every close line. 179 also closed on "lock" and
+  "dream", and gave no age.
+- **What changed in 180** (`SidekickPanel.kt` only):
+  - Only "homekey" and "recentapps" close it, plus the screen going off. "lock" and "dream" are now
+    written in the recorder and leave it open; locking turns the screen off, which closes it anyway.
+  - Every close writes "Sidekick: its own settings closing, N ms after they opened: why" when it begins.
+  - It writes "… gone, N ms after they opened (why)" when its window is removed.
+- **Checked:** Kotlin compiles; the preview button test gives 67 of 68 (the Android-only miss). The long
+  test isn't re-run: Prism's code is unchanged from 179 but for its build number.
+- **Build 180:** `Prism build 180`, `0.141.0+208`. NAME-OK; "ms after they opened" is in its
+  `classes.dex`. sha256 `238255a523073a8f3f37866052aca4cbfead1abce410d76d13ad2623b44db2c6`, 18,665,722
+  bytes. Link: LINK180
+
+**For the owner:** install 180 rather than 179. Then as above: hold, let go, wait, close with the ✕, send
+the recorder, then the button test.

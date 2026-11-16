@@ -101,15 +101,15 @@ object SidekickPanel {
         val r = listener
         listener = null
         if (r != null) try { v.context.applicationContext.unregisterReceiver(r) } catch (e: Exception) {}
-        Trail.add("Sidekick: its own settings closed ($why)")
+        Trail.add("Sidekick: its own settings gone, ${v.age()} ms after they opened ($why)")
     }
 
-    // Heading for the home screen or the recent apps, the phone locking or dreaming, or the
-    // screen going off: it closes. Android (and One UI) announce "close system dialogs" for many
-    // other reasons too ("assist", "globalactions", and others with no reason at all, some of
-    // them on window changes): those are written in the recorder and leave it open. (Build 178
-    // closed on every one of them, and the owner saw it close by itself a moment after opening.)
-    private val closingReasons = setOf("homekey", "recentapps", "lock", "dream")
+    // Heading for the home screen or the recent apps, or the screen going off: it closes. Android
+    // (and One UI) announce "close system dialogs" for many other reasons too ("assist",
+    // "globalactions", "lock", "dream", "voiceinteraction", and some with no reason at all, on
+    // window changes): those are written in the recorder and leave it open. (Build 178 closed on
+    // every one of them, and the owner saw it close by itself a moment after opening.)
+    private val closingReasons = setOf("homekey", "recentapps")
 
     private fun listen(app: Context) {
         if (listener != null) return
@@ -121,7 +121,7 @@ object SidekickPanel {
                 }
                 val reason = i.getStringExtra("reason")
                 if (reason != null && reason in closingReasons) {
-                    close("Android said \"$reason\": home, recent apps, the lock or the screensaver")
+                    close("Android said \"$reason\": the home screen or the recent apps")
                 } else {
                     Trail.add("Sidekick: its own settings stay open: Android said \"close system dialogs\" (${reason ?: "no reason given"})")
                 }
@@ -426,10 +426,15 @@ internal class PanelView(
         super.onDetachedFromWindow()
     }
 
+    // When it opened, for the recorder: how long it was open when something closed it.
+    private val born = android.os.SystemClock.uptimeMillis()
+    fun age(): Long = android.os.SystemClock.uptimeMillis() - born
+
     fun close(reason: String) {
         if (closing) return
         closing = true
         why = reason
+        Trail.add("Sidekick: its own settings closing, ${age()} ms after they opened: $reason")
         endRuler(save = true, back = false)
         coasting = null
         // Back into the Sidekick, as fast as it came out: and the Sidekick to its state of before.

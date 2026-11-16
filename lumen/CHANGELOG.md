@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 180 (16 November 2026)
+
+**File:** `releases/prism-build-180.apk`
+
+Needs Play Protect paused to install. Can be installed over build 179. **Install this one rather than 179.**
+
+**Build 179 made exactly as the review asked:** the review's brief, sent while 179 was being built, differs from it in two small ways. Nothing else changes.
+
+- **Only Home and the recent apps** (and the screen going off) close the Sidekick's panel now. 179 also closed it when the phone locked or the screen saver came on; locking turns the screen off, which closes it anyway.
+- **Every close says how long the panel had been open,** in milliseconds, in the flight recorder: "its own settings closing, N ms after they opened: why".
+
+**Checked:** it compiles, both sides; in my preview: the button test, 67 of 68 (the Android-only miss). Not re-run: the long test, since Prism's own code is unchanged from 179 but for its build number.
+**Not checked:** on a phone.
+
 ## Prism, build 179 (16 November 2026)
 
 **File:** `releases/prism-build-179.apk`
