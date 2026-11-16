@@ -129,7 +129,7 @@ long test:    CHECKS: 62 right, 4 wrong, of 66 (the usual 4)
 - Its `classes.dex` has `panelAlpha`, `dragLens` and `sampleRing`. Its `libapp.so` has "Prism build
   185" and the no-shade check.
 - sha256 `27acb58c62315d4b77d764f30994a97da0307f1e67197ed060bd64fb3991bfdd`, 18,797,002 bytes.
-- Link: LINK_RESULT
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/e8004671187d862c395baea6f55bb6931194f7be/lumen/releases/prism-build-185.apk
 
 ## Where I could be wrong
 
