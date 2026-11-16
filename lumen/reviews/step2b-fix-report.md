@@ -1,6 +1,7 @@
 # Step 2b fix report: the panel that closed by itself (build 179)
 
-Brief: `tasks/STEP2b-fix.md`. Branch `claude/flutter-ui-showcase-ngzfru`, based on `58cc217`. Fix only.
+Brief: `tasks/STEP2b-fix.md`. Branch `claude/flutter-ui-showcase-ngzfru`, based on `58cc217`. Two commits: `b3c0414` (the code, the APK, the
+changelog, the brief, this report) and the one after it, which only adds the checked link here. Fix only.
 
 **What was seen** (two of the owner's screen recordings of 178): held, the panel opens fully, stays about
 0.6–1.0 s after the finger lifts, then closes back into the Sidekick by itself. The keyboard of the app
@@ -93,7 +94,10 @@ long test:    CHECKS: 62 right, 4 wrong, of 66 (the usual 4)
 
 **Build 179:** `Prism build 179`, `0.140.0+207`, built from the final code. NAME-OK. The new recorder lines are in
 its `classes.dex`, and the new check in its `libapp.so`. sha256
-`9872353b32d9932cbd016d8ebe64bc95f41fd8d874b4423421773ab75eb2016f`, 18,665,722 bytes. Link: LINK_RESULT
+`9872353b32d9932cbd016d8ebe64bc95f41fd8d874b4423421773ab75eb2016f`, 18,665,722 bytes. Link:
+https://github.com/vikac995/vikac/raw/b3c0414231ece8596f817d7f61acac47c4496daf/lumen/releases/prism-build-179.apk
+(pinned to `b3c0414`, the commit that added the APK). Checked after the push: it answers 200, and the
+downloaded file has the same sha256 as the one built.
 
 ## For the owner on the phone
 
