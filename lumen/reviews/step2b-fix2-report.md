@@ -116,7 +116,7 @@ long test:    CHECKS: 62 right, 4 wrong, of 66 (the usual 4)
 
 **Build 181:** `Prism build 181`, `0.142.0+209`, built from the final code. NAME-OK. "stand-in" is in
 its `classes.dex`, and "put above its own settings panel" no longer is. sha256
-`f2272d8db0b5780b85af589f266c7518353e0419c2ec288ea38d8dbd005e66e1`, 18,665,722 bytes. Link: LINK_RESULT
+`f2272d8db0b5780b85af589f266c7518353e0419c2ec288ea38d8dbd005e66e1`, 18,665,722 bytes. Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/8db28c07a2a73f2461f093f0eeb8435240d2370c/lumen/releases/prism-build-181.apk
 
 ## For the owner on the phone
 
