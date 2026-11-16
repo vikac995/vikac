@@ -828,8 +828,15 @@ class TestRun {
             .length;
         final String name = all.length > 1 ? '${e.key} x${all.length}' : e.key;
         if (good.isEmpty) {
+          // Done every time, but nothing drawn was timed (as "untuck"): what it did, in words.
+          final Set<String> did = <String>{
+            for (final Map<String, Object?> m in all)
+              if (m['did'] != null) '${m['did']}',
+          };
           o.writeln(
-            '${name.padRight(46)}     -      -          -          -   NOT DONE: ${all.first['note']}',
+            failed == 0
+                ? '${name.padRight(46)}     -      -          -          -   done, not timed${did.isEmpty ? '' : ': ${did.join('; ')}'}'
+                : '${name.padRight(46)}     -      -          -          -   NOT DONE: ${all.firstWhere((Map<String, Object?> m) => m['ok'] != true)['note']}',
           );
           continue;
         }

@@ -2317,6 +2317,7 @@ class Floater(val timer: Boolean) {
     private fun finger(
         v: android.view.View, path: List<FloatArray>, local: Boolean, holdMs: Long, legMs: Long, endMs: Long, flick: Boolean,
         settleMs: Long, settled: () -> Boolean, done: () -> Unit, cancel: Boolean = false,
+        upped: () -> Unit = {},
     ) {
         val frames = android.view.Choreographer.getInstance()
         val down = android.os.SystemClock.uptimeMillis()
@@ -2356,6 +2357,7 @@ class Floater(val timer: Boolean) {
                 }
                 // (With [cancel], the touch is taken away instead of let go, as Android sometimes does.)
                 touch(v, if (cancel) android.view.MotionEvent.ACTION_CANCEL else android.view.MotionEvent.ACTION_UP, x, y, down, local)
+                upped()
                 val until = now + settleMs
                 val wait = object : Runnable {
                     override fun run() {
@@ -2600,8 +2602,24 @@ class Floater(val timer: Boolean) {
                             }
                             val flick = a["what"] == "flick"
                             val held = a["what"] == "press"
+                            // [again]: a second stroke from the same place, [gapMs] after the first
+                            // is let go, as a thumb turning a dial in short strokes.
+                            val again = (a["again"] as? List<*>)?.map { (it as Number).toFloat() }
                             watcher.postDelayed({
-                                if (held) {
+                                if (again != null) {
+                                    val path2 = ArrayList<FloatArray>()
+                                    path2.add(from)
+                                    var x2 = from[0]
+                                    for (d in again) {
+                                        x2 += d * dp
+                                        path2.add(floatArrayOf(x2, from[1]))
+                                    }
+                                    finger(pv, path, true, 40, num("legMs", 400), 0, false, 0, { true }, {}, upped = {
+                                        watcher.postDelayed({
+                                            finger(pv, path2, true, 40, num("legMs", 400), 0, false, num("settleMs", 1200), { true }, { done(state(context)) })
+                                        }, num("gapMs", 50))
+                                    })
+                                } else if (held) {
                                     // (Answers while the finger is still down, then lifts it.)
                                     finger(pv, listOf(from), true, num("holdMs", 600), 0, 0, false, 0, { true }, {})
                                     watcher.postDelayed({ done(state(context)) }, num("holdMs", 600) / 2)
@@ -2633,6 +2651,8 @@ class Floater(val timer: Boolean) {
                     watcher.postDelayed({
                         val m = state(context)
                         m["wasTucked"] = was
+                        // (What it did, in words, for the report's floating-lens table.)
+                        m["did"] = if (was) "was tucked: yes, brought out (tucked now: ${if (tucked) "yes" else "no"})" else "was tucked: no, left as it was"
                         done(m)
                     }, if (was) num("settleMs", 700) else 0L)
                 }

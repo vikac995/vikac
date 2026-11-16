@@ -7,6 +7,7 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
 import android.os.Build
+import android.os.SystemClock
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -17,18 +18,20 @@ import android.view.WindowManager
  * Sidekick's own (SidekickSettings), and Prism is only told afterwards, to keep its copy.
  *
  * As the owner approved it (tasks/STEP2b.md, the mock-up linked there):
- * - beside the Sidekick, on the side away from it, nearly full height, 330 points wide;
+ * - beside the Sidekick, on the side away from it, ending before its furthest Hovering spot (185),
+ *   and above Prism's bar or Android's (186);
  * - it grows out of the Sidekick's circle on Prism's "snappy" spring and goes back into it on
  *   "spatialFast", as Prism's own settings and the app list do; its contents come in between 5%
  *   and 30% of the way;
- * - a shade over the app, with a hole where the Sidekick is; the Sidekick's own window is kept
- *   above the panel, always;
+ * - no shade (185): nothing is drawn round it; the panel has a hole where the Sidekick is, so the
+ *   Sidekick (its own window, under the panel's) shows on every frame;
  * - In Prism / Over other apps, Labels, Icons, Colours, Look (three to a row), and "Where it rests,
  *   in points": two dials side by side, Hovering and Tucked in. Touching one puts the Sidekick in
  *   that state at once, and sliding moves it the way the finger goes on either edge; one tick a
- *   point; a flick coasts and lands on a whole point. While one is held the panel stays exactly as
- *   it is and only the shade lifts. Let go: the shade comes back, with nothing else changing, and
- *   the Sidekick goes back to the state it was in when the panel opened;
+ *   point; a flick coasts and lands on a whole point. While one is held, the rest of the panel goes
+ *   see-through and the whole "Where it rests" section stays solid (187). Let go: a tenth of a
+ *   second later the panel is solid again, on the quick spring, and the Sidekick goes back to the
+ *   state it was in when the panel opened;
  * - it never takes the focus (as the Sidekick's menu: a keyboard in the app underneath is never
  *   taken away; measured in build 176). Back goes to that app. It closes with the X, a tap on the
  *   shade, a tap on the Sidekick, Home / Recents, and the screen going off.
@@ -319,8 +322,10 @@ internal class PanelView(
         val bar = RestBubble.barTop
         if (RestBubble.foreground && bar != null) bottomLimit = Math.min(bottomLimit, bar - origin[1] - 8 * dp)
         limitBottom = bottomLimit
+        limitTop = topLimit
         box.set(left, topLimit, left + pw, Math.max(topLimit + 200 * dp, bottomLimit))
         layOut()
+        fills = contentH >= box.height()
         val ph = Math.min(contentH, box.height())
         val top = (lensY() - ph / 2f).coerceIn(topLimit, Math.max(topLimit, bottomLimit - ph))
         box.set(left, top, left + pw, top + ph)
@@ -328,8 +333,11 @@ internal class PanelView(
         laidFor = floatArrayOf(lensX(), lensY())
     }
 
-    // (The lowest the panel may reach, on the screen, as it was last laid out: for the test.)
+    // (The lowest and highest the panel may reach, on the screen, as it was last laid out, and
+    // whether its contents fill all of that, so that it can't move up or down: for the test.)
     private var limitBottom = 0f
+    private var limitTop = 0f
+    private var fills = false
 
     // Where the Sidekick was when the panel was last laid out: it follows when that changes.
     private var laidFor = floatArrayOf(Float.NaN, Float.NaN)
@@ -393,26 +401,32 @@ internal class PanelView(
     private fun layOut() {
         parts.clear()
         fun gap(h: Float) = parts.add(Part(Kind.GAP, "", "", h * dp))
-        fun label(t: String) = parts.add(Part(Kind.LABEL, "", t, 20 * dp * fs))
+        fun label(t: String, id: String = "") = parts.add(Part(Kind.LABEL, id, t, 20 * dp * fs))
+        // (From build 187 the spacing is tighter: 10 points between sections, 6 from a section's
+        // name to its control, 8 under the title. That brings the dials 40 points up, so that on the
+        // S25, where the panel ends above Prism's bar, both are on the screen with room to spare.
+        // Nothing is smaller; only the space between.)
+        val section = 10f
+        val under = 6f
         parts.add(Part(Kind.TITLE, "close", "Sidekick", 44 * dp))
-        gap(14f)
+        gap(8f)
         // (From build 186 the dials come before the two switches, so that they are on the screen
         // without scrolling, within the thumb's reach; the switches, rarely used, are at the end.)
-        label("Labels"); gap(8f)
+        label("Labels"); gap(under)
         parts.add(Part(Kind.PICKER, "names", "", 48 * dp, listOf("Show", "Hide")))
-        gap(14f)
-        label("Icons"); gap(8f)
+        gap(section)
+        label("Icons"); gap(under)
         parts.add(Part(Kind.PICKER, "prismIcons", "", 48 * dp, listOf("Prism", "Regular")))
-        gap(16f)
-        label("Colours"); gap(8f)
+        gap(section)
+        label("Colours"); gap(under)
         parts.add(Part(Kind.PICKER, "vivid", "", 48 * dp, listOf("Mellow", "Vivid")))
-        gap(16f)
-        label("Look"); gap(10f)
+        gap(section)
+        label("Look"); gap(under)
         parts.add(Part(Kind.LOOKS, "look", "", lookRows() * lookCellH() + (lookRows() - 1) * 12 * dp))
-        gap(16f)
-        label("Where it rests, in points"); gap(8f)
+        gap(section)
+        label("Where it rests, in points", "rests"); gap(under)
         parts.add(Part(Kind.RULERS, "rulers", "", (18 * fs + 6 + 52) * dp))
-        gap(16f)
+        gap(section)
         parts.add(Part(Kind.SWITCH, "inApp", "In Prism", 48 * dp))
         gap(12f)
         parts.add(Part(Kind.SWITCH, "overApps", "Over other apps", 48 * dp))
@@ -563,12 +577,22 @@ internal class PanelView(
     private fun smooth(t: Float) = t * t * (3 - 2 * t)
 
     // While a dial is held, how see-through the rest of the panel goes (0.6: it is drawn at 0.4,
-    // clearly background); the dial being held stays solid, its value readable. (Build 186.)
+    // clearly background). The whole "Where it rests" section stays solid: its title and both
+    // dials, on a backing of its own (build 187; 186 kept only the dial held).
     private val REST_SEE = 0.6f
 
-    // The dial drawn solid over the see-through panel: the one held, and for the moment after it
-    // is let go; "" when none.
+    // The dial held, or just let go ("" when none): while it is set, "Where it rests" is drawn
+    // solid, apart from the see-through panel.
     private var solidDial = ""
+
+    // Whether [p] is part of the "Where it rests" section, drawn apart (solid) while a dial is held.
+    private var drawingApart = false
+    private fun heldApart(p: Part): Boolean =
+        solidDial.isNotEmpty() && !drawingApart && (p.kind == Kind.RULERS || p.id == "rests")
+
+    // (For the test: what was drawn solid in the last frame, and at what alpha; and the rest's.)
+    private var lastSolidParts: List<String> = emptyList()
+    private var lastSolidAlpha = 0f
 
     // The two dials are kept out of Android's back gesture: the outer one lies within a few dozen
     // points of the screen's edge, where a sideways stroke could otherwise be taken away from it.
@@ -591,6 +615,8 @@ internal class PanelView(
     override fun onDraw(canvas: Canvas) {
         if (width == 0) return
         draws++
+        lastSolidParts = emptyList()
+        lastSolidAlpha = 0f
         val t = g.value.coerceIn(0f, 1.2f)
         // (No shade: from build 185 nothing is drawn round the Sidekick or the panel.)
         // The panel, from the Sidekick's circle to its own place.
@@ -615,6 +641,11 @@ internal class PanelView(
         if (holding && (ruler.isNotEmpty() || settling)) {
             heldAlphaMost = Math.max(heldAlphaMost, bodyAlpha)
             heldFrames++
+        }
+        if (solidDial.isNotEmpty() && ruler.isEmpty() && !settling && clear.target == 0f && clear.value < 0.01f) solidDial = ""
+        if (letGoAt > 0L && ruler.isEmpty() && bodyAlpha > 0.97f) {
+            solidAfterMs = SystemClock.uptimeMillis() - letGoAt
+            letGoAt = 0L
         }
         excludeDials()
         if (tt < 0.002f || fade < 0.004f) return
@@ -655,32 +686,44 @@ internal class PanelView(
             canvas.restoreToCount(layer)
             canvas.restore()
         }
-        // The dial being held (or just let go): solid over the see-through panel, on a backing of the
-        // panel's own colour, so its value reads clearly whatever is behind.
-        if (solidDial.isNotEmpty() && a > 0.001f && grown > 0.004f) {
-            val part = parts.firstOrNull { it.kind == Kind.RULERS }
-            if (part != null) {
-                canvas.restoreToCount(outer)
-                val keep = canvas.save()
-                clip.reset()
-                clip.addCircle(lx, ly, sr, Path.Direction.CW)
-                clipOut(canvas, clip)
-                clip.reset()
-                clip.addRoundRect(rr, corner, corner, Path.Direction.CW)
-                canvas.clipPath(clip)
-                canvas.translate(l, top)
-                canvas.scale((r - l) / box.width(), (b - top) / box.height())
-                canvas.translate(0f, -scroll)
-                if (grown < 0.999f) canvas.saveLayerAlpha(0f, scroll, box.width(), scroll + box.height(), (grown * 255).toInt())
-                val db = rulerBox(solidDial, pad, part.y)
-                val back = RectF(db.left - 6 * dp, part.y - 2 * dp, db.right + 6 * dp, db.bottom + 6 * dp)
-                paint.style = Paint.Style.FILL
-                paint.color = cSurface
-                canvas.drawRoundRect(back, 22 * dp, 22 * dp, paint)
-                drawRulers(canvas, pad, part.y, only = solidDial)
-                canvas.restoreToCount(keep)
-                return
-            }
+        // While a dial is held (or just let go): the whole "Where it rests" section, its title and
+        // both dials, drawn solid over the see-through panel, on a backing of the panel's own colour,
+        // so it reads as one solid block whatever is behind.
+        val title = parts.firstOrNull { it.id == "rests" }
+        val dials = parts.firstOrNull { it.kind == Kind.RULERS }
+        if (solidDial.isNotEmpty() && a > 0.001f && grown > 0.004f && title != null && dials != null) {
+            canvas.restoreToCount(outer)
+            val keep = canvas.save()
+            clip.reset()
+            clip.addCircle(lx, ly, sr, Path.Direction.CW)
+            clipOut(canvas, clip)
+            clip.reset()
+            clip.addRoundRect(rr, corner, corner, Path.Direction.CW)
+            canvas.clipPath(clip)
+            canvas.translate(l, top)
+            canvas.scale((r - l) / box.width(), (b - top) / box.height())
+            canvas.translate(0f, -scroll)
+            val sa = Math.min(grown, a)
+            if (sa < 0.999f) canvas.saveLayerAlpha(0f, scroll, box.width(), scroll + box.height(), (sa * 255).toInt())
+            val back = RectF(pad - 10 * dp, title.y - 8 * dp, pad + innerW + 10 * dp, dials.y + dials.h + 8 * dp)
+            paint.style = Paint.Style.FILL
+            paint.color = cSurface
+            canvas.drawRoundRect(back, 22 * dp, 22 * dp, paint)
+            // (Its edge shows only as the rest goes see-through, and goes as the rest comes back: at
+            // the start and the end, the block is the panel itself, with nothing popping in or out.)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1 * dp
+            paint.color = alpha(cHairline, clear.value.coerceIn(0f, 1f))
+            canvas.drawRoundRect(back, 22 * dp, 22 * dp, paint)
+            paint.style = Paint.Style.FILL
+            drawingApart = true
+            drawPart(canvas, title)
+            drawPart(canvas, dials)
+            drawingApart = false
+            lastSolidParts = listOf("title", "gap", "tuck")
+            lastSolidAlpha = sa
+            canvas.restoreToCount(keep)
+            return
         }
         canvas.restoreToCount(outer)
     }
@@ -731,14 +774,14 @@ internal class PanelView(
                 canvas.drawLine(cx - k, cy + k, cx + k, cy - k, paint)
                 paint.style = Paint.Style.FILL
             }
-            Kind.LABEL -> drawText(canvas, p.label, x0, y + 15 * dp * fs, 15f, 560, cInk)
+            Kind.LABEL -> if (!heldApart(p)) drawText(canvas, p.label, x0, y + 15 * dp * fs, 15f, 560, cInk)
             Kind.SWITCH -> {
                 drawText(canvas, p.label, x0, y + 24 * dp + 5 * dp * fs, 15f, 560, cInk)
                 drawSwitch(canvas, p.id, x0 + innerW - 57 * dp, y + 8 * dp)
             }
             Kind.PICKER -> drawPicker(canvas, p, x0, y)
             Kind.LOOKS -> drawLooks(canvas, x0, y)
-            Kind.RULERS -> drawRulers(canvas, x0, y, skip = solidDial)
+            Kind.RULERS -> if (!heldApart(p)) drawRulers(canvas, x0, y)
         }
     }
 
@@ -829,9 +872,8 @@ internal class PanelView(
         return RectF(left, top, left + w, top + 52 * dp)
     }
 
-    private fun drawRulers(canvas: Canvas, x: Float, y: Float, skip: String = "", only: String = "") {
+    private fun drawRulers(canvas: Canvas, x: Float, y: Float) {
         for ((id, name) in listOf("gap" to "Hovering", "tuck" to "Tucked in")) {
-            if (id == skip || (only.isNotEmpty() && id != only)) continue
             val b = rulerBox(id, x, y)
             drawText(canvas, name, b.centerX(), y + 13 * dp * fs, 13f, 560, cInkMuted, center = true)
             val lift = lifts[id]?.value ?: 0f
@@ -1061,6 +1103,11 @@ internal class PanelView(
     // ---- The two dials.
     private fun startRuler(id: String) {
         removeCallbacks(settle)
+        // (A finger back on a dial: how long after the last let-go, for the owner's report. It tells
+        // how short the moment after a let-go can be.)
+        if (letGoAt > 0L) Trail.add("Sidekick: its panel's dial held again ${SystemClock.uptimeMillis() - letGoAt} ms after it was let go${if (settling) ", carrying on" else ""}")
+        if (settling) carriedOn++
+        letGoAt = 0L
         settling = false
         if (!holding) {
             heldAlphaMost = 0f
@@ -1141,7 +1188,7 @@ internal class PanelView(
         return true
     }
 
-    /** The dial let go: kept; a moment later, the panel solid again and the Sidekick back to the state it was in. */
+    /** The dial let go: kept; a tenth of a second later, the panel solid again and the Sidekick back to the state it was in. */
     private fun endRuler(save: Boolean, back: Boolean, why: String = "let go") {
         val id = ruler
         if (id.isEmpty()) return
@@ -1154,12 +1201,14 @@ internal class PanelView(
         Trail.add("Sidekick: its panel's dial ($id) $why")
         if (back) {
             // A dial is often turned in several short strokes. Let go, the panel stays see-through,
-            // and the Sidekick where the dial put it, for a moment: a finger straight back on a dial
-            // carries on without a flash in between (build 185 went solid, and the Sidekick back,
-            // between every two strokes). Then both come back.
+            // and the Sidekick where the dial put it, for a tenth of a second ([SETTLE_MS]): a
+            // finger straight back on a dial carries on without a flash in between. Then both come
+            // back at once, on the quick spring (186's 0.6 s was much too long; 185 had none).
             removeCallbacks(settle)
             postDelayed(settle, SETTLE_MS)
             settling = true
+            letGoAt = SystemClock.uptimeMillis()
+            solidAfterMs = -1L
         } else {
             clear.to(0f)
             holding = false
@@ -1168,15 +1217,22 @@ internal class PanelView(
         run()
     }
 
-    // (How long after a dial is let go before the panel is solid again and the Sidekick back.)
-    private val SETTLE_MS = 600L
+    // How long after a dial is let go before the panel starts back to solid (on the quick spring,
+    // about 0.12 s more) and the Sidekick goes back. Build 186 waited 0.6 s: much too long for the
+    // owner. 0.1 s is about the shortest delay anyone notices, so the let-go still feels immediate;
+    // yet a finger back on the dial within it carries straight on, with no flash in between. A
+    // slower stroke sees the panel start back, and a stroke after about 0.2 s sees it solid: by
+    // the owner's rule, it is solid again right away. (Build 187.)
+    private val SETTLE_MS = 100L
     private var settling = false
     private val settle = Runnable {
         settling = false
         if (ruler.isEmpty() && !closing) {
             clear.to(0f)
             holding = false
-            solidDial = ""
+            // ("Where it rests" stays drawn apart, solid, until the rest has come back to solid
+            // too: dropped now, it would dip to the rest's 0.4 and come back with it. onDraw lets
+            // it go once the rest is solid.)
             RestBubble.showSpot(wasTucked)
             run()
         }
@@ -1187,6 +1243,12 @@ internal class PanelView(
     private var holding = false
     private var heldAlphaMost = 0f
     private var heldFrames = 0
+    // When a dial was last let go (0 once the panel is solid again), and how long after that the
+    // first frame was drawn solid again (over 0.97); -1 until then.
+    private var letGoAt = 0L
+    private var solidAfterMs = -1L
+    // How many times a finger came back on a dial within the moment after a let-go, carrying on.
+    private var carriedOn = 0
 
     private fun fling(dt: Float): Boolean {
         val v = flinging ?: return false
@@ -1207,9 +1269,13 @@ internal class PanelView(
         "panelShade" to 0.0,
         // How opaque the panel's body and contents are: 1, or about 0.5 while a dial is held.
         "panelAlpha" to (1f - REST_SEE * clear.value.coerceIn(0f, 1f)).toDouble(),
-        // The dial drawn solid over it ("" for none), and its alpha (always 1: it is never faded).
+        // The dial held ("" for none); what the last frame drew solid apart from the panel ("title",
+        // "gap", "tuck": the whole "Where it rests" section) and at what alpha; each dial's alpha.
         "panelSolidDial" to solidDial,
-        "panelDialAlpha" to if (solidDial.isEmpty()) 0.0 else 1.0,
+        "panelSolidParts" to lastSolidParts,
+        "panelSolidAlpha" to lastSolidAlpha.toDouble(),
+        "panelDialAlpha" to (if (solidDial in lastSolidParts) lastSolidAlpha else lastFade).toDouble(),
+        "panelDialsAlpha" to listOf("gap", "tuck").associateWith { (if (it in lastSolidParts) lastSolidAlpha else lastFade).toDouble() },
         "panelLifted" to clear.target.toDouble(),
         "panelLeastSinceOpen" to leastSinceOpen.toDouble(),
         "panelOpenFully" to opened,
@@ -1236,8 +1302,13 @@ internal class PanelView(
         "panelHeldAlphaMost" to heldAlphaMost.toDouble(),
         "panelHeldFrames" to heldFrames,
         "panelSettling" to settling,
+        // How long after the last let-go the panel was drawn solid again (over 0.97); -1 if not yet.
+        "panelSolidAfterMs" to solidAfterMs,
+        "panelCarriedOn" to carriedOn,
         // Where the panel may reach down to, and where the dials are now (on the screen, in points).
         "panelBottomLimit" to ((limitBottom + origin[1]) / dp).toDouble(),
+        "panelTopLimit" to ((limitTop + origin[1]) / dp).toDouble(),
+        "panelFills" to fills,
         "panelBarTop" to (RestBubble.barTop?.let { (it / dp).toDouble() }),
         "panelInPrism" to RestBubble.foreground,
         "panelDials" to (parts.firstOrNull { it.kind == Kind.RULERS }?.let { part ->

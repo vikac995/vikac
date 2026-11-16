@@ -2,7 +2,10 @@
 
 From the review chat, 16 November 2026, 16:04: the owner's new plan.
 
-## 187: dismiss the Sidekick at the top
+**Renumbered** (review chat, 17:14): 187 = the dials, fixed again (`BUILD187.md`); 188 = the Hovering
+range; 189 = dismiss the Sidekick at the top.
+
+## 189: dismiss the Sidekick at the top
 
 - **The cross moves to the top centre,** below the status bar (`crossX`/`crossY`).
 - **A fling upwards dismisses it,** the mirror of the `atCross` test (`throwIt` in `MainActivity.kt`).
@@ -17,7 +20,7 @@ From the review chat, 16 November 2026, 16:04: the owner's new plan.
   - dragging towards the top never opens the notification shade;
   - the cross clears the status bar and the camera cutout, on both phones.
 
-## After 187: three resting spots along the bottom (mock-up first)
+## After 189: three resting spots along the bottom (mock-up first)
 
 - **Outside Prism only,** the Sidekick gets three new resting spots along the bottom, at 25%, 50% and
   75% of the width. The corners are its existing side spots.

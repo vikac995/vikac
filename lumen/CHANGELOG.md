@@ -1,5 +1,24 @@
 # Lumen changelog
 
+## Prism, build 187 (16 November 2026)
+
+**File:** `releases/prism-build-187.apk`
+
+Needs Play Protect paused to install. Can be installed over build 186.
+
+**The dials, fixed again, from your video:**
+- **Let go of a dial and the panel is solid again at once.** 186 waited 0.6 s; now the wait is a tenth of a second, too short to notice, and it comes back on the quick spring, solid in about a fifth of a second. The Sidekick goes back with it. The tenth of a second means a thumb straight back on the dial carries on with no flash.
+- **While you hold a dial, the whole "Where it rests" section stays solid:** its title, both dials and their names, on a solid block of their own. Only the rest of the panel fades. In 186 the dial you held also dipped for an instant as the panel came back; that's gone too.
+- **Both dials fit on the S25's screen** when the panel opens: a little less space between the sections (nothing smaller, nothing moved). About 18 points to spare on the S25 and about 50 on the S26.
+- **The button test (test kit only):**
+  - the "dragged by hand" check now knows when the panel fills all the height it may have, as on both phones, so it rightly stays put;
+  - the untuck step says what it did, and the report's table no longer calls it "NOT DONE";
+  - new checks: both dials solid while one is held, the panel solid again within 0.3 s of letting go, and a quick second stroke carrying on with no dip.
+- Each time a finger comes back on a dial, "Send what just happened" now shows how long after the let-go it was, to tune the tenth of a second if needed.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 80 of 82, the same as before (the Sidekick's panel is Android's, so its checks run only on a phone); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 186 (16 November 2026)
 
 **File:** `releases/prism-build-186.apk`

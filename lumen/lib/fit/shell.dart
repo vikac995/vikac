@@ -5174,12 +5174,9 @@ class _ShellState extends State<Shell>
             'settleMs': 700,
           });
           t.lensRun('untuck', out);
-          if (out['wasTucked'] == true) {
-            t.note(
-              'the Sidekick was tucked away before the test\'s first tap: brought out first '
-              '(tucked now ${out['tucked'] == true ? 'yes' : 'no'})',
-            );
-          }
+          t.note(
+            'the Sidekick before the test\'s first tap: ${out['did'] ?? (out['wasTucked'] == true ? 'was tucked: yes, brought out' : 'was tucked: no')}',
+          );
           final bool opened = await openMenu();
           t.check(
             'sidekick: a tap opens its blobs',
@@ -5541,6 +5538,8 @@ class _ShellState extends State<Shell>
           String what, {
           String part = '',
           Object? dx,
+          List<double>? again,
+          int gapMs = 50,
           int settleMs = 800,
           int holdMs = 700,
           int legMs = 400,
@@ -5549,6 +5548,8 @@ class _ShellState extends State<Shell>
           'what': what,
           'part': part,
           'dx': ?dx,
+          'again': ?again,
+          'gapMs': gapMs,
           'settleMs': settleMs,
           'holdMs': holdMs,
           'legMs': legMs,
@@ -5825,9 +5826,15 @@ class _ShellState extends State<Shell>
           final List<Object?> b0 =
                   (d0['panelBox'] as List<Object?>?) ?? const <Object?>[],
               b1 = (d1['panelBox'] as List<Object?>?) ?? const <Object?>[];
+          // (As tall as it may be: from the panel's own record of its limits. From 186 those end
+          // above Prism's bar, so the old figure, the screen less fixed margins, no longer said.)
           final bool tall =
               b0.length == 4 &&
-              numOf(b0[3]) >= numOf(d0['h']) / dp - 56 - 42 - 60;
+              (d0['panelFills'] == true ||
+                  numOf(b0[3]) >=
+                      numOf(d0['panelBottomLimit']) -
+                          numOf(d0['panelTopLimit']) -
+                          1);
           final double boxMoved = b0.length == 4 && b1.length == 4
               ? (numOf(b1[1]) + numOf(b1[3]) / 2) -
                     (numOf(b0[1]) + numOf(b0[3]) / 2)
@@ -5839,7 +5846,7 @@ class _ShellState extends State<Shell>
                 (tall
                     ? boxMoved.abs() < 2 || (boxMoved - moved).abs() < 30
                     : (boxMoved - moved).abs() < 30),
-            'the Sidekick moved ${moved.toStringAsFixed(0)} points (dragged -120), the panel ${boxMoved.toStringAsFixed(0)}${tall ? ' (as tall as the screen allows: it may only stay or follow)' : ''}; open ${d1['panelOpen']}',
+            'the Sidekick moved ${moved.toStringAsFixed(0)} points (dragged -120), the panel ${boxMoved.toStringAsFixed(0)}${tall ? ' (as tall as it may be: it may only stay or follow)' : ''}; open ${d1['panelOpen']}; the panel ${b0.length == 4 ? numOf(b0[3]).toStringAsFixed(0) : '?'} tall, may reach from ${numOf(d0['panelTopLimit']).toStringAsFixed(0)} to ${numOf(d0['panelBottomLimit']).toStringAsFixed(0)}, fills it ${d0['panelFills']}',
           );
           // Back to where it was, for what follows.
           await t.lens(<String, Object?>{
@@ -5868,6 +5875,27 @@ class _ShellState extends State<Shell>
           });
         }
 
+        // How much room is left under the dials, inside the panel, in points (187: at least 8 on
+        // the S25 at font scale 1).
+        String spareUnderDials(Map<String, Object?> m) {
+          final List<Object?> b =
+              (m['panelBox'] as List<Object?>?) ?? const <Object?>[];
+          final List<Object?> dials =
+              (m['panelDials'] as List<Object?>?) ?? const <Object?>[];
+          if (b.length != 4 || dials.isEmpty) {
+            return 'room under the dials unknown';
+          }
+          double lowest = double.negativeInfinity;
+          for (final Object? d in dials) {
+            final List<Object?> r = d is List ? d : const <Object?>[];
+            if (r.length == 4) {
+              lowest = math.max(lowest, numOf(r[1]) + numOf(r[3]));
+            }
+          }
+          final double room = numOf(b[1]) + numOf(b[3]) - lowest;
+          return '${room.toStringAsFixed(1)} points to spare under the dials';
+        }
+
         double bottomOf(Map<String, Object?> m) {
           final List<Object?> b =
               (m['panelBox'] as List<Object?>?) ?? const <Object?>[];
@@ -5883,7 +5911,7 @@ class _ShellState extends State<Shell>
         inPanel(
           'sidekick panel: both dials on the screen as it opens, without scrolling',
           dialsShown(s) && numOf(s['panelScroll']) == 0,
-          'box ${s['panelBox']}, dials ${s['panelDials']}, scrolled ${s['panelScroll']}',
+          'box ${s['panelBox']}, dials ${s['panelDials']}, scrolled ${s['panelScroll']}; ${spareUnderDials(s)}',
         );
         inPanel(
           'sidekick panel: in Prism, its bottom at least 8 points above Prism\'s bar',
@@ -6003,14 +6031,40 @@ class _ShellState extends State<Shell>
             'Android ${kept(s)?['overApps']}',
           );
         }
-        // The two dials. Touching one puts the Sidekick in that state at once; the panel stays
-        // and only the shade lifts; sliding toward the middle of the screen is more; let go, the
-        // shade comes back with no flash, and the Sidekick goes back to the state it was in.
+        // The two dials. Touching one puts the Sidekick in that state at once; the rest of the
+        // panel goes see-through, "Where it rests" stays solid; sliding toward the middle of the
+        // screen is more; let go, the panel is solid again within 0.3 s, and the Sidekick goes back
+        // to the state it was in.
         final double inward = s['panelOnRight'] == true ? -1 : 1;
+        // While a dial is held: the whole "Where it rests" section (its title and both dials) is
+        // drawn solid, apart from the see-through rest of the panel (187).
+        bool solidRests(Map<String, Object?> m) {
+          final List<Object?> drawn =
+              (m['panelSolidParts'] as List<Object?>?) ?? const <Object?>[];
+          final Map<Object?, Object?> dials =
+              (m['panelDialsAlpha'] as Map<Object?, Object?>?) ??
+              const <Object?, Object?>{};
+          return <String>['title', 'gap', 'tuck'].every(drawn.contains) &&
+              numOf(m['panelSolidAlpha']) >= 0.999 &&
+              numOf(dials['gap']) >= 0.999 &&
+              numOf(dials['tuck']) >= 0.999;
+        }
+
+        // Let go: the panel was drawn solid again (over 0.97) within 0.3 s, and is solid now, with
+        // "Where it rests" no longer drawn apart.
+        bool solidSoon(Map<String, Object?> m) {
+          final double after = numOf(m['panelSolidAfterMs']);
+          return after >= 0 &&
+              after <= 300 &&
+              numOf(m['panelAlpha']) > 0.97 &&
+              m['panelSettling'] != true &&
+              m['panelSolidDial'] == '';
+        }
+
         Future<void> dial(String id, String name, bool tucks) async {
           if (!opened) {
             t.skip(
-              'sidekick panel: $name touched, the Sidekick goes there, the rest of the panel see-through, the dial solid',
+              'sidekick panel: $name touched, the Sidekick goes there, the rest of the panel see-through, "Where it rests" solid',
               'its own settings did not come up',
             );
             return;
@@ -6018,25 +6072,25 @@ class _ShellState extends State<Shell>
           final double was = numOf(kept(await where())?[id]);
           s = await panel('press', part: 'ruler.$id', holdMs: 900);
           t.check(
-            'sidekick panel: $name touched, the Sidekick goes there, the rest of the panel see-through, the dial solid',
+            'sidekick panel: $name touched, the Sidekick goes there, the rest of the panel see-through, "Where it rests" solid',
             (s['tucked'] == true) == tucks &&
                 (numOf(s['panelAlpha']) - 0.4).abs() < 0.08 &&
                 s['panelSolidDial'] == id &&
-                numOf(s['panelDialAlpha']) == 1 &&
+                solidRests(s) &&
                 numOf(s['panelShade']) == 0 &&
                 numOf(s['panelLeastSinceOpen']) >= 0.999 &&
                 s['lens'] == true,
-            'tucked ${s['tucked']}, the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque, the solid dial "${s['panelSolidDial']}" at ${numOf(s['panelDialAlpha']).toStringAsFixed(2)}, shade ${numOf(s['panelShade']).toStringAsFixed(2)}, its contents at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}',
+            'tucked ${s['tucked']}, the rest of the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque; drawn solid ${s['panelSolidParts']} at ${numOf(s['panelSolidAlpha']).toStringAsFixed(2)}, the dials at ${s['panelDialsAlpha']}; shade ${numOf(s['panelShade']).toStringAsFixed(2)}, its contents at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}',
           );
-          // (A moment after the let-go, in case another stroke follows: then solid again.)
-          await Robot.wait(1600);
+          // (The press lets go about half a second after it answers.)
+          await Robot.wait(1000);
           s = await where();
           t.check(
-            'sidekick panel: $name let go, the panel is solid again, the Sidekick as it was',
-            numOf(s['panelAlpha']) > 0.97 &&
+            'sidekick panel: $name let go, the panel is solid again within 0.3 s, the Sidekick as it was',
+            solidSoon(s) &&
                 numOf(s['panelLeastSinceOpen']) >= 0.999 &&
                 (s['tucked'] == true) == wasTucked,
-            'the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque, its contents at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, tucked ${s['tucked']} (was $wasTucked)',
+            'solid again ${numOf(s['panelSolidAfterMs']).round()} ms after the let-go, now ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque, drawn apart "${s['panelSolidDial']}", its contents at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}, tucked ${s['tucked']} (was $wasTucked)',
           );
           // Slid toward the middle by 4 points' worth (16 points of finger a point), then back.
           final double max = id == 'gap'
@@ -6087,9 +6141,9 @@ class _ShellState extends State<Shell>
 
         await dial('gap', 'Hovering', false);
         await dial('tuck', 'Tucked in', true);
-        // A dial turned in one long drag, then in a second stroke straight after: the panel stays
-        // half see-through the whole time (185 went solid between strokes, in the owner's video),
-        // and is solid again a moment after the last stroke.
+        // A dial turned in one long drag: the rest of the panel stays see-through the whole time.
+        // Then two strokes with a finger back on it 0.05 s after the let-go: it carries straight on,
+        // with no dip in between. A moment after the last stroke, solid again within 0.3 s (187).
         if (opened) {
           final double was = numOf(kept(await where())?['gap']);
           final double way = RestBubble.gapMax - was >= 6 ? 1 : -1;
@@ -6113,25 +6167,33 @@ class _ShellState extends State<Shell>
             frames >= 3 && most <= 0.45,
             'the most opaque it was drawn ${most.toStringAsFixed(2)}, over $frames frames',
           );
+          await Robot.wait(600);
+          final int carried = numOf(d['panelCarriedOn']).isNaN
+              ? 0
+              : numOf(d['panelCarriedOn']).toInt();
           d = await panel(
             'drag',
             part: 'ruler.gap',
             dx: <double>[-inward * way * 30],
+            again: <double>[inward * way * 30],
+            gapMs: 50,
             legMs: 400,
             settleMs: 200,
           );
+          final int carriedNow = numOf(d['panelCarriedOn']).isNaN
+              ? 0
+              : numOf(d['panelCarriedOn']).toInt();
           t.check(
-            'sidekick panel: a second stroke straight after, it stays see-through in between',
-            numOf(d['panelHeldAlphaMost']) <= 0.45 &&
-                numOf(d['panelHeldFrames']) > frames,
-            'the most opaque it was drawn ${numOf(d['panelHeldAlphaMost']).toStringAsFixed(2)}, over ${numOf(d['panelHeldFrames']).isNaN ? 0 : numOf(d['panelHeldFrames']).toInt()} frames (the first stroke: $frames)',
+            'sidekick panel: a finger back on the dial 0.05 s after the let-go carries straight on, no dip',
+            numOf(d['panelHeldAlphaMost']) <= 0.45 && carriedNow == carried + 1,
+            'the most opaque it was drawn over both strokes ${numOf(d['panelHeldAlphaMost']).toStringAsFixed(2)}, over ${numOf(d['panelHeldFrames']).isNaN ? 0 : numOf(d['panelHeldFrames']).toInt()} frames; carried on ${carriedNow - carried} time(s)',
           );
-          await Robot.wait(1300);
+          await Robot.wait(400);
           s = await where();
           t.check(
-            'sidekick panel: a moment after the last stroke, the panel is solid again',
-            numOf(s['panelAlpha']) > 0.97 && s['panelSettling'] != true,
-            'the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque, settling ${s['panelSettling']}',
+            'sidekick panel: let go after the last stroke, the panel is solid again within 0.3 s',
+            solidSoon(s),
+            'solid again ${numOf(s['panelSolidAfterMs']).round()} ms after the let-go, now ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque, settling ${s['panelSettling']}, drawn apart "${s['panelSolidDial']}"',
           );
           await lensOf.testPut(<String, Object>{'gap': was});
           await Robot.wait(400);
