@@ -7076,18 +7076,140 @@ class _ShellState extends State<Shell>
           s['lens'] == true && s['guest'] == true && s['prismFocus'] != false,
           'shown ${s['lens']}, Prism has the focus ${s['prismFocus']}, flung from ${flingFrom.dx.round()},${flingFrom.dy.round()}',
         );
-        // Held: its panel; "Dismiss": the panel closes and the Sidekick is sent away, until it is
-        // brought back (the next app opened from Prism, or here the test's own bring-back).
+        // Held: its panel; "Dismiss" held to the end (195): the panel closes and the Sidekick is
+        // sent away, until it is brought back (the next app opened from Prism, or here the test's
+        // own bring-back). Let go, slid off or only tapped before the end: nothing. What to do is
+        // said in a bubble just under the pill.
         {
+          const List<String> holds = <String>[
+            'sidekick: "Dismiss" pressed: the fill sweeps across it, and a bubble under it says "Keep holding…", inside the panel and clear of the X',
+            'sidekick: "Dismiss" pressed for 0.6 s and let go: nothing happens, and the fill drains back within 0.5 s',
+            'sidekick: "Dismiss" slid off at 0.8 s: nothing happens, and the fill drains back',
+            'sidekick: a tap on "Dismiss" does nothing; its bubble says "Hold to dismiss" for a moment, then goes',
+            'sidekick: "Dismiss" held for 1.3 s: "Dismissed", with a light tick at 25, 50 and 75% and a heavy one at 100%',
+            'sidekick: held, its panel\'s "Dismiss" held to the end sends it away, and the panel closes',
+          ];
           final int was = numOf(s['sidekickDismissals']).isNaN
               ? 0
               : numOf(s['sidekickDismissals']).toInt();
+          String fillSaid(Map<String, Object?> m) =>
+              'panel open ${m['panelOpen']}, sent away ${m['sideGone']}; most filled ${(numOf(m['holdMost']) * 100).toStringAsFixed(0)}%, ended "${m['holdEnded']}", fill now ${(numOf(m['holdFill']) * 100).toStringAsFixed(1)}%, at 0.5 s ${(numOf(m['holdAt500']) * 100).toStringAsFixed(1)}%, drained in ${m['holdDrainMs']} ms; haptics ${m['holdBuzzes']}; "${m['holdLabel']}"';
+          List<double> boxOf(Object? v) => <double>[
+            for (final Object? x in (v is List ? v : const <Object?>[]))
+              numOf(x),
+          ];
           if (await holdOpen('sidekick held, to dismiss it')) {
-            await panel('tap', part: 'close.dismiss', settleMs: 900);
-            await Robot.wait(900);
+            // Pressed 0.6 s: read halfway through, while it is held; then after the let-go.
+            // ("Drained" is under 3% at 0.5 s: the owner's spring, k 90 and c 19, takes about
+            // 0.6 s to go from half to under 1%.)
+            Map<String, Object?> m = await panel(
+              'press',
+              part: 'close.dismiss',
+              holdMs: 600,
+            );
+            final List<double> bub = boxOf(m['holdBubbleBox']);
+            final List<double> pb = boxOf(m['panelBox']);
+            final List<double> xb = boxOf(m['closeBox']);
+            final bool inside =
+                bub.length == 4 &&
+                pb.length == 4 &&
+                bub[0] >= pb[0] - 0.5 &&
+                bub[1] >= pb[1] - 0.5 &&
+                bub[0] + bub[2] <= pb[0] + pb[2] + 0.5 &&
+                bub[1] + bub[3] <= pb[1] + pb[3] + 0.5;
+            final bool clearOfX =
+                bub.length == 4 &&
+                xb.length == 4 &&
+                (bub[1] >= xb[1] + xb[3] - 0.5 ||
+                    bub[0] + bub[2] <= xb[0] + 0.5 ||
+                    bub[0] >= xb[0] + xb[2] - 0.5);
+            t.check(
+              holds[0],
+              m['holdHeld'] == true &&
+                  numOf(m['holdFill']) > 0.1 &&
+                  m['holdLabel'] == 'Keep holding…' &&
+                  numOf(m['holdBubble']) > 0.5 &&
+                  inside &&
+                  clearOfX,
+              'held ${m['holdHeld']}, fill ${(numOf(m['holdFill']) * 100).toStringAsFixed(0)}%; the bubble "${m['holdLabel']}", showing ${numOf(m['holdBubble']).toStringAsFixed(2)}, at ${bub.map((double v) => v.toStringAsFixed(0)).join(',')}; the panel ${pb.map((double v) => v.toStringAsFixed(0)).join(',')}; the X ${xb.map((double v) => v.toStringAsFixed(0)).join(',')}',
+            );
+            await Robot.wait(1000);
+            m = await where();
+            t.check(
+              holds[1],
+              m['panelOpen'] == true &&
+                  m['holdDone'] != true &&
+                  m['sideGone'] != true &&
+                  numOf(m['holdMost']) >= 0.4 &&
+                  numOf(m['holdMost']) < 0.75 &&
+                  m['holdEnded'] == 'let go' &&
+                  numOf(m['holdAt500']) >= 0 &&
+                  numOf(m['holdAt500']) <= 0.03 &&
+                  numOf(m['holdFill']) == 0 &&
+                  !'${m['holdBuzzes']}'.contains('heavy'),
+              fillSaid(m),
+            );
+            // Held 0.8 s, then slid off sideways and let go there.
+            m = await panel(
+              'holdSlide',
+              part: 'close.dismiss',
+              holdMs: 800,
+              dx: 180,
+              legMs: 120,
+              settleMs: 1000,
+            );
+            t.check(
+              holds[2],
+              m['panelOpen'] == true &&
+                  m['holdDone'] != true &&
+                  m['sideGone'] != true &&
+                  m['holdEnded'] == 'slid off' &&
+                  numOf(m['holdMost']) >= 0.6 &&
+                  numOf(m['holdMost']) < 0.9 &&
+                  numOf(m['holdFill']) == 0,
+              fillSaid(m),
+            );
+            await Robot.wait(1300);
+            m = await panel('tap', part: 'close.dismiss', settleMs: 300);
+            final bool said =
+                m['holdLabel'] == 'Hold to dismiss' &&
+                numOf(m['holdBubble']) > 0.5;
+            await Robot.wait(1600);
+            final Map<String, Object?> later = await where();
+            t.check(
+              holds[3],
+              said &&
+                  later['panelOpen'] == true &&
+                  later['holdDone'] != true &&
+                  later['sideGone'] != true &&
+                  numOf(later['holdFill']) == 0 &&
+                  numOf(later['holdBubble']) < 0.05,
+              'just after the tap: "${m['holdLabel']}", showing ${numOf(m['holdBubble']).toStringAsFixed(2)}; 1.6 s later: showing ${numOf(later['holdBubble']).toStringAsFixed(2)}; ${fillSaid(later)}',
+            );
+            // Held 1.3 s: read just after the lift, while the panel is still up with "Dismissed".
+            m = await panel(
+              'hold',
+              part: 'close.dismiss',
+              holdMs: 1300,
+              settleMs: 30,
+            );
+            final List<String> buzzes = <String>[
+              for (final Object? b
+                  in (m['holdBuzzes'] as List<Object?>?) ?? const <Object?>[])
+                '$b',
+            ];
+            t.check(
+              holds[4],
+              m['holdDone'] == true &&
+                  m['holdLabel'] == 'Dismissed' &&
+                  buzzes.join(', ') ==
+                      'light at 25%, light at 50%, light at 75%, heavy at 100%',
+              fillSaid(m),
+            );
+            await Robot.wait(1500);
             s = await where();
             t.check(
-              'sidekick: held, its panel\'s "Dismiss" sends it away, and the panel closes',
+              holds[5],
               s['lens'] != true &&
                   s['panelOpen'] != true &&
                   s['sideGone'] == true &&
@@ -7103,10 +7225,7 @@ class _ShellState extends State<Shell>
               'shown ${s['lens']}',
             );
           } else {
-            t.skip(
-              'sidekick: held, its panel\'s "Dismiss" sends it away, and the panel closes',
-              'its panel did not open',
-            );
+            skip(holds, 'its panel did not open');
           }
         }
         // An emptied Sidekick menu: one plus. Then the person's own menu, back as it was.

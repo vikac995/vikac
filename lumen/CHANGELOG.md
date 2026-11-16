@@ -1,5 +1,19 @@
 # Lumen changelog
 
+## Prism, build 195 (16 November 2026)
+
+**File:** `releases/prism-build-195.apk`
+
+Needs Play Protect paused to install. Can be installed over build 194.
+
+**Dismiss is now hold-to-dismiss, as you asked** (from your "Hold to confirm" exhibit, with its numbers):
+- **Press and hold "Dismiss"** in the Sidekick's panel: a fill sweeps across it over 1.2 seconds, with three light ticks and a heavy one at the end, and the pill shakes a little more as it fills. At the end it pops, says "Dismissed", and the Sidekick is sent away as before.
+- **Let go early, or slide off:** the fill runs back and nothing happens. A quick tap does nothing either.
+- **A small dark bubble under the pill** says what to do: "Hold to dismiss" after a tap, "Keep holding…" while you hold, "Dismissed" at the end. (Those words don't fit beside the title, so the pill itself still reads "Dismiss", in the same place.)
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 194 (16 November 2026)
 
 **File:** `releases/prism-build-194.apk`

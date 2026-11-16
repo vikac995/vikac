@@ -508,6 +508,11 @@ internal class PanelView(
         if (closing) return
         closing = true
         why = reason
+        if (dismissHeld) {
+            dismissHeld = false
+            holdP = 0f
+            holdEnded = "the panel closed"
+        }
         Trail.add("Sidekick: its own settings closing, ${age()} ms after they opened: $reason")
         endRuler(save = true, back = false, why = "let go as the panel closed")
         removeCallbacks(settle)
@@ -539,6 +544,7 @@ internal class PanelView(
             for (s in switches.values) moving = s.step(dt) or moving
             for (s in presses.values) moving = s.step(dt) or moving
             for (s in lifts.values) moving = s.step(dt) or moving
+            moving = stepHold(dt) or moving
             coasting?.let { moving = coast(dt) or moving }
             flinging?.let { moving = fling(dt) or moving }
             if (!opened && g.value >= 0.999f) opened = true
@@ -718,6 +724,7 @@ internal class PanelView(
             val layer = canvas.saveLayerAlpha(box.left, box.top, box.right, box.bottom, (a * 255).toInt())
             canvas.translate(box.left, box.top - scroll)
             for (p in parts) drawPart(canvas, p)
+            drawHoldBubble(canvas)
             canvas.restoreToCount(layer)
             canvas.restore()
         }
@@ -791,6 +798,132 @@ internal class PanelView(
 
     private fun dismissW(): Float = measure("Dismiss", 15f, 600) + 2 * 16 * dp
 
+    // ---- Hold to dismiss (195, the owner's "I-05 Hold to confirm", their numbers). Held, a fill
+    // sweeps across the pill from left to right over 1.2 s, with a light tick at a quarter, half and
+    // three quarters, and a heavy one at the end; the pill shakes a little, more as it fills, and
+    // shrinks a little. Let go or slid off before the end: the fill drains back on a spring, and
+    // nothing happens. At the end: a small pop, "Dismissed", then the panel closes and the
+    // Sidekick is sent away as before (193). The pill keeps the word "Dismiss" (194's size, beside
+    // the title, the owner's choice); what to do is said in a small dark bubble just under it,
+    // while it is pressed and for 1.2 s after a short tap: "Hold to dismiss", "Keep holding…",
+    // "Dismissed" (the review chat's choice (c), 195: those labels do not fit beside the title).
+    private val HOLD_REST = "Hold to dismiss"
+    private val HOLD_HELD = "Keep holding…"
+    private val HOLD_DONE = "Dismissed"
+    private val HOLD_MS = 1200f
+    private val BUBBLE_STAYS_MS = 1200L
+    private var dismissHeld = false
+    private var holdFrom = 0L
+    private var holdP = 0f
+    private var holdDone = false
+    private var holdTicks = 0
+    private val holdDrain = Spring(90f, 1f).also { it.k = 90f; it.c = 19f }
+    private var draining = false
+    private val holdPop = Spring(420f, 0.25f, 1f).also { it.k = 420f; it.c = 10f }
+    private var lastBuzz = 0L
+    // (For the test: the most it filled, how it last ended, when it let go and how long the fill
+    // took to drain back, and each haptic given, with where the fill was.)
+    private var holdMost = 0f
+    private var holdEnded = ""
+    private var holdLetGoAt = 0L
+    private var holdDrainMs = -1L
+    private var holdAt500 = -1f
+    private val holdBuzzes = ArrayList<String>()
+    // The bubble: how much it shows (0 to 1), and until when it stays after a let-go.
+    private val holdBubble = Spring(Springs.effects.first, Springs.effects.second)
+    private var bubbleUntil = 0L
+    private val bubbleBox = RectF()
+    private var bubbleSeen = false
+
+    /** At most one haptic every 28 ms. */
+    private fun buzz(kind: String, what: String) {
+        val now = android.os.SystemClock.uptimeMillis()
+        if (now - lastBuzz < 28) return
+        lastBuzz = now
+        holdBuzzes.add(what)
+        haptic(kind)
+    }
+
+    private fun startHold() {
+        if (holdDone || closing) return
+        dismissHeld = true
+        draining = false
+        holdFrom = android.os.SystemClock.uptimeMillis() - (holdP * HOLD_MS).toLong()
+        holdTicks = (holdP / 0.25f).toInt().coerceIn(0, 3)
+        holdMost = 0f
+        holdBuzzes.clear()
+        holdDrainMs = -1L
+        holdAt500 = -1f
+        holdEnded = ""
+        run()
+    }
+
+    /** Let go, or slid off, before the end: the fill drains back, and nothing happens. */
+    private fun letGoHold(why: String) {
+        if (!dismissHeld) return
+        dismissHeld = false
+        holdEnded = why
+        holdLetGoAt = android.os.SystemClock.uptimeMillis()
+        holdDrain.jump(holdP)
+        holdDrain.to(0f)
+        draining = true
+        // (The bubble stays a moment, saying "Hold to dismiss", for a short tap above all.)
+        bubbleUntil = holdLetGoAt + BUBBLE_STAYS_MS
+        postDelayed({ run() }, BUBBLE_STAYS_MS + 16)
+        Trail.add("Sidekick: Dismiss let go at ${(holdP * 100).toInt()}% ($why): nothing done")
+        run()
+    }
+
+    /** The hold, a frame on; true while it is still moving. */
+    private fun stepHold(dt: Float): Boolean {
+        var moving = holdPop.step(dt)
+        val now = android.os.SystemClock.uptimeMillis()
+        holdBubble.to(if (dismissHeld || holdDone || now < bubbleUntil) 1f else 0f)
+        moving = holdBubble.step(dt) or moving
+        if (dismissHeld) {
+            holdP = ((android.os.SystemClock.uptimeMillis() - holdFrom) / HOLD_MS).coerceIn(0f, 1f)
+            holdMost = Math.max(holdMost, holdP)
+            while (holdTicks < 3 && holdP >= (holdTicks + 1) * 0.25f) {
+                holdTicks++
+                buzz("tick", "light at ${holdTicks * 25}%")
+            }
+            if (holdP >= 1f) {
+                dismissHeld = false
+                holdDone = true
+                holdEnded = "held to the end"
+                buzz("thud", "heavy at 100%")
+                holdPop.jump(0.88f)
+                holdPop.to(1f)
+                Trail.add("Sidekick: Dismiss held to the end")
+                // (The pop and "Dismissed" seen, then the panel closes into the Sidekick, and the
+                // Sidekick is sent away, 193.)
+                // (Held to the end, it is sent away even if the panel was closed some other way meanwhile.)
+                val main = android.os.Handler(android.os.Looper.getMainLooper())
+                main.postDelayed({
+                    SidekickPanel.close("Dismiss, held to the end")
+                    main.postDelayed({ RestBubble.dismissSidekick() }, 280)
+                }, 420)
+            }
+            moving = true
+        } else if (draining) {
+            val still = !holdDrain.step(dt)
+            holdP = holdDrain.value.coerceIn(0f, 1f)
+            val since = android.os.SystemClock.uptimeMillis() - holdLetGoAt
+            if (holdAt500 < 0f && since >= 500) holdAt500 = holdP
+            // (Drained: under 1%, less than a pixel or two of the pill.)
+            if (still || holdP < 0.01f) {
+                // (Drained before 0.5 s: empty then too.)
+                if (holdAt500 < 0f) holdAt500 = 0f
+                holdP = 0f
+                draining = false
+                holdDrainMs = android.os.SystemClock.uptimeMillis() - holdLetGoAt
+            } else {
+                moving = true
+            }
+        }
+        return moving
+    }
+
     // (Its place, 194: right after the title, 12 points from it; its touch reaches 6 points round
     // the 36-point pill, so 48 points tall, and stops short of the X's, which reaches 50 points in
     // from the right.)
@@ -826,6 +959,101 @@ internal class PanelView(
 
     private val innerW get() = box.width() - 2 * pad
 
+    // "Hold to dismiss": a pill, as the panel's other controls are, never round like the X (195).
+    private val holdClip = Path()
+
+    private fun drawDismiss(canvas: Canvas, p: Part) {
+        val db = dismissBox(p)
+        val r = db.height() / 2
+        val held = dismissHeld || draining
+        // (Its shake: sin(t / 14 ms) × p² × 2.2 points, while held; and 1 − 0.035 × p smaller.)
+        val shake = if (dismissHeld) (Math.sin((android.os.SystemClock.uptimeMillis() - holdFrom) / 14.0) * holdP * holdP * 2.2 * dp).toFloat() else 0f
+        val scale = (if (holdDone) 1f else 1f - 0.035f * holdP) * holdPop.value
+        canvas.save()
+        canvas.translate(db.centerX() + shake, db.centerY())
+        canvas.scale(scale, scale)
+        canvas.translate(-db.centerX(), -db.centerY())
+        paint.style = Paint.Style.FILL
+        paint.color = alpha(cInk, if (held) 0.12f else 0.08f)
+        canvas.drawRoundRect(db, r, r, paint)
+        val label = "Dismiss"
+        val base = db.centerY() + 5 * dp * fs
+        drawText(canvas, label, db.centerX(), base, 15f, 600, cInk, center = true)
+        // The fill, left to right, with the label in the accent's own ink where it has reached.
+        val fill = if (holdDone) 1f else holdP
+        if (fill > 0f) {
+            holdClip.reset()
+            holdClip.addRoundRect(db, r, r, Path.Direction.CW)
+            canvas.save()
+            canvas.clipPath(holdClip)
+            canvas.clipRect(db.left, db.top, db.left + db.width() * fill, db.bottom)
+            paint.color = cAccent
+            canvas.drawRect(db, paint)
+            drawText(canvas, label, db.centerX(), base, 15f, 600, cOnAccent, center = true)
+            canvas.restore()
+        }
+        canvas.restore()
+    }
+
+    private fun bubbleLabel() = when {
+        holdDone -> HOLD_DONE
+        dismissHeld -> HOLD_HELD
+        else -> HOLD_REST
+    }
+
+    /**
+     * The bubble just under the pill (in the contents' own points), kept inside the panel. It
+     * begins below the title's row, so it never covers the X.
+     */
+    private fun bubbleRect(p: Part): RectF {
+        val db = dismissBox(p)
+        val w = measure(bubbleLabel(), 13f, 600) + 2 * 11 * dp
+        val h = 30 * dp * Math.max(1f, fs)
+        val top = Math.max(db.bottom + 8 * dp, p.y + 44 * dp + 4 * dp)
+        val left = (db.centerX() - w / 2).coerceIn(pad / 2, Math.max(pad / 2, box.width() - pad / 2 - w))
+        return RectF(left, top, left + w, top + h)
+    }
+
+    private val bubblePath = Path()
+
+    /** Drawn over the rest of the contents, while it shows. */
+    private fun drawHoldBubble(canvas: Canvas) {
+        val v = holdBubble.value.coerceIn(0f, 1f)
+        val p = parts.firstOrNull { it.kind == Kind.TITLE }
+        if (v <= 0.01f || p == null) {
+            bubbleSeen = false
+            return
+        }
+        val b = bubbleRect(p)
+        bubbleBox.set(b)
+        bubbleSeen = true
+        val db = dismissBox(p)
+        canvas.save()
+        // (It grows a little out of the pill as it shows.)
+        val k = 0.9f + 0.1f * v
+        canvas.scale(k, k, db.centerX(), b.top)
+        paint.style = Paint.Style.FILL
+        paint.color = alpha(0xFF1B1C1F.toInt(), 0.94f * v)
+        canvas.drawRoundRect(b, 9 * dp, 9 * dp, paint)
+        // Its point, up toward the pill.
+        val px = db.centerX().coerceIn(b.left + 12 * dp, b.right - 12 * dp)
+        bubblePath.reset()
+        bubblePath.moveTo(px - 6 * dp, b.top + 0.5f)
+        bubblePath.lineTo(px, b.top - 6 * dp)
+        bubblePath.lineTo(px + 6 * dp, b.top + 0.5f)
+        bubblePath.close()
+        canvas.drawPath(bubblePath, paint)
+        if (dark) {
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1 * dp
+            paint.color = alpha(0xFFFFFFFF.toInt(), 0.14f * v)
+            canvas.drawRoundRect(b, 9 * dp, 9 * dp, paint)
+            paint.style = Paint.Style.FILL
+        }
+        drawText(canvas, bubbleLabel(), b.centerX(), b.centerY() + 4.5f * dp * fs, 13f, 600, alpha(0xFFF2EFE8.toInt(), v), center = true)
+        canvas.restore()
+    }
+
     private fun drawPart(canvas: Canvas, p: Part) {
         val x0 = pad
         val y = p.y
@@ -833,13 +1061,8 @@ internal class PanelView(
             Kind.GAP -> {}
             Kind.TITLE -> {
                 drawText(canvas, p.label, x0, y + 30 * dp, 22f, 700, cInk, display = true)
-                // "Dismiss": a pill, as the panel's other controls are, never round like the X.
-                val db = dismissBox(p)
-                val press = (presses["dismiss"]?.value ?: 0f).coerceIn(0f, 1f)
+                drawDismiss(canvas, p)
                 paint.style = Paint.Style.FILL
-                paint.color = mix(alpha(cInk, 0.08f), alpha(cInk, 0.16f), press)
-                canvas.drawRoundRect(db, db.height() / 2, db.height() / 2, paint)
-                drawText(canvas, "Dismiss", db.centerX(), db.centerY() + 5 * dp * fs, 15f, 600, cInk, center = true)
                 val cx = x0 + innerW - 22 * dp
                 val cy = y + 22 * dp
                 paint.color = alpha(cInk, 0.1f)
@@ -1095,6 +1318,7 @@ internal class PanelView(
                 tracker?.addMovement(e)
                 target = hit(e.x, e.y)
                 if (target.startsWith("ruler.")) startRuler(target.removePrefix("ruler."))
+                if (target == "dismiss") startHold()
                 if (target == "inApp" || target == "overApps") {
                     presses[target]?.to(1f, 12f)
                     run()
@@ -1105,6 +1329,8 @@ internal class PanelView(
                 val dx = e.x - lastX
                 val dy = e.y - lastY
                 lastX = e.x; lastY = e.y
+                // (Slid off "Hold to dismiss" before the end: it drains back, 195.)
+                if (dismissHeld && hit(e.x, e.y) != "dismiss") letGoHold("slid off")
                 if (ruler.isNotEmpty()) {
                     moveRuler(dx)
                 } else if (scrolling) {
@@ -1112,6 +1338,7 @@ internal class PanelView(
                     invalidate()
                 } else if (Math.abs(e.y - downY) > slop && box.contains(downX, downY) && maxScroll() > 0f) {
                     scrolling = true
+                    letGoHold("scrolled")
                     unpress()
                 }
             }
@@ -1121,6 +1348,7 @@ internal class PanelView(
                 val vx = tracker?.xVelocity ?: 0f
                 val vy = tracker?.yVelocity ?: 0f
                 val tap = Math.hypot((e.x - downX).toDouble(), (e.y - downY).toDouble()) < slop
+                letGoHold("let go")
                 if (ruler.isNotEmpty()) {
                     // (A dial held still and let go is not a tap: it only showed where the Sidekick goes.)
                     upRuler(vx, tap && e.eventTime - e.downTime < android.view.ViewConfiguration.getLongPressTimeout(), e.x)
@@ -1136,6 +1364,7 @@ internal class PanelView(
                 scrolling = false
             }
             MotionEvent.ACTION_CANCEL -> {
+                letGoHold("taken away by Android (cancel)")
                 if (ruler.isNotEmpty()) endRuler(save = true, back = true, why = "taken away by Android (cancel)")
                 unpress()
                 scrolling = false
@@ -1159,12 +1388,8 @@ internal class PanelView(
                 haptic("tick")
                 SidekickPanel.close("its X")
             }
-            id == "dismiss" -> {
-                // The panel goes back into the Sidekick, and then the Sidekick is sent away (193).
-                haptic("tick")
-                SidekickPanel.close("Dismiss")
-                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ RestBubble.dismissSidekick() }, 280)
-            }
+            // (A tap on "Hold to dismiss" only starts the fill, which drains back: it is held, 195.)
+            id == "dismiss" -> {}
             id == "inApp" || id == "overApps" -> {
                 val v = !switchValue(id)
                 change(mapOf(id to v))
@@ -1421,6 +1646,32 @@ internal class PanelView(
                 "below" to dismissBelow,
             )
         }),
+        // Hold to dismiss (195): the fill now (0 to 1), whether it is held or draining, whether it
+        // was held to the end, the most it filled, how it last ended, how long it took to drain
+        // back after the last let-go (-1 if not yet), and each haptic, with where the fill was.
+        "holdFill" to holdP.toDouble(),
+        "holdHeld" to dismissHeld,
+        "holdDraining" to draining,
+        "holdDone" to holdDone,
+        "holdMost" to holdMost.toDouble(),
+        "holdEnded" to holdEnded,
+        "holdDrainMs" to holdDrainMs,
+        "holdAt500" to holdAt500.toDouble(),
+        "holdBuzzes" to holdBuzzes.toList(),
+        // The bubble under the pill: what it says, how much it shows, and where it is (on the
+        // screen, in points; empty when not drawn), with the X's circle for the test to compare.
+        "holdLabel" to bubbleLabel(),
+        "holdBubble" to holdBubble.value.toDouble(),
+        "holdBubbleBox" to (if (bubbleSeen) {
+            val ox = box.left + origin[0]
+            val oy = box.top - scroll + origin[1]
+            listOf((bubbleBox.left + ox) / dp, (bubbleBox.top + oy) / dp, bubbleBox.width() / dp, bubbleBox.height() / dp).map { it.toDouble() }
+        } else emptyList<Double>()),
+        "closeBox" to (parts.firstOrNull { it.kind == Kind.TITLE }?.let { p ->
+            val ox = box.left + origin[0]
+            val oy = box.top - scroll + origin[1]
+            listOf((pad + innerW - 44 * dp + ox) / dp, (p.y + oy) / dp, 44.0, 44.0).map { it.toDouble() }
+        } ?: emptyList<Double>()),
         "panelCarriedOn" to carriedOn,
         // Where the panel may reach down to, and where the dials are now (on the screen, in points).
         "panelBottomLimit" to ((limitBottom + origin[1]) / dp).toDouble(),

@@ -2853,6 +2853,17 @@ class Floater(val timer: Boolean) {
                                 finger(pv, listOf(local(spot)), true, 60, 0, 0, false, num("settleMs", 700), { true }, { done(state(context)) })
                             }, 80)
                         }
+                        // (195) A finger held still on a part for [holdMs], then lifted ("hold"), or
+                        // after [holdMs] slid [dx] and [dy] points away and lifted there ("holdSlide").
+                        // Answers [settleMs] after the lift.
+                        "hold", "holdSlide" -> {
+                            val spot = SidekickPanel.testSpot(part) ?: return fail("no part $part in the panel")
+                            val from = local(spot)
+                            val path = if (a["what"] == "hold") listOf(from) else listOf(from, floatArrayOf(from[0] + num("dx", 0).toFloat() * dp, from[1] + num("dy", 0).toFloat() * dp))
+                            watcher.postDelayed({
+                                finger(pv, path, true, num("holdMs", 600), num("legMs", 120), 0, false, num("settleMs", 600), { true }, { done(state(context)) })
+                            }, 80)
+                        }
                         "drag", "flick", "press" -> {
                             val spot = SidekickPanel.testSpot(part) ?: return fail("no part $part in the panel")
                             val from = local(spot)

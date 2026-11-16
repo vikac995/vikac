@@ -128,9 +128,21 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
 - **The Sidekick never takes the keyboard or the focus** of the app underneath.
 - **The Sidekick is sent away only from its settings panel** (the owner's decision, from 193): hold
   it, and its panel has a "Dismiss" pill in its header, right after the "Sidekick" title (from 194;
-  next to the ✕ in 193), with the ✕ (which only closes the panel) on the right.
-  "Dismiss" closes the panel and the Sidekick shrinks away where it rests; it stays away until the
-  next app is opened from Prism. Carried or flung anywhere, the Sidekick only moves: there is no cross
+  next to the ✕ in 193), with the ✕ (which only closes the panel) on the right. **It is held, not
+  tapped** (from 195, the owner's "I-05 Hold to confirm"):
+  - **Held:** a fill sweeps across it from left to right over 1.2 s, in the accent; a light tick at a
+    quarter, half and three quarters, and a heavy one at the end (never two within 28 ms). The pill shakes a little, more as it fills (sideways by
+    sin(t / 14 ms) × p² × 2.2 points), and shrinks a little (1 − 0.035 × p).
+  - **Let go, slid off, or only tapped before the end:** the fill drains back on a spring (k 90,
+    c 19) and nothing happens.
+  - **At the end:** a small pop (0.88 to 1 on a spring, k 420, c 10) and "Dismissed"; then the panel
+    closes and the Sidekick shrinks away where it rests. It stays away until the next app is opened
+    from Prism.
+  - **What to do is said in a small dark bubble just under the pill** ("Hold to dismiss", "Keep
+    holding…", "Dismissed"): while it is pressed, and for 1.2 s after a short tap. It stays inside
+    the panel and below the title's row, so it never covers the ✕. (The pill keeps the word
+    "Dismiss" at 194's size: the longer labels don't fit beside the title, and a line of their own
+    would cost the dials the room they need on the S25.) Carried or flung anywhere, the Sidekick only moves: there is no cross
   for it, nothing pulls it, no fling sends it away (190 to 192 had a cross at the top, which the owner
   hit by accident). The workout timer's cross, with Pause and Count up, stays at the bottom.
 - Its two places at a screen edge are two dials side by side in its own panel, **Hovering** (how far
@@ -148,7 +160,7 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   - **Where:** beside it, on the side away from it, at its height (kept on the screen), as tall as
     its contents allow. It ends 8 points above Prism's bar (in Prism) or Android's own bar (outside),
     and never covers either (from 186).
-  - **Its header:** "Sidekick", then a "Dismiss" pill 12 points after it, and the ✕ at the right (from
+  - **Its header:** "Sidekick", then the dismiss pill 12 points after it, and the ✕ at the right (from
     194). Its touch is 48 points tall and stops short of the ✕'s. At a large text size, if "Dismiss"
     doesn't fit there, it goes on a line of its own under the title.
   - **Its order:** Labels, Icons, Colours, Look, then where it rests (the two dials, in reach without
