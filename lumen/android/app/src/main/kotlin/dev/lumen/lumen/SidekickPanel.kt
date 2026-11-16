@@ -168,6 +168,9 @@ object SidekickPanel {
     /** See PanelView.testSample. */
     fun testSample(at: Float): HashMap<String, Any?>? = view?.testSample(at)
 
+    /** What the "Where it rests" section really looks like, from its pixels (188). */
+    fun testPixels(): HashMap<String, Any?>? = view?.testPixels()
+
     /** Where part [id] is on the screen, brought into sight first; null if there is no such part. */
     fun testSpot(id: String): FloatArray? = view?.testSpot(id)
 
@@ -425,7 +428,7 @@ internal class PanelView(
         parts.add(Part(Kind.LOOKS, "look", "", lookRows() * lookCellH() + (lookRows() - 1) * 12 * dp))
         gap(section)
         label("Where it rests, in points", "rests"); gap(under)
-        parts.add(Part(Kind.RULERS, "rulers", "", (18 * fs + 6 + 52) * dp))
+        parts.add(Part(Kind.RULERS, "rulers", "", (18 * fs + 6) * dp + pillH()))
         gap(section)
         parts.add(Part(Kind.SWITCH, "inApp", "In Prism", 48 * dp))
         gap(12f)
@@ -557,6 +560,10 @@ internal class PanelView(
 
     // ---- Drawing.
     private val rr = RectF()
+    // The panel's own outline as this frame draws it. Kept apart from [rr], which the switches and
+    // pickers use as they draw: until 188 the solid "Where it rests" pass clipped to [rr] after the
+    // contents had drawn, so to the last switch's knob, and was never seen on the screen.
+    private val outline = RectF()
     private val clip = Path()
 
     // (What the panel drew, for the recorder and the button test: how many frames, and the last
@@ -627,9 +634,9 @@ internal class PanelView(
         val top = lerp(ly - sr, box.top, tt)
         val r = lerp(lx + sr, box.right, tt)
         val b = lerp(ly + sr, box.bottom, tt)
-        rr.set(l, top, r, b)
-        lastRect.set(rr)
-        lastCovers = covers(rr)
+        outline.set(l, top, r, b)
+        lastRect.set(outline)
+        lastCovers = covers(outline)
         // It fades in as it grows out of the Sidekick and out as it shrinks back in: while it is
         // small it is all but clear, so no dark box is ever seen round the Sidekick. While a dial
         // is held it is half see-through, to see where the Sidekick goes; on the dial's spring.
@@ -657,14 +664,14 @@ internal class PanelView(
         clip.reset()
         clip.addCircle(lx, ly, sr, Path.Direction.CW)
         clipOut(canvas, clip)
-        if (fade < 0.999f) canvas.saveLayerAlpha(rr, (fade * 255).toInt())
+        if (fade < 0.999f) canvas.saveLayerAlpha(outline, (fade * 255).toInt())
         paint.style = Paint.Style.FILL
         paint.color = cSurface
-        canvas.drawRoundRect(rr, corner, corner, paint)
+        canvas.drawRoundRect(outline, corner, corner, paint)
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 1 * dp
         paint.color = cHairline
-        canvas.drawRoundRect(rr, corner, corner, paint)
+        canvas.drawRoundRect(outline, corner, corner, paint)
         paint.style = Paint.Style.FILL
         // Its contents come in between 5% and 30% of the way, as in Prism; drawn at their own
         // size, scaled with the panel, as Prism's transform does.
@@ -673,7 +680,7 @@ internal class PanelView(
         if (a > 0.001f) {
             canvas.save()
             clip.reset()
-            clip.addRoundRect(rr, corner, corner, Path.Direction.CW)
+            clip.addRoundRect(outline, corner, corner, Path.Direction.CW)
             canvas.clipPath(clip)
             val sxk = (r - l) / box.width()
             val syk = (b - top) / box.height()
@@ -698,7 +705,7 @@ internal class PanelView(
             clip.addCircle(lx, ly, sr, Path.Direction.CW)
             clipOut(canvas, clip)
             clip.reset()
-            clip.addRoundRect(rr, corner, corner, Path.Direction.CW)
+            clip.addRoundRect(outline, corner, corner, Path.Direction.CW)
             canvas.clipPath(clip)
             canvas.translate(l, top)
             canvas.scale((r - l) / box.width(), (b - top) / box.height())
@@ -869,8 +876,13 @@ internal class PanelView(
         val w = (innerW - 10 * dp) / 2
         val left = if (id == "gap") x else x + w + 10 * dp
         val top = y + (18 * fs + 6) * dp
-        return RectF(left, top, left + w, top + 52 * dp)
+        return RectF(left, top, left + w, top + pillH())
     }
+
+    // A dial's pill: 52 points tall, and taller at a large text size, so that its number, 6 points
+    // of space, its ticks and 10 points under them always fit inside, with room at the top (188).
+    private fun pillH(): Float = Math.max(52f, 32f + 14f * fs) * dp
+    private val tickClip = Path()
 
     private fun drawRulers(canvas: Canvas, x: Float, y: Float) {
         for ((id, name) in listOf("gap" to "Hovering", "tuck" to "Tucked in")) {
@@ -891,15 +903,26 @@ internal class PanelView(
                 paint.style = Paint.Style.FILL
             }
             // The edge of a wheel, turning with the thumb: ticks that bunch up and fade at the sides.
+            // They stay inside the pill's rounded outline with room to spare (188: until then they
+            // were clipped only to its square box, so the outer ones ran past its rounded ends, 5
+            // points from its bottom edge): 10 points above its bottom, and at the sides clear of
+            // its rounded ends by 6 points, at the height of the lowest tick.
             canvas.save()
-            canvas.clipRect(b)
+            tickClip.reset()
+            tickClip.addRoundRect(b.left + 4 * dp, b.top + 4 * dp, b.right - 4 * dp, b.bottom - 4 * dp, b.height() / 2 - 4 * dp, b.height() / 2 - 4 * dp, Path.Direction.CW)
+            canvas.clipPath(tickClip)
             val mid = b.centerX()
-            val radius = b.width() * 0.52f
+            val tickH = 8 * dp
+            val tickBottom = b.bottom - 10 * dp
+            val tickTop = tickBottom - tickH
+            val end = b.height() / 2
+            val rise = end - (b.bottom - tickBottom)
+            val endInset = end - Math.sqrt((end * end - rise * rise).toDouble()).toFloat()
+            val halfSpan = b.width() / 2 - endInset - 6 * dp
+            val radius = halfSpan / Math.sin(1.45).toFloat()
             val spacing = 0.2
             val turn = (wheel[id] ?: 0f) / radius
             val phase = ((turn % spacing) + spacing) % spacing
-            val tickTop = b.bottom - 5 * dp - 9 * dp
-            val tickH = 9 * dp
             paint.style = Paint.Style.STROKE
             paint.strokeWidth = 1.6f * dp
             paint.strokeCap = Paint.Cap.ROUND
@@ -909,13 +932,13 @@ internal class PanelView(
                 val px = mid + radius * Math.sin(a).toFloat()
                 val depth = Math.cos(a).toFloat()
                 paint.color = alpha(tc, (depth * depth).coerceIn(0f, 1f))
-                canvas.drawLine(px, tickTop + tickH * (1 - depth) * 0.5f, px, tickTop + tickH, paint)
+                if (!hideTicks) canvas.drawLine(px, tickTop + tickH * (1 - depth) * 0.5f, px, tickBottom, paint)
                 a += spacing
             }
             paint.style = Paint.Style.FILL
             canvas.restore()
             val v = if (id == "gap") SidekickSettings.gap else SidekickSettings.tuck
-            drawText(canvas, "${Math.round(v)}", mid, b.top + 26 * dp + 2 * dp * fs, 19f, 700, cInk, center = true)
+            drawText(canvas, "${Math.round(v)}", mid, b.bottom - 24 * dp, 19f, 700, if (hideNumbers) 0 else cInk, center = true)
             canvas.restore()
         }
     }
@@ -1330,6 +1353,141 @@ internal class PanelView(
      * outside the glass, towards the panel, to show the panel itself was drawn. (Drawn in
      * software, off the screen: nothing is seen.)
      */
+    // (Test only: the next drawing leaves out the dials' ticks or numbers, to find their pixels.)
+    private var hideTicks = false
+    private var hideNumbers = false
+
+    /**
+     * The "Where it rests" section as it is drawn now, read from its pixels (188: 187's check read
+     * only what the code meant to draw, and passed while the phone showed nothing). It is drawn in
+     * software three times, as it is, without the ticks and without the numbers, onto clear pixels;
+     * the differences are the ticks and the numbers. Says:
+     * - how opaque the section's own area is at its least (255 solid), and a point of the rest of
+     *   the panel (on the Labels row, right of its name: about 102 while a dial is held);
+     * - for each dial, how many pixels its number has and how opaque they are at the least;
+     * - for each dial, how many pixels its ticks have, how many of those lie outside its pill (its
+     *   rounded outline, 2 points in), and the room under the lowest, in points.
+     */
+    fun testPixels(): HashMap<String, Any?> {
+        val m = HashMap<String, Any?>()
+        val title = parts.firstOrNull { it.id == "rests" }
+        val dials = parts.firstOrNull { it.kind == Kind.RULERS }
+        if (title == null || dials == null || width == 0) {
+            m["pixNote"] = "no section to read"
+            return m
+        }
+        val wasSampling = sampling
+        sampling = true
+        try {
+            val top = box.top + title.y - scroll - 12 * dp
+            val bottom = box.top + dials.y + dials.h - scroll + 12 * dp
+            val w = Math.ceil(box.width().toDouble()).toInt()
+            val h = Math.ceil((bottom - top).toDouble()).toInt()
+            if (w <= 0 || h <= 0) {
+                m["pixNote"] = "nothing to read"
+                return m
+            }
+            val bmp = android.graphics.Bitmap.createBitmap(w, h, android.graphics.Bitmap.Config.ARGB_8888)
+            val c = Canvas(bmp)
+            fun render(ticks: Boolean, numbers: Boolean): IntArray {
+                bmp.eraseColor(0)
+                hideTicks = !ticks
+                hideNumbers = !numbers
+                try {
+                    val keep = c.save()
+                    c.translate(-box.left, -top)
+                    draw(c)
+                    c.restoreToCount(keep)
+                } finally {
+                    hideTicks = false
+                    hideNumbers = false
+                }
+                val px = IntArray(w * h)
+                bmp.getPixels(px, 0, w, 0, 0, w, h)
+                return px
+            }
+            val all = render(true, true)
+            val noTicks = render(false, true)
+            val noNumbers = render(true, false)
+            bmp.recycle()
+            fun alphaAt(px: IntArray, x: Int, y: Int): Int =
+                if (x in 0 until w && y in 0 until h) (px[y * w + x] ushr 24) and 0xFF else -1
+            // The section's own area: from just above its title to just under the dials, across
+            // its width, clear of its block's rounded corners.
+            val sx0 = pad + 10 * dp
+            val sx1 = pad + innerW - 10 * dp
+            val sy0 = title.y - scroll - 2 * dp + box.top - top
+            val sy1 = dials.y + dials.h - scroll + 2 * dp + box.top - top
+            var least = 255
+            for (i in 0..8) for (j in 0..4) {
+                val x = (sx0 + (sx1 - sx0) * i / 8f).toInt()
+                val y = (sy0 + (sy1 - sy0) * j / 4f).toInt()
+                val a = alphaAt(all, x, y)
+                if (a >= 0) least = Math.min(least, a)
+            }
+            m["pixBlockLeast"] = least
+            // A point of the rest of the panel, drawn on its own.
+            val labels = parts.firstOrNull { it.kind == Kind.LABEL && it.label == "Labels" }
+            if (labels != null) {
+                val one = android.graphics.Bitmap.createBitmap(1, 1, android.graphics.Bitmap.Config.ARGB_8888)
+                val c1 = Canvas(one)
+                c1.translate(-(box.left + pad + innerW - 4 * dp), -(box.top + labels.y - scroll + 10 * dp * fs))
+                draw(c1)
+                m["pixRest"] = (one.getPixel(0, 0) ushr 24) and 0xFF
+                one.recycle()
+            }
+            for (id in listOf("gap", "tuck")) {
+                val k = 1 + 0.06f * (lifts[id]?.value ?: 0f)
+                val b0 = rulerBox(id, pad, dials.y - scroll)
+                // (Held, the pill is drawn a little larger, about its middle.)
+                val b = RectF(b0.centerX() - b0.width() * k / 2, b0.centerY() - b0.height() * k / 2, b0.centerX() + b0.width() * k / 2, b0.centerY() + b0.height() * k / 2)
+                b.offset(0f, box.top - top)
+                val inside = RectF(b.left + 2 * dp, b.top + 2 * dp, b.right - 2 * dp, b.bottom - 2 * dp)
+                val r = inside.height() / 2
+                fun inPill(x: Float, y: Float): Boolean {
+                    if (!inside.contains(x, y)) return false
+                    val cx = x.coerceIn(inside.left + r, inside.right - r)
+                    return Math.hypot((x - cx).toDouble(), (y - inside.centerY()).toDouble()) <= r
+                }
+                var numberPx = 0
+                var numberLeast = 255
+                var tickPx = 0
+                var tickOut = 0
+                var lowest = -1
+                val x0 = Math.max(0, b.left.toInt() - 4)
+                val x1 = Math.min(w - 1, b.right.toInt() + 4)
+                val y0 = Math.max(0, b.top.toInt() - 4)
+                val y1 = Math.min(h - 1, b.bottom.toInt() + 4)
+                for (y in y0..y1) for (x in x0..x1) {
+                    val i = y * w + x
+                    if (all[i] != noNumbers[i]) {
+                        numberPx++
+                        numberLeast = Math.min(numberLeast, (all[i] ushr 24) and 0xFF)
+                    }
+                    if (all[i] != noTicks[i]) {
+                        tickPx++
+                        if (!inPill(x + 0.5f, y + 0.5f)) tickOut++
+                        lowest = Math.max(lowest, y)
+                    }
+                }
+                m["pix${id}NumberPx"] = numberPx
+                m["pix${id}NumberLeast"] = if (numberPx == 0) 0 else numberLeast
+                m["pix${id}TickPx"] = tickPx
+                m["pix${id}TickOutside"] = tickOut
+                m["pix${id}TickRoom"] = if (lowest < 0) -1.0 else ((b.bottom - (lowest + 1)) / dp).toDouble()
+            }
+            m["pixFontScale"] = fs.toDouble()
+            // (How opaque the panel's own colour is: the most anything solid on it can be.)
+            m["pixSurfaceAlpha"] = (cSurface ushr 24) and 0xFF
+            m["pixHeld"] = solidDial
+        } catch (e: Exception) {
+            m["pixNote"] = "could not be read: ${e.javaClass.simpleName}"
+        } finally {
+            sampling = wasSampling
+        }
+        return m
+    }
+
     fun testSample(at: Float): HashMap<String, Any?> {
         val was = g.value
         sampling = true

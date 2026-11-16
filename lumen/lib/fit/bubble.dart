@@ -342,6 +342,14 @@ class RestBubble with WidgetsBindingObserver {
   /// The lens is being carried over Prism's blobs (where, in real pixels; null once it is not).
   void Function(Offset? at)? onLensAt;
 
+  /// Only one menu open at a time (188): the Sidekick's own menu ("menu") or panel ("panel") has
+  /// just opened, so Prism's blobs close if they are out. Set by the shell.
+  void Function(String what)? onSidekickOpened;
+
+  /// A tap on Prism's button, caught by the Sidekick's open menu, which has closed: Prism does what
+  /// a tap on its button does, in the same tap (188). Set by the shell.
+  void Function()? onButtonTap;
+
   /// The lens was let go among Prism's blobs, there: it is one of them again. [inner] is how
   /// large the blob was drawn inside the lens, in real pixels.
   void Function(Offset at, double inner)? onReturned;
@@ -544,6 +552,10 @@ class RestBubble with WidgetsBindingObserver {
         onPinned?.call(call.arguments as String?);
       case 'fused':
         onFused?.call();
+      case 'sidekickOpened':
+        onSidekickOpened?.call('${call.arguments}');
+      case 'buttonTap':
+        onButtonTap?.call();
       case 'weigh':
         onWeigh?.call((call.arguments as num).toDouble());
       case 'food':

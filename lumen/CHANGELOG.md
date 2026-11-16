@@ -1,5 +1,23 @@
 # Lumen changelog
 
+## Prism, build 188 (16 November 2026)
+
+**File:** `releases/prism-build-188.apk`
+
+Needs Play Protect paused to install. Can be installed over build 187.
+
+**The dials, from your video:**
+- **They no longer vanish while you hold one.** The "Where it rests" section, its title, both numbers and the ticks, now really is drawn fully solid while a dial is held. It wasn't drawn at all before: a mix-up in the code meant it was cut down to a tiny spot elsewhere. It's the same mix-up that made the held dial vanish in 186. The test now checks this by reading the pixels, not by trusting the code.
+- **The ticks sit inside their pills,** clear of the bottom edge and of the rounded ends. At a large text size the pill grows a little, so everything still fits.
+
+**Only one menu open at a time, as you chose:**
+- With Prism's blobs out, one tap on the Sidekick closes them and opens the Sidekick's. Holding the Sidekick (its settings) closes them too.
+- With the Sidekick's blobs out, one tap on Prism's triangle closes them and opens Prism's.
+- The triangle turns by its usual rule.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip; Prism's half of the menu swap passes); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone. The panel and the Sidekick's menu are Android's, so the phone run is what proves them.
+
 ## Prism, build 187 (16 November 2026)
 
 **File:** `releases/prism-build-187.apk`

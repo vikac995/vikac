@@ -975,6 +975,34 @@ class _ShellState extends State<Shell>
       ..animateTo(1, spring: Motions.expressiveFast);
   }
 
+  /// Only one menu open at a time (188, the owner's choice): the Sidekick's own menu or panel has
+  /// just opened, so Prism's blobs close (the triangle follows its rule).
+  void _sidekickOpened(String what) {
+    if (!mounted) {
+      return;
+    }
+    _sidekickOpenings++;
+    if (_open) {
+      Diag.instance.event('the Sidekick\'s $what opened: Prism\'s blobs close');
+      _setOpen(false);
+    }
+  }
+
+  /// A tap on the button, caught by the Sidekick's open menu, which has closed: the tap is Prism's,
+  /// as if the Sidekick's menu had not been there (188).
+  void _buttonTapFromSidekick() {
+    if (!mounted) {
+      return;
+    }
+    _buttonTapsFromSidekick++;
+    Diag.instance.event('a tap on the button closed the Sidekick\'s menu: Prism takes it');
+    _doTap(_tapOutcome());
+  }
+
+  // (For the test: how often each happened.)
+  int _sidekickOpenings = 0;
+  int _buttonTapsFromSidekick = 0;
+
   /// While the blobs are out Android knows where they sit, so a lens let go among them is put back.
   void _tellFan() {
     final double dpr = MediaQuery.devicePixelRatioOf(context);
@@ -2569,6 +2597,8 @@ class _ShellState extends State<Shell>
         _sendPin();
       }
       ..onLensAt = _lensOver
+      ..onSidekickOpened = _sidekickOpened
+      ..onButtonTap = _buttonTapFromSidekick
       ..onReturned = _lensBack
       ..container.addListener(_sendPinData)
       ..pinned.addListener(_pinChanged);
@@ -4427,6 +4457,28 @@ class _ShellState extends State<Shell>
           _setOpen(false);
           await Robot.wait(700);
         }
+        // Only one menu open at a time (188), Prism's side, as Android tells it: the Sidekick's
+        // menu opened with Prism's blobs out, they close; a tap on the button caught by the
+        // Sidekick's menu, Prism's blobs open. (On a phone, part 4 does it for real.)
+        {
+          _setOpen(true);
+          await Robot.wait(700);
+          RestBubble.instance.handle(const MethodCall('sidekickOpened', 'menu'));
+          await Robot.wait(700);
+          final bool closed = !_open;
+          final bool upAfterClose = !_pointsDown(_signTurn.target);
+          RestBubble.instance.handle(const MethodCall('buttonTap'));
+          await Robot.wait(700);
+          final bool reopened = _open;
+          final bool downAfterOpen = _pointsDown(_signTurn.target);
+          t.check(
+            'one menu at a time, Prism\'s side: told the Sidekick\'s menu opened, its blobs close; given the tap, they open',
+            closed && upAfterClose && reopened && downAfterOpen,
+            'closed $closed (the triangle ${upAfterClose ? 'up' : 'down'}), opened again $reopened (the triangle ${downAfterOpen ? 'down' : 'up'})',
+          );
+          _setOpen(false);
+          await Robot.wait(700);
+        }
         // ------------------------------------------------ the button: taps
         say('1 of 6, the button: taps');
         await memoryAt('part 1 of 6');
@@ -5189,6 +5241,45 @@ class _ShellState extends State<Shell>
             s['menuCount'] == filled(stored(s)).length,
             '${s['menuCount']} shown, ${filled(stored(s)).length} in its menu',
           );
+          // Only one menu open at a time (188, the owner's choice). With the Sidekick's blobs out,
+          // one tap on Prism's button closes them and opens Prism's; with Prism's out, one tap on
+          // the Sidekick closes them and opens its own. Never both open at once.
+          if (opened) {
+            String both(Map<String, Object?> m) =>
+                'the Sidekick\'s blobs ${m['menu'] == true ? 'out' : 'in'}, Prism\'s ${_open ? 'out' : 'in'}; the triangle points ${_pointsDown(_signTurn.target) ? 'down' : 'up'}';
+            final int tapsWas = _buttonTapsFromSidekick;
+            s = await menu('button', settleMs: 900);
+            await Robot.wait(400);
+            t.check(
+              'one menu at a time: with the Sidekick\'s blobs out, one tap on Prism\'s button closes them and opens Prism\'s',
+              s['menu'] != true &&
+                  _open &&
+                  _buttonTapsFromSidekick == tapsWas + 1 &&
+                  _pointsDown(_signTurn.target),
+              '${both(s)}; Prism was given ${_buttonTapsFromSidekick - tapsWas} tap(s); its last touch: ${s['touch'] ?? '?'}',
+            );
+            final int openingsWas = _sidekickOpenings;
+            final bool swapped = await openMenu();
+            await Robot.wait(400);
+            t.check(
+              'one menu at a time: with Prism\'s blobs out, one tap on the Sidekick closes them and opens its own',
+              swapped &&
+                  !_open &&
+                  _sidekickOpenings > openingsWas &&
+                  !_pointsDown(_signTurn.target),
+              swapped
+                  ? '${both(tapped)}; Prism was told ${_sidekickOpenings - openingsWas} time(s)'
+                  : 'the Sidekick\'s blobs did not open: ${whyNot()}',
+            );
+            // (Back as before: the Sidekick's blobs out, Prism's in.)
+            if (_open) {
+              _setOpen(false);
+              await Robot.wait(600);
+            }
+            if (!swapped) {
+              await openMenu();
+            }
+          }
           s = await menu('hold', i: 1);
           t.check(
             'sidekick: holding a blob brings its small menu',
@@ -5540,6 +5631,7 @@ class _ShellState extends State<Shell>
           Object? dx,
           List<double>? again,
           int gapMs = 50,
+          bool pixels = false,
           int settleMs = 800,
           int holdMs = 700,
           int legMs = 400,
@@ -5550,6 +5642,7 @@ class _ShellState extends State<Shell>
           'dx': ?dx,
           'again': ?again,
           'gapMs': gapMs,
+          'pixels': pixels,
           'settleMs': settleMs,
           'holdMs': holdMs,
           'legMs': legMs,
@@ -5596,7 +5689,21 @@ class _ShellState extends State<Shell>
         final bool wasTucked = s['tucked'] == true;
         final Object? closedWas = s['panelClosed'];
         final double openedWas = numOf(s['panelOpened']);
+        // Only one menu open at a time (188): Prism's blobs are out as the Sidekick is held; its
+        // panel opens, and Prism's blobs close.
+        _setOpen(true);
+        await Robot.wait(700);
+        final int heldOpeningsWas = _sidekickOpenings;
         final bool opened = await holdOpen('sidekick held');
+        t.check(
+          'one menu at a time: with Prism\'s blobs out, holding the Sidekick opens its panel and closes them',
+          opened && !_open && _sidekickOpenings > heldOpeningsWas,
+          'its panel ${opened ? 'open' : 'not open'}, Prism\'s blobs ${_open ? 'out' : 'in'}; Prism was told ${_sidekickOpenings - heldOpeningsWas} time(s)',
+        );
+        if (_open) {
+          _setOpen(false);
+          await Robot.wait(600);
+        }
         // Still open well after the finger has lifted, never closed meanwhile, and the Sidekick
         // put above it without the panel changing at all (build 178 closed by itself, about
         // 0.6 to 1 s after the opening hold was let go, on the owner's phones).
@@ -5913,6 +6020,24 @@ class _ShellState extends State<Shell>
           dialsShown(s) && numOf(s['panelScroll']) == 0,
           'box ${s['panelBox']}, dials ${s['panelDials']}, scrolled ${s['panelScroll']}; ${spareUnderDials(s)}',
         );
+        // The dials' ticks inside their pills, with room under them, from their pixels (188: they
+        // ran past the pills' rounded ends, 5 points from the bottom edge).
+        if (opened) {
+          final Map<String, Object?> px = await panel('pixels');
+          bool fits(String d) =>
+              numOf(px['pix${d}TickPx']) > 0 &&
+              numOf(px['pix${d}TickOutside']) == 0 &&
+              numOf(px['pix${d}TickRoom']) >= 6;
+          String said(String d) =>
+              '${numOf(px['pix${d}TickPx']).round()} tick pixels, ${numOf(px['pix${d}TickOutside']).round()} outside the pill, ${numOf(px['pix${d}TickRoom']).toStringAsFixed(1)} points under the lowest';
+          t.check(
+            'sidekick panel: the dials\' ticks sit inside their pills, with room under them',
+            px['pixNote'] == null && fits('gap') && fits('tuck'),
+            px['pixNote'] != null
+                ? '${px['pixNote']}'
+                : 'Hovering: ${said('gap')}; Tucked in: ${said('tuck')}; text size ${numOf(px['pixFontScale']).toStringAsFixed(2)}',
+          );
+        }
         inPanel(
           'sidekick panel: in Prism, its bottom at least 8 points above Prism\'s bar',
           bottomOf(s) <= math.min(barTop, navTop) - 8 + 0.5,
@@ -6050,6 +6175,28 @@ class _ShellState extends State<Shell>
               numOf(dials['tuck']) >= 0.999;
         }
 
+        // From the section's own pixels (188: 187 read only what was meant to be drawn, and passed
+        // while the phone showed nothing): its area solid (255), the rest of the panel at about
+        // 0.4 (about 102), and both dials' numbers there, drawn solid.
+        bool solidPixels(Map<String, Object?> m) {
+          // (As opaque as the panel's own colour can be: 255 in every look so far.)
+          final double full = numOf(m['pixSurfaceAlpha']).isNaN
+              ? 255
+              : numOf(m['pixSurfaceAlpha']);
+          return numOf(m['pixBlockLeast']) >= full - 5 &&
+              (numOf(m['pixRest']) - 0.4 * full).abs() <= 0.1 * full &&
+              <String>['gap', 'tuck'].every(
+                (String d) =>
+                    numOf(m['pix${d}NumberPx']) >= 30 &&
+                    numOf(m['pix${d}NumberLeast']) >= full - 5,
+              );
+        }
+        String pixelsSaid(Map<String, Object?> m) => m['pixNote'] != null
+            ? 'its pixels: ${m['pixNote']}'
+            : 'its pixels: the section at least ${m['pixBlockLeast']} of 255, the rest ${m['pixRest']}; '
+                  'Hovering\'s number ${m['pixgapNumberPx']} pixels at least ${m['pixgapNumberLeast']}, '
+                  'Tucked in\'s ${m['pixtuckNumberPx']} at least ${m['pixtuckNumberLeast']}';
+
         // Let go: the panel was drawn solid again (over 0.97) within 0.3 s, and is solid now, with
         // "Where it rests" no longer drawn apart.
         bool solidSoon(Map<String, Object?> m) {
@@ -6070,17 +6217,18 @@ class _ShellState extends State<Shell>
             return;
           }
           final double was = numOf(kept(await where())?[id]);
-          s = await panel('press', part: 'ruler.$id', holdMs: 900);
+          s = await panel('press', part: 'ruler.$id', holdMs: 900, pixels: true);
           t.check(
             'sidekick panel: $name touched, the Sidekick goes there, the rest of the panel see-through, "Where it rests" solid',
             (s['tucked'] == true) == tucks &&
                 (numOf(s['panelAlpha']) - 0.4).abs() < 0.08 &&
                 s['panelSolidDial'] == id &&
                 solidRests(s) &&
+                solidPixels(s) &&
                 numOf(s['panelShade']) == 0 &&
                 numOf(s['panelLeastSinceOpen']) >= 0.999 &&
                 s['lens'] == true,
-            'tucked ${s['tucked']}, the rest of the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque; drawn solid ${s['panelSolidParts']} at ${numOf(s['panelSolidAlpha']).toStringAsFixed(2)}, the dials at ${s['panelDialsAlpha']}; shade ${numOf(s['panelShade']).toStringAsFixed(2)}, its contents at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}',
+            'tucked ${s['tucked']}, the rest of the panel ${numOf(s['panelAlpha']).toStringAsFixed(2)} opaque; ${pixelsSaid(s)}; meant to be drawn solid ${s['panelSolidParts']} at ${numOf(s['panelSolidAlpha']).toStringAsFixed(2)}; shade ${numOf(s['panelShade']).toStringAsFixed(2)}, its contents at least ${numOf(s['panelLeastSinceOpen']).toStringAsFixed(2)}',
           );
           // (The press lets go about half a second after it answers.)
           await Robot.wait(1000);

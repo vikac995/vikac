@@ -84,6 +84,10 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   **The Sidekick** is the floating button that comes with you over other apps, with its own menu.
   They are **two separate things that look and behave alike**: same gestures, same menus, same
   springs, but separate data, separate settings and separate screens.
+- **Only one menu open at a time** (the owner's choice, from 188). With Prism's blobs out, a tap on
+  the Sidekick closes them and opens the Sidekick's, in the same tap; a hold on it (its panel)
+  closes them too. With the Sidekick's blobs out, a tap on Prism's button closes them and opens
+  Prism's. The triangle follows its rule.
 - **Each one is edited where it is.** Editing the Sidekick happens over the app it is in and never
   opens or turns Prism. Editing Prism happens in Prism. Nothing about one should feel like editing
   the other.
@@ -118,6 +122,9 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   - **Its spacing:** 10 points between sections, 6 from a section's name to its control, 8 under the
     title (from 187), so both dials are on the screen of the shorter phone (the S25) with room to
     spare. Nothing is made smaller for it.
+  - **A dial's ticks stay inside its pill** (from 188): 10 points above its bottom edge, and clear of
+    its rounded ends by 6 points. At a large text size the pill grows, so its number, the ticks and
+    the space round them always fit.
   - **How wide:** it ends before the Sidekick's furthest Hovering spot, with 8 points to spare, so
     the Sidekick never reaches it.
   - **Nothing around them:** no shade, no shadow, no dark layer round the Sidekick or the panel. The

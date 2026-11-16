@@ -478,6 +478,8 @@ class MainActivity : FlutterActivity() {
                 // Where Prism's own blobs sit while they are out, or nothing when they are not.
                 val fan = (call.arguments as? List<*>)?.map { (it as Number).toFloat() }
                 for (b in Floaters) b.fan = fan
+                // Only one menu open at a time (188): Prism's blobs out, the Sidekick's close.
+                if (fan != null) for (b in Floaters) if (b.guest) b.closeMenu()
                 // (With floating elements switched off in Prism, they are seen there only while the blobs are out.)
                 if (!RestBubble.floatIn) for (b in Floaters) b.refresh(applicationContext)
                 result.success(null)
@@ -1448,7 +1450,8 @@ class Floater(val timer: Boolean) {
     //
     // [guest] says the lens holds it. (The name is from when it was an app's blob that came
     // along with the app for a while. It holds for the lens as long as the side Blob is in it.)
-    private var guest = false
+    var guest = false
+        private set
     private var own: Pin? = null
     private var sideGone = false
 
@@ -2122,6 +2125,7 @@ class Floater(val timer: Boolean) {
             wm(context).addView(m, lp)
             menu = m
             listenForMenu(context)
+            tellOpened("menu")
         } catch (e: Exception) {
             menu = null
         }
@@ -2140,6 +2144,21 @@ class Floater(val timer: Boolean) {
     fun closeMenu() {
         menu?.close()
     }
+
+    /**
+     * Only one menu open at a time (build 188, the owner's choice): the Sidekick's own menu or
+     * panel has just opened, so Prism closes its blobs if they are out. (Prism decides: it knows.)
+     */
+    private fun tellOpened(what: String) {
+        if (!guest) return
+        swaps++
+        try { channel?.invokeMethod("sidekickOpened", what) } catch (e: Exception) {}
+    }
+
+    // (For the test: how often Prism was told the Sidekick's menu or panel opened, and how often a
+    // tap on Prism's button was handed on to Prism from the Sidekick's menu.)
+    var swaps = 0
+    var buttonTaps = 0
 
     // While the lens's own menu is open, and only then, this hears Android announce that the
     // person is heading for the home screen or the recent apps, and closes the menu. The menu
@@ -2217,6 +2236,10 @@ class Floater(val timer: Boolean) {
         m["docked"] = docked
         m["pin"] = pin?.key
         m["menu"] = menu != null
+        // Only one menu open at a time (188): how often Prism was told, and taps handed to Prism.
+        m["swaps"] = swaps
+        m["buttonTaps"] = buttonTaps
+        m["prismFanOut"] = fan != null
         m["menuCount"] = menu?.testCount() ?: 0
         m["menuEditing"] = menu?.testEditing() ?: false
         // (For the button test: the held blob's small menu, the Sidekick's two distances, and
@@ -2565,6 +2588,12 @@ class Floater(val timer: Boolean) {
                             }
                             done(m)
                         }
+                        // What the "Where it rests" section looks like now, from its pixels (188).
+                        "pixels" -> {
+                            val m = state(context)
+                            SidekickPanel.testPixels()?.let { m.putAll(it) }
+                            done(m)
+                        }
                         "home" -> {
                             SidekickPanel.testHome()
                             watcher.postDelayed({ done(state(context)) }, num("settleMs", 700))
@@ -2620,9 +2649,14 @@ class Floater(val timer: Boolean) {
                                         }, num("gapMs", 50))
                                     })
                                 } else if (held) {
-                                    // (Answers while the finger is still down, then lifts it.)
+                                    // (Answers while the finger is still down, then lifts it; with what
+                                    // the "Where it rests" section looks like then, from its pixels.)
                                     finger(pv, listOf(from), true, num("holdMs", 600), 0, 0, false, 0, { true }, {})
-                                    watcher.postDelayed({ done(state(context)) }, num("holdMs", 600) / 2)
+                                    watcher.postDelayed({
+                                        val m = state(context)
+                                        if (a["pixels"] == true) SidekickPanel.testPixels()?.let { m.putAll(it) }
+                                        done(m)
+                                    }, num("holdMs", 600) / 2)
                                 } else {
                                     finger(pv, path, true, 40, num("legMs", if (flick) 60 else 400), 0, flick, num("settleMs", 1200), { true }, { done(state(context)) })
                                 }
@@ -2777,6 +2811,12 @@ class Floater(val timer: Boolean) {
                         "back" -> {
                             m.testBack()
                             watcher.postDelayed({ after() }, num("settleMs", 600))
+                        }
+                        // A tap on Prism's own button, where the menu lies over it (188: the menu
+                        // closes and Prism is given the tap).
+                        "button" -> {
+                            val b = buttonAt ?: return fail("Prism has not said where its button is")
+                            finger(m, listOf(floatArrayOf(b[0], b[1])), true, 50, 0, 0, false, num("settleMs", 900), { true }, after)
                         }
                         else -> fail("unknown menu step")
                     }
@@ -3132,6 +3172,7 @@ class Floater(val timer: Boolean) {
     /** The Sidekick's own settings, over the app it is in: Prism neither comes forward nor is asked (build 178). */
     private fun sideSettings(context: Context, how: String) {
         haptic(context, "click")
+        tellOpened("panel")
         // (Its blobs' menu has just closed, for two of the three ways: the panel opens from where it rests.)
         watcher.postDelayed({ SidekickPanel.open(context, how) }, 60)
     }
@@ -4052,7 +4093,17 @@ class Floater(val timer: Boolean) {
                         // the middle of its own menu, closes it and goes to what is in the lens.
                         val onLens = mode() == 2 && Math.hypot((downX - cx).toDouble(), (downY - cy).toDouble()) < lensR + 6 * dp
                         val c = context
+                        // On Prism's own button (Prism in front): the Sidekick's menu closes and the
+                        // tap is Prism's, in the same tap: its blobs open (only one menu at a time, 188).
+                        val b = buttonAt
+                        val onButton = guest && this@Floater.foreground && !onLens && b != null &&
+                            Math.hypot((e.rawX - b[0]).toDouble(), (e.rawY - b[1]).toDouble()) < 40 * dp
                         close()
+                        if (onButton) {
+                            buttonTaps++
+                            Trail.add("$who: its menu closed by a tap on Prism's button, which Prism is given")
+                            try { channel?.invokeMethod("buttonTap", null) } catch (ex: Exception) {}
+                        }
                         // (A blob that only came along has nowhere of its own to go: the menu just closes.)
                         if (onLens && !guest) watcher.postDelayed({ usePinned(c) }, 110)
                     }
