@@ -19,20 +19,27 @@ review chat's go (see LESSONS.md: no new build while the owner is testing).
      - Prism's settings (hold): the same as the drawer, +120°;
      - always clockwise: one smooth spring, critically damped or overdamped, with no overshoot and no
        reversal; closing goes back the same way.
-   - **Test:**
-     - record the angle every frame during the open and the close of each;
-     - fail on any overshoot past the target, or any change of direction;
-     - include the drawer flicked open from open blobs with a real finger path (`Robot.drag`), not
-       `_setDrawer`: today that's the one path that really reverses.
+   - **The flick fix:** a flick from open blobs must not target 0 first.
+     - `_setOpen(false)` at the flick's first move (`_buttonMove`) must not move the sign while a
+       drawer flick may be under way.
+     - The sign waits for the gesture's outcome: the drawer, the remaining +60°; anything else, back
+       as usual. (One way: defer the sign's update until the gesture is decided.)
+   - **Test** (from `reviews/investigate-sign-spin.md`, "How the test could catch it"):
+     1. **The angle every frame:** during the open and the close of each (blobs, drawer, drawer from
+        blobs, settings), record (frame time, angle, target) on every tick. WRONG on any step more
+        than 0.5° against the way to the target, or any value more than 1° past it. Write the path
+        into the check.
+     2. **A real flick from open blobs:** the drawer flicked open with a real finger path
+        (`Robot.drag`), not `_setDrawer`, checked as in 1.
+     3. **No turn over 120°:** for a look that repeats every 120°, WRONG if a single turn's span is
+        over 120° (it would show its end look on the way). Start and target are enough, so this runs
+        in the preview too.
+     4. **A note only, phone only** (SKIPPED in the preview, whose frames are too slow): the largest
+        turn in one frame.
    - **The 183 report** includes the cause, from `reviews/investigate-sign-spin.md`.
-   - **Two points from the investigation, sent after this approval was written; the review chat
-     confirms them before the build:**
-     - **The flick's first move** (`_buttonMove` → `_setOpen(false)`) sends the sign back towards 0
-       before `_setDrawer(true)`. "The remaining +60°" needs the sign to wait for the flick's outcome,
-       or not to go back at the first move.
-     - **+120° ends looking exactly like rest,** because the Window triangle repeats every 120°: with
-       the drawer open it points down, as at rest. Pass on to the owner if not already seen in the
-       mock-up.
+   - **Settled with the review chat (09:19):**
+     - the sign waits for the flick's outcome;
+     - +120° ends pointing down, as at rest: the owner's mock-up showed it and the owner approved it.
 3. Whatever the 182 phone results ask for. The review chat adds it here.
 
 **Later, for step 3's brief (the Sidekick's own app chooser),** not for 183: after a Change or Add, the new
