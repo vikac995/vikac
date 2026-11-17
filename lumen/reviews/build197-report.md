@@ -70,7 +70,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
 - `Prism build 197`, `0.158.0+225`, built from the final code. Name `Prism`, package `dev.lumen.prism`.
 - **Its `libapp.so` has** "Prism build 197" and "A bigger magnifying glass".
 - sha256 `e675bde0a040fb1dc8cfefb2a7cacf3cc670fef2cdf878b74a8e57860afc0788`, 18,878,922 bytes.
-- Link: added once it is pushed and checked.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/a2cddbc5a72f6687ecbf4890fd5f4110cdc3eaa9/lumen/releases/prism-build-197.apk
 
 ## Where I could be wrong
 
