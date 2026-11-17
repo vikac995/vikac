@@ -95,7 +95,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
   and no `holdBubbleBox`.
 - **Its `libapp.so` has:** "Prism build 196", "Dismiss under the Sidekick" and the new checks.
 - sha256 `27b8f76d7b57cd5dd754c87552b28921d83548456e56169f7dbfc911c3b49c80`, 18,878,922 bytes.
-- Link: added once it is pushed and checked.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/5abcbfbb10c03f6c6dd8ac3db23d67c6c6214ffc/lumen/releases/prism-build-196.apk
 
 ## Where I could be wrong
 
