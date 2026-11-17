@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 197 (17 November 2026)
+
+**File:** `releases/prism-build-197.apk`
+
+Needs Play Protect paused to install. Can be installed over build 196.
+
+**A bigger magnifying glass**, as you asked: the glass you carry from Prism's button over Home's cards is now 2.5 times as wide, about two thirds of the screen. It's the same glass, just bigger. It rides higher above your thumb to match, so your finger never covers its middle, and it stays fully on the screen near the edges.
+
+**Checked:** in my preview, the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses, twice; every glass check passes. Carrying it costs about 2 to 5 ms more per frame there.
+**Not checked:** on a phone, where the bigger glass costs the graphics chip more: see the report.
+
 ## Prism, build 196 (17 November 2026)
 
 **File:** `releases/prism-build-196.apk`

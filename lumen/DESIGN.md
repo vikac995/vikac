@@ -225,6 +225,10 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   the full glass (blur, refraction, dispersion and rim), whatever the Glass setting or Auto's current
   level. The only exception is Android's "reduce transparency", which makes it solid. (The owner's rule,
   16 November 2026.)
+  - **Its size:** 269 points across (from 197, the owner's choice: 2.5 times the 107.5 it was). It
+    rides 155 points above the finger, scaled with it, so the finger is just under its edge and never
+    over its middle. It is kept fully on the screen: near a side or the top it stops, and the finger
+    goes on without it.
 - **The looks** (Pearls, Petals, Lotus, Beam, Halo, Window; Window is the default): each fills the
   glass and is balanced in it. Looks that turn keep their colours still while their shape turns
   (Window, Petals). Every look is easy to remove completely: one entry and one function in

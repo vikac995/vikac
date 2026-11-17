@@ -2449,8 +2449,23 @@ class _ShellState extends State<Shell>
   );
   double _sheetWeight = 81.8, _sheetSeconds = 90;
 
-  // The lens: the button, carried. See Lumen R51.
-  static const double _lensSize = 107.5;
+  // The lens: the button, carried. See Lumen R51. (2.5 times as wide from build 197, the owner's
+  // choice: 107.5 until 196.)
+  static const double _lensSize = 268.75;
+
+  // How far above the finger it rides, so that the thumb does not cover it: scaled with it from
+  // build 197 (62 until 196), so the finger stays just under its edge, never over its middle.
+  static const double _lensRide = 155;
+
+  /// Where a finger goes for the glass to come over [lensAt] (for the tests): [_lensRide] under
+  /// it, kept on the screen.
+  static Offset _fingerFor(Offset lensAt) {
+    final ui.FlutterView v =
+        WidgetsBinding.instance.platformDispatcher.views.first;
+    final double h = v.physicalSize.height / v.devicePixelRatio;
+    return Offset(lensAt.dx, math.min(lensAt.dy + _lensRide, h - 4));
+  }
+
   late final SpringValue _glass = SpringValue(
     this,
     spring: Motions.expressiveFast,
@@ -2893,9 +2908,9 @@ class _ShellState extends State<Shell>
               : x.left.compareTo(y.left),
         );
     for (int n = 0; n < 2 && cards.isNotEmpty; n++) {
-      // The glass rides 62 above the finger, so the finger aims that much lower.
+      // The glass rides above the finger, so the finger aims that much lower.
       await Robot.drag(
-        <Offset>[b, for (final Rect r in cards) r.center + const Offset(0, 62)],
+        <Offset>[b, for (final Rect r in cards) _fingerFor(r.center)],
         legMs: 380,
         dwell: 350,
         after: 900,
@@ -3811,10 +3826,7 @@ class _ShellState extends State<Shell>
           _glass.addListener(seen);
           await t.scene('carrying the glass over every card', () async {
             await Robot.drag(
-              <Offset>[
-                _home,
-                for (final Rect r in cards) r.center + const Offset(0, 62),
-              ],
+              <Offset>[_home, for (final Rect r in cards) _fingerFor(r.center)],
               legMs: 380,
               dwell: 300,
               after: 900,
@@ -3835,10 +3847,9 @@ class _ShellState extends State<Shell>
               c,
         ];
         if (doing.length >= 2) {
-          // The glass rides 62 above the finger.
-          const Offset under = Offset(0, 62);
+          // The glass rides [_lensRide] above the finger: see [_fingerFor].
           await Robot.drag(
-            <Offset>[_home, doing[0].rect!.center + under],
+            <Offset>[_home, _fingerFor(doing[0].rect!.center)],
             legMs: 500,
             dwell: 450,
             after: 900,
@@ -3850,7 +3861,7 @@ class _ShellState extends State<Shell>
           );
           await t.scene('picking the put-down glass up again', () async {
             await Robot.drag(
-              <Offset>[_lensRect.center, doing[1].rect!.center + under],
+              <Offset>[_lensRect.center, _fingerFor(doing[1].rect!.center)],
               legMs: 500,
               dwell: 450,
               after: 900,
@@ -3882,7 +3893,7 @@ class _ShellState extends State<Shell>
           }
           if (bare != null && _parked) {
             await Robot.drag(
-              <Offset>[_lensRect.center, bare + under],
+              <Offset>[_lensRect.center, _fingerFor(bare)],
               legMs: 500,
               dwell: 350,
               after: 1100,
@@ -7636,8 +7647,7 @@ class _ShellState extends State<Shell>
                 await Robot.drag(
                   <Offset>[
                     _home,
-                    for (final Rect c in cards.take(3))
-                      c.center + const Offset(0, 62),
+                    for (final Rect c in cards.take(3)) _fingerFor(c.center),
                     Offset(sc.width / 2, top + 60),
                   ],
                   legMs: 380,
@@ -8533,7 +8543,7 @@ class _ShellState extends State<Shell>
     if (away && !wasParked && _morph.value < 0.3) {
       // The glass rode above the finger and was large. The drop starts nearer the finger, and smaller.
       // The glass rode above the finger. The drop appears under the finger itself, at the button's size.
-      _ly.jumpTo(_ly.value + 62);
+      _ly.jumpTo(_ly.value + _lensRide);
       _glass.jumpTo(0);
       _retFrom = Offset(_lx.value, _ly.value);
     }
@@ -8592,7 +8602,7 @@ class _ShellState extends State<Shell>
     _liftOff();
     final Offset at = _lastAt ?? _home;
     _lx.animateTo(at.dx);
-    _ly.animateTo(at.dy - 62);
+    _ly.animateTo(at.dy - _lensRide);
   }
 
   void _buttonMove(PointerMoveEvent e) {
@@ -8656,7 +8666,7 @@ class _ShellState extends State<Shell>
       e.position.dx.clamp(_lensSize / 2, screen.width - _lensSize / 2),
     );
     _ly.animateTo(
-      (e.position.dy - 62).clamp(
+      (e.position.dy - _lensRide).clamp(
         _lensSize / 2 + 30,
         screen.height - _lensSize / 2,
       ),
@@ -8878,7 +8888,10 @@ class _ShellState extends State<Shell>
     final Size screen = MediaQuery.sizeOf(context);
     _lx.animateTo(at.dx.clamp(_lensSize / 2, screen.width - _lensSize / 2));
     _ly.animateTo(
-      (at.dy - 62).clamp(_lensSize / 2 + 30, screen.height - _lensSize / 2),
+      (at.dy - _lensRide).clamp(
+        _lensSize / 2 + 30,
+        screen.height - _lensSize / 2,
+      ),
     );
   }
 
