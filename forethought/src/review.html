@@ -1,0 +1,53 @@
+<p class="room-num">Review</p>
+<h2 id="review-h">Reading the other gallery</h2>
+<p class="lead">"Touch" is a serious piece of work: four volumes, 80 exhibits, real spring physics and a "Why" line on every one. I read all four files closely, the prose and the code. This is what it gets right, where it stops short, and how this gallery answers.</p>
+
+<div class="verdict">
+  <section>
+    <h3>What it does well</h3>
+    <ul>
+      <li><b>Physics over durations.</b> Springs are interruptible and frame-rate independent. That is the right foundation, and this gallery keeps it.</li>
+      <li><b>Every exhibit justifies itself.</b> The one-line "Why" is a good habit. Some are admirably honest, such as admitting that research on skeleton screens is mixed.</li>
+      <li><b>Craft in the hard ones.</b> The page curl uses the real fold geometry. The swipe deck carries release velocity into the fling.</li>
+      <li><b>Restraint notes.</b> "Use sparingly, once per flow" on the disintegrate effect shows taste.</li>
+    </ul>
+  </section>
+  <section>
+    <h3>Where it stops short</h3>
+    <ul>
+      <li><b>A formula in place of an insight.</b> By Volume IV every pitch is a borrowed object: seesaw, hourglass, zipper, snow globe, tape measure, envelope, wax seal. Costumes age fast. Several also turn a one-tap action into a multi-second ritual, which is a cost on anything people do daily.</li>
+      <li><b>It preaches accessibility it doesn't practise.</b> The notes say every custom control gets Semantics. The pages contain no <code>tabindex</code>, no <code>role</code> and one keyboard handler across all 80 exhibits. Native buttons still focus, but the dials, sliders, decks and canvases can't be reached or operated without a finger or a mouse.</li>
+      <li><b>It fights the page.</b> 42 <code>touch-action:none</code> rules capture vertical drags, so the footer has to tell you to "scroll the page by dragging on the captions". On a phone, the gallery breaks the most common gesture there is.</li>
+      <li><b>Recipes are sketches.</b> The Flutter recipes average 4.8 lines, for example "ScaleGestureDetector: scale 1.35 on a tile → level++". You can't estimate or build from that.</li>
+      <li><b>It repeats itself.</b> Seven exhibits are "hold to do X". Three hide content behind a physical cover (fold, zip, scratch). Two set a value by circular drag. "Nothing repeated" holds for names, not for mechanics.</li>
+      <li><b>It ignores the viewer.</b> No volume reads <code>prefers-color-scheme</code>. Only one volume styles keyboard focus at all, and the claim of "feedback in one frame" can't be checked anywhere on the page.</li>
+    </ul>
+  </section>
+</div>
+
+<div class="evidence" role="region" aria-label="Measured comparison" tabindex="0">
+  <table>
+    <thead><tr><th>Measured in the source</th><th>Touch, 4 volumes</th><th>Forethought</th></tr></thead>
+    <tbody id="evidenceBody">
+      <tr><td>Live exhibits</td><td class="num">80</td><td class="num">21</td></tr>
+      <tr><td>Elements reachable by keyboard (<code>tabindex</code>)</td><td class="num bad">0</td><td class="num good" data-count="tabindex">every control</td></tr>
+      <tr><td>ARIA roles on custom controls</td><td class="num bad">0</td><td class="num good" data-count="role">on every custom control</td></tr>
+      <tr><td>Keyboard handlers</td><td class="num bad">1</td><td class="num good" data-count="keydown">on every exhibit</td></tr>
+      <tr><td>Page scroll over horizontal controls</td><td class="bad">blocked; "drag on captions"</td><td class="good">works (<code>pan-y</code> on horizontal controls)</td></tr>
+      <tr><td>Follows light/dark preference</td><td class="bad">no</td><td class="good">yes, plus a toggle</td></tr>
+      <tr><td>Average Flutter recipe</td><td class="num">4.8 lines of pseudo-code</td><td class="num" data-count="dart">25–45 lines of Dart</td></tr>
+      <tr><td>Gestures and haptics you can inspect</td><td class="bad">no</td><td class="good">X-ray mode</td></tr>
+      <tr><td>Exhibits citing a source</td><td class="num">1 (skeletons)</td><td class="num">every Room II exhibit</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h3 class="ft-label" style="margin:0 0 6px">How this gallery answers</h3>
+<ul class="answers">
+  <li><span>Borrowed objects as the idea</span><span>Principles as the idea: foresight, memory, candour. Each exhibit keeps the control people already know and adds one capability.</span></li>
+  <li><span>Rituals that slow frequent actions</span><span>Tap still works everywhere. The new behaviour waits for the finger that reaches further: a longer drag, a held press, a faster flick.</span></li>
+  <li><span>Accessibility in the notes only</span><span>Accessibility in the code. Every exhibit has keyboard operation, roles, values and live announcements, and each lists exactly how it works.</span></li>
+  <li><span>Captured scroll</span><span>Controls claim only the axis they use. The page always scrolls.</span></li>
+  <li><span>Claims you can't check</span><span>X-ray draws the touch area, velocity vector, recognised gesture, the exhibit's decision and every haptic, named as its Flutter call.</span></li>
+  <li><span>Recipes as hints</span><span>Real widget code with the actual APIs (SpringSimulation, ScrollPhysics, Semantics, CustomPainter), plus an APK blueprint below.</span></li>
+</ul>

@@ -1,0 +1,144 @@
+<p class="room-num">Blueprint</p>
+<h2 id="bp-h">From this page to an APK</h2>
+<p class="lead">The HTML is the sketchbook. The goal is a Flutter app, so every exhibit was built on primitives that map one-to-one onto the Flutter SDK. These are the shared foundations, the parts that make 21 exhibits feel like one product.</p>
+
+<div class="bp-grid">
+  <section>
+    <h3>One motion system</h3>
+    <p>Every animated value is a spring with velocity, so any motion can be grabbed mid-flight and thrown somewhere else. Four tokens cover the whole gallery, the same four the page uses.</p>
+    <pre class="code"><code>abstract final class FtSpring {
+  static const snappy = SpringDescription(mass: 1, stiffness: 600, damping: 44);
+  static const smooth = SpringDescription(mass: 1, stiffness: 260, damping: 30);
+  static const bouncy = SpringDescription(mass: 1, stiffness: 320, damping: 16);
+  static const gentle = SpringDescription(mass: 1, stiffness: 120, damping: 20);
+}
+
+class SpringValue extends ChangeNotifier implements ValueListenable&lt;double&gt; {
+  SpringValue(TickerProvider vsync, double v, {this.spring = FtSpring.smooth})
+      : _c = AnimationController.unbounded(vsync: vsync, value: v) {
+    _c.addListener(notifyListeners);
+  }
+  final AnimationController _c;
+  SpringDescription spring;
+  static bool reduceMotion = false; // set from MediaQuery.disableAnimationsOf
+
+  @override double get value =&gt; _c.value;
+  void jump(double v) =&gt; _c.value = v;
+  void animateTo(double target, {double? velocity}) =&gt; reduceMotion
+      ? _c.value = target
+      : _c.animateWith(SpringSimulation(spring, _c.value, target, velocity ?? _c.velocity));
+  @override void dispose() { _c.dispose(); super.dispose(); }
+}</code></pre>
+  </section>
+
+  <section>
+    <h3>X-ray, shipped as a debug overlay</h3>
+    <p>The same inspector lives at the root of the app in debug and profile builds. A translucent <code>Listener</code> sees every pointer without joining the gesture arena, so it never changes what the exhibits receive.</p>
+    <pre class="code"><code>class XRay extends StatefulWidget {
+  const XRay({super.key, required this.child});
+  final Widget child;
+  @override State&lt;XRay&gt; createState() =&gt; _XRayState();
+}
+
+class _XRayState extends State&lt;XRay&gt; {
+  final _trackers = &lt;int, VelocityTracker&gt;{};
+  final _touches = ValueNotifier(&lt;int, Offset&gt;{});
+
+  void _track(PointerEvent e) {
+    _trackers[e.pointer]?.addPosition(e.timeStamp, e.position);
+    _touches.value = {..._touches.value, e.pointer: e.position};
+  }
+
+  @override
+  Widget build(BuildContext context) =&gt; Listener(
+    behavior: HitTestBehavior.translucent,
+    onPointerDown: (e) {
+      _trackers[e.pointer] = VelocityTracker.withKind(e.kind);
+      _track(e);
+    },
+    onPointerMove: _track,
+    onPointerUp: (e) =&gt; XRayLog.release(_trackers.remove(e.pointer)!.getVelocity()),
+    child: Stack(children: [
+      widget.child,
+      IgnorePointer(child: CustomPaint(painter: XRayPainter(_touches), size: Size.infinite)),
+    ]),
+  );
+}</code></pre>
+  </section>
+
+  <section>
+    <h3>A haptic vocabulary</h3>
+    <p>Five words, used the same way everywhere: <b>select</b> for detents and snaps, <b>light</b> for a press, <b>medium</b> for a commit, <b>heavy</b> only for something irreversible, <b>success</b> for a completed flow. X-ray logs each one, so a designer can review haptics on a laptop.</p>
+    <pre class="code"><code>enum Haptic { select, light, medium, heavy, success }
+
+extension Fire on Haptic {
+  Future&lt;void&gt; call() async {
+    XRayLog.haptic(this);
+    switch (this) {
+      case Haptic.select: return HapticFeedback.selectionClick();
+      case Haptic.light:  return HapticFeedback.lightImpact();
+      case Haptic.medium: return HapticFeedback.mediumImpact();
+      case Haptic.heavy:  return HapticFeedback.heavyImpact();
+      case Haptic.success:
+        await HapticFeedback.lightImpact();
+        await Future.delayed(const Duration(milliseconds: 70));
+        return HapticFeedback.mediumImpact();
+    }
+  }
+}</code></pre>
+  </section>
+
+  <section>
+    <h3>Accessibility as a contract</h3>
+    <ul>
+      <li>Every custom control declares <code>Semantics</code> with a value and <code>onIncrease</code>/<code>onDecrease</code>, so TalkBack's volume-key adjustment works on the spiral dial, the EQ and the allocator.</li>
+      <li>Gesture-only shortcuts get a twin in <code>customSemanticsActions</code>. Deep back exposes "Back to Inbox" and "Back to Home"; drawn commands expose Complete, Star and Delete.</li>
+      <li><code>Shortcuts</code> + <code>Actions</code> mirror the keyboard map on this page for Chromebooks, tablets with keyboards and DeX.</li>
+      <li><code>MediaQuery.disableAnimationsOf</code> sets <code>SpringValue.reduceMotion</code>: springs jump to their target and sheens become static.</li>
+      <li>Every hit area is at least 48 dp, verified by <code>meetsGuideline(androidTapTargetGuideline)</code> in widget tests.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h3>Performance budget</h3>
+    <ul>
+      <li>Target 8.3 ms per frame (120 Hz) on a mid-range phone, checked with <code>integration_test</code> and <code>traceAction</code> timelines in CI.</li>
+      <li>Each exhibit sits in a <code>RepaintBoundary</code>. Painters take <code>repaint:</code> listenables, so motion repaints without rebuilding widgets.</li>
+      <li>The wet-ink sheen, the morphing chart and the tide are <code>FragmentProgram</code> shaders on Impeller. Each has a plain-canvas fallback.</li>
+      <li>Off-screen exhibits are wrapped in <code>TickerMode(enabled: false)</code>, so springs and loops sleep, just as they do here.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h3>Platform details that matter</h3>
+    <ul>
+      <li>Deep back is bound to the back chevron, never to the screen edge, so it coexists with Android's predictive back (<code>PredictiveBackPageTransitionsBuilder</code>, <code>PopScope</code>).</li>
+      <li>Word-level scrubbing (III.5) uses on-device speech recognition timestamps for real voice notes, and <code>flutter_tts</code> progress callbacks for the demo voice. That is the only third-party dependency.</li>
+      <li>Everything else, including the $1 glyph recogniser and the sketch matcher, is plain Dart: no ML runtime, no network.</li>
+    </ul>
+  </section>
+
+  <section class="bp-wide">
+    <h3>Project layout</h3>
+    <pre class="code"><code>lib/
+  main.dart                     // MaterialApp, theme from tokens, XRay in debug/profile
+  foundation/
+    motion.dart                 // FtSpring, SpringValue, FrictionSimulation helpers
+    haptics.dart                // Haptic vocabulary
+    xray.dart                   // overlay, VelocityTracker, XRayLog
+    tokens.dart                 // colour + type tokens for light and dark, identical to this page
+  gallery/
+    plate.dart                  // stage + label card, Flutter-build sheet, a11y sheet
+    room_page.dart              // CustomScrollView of plates, room nav
+  rooms/
+    instruments/                // consequence_button.dart, tail_toggle.dart, spiral_dial.dart, ...
+    expeditions/                // sentence_form.dart, glyph_commands.dart, terrain_physics.dart, ...
+    proposals/                  // wet_ink.dart, deep_back.dart, fuzzy_value.dart, ...
+shaders/                        // sheen.frag, tide.frag
+test/
+  goldens/                      // every exhibit, light + dark, at 360 and 412 dp
+  semantics_test.dart           // matchesSemantics for every custom control
+integration_test/
+  jank_test.dart                // drives each exhibit, asserts the frame budget</code></pre>
+  </section>
+</div>

@@ -1,0 +1,107 @@
+<title>Forethought Gallery</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A UX/UI gallery in three rooms: interfaces that show the consequence before you commit, remember what you did, and admit what they don't know. 21 live exhibits, each with its Flutter build.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap">
+<style>
+/*{{CSS}}*/
+</style>
+
+<header class="topbar" id="top">
+  <div class="topbar-in">
+    <a class="brand" href="#hero" aria-label="Forethought, back to top"><span class="brand-mark" aria-hidden="true"></span>Forethought</a>
+    <nav class="rooms-nav" aria-label="Rooms">
+      <a href="#room-1"><span class="rn">I</span> Instruments</a>
+      <a href="#room-2"><span class="rn">II</span> Expeditions</a>
+      <a href="#room-3"><span class="rn">III</span> Proposals</a>
+      <a href="#review">Review</a>
+      <a href="#blueprint">Flutter</a>
+    </nav>
+    <div class="topbar-tools">
+      <button class="xray-btn" id="xrayBtn" type="button" aria-pressed="false" title="X-ray: show hit areas, gestures and haptics">
+        <span class="xray-dot" aria-hidden="true"></span><span>X-ray</span>
+      </button>
+      <button class="theme-btn" id="themeBtn" type="button" aria-label="Theme: system">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero" id="hero">
+    <p class="eyebrow">A UX/UI gallery · 21 live exhibits · each one specified for Flutter</p>
+    <h1 class="hero-title">Interfaces with <em>forethought.</em></h1>
+    <p class="hero-lede">Most interface polish is about the moment after you touch something. This gallery is about the moment before. Every exhibit shows you the consequence before you commit, remembers what you did last time, or tells you plainly what it doesn't know yet.</p>
+    <dl class="tenets">
+      <div><dt>Foresight</dt><dd>Preview the result while the finger is still down. Releasing commits, sliding away cancels.</dd></div>
+      <div><dt>Memory</dt><dd>Controls carry history: your last value, the default, where you already read, what you changed.</dd></div>
+      <div><dt>Candour</dt><dd>Show ranges instead of fake precision, time instead of spinners, and the true cost of an action.</dd></div>
+    </dl>
+    <div class="xray-invite">
+      <div class="xi-text">
+        <p class="xi-title">Turn on X-ray, then touch anything.</p>
+        <p>You'll see each control's touch area, your finger's speed and direction, the gesture the page decided you made, and every haptic it fired, named as the Flutter call that would fire it on a phone.</p>
+      </div>
+      <button class="xi-btn" id="xrayBtn2" type="button" aria-pressed="false">Turn on X-ray</button>
+    </div>
+  </section>
+
+  <section class="room" id="room-1" aria-labelledby="room-1-h">
+    <header class="room-head">
+      <p class="room-num">Room I</p>
+      <h2 id="room-1-h">Instruments</h2>
+      <p class="room-lede">The basics: buttons, toggles, dials, sliders, fields and progress. Each keeps the shape people already know and adds one capability the old version never had. Tap works everywhere; the new part is there when you reach for it.</p>
+    </header>
+    <div class="plates" id="room-1-list"></div>
+  </section>
+
+  <section class="room" id="room-2" aria-labelledby="room-2-h">
+    <header class="room-head">
+      <p class="room-num">Room II</p>
+      <h2 id="room-2-h">Expeditions</h2>
+      <p class="room-lede">Bolder territory. Each exhibit comes from a technique that has worked somewhere specific (a research lab, a classic desktop OS, a booking form) and hasn't yet reached phone interfaces. Each one cites where it comes from.</p>
+    </header>
+    <div class="plates" id="room-2-list"></div>
+  </section>
+
+  <section class="room" id="room-3" aria-labelledby="room-3-h">
+    <header class="room-head">
+      <p class="room-num">Room III</p>
+      <h2 id="room-3-h">Proposals</h2>
+      <p class="room-lede">Six concepts of my own. None of them depends on a costume borrowed from a physical object. Each starts from a problem people hit every week (undo, going back, estimating, comparing, listening, prioritising) and solves it with a gesture you can guess on the first try.</p>
+    </header>
+    <div class="plates" id="room-3-list"></div>
+  </section>
+
+  <section class="review" id="review" aria-labelledby="review-h">
+    <!--{{CRITIQUE}}-->
+  </section>
+
+  <section class="blueprint" id="blueprint" aria-labelledby="bp-h">
+    <!--{{BLUEPRINT}}-->
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Forethought · a UX/UI gallery in three rooms. Everything here runs with touch, mouse or keyboard. Haptics fire where the browser allows (Android Chrome); X-ray shows them everywhere.</p>
+</footer>
+
+<canvas id="xrayCanvas" aria-hidden="true"></canvas>
+<div id="xrayHud" aria-hidden="true">
+  <div class="hud-row"><span class="hud-k">gesture</span><span id="hudGesture">waiting</span></div>
+  <div class="hud-row"><span class="hud-k">velocity</span><span id="hudVel">0 px/s</span></div>
+  <div class="hud-row"><span class="hud-k">meaning</span><span id="hudIntent">touch an exhibit</span></div>
+  <div class="hud-row"><span class="hud-k">haptic</span><span id="hudHaptic">none yet</span></div>
+  <div class="hud-row"><span class="hud-k">frame</span><span id="hudFps">0 ms</span></div>
+</div>
+<div class="sr-only" id="live" aria-live="polite"></div>
+
+<script>
+/*{{CORE}}*/
+</script>
+<script>
+/*{{EXHIBITS}}*/
+</script>
+<script>FT.build();</script>
