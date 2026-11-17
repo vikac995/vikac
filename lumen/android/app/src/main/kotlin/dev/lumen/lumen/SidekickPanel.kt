@@ -238,6 +238,9 @@ object SidekickPanel {
     /** As Home or the recent apps would. */
     fun testHome() = close("Android said \"homekey\" (the test)")
 
+    /** (202) [text] typed into its app list's search field, as the keyboard would. */
+    fun testType(text: String) = view?.testType(text)
+
     /** As Back would (its app list only: false, and nothing done, for its settings). */
     fun testBack(): Boolean = view?.backPressed() ?: false
 }
@@ -448,6 +451,7 @@ internal class PanelView(
                 ins.getInsets(android.view.WindowInsets.Type.systemBars()).bottom,
                 ins.getInsets(android.view.WindowInsets.Type.ime()).bottom,
             ).toFloat()
+            imeShown = ins.isVisible(android.view.WindowInsets.Type.ime())
         } else {
             @Suppress("DEPRECATION")
             topInset = ins.systemWindowInsetTop.toFloat()
@@ -457,7 +461,7 @@ internal class PanelView(
     }
 
     // ---- The contents, top to bottom, in the panel's own points (y from the panel's top, before scrolling).
-    private enum class Kind { TITLE, SWITCH, LABEL, PICKER, LOOKS, RULERS, GAP, GRID, ROW, NOTE }
+    private enum class Kind { TITLE, SWITCH, LABEL, PICKER, LOOKS, RULERS, GAP, GRID, ROW, NOTE, SEARCH }
 
     val isChooser get() = chooser != null
 
@@ -484,6 +488,21 @@ internal class PanelView(
     }
 
     override fun dispatchKeyEvent(e: android.view.KeyEvent): Boolean {
+        if (searching && e.action == android.view.KeyEvent.ACTION_DOWN) {
+            if (e.keyCode == android.view.KeyEvent.KEYCODE_DEL) {
+                if (query.isNotEmpty()) {
+                    query.delete(query.length - 1, query.length)
+                    onQueryChanged()
+                }
+                return true
+            }
+            val ch = e.unicodeChar
+            if (ch != 0 && !Character.isISOControl(ch)) {
+                query.append(ch.toChar())
+                onQueryChanged()
+                return true
+            }
+        }
         if (chooser != null && e.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
             if (e.action == android.view.KeyEvent.ACTION_UP) backPressed()
             return true
@@ -496,6 +515,11 @@ internal class PanelView(
      * begins, not when the panel has gone back into the Sidekick. Its window stops taking it.
      */
     private fun giveFocusBack() {
+        // (202) The keyboard goes with the list, at once.
+        if (searching) {
+            hideKeyboard()
+            searching = false
+        }
         val lp = layoutParams as? WindowManager.LayoutParams ?: return
         if (lp.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE != 0) return
         lp.flags = lp.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
@@ -508,9 +532,24 @@ internal class PanelView(
     // (For the test: how long after it opened its window stopped taking the focus; -1 if not yet.)
     private var focusBackAfterMs = -1L
 
+    /** (Test only, 202) [text] typed into the search field, as the keyboard would: the field focused first. */
+    fun testType(text: String) {
+        if (chooser == null) return
+        if (!searching) startSearch()
+        query.replace(0, query.length, text)
+        onQueryChanged()
+    }
+
     /** Back, in its app list: it closes, nothing chosen. (Its settings never have the focus, so Back is the app's.) */
     fun backPressed(): Boolean {
         if (chooser == null) return false
+        // (202) With the keyboard up, Back puts it away first (Android usually does this itself,
+        // before Back reaches the list); the next closes the list.
+        if (searching && imeShown) {
+            hideKeyboard()
+            imeHiddenByBack++
+            return true
+        }
         SidekickPanel.close("Back")
         return true
     }
@@ -591,7 +630,10 @@ internal class PanelView(
             parts.add(Part(Kind.NOTE, "", "Finding your apps…", 40 * dp))
             return
         }
-        val top = AppChoices.suggested
+        // (202) Typing in the search field filters both parts live, by any part of a name, case
+        // and accents aside.
+        val top = AppChoices.suggested.filter { matches(it) }
+        val all = AppChoices.all.filter { matches(it) }
         if (top.isNotEmpty()) {
             label("Your most used", "")
             gap(8f)
@@ -599,9 +641,112 @@ internal class PanelView(
             parts.add(Part(Kind.GRID, "suggested", "", rows * gridCellH() + (rows - 1) * 10 * dp, top.map { it.key }))
             gap(14f)
         }
+        parts.add(Part(Kind.SEARCH, "search", "", 44 * dp))
+        gap(14f)
+        if (all.isEmpty() && query.isNotEmpty()) {
+            parts.add(Part(Kind.NOTE, "", "No apps match \u201c${query.toString().trim()}\u201d", 40 * dp))
+            return
+        }
         label("All apps", "")
         gap(4f)
-        for (a in AppChoices.all) parts.add(Part(Kind.ROW, a.key, a.label, 44 * dp, listOf(a.pkg)))
+        for (a in all) parts.add(Part(Kind.ROW, a.key, a.label, 44 * dp, listOf(a.pkg)))
+    }
+
+    // ---- Search (202): the field, what is typed in it, and the keyboard.
+    private val query = android.text.SpannableStringBuilder()
+    // (The field has the focus: typing goes to it, and the keyboard may be up.)
+    private var searching = false
+    // (The keyboard is up, as Android's insets say; and whether it was asked for, for the test.)
+    private var imeShown = false
+    private var imeAsked = false
+    private var imeHiddenByBack = 0
+
+    private fun fold(s: String): String =
+        java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "").lowercase(java.util.Locale.ROOT)
+
+    private fun matches(c: Choice): Boolean {
+        val q = query.toString().trim()
+        return q.isEmpty() || fold(c.label).contains(fold(q))
+    }
+
+    private fun imm() = context.getSystemService(Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+
+    /**
+     * A tap on the field: it takes the focus and asks for the keyboard. Its window, which kept out
+     * of the keyboard's way while the list was only looked at (200), now takes it; the field goes
+     * just under the header, where the keyboard cannot cover it.
+     */
+    private fun startSearch() {
+        if (chooser == null || closing) return
+        val lp = layoutParams as? WindowManager.LayoutParams
+        if (lp != null && lp.flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM != 0) {
+            lp.flags = lp.flags and WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM.inv()
+            try {
+                (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).updateViewLayout(this, lp)
+            } catch (e: Exception) {}
+        }
+        searching = true
+        requestFocus()
+        parts.firstOrNull { it.kind == Kind.SEARCH }?.let { scroll = (it.y - pinnedH() - 4 * dp).coerceIn(0f, maxScroll()) }
+        // (Asked once the window has the focus with its new flags: at once, and again a moment later.)
+        showKeyboard()
+        postDelayed({ if (searching && !imeShown) showKeyboard() }, 120)
+        Trail.add("Sidekick: its app list's search field focused")
+        invalidate()
+    }
+
+    private fun showKeyboard() {
+        try {
+            imm().restartInput(this)
+            imeAsked = imm().showSoftInput(this, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT) || imeAsked
+        } catch (e: Exception) {}
+    }
+
+    private fun hideKeyboard() {
+        try {
+            imm().hideSoftInputFromWindow(windowToken, 0)
+        } catch (e: Exception) {}
+    }
+
+    /** What is typed has changed: both parts filtered again, the field kept still where it is on the screen. */
+    private fun onQueryChanged() {
+        val fieldWas = parts.firstOrNull { it.kind == Kind.SEARCH }?.let { it.y - scroll }
+        layOut()
+        val f = parts.firstOrNull { it.kind == Kind.SEARCH }
+        if (fieldWas != null && f != null) scroll = (f.y - fieldWas).coerceIn(0f, maxScroll())
+        invalidate()
+    }
+
+    override fun onCheckIsTextEditor(): Boolean = searching
+
+    override fun onCreateInputConnection(out: android.view.inputmethod.EditorInfo): android.view.inputmethod.InputConnection? {
+        if (!searching) return null
+        out.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        out.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH or
+            android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI or android.view.inputmethod.EditorInfo.IME_FLAG_NO_FULLSCREEN
+        out.initialSelStart = query.length
+        out.initialSelEnd = query.length
+        return object : android.view.inputmethod.BaseInputConnection(this, true) {
+            override fun getEditable(): android.text.Editable = query
+            override fun commitText(text: CharSequence?, newCursorPosition: Int): Boolean =
+                super.commitText(text, newCursorPosition).also { onQueryChanged() }
+            override fun setComposingText(text: CharSequence?, newCursorPosition: Int): Boolean =
+                super.setComposingText(text, newCursorPosition).also { onQueryChanged() }
+            override fun finishComposingText(): Boolean = super.finishComposingText().also { onQueryChanged() }
+            override fun deleteSurroundingText(beforeLength: Int, afterLength: Int): Boolean =
+                super.deleteSurroundingText(beforeLength, afterLength).also { onQueryChanged() }
+            override fun performEditorAction(actionCode: Int): Boolean {
+                // (Search: the keyboard goes; what was typed stays, and so does the list it filters.)
+                hideKeyboard()
+                return true
+            }
+        }
+    }
+
+    override fun onWindowFocusChanged(has: Boolean) {
+        super.onWindowFocusChanged(has)
+        if (has && searching && !imeShown) showKeyboard()
     }
 
     private fun choiceOf(key: String): Choice? =
@@ -657,6 +802,60 @@ internal class PanelView(
             canvas.restore()
             val name = fit(c.label, 11f, 560, cell.width() - 4 * dp)
             drawText(canvas, name, cell.centerX(), cell.top + icon + 6 * dp + 12 * dp * fs, 11f, 560, cInkMuted, center = true)
+        }
+    }
+
+    /** The search field (202): a magnifier, what is typed (or "Search apps"), a caret while it has the focus, and an X to clear it. */
+    private fun drawSearch(canvas: Canvas, p: Part) {
+        val f = RectF(pad, p.y + 2 * dp, pad + innerW, p.y + p.h - 2 * dp)
+        val r = f.height() / 2
+        paint.style = Paint.Style.FILL
+        paint.color = alpha(cInk, if (searching) 0.09f else 0.06f)
+        canvas.drawRoundRect(f, r, r, paint)
+        if (searching) {
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1.5f * dp
+            paint.color = cAccent
+            canvas.drawRoundRect(f, r, r, paint)
+        }
+        // The magnifier.
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 2 * dp
+        paint.strokeCap = Paint.Cap.ROUND
+        paint.color = cInkMuted
+        val mx = f.left + 22 * dp
+        val my = f.centerY() - 1.5f * dp
+        canvas.drawCircle(mx, my, 6.5f * dp, paint)
+        canvas.drawLine(mx + 4.7f * dp, my + 4.7f * dp, mx + 9 * dp, my + 9 * dp, paint)
+        paint.style = Paint.Style.FILL
+        val tx = f.left + 40 * dp
+        val base = f.centerY() + 5 * dp * fs
+        val room = f.right - tx - (if (query.isNotEmpty()) 40 else 14) * dp
+        if (query.isEmpty()) {
+            drawText(canvas, "Search apps", tx, base, 15f, 500, cInkMuted)
+        } else {
+            // (The end of what is typed, if it is longer than the field.)
+            var shown = query.toString()
+            while (shown.length > 1 && measure(shown, 15f, 560) > room) shown = shown.substring(1)
+            drawText(canvas, shown, tx, base, 15f, 560, cInk)
+        }
+        if (searching) {
+            val cx = tx + (if (query.isEmpty()) 0f else Math.min(room, measure(query.toString(), 15f, 560)))
+            paint.color = cAccent
+            canvas.drawRect(cx + 1 * dp, f.centerY() - 10 * dp, cx + 3 * dp, f.centerY() + 10 * dp, paint)
+        }
+        if (query.isNotEmpty()) {
+            // The X that clears it.
+            val cx = f.right - 22 * dp
+            paint.color = alpha(cInk, 0.12f)
+            canvas.drawCircle(cx, f.centerY(), 10 * dp, paint)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = 1.8f * dp
+            paint.color = cInk
+            val k = 4 * dp
+            canvas.drawLine(cx - k, f.centerY() - k, cx + k, f.centerY() + k, paint)
+            canvas.drawLine(cx + k, f.centerY() - k, cx - k, f.centerY() + k, paint)
+            paint.style = Paint.Style.FILL
         }
     }
 
@@ -1365,6 +1564,7 @@ internal class PanelView(
             Kind.GRID -> drawGrid(canvas, p)
             Kind.ROW -> drawRow(canvas, p)
             Kind.NOTE -> drawText(canvas, p.label, x0, y + 24 * dp, 14f, 500, cInkMuted)
+            Kind.SEARCH -> drawSearch(canvas, p)
             Kind.RULERS -> if (!heldApart(p)) drawRulers(canvas, x0, y)
         }
     }
@@ -1562,6 +1762,7 @@ internal class PanelView(
                     for (i in p.options.indices) if (gridCell(p, i).contains(cx, cy)) return "pick.${p.options[i]}"
                 }
                 Kind.ROW -> return "pick.${p.id}"
+                Kind.SEARCH -> return if (query.isNotEmpty() && cx > pad + innerW - 44 * dp) "search.clear" else "search"
                 Kind.SWITCH -> return p.id
                 Kind.PICKER -> {
                     val i = ((cx - pad - 3 * dp) / ((innerW - 6 * dp) / p.options.size)).toInt().coerceIn(0, p.options.size - 1)
@@ -1686,6 +1887,12 @@ internal class PanelView(
             id == "close" -> {
                 haptic("tick")
                 SidekickPanel.close("its X")
+            }
+            id == "search" -> startSearch()
+            id == "search.clear" -> {
+                query.clear()
+                onQueryChanged()
+                if (!searching) startSearch()
             }
             id.startsWith("pick.") -> {
                 // (200) The blob becomes it (Change), or it goes in right after (Add). The list
@@ -2020,6 +2227,20 @@ internal class PanelView(
                 "pressed" to (if ((presses["pick"]?.value ?: 0f) > 0.01f) pressedPick.removePrefix("pick.") else ""),
                 "pressedLook" to (presses["pick"]?.value ?: 0f).toDouble(),
                 "focusBackAfterMs" to focusBackAfterMs,
+                // (202) Search: whether its field has the focus, what is typed, whether the keyboard
+                // was asked for and is up, how often Back put it away; the parts in order, the most
+                // used and the rows shown now, and whether nothing matches.
+                "searching" to searching,
+                "query" to query.toString(),
+                "imeAsked" to imeAsked,
+                "imeShown" to imeShown,
+                "imeHiddenByBack" to imeHiddenByBack,
+                "order" to parts.filter { it.kind != Kind.GAP }.map { if (it.kind == Kind.LABEL) "label:${it.label}" else it.kind.name.lowercase() }.distinct(),
+                "shownSuggested" to (parts.firstOrNull { it.kind == Kind.GRID }?.options ?: emptyList<String>()),
+                "shownRows" to parts.filter { it.kind == Kind.ROW }.map { it.label },
+                "shownRowKeys" to parts.filter { it.kind == Kind.ROW }.take(6).map { it.id },
+                "allFirstLabels" to AppChoices.all.take(6).map { it.label },
+                "noMatch" to parts.any { it.kind == Kind.NOTE && it.label.startsWith("No apps match") },
             )
         },
         "panelCarriedOn" to carriedOn,
@@ -2239,7 +2460,16 @@ internal class PanelView(
         if (chooser == null) return null
         val grid = parts.firstOrNull { it.kind == Kind.GRID }
         val rows = parts.filter { it.kind == Kind.ROW }
+        val search = parts.firstOrNull { it.kind == Kind.SEARCH }
         val local: FloatArray = when {
+            id == "search" -> {
+                val f = search ?: return null
+                floatArrayOf(pad + innerW / 2, f.y + f.h / 2)
+            }
+            id == "search.clear" -> {
+                val f = search ?: return null
+                floatArrayOf(pad + innerW - 22 * dp, f.y + f.h / 2)
+            }
             id.startsWith("suggested.") -> {
                 val i = id.removePrefix("suggested.").toIntOrNull() ?: return null
                 if (grid == null || i !in grid.options.indices) return null

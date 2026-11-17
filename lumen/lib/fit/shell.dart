@@ -5872,6 +5872,141 @@ class _ShellState extends State<Shell>
             );
           }
           clean('after the Sidekick\'s app list');
+          // ---- Search (202): a field between the two parts; a tap focuses it and asks for the
+          // keyboard; typing filters both parts live; Back puts the keyboard away first.
+          {
+            final Map<String, Object?>? so = await openList(0, 0);
+            if (so == null || so['panelOpen'] != true) {
+              t.check(
+                'sidekick: its app list has a search field between "Your most used" and "All apps"',
+                false,
+                listSaid(so),
+              );
+            } else {
+              final List<String> order = strs(chooserOf(so)['order']);
+              final int si = order.indexOf('search');
+              final int gi = order.indexOf('grid'),
+                  ai = order.indexOf('label:All apps');
+              t.check(
+                'sidekick: its app list has a search field between "Your most used" and "All apps"',
+                si >= 0 && (gi < 0 || gi < si) && ai > si,
+                order.join(' > '),
+              );
+              // A tap on it.
+              Map<String, Object?> m = await list(
+                'tap',
+                part: 'search',
+                settleMs: 900,
+              );
+              Map<Object?, Object?> c = chooserOf(m);
+              t.check(
+                'sidekick: a tap on its search field focuses it and asks for the keyboard, and its window may now take the keyboard',
+                c['searching'] == true &&
+                    c['imeAsked'] == true &&
+                    m['panelNoKeyboard'] == false,
+                'focused ${c['searching']}, keyboard asked ${c['imeAsked']}, up ${c['imeShown']}; keeps out of the keyboard\'s way ${m['panelNoKeyboard']}',
+              );
+              t.note(
+                'the Sidekick\'s search: the keyboard ${c['imeShown'] == true ? 'came up' : 'did not come up (or Android did not say so)'} for the test\'s tap',
+              );
+              // Typed: the first three letters of the first app's name, A to Z.
+              final List<String> firsts = strs(c['allFirstLabels']);
+              final String typed = firsts.isEmpty
+                  ? 'a'
+                  : firsts.first.substring(0, math.min(3, firsts.first.length));
+              String fold(String x) => x.toLowerCase();
+              m = await t.lens(<String, Object?>{
+                'op': 'panel',
+                'what': 'type',
+                'text': typed,
+                'settleMs': 500,
+              }, extraMs: 3000);
+              c = chooserOf(m);
+              final List<String> rows = strs(c['shownRows']);
+              final int all = nOf(c['allCount']).isNaN
+                  ? 0
+                  : nOf(c['allCount']).round();
+              t.check(
+                'sidekick: typing in its search filters "All apps" live: every app shown has what was typed in its name',
+                c['query'] == typed &&
+                    rows.isNotEmpty &&
+                    rows.every((String r) => fold(r).contains(fold(typed))) &&
+                    rows.length <= all,
+                '"$typed": ${rows.length} of $all apps shown (${rows.take(4).join(', ')}${rows.length > 4 ? '…' : ''})',
+              );
+              t.check(
+                'sidekick: typing in its search filters "Your most used" too',
+                strs(c['shownSuggested']).length <=
+                    strs(chooserOf(so)['suggested']).length,
+                'most used shown ${strs(c['shownSuggested']).length} of ${strs(chooserOf(so)['suggested']).length}',
+              );
+              // Nothing matches.
+              m = await t.lens(<String, Object?>{
+                'op': 'panel',
+                'what': 'type',
+                'text': 'zqxjv',
+                'settleMs': 500,
+              }, extraMs: 3000);
+              c = chooserOf(m);
+              t.check(
+                'sidekick: when nothing matches, its list says so',
+                c['noMatch'] == true && strs(c['shownRows']).isEmpty,
+                'no match ${c['noMatch']}, rows ${strs(c['shownRows']).length}',
+              );
+              // Cleared by its X: every app back.
+              m = await list('tap', part: 'search.clear', settleMs: 600);
+              c = chooserOf(m);
+              t.check(
+                'sidekick: its search cleared by its X: every app is back',
+                c['query'] == '' && strs(c['shownRows']).length == all,
+                'typed "${c['query']}", ${strs(c['shownRows']).length} of $all apps',
+              );
+              // A pick from a filtered list lands.
+              m = await t.lens(<String, Object?>{
+                'op': 'panel',
+                'what': 'type',
+                'text': typed,
+                'settleMs': 500,
+              }, extraMs: 3000);
+              final List<String> keysShown = strs(chooserOf(m)['shownRowKeys']);
+              final List<String> beforePick = stored(m);
+              if (keysShown.isNotEmpty) {
+                await list('tap', part: 'all.0', settleMs: 1300);
+                final Map<String, Object?> after = await where();
+                t.check(
+                  'sidekick: an app picked from a filtered list: that blob becomes it',
+                  stored(after).isNotEmpty &&
+                      stored(after).first == keysShown.first &&
+                      after['panelOpen'] != true,
+                  'its menu ${stored(after).join(' ')} (wanted ${keysShown.first} first, was ${beforePick.join(' ')}); list open ${after['panelOpen']}',
+                );
+                await picturesIn('an app was picked from a filtered list');
+              }
+              // Back: the keyboard first (where it is up), then the list.
+              final Map<String, Object?>? sb = await openList(0, 0);
+              if (sb != null && sb['panelOpen'] == true) {
+                await list('tap', part: 'search', settleMs: 900);
+                final Map<String, Object?> b1 = await list('back');
+                final Map<Object?, Object?> c1 = chooserOf(b1);
+                final bool imeWasUp =
+                    c1['imeHiddenByBack'] is num &&
+                    (c1['imeHiddenByBack']! as num) > 0;
+                Map<String, Object?> b2 = b1;
+                if (imeWasUp) {
+                  b2 = await list('back');
+                }
+                t.check(
+                  'sidekick: Back puts its search\'s keyboard away first, and then closes the list',
+                  (!imeWasUp || b1['panelOpen'] == true) &&
+                      b2['panelOpen'] != true,
+                  imeWasUp
+                      ? 'the first Back put the keyboard away (the list still open ${b1['panelOpen']}); the second closed the list (${b2['panelOpen'] != true})'
+                      : 'the keyboard was not up for the test, so one Back closed the list (${b1['panelOpen'] != true})',
+                );
+              }
+            }
+            clean('after the Sidekick\'s search');
+          }
           // Over another app: the list opens over it and Prism stays behind, all the way through.
           const List<String> overOther = <String>[
             'sidekick: over another app, Change opens its own list over it, and Prism stays behind',

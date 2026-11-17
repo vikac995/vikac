@@ -2865,6 +2865,11 @@ class Floater(val timer: Boolean) {
                             SidekickPanel.testHome()
                             watcher.postDelayed({ done(state(context)) }, num("settleMs", 700))
                         }
+                        // (202) Typed into its app list's search field ("text"), as the keyboard would.
+                        "type" -> {
+                            SidekickPanel.testType(a["text"] as? String ?: "")
+                            watcher.postDelayed({ done(state(context)) }, num("settleMs", 400))
+                        }
                         // (200) A part brought into sight, as a finger would scroll to it, and nothing touched.
                         "spot" -> {
                             if (SidekickPanel.testSpot(part) == null) return fail("no part $part in the panel")

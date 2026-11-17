@@ -153,10 +153,15 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   - **A tap on one:** that blob becomes it (Change), or it goes in right after the held blob (Add).
     The list closes, and the Sidekick's blobs come out again with the change.
   - **Closed without a change by:** its ✕, a tap beside it, Back, or Home.
-  - **Search** (a field between the two parts, with the keyboard) comes in 202.
+  - **Search** (from 202): a field between the two parts, "Search apps", with a magnifier. A tap
+    focuses it and brings the keyboard; the field goes just under the header, where the keyboard
+    cannot cover it, and the panel ends above the keyboard. Typing filters both parts live, by any
+    part of a name, case and accents aside; nothing matching, it says so. An X in the field clears
+    it. Back puts the keyboard away first, then closes the list; the keyboard goes with the list.
 - **The Sidekick never takes the keyboard or the focus** of the app underneath, except while its app
   list is up (from 200): that takes the focus, so that Back closes it, and gives it back the moment it
-  begins to close. It never takes the keyboard: the app's keyboard, if up, is left as it is.
+  begins to close. It takes the keyboard only once its search field is tapped (202); until then the
+  app's keyboard, if up, is left as it is.
 - **The Sidekick is sent away only from its settings panel** (the owner's decision, from 193): hold
   it, and while its panel is open a **"Hold to dismiss"** pill sits just under the Sidekick's glass
   (from 196; in the panel's header in 193 to 195). **It is held, not tapped** (from 195, the owner's

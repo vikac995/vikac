@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 202 (17 November 2026)
+
+**File:** `releases/prism-build-202.apk`
+
+Needs Play Protect paused to install. Can be installed over build 201.
+
+**Search in the Sidekick's app list.** Between "Your most used" and "All apps" there's now a "Search apps" field. Tap it and the keyboard comes up; type a few letters of a name and both lists narrow as you type (capitals and accents don't matter). The X in the field clears it. Back puts the keyboard away first, then closes the list.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 84 of 86 (the usual Android-only miss and phone-only skip); the long test, 68 of 71 with the usual 3 misses.
+**Not checked:** on a phone, where the keyboard is the thing to watch.
+
 ## Prism, build 201 (17 November 2026)
 
 **File:** `releases/prism-build-201.apk`

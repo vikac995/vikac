@@ -108,12 +108,12 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 201';
+  static const String build = 'Prism build 202';
 
   // For the test area's badge, set with every build: its number, its date and what it is for.
-  static const int buildNumber = 201;
+  static const int buildNumber = 202;
   static const String buildDate = '17 November';
-  static const String buildTitle = 'The test\'s own store';
+  static const String buildTitle = 'Search the Sidekick\'s app list';
 
   /// Which test this build asks the owner to run, set with every build. Its button is green,
   /// with a "Test this one" tag, and comes first. One of: 'leak', 'button', 'hour', 'stability';
