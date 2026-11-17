@@ -5806,6 +5806,66 @@ class _ShellState extends State<Shell>
         double numOf(Object? v) => v is num ? v.toDouble() : double.nan;
         bool panelUp(Map<String, Object?> m) =>
             m['panelOpen'] == true && m['panelOpenFully'] == true;
+        // (196) "Hold to dismiss" where it should be: 10 points under the Sidekick's glass (or over
+        // it, where there is no room under it), centred on it unless it had to slide in to stay 12
+        // points from the screen's side; fully on the screen, between the lowest and highest it may
+        // reach; its touch at least 48 tall, clear of the Sidekick's own touch (its glass and 6
+        // points round it), and kept from Back near an edge.
+        (bool, String) pillOk(Map<String, Object?> m) {
+          final Map<Object?, Object?> pm = m['pill'] is Map
+              ? m['pill']! as Map<Object?, Object?>
+              : const <Object?, Object?>{};
+          List<double> four(Object? v) => <double>[
+            for (final Object? x in (v is List ? v : const <Object?>[]))
+              numOf(x),
+          ];
+          final List<double> b = four(pm['box']),
+              tch = four(pm['touch']),
+              gl = four(pm['glass']),
+              sc = four(pm['screen']);
+          if (b.length != 4 ||
+              tch.length != 4 ||
+              gl.length != 3 ||
+              sc.length != 2) {
+            return (false, 'no pill in the panel\'s state');
+          }
+          final bool above = pm['above'] == true;
+          final double l = b[0], t = b[1], r = b[0] + b[2], bt = b[1] + b[3];
+          final double floor = numOf(pm['floor']), ceil = numOf(pm['ceiling']);
+          final bool onScreen =
+              l >= 12 - 0.5 &&
+              r <= sc[0] - 12 + 0.5 &&
+              t >= ceil - 0.5 &&
+              bt <= floor + 0.5;
+          final bool placed = above
+              ? bt <= gl[1] - gl[2] - 10 + 0.5
+              : t >= gl[1] + gl[2] + 10 - 0.5;
+          final bool slid =
+              (l - 12).abs() < 0.6 || (r - (sc[0] - 12)).abs() < 0.6;
+          final bool centred = ((l + r) / 2 - gl[0]).abs() < 0.6 || slid;
+          // The Sidekick's touch is its glass and 6 points round it: the pill's touch never in it.
+          final double nx = gl[0].clamp(tch[0], tch[0] + tch[2]),
+              ny = gl[1].clamp(tch[1], tch[1] + tch[3]);
+          final double gap = math.sqrt(
+            (gl[0] - nx) * (gl[0] - nx) + (gl[1] - ny) * (gl[1] - ny),
+          );
+          final bool clearOfGlass = gap >= gl[2] + 6 - 0.5;
+          final bool tall = tch[3] >= 47.5;
+          final bool nearEdge = tch[0] < 48 || tch[0] + tch[2] > sc[0] - 48;
+          final bool kept = !nearEdge || pm['excluded'] == true;
+          final List<double> over = four(pm['overPanel']);
+          return (
+            onScreen &&
+                placed &&
+                centred &&
+                clearOfGlass &&
+                tall &&
+                kept &&
+                m['holdLabel'] == 'Hold to dismiss',
+            '${above ? 'over' : 'under'} the glass (${gl.map((double v) => v.toStringAsFixed(0)).join(',')}), at ${b.map((double v) => v.toStringAsFixed(0)).join(',')}${slid ? ', slid in from the side' : ''}; on the screen $onScreen (${sc.map((double v) => v.toStringAsFixed(0)).join('×')}, from ${ceil.toStringAsFixed(0)} to ${floor.toStringAsFixed(0)}), placed $placed, centred $centred; its touch ${tch[3].toStringAsFixed(1)} tall, ${gap.toStringAsFixed(1)} from the glass\'s middle, kept from Back $kept; "${m['holdLabel']}"; over the panel ${over.length == 2 ? '${over[0].toStringAsFixed(0)} × ${over[1].toStringAsFixed(0)}' : '?'} points',
+          );
+        }
+
         final double wPx = (s['w'] as num?)?.toDouble() ?? w;
         // How far the Sidekick rests from its edge, and how much of it shows tucked, in points.
         double fromEdge(Map<String, Object?> m) {
@@ -6124,6 +6184,50 @@ class _ShellState extends State<Shell>
             'dy': -moved.round(),
             'settleMs': 1500,
           }, extraMs: 5000);
+          // (196) "Hold to dismiss" high and low on the screen, at Hovering 8 and −48: under the
+          // Sidekick (over it low down, where there is no room under it), fully on the screen. The
+          // Sidekick is carried to the top and the bottom with the panel open (it stops 48 points
+          // from each), and at each its Hovering set as its dial would.
+          final Map<String, Object?> p0 = await where();
+          final double homeY = midOf(p0)[1];
+          for (final (String where0, int dy) in <(String, int)>[
+            ('high', -2000),
+            ('low', 2000),
+          ]) {
+            await t.lens(<String, Object?>{
+              'op': 'panel',
+              'what': 'dragLens',
+              'dy': dy,
+              'settleMs': 1600,
+            }, extraMs: 6000);
+            for (final int g in <int>[8, -48]) {
+              final Map<String, Object?> pm = await t.lens(<String, Object?>{
+                'op': 'panel',
+                'what': 'gap',
+                'value': g,
+                'settleMs': 1100,
+              }, extraMs: 3000);
+              final (bool ok, String said) = pillOk(pm);
+              t.check(
+                'sidekick panel: "Hold to dismiss" under (or over) the Sidekick, fully on the screen, $where0, at Hovering ${g < 0 ? '−${-g}' : '$g'}',
+                pm['panelOpen'] == true && ok,
+                'panel open ${pm['panelOpen']}; $said',
+              );
+            }
+          }
+          await t.lens(<String, Object?>{
+            'op': 'panel',
+            'what': 'gap',
+            'value': numOf(gapWas).isNaN ? 8 : numOf(gapWas),
+            'settleMs': 900,
+          }, extraMs: 3000);
+          final Map<String, Object?> p1 = await where();
+          await t.lens(<String, Object?>{
+            'op': 'panel',
+            'what': 'dragLens',
+            'dy': (homeY - midOf(p1)[1]).round(),
+            'settleMs': 1500,
+          }, extraMs: 5000);
         }
         // Both dials on the screen as it opens, without scrolling; and its bottom at least 8 points
         // above Prism's bar (in Prism) and above Android's own bar (build 186).
@@ -6221,31 +6325,22 @@ class _ShellState extends State<Shell>
           numOf(s['panelShade']) == 0,
           'shade ${numOf(s['panelShade']).toStringAsFixed(2)}',
         );
-        // "Dismiss" right after the title (194): 12 points from it at least, its touch 48 tall and
-        // short of the X's.
+        // (196) The header is only its title and the X: "Dismiss" is a pill of its own, under the
+        // Sidekick.
         {
           final Map<Object?, Object?> hd = s['panelHeader'] is Map
               ? s['panelHeader']! as Map<Object?, Object?>
               : const <Object?, Object?>{};
-          final List<Object?> pill =
-              (hd['dismiss'] as List<Object?>?) ?? const <Object?>[];
-          final List<Object?> touch =
-              (hd['dismissTouch'] as List<Object?>?) ?? const <Object?>[];
-          final bool below = hd['below'] == true;
-          final double gapToTitle = pill.length == 4
-              ? numOf(pill[0]) - numOf(hd['titleRight'])
-              : double.nan;
-          final double touchH = touch.length == 4 ? numOf(touch[3]) : 0;
-          final double touchRight = touch.length == 4
-              ? numOf(touch[0]) + numOf(touch[2])
-              : double.nan;
           inPanel(
-            'sidekick panel: "Dismiss" right after the title, its touch 48 tall and clear of the X\'s',
-            pill.length == 4 &&
-                (below || gapToTitle >= 11.5) &&
-                touchH >= 47.5 &&
-                (below || touchRight <= numOf(hd['closeTouchLeft']) + 0.5),
-            '${below ? 'on its own line under the title (large text)' : '${gapToTitle.toStringAsFixed(1)} points after the title'}; its touch ${touchH.toStringAsFixed(1)} tall, ending at ${touchRight.toStringAsFixed(1)}, the X\'s from ${numOf(hd['closeTouchLeft']).toStringAsFixed(1)}',
+            'sidekick panel: the header has no Dismiss: only its title and the X',
+            hd.isNotEmpty && hd['dismiss'] == null && s['pill'] is Map,
+            'header ${hd.isEmpty ? 'not read' : 'title to ${numOf(hd['titleRight']).toStringAsFixed(1)}, the X\'s touch from ${numOf(hd['closeTouchLeft']).toStringAsFixed(1)}, Dismiss in it ${hd['dismiss'] != null}'}; the pill ${s['pill'] is Map ? 'under the Sidekick' : 'not there'}',
+          );
+          final (bool ok, String said) = pillOk(s);
+          inPanel(
+            'sidekick panel: "Hold to dismiss" under (or over) the Sidekick, fully on the screen, as it opens',
+            ok,
+            said,
           );
         }
         // Each two-way choice, changed in the panel and put back: kept by Android, and Prism's
@@ -7076,28 +7171,24 @@ class _ShellState extends State<Shell>
           s['lens'] == true && s['guest'] == true && s['prismFocus'] != false,
           'shown ${s['lens']}, Prism has the focus ${s['prismFocus']}, flung from ${flingFrom.dx.round()},${flingFrom.dy.round()}',
         );
-        // Held: its panel; "Dismiss" held to the end (195): the panel closes and the Sidekick is
-        // sent away, until it is brought back (the next app opened from Prism, or here the test's
-        // own bring-back). Let go, slid off or only tapped before the end: nothing. What to do is
-        // said in a bubble just under the pill.
+        // Held: its panel, and "Hold to dismiss" under the Sidekick (196), held to the end (195):
+        // the panel closes and the Sidekick is sent away, until it is brought back (the next app
+        // opened from Prism, or here the test's own bring-back). Let go, slid off or only tapped
+        // before the end: nothing.
         {
           const List<String> holds = <String>[
-            'sidekick: "Dismiss" pressed: the fill sweeps across it, and a bubble under it says "Keep holding…", inside the panel and clear of the X',
-            'sidekick: "Dismiss" pressed for 0.6 s and let go: nothing happens, and the fill drains back within 0.5 s',
-            'sidekick: "Dismiss" slid off at 0.8 s: nothing happens, and the fill drains back',
-            'sidekick: a tap on "Dismiss" does nothing; its bubble says "Hold to dismiss" for a moment, then goes',
-            'sidekick: "Dismiss" held for 1.3 s: "Dismissed", with a light tick at 25, 50 and 75% and a heavy one at 100%',
-            'sidekick: held, its panel\'s "Dismiss" held to the end sends it away, and the panel closes',
+            'sidekick: "Hold to dismiss" pressed: the fill sweeps across it, and it says "Keep holding…", still where it should be',
+            'sidekick: "Hold to dismiss" pressed for 0.6 s and let go: nothing happens, and the fill drains back within 0.5 s',
+            'sidekick: "Hold to dismiss" slid off at 0.8 s: nothing happens, and the fill drains back',
+            'sidekick: a tap on "Hold to dismiss" does nothing, and it still says so',
+            'sidekick: "Hold to dismiss" held for 1.3 s: "Dismissed", with a light tick at 25, 50 and 75% and a heavy one at 100%',
+            'sidekick: held, its panel\'s "Hold to dismiss" held to the end sends it away, and the panel closes',
           ];
           final int was = numOf(s['sidekickDismissals']).isNaN
               ? 0
               : numOf(s['sidekickDismissals']).toInt();
           String fillSaid(Map<String, Object?> m) =>
               'panel open ${m['panelOpen']}, sent away ${m['sideGone']}; most filled ${(numOf(m['holdMost']) * 100).toStringAsFixed(0)}%, ended "${m['holdEnded']}", fill now ${(numOf(m['holdFill']) * 100).toStringAsFixed(1)}%, at 0.5 s ${(numOf(m['holdAt500']) * 100).toStringAsFixed(1)}%, drained in ${m['holdDrainMs']} ms; haptics ${m['holdBuzzes']}; "${m['holdLabel']}"';
-          List<double> boxOf(Object? v) => <double>[
-            for (final Object? x in (v is List ? v : const <Object?>[]))
-              numOf(x),
-          ];
           if (await holdOpen('sidekick held, to dismiss it')) {
             // Pressed 0.6 s: read halfway through, while it is held; then after the let-go.
             // ("Drained" is under 3% at 0.5 s: the owner's spring, k 90 and c 19, takes about
@@ -7107,31 +7198,18 @@ class _ShellState extends State<Shell>
               part: 'close.dismiss',
               holdMs: 600,
             );
-            final List<double> bub = boxOf(m['holdBubbleBox']);
-            final List<double> pb = boxOf(m['panelBox']);
-            final List<double> xb = boxOf(m['closeBox']);
-            final bool inside =
-                bub.length == 4 &&
-                pb.length == 4 &&
-                bub[0] >= pb[0] - 0.5 &&
-                bub[1] >= pb[1] - 0.5 &&
-                bub[0] + bub[2] <= pb[0] + pb[2] + 0.5 &&
-                bub[1] + bub[3] <= pb[1] + pb[3] + 0.5;
-            final bool clearOfX =
-                bub.length == 4 &&
-                xb.length == 4 &&
-                (bub[1] >= xb[1] + xb[3] - 0.5 ||
-                    bub[0] + bub[2] <= xb[0] + 0.5 ||
-                    bub[0] >= xb[0] + xb[2] - 0.5);
+            // (Where it should be while held: it shakes a little, but its place is the same.)
+            final (bool placedHeld, String saidHeld) = pillOk(<String, Object?>{
+              ...m,
+              'holdLabel': 'Hold to dismiss',
+            });
             t.check(
               holds[0],
               m['holdHeld'] == true &&
                   numOf(m['holdFill']) > 0.1 &&
                   m['holdLabel'] == 'Keep holding…' &&
-                  numOf(m['holdBubble']) > 0.5 &&
-                  inside &&
-                  clearOfX,
-              'held ${m['holdHeld']}, fill ${(numOf(m['holdFill']) * 100).toStringAsFixed(0)}%; the bubble "${m['holdLabel']}", showing ${numOf(m['holdBubble']).toStringAsFixed(2)}, at ${bub.map((double v) => v.toStringAsFixed(0)).join(',')}; the panel ${pb.map((double v) => v.toStringAsFixed(0)).join(',')}; the X ${xb.map((double v) => v.toStringAsFixed(0)).join(',')}',
+                  placedHeld,
+              'held ${m['holdHeld']}, fill ${(numOf(m['holdFill']) * 100).toStringAsFixed(0)}%, it says "${m['holdLabel']}"; $saidHeld',
             );
             await Robot.wait(1000);
             m = await where();
@@ -7149,12 +7227,15 @@ class _ShellState extends State<Shell>
                   !'${m['holdBuzzes']}'.contains('heavy'),
               fillSaid(m),
             );
-            // Held 0.8 s, then slid off sideways and let go there.
+            // Held 0.8 s, then slid off sideways, toward the middle of the screen, and let go there.
+            final bool pillRight =
+                (m['pill'] is Map) &&
+                (m['pill']! as Map<Object?, Object?>)['onRight'] == true;
             m = await panel(
               'holdSlide',
               part: 'close.dismiss',
               holdMs: 800,
-              dx: 180,
+              dx: pillRight ? -180 : 180,
               legMs: 120,
               settleMs: 1000,
             );
@@ -7169,22 +7250,15 @@ class _ShellState extends State<Shell>
                   numOf(m['holdFill']) == 0,
               fillSaid(m),
             );
-            await Robot.wait(1300);
-            m = await panel('tap', part: 'close.dismiss', settleMs: 300);
-            final bool said =
-                m['holdLabel'] == 'Hold to dismiss' &&
-                numOf(m['holdBubble']) > 0.5;
-            await Robot.wait(1600);
-            final Map<String, Object?> later = await where();
+            m = await panel('tap', part: 'close.dismiss', settleMs: 900);
             t.check(
               holds[3],
-              said &&
-                  later['panelOpen'] == true &&
-                  later['holdDone'] != true &&
-                  later['sideGone'] != true &&
-                  numOf(later['holdFill']) == 0 &&
-                  numOf(later['holdBubble']) < 0.05,
-              'just after the tap: "${m['holdLabel']}", showing ${numOf(m['holdBubble']).toStringAsFixed(2)}; 1.6 s later: showing ${numOf(later['holdBubble']).toStringAsFixed(2)}; ${fillSaid(later)}',
+              m['panelOpen'] == true &&
+                  m['holdDone'] != true &&
+                  m['sideGone'] != true &&
+                  numOf(m['holdFill']) == 0 &&
+                  m['holdLabel'] == 'Hold to dismiss',
+              fillSaid(m),
             );
             // Held 1.3 s: read just after the lift, while the panel is still up with "Dismissed".
             m = await panel(

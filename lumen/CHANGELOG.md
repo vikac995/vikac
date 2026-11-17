@@ -1,5 +1,20 @@
 # Lumen changelog
 
+## Prism, build 196 (17 November 2026)
+
+**File:** `releases/prism-build-196.apk`
+
+Needs Play Protect paused to install. Can be installed over build 195.
+
+**"Hold to dismiss" now sits just under the Sidekick**, as you decided:
+- **Where:** while its panel is open, the pill is right under the Sidekick, with the full words on it: "Hold to dismiss", then "Keep holding…" while you hold, and "Dismissed" at the end. Low on the screen it sits above the Sidekick instead, and it always stays fully on the screen, even with the Sidekick half past the edge.
+- **It moves with the Sidekick** if you drag it with the panel open.
+- **The panel's header** is back to just "Sidekick" and the ✕.
+- **Holding it works as in 195:** the fill, the ticks, the shake, and a quick let-go does nothing.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 195 (16 November 2026)
 
 **File:** `releases/prism-build-195.apk`
