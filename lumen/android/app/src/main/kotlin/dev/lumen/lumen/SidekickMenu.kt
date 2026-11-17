@@ -67,8 +67,29 @@ object SidekickMenu {
         return Array(PLACES) { if (it < full.size) full[it] else EMPTY }
     }
 
+    /**
+     * While one of Prism's tests runs (201, the outside review's F02): changes are kept here only,
+     * never saved, so a test killed half way leaves the person's own menu as it was saved.
+     */
+    @Volatile var testing = false
+
+    /** A test has ended (201): the menu read again from what is saved, shown, and Prism told its keys. */
+    fun testEnded(context: Context) {
+        testing = false
+        loaded = false
+        own = false
+        keys = Array(PLACES) { EMPTY }
+        moved = ""
+        load(context)
+        show()
+        toldAt = android.os.SystemClock.uptimeMillis()
+        RestBubble.toPrism("sidekickKeys", keys.toList())
+        Trail.add("Sidekick: a test ended, its own menu is as saved: ${keys.joinToString(" ")}")
+    }
+
     /** [now]: written before this returns (for the one-time move, after which Prism deletes its old copy). */
     private fun save(context: Context, now: Boolean = false) {
+        if (testing) return
         try {
             val e = context.getSharedPreferences(STORE, Context.MODE_PRIVATE).edit()
                 .putString("keys", keys.joinToString("\n")).putString("moved", moved)
@@ -177,6 +198,13 @@ object SidekickMenu {
     fun state(context: Context, into: HashMap<String, Any?>) {
         load(context)
         into["sidekickKeys"] = keys.toList()
+        // (201) What is saved, as it is saved, and whether a test keeps its changes apart now.
+        into["sidekickSavedKeys"] = try {
+            context.getSharedPreferences(STORE, Context.MODE_PRIVATE).getString("keys", null)
+        } catch (e: Exception) {
+            null
+        }
+        into["sidekickTesting"] = testing
         into["sidekickOwn"] = own
         into["sidekickMoved"] = moved
         into["sidekickPictures"] = pictures.size

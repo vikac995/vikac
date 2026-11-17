@@ -277,6 +277,12 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
 
 ## 10. How work is done
 
+- **The tests never touch what the person keeps** (from 201, the outside review's F02 and F34).
+  While one of Prism's own tests runs, everything Prism and the Sidekick keep (the menus, swipes,
+  labels, look, icons, the pin, Auto's glass level, the Sidekick's settings) is kept apart: the test's
+  changes go to files of its own, or on Android are not saved at all, and as it ends everything is
+  read again from the person's own. A test killed half way leaves the person's things exactly as they
+  were; the next start notes that it ended unfinished.
 - Every build: a full release APK with a commit-pinned link, a `CHANGELOG.md` entry saying what
   changed, what was checked and what was not.
 - The automatic tests (the long test and the button test) are updated with every change of

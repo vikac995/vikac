@@ -5,6 +5,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart' show ScrollController;
 import 'package:flutter/services.dart';
 
+import 'test_store.dart';
+
 /// What the two-finger swipes do. Four of them: down, up, left, right. Each holds the same
 /// kind of thing a blob holds ('action:2', 'screen:1', 'app:com.whatsapp'), or the
 /// notifications ('phone:shade'), or nothing ('empty:'). Kept in a small file of its own.
@@ -22,13 +24,27 @@ class GestureSlots extends ChangeNotifier {
     'empty:',
   ];
 
-  File get _file {
+  /// The person's own file for the swipes (201: while a test runs, [_file] is the test's).
+  File get realFile {
     final Directory files = Directory(
       '${Directory.systemTemp.parent.path}/files',
     );
     return File(
       '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_gestures_v1',
     );
+  }
+
+  File get _file => TestStore.file(realFile);
+
+  /// A test has ended (201): the person's own swipes, read again from their file.
+  void reload() {
+    keys
+      ..[0] = 'phone:shade'
+      ..[1] = 'action:2'
+      ..[2] = 'empty:'
+      ..[3] = 'empty:';
+    load();
+    notifyListeners();
   }
 
   void load() {

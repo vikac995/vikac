@@ -8,6 +8,12 @@ enum GlassQuality { auto, full, medium, low }
 
 /// App-wide preferences. One instance, listened to at the root.
 class AppSettings extends ChangeNotifier {
+  /// Whether one of the app's own tests is running (set by the test store, build 201). None of
+  /// these preferences is kept anywhere yet; whatever comes to keep them must keep nothing while
+  /// this is true, so that a test killed half way cannot leave its settings as the person's (the
+  /// outside review's F34). The test puts them back in memory as it ends.
+  static bool testing = false;
+
   ThemeMode _themeMode = ThemeMode.dark;
   bool _reduceMotion = false;
   bool _reduceTransparency = false;

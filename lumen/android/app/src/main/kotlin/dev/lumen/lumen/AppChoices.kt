@@ -116,7 +116,8 @@ internal object AppChoices {
 
     /** An app was opened from Prism or the Sidekick: counted, for "most used" without usage access. */
     fun opened(context: Context, pkg: String) {
-        if (pkg.isEmpty()) return
+        // (Not while one of Prism's tests runs, 201: the person's own counts.)
+        if (pkg.isEmpty() || SidekickMenu.testing) return
         try {
             val p = context.applicationContext.getSharedPreferences(OPENS, Context.MODE_PRIVATE)
             p.edit().putInt(pkg, p.getInt(pkg, 0) + 1).apply()

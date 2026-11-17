@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'apps.dart';
+import 'test_store.dart';
 
 /// The workout, floating over other apps: a small glass lens with the timer, which opens
 /// into a panel for logging the set. It appears when Prism leaves the screen during a workout. It is drawn by Android itself,
@@ -72,8 +73,11 @@ class RestBubble with WidgetsBindingObserver {
     final Directory files = Directory(
       '${Directory.systemTemp.parent.path}/files',
     );
-    return File(
-      '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_timer_mode',
+    // (201: while one of Prism's tests runs, a file of the test's own; see TestStore.)
+    return TestStore.file(
+      File(
+        '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_timer_mode',
+      ),
     );
   }
 
@@ -95,8 +99,11 @@ class RestBubble with WidgetsBindingObserver {
     final Directory files = Directory(
       '${Directory.systemTemp.parent.path}/files',
     );
-    return File(
-      '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_lens_style',
+    // (201: while one of Prism's tests runs, a file of the test's own; see TestStore.)
+    return TestStore.file(
+      File(
+        '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_lens_style',
+      ),
     );
   }
 
@@ -312,8 +319,11 @@ class RestBubble with WidgetsBindingObserver {
     final Directory files = Directory(
       '${Directory.systemTemp.parent.path}/files',
     );
-    return File(
-      '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_pin',
+    // (201: while one of Prism's tests runs, a file of the test's own; see TestStore.)
+    return TestStore.file(
+      File(
+        '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_pin',
+      ),
     );
   }
 
@@ -378,6 +388,16 @@ class RestBubble with WidgetsBindingObserver {
 
   /// The one-time move: the menu the Sidekick showed until now, for Android to keep from now
   /// on. Taken only if it has none of its own yet. Answers with the keys it has; null if no answer.
+  /// (201) One of Prism's tests begins ([on]) or ends: while it runs, Android keeps the
+  /// Sidekick's menu and settings apart and saves none of them; as it ends it reads them again.
+  Future<void> testStore(bool on) async {
+    try {
+      await _device.invokeMethod<void>('testStore', on);
+    } catch (_) {
+      // No Android (the preview): nothing of the Sidekick's to keep apart.
+    }
+  }
+
   Future<List<String>?> sidekickAdopt(List<String> keys) async {
     try {
       final List<Object?>? now = await _device.invokeMethod<List<Object?>>(

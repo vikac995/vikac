@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 201 (17 November 2026)
+
+**File:** `releases/prism-build-201.apk`
+
+Needs Play Protect paused to install. Can be installed over build 200.
+
+**The tests can no longer leave your settings changed.** Until now, Prism's own tests changed your menu, swipes, labels, look and the Sidekick's menu and settings, and saved those changes over yours, putting yours back only at the very end. A test that was stopped half way (swiped away, a crash, the phone restarting) left you with the test's menu. Now a test keeps all its changes apart and never saves over yours: whatever happens to it, your own settings are exactly as you left them.
+
+**Checked:** in my preview, a test killed half way left all your files untouched; the button test, 84 of 86 (the usual Android-only miss and phone-only skip); the long test, 68 of 71 with the usual 3 misses. Every new check passes.
+**Not checked:** the Sidekick's half, on a phone.
+
 ## Prism, build 200 (17 November 2026)
 
 **File:** `releases/prism-build-200.apk`

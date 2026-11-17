@@ -489,6 +489,21 @@ class MainActivity : FlutterActivity() {
                 val list = call.arguments as? List<*>
                 SidekickMenu.pictures(applicationContext, list?.mapNotNull { (it as? Map<*, *>)?.let { m -> RestBubble.blobOf(m) } } ?: emptyList())
                 result.success(null)
+            } else if (call.method == "testStore") {
+                // (201) One of Prism's tests begins (true) or ends (false): while it runs, the
+                // Sidekick's menu and settings are changed but never saved; as it ends they are
+                // read again from what is saved. Also sent (false) as Prism starts, in case a
+                // test ended unfinished while this process lived on.
+                val on = call.arguments == true
+                if (on) {
+                    SidekickMenu.testing = true
+                    SidekickSettings.testing = true
+                    Trail.add("Prism: a test begins; the Sidekick's menu and settings are kept apart, never saved")
+                } else if (SidekickMenu.testing || SidekickSettings.testing) {
+                    SidekickMenu.testEnded(applicationContext)
+                    SidekickSettings.testEnded(applicationContext)
+                }
+                result.success(null)
             } else if (call.method == "sidekickKeys") {
                 // Prism asks what the Sidekick's menu holds, to draw the pictures: its five keys,
                 // or nothing if it has no menu of its own yet (then Prism moves the old one over).
@@ -2490,6 +2505,9 @@ class Floater(val timer: Boolean) {
         // (And its settings as they are kept here, and its own panel: whether its window is above
         // the panel's, and how often Prism has been brought forward.)
         m["sidekickSettings"] = SidekickSettings.state(context)
+        // (201) What the Sidekick's settings are saved as, and whether a test keeps its changes apart.
+        m["sidekickSettingsSaved"] = SidekickSettings.savedNow(context)
+        m["settingsTesting"] = SidekickSettings.testing
         m.putAll(SidekickPanel.testState())
         m["lensAdds"] = lensAdds
         m["lensRemoves"] = lensRemoves

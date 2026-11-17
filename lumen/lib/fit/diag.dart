@@ -11,6 +11,7 @@ import 'recorder.dart';
 
 import '../core/glass.dart';
 import '../core/settings.dart';
+import 'test_store.dart';
 
 /// Running totals for one place or one action. Adding a frame is a handful
 /// of additions; nothing is allocated.
@@ -107,12 +108,12 @@ class _Step {
 class Diag {
   Diag._();
   static final Diag instance = Diag._();
-  static const String build = 'Prism build 200';
+  static const String build = 'Prism build 201';
 
   // For the test area's badge, set with every build: its number, its date and what it is for.
-  static const int buildNumber = 200;
+  static const int buildNumber = 201;
   static const String buildDate = '17 November';
-  static const String buildTitle = 'The Sidekick\'s own app list';
+  static const String buildTitle = 'The test\'s own store';
 
   /// Which test this build asks the owner to run, set with every build. Its button is green,
   /// with a "Test this one" tag, and comes first. One of: 'leak', 'button', 'hour', 'stability';
@@ -143,8 +144,25 @@ class Diag {
   int get barMode => glassMode.value == 4 ? autoLevel.value : glassMode.value;
   int _autoDowns = 0, _winFrames = 0, _winOver = 0;
   double _winMs = 0;
-  File get _autoFile =>
+
+  /// The person's own file for Auto's level (201: while a test runs, [_autoFile] is the test's:
+  /// a test's heavy scenes must not step the person's glass down for good).
+  File get realAutoFile =>
       File('${Directory.systemTemp.path}/prism_auto_level_v2');
+  File get _autoFile => TestStore.file(realAutoFile);
+
+  /// A test has ended (201): Auto's level as the person's file has it.
+  void reloadAuto() {
+    autoLevel.value = 0;
+    _autoDowns = 0;
+    try {
+      final List<String> saved = realAutoFile.readAsStringSync().split(' ');
+      autoLevel.value = int.parse(saved[0]);
+      _autoDowns = int.parse(saved[1]);
+    } catch (_) {
+      // Never stepped.
+    }
+  }
 
   /// Judged every 480 frames (four seconds of movement at 120 Hz). More than
   /// 15 % of frames over budget on Original means this phone cannot afford the

@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'test_store.dart';
+
 /// One real app the blob menu can open.
 class BlobApp {
   BlobApp(this.name, this.package, Color brand) : color = BlobApps.tame(brand);
@@ -711,7 +713,9 @@ class BlobSlots extends ChangeNotifier {
   /// Whether the blobs show their names under them. Kept in a small file of its own.
   bool names = true;
 
-  File get _namesFile => File('${_file.parent.path}/prism_blob_names');
+  /// The person's own file for the names (201: while a test runs, [_namesFile] is the test's).
+  File get realNamesFile => File('${realFile.parent.path}/prism_blob_names');
+  File get _namesFile => TestStore.file(realNamesFile);
 
   // (The Sidekick's own Labels are Android's from build 176: see RestBubble.sideNames.)
 
@@ -725,13 +729,24 @@ class BlobSlots extends ChangeNotifier {
     notifyListeners();
   }
 
-  File get _file {
+  /// The person's own file for the menu (201: while a test runs, [_file] is the test's).
+  File get realFile {
     final Directory files = Directory(
       '${Directory.systemTemp.parent.path}/files',
     );
     return File(
       '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_blobs_v1',
     );
+  }
+
+  File get _file => TestStore.file(realFile);
+
+  /// A test has ended (201): the person's own menu and names, read again from their files.
+  void reload() {
+    _main.fillRange(0, _main.length, null);
+    names = true;
+    load();
+    notifyListeners();
   }
 
   void load() {
@@ -805,7 +820,8 @@ class Apps extends ChangeNotifier {
 
   /// The app list as one list that scrolls, with letters at the side, instead of pages.
   bool scrolling = false;
-  File get _scrollFile => File('${_iconsFile.parent.path}/prism_apps_scroll');
+  File get _scrollFile =>
+      TestStore.file(File('${_iconsReal.parent.path}/prism_apps_scroll'));
 
   void setScrolling(bool v) {
     scrolling = v;
@@ -822,7 +838,8 @@ class Apps extends ChangeNotifier {
   int density = 1;
   static const List<int> columns = <int>[3, 4, 5, 6];
   int get cols => columns[density];
-  File get _densityFile => File('${_iconsFile.parent.path}/prism_apps_density');
+  File get _densityFile =>
+      TestStore.file(File('${_iconsReal.parent.path}/prism_apps_density'));
 
   /// Changes it at once, for the list to follow the finger. [save] writes it down, once, at the end.
   void setDensity(int v, {bool save = false}) {
@@ -843,11 +860,13 @@ class Apps extends ChangeNotifier {
   /// Which look the Blob's sign has, by the look's id (see blob_sign.dart). One that is not
   /// known there, or none, is drawn as the first of the looks.
   String blobLook = '';
-  File get _lookFile => File('${_iconsFile.parent.path}/prism_blob_look');
+  File get _lookFile =>
+      TestStore.file(File('${_iconsReal.parent.path}/prism_blob_look'));
 
   /// The Blob's sign vivid (black glass, colours at full strength) or mellow.
   bool blobVivid = false;
-  File get _vividFile => File('${_iconsFile.parent.path}/prism_blob_vivid');
+  File get _vividFile =>
+      TestStore.file(File('${_iconsReal.parent.path}/prism_blob_vivid'));
   // (The Sidekick's own look and colours are Android's from build 176: see RestBubble.sideLook.)
 
   /// Vivid or mellow, for Prism's button.
@@ -875,7 +894,8 @@ class Apps extends ChangeNotifier {
   /// How many times the cog on the button has shown itself off. It does so the first three
   /// times the blobs are changed, and after that comes in quietly.
   int cogShown = 0;
-  File get _cogFile => File('${_iconsFile.parent.path}/prism_cog_shown');
+  File get _cogFile =>
+      TestStore.file(File('${_iconsReal.parent.path}/prism_cog_shown'));
   bool takeCogHint() {
     if (cogShown >= 3) {
       return false;
@@ -911,9 +931,13 @@ class Apps extends ChangeNotifier {
   }
 
   File get _blobIconsFile =>
-      File('${_iconsFile.parent.path}/prism_icons_blobs');
+      TestStore.file(File('${_iconsReal.parent.path}/prism_icons_blobs'));
 
-  File get _iconsFile {
+  // (201) Each of these choices is kept in a file of its own; while one of Prism's tests runs,
+  // in a file of the test's own (see TestStore).
+  File get _iconsFile => TestStore.file(_iconsReal);
+
+  File get _iconsReal {
     final Directory files = Directory(
       '${Directory.systemTemp.parent.path}/files',
     );

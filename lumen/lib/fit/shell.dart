@@ -38,6 +38,7 @@ import 'robot.dart';
 import 'state.dart';
 import 'still_glass.dart';
 import 'train_page.dart';
+import 'test_store.dart';
 
 const List<(IconData, String)> _tabs = <(IconData, String)>[
   (Icons.home_rounded, 'Home'),
@@ -2702,6 +2703,15 @@ class _ShellState extends State<Shell>
       }
     };
     BlobApps.instance.addListener(_blobsChanged);
+    // (201) A test that never ended (Prism was stopped during it) left the person's own files
+    // as they were: noted, and Android told no test is running, in case it still thinks one is.
+    final String? unfinished = TestStore.unfinished();
+    if (unfinished != null) {
+      Diag.instance.event(
+        'a test ended unfinished ($unfinished): your menu, swipes, labels and look were not touched',
+      );
+    }
+    unawaited(RestBubble.instance.testStore(false));
     BlobSlots.instance
       ..load()
       ..addListener(_blobsChanged);
@@ -3050,6 +3060,42 @@ class _ShellState extends State<Shell>
       ..._settingsNow(),
     ];
     String build = Diag.build;
+    // (201) The person's own files as they are now; from here the test keeps its own apart.
+    final Map<String, File> ownFiles = <String, File>{
+      'menu': BlobSlots.instance.realFile,
+      'labels': BlobSlots.instance.realNamesFile,
+      'swipes': GestureSlots.instance.realFile,
+      'look': Look.instance.realFile,
+      'glass Auto': Diag.instance.realAutoFile,
+    };
+    final Map<String, List<int>?> ownBefore = TestStore.snapshot(ownFiles);
+    final List<String> swipesBefore = <String>[...GestureSlots.instance.keys];
+    TestStore.begin(title);
+    await RestBubble.instance.testStore(true);
+    // (What Android has saved for the Sidekick, as the test begins: to compare at the end.)
+    final Map<String, Object?> sideSavedBefore = Platform.isAndroid
+        ? await t.lens(<String, Object?>{'op': 'state'})
+        : const <String, Object?>{};
+    // Which of the person's files differ from how they were when the test began, in words.
+    String changedOwn() {
+      final Map<String, List<int>?> now = TestStore.snapshot(ownFiles);
+      final List<String> out = <String>[];
+      for (final String k in ownFiles.keys) {
+        final List<int>? a = ownBefore[k], b = now[k];
+        final bool same =
+            (a == null && b == null) ||
+            (a != null &&
+                b != null &&
+                a.length == b.length &&
+                <int>[for (int i = 0; i < a.length; i++) i]
+                    .every((int i) => a[i] == b[i]));
+        if (!same) {
+          out.add(k);
+        }
+      }
+      return out.join(', ');
+    }
+
     try {
       say('getting ready');
       // The list of the phone's apps is only read when the app list is first opened. It is
@@ -3097,6 +3143,12 @@ class _ShellState extends State<Shell>
       _sendPin();
       lensOf.setFloating(inPrism: true, overApps: true);
       BlobSlots.instance.putAll(five);
+      t.check(
+        'test store: the test\'s own menu is kept apart: your menu\'s file is as it was',
+        BlobSlots.instance.keys.join(' ') == five.join(' ') &&
+            !changedOwn().split(', ').contains('menu'),
+        'the test\'s menu in force: ${BlobSlots.instance.keys.join(' ')}; your files changed: ${changedOwn().isEmpty ? 'none' : changedOwn()}',
+      );
       if (!BlobSlots.instance.names) {
         _setNames(true);
       }
@@ -3641,6 +3693,11 @@ class _ShellState extends State<Shell>
         t.check(
           'swipes: one that was given nothing does nothing',
           !_sheetOpen && !_drawerOpen && !_open && _tab == tabWas,
+        );
+        t.check(
+          'test store: the test\'s swipes are kept apart: your swipes\' file is as it was',
+          !changedOwn().split(', ').contains('swipes'),
+          'your files changed: ${changedOwn().isEmpty ? 'none' : changedOwn()}',
         );
         for (int g = 0; g < 4; g++) {
           GestureSlots.instance.put(g, swipes[g]);
@@ -8415,21 +8472,21 @@ class _ShellState extends State<Shell>
       // Everything as it was.
       await calm();
       lensOf.onStop?.call();
-      for (int i = 0; i < keysWere.length; i++) {
-        BlobSlots.instance.keys[i] = keysWere[i];
-      }
-      BlobSlots.instance.put(0, keysWere[0]);
-      if (BlobSlots.instance.names != namesWere) {
-        _setNames(namesWere);
-      }
+      // (201) The person's own menu, labels, swipes, look and Auto's level: never written during
+      // the test, read again from their own files now. (Until 201 they were written back from what
+      // the test remembered, and a test killed half way never wrote them back at all.)
+      TestStore.end();
+      BlobSlots.instance.reload();
+      GestureSlots.instance.reload();
+      Look.instance.reload();
+      Diag.instance.reloadAuto();
+      _far.animateTo(BlobSlots.instance.names ? _reach : _reachBare);
+      _tellFan();
       lensOf.setFloating(inPrism: inWas, overApps: outWas);
       settings.showFps = fpsWas;
       settings.quality = qualityWas;
       Diag.instance.glassMode.value = glassWas;
       Diag.instance.wallpaperOn.value = lightsWas;
-      if (Look.instance.vibe != vibeWas) {
-        Look.instance.choose(vibe: vibeWas);
-      }
       settings.reduceTransparency = solidWas;
       // (The leak test's parts left out, all back; its text that changes weight, gone.)
       _leakNoSends = _leakNoLooks = false;
@@ -8442,6 +8499,36 @@ class _ShellState extends State<Shell>
       final List<String>? sideBack = sideWere;
       if (sideBack != null) {
         await t.lens(<String, Object?>{'op': 'sidekick', 'keys': sideBack});
+      }
+      // (201) Android reads the Sidekick's own menu and settings again from what it saved.
+      await RestBubble.instance.testStore(false);
+      final String changed = changedOwn();
+      t.check(
+        'test store: at the end, your menu, labels, swipes, look and glass Auto files are exactly as they were',
+        changed.isEmpty,
+        changed.isEmpty ? 'all five as they were' : 'changed: $changed',
+      );
+      t.check(
+        'test store: at the end, your menu, labels, swipes and look are back in force',
+        BlobSlots.instance.keys.join(' ') == keysWere.join(' ') &&
+            BlobSlots.instance.names == namesWere &&
+            GestureSlots.instance.keys.join(' ') == swipesBefore.join(' ') &&
+            Look.instance.vibe == vibeWas,
+        'menu ${BlobSlots.instance.keys.join(' ')} (was ${keysWere.join(' ')}); labels ${BlobSlots.instance.names} (was $namesWere); swipes ${GestureSlots.instance.keys.join(' ')} (was ${swipesBefore.join(' ')}); look ${Look.instance.vibe} (was $vibeWas)',
+      );
+      if (Platform.isAndroid && sideSavedBefore['sidekickSavedKeys'] != null) {
+        final Map<String, Object?> after = await t.lens(<String, Object?>{
+          'op': 'state',
+        });
+        t.check(
+          'test store: at the end, the Sidekick\'s saved menu and settings are exactly as they were, and in force again',
+          after['sidekickSavedKeys'] == sideSavedBefore['sidekickSavedKeys'] &&
+              after['sidekickSettingsSaved'] ==
+                  sideSavedBefore['sidekickSettingsSaved'] &&
+              after['sidekickTesting'] != true &&
+              after['settingsTesting'] != true,
+          'saved menu ${after['sidekickSavedKeys'] == sideSavedBefore['sidekickSavedKeys'] ? 'the same' : 'CHANGED'}, saved settings ${after['sidekickSettingsSaved'] == sideSavedBefore['sidekickSettingsSaved'] ? 'the same' : 'CHANGED (${after['sidekickSettingsSaved']} was ${sideSavedBefore['sidekickSettingsSaved']})'}; still kept apart ${after['sidekickTesting']}/${after['settingsTesting']}',
+        );
       }
       if (_tab != 0) {
         _go(0);

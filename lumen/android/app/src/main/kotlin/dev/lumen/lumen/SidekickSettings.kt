@@ -144,8 +144,34 @@ object SidekickSettings {
     private fun onOff(b: Boolean) = if (b) "on" else "off"
     private fun fmt(v: Float) = if (v == Math.floor(v.toDouble()).toFloat()) "${v.toInt()}" else String.format(java.util.Locale.ROOT, "%.1f", v)
 
+    /**
+     * While one of Prism's tests runs (201, the outside review's F02): changes are in force but
+     * never saved, so a test killed half way leaves the person's own settings as they were saved.
+     */
+    @Volatile var testing = false
+
+    /** A test has ended (201): the settings read again from what is saved, put in force, and Prism told. */
+    fun testEnded(context: Context) {
+        testing = false
+        loaded = false
+        load(context)
+        for (b in Floaters) b.refresh(context)
+        RestBubble.redraw()
+        RestBubble.toPrism("sidekickSettings", state(context))
+        Trail.add("Sidekick settings: a test ended, they are as saved: ${describe()}")
+    }
+
+    /** (201) What is saved now, as it is saved (Prism's panel colours left out), for the test to compare. */
+    fun savedNow(context: Context): String = try {
+        context.getSharedPreferences(STORE, Context.MODE_PRIVATE).all
+            .filterKeys { !it.startsWith("palette.") }.toSortedMap().toString()
+    } catch (e: Exception) {
+        "?"
+    }
+
     /** [now]: written before this returns (the move: Prism deletes its old files once told). */
     private fun save(context: Context, now: Boolean = false) {
+        if (testing) return
         try {
             val e = context.getSharedPreferences(STORE, Context.MODE_PRIVATE).edit()
                 .putBoolean("settingsOwn", true)

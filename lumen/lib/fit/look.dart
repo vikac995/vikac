@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart' show ThemeMode;
 
 import '../core/settings.dart';
 import '../core/theme.dart';
+import 'test_store.dart';
 
 /// Prism's look, generated from two choices: a colour and a kind of background.
 ///
@@ -71,7 +72,8 @@ class Look extends ChangeNotifier {
   int get vibe => _vibe;
   late LumenColors night = _colours(true), day = _colours(false);
 
-  File get _file {
+  /// The person's own file for the look (201: while a test runs, [_file] is the test's).
+  File get realFile {
     // Kept with the app's own files where there are any; they survive a cache clear-out.
     final Directory files = Directory(
       '${Directory.systemTemp.parent.path}/files',
@@ -79,6 +81,19 @@ class Look extends ChangeNotifier {
     return File(
       '${files.existsSync() ? files.path : Directory.systemTemp.path}/prism_look_v1',
     );
+  }
+
+  File get _file => TestStore.file(realFile);
+
+  /// A test has ended (201): the person's own look, read again from its file.
+  void reload() {
+    _hue = 38;
+    _vibe = 0;
+    _pattern = 0;
+    _strength = 1;
+    load();
+    _remake();
+    notifyListeners();
   }
 
   void load() {

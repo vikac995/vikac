@@ -1,4 +1,4 @@
-# Next after the app list: the test's own store (F02 + F34)
+# Build 201: the test's own store (F02 + F34)
 
 From the review chat (16 November 2026, 22:30 and 22:43), planning only: "Plan it as the build after the
 list. I'll give the go." Wait for the go.
@@ -33,3 +33,13 @@ list. I'll give the go." Wait for the go.
    - At the end, all three files are byte-for-byte as they began.
    - On the phone, the Sidekick's prefs are unchanged during the test.
    - The F34 settings, whatever is saved for them, are unchanged.
+
+**Its number (the lead, 17 November, 12:23, 12:50):** "after 197 (the glass), go straight on with 198
+(the Sidekick's app list), then 199 (the test-safety fix), then 200 (search), one at a time, each posted
+on the board as usual"; then the low-Sidekick bug came first (198, 199), and "the app list, the test
+store and search follow, renumbered after it": 201 is the test store, 202 search.
+
+**Found while building it:** the test also changes the person's look (its colour vibe), Auto's glass
+level (a test's heavy scenes can step it down), the pinned thing, the timer's count up or down, Prism's
+icons and the app list's density, each saved to a file of its own; and the Sidekick's app-open counts
+(200). All of them are kept apart the same way.
