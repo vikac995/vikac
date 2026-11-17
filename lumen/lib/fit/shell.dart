@@ -256,15 +256,9 @@ class _ShellState extends State<Shell>
       final int? slot = _editSlot;
       if (slot != null) {
         // Up to choose something: what closing it leads to (see [_setDrawer]).
-        if (_pickBack) {
-          return TapOutcome.closeDrawerToBack;
-        }
-        if (_isSwipe(slot)) {
-          return TapOutcome.closeDrawerToSettings;
-        }
-        if (slot != _sideSlot) {
-          return TapOutcome.closeDrawerToBlobs;
-        }
+        return _isSwipe(slot)
+            ? TapOutcome.closeDrawerToSettings
+            : TapOutcome.closeDrawerToBlobs;
       }
       return TapOutcome.closeDrawer;
     }
@@ -336,7 +330,6 @@ class _ShellState extends State<Shell>
       case TapOutcome.closeDrawer:
       case TapOutcome.closeDrawerToBlobs:
       case TapOutcome.closeDrawerToSettings:
-      case TapOutcome.closeDrawerToBack:
         _setDrawer(false);
       case TapOutcome.closePanel:
       case TapOutcome.closePanelToBlobs:
@@ -371,9 +364,7 @@ class _ShellState extends State<Shell>
     if (_panelOpen && !PanelWatch.instance.anyOpen) {
       _panelOpen = false;
     }
-    final int now = (_drawerOpen && _editSlot != _sideSlot) || _panelOpen
-        ? 2
-        : (_open ? 1 : 0);
+    final int now = _drawerOpen || _panelOpen ? 2 : (_open ? 1 : 0);
     final bool turns = BlobSign.of(Apps.instance.blobLook).turns;
     if (turns) {
       if (!_signHeld) {
@@ -561,31 +552,15 @@ class _ShellState extends State<Shell>
   bool _editing = false;
   int? _editSlot;
 
-  /// Prism's app list is up only to choose for one of the Sidekick's places, as Android asked
-  /// ("sidekickChoose"): which place, whether the new blob is to go right after it (Add), and
-  /// what is there now. The list is then only a chooser: what is chosen is sent back to
-  /// Android, which keeps the Sidekick's menu. Prism's own menu is not touched. While it is up,
-  /// [_editSlot] is [_sideSlot].
-  ({int slot, bool add, String key})? _sideAsk;
-
-  /// The place number that stands for the Sidekick's blob being chosen for, so that everything
-  /// that names or draws a blob (the list's title, the button wearing the blob) works for it as
-  /// it is. (As places 100 to 103 are the two-finger swipes.)
-  static const int _sideSlot = 200;
+  // (Until build 200 Prism's app list also came up to choose for one of the Sidekick's places,
+  // Prism brought forward for it. From 200 the Sidekick has its own list, in its panel.)
 
   /// Whether place [i] is one of the two-finger swipes.
-  static bool _isSwipe(int i) => i >= 100 && i < _sideSlot;
-
-  /// Prism came forward only to choose (for the Sidekick): once chosen, it steps back to the
-  /// app that was in front.
-  bool _pickBack = false;
+  static bool _isSwipe(int i) => i >= 100;
 
   /// The Sidekick's keys, as Android last told them: only to draw their pictures and for the
   /// flight recorder's report. Prism never changes them. (Empty until Android has said.)
   List<String> _sideKeys = const <String>[];
-
-  /// How many times Android has asked Prism to choose for the Sidekick: for the button test.
-  int _sideAsks = 0;
 
   /// Which of Prism's engines this is, as Android numbers them (0 until it has said).
   int _engineNo = 0;
@@ -844,12 +819,8 @@ class _ShellState extends State<Shell>
   void _picked(String key) {
     if (key == 'test:buttons') {
       // Not a blob: the button test, which needs the list closed and the menu as it was.
-      // (Chosen while choosing for the Sidekick, Prism's own menu is left as it is.)
-      final bool side = _editSlot == _sideSlot;
       _setDrawer(false);
-      if (!side) {
-        _rearrange(_packed());
-      }
+      _rearrange(_packed());
       Future<void>.delayed(
         const Duration(milliseconds: 900),
         () => Diag.instance.buttonTest?.call(),
@@ -857,12 +828,6 @@ class _ShellState extends State<Shell>
       return;
     }
     final int? i = _editSlot;
-    if (i == _sideSlot) {
-      // Chosen for the Sidekick: sent to Android, which puts it in the Sidekick's own menu.
-      _sideChosen(key);
-      _setDrawer(false);
-      return;
-    }
     if (i != null && _isSwipe(i)) {
       GestureSlots.instance.put(i - 100, key);
       Diag.instance.event('gesture ${GestureSlots.names[i - 100]} set');
@@ -1688,12 +1653,8 @@ class _ShellState extends State<Shell>
 
   /// The name a blob is pinned under.
   // (Places from 100 on are not blobs: they are what the two-finger swipes do, kept the same
-  // way, so that everything that draws, names or changes a blob works for them as it is.
-  // Place 200 is the Sidekick's blob being chosen for, as Android said: only read, for the
-  // list's title and for the button to wear it meanwhile.)
-  String _pinKey(int i) => i == _sideSlot
-      ? (_sideAsk == null || _sideAsk!.add ? 'empty:' : _sideAsk!.key)
-      : i >= 100
+  // way, so that everything that draws, names or changes a blob works for them as it is.)
+  String _pinKey(int i) => i >= 100
       ? GestureSlots.instance.keys[i - 100]
       : BlobSlots.instance.at(i) ??
             (_appBlobs
@@ -1942,19 +1903,6 @@ class _ShellState extends State<Shell>
     if (mounted) {
       _sidekickTold(keys);
     }
-  }
-
-  /// Something was chosen in the app list for the Sidekick's place ('empty:' for Remove):
-  /// Android is told, and puts it in the Sidekick's own menu.
-  void _sideChosen(String key) {
-    final ({int slot, bool add, String key})? ask = _sideAsk;
-    if (ask == null) {
-      return;
-    }
-    Diag.instance.event(
-      'Sidekick: $key chosen ${ask.add ? 'to add after its place ${ask.slot + 1}' : 'for its place ${ask.slot + 1}'}',
-    );
-    RestBubble.instance.sidekickChosen(slot: ask.slot, add: ask.add, key: key);
   }
 
   /// One blob as Android needs it: its name, colour and picture. Null if its app is not known yet.
@@ -2688,33 +2636,6 @@ class _ShellState extends State<Shell>
       if (call.method == 'sidekickSettings') {
         // The Sidekick's settings changed on Android, which keeps them: Prism's copy follows.
         RestBubble.instance.took(call.arguments, 'told');
-        return;
-      }
-      if (call.method == 'sidekickChoose' && mounted) {
-        // Change or Add on one of the Sidekick's blobs: Prism has come to the front with its
-        // app list, only to choose from. What is chosen is sent back to Android, which keeps
-        // the Sidekick's menu; Prism's own menu is not touched.
-        if (_sheetOpen) {
-          _closeSheet();
-        }
-        final Map<Object?, Object?> a = call.arguments as Map<Object?, Object?>;
-        if (_editing) {
-          _setEditing(false);
-        }
-        _sideAsks++;
-        _sideAsk = (
-          slot: ((a['slot'] as num?)?.toInt() ?? 0).clamp(0, _n - 1),
-          add: a['add'] == true,
-          key: (a['key'] as String?) ?? 'empty:',
-        );
-        _pickBack = a['back'] == true;
-        Diag.instance.event(
-          _sideAsk!.add
-              ? 'Sidekick: Add, Prism\'s list to choose from'
-              : 'Sidekick: Change, Prism\'s list to choose from',
-        );
-        setState(() => _editSlot = _sideSlot);
-        _setDrawer(true);
         return;
       }
       if (call.method == 'sidekickKeys' && mounted) {
@@ -4339,10 +4260,9 @@ class _ShellState extends State<Shell>
             _menuFor == null &&
             !_drawerOpen &&
             _editSlot == null &&
-            _sideAsk == null &&
             !_carrying &&
             !_parked,
-        'panel $_panelOpen/${PanelWatch.instance.anyOpen}, menu $_menuFor, list $_drawerOpen, place $_editSlot, for the Sidekick ${_sideAsk != null}, glass $_carrying/$_parked',
+        'panel $_panelOpen/${PanelWatch.instance.anyOpen}, menu $_menuFor, list $_drawerOpen, place $_editSlot, glass $_carrying/$_parked',
       );
       // The settings closed by their X. The X is brought into sight first (the panel scrolls, and
       // a tap where the X was scrolled away to lands on the panel itself). Should the panel still
@@ -5470,7 +5390,6 @@ class _ShellState extends State<Shell>
           // Down on Remove, slid onto Change, let go there: what is under the finger as it
           // lifts is not what it came down on, so nothing is done, and the small menu stays.
           final List<String> beforeSlide = stored(await where());
-          final int asksSlide = _sideAsks;
           await menu('hold', i: 1);
           s = await menu('popSlide', which: 1, to: 0, settleMs: 900);
           await Robot.wait(600);
@@ -5479,14 +5398,13 @@ class _ShellState extends State<Shell>
             s['pop'] == 1 &&
                 s['menu'] == true &&
                 stored(s).join(' ') == beforeSlide.join(' ') &&
-                _sideAsks == asksSlide &&
+                s['panelOpen'] != true &&
                 !_drawerOpen,
-            'small menu ${s['pop']}, its menu ${stored(s).join(' ')}, Prism asked ${_sideAsks - asksSlide} times',
+            'small menu ${s['pop']}, its menu ${stored(s).join(' ')}, a list open ${s['panelOpen']}',
           );
           await menu('outside', settleMs: 700);
           // Remove: done by Android alone. Over another app where there is one, so that it can be
           // seen that Prism is not brought forward for it.
-          final int asksBefore = _sideAsks;
           final List<String> sideBefore = stored(await where());
           bool over = false, left = false;
           if (t.other != null) {
@@ -5528,11 +5446,11 @@ class _ShellState extends State<Shell>
           t.check(
             over
                 ? 'sidekick: Remove over another app leaves that app in front: Prism is not brought forward'
-                : 'sidekick: Remove asks nothing of Prism',
+                : 'sidekick: Remove opens no list',
             (!over || s['fg'] == false) &&
-                _sideAsks == asksBefore &&
+                s['panelOpen'] != true &&
                 !_drawerOpen,
-            'Prism in front ${s['fg']}, asked to choose ${_sideAsks - asksBefore} times, list $_drawerOpen',
+            'Prism in front ${s['fg']}, its list open ${s['panelOpen']}, Prism\'s list $_drawerOpen',
           );
           t.check(
             'sidekick: Remove leaves Prism\'s menu as it was, and its blobs as they were',
@@ -5550,118 +5468,366 @@ class _ShellState extends State<Shell>
             await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
             await Robot.wait(900);
           }
-          // Add, closed without choosing.
-          if (await openMenu()) {
-            await menu('hold', i: 0);
-            s = await menu('pop', which: 2, settleMs: 1200);
-            await Robot.wait(1200);
-            heard(
-              'sidekick: Add brings Prism\'s list, only to choose for the place after it',
-              _drawerOpen &&
-                  _editSlot == _sideSlot &&
-                  _sideAsk?.add == true &&
-                  _sideAsk?.slot == 0,
-              'list $_drawerOpen, place $_editSlot, asked for ${_sideAsk?.slot} (add ${_sideAsk?.add})',
-            );
-            heard(
-              'sidekick: while Prism\'s list is up for it, Prism\'s triangle points down (a tap closes the list)',
-              !turns || _pointsDown(_signTurn.target),
-              'turned ${(_signTurn.target * 180 / math.pi).toStringAsFixed(0)}°, a tap would: ${_tapOutcome().name}',
-            );
-            await Robot.tap(_home, after: 1300);
-            s = await where();
-            heard(
-              'sidekick: closed without choosing, both menus are as they were and Prism\'s blobs do not open',
-              !_drawerOpen &&
-                  _sideAsk == null &&
-                  stored(s).join(' ') == afterRemove.join(' ') &&
-                  keys().join(' ') == mainBefore.join(' ') &&
-                  _open == openBefore,
-              'its menu ${stored(s).join(' ')}; Prism ${keys().join(' ')}, blobs out $_open',
+          // ---- Its own app list (200). Change and Add open it in the Sidekick's own panel, over
+          // whatever is in front: Prism is never brought forward, and Prism's own list never comes
+          // up. Here in Prism first, then over another app.
+          Future<Map<String, Object?>> list(
+            String what, {
+            String part = '',
+            int settleMs = 900,
+            int holdMs = 300,
+          }) async {
+            final Map<String, Object?> m = await t.lens(<String, Object?>{
+              'op': 'panel',
+              'what': what,
+              'part': part,
+              'settleMs': settleMs,
+              'holdMs': holdMs,
+            }, extraMs: 4000);
+            t.lensRun('its list: $what $part', m);
+            return m;
+          }
+
+          Map<Object?, Object?> chooserOf(Map<String, Object?>? m) =>
+              m != null && m['chooser'] is Map
+              ? m['chooser']! as Map<Object?, Object?>
+              : const <Object?, Object?>{};
+          List<String> strs(Object? v) => <String>[
+            for (final Object? x in (v is List ? v : const <Object?>[])) '$x',
+          ];
+          double nOf(Object? v) => v is num ? v.toDouble() : double.nan;
+          // Opens its list for held blob [i]: Change ([which] 0) or Add (2). Then waits, up to
+          // 5 s, for it to be open and to have read the apps. Null if its blobs did not open.
+          Future<Map<String, Object?>?> openList(int i, int which) async {
+            if ((await where())['menu'] != true && !await openMenu()) {
+              return null;
+            }
+            await menu('hold', i: i);
+            await menu('pop', which: which, settleMs: 500);
+            final Stopwatch w = Stopwatch()..start();
+            Map<String, Object?> m = await where();
+            while (w.elapsedMilliseconds < 5000 &&
+                (m['panelOpenFully'] != true ||
+                    chooserOf(m)['loaded'] != true)) {
+              await Robot.wait(150);
+              m = await where();
+            }
+            return m;
+          }
+
+          String listSaid(Map<String, Object?>? m) {
+            if (m == null) {
+              return 'its blobs did not open: ${whyNot()}';
+            }
+            final Map<Object?, Object?> c = chooserOf(m);
+            return 'list open ${m['panelOpen']} (fully ${m['panelOpenFully']}), '
+                '${c.isEmpty ? 'not its app list' : '"${c['title']}" (place ${c['slot']}, add ${c['adding']}), apps read ${c['loaded']}'}; '
+                'Prism in front ${m['fg']}';
+          }
+
+          // An app to pick, not already in its menu [notIn]: the first such of the most used
+          // ("pick.<key>", in the grid), or with [fromAll] of the first apps A to Z ("all.<n>",
+          // a row). Null if there is none.
+          (String, String)? fresh(
+            Map<String, Object?> m,
+            List<String> notIn, {
+            bool fromAll = false,
+          }) {
+            final Map<Object?, Object?> c = chooserOf(m);
+            if (!fromAll) {
+              for (final String k in strs(c['suggested'])) {
+                if (!notIn.contains(k)) {
+                  return ('pick.$k', k);
+                }
+              }
+            }
+            final List<String> first = strs(c['allFirst']);
+            for (int j = 0; j < first.length; j++) {
+              if (!notIn.contains(first[j])) {
+                return ('all.$j', first[j]);
+              }
+            }
+            return null;
+          }
+
+          // Clear of the bars: under the status bar, and at least 8 points above Android's bar
+          // (and in Prism, above Prism's own), as its settings are (186).
+          final ui.FlutterView v0 =
+              WidgetsBinding.instance.platformDispatcher.views.first;
+          final double statusEnd = v0.padding.top / v0.devicePixelRatio;
+          final double navStart =
+              (v0.physicalSize.height - v0.padding.bottom) /
+              v0.devicePixelRatio;
+          final double prismBar = _home.dy - _button * 0.62;
+          (bool, String) clearOfBars(Map<String, Object?> m, bool inPrism) {
+            final List<Object?> b =
+                (m['panelBox'] as List<Object?>?) ?? const <Object?>[];
+            if (b.length != 4) {
+              return (false, 'no panel box');
+            }
+            final double top = nOf(b[1]), bottom = nOf(b[1]) + nOf(b[3]);
+            final double floor =
+                (inPrism ? math.min(navStart, prismBar) : navStart) - 8;
+            return (
+              top >= statusEnd - 0.5 && bottom <= floor + 0.5,
+              'from ${top.toStringAsFixed(1)} to ${bottom.toStringAsFixed(1)}; the status bar ends at ${statusEnd.toStringAsFixed(1)}, ${inPrism ? 'Prism\'s bar from ${prismBar.toStringAsFixed(1)}, ' : ''}Android\'s from ${navStart.toStringAsFixed(1)}',
             );
           }
-          // Change, choosing the first thing.
+
+          // Add, in Prism, closed by its X.
+          Map<String, Object?>? o = await openList(0, 2);
+          Map<Object?, Object?> c = chooserOf(o);
+          final bool addUp =
+              o != null &&
+              o['panelOpen'] == true &&
+              c['adding'] == true &&
+              c['slot'] == 0 &&
+              c['title'] == 'Add a blob';
+          t.check(
+            'sidekick: Add opens its own app list in its panel, "Add a blob", for after the held blob',
+            addUp,
+            listSaid(o),
+          );
+          t.check(
+            'sidekick: its app list takes the focus (for Back) but never the keyboard',
+            o != null &&
+                o['panelFocusable'] == true &&
+                o['panelNoKeyboard'] == true,
+            'takes the focus ${o?['panelFocusable']}, keeps out of the keyboard\'s way ${o?['panelNoKeyboard']}',
+          );
+          t.check(
+            'sidekick: its app list in Prism: Prism\'s own list does not come up, and Prism\'s blobs stay as they were',
+            !_drawerOpen &&
+                _editSlot == null &&
+                keys().join(' ') == mainBefore.join(' ') &&
+                _open == openBefore,
+            'Prism\'s list $_drawerOpen, place $_editSlot; Prism ${keys().join(' ')}, blobs out $_open',
+          );
+          if (addUp) {
+            final List<String> top = strs(c['suggested']);
+            final int all = nOf(c['allCount']).isNaN
+                ? 0
+                : nOf(c['allCount']).round();
+            t.check(
+              'sidekick: its app list: "Your most used" holds 1 to 8 apps, each once and each one of "All apps"; "All apps" has each app once, a row each',
+              c['loaded'] == true &&
+                  (all == 0 ||
+                      (top.isNotEmpty &&
+                          top.length <= 8 &&
+                          top.toSet().length == top.length)) &&
+                  c['suggestedAllApps'] == true &&
+                  c['allDistinct'] == true &&
+                  c['rows'] == c['allCount'],
+              'most used ${top.length} (${top.take(3).join(' ')}…), by ${c['rankedBy']}; all apps ${c['allCount']}, each once ${c['allDistinct']}, rows ${c['rows']}',
+            );
+            t.note(
+              'the Sidekick\'s app list ranked "most used" by ${c['rankedBy'] == 'use'
+                  ? 'Android\'s usage stats'
+                  : c['rankedBy'] == 'opens'
+                  ? 'how often each was opened from Prism or the Sidekick'
+                  : 'name (neither usage stats nor opens to go by)'}; no search field yet (202)',
+            );
+            final (bool clear, String where0) = clearOfBars(o, true);
+            t.check(
+              'sidekick: its app list in Prism is clear of the bars',
+              clear,
+              where0,
+            );
+            final List<String> before = stored(o);
+            final int picks = nOf(o['chooserPicks']).round();
+            // Scrolled to the last app: the header (its title and X) stays where it was (200).
+            final List<String> atTop = strs(c['closeAt']);
+            final Map<String, Object?> end = await list(
+              'spot',
+              part: 'all.${(all - 1).clamp(0, 9999)}',
+            );
+            final Map<Object?, Object?> ce = chooserOf(end);
+            t.check(
+              'sidekick: its app list\'s header stays put: scrolled to the last app, its title and X are where they were',
+              nOf(end['panelScroll']) > 0 &&
+                  atTop.isNotEmpty &&
+                  strs(ce['closeAt']).join(',') == atTop.join(','),
+              'scrolled ${nOf(end['panelScroll']).toStringAsFixed(0)} of ${nOf(end['panelScrolls']).toStringAsFixed(0)} points; the X at ${strs(ce['closeAt']).join(',')} (was ${atTop.join(',')}); the header ${ce['pinnedH']} points tall',
+            );
+            // Its X, scrolled down: read just after, as it begins to close, then once it has.
+            final Map<String, Object?> x0 = await list(
+              'tap',
+              part: 'close',
+              settleMs: 40,
+            );
+            t.check(
+              'sidekick: its app list gives the focus back the moment it begins to close',
+              x0['panelOpen'] != true ||
+                  (x0['panelClosing'] == true &&
+                      x0['panelFocusable'] == false &&
+                      nOf(chooserOf(x0)['focusBackAfterMs']) >= 0),
+              'open ${x0['panelOpen']}, closing ${x0['panelClosing']}, its window takes the focus ${x0['panelFocusable']}, gave it back ${chooserOf(x0)['focusBackAfterMs']} ms after it opened',
+            );
+            await Robot.wait(900);
+            final Map<String, Object?> x = await where();
+            t.check(
+              'sidekick: its app list\'s X closes it, and nothing is changed',
+              x['panelOpen'] != true &&
+                  stored(x).join(' ') == before.join(' ') &&
+                  nOf(x['chooserPicks']).round() == picks,
+              'open ${x['panelOpen']}; its menu ${stored(x).join(' ')} (was ${before.join(' ')}); picks ${x['chooserPicks']} (were $picks)',
+            );
+          }
+          // Change, in Prism, picking the first of the most used (in the grid).
           List<String> afterChange = afterRemove;
-          if (await openMenu()) {
-            await menu('hold', i: 0);
-            s = await menu('pop', which: 0, settleMs: 1200);
-            await Robot.wait(1200);
-            heard(
-              'sidekick: Change brings Prism\'s list, only to choose for that blob, and the button wears it meanwhile',
-              _drawerOpen &&
-                  _editSlot == _sideSlot &&
-                  _sideAsk?.add == false &&
-                  _sideAsk?.slot == 0 &&
-                  _sideAsk?.key == afterRemove[0] &&
-                  _face.target == 1,
-              'list $_drawerOpen, place $_editSlot, asked for ${_sideAsk?.slot} ${_sideAsk?.key}, button as the blob ${_face.target}',
+          o = await openList(0, 0);
+          c = chooserOf(o);
+          final bool changeUp =
+              o != null &&
+              o['panelOpen'] == true &&
+              c['adding'] == false &&
+              c['slot'] == 0 &&
+              c['title'] == 'Change blob 1';
+          t.check(
+            'sidekick: Change opens its own app list in its panel, "Change blob 1"',
+            changeUp,
+            listSaid(o),
+          );
+          final (String, String)? one = changeUp ? fresh(o, stored(o)) : null;
+          if (one != null) {
+            final List<String> before = stored(o!);
+            final int picks = nOf(o['chooserPicks']).round();
+            // (Pressed for 0.25 s: read while the finger is down, for the pressed look, 200.)
+            final Map<String, Object?> held = await list(
+              'press',
+              part: one.$1,
+              holdMs: 250,
             );
-            final Offset? first = Robot.spot('choice0');
-            if (first != null) {
-              await seenTap(
-                'Prism\'s list: its first choice',
-                first,
-                after: 1700,
-              );
+            t.check(
+              'sidekick: an icon in its app list looks pressed while the finger is on it',
+              chooserOf(held)['pressed'] == one.$2 &&
+                  nOf(chooserOf(held)['pressedLook']) >= 0.9,
+              'pressed "${chooserOf(held)['pressed']}" (want ${one.$2}), ${nOf(chooserOf(held)['pressedLook']).toStringAsFixed(2)}',
+            );
+            await Robot.wait(900);
+            // (Its blobs come out again once Prism has sent the new one's picture: up to 1.5 s.)
+            Map<String, Object?> m = await where();
+            final Stopwatch back = Stopwatch()..start();
+            while (m['menu'] != true && back.elapsedMilliseconds < 2500) {
+              await Robot.wait(150);
+              m = await where();
             }
-            s = await where();
-            afterChange = <String>[...afterRemove]..[0] = 'action:0';
-            heard(
-              'sidekick: what was chosen is in that place of the Sidekick\'s menu, and only there',
-              stored(s).join(' ') == afterChange.join(' ') &&
-                  keys().join(' ') == mainBefore.join(' '),
-              'its menu ${stored(s).join(' ')}; Prism ${keys().join(' ')}',
+            afterChange = <String>[...before]..[0] = one.$2;
+            t.check(
+              'sidekick: one of the most used picked for Change: that blob becomes it, the list closes and its blobs come out again',
+              stored(m).join(' ') == afterChange.join(' ') &&
+                  m['panelOpen'] != true &&
+                  m['menu'] == true &&
+                  nOf(m['chooserPicks']).round() == picks + 1,
+              'its menu ${stored(m).join(' ')} (want ${afterChange.join(' ')}); list open ${m['panelOpen']}; blobs out ${m['menu']} (${m['chooserReopenMs']} ms after the pick); picks ${m['chooserPicks']} (were $picks), last ${m['chooserLastPick']}',
             );
+            t.check(
+              'sidekick: picked in its list: Prism\'s own menu and blobs are as they were, and Prism\'s list never came up',
+              keys().join(' ') == mainBefore.join(' ') &&
+                  _open == openBefore &&
+                  !_drawerOpen,
+              'Prism ${keys().join(' ')}, blobs out $_open, its list $_drawerOpen',
+            );
+            final String? late = await picturesIn(
+              'an app was picked for Change',
+            );
+            final Map<String, Object?> shown = await where();
             heard(
-              'sidekick: chosen, Prism\'s blobs do not open',
-              _open == openBefore,
-              'blobs out $_open',
+              'sidekick: Prism sends the picked app\'s picture, and the Sidekick shows it',
+              late == null &&
+                  '${shown['sideKeys']}'.split(',').contains(one.$2),
+              late ?? 'shown ${shown['sideKeys']}',
             );
             clean('after changing a Sidekick blob');
-          }
-          // Add, choosing the first thing: right after the blob that was held, and only there.
-          if (await openMenu()) {
-            await menu('hold', i: 1);
-            s = await menu('pop', which: 2, settleMs: 1200);
-            await Robot.wait(1200);
-            final Offset? first = Robot.spot('choice0');
-            if (first != null) {
-              await seenTap(
-                'Prism\'s list: its first choice',
-                first,
-                after: 1700,
-              );
-            }
-            s = await where();
-            final List<String> want = together(
-              <String>[...filled(afterChange)]..insert(2, 'action:0'),
+          } else if (changeUp) {
+            t.note(
+              'no app to pick in the Sidekick\'s list for Change: it has none',
             );
-            heard(
-              'sidekick: Add puts what was chosen right after the held blob, in the Sidekick\'s menu only',
-              stored(s).join(' ') == want.join(' ') &&
+            await list('tap', part: 'close');
+          }
+          // Add, in Prism, picking from "All apps" (a row): right after the held blob, only there.
+          o = await openList(1, 2);
+          final (String, String)? row =
+              o != null &&
+                  o['panelOpen'] == true &&
+                  chooserOf(o)['adding'] == true
+              ? fresh(o, stored(o), fromAll: true)
+              : null;
+          if (row != null) {
+            final List<String> before = stored(o!);
+            final Map<String, Object?> held = await list(
+              'press',
+              part: row.$1,
+              holdMs: 250,
+            );
+            t.check(
+              'sidekick: a row in its app list looks pressed while the finger is on it',
+              chooserOf(held)['pressed'] == row.$2 &&
+                  nOf(chooserOf(held)['pressedLook']) >= 0.9,
+              'pressed "${chooserOf(held)['pressed']}" (want ${row.$2}), ${nOf(chooserOf(held)['pressedLook']).toStringAsFixed(2)}',
+            );
+            await Robot.wait(1300);
+            final Map<String, Object?> m = await where();
+            final List<String> want = together(
+              <String>[...filled(before)]..insert(2, row.$2),
+            );
+            t.check(
+              'sidekick: an app picked from "All apps" for Add: it goes in right after the held blob, only there',
+              stored(m).join(' ') == want.join(' ') &&
+                  m['panelOpen'] != true &&
                   keys().join(' ') == mainBefore.join(' ') &&
                   _open == openBefore,
-              'its menu ${stored(s).join(' ')} (want ${want.join(' ')}); Prism ${keys().join(' ')}, blobs out $_open',
+              'its menu ${stored(m).join(' ')} (want ${want.join(' ')}); list open ${m['panelOpen']}; Prism ${keys().join(' ')}, blobs out $_open',
             );
+            await picturesIn('an app was added');
             clean('after adding a Sidekick blob');
+          } else {
+            t.check(
+              'sidekick: an app picked from "All apps" for Add: it goes in right after the held blob, only there',
+              false,
+              listSaid(o),
+            );
           }
-          // The whole way round, over another app: Change and Add bring Prism forward with its
-          // list; chosen, or the list closed without choosing, Prism steps back to that app, and
-          // the Sidekick has what was chosen (or what it had).
-          const List<String> roundTrip = <String>[
-            'sidekick: over another app, Change brings Prism forward with its list',
-            'sidekick: over another app, Change chosen: back in that app, and the Sidekick has it',
-            'sidekick: over another app, Change closed without choosing: back in that app, nothing changed',
-            'sidekick: over another app, Add brings Prism forward with its list',
-            'sidekick: over another app, Add chosen: back in that app, and the Sidekick has it after the held blob',
-            'sidekick: over another app, Add closed without choosing: back in that app, nothing changed',
+          // Closed without choosing: a tap beside it, Back, Home. (Its X is above.)
+          for (final (String how, String what, String part)
+              in <(String, String, String)>[
+                ('a tap beside it', 'tap', 'shade'),
+                ('Back', 'back', ''),
+                ('Home', 'home', ''),
+              ]) {
+            o = await openList(0, 0);
+            if (o == null || o['panelOpen'] != true) {
+              t.check(
+                'sidekick: its app list closed by $how: nothing is changed',
+                false,
+                listSaid(o),
+              );
+              continue;
+            }
+            final List<String> before = stored(o);
+            final Map<String, Object?> x = await list(what, part: part);
+            t.check(
+              'sidekick: its app list closed by $how: nothing is changed',
+              x['panelOpen'] != true &&
+                  stored(x).join(' ') == before.join(' ') &&
+                  (what != 'back' || x['backTaken'] == true),
+              'open ${x['panelOpen']}; its menu ${stored(x).join(' ')} (was ${before.join(' ')})${what == 'back' ? '; Back taken ${x['backTaken']}' : ''}',
+            );
+          }
+          clean('after the Sidekick\'s app list');
+          // Over another app: the list opens over it and Prism stays behind, all the way through.
+          const List<String> overOther = <String>[
+            'sidekick: over another app, Change opens its own list over it, and Prism stays behind',
+            'sidekick: over another app, its app list is clear of Android\'s bar',
+            'sidekick: over another app, picked for Change: that blob has it, and that app is still in front',
+            'sidekick: over another app, Add opens its own list over it, and Prism stays behind',
+            'sidekick: over another app, picked for Add: it goes in right after the held blob, and that app is still in front',
+            'sidekick: over another app, its list closed by Back: nothing is changed, and that app is still in front',
           ];
-          if (t.other == null || !lineOk) {
+          if (t.other == null) {
             skip(
-              roundTrip,
-              t.other == null
-                  ? 'none of the usual apps was found to be "another app"'
-                  : 'Android\'s line to Prism leads to Prism #$lineTo, not to this one (#$testIn)',
+              overOther,
+              'none of the usual apps was found to be "another app"',
             );
           } else {
             await t.lens(<String, Object?>{
@@ -5674,125 +5840,103 @@ class _ShellState extends State<Shell>
                 'empty:',
               ],
             });
-            await picturesIn('the round trip\'s menu was set');
-            // One trip: over the other app, the held blob's part [which] (0 Change, 2 Add),
-            // then [choose] or close the list. Answers what Android keeps afterwards, or null if
-            // the trip could not be made.
-            Future<List<String>?> trip(
-              int which,
-              bool choose,
-              String forward,
-              String back,
-            ) async {
-              Map<String, Object?> m = await t.lens(<String, Object?>{
-                'op': 'leave',
-                'pkg': otherPkg,
-              }, extraMs: 3000);
-              if (m['ok'] == false || m['fg'] != false || !await openMenu()) {
-                skip(
-                  <String>[forward, back],
-                  'the other app did not come to the front, or the Sidekick\'s blobs did not open over it',
-                );
-                if (m['ok'] != false) {
-                  await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
+            await picturesIn('the menu for over another app was set');
+            final Map<String, Object?> gone = await t.lens(<String, Object?>{
+              'op': 'leave',
+              'pkg': otherPkg,
+            }, extraMs: 3000);
+            if (gone['ok'] == false || gone['fg'] != false) {
+              skip(overOther, 'the other app did not come to the front');
+            } else {
+              // Change, picked.
+              o = await openList(0, 0);
+              final bool up1 =
+                  o != null &&
+                  o['panelOpen'] == true &&
+                  chooserOf(o)['adding'] == false &&
+                  o['fg'] == false;
+              t.check(overOther[0], up1, listSaid(o));
+              if (up1) {
+                final (bool clear, String where1) = clearOfBars(o, false);
+                t.check(overOther[1], clear, where1);
+                final (String, String)? k = fresh(o, stored(o));
+                final List<String> before = stored(o);
+                if (k != null) {
+                  await list('tap', part: k.$1, settleMs: 1300);
+                  final Map<String, Object?> m = await where();
+                  final List<String> want = <String>[...before]..[0] = k.$2;
+                  t.check(
+                    overOther[2],
+                    stored(m).join(' ') == want.join(' ') &&
+                        m['panelOpen'] != true &&
+                        m['fg'] == false,
+                    'its menu ${stored(m).join(' ')} (want ${want.join(' ')}); list open ${m['panelOpen']}; Prism in front ${m['fg']}',
+                  );
+                  await picturesIn('an app was picked over another app');
+                } else {
+                  skip(<String>[overOther[2]], 'no app to pick');
+                  await list('tap', part: 'close');
                 }
-                return null;
+              } else {
+                skip(<String>[
+                  overOther[1],
+                  overOther[2],
+                ], 'its list did not open over the other app');
               }
-              await menu('hold', i: 0);
-              await menu('pop', which: which, settleMs: 1200);
-              await Robot.wait(1500);
-              m = await where();
-              final bool up =
-                  m['fg'] == true &&
-                  _drawerOpen &&
-                  _editSlot == _sideSlot &&
-                  _sideAsk?.add == (which == 2) &&
-                  _pickBack;
-              t.check(
-                forward,
-                up,
-                'Prism in front ${m['fg']}, list $_drawerOpen, for the Sidekick ${_editSlot == _sideSlot}, steps back after $_pickBack',
-              );
-              if (!up) {
-                skip(<String>[back], 'Prism\'s list did not come up for it');
-                await calm();
-                await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
-                return null;
+              // Add, picked.
+              o = await openList(1, 2);
+              final bool up2 =
+                  o != null &&
+                  o['panelOpen'] == true &&
+                  chooserOf(o)['adding'] == true &&
+                  o['fg'] == false;
+              t.check(overOther[3], up2, listSaid(o));
+              final (String, String)? k2 = up2
+                  ? fresh(o, stored(o), fromAll: true)
+                  : null;
+              if (k2 != null) {
+                final List<String> before = stored(o!);
+                await list('tap', part: k2.$1, settleMs: 1300);
+                final Map<String, Object?> m = await where();
+                final List<String> want = together(
+                  <String>[...filled(before)]..insert(2, k2.$2),
+                );
+                t.check(
+                  overOther[4],
+                  stored(m).join(' ') == want.join(' ') &&
+                      m['panelOpen'] != true &&
+                      m['fg'] == false,
+                  'its menu ${stored(m).join(' ')} (want ${want.join(' ')}); list open ${m['panelOpen']}; Prism in front ${m['fg']}',
+                );
+                await picturesIn('an app was added over another app');
+              } else {
+                skip(
+                  <String>[overOther[4]],
+                  up2
+                      ? 'no app to pick'
+                      : 'its list did not open over the other app',
+                );
               }
-              final Offset? first = choose ? Robot.spot('choice0') : null;
-              if (choose && first != null) {
-                await seenTap(
-                  'Prism\'s list: its first choice',
-                  first,
-                  after: 2000,
+              // Change, closed by Back.
+              o = await openList(0, 0);
+              if (o != null && o['panelOpen'] == true) {
+                final List<String> before = stored(o);
+                final Map<String, Object?> x = await list('back');
+                t.check(
+                  overOther[5],
+                  x['panelOpen'] != true &&
+                      x['backTaken'] == true &&
+                      stored(x).join(' ') == before.join(' ') &&
+                      x['fg'] == false,
+                  'open ${x['panelOpen']}, Back taken ${x['backTaken']}; its menu ${stored(x).join(' ')} (was ${before.join(' ')}); Prism in front ${x['fg']}',
                 );
               } else {
-                await Robot.tap(_home, after: 2000);
+                t.check(overOther[5], false, listSaid(o));
               }
-              m = await where();
-              return <String>[
-                if (m['fg'] == false) 'away',
-                for (final Object? k
-                    in (m['sidekickKeys'] as List<Object?>?) ??
-                        const <Object?>[])
-                  '$k',
-                '|',
-                ...'${m['sideKeys']}'.split(','),
-              ];
             }
-
-            // (What a trip answers: 'away' first if Prism stepped back, then the five keys kept,
-            // then '|' and the keys shown.)
-            bool away(List<String> r) => r.isNotEmpty && r.first == 'away';
-            List<String> kept(List<String> r) => r
-                .skipWhile((String k) => k == 'away')
-                .takeWhile((String k) => k != '|')
-                .toList();
-            List<String> shownOf(List<String> r) =>
-                r.skipWhile((String k) => k != '|').skip(1).toList();
-            List<String>? r = await trip(0, true, roundTrip[0], roundTrip[1]);
-            if (r != null) {
-              t.check(
-                roundTrip[1],
-                away(r) &&
-                    kept(r).first == 'action:0' &&
-                    shownOf(r).contains('action:0'),
-                'Prism stepped back ${away(r)}; kept ${kept(r).join(' ')}; shown ${shownOf(r).join(',')}',
-              );
+            if (gone['ok'] != false) {
+              await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
             }
-            List<String> was = stored(await where());
-            r = await trip(0, false, roundTrip[0], roundTrip[2]);
-            if (r != null) {
-              t.check(
-                roundTrip[2],
-                away(r) && kept(r).join(' ') == was.join(' '),
-                'Prism stepped back ${away(r)}; kept ${kept(r).join(' ')} (was ${was.join(' ')})',
-              );
-            }
-            was = stored(await where());
-            r = await trip(2, true, roundTrip[3], roundTrip[4]);
-            if (r != null) {
-              final List<String> want = together(
-                <String>[...filled(was)]..insert(1, 'action:0'),
-              );
-              t.check(
-                roundTrip[4],
-                away(r) &&
-                    kept(r).join(' ') == want.join(' ') &&
-                    shownOf(r).length == filled(want).length,
-                'Prism stepped back ${away(r)}; kept ${kept(r).join(' ')} (want ${want.join(' ')}); shown ${shownOf(r).join(',')}',
-              );
-            }
-            was = stored(await where());
-            r = await trip(2, false, roundTrip[3], roundTrip[5]);
-            if (r != null) {
-              t.check(
-                roundTrip[5],
-                away(r) && kept(r).join(' ') == was.join(' '),
-                'Prism stepped back ${away(r)}; kept ${kept(r).join(' ')} (was ${was.join(' ')})',
-              );
-            }
-            await t.lens(<String, Object?>{'op': 'front'}, extraMs: 4000);
             await calm();
           }
         }
@@ -8860,8 +9004,6 @@ class _ShellState extends State<Shell>
     // The drawer may have been up to choose what takes a blob's place.
     final bool choosing = !v && _editSlot != null;
     final bool swipe = choosing && _isSwipe(_editSlot!);
-    // Up only to choose for the Sidekick: nothing of Prism's own menu is touched.
-    final bool side = choosing && _editSlot == _sideSlot;
     _setOpen(false);
     setState(() {
       _drawerOpen = v;
@@ -8875,25 +9017,16 @@ class _ShellState extends State<Shell>
       ..overlay = v ? '+drawer' : ''
       ..event(v ? 'drawer open' : 'drawer close');
     Haptics.settle();
-    if (choosing && !swipe && !side) {
+    if (choosing && !swipe) {
       // (A place made for "Add" and left empty: the empty ones go last again.)
       _rearrange(_packed());
     }
     if (choosing) {
-      final bool back = _pickBack;
-      _pickBack = false;
-      _sideAsk = null;
-      if (back) {
-        // Prism came forward only for this: back to the app you were in.
-        const MethodChannel('lumen/device')
-            .invokeMethod<void>('toBack')
-            .catchError((Object _) {});
-      } else if (swipe) {
+      if (swipe) {
         // A two-finger swipe was being set, from Prism's settings: back to them.
         _showFloating();
-      } else if (!side) {
-        // Chosen or not, the blobs come back out, showing what is there now. (Not after
-        // choosing for the Sidekick: Prism's own blobs stay as they were, in.)
+      } else {
+        // Chosen or not, the blobs come back out, showing what is there now.
         _setOpen(true);
       }
     }
@@ -9727,11 +9860,7 @@ class _ShellState extends State<Shell>
                                 : !_isEmpty(_editSlot!))
                         ? () {
                             final int i = _editSlot!;
-                            if (i == _sideSlot) {
-                              // The Sidekick's blob: Android takes it out of its menu.
-                              Haptics.thud();
-                              _sideChosen('empty:');
-                            } else if (_isSwipe(i)) {
+                            if (_isSwipe(i)) {
                               Haptics.thud();
                               Diag.instance.event(
                                 'gesture ${GestureSlots.names[i - 100]} cleared',
@@ -13093,9 +13222,6 @@ enum TapOutcome {
   /// The app list was up to choose a two-finger swipe: it closes and Prism's settings come back.
   closeDrawerToSettings,
 
-  /// The app list was up to choose from another app: it closes and Prism goes back to that app.
-  closeDrawerToBack,
-
   /// The magnifying glass is out, put down somewhere: it comes home.
   callGlassHome,
 
@@ -13107,11 +13233,7 @@ enum TapOutcome {
 
   /// Whether the tap leaves nothing of Prism's open: then the triangle points down.
   bool get closesAll => switch (this) {
-    closeBlobs ||
-    closeDrawer ||
-    closeDrawerToBack ||
-    callGlassHome ||
-    closePanel => true,
+    closeBlobs || closeDrawer || callGlassHome || closePanel => true,
     _ => false,
   };
 }

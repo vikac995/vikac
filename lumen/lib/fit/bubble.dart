@@ -390,22 +390,6 @@ class RestBubble with WidgetsBindingObserver {
     }
   }
 
-  /// What was chosen in the app list for the Sidekick's place [slot] ([add]: to go right after
-  /// it). Android puts it in the Sidekick's menu.
-  void sidekickChosen({
-    required int slot,
-    required bool add,
-    required String key,
-  }) {
-    _device
-        .invokeMethod<void>('sidekickChosen', <String, Object>{
-          'slot': slot,
-          'add': add,
-          'key': key,
-        })
-        .catchError((Object _) {});
-  }
-
   /// Tells Android that a panel is open in Prism (true) or not. The side Blob, which Android
   /// draws over everything, steps aside meanwhile: a tap meant for the panel must not reach it.
   void tellCovered(bool covered) {

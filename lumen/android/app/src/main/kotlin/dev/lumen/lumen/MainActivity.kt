@@ -336,6 +336,8 @@ class MainActivity : FlutterActivity() {
                     val pkg = if (a is Map<*, *>) a["package"] as String else a as String
                     val i = packageManager.getLaunchIntentForPackage(pkg)
                     if (i != null) {
+                        // (Counted, for the Sidekick's "most used" without usage access, 200.)
+                        AppChoices.opened(applicationContext, pkg)
                         // What a home screen is expected to send: bring the app's existing task forward as it was left.
                         i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
                         var opts: Bundle? = null
@@ -451,10 +453,6 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "holdMs") {
                 // How long a finger held still counts as a hold, the same in Prism as on the Sidekick.
                 result.success(Floater.holdTime().toInt())
-            } else if (call.method == "toBack") {
-                // Prism came forward only to change a Sidekick blob: it steps back to the app you were in.
-                moveTaskToBack(true)
-                result.success(null)
             } else if (call.method == "covered") {
                 // A panel is open in Prism, or none is: the side Blob steps aside meanwhile.
                 RestBubble.covered = (call.arguments as? Boolean) ?: false
@@ -500,17 +498,6 @@ class MainActivity : FlutterActivity() {
                 // Taken only if the Sidekick has none of its own yet.
                 val list = (call.arguments as? List<*>)?.map { "$it" } ?: emptyList()
                 result.success(SidekickMenu.adopt(applicationContext, list))
-            } else if (call.method == "sidekickChosen") {
-                // Chosen in Prism's app list for one of the Sidekick's places (asked for with
-                // "sidekickChoose"): that place is given it, or with "add" it goes right after it.
-                val a = call.arguments as? Map<*, *>
-                val slot = (a?.get("slot") as? Number)?.toInt() ?: -1
-                val key = (a?.get("key") as? String) ?: ""
-                if (key.isNotEmpty()) {
-                    if (a?.get("add") == true) SidekickMenu.addAfter(applicationContext, slot, key)
-                    else SidekickMenu.put(applicationContext, slot, key)
-                }
-                result.success(null)
             } else if (call.method == "pinData") {
                 // The numbers the pinned sheets show.
                 val a = call.arguments as Map<*, *>
@@ -2178,6 +2165,7 @@ class Floater(val timer: Boolean) {
             val i = context.packageManager.getLaunchIntentForPackage(b.pkg)
             if (i != null) {
                 i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                AppChoices.opened(context, b.pkg)
                 val how = launch(context, i)
                 lastTouch += "; ${b.pkg} opened $how"
                 Trail.add("$who menu: ${b.pkg} opened $how")
@@ -2253,6 +2241,12 @@ class Floater(val timer: Boolean) {
     /** Closes the lens's own menu, if it is open. */
     fun closeMenu() {
         menu?.close()
+    }
+
+    /** Its blobs out again, after a choice in its app list (200). */
+    fun openMenuAgain(context: Context) {
+        if (!guest || view == null || tucked || menu != null) return
+        openMenu(context)
     }
 
     /** The Sidekick sent away from its settings panel's "Dismiss" (193). */
@@ -2852,6 +2846,16 @@ class Floater(val timer: Boolean) {
                         "home" -> {
                             SidekickPanel.testHome()
                             watcher.postDelayed({ done(state(context)) }, num("settleMs", 700))
+                        }
+                        // (200) A part brought into sight, as a finger would scroll to it, and nothing touched.
+                        "spot" -> {
+                            if (SidekickPanel.testSpot(part) == null) return fail("no part $part in the panel")
+                            watcher.postDelayed({ done(state(context)) }, num("settleMs", 300))
+                        }
+                        // As Back would (200: its app list closes; its settings leave Back to the app).
+                        "back" -> {
+                            val took = SidekickPanel.testBack()
+                            watcher.postDelayed({ done(state(context).also { it["backTaken"] = took }) }, num("settleMs", 700))
                         }
                         // Hovering set as the dial would set it, the Sidekick going to its new place.
                         "gap" -> {
@@ -3473,37 +3477,6 @@ class Floater(val timer: Boolean) {
         tellOpened("panel")
         // (Its blobs' menu has just closed, for two of the three ways: the panel opens from where it rests.)
         watcher.postDelayed({ SidekickPanel.open(context, how) }, 60)
-    }
-
-    /**
-     * Asks Prism for something once it has come to the front: Change or Add on a Sidekick blob,
-     * or the Sidekick's settings. Until Prism answers, it is asked again a little later, for up
-     * to about three seconds. (Brought forward while Android was making its screen again, as it
-     * does after taking memory back, Prism is not listening yet the first time, and the ask was
-     * lost: Prism came forward and nothing else happened.)
-     */
-    private fun askPrism(method: String, args: Any?, tries: Int = 12) {
-        val again = Runnable { askPrism(method, args, tries - 1) }
-        val ch = channel
-        val n = channelEngine
-        if (ch == null) {
-            if (tries > 0) watcher.postDelayed(again, 250) else Trail.add("$who: $method not sent: no line to Prism")
-            return
-        }
-        if (tries == 12) Trail.add("$who: sending $method to Prism #$n")
-        try {
-            ch.invokeMethod(method, args, object : MethodChannel.Result {
-                override fun success(result: Any?) { Trail.add("$who: Prism #$n answered $method") }
-                override fun error(code: String, message: String?, details: Any?) {
-                    if (tries > 0) watcher.postDelayed(again, 250) else Trail.add("$who: Prism #$n answered $method with an error ($code)")
-                }
-                override fun notImplemented() {
-                    if (tries > 0) watcher.postDelayed(again, 250) else Trail.add("$who: Prism #$n did not answer $method (nothing listening)")
-                }
-            })
-        } catch (e: Exception) {
-            if (tries > 0) watcher.postDelayed(again, 250) else Trail.add("$who: $method to Prism #$n failed (${e.javaClass.simpleName})")
-        }
     }
 
     /** Brings Prism to the front. [train]: on the workout (for the timer); otherwise as it was. */
@@ -4635,22 +4608,18 @@ class Floater(val timer: Boolean) {
         }
 
         /**
-         * Change, or Add ([adding]: a new blob right after this one): Prism comes to the front with
-         * its app list, only to choose from. What is chosen is sent back ("sidekickChosen") and
-         * put in the Sidekick's menu here; Prism's own menu is not touched.
+         * Change, or Add ([adding]: a new blob right after this one): the Sidekick's own app list
+         * opens in its panel (200), and what is chosen there goes into the Sidekick's menu here.
+         * Prism's own menu is not touched, and Prism is not brought forward.
          */
         private fun change(i: Int, adding: Boolean = false) {
             val c = context
             haptic(c, "click")
             val slot = if (items[i].slot >= 0) items[i].slot else i
-            // What is there now, for the list's title and for Prism's button to wear meanwhile.
-            val key = SidekickMenu.keyAt(c, slot)
-            // Brought forward only for this: once chosen, Prism steps back to where you were.
-            val back = !this@Floater.foreground
+            // (200) Its own app list, in its panel, over whatever app is in front: Prism never
+            // comes forward. (Until 200 Prism came forward with its own list to choose from.)
             close()
-            openPrism(c, false)
-            // Once Prism is in front.
-            watcher.postDelayed({ askPrism("sidekickChoose", mapOf("slot" to slot, "back" to back, "add" to adding, "key" to key)) }, 220)
+            watcher.postDelayed({ SidekickPanel.openChooser(c, slot, adding) }, 200)
         }
 
         /** Dragged out of its place and let go, at this spot: it goes into the lens. */

@@ -62,8 +62,60 @@ object SidekickPanel {
         view?.follow()
     }
 
+    /** Which blob the Sidekick's own app list is for (200), and whether the choice goes in after it. */
+    class Chooser(val slot: Int, val adding: Boolean) {
+        val title get() = if (adding) "Add a blob" else "Change blob ${slot + 1}"
+    }
+
+    /**
+     * The Sidekick's own app list (200), in its panel, over whatever app is in front: Prism never
+     * comes forward. For blob [slot]: to change it, or ([adding]) to add one right after it.
+     */
+    fun openChooser(context: Context, slot: Int, adding: Boolean) {
+        val c = Chooser(slot, adding)
+        open(context, "its app list: ${c.title}", c)
+        // (Every app, ranked, read again each time; the list shows them once read.)
+        AppChoices.load(context) { view?.relayout() }
+    }
+
+    /** Chosen in its app list: that blob becomes [key], or [key] goes in right after it; the list closes and its blobs come out again. */
+    internal fun picked(context: Context, c: Chooser, key: String) {
+        val app = context.applicationContext
+        if (c.adding) SidekickMenu.addAfter(app, c.slot, key) else SidekickMenu.put(app, c.slot, key)
+        picks++
+        lastPick = "${if (c.adding) "added after blob ${c.slot + 1}" else "blob ${c.slot + 1} changed"}: $key"
+        Trail.add("Sidekick: its app list: ${lastPick}")
+        close("chosen: $key")
+        // Its blobs come out again once the list has gone back into it, and once Prism has sent
+        // the new blob's picture (an open fan keeps the blobs it opened with, and one without its
+        // picture is not shown): waited for up to 1.5 s.
+        val h = android.os.Handler(android.os.Looper.getMainLooper())
+        val from = android.os.SystemClock.uptimeMillis()
+        fun again() {
+            val waited = android.os.SystemClock.uptimeMillis() - from
+            if (SidekickMenu.hasPicture(key) || waited >= 1500) {
+                reopenWaitMs = waited
+                if (!SidekickMenu.hasPicture(key)) Trail.add("Sidekick: its blobs out again without $key's picture: Prism had not sent it after $waited ms")
+                RestBubble.openMenuAgain(app)
+            } else {
+                h.postDelayed({ again() }, 50)
+            }
+        }
+        h.postDelayed({ again() }, 320)
+    }
+
+    // (For the test: how long after the pick its blobs came out again.)
+    var reopenWaitMs = -1L
+        private set
+
+    // (For the test: how many choices were made in its app list, and the last.)
+    var picks = 0
+        private set
+    var lastPick = ""
+        private set
+
     /** Opens it beside the Sidekick ([how]: which of the three ways, for the recorder). */
-    fun open(context: Context, how: String) {
+    fun open(context: Context, how: String, chooser: Chooser? = null) {
         if (view != null) return
         val app = context.applicationContext
         if (!android.provider.Settings.canDrawOverlays(app)) return
@@ -72,12 +124,16 @@ object SidekickPanel {
             return
         }
         SidekickSettings.load(app)
-        val v = PanelView(app, lens[0], lens[1], lens[2], RestBubble.lensTucked())
+        val v = PanelView(app, lens[0], lens[1], lens[2], RestBubble.lensTucked(), chooser)
         val lp = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            // Never the focus, never the keyboard: Back and the keyboard stay the app's.
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+            // Its settings: never the focus, never the keyboard: Back and the keyboard stay the
+            // app's. Its app list (200) takes the focus while it is up, so that Back closes it,
+            // and gives it back the moment it begins to close; but never the keyboard (it has
+            // nothing to type into yet): FLAG_ALT_FOCUSABLE_IM keeps it from being the keyboard's
+            // window, so the app's keyboard, if up, is left as it is.
+            (if (chooser == null) WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE else WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM) or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             android.graphics.PixelFormat.TRANSLUCENT,
         )
@@ -97,7 +153,7 @@ object SidekickPanel {
         // back, which blinked in build 180. Beside the panel it shows through the shade's hole;
         // where the panel covers it, the panel draws it: see PanelView.drawStandIn.)
         listen(app)
-        Trail.add("Sidekick: its own settings opened ($how), never taking the focus")
+        Trail.add(if (chooser == null) "Sidekick: its own settings opened ($how), never taking the focus" else "Sidekick: $how opened in its panel, over the app in front")
     }
 
     /** Closes it, back into the Sidekick. */
@@ -113,7 +169,8 @@ object SidekickPanel {
         val r = listener
         listener = null
         if (r != null) try { v.context.applicationContext.unregisterReceiver(r) } catch (e: Exception) {}
-        Trail.add("Sidekick: its own settings gone, ${v.age()} ms after they opened ($why)")
+        if (v.isChooser) AppChoices.forget()
+        Trail.add("Sidekick: its own ${if (v.isChooser) "app list" else "settings"} gone, ${v.age()} ms after it opened ($why)")
     }
 
     // Heading for the home screen or the recent apps, or the screen going off: it closes. Android
@@ -157,7 +214,11 @@ object SidekickPanel {
 
     fun testState(): HashMap<String, Any?> {
         val v = view
-        val m = hashMapOf<String, Any?>("panelOpen" to (v != null), "panelOpened" to opened, "panelClosed" to lastClosed)
+        val m = hashMapOf<String, Any?>(
+            "panelOpen" to (v != null), "panelOpened" to opened, "panelClosed" to lastClosed,
+            // Its app list (200): how many choices were made in it, and the last.
+            "chooserPicks" to picks, "chooserLastPick" to lastPick, "chooserReopenMs" to reopenWaitMs,
+        )
         if (v != null) m.putAll(v.testState())
         return m
     }
@@ -176,6 +237,9 @@ object SidekickPanel {
 
     /** As Home or the recent apps would. */
     fun testHome() = close("Android said \"homekey\" (the test)")
+
+    /** As Back would (its app list only: false, and nothing done, for its settings). */
+    fun testBack(): Boolean = view?.backPressed() ?: false
 }
 
 /** A spring as in springs.dart: stiffness and damping ratio, mass 1. */
@@ -264,6 +328,8 @@ internal class PanelView(
     private val sy: Float,
     private val sr: Float,
     private val wasTucked: Boolean,
+    /** Set for the Sidekick's own app list (200): which blob, and whether adding after it. */
+    private val chooser: SidekickPanel.Chooser? = null,
 ) : View(context) {
     private val dp = resources.displayMetrics.density
     private val fs = resources.configuration.fontScale
@@ -391,7 +457,63 @@ internal class PanelView(
     }
 
     // ---- The contents, top to bottom, in the panel's own points (y from the panel's top, before scrolling).
-    private enum class Kind { TITLE, SWITCH, LABEL, PICKER, LOOKS, RULERS, GAP }
+    private enum class Kind { TITLE, SWITCH, LABEL, PICKER, LOOKS, RULERS, GAP, GRID, ROW, NOTE }
+
+    val isChooser get() = chooser != null
+
+    /** Its contents changed (its app list, once read): laid out again. */
+    fun relayout() {
+        if (width == 0) return
+        layoutBox()
+        invalidate()
+    }
+
+    // ---- Back (its app list only, 200: it has the focus while it is up). Closes it, unchanged.
+    private var back: Any? = null
+
+    private fun listenForBack() {
+        if (chooser == null) return
+        isFocusable = true
+        isFocusableInTouchMode = true
+        requestFocus()
+        if (Build.VERSION.SDK_INT >= 33) {
+            val cb = android.window.OnBackInvokedCallback { backPressed() }
+            back = cb
+            findOnBackInvokedDispatcher()?.registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, cb)
+        }
+    }
+
+    override fun dispatchKeyEvent(e: android.view.KeyEvent): Boolean {
+        if (chooser != null && e.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+            if (e.action == android.view.KeyEvent.ACTION_UP) backPressed()
+            return true
+        }
+        return super.dispatchKeyEvent(e)
+    }
+
+    /**
+     * Its app list closing (200): the focus goes back to the app behind at once, as the closing
+     * begins, not when the panel has gone back into the Sidekick. Its window stops taking it.
+     */
+    private fun giveFocusBack() {
+        val lp = layoutParams as? WindowManager.LayoutParams ?: return
+        if (lp.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE != 0) return
+        lp.flags = lp.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        try {
+            (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).updateViewLayout(this, lp)
+            focusBackAfterMs = age()
+        } catch (e: Exception) {}
+    }
+
+    // (For the test: how long after it opened its window stopped taking the focus; -1 if not yet.)
+    private var focusBackAfterMs = -1L
+
+    /** Back, in its app list: it closes, nothing chosen. (Its settings never have the focus, so Back is the app's.) */
+    fun backPressed(): Boolean {
+        if (chooser == null) return false
+        SidekickPanel.close("Back")
+        return true
+    }
     private class Part(val kind: Kind, val id: String, val label: String, val h: Float, val options: List<String> = emptyList()) {
         var y = 0f
     }
@@ -405,6 +527,17 @@ internal class PanelView(
         parts.clear()
         fun gap(h: Float) = parts.add(Part(Kind.GAP, "", "", h * dp))
         fun label(t: String, id: String = "") = parts.add(Part(Kind.LABEL, id, t, 20 * dp * fs))
+        if (chooser != null) {
+            layOutChooser(::gap, ::label)
+            var y = pad
+            for (p in parts) {
+                p.y = y
+                y += p.h
+            }
+            contentH = y + pad
+            scroll = scroll.coerceIn(0f, maxScroll())
+            return
+        }
         // (From build 187 the spacing is tighter: 10 points between sections, 6 from a section's
         // name to its control, 8 under the title. That brings the dials 40 points up, so that on the
         // S25, where the panel ends above Prism's bar, both are on the screen with room to spare.
@@ -445,9 +578,115 @@ internal class PanelView(
         scroll = scroll.coerceIn(0f, maxScroll())
     }
 
+    // ---- The Sidekick's own app list (200): "Change blob N" or "Add a blob", the most used as a
+    // grid of four across, then every app A to Z, one to a row. As in the approved mock-up
+    // ("most-used first").
+    private fun gridCellH() = (42 + 6) * dp + 16 * dp * fs
+
+    private fun layOutChooser(gap: (Float) -> Boolean, label: (String, String) -> Boolean) {
+        val c = chooser ?: return
+        parts.add(Part(Kind.TITLE, "close", c.title, 44 * dp))
+        gap(8f)
+        if (!AppChoices.loaded) {
+            parts.add(Part(Kind.NOTE, "", "Finding your apps…", 40 * dp))
+            return
+        }
+        val top = AppChoices.suggested
+        if (top.isNotEmpty()) {
+            label("Your most used", "")
+            gap(8f)
+            val rows = (top.size + 3) / 4
+            parts.add(Part(Kind.GRID, "suggested", "", rows * gridCellH() + (rows - 1) * 10 * dp, top.map { it.key }))
+            gap(14f)
+        }
+        label("All apps", "")
+        gap(4f)
+        for (a in AppChoices.all) parts.add(Part(Kind.ROW, a.key, a.label, 44 * dp, listOf(a.pkg)))
+    }
+
+    private fun choiceOf(key: String): Choice? =
+        AppChoices.all.firstOrNull { it.key == key } ?: AppChoices.suggested.firstOrNull { it.key == key }
+
+    /** Where suggestion [i] is, in the contents. */
+    private fun gridCell(p: Part, i: Int): RectF {
+        val w = innerW / 4f
+        val col = i % 4
+        val row = i / 4
+        val left = pad + col * w
+        val top = p.y + row * (gridCellH() + 10 * dp)
+        return RectF(left, top, left + w, top + gridCellH())
+    }
+
+    private fun drawIcon(canvas: Canvas, pkg: String, x: Float, y: Float, size: Float) {
+        val bmp = if (pkg.isEmpty()) null else AppChoices.icon(context, pkg, size.toInt()) { postInvalidateOnAnimation() }
+        if (bmp != null) {
+            canvas.drawBitmap(bmp, x, y, null)
+        } else {
+            paint.style = Paint.Style.FILL
+            paint.color = alpha(cInk, 0.08f)
+            canvas.drawRoundRect(x, y, x + size, y + size, size * 0.28f, size * 0.28f, paint)
+        }
+    }
+
+    private fun fit(s: String, size: Float, weight: Int, width: Float): String {
+        if (measure(s, size, weight) <= width) return s
+        var n = s.length
+        while (n > 1 && measure(s.substring(0, n) + "…", size, weight) > width) n--
+        return s.substring(0, n) + "…"
+    }
+
+    // The pick under the finger ("pick.<key>"), and how pressed it looks (0 to 1).
+    private var pressedPick = ""
+    private fun pickPressed(key: String) = if (pressedPick == "pick.$key") (presses["pick"]?.value ?: 0f).coerceIn(0f, 1f) else 0f
+
+    private fun drawGrid(canvas: Canvas, p: Part) {
+        for ((i, key) in p.options.withIndex()) {
+            val c = choiceOf(key) ?: continue
+            val cell = gridCell(p, i)
+            val icon = 42 * dp
+            val down = pickPressed(key)
+            if (down > 0f) {
+                paint.style = Paint.Style.FILL
+                paint.color = alpha(cInk, 0.08f * down)
+                canvas.drawRoundRect(cell.left + 2 * dp, cell.top - 4 * dp, cell.right - 2 * dp, cell.bottom + 2 * dp, 12 * dp, 12 * dp, paint)
+            }
+            canvas.save()
+            val k = 1f - 0.06f * down
+            canvas.scale(k, k, cell.centerX(), cell.top + icon / 2)
+            drawIcon(canvas, c.pkg, cell.centerX() - icon / 2, cell.top, icon)
+            canvas.restore()
+            val name = fit(c.label, 11f, 560, cell.width() - 4 * dp)
+            drawText(canvas, name, cell.centerX(), cell.top + icon + 6 * dp + 12 * dp * fs, 11f, 560, cInkMuted, center = true)
+        }
+    }
+
+    private fun drawRow(canvas: Canvas, p: Part) {
+        val icon = 28 * dp
+        val down = pickPressed(p.id)
+        if (down > 0f) {
+            paint.style = Paint.Style.FILL
+            paint.color = alpha(cInk, 0.08f * down)
+            canvas.drawRoundRect(pad - 8 * dp, p.y + 2 * dp, pad + innerW + 8 * dp, p.y + p.h - 2 * dp, 10 * dp, 10 * dp, paint)
+        }
+        canvas.save()
+        val k = 1f - 0.06f * down
+        canvas.scale(k, k, pad + icon / 2, p.y + p.h / 2)
+        drawIcon(canvas, p.options.firstOrNull() ?: "", pad, p.y + (p.h - icon) / 2, icon)
+        canvas.restore()
+        val name = fit(p.label, 14f, 560, innerW - icon - 12 * dp)
+        drawText(canvas, name, pad + icon + 12 * dp, p.y + p.h / 2 + 5 * dp * fs, 14f, 560, cInk)
+    }
+
     private fun lookRows() = (looks.size + 2) / 3
     private fun lookCellH() = (66 + 6 + 17 * fs) * dp
     private fun maxScroll() = Math.max(0f, contentH - box.height())
+
+    /** Its app list's header, which stays put (200): from the panel's top to under its title. 0 for its settings. */
+    private fun pinnedH(): Float {
+        if (chooser == null) return 0f
+        val t = parts.firstOrNull { it.kind == Kind.TITLE } ?: return 0f
+        return t.y + t.h + 4 * dp
+    }
 
     // ---- What each control is doing (springs and values).
     private val g = Spring(Springs.snappy.first, Springs.snappy.second)          // 0 shut, 1 open
@@ -490,11 +729,15 @@ internal class PanelView(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        listenForBack()
         run()
     }
 
     override fun onDetachedFromWindow() {
         running = false
+        if (Build.VERSION.SDK_INT >= 33) {
+            (back as? android.window.OnBackInvokedCallback)?.let { findOnBackInvokedDispatcher()?.unregisterOnBackInvokedCallback(it) }
+        }
         super.onDetachedFromWindow()
     }
 
@@ -511,7 +754,8 @@ internal class PanelView(
             holdP = 0f
             holdEnded = "the panel closed"
         }
-        Trail.add("Sidekick: its own settings closing, ${age()} ms after they opened: $reason")
+        if (chooser != null) giveFocusBack()
+        Trail.add("Sidekick: its own ${if (chooser != null) "app list" else "settings"} closing, ${age()} ms after it opened: $reason")
         endRuler(save = true, back = false, why = "let go as the panel closed")
         removeCallbacks(settle)
         settling = false
@@ -733,7 +977,27 @@ internal class PanelView(
             canvas.translate(-box.left, -box.top)
             val layer = canvas.saveLayerAlpha(box.left, box.top, box.right, box.bottom, (a * 255).toInt())
             canvas.translate(box.left, box.top - scroll)
-            for (p in parts) drawPart(canvas, p)
+            if (chooser == null) {
+                for (p in parts) drawPart(canvas, p)
+            } else {
+                // Its app list (200): the header stays put, and only the lists scroll, under it.
+                // (Only what is in sight: it has a row for every app.)
+                val head = pinnedH()
+                canvas.save()
+                canvas.clipRect(0f, scroll + head, box.width(), scroll + box.height())
+                for (p in parts) if (p.kind != Kind.TITLE && p.y + p.h >= scroll + head && p.y <= scroll + box.height()) drawPart(canvas, p)
+                canvas.restore()
+                canvas.save()
+                canvas.translate(0f, scroll)
+                parts.firstOrNull { it.kind == Kind.TITLE }?.let { drawPart(canvas, it) }
+                if (scroll > 0.5f) {
+                    // (A hairline under the header once the lists have scrolled under it.)
+                    paint.style = Paint.Style.FILL
+                    paint.color = cHairline
+                    canvas.drawRect(0f, head - 1 * dp, box.width(), head, paint)
+                }
+                canvas.restore()
+            }
             canvas.restoreToCount(layer)
             canvas.restore()
         }
@@ -987,6 +1251,8 @@ internal class PanelView(
 
     /** How much it shows (0 to 1): with the panel's opening and closing, and not while a dial is held. */
     private fun pillShows(): Float {
+        // (Not in its app list, 200: its header is only its title and the X, and nothing else.)
+        if (chooser != null) return 0f
         val open = smooth(((g.value - 0.05f) / 0.35f).coerceIn(0f, 1f))
         return open * (1f - clear.value.coerceIn(0f, 1f))
     }
@@ -1096,6 +1362,9 @@ internal class PanelView(
             }
             Kind.PICKER -> drawPicker(canvas, p, x0, y)
             Kind.LOOKS -> drawLooks(canvas, x0, y)
+            Kind.GRID -> drawGrid(canvas, p)
+            Kind.ROW -> drawRow(canvas, p)
+            Kind.NOTE -> drawText(canvas, p.label, x0, y + 24 * dp, 14f, 500, cInkMuted)
             Kind.RULERS -> if (!heldApart(p)) drawRulers(canvas, x0, y)
         }
     }
@@ -1278,14 +1547,21 @@ internal class PanelView(
         }
         if (!box.contains(x, y)) return "shade"
         val cx = x - box.left
-        val cy = y - box.top + scroll
+        // (Its app list's header stays put, 200: a touch on it is never on the lists under it.)
+        val onHead = chooser != null && y - box.top < pinnedH()
+        val cy = if (onHead) y - box.top else y - box.top + scroll
         for (p in parts) {
+            if (chooser != null && (p.kind == Kind.TITLE) != onHead) continue
             if (cy < p.y || cy > p.y + p.h) continue
             when (p.kind) {
                 Kind.TITLE -> {
                     val bx = pad + innerW - 22 * dp
                     if (Math.hypot((cx - bx).toDouble(), (cy - p.y - 22 * dp).toDouble()) < 28 * dp) return "close"
                 }
+                Kind.GRID -> {
+                    for (i in p.options.indices) if (gridCell(p, i).contains(cx, cy)) return "pick.${p.options[i]}"
+                }
+                Kind.ROW -> return "pick.${p.id}"
                 Kind.SWITCH -> return p.id
                 Kind.PICKER -> {
                     val i = ((cx - pad - 3 * dp) / ((innerW - 6 * dp) / p.options.size)).toInt().coerceIn(0, p.options.size - 1)
@@ -1336,6 +1612,12 @@ internal class PanelView(
                 target = hit(e.x, e.y)
                 if (target.startsWith("ruler.")) startRuler(target.removePrefix("ruler."))
                 if (target == "dismiss") startHold()
+                if (target.startsWith("pick.")) {
+                    // (200) Pressed: dimmed and a little smaller in the very next frame.
+                    pressedPick = target
+                    presses.getOrPut("pick") { Spring(Springs.spatialFast.first, Springs.spatialFast.second) }.jump(1f)
+                    invalidate()
+                }
                 if (target == "inApp" || target == "overApps") {
                     presses[target]?.to(1f, 12f)
                     run()
@@ -1405,7 +1687,15 @@ internal class PanelView(
                 haptic("tick")
                 SidekickPanel.close("its X")
             }
-            // (A tap on "Hold to dismiss" only starts the fill, which drains back: it is held, 195.)
+            id.startsWith("pick.") -> {
+                // (200) The blob becomes it (Change), or it goes in right after (Add). The list
+                // closes, and the Sidekick's blobs come out again with it.
+                val c = chooser ?: return
+                val key = id.removePrefix("pick.")
+                haptic("click")
+                SidekickPanel.picked(context, c, key)
+            }
+            // (A tap on "Dismiss" only starts the fill, which drains back: it is held, 195.)
             id == "dismiss" -> {}
             id == "inApp" || id == "overApps" -> {
                 val v = !switchValue(id)
@@ -1633,6 +1923,8 @@ internal class PanelView(
         "panelWasTucked" to wasTucked,
         "panelFrom" to listOf(sx / dp, sy / dp, sr / dp).map { it.toDouble() },
         "panelFocusable" to ((layoutParams as? WindowManager.LayoutParams)?.flags?.and(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) == 0),
+        // (200) Whether its window keeps out of the keyboard's way (its app list: the app keeps its keyboard).
+        "panelNoKeyboard" to ((layoutParams as? WindowManager.LayoutParams)?.flags?.and(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM) != 0),
         "panelFontScale" to fs.toDouble(),
         "panelHole" to listOf((lensX() + origin[0]) / dp, (lensY() + origin[1]) / dp).map { it.toDouble() },
         // What the panel last drew: how many frames so far, its rectangle, whether it lay over the
@@ -1701,6 +1993,33 @@ internal class PanelView(
                     Math.max(0f, Math.min(b.bottom, box.bottom) - Math.max(b.top, box.top)) / dp,
                 ).map { it.toDouble() },
                 "onRight" to onRight,
+            )
+        },
+        // Its app list (200): which blob it is for, and what it offers (null for its settings).
+        "chooser" to chooser?.let { c ->
+            val all = AppChoices.all.map { it.key }
+            val top = AppChoices.suggested.map { it.key }
+            hashMapOf(
+                "title" to c.title,
+                "slot" to c.slot,
+                "adding" to c.adding,
+                "loaded" to AppChoices.loaded,
+                "rankedBy" to AppChoices.rankedBy,
+                "suggested" to top,
+                "suggestedAllApps" to top.all { it in all },
+                "allCount" to all.size,
+                "allDistinct" to (all.toSet().size == all.size),
+                "allFirst" to all.take(6),
+                "rows" to parts.count { it.kind == Kind.ROW },
+                "search" to false,
+                // The header that stays put: how tall, and where its X is now (on the screen, in points).
+                "pinnedH" to (pinnedH() / dp).toDouble(),
+                "closeAt" to (parts.firstOrNull { it.kind == Kind.TITLE }?.let { t ->
+                    listOf((box.left + pad + innerW - 22 * dp + origin[0]) / dp, (box.top + t.y + 22 * dp + origin[1]) / dp).map { it.toDouble() }
+                } ?: emptyList<Double>()),
+                "pressed" to (if ((presses["pick"]?.value ?: 0f) > 0.01f) pressedPick.removePrefix("pick.") else ""),
+                "pressedLook" to (presses["pick"]?.value ?: 0f).toDouble(),
+                "focusBackAfterMs" to focusBackAfterMs,
             )
         },
         "panelCarriedOn" to carriedOn,
@@ -1911,17 +2230,70 @@ internal class PanelView(
         return m
     }
 
+    /**
+     * In its app list (200): "suggested.N" (the Nth of the most used), "all.N" (the Nth app A to Z)
+     * or "pick.<key>" (that one: among the most used if it is there, otherwise its row). Brought
+     * into sight first, as a finger would scroll to it. Null if there is no such thing.
+     */
+    private fun chooserSpot(id: String): FloatArray? {
+        if (chooser == null) return null
+        val grid = parts.firstOrNull { it.kind == Kind.GRID }
+        val rows = parts.filter { it.kind == Kind.ROW }
+        val local: FloatArray = when {
+            id.startsWith("suggested.") -> {
+                val i = id.removePrefix("suggested.").toIntOrNull() ?: return null
+                if (grid == null || i !in grid.options.indices) return null
+                gridCell(grid, i).let { floatArrayOf(it.centerX(), it.top + 21 * dp) }
+            }
+            id.startsWith("all.") -> {
+                val i = id.removePrefix("all.").toIntOrNull() ?: return null
+                val r = rows.getOrNull(i) ?: return null
+                floatArrayOf(pad + innerW / 2, r.y + r.h / 2)
+            }
+            id.startsWith("pick.") -> {
+                val key = id.removePrefix("pick.")
+                val i = grid?.options?.indexOf(key) ?: -1
+                if (grid != null && i >= 0) {
+                    gridCell(grid, i).let { floatArrayOf(it.centerX(), it.top + 21 * dp) }
+                } else {
+                    val r = rows.firstOrNull { it.id == key } ?: return null
+                    floatArrayOf(pad + innerW / 2, r.y + r.h / 2)
+                }
+            }
+            else -> return null
+        }
+        return inSight(local)
+    }
+
+    /** [local] (in the contents) on the screen, scrolled into sight first. */
+    private fun inSight(local: FloatArray): FloatArray {
+        val visTop = scroll + pinnedH() + 12 * dp
+        val visBottom = scroll + box.height() - 12 * dp
+        if (local[1] < visTop || local[1] > visBottom) {
+            scroll = (local[1] - (pinnedH() + box.height()) / 2).coerceIn(0f, maxScroll())
+            invalidate()
+        }
+        return floatArrayOf(box.left + local[0] + origin[0], box.top + local[1] - scroll + origin[1])
+    }
+
     fun testSpot(id: String): FloatArray? {
         // (196) "Hold to dismiss", under the Sidekick: on the screen, as it is.
         if (id == "dismiss" || id == "close.dismiss") {
+            if (chooser != null) return null
             pillAt(lensX(), lensY(), pillBox)
             return floatArrayOf(pillBox.centerX() + origin[0], pillBox.centerY() + origin[1])
+        }
+        // (Its app list's X stays put with its header, 200.)
+        if (chooser != null && id == "close") {
+            val t = parts.firstOrNull { it.kind == Kind.TITLE } ?: return null
+            return floatArrayOf(box.left + pad + innerW - 22 * dp + origin[0], box.top + t.y + 22 * dp + origin[1])
         }
         if (id == "shade") {
             // Beside the panel, away from the Sidekick: high up on the far side.
             val x = if (onRight) Math.min(width - 4 * dp, box.right + 20 * dp) else Math.max(4 * dp, box.left - 20 * dp)
             return floatArrayOf(x + origin[0], box.top + 30 * dp + origin[1])
         }
+        chooserSpot(id)?.let { return it }
         val (part, sub) = if (id.contains('.')) id.substringBefore('.') to id.substringAfter('.') else id to ""
         val p = parts.firstOrNull { it.id == part || (part == "look" && it.kind == Kind.LOOKS) || (part == "ruler" && it.kind == Kind.RULERS) } ?: return null
         val local: FloatArray = when (p.kind) {
@@ -1945,12 +2317,6 @@ internal class PanelView(
             else -> return null
         }
         // Brought into sight first, as a finger would scroll to it.
-        val visTop = scroll + 12 * dp
-        val visBottom = scroll + box.height() - 12 * dp
-        if (local[1] < visTop || local[1] > visBottom) {
-            scroll = (local[1] - box.height() / 2).coerceIn(0f, maxScroll())
-            invalidate()
-        }
-        return floatArrayOf(box.left + local[0] + origin[0], box.top + local[1] - scroll + origin[1])
+        return inSight(local)
     }
 }

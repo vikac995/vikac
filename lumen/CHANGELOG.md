@@ -1,5 +1,22 @@
 # Lumen changelog
 
+## Prism, build 200 (17 November 2026)
+
+**File:** `releases/prism-build-200.apk`
+
+Needs Play Protect paused to install. Can be installed over build 199.
+
+**The Sidekick has its own app list.** Hold one of its blobs and tap **Change** or **Add**: the list opens right there beside the Sidekick, over whatever app you're in. Prism doesn't come to the front any more.
+- **At the top, "Your most used":** your 8 most-used apps as icons. They're ranked by how long you've used each lately, where Prism can see that (it can, for screen time); otherwise by how often you open them from Prism or the Sidekick; otherwise A to Z.
+- **Under it, "All apps":** every app, A to Z, one to a row. The header with the ✕ stays put while you scroll.
+- **Tap one:** it dims as your finger lands. That blob becomes it (Change), or it's added right after the blob you held (Add). The list closes, and the Sidekick's blobs come back out with the change.
+- **To close it without changing anything:** the ✕, a tap beside it, Back, or Home.
+- **The app behind** keeps its keyboard, and a video in it should keep playing.
+- **Search comes in the next build,** with the keyboard.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 199 (17 November 2026)
 
 **File:** `releases/prism-build-199.apk`

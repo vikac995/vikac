@@ -131,9 +131,32 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   request where another touchable window lies over it, and these cover the whole screen): its window
   and 24 points above and below, from the edge, at least 80 points wide.
 - **The button never goes bare.** With an empty menu it keeps its look, in the light's own colours.
-- **Change** opens the list titled "Change ..." with a red Remove in it; while it is up, the button
-  becomes the blob being changed, and goes back after.
-- **The Sidekick never takes the keyboard or the focus** of the app underneath.
+- **Change** (Prism's) opens the list titled "Change ..." with a red Remove in it; while it is up, the
+  button becomes the blob being changed, and goes back after.
+- **The Sidekick's Change and Add open its own app list** (from 200; the owner's mock-up
+  https://claude.ai/artifact/2UGwZ9VXNnKCtUcm2BuGkX, "most-used first"), **in its own panel**, over
+  whatever app is in front. **Prism is never brought forward for it, and Prism's list never comes up**
+  (until 200 Prism came forward with its list).
+  - **Its place and motion** are its settings panel's: the same width and side, the same rules for
+    the bars, the same opening out of the Sidekick and closing back into it.
+  - **Top to bottom:** "Change blob N" or "Add a blob", and the ✕ (no "Dismiss" here); **"Your most
+    used"**: up to 8 apps, four across, each a 42-point icon with its name under it; **"All apps"**:
+    every app on the home screen, A to Z, one to a row, a 28-point icon and its name.
+  - **Its header stays put:** only the two lists scroll, under it, with a hairline under the header
+    once they have.
+  - **Pressed, a row or an icon dims and shrinks a little in the very next frame** (the owner's
+    "feedback in one frame"); a finger that starts to scroll lets it go.
+  - **"Most used"** is by time in front over the last 14 days (Android's usage stats, where Prism may
+    read them), otherwise by how often each was opened from Prism or the Sidekick, otherwise A to Z.
+    Each thing in it is a general item (its kind, key, name and icon), so that Prism's own actions
+    and screens can join it later.
+  - **A tap on one:** that blob becomes it (Change), or it goes in right after the held blob (Add).
+    The list closes, and the Sidekick's blobs come out again with the change.
+  - **Closed without a change by:** its ✕, a tap beside it, Back, or Home.
+  - **Search** (a field between the two parts, with the keyboard) comes in 202.
+- **The Sidekick never takes the keyboard or the focus** of the app underneath, except while its app
+  list is up (from 200): that takes the focus, so that Back closes it, and gives it back the moment it
+  begins to close. It never takes the keyboard: the app's keyboard, if up, is left as it is.
 - **The Sidekick is sent away only from its settings panel** (the owner's decision, from 193): hold
   it, and while its panel is open a **"Hold to dismiss"** pill sits just under the Sidekick's glass
   (from 196; in the panel's header in 193 to 195). **It is held, not tapped** (from 195, the owner's

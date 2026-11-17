@@ -162,6 +162,9 @@ object SidekickMenu {
         show()
     }
 
+    /** Whether Prism has sent [key]'s picture (a blob is shown only once it has). */
+    fun hasPicture(key: String) = pictures.containsKey(key)
+
     /** For the button test only: the menu set as it asks, to be put back as it was afterwards. */
     fun testPut(context: Context, from: List<String>) {
         load(context)
