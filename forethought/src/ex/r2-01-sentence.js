@@ -3,7 +3,7 @@ FT.exhibit({
   id: 'sentence-form', room: 2, num: 1, kind: 'form', replaces: 'a stack of labelled fields',
   title: 'A form that reads like a sentence',
   hint: 'Tap a blue word for choices · drag a solid one sideways',
-  height: 420,
+  height: 390,
   body: `<p>The booking form is one sentence. Each blue word is a field. Tap it and its choices open right underneath. Drag a number or a time sideways and it counts like a dial. As words change length, the rest of the sentence slides into place instead of jumping.</p><p>You read the whole request before you send it, in the same words you'd say to a waiter.</p>`,
   why: `Labels and fields are two things to read for every one answer. A sentence makes the label and the value one thing, and the finished form doubles as its own confirmation.`,
   source: `the Vast.com A/B test, where a fill-in-the-blank contact form converted 25–40% better than the field stack, <a href="https://konigi.com/blog/mad-libs-style-form-increases-conversion-25-40" target="_blank" rel="noopener">reported by Luke Wroblewski (2010)</a>.`,

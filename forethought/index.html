@@ -2486,7 +2486,7 @@ FT.exhibit({
   id: 'sentence-form', room: 2, num: 1, kind: 'form', replaces: 'a stack of labelled fields',
   title: 'A form that reads like a sentence',
   hint: 'Tap a blue word for choices · drag a solid one sideways',
-  height: 420,
+  height: 390,
   body: `<p>The booking form is one sentence. Each blue word is a field. Tap it and its choices open right underneath. Drag a number or a time sideways and it counts like a dial. As words change length, the rest of the sentence slides into place instead of jumping.</p><p>You read the whole request before you send it, in the same words you'd say to a waiter.</p>`,
   why: `Labels and fields are two things to read for every one answer. A sentence makes the label and the value one thing, and the finished form doubles as its own confirmation.`,
   source: `the Vast.com A/B test, where a fill-in-the-blank contact form converted 25–40% better than the field stack, <a href="https://konigi.com/blog/mad-libs-style-form-increases-conversion-25-40" target="_blank" rel="noopener">reported by Luke Wroblewski (2010)</a>.`,
@@ -3092,7 +3092,7 @@ class LandmarkScrollPhysics extends BouncingScrollPhysics {
     final natural = super.createBallisticSimulation(m, velocity);
     if (natural == null || m.outOfRange) return natural;
     final end = natural.x(double.infinity);                   // where friction would stop
-    final pull = math.max(70.0, (end - m.pixels).abs() * .22); // farther flings snap from farther
+    final pull = math.max(90.0, (end - m.pixels).abs() * .3);  // farther flings snap from farther
     final target = landmarks
         .where((l) => (l - end).abs() < pull)
         .fold<double?>(null, (b, l) => b == null || (l - end).abs() < (b - end).abs() ? l : b);
@@ -3243,7 +3243,7 @@ class LandmarkScrollPhysics extends BouncingScrollPhysics {
       if (y < 0 || y > maxY) { springTo(FT.clamp(y, 0, maxY)); FT.intent('pulled past the end: spring back'); return; }
       if (Math.abs(v) < 90) { FT.intent('released slowly: stays where you left it'); return; }
       const natural = FT.clamp(y + FT.project(v), 0, maxY);
-      const pull = Math.max(70, Math.abs(natural - y) * 0.22);
+      const pull = Math.max(90, Math.abs(natural - y) * 0.3);
       let best = null;
       for (const m of marks) {
         if (Math.sign(m.top - y) !== Math.sign(v) && Math.abs(m.top - y) > 2) continue; // never snap backwards against the fling
@@ -3584,7 +3584,8 @@ class _SketchQueryState extends State<SketchQuery> {
   mount(stage) {
     const { h } = FT;
     stage.append(h('style', { text: `
-      .sk-root{position:absolute;inset:0;padding:14px 16px 12px;display:flex;flex-direction:column;gap:9px}
+      .sk-root{position:absolute;inset:0;padding:14px 16px 12px;display:flex;flex-direction:column;gap:9px;container-type:inline-size}
+      @container (max-width: 390px){.sk-head .ft-label{display:none}}
       .sk-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 2px}
       .sk-head b{font-size:14.5px}
       .sk-pad{position:relative;height:128px;flex:none;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);box-shadow:var(--shadow);cursor:crosshair}

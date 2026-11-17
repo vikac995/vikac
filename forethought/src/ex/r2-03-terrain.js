@@ -22,7 +22,7 @@ class LandmarkScrollPhysics extends BouncingScrollPhysics {
     final natural = super.createBallisticSimulation(m, velocity);
     if (natural == null || m.outOfRange) return natural;
     final end = natural.x(double.infinity);                   // where friction would stop
-    final pull = math.max(70.0, (end - m.pixels).abs() * .22); // farther flings snap from farther
+    final pull = math.max(90.0, (end - m.pixels).abs() * .3);  // farther flings snap from farther
     final target = landmarks
         .where((l) => (l - end).abs() < pull)
         .fold<double?>(null, (b, l) => b == null || (l - end).abs() < (b - end).abs() ? l : b);
@@ -173,7 +173,7 @@ class LandmarkScrollPhysics extends BouncingScrollPhysics {
       if (y < 0 || y > maxY) { springTo(FT.clamp(y, 0, maxY)); FT.intent('pulled past the end: spring back'); return; }
       if (Math.abs(v) < 90) { FT.intent('released slowly: stays where you left it'); return; }
       const natural = FT.clamp(y + FT.project(v), 0, maxY);
-      const pull = Math.max(70, Math.abs(natural - y) * 0.22);
+      const pull = Math.max(90, Math.abs(natural - y) * 0.3);
       let best = null;
       for (const m of marks) {
         if (Math.sign(m.top - y) !== Math.sign(v) && Math.abs(m.top - y) > 2) continue; // never snap backwards against the fling

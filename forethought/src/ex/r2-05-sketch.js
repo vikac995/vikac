@@ -43,7 +43,8 @@ class _SketchQueryState extends State<SketchQuery> {
   mount(stage) {
     const { h } = FT;
     stage.append(h('style', { text: `
-      .sk-root{position:absolute;inset:0;padding:14px 16px 12px;display:flex;flex-direction:column;gap:9px}
+      .sk-root{position:absolute;inset:0;padding:14px 16px 12px;display:flex;flex-direction:column;gap:9px;container-type:inline-size}
+      @container (max-width: 390px){.sk-head .ft-label{display:none}}
       .sk-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:0 2px}
       .sk-head b{font-size:14.5px}
       .sk-pad{position:relative;height:128px;flex:none;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);box-shadow:var(--shadow);cursor:crosshair}
