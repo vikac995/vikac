@@ -83,7 +83,7 @@ long test:    CHECKS: 68 right, 3 wrong, of 71 (the usual 3, all "measured: no a
 - **Its `libapp.so` has:** "Prism build 201", "The test's own store", `prism_test_running` and the new
   checks.
 - sha256 `64c8b95a989bfe8fce4ef2e88771e77d33474a6dd8def216e40fcfb98f35e0b6`, 18,960,842 bytes.
-- Link: added once it is pushed and checked.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/f6200ae7161d772bcdd47ffab66ed0c020cd077f/lumen/releases/prism-build-201.apk
 
 ## Where I could be wrong
 
