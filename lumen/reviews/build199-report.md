@@ -67,7 +67,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
 - **Its `classes.dex` has:** `restLimits`, `lowestBottom` and "lower than it may rest now".
 - **Its `libapp.so` has:** "Prism build 199", "Above the navigation bar" and the new check.
 - sha256 `224bd73bfc7f3e07782d738ad6a5b4fac5de5240670dece81603ff6fd0611e98`, 18,878,922 bytes.
-- Link: added once it is pushed and checked.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/55d5b6ea9e8b35aa7495b0fad6e7be3fc5e2b979/lumen/releases/prism-build-199.apk
 
 ## Where I could be wrong
 
