@@ -46,7 +46,6 @@ class _State extends State<ConsequenceButton> {
       ['Lumen Bank', 'Your statement for September', '41 d', true],
       ['Tomo', 'Photos from the lake 📷', '5 h', false],
       ['Parcel desk', 'Delivered: order #22817', '63 d', true],
-      ['Studio Kora', 'Invoice 204 is paid', '1 d', false],
       ['Newsletter', 'Ten ideas for autumn', '38 d', true],
       ['Airline', 'Your boarding pass (expired)', '90 d', true],
     ];
@@ -59,7 +58,7 @@ class _State extends State<ConsequenceButton> {
     wrap.append(head, list);
     const rows = MAILS.map(([from, subj, age, old]) => {
       const tag = h('span', { class: 'ft-label', style: { position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent)', opacity: 0 } }, '→ archive');
-      const inner = h('div', { style: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '2px 10px', padding: '7px 14px', background: 'var(--surface-2)', position: 'relative', willChange: 'transform' } },
+      const inner = h('div', { style: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '2px 10px', padding: '6px 14px', background: 'var(--surface-2)', position: 'relative', willChange: 'transform' } },
         h('span', { style: { fontWeight: 600, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, from),
         h('span', { class: 'ft-mono', style: { fontSize: '11px', color: old ? 'var(--amber)' : 'var(--muted)' } }, age),
         h('span', { style: { fontSize: '12.5px', color: 'var(--muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', gridColumn: '1 / -1' } }, subj));

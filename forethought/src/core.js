@@ -59,7 +59,7 @@ const subs = new Set();
 let running = false, last = 0, fpsAvg = 16.7;
 function frame(now) {
   const raw = now - last; last = now;
-  const dt = Math.min(0.05, raw / 1000) || 0.016;
+  const dt = Math.max(0, Math.min(0.05, raw / 1000)) || 0.016;
   fpsAvg = fpsAvg * 0.9 + raw * 0.1;
   for (const f of [...subs]) {
     let keep;
@@ -142,7 +142,10 @@ FT.announce = msg => {
 };
 
 /* ---------- semantic intent (exhibits tell X-ray what they decided) ---------- */
-FT.intent = text => xrayNote('intent', text);
+FT.intent = (text, from) => {
+  if (from && from.closest) { const pl = from.closest('.plate'); if (pl) xray.exhibit = pl.dataset.exhibit; }
+  xrayNote('intent', text);
+};
 
 /* ---------- canvas helper: HiDPI, auto-resizing ---------- */
 FT.canvas = (host, onResize) => {
