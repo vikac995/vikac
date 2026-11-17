@@ -163,7 +163,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
 - **Its `libapp.so` has:** "Prism build 200" and the new checks.
 - **Neither has** `sidekickChoose`.
 - sha256 `96aa902b7c1af08b06ad24f6f6d660e2e4fcb10f4457c15a4b2fa201aeec2017`, 18,960,842 bytes.
-- Link: added once it is pushed and checked.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/1a64dc5be0e404264abd7197e12f932af55b3dcb/lumen/releases/prism-build-200.apk
 
 ## Where I could be wrong
 
