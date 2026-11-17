@@ -1,0 +1,76 @@
+<title>Trailkin</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Trailkin: a pocket-sized walking game concept for Flutter. Steps make creatures appear, active calories weave the nests you catch them with, and your daily goal decides how rare they get.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/*{{CSS}}*/
+</style>
+
+<header class="bar">
+  <div class="bar-in">
+    <a class="logo" href="#play"><span class="logo-mark" aria-hidden="true"></span>Trailkin</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#play">Play</a><a href="#loop">The loop</a><a href="#rewards">Seven rewards</a><a href="#research">Research</a><a href="#flutter">Flutter</a>
+    </nav>
+    <button class="icon-btn" id="soundBtn" type="button" aria-pressed="false" title="Sound">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path class="wave" d="M16 9c1.3 1.6 1.3 4.4 0 6M18.6 6.5c2.6 3 2.6 8 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span class="sr-only">Sound</span>
+    </button>
+    <button class="icon-btn" id="themeBtn" type="button" aria-label="Theme: system">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <section class="play" id="play" aria-labelledby="play-h">
+    <div class="play-text">
+      <p class="kicker">A Flutter game concept · steps and calories are the engine</p>
+      <h1 id="play-h">Walk, and the trail <span>wakes up.</span></h1>
+      <p class="lede">Trailkin is a pocket-sized walking game. Every 700 steps a little creature rustles in a bush along your trail. Your active calories weave the nests you catch them with. The closer you get to your daily goal, the rarer the kin, and a rare one is always waiting at the summit.</p>
+      <ul class="howto">
+        <li><b>Tap a rustling bush</b> on the trail, then flick the nest up to catch the kin inside.</li>
+        <li><b>Tap a glowing waystone</b> to crack it open for a small reward.</li>
+        <li><b>Use the walk simulator</b> to feed the game step and calorie data, the way Health Connect would on a phone.</li>
+      </ul>
+      <section class="sim" aria-labelledby="sim-h">
+        <div class="sim-head">
+          <h2 id="sim-h">Walk simulator</h2>
+          <span class="sim-src">stands in for Health Connect</span>
+        </div>
+        <dl class="sim-data">
+          <div><dt>Steps today</dt><dd id="simSteps">0</dd></div>
+          <div><dt>Active kcal</dt><dd id="simKcal">0</dd></div>
+          <div><dt>Daily goal</dt><dd id="simGoal">0</dd></div>
+        </dl>
+        <div class="sim-btns">
+          <button type="button" class="sbtn" data-sim="short">Short walk<small>+300 steps · +12 kcal</small></button>
+          <button type="button" class="sbtn" data-sim="walk">Walk 10 min<small>+1,100 steps · +48 kcal</small></button>
+          <button type="button" class="sbtn" data-sim="brisk">Brisk 30 min<small>+3,400 steps · +150 kcal</small></button>
+          <button type="button" class="sbtn" data-sim="sit">Sit 2 hours<small>no steps · buddy notices</small></button>
+          <button type="button" class="sbtn toggle" data-sim="moving" aria-pressed="false">Walking right now<small>pauses throwing for safety</small></button>
+          <button type="button" class="sbtn" data-sim="day">Next day<small>closes today's ember</small></button>
+        </div>
+        <button type="button" class="sim-reset" data-sim="reset">Reset the demo</button>
+      </section>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone" id="phone">
+        <div class="tk-screen" id="screen" aria-label="Trailkin prototype" role="application"></div>
+        <div class="haptic-dot" id="hapticDot" aria-hidden="true"><span></span></div>
+      </div>
+      <p class="phone-cap">Interactive prototype. Haptics show as a pulse in the corner when your device can't vibrate.</p>
+    </div>
+  </section>
+
+  <!--{{DOCS}}-->
+</main>
+
+<footer class="foot">Trailkin · a game concept for Flutter. All creatures, names and art here are original and drawn in code.</footer>
+<div class="sr-only" id="tk-live" aria-live="polite"></div>
+
+<script>
+/*{{JS}}*/
+</script>

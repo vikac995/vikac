@@ -1,0 +1,265 @@
+<section class="doc" id="loop" aria-labelledby="loop-h">
+  <p class="eyebrow">The loop</p>
+  <h2 id="loop-h">Two numbers from your phone run the whole game</h2>
+  <p class="intro">Trailkin reads exactly two things: steps and active calories. It never needs your location, a map or a camera, so it works on a treadmill, in a city, in the rain, and it can't send anyone into traffic. Each data stream feeds one part of the game.</p>
+  <div class="loop">
+    <section>
+      <span class="from">Steps</span>
+      <h3>Kin appear and waystones light</h3>
+      <p>A creature rustles in a bush along your trail every 700 steps. Eight waystones mark the way to your goal, and the first ones come quickly.</p>
+      <p class="rule">1 kin / 700 steps · waystones at 6, 15, 25, 38, 50, 63, 78, 100 % of goal</p>
+    </section>
+    <section>
+      <span class="from">Active calories</span>
+      <h3>Nests get woven</h3>
+      <p>Nests are what you throw. Every 40 active kcal weaves one. A brisk walk fills your hands; a lazy day leaves you a few short, which is a gentle reason to move.</p>
+      <p class="rule">1 nest / 40 active kcal · unused nests carry over</p>
+    </section>
+    <section>
+      <span class="from">Daily goal</span>
+      <h3>Rarity rises as you climb</h3>
+      <p>Common kin live near the start. Uncommon ones appear past halfway. A rare kin waits at the summit, visible as a silhouette from your first step, and comes down when you reach your goal.</p>
+      <p class="rule">&lt;50 %: common · 50–100 %: 35 % uncommon · goal: 1 rare · 125 %: elusive</p>
+    </section>
+    <section>
+      <span class="from">The week</span>
+      <h3>The lantern keeps the habit</h3>
+      <p>Each goal day lights an ember. A missed day lets one go out, but the first miss each week is covered by a rest ember. Keep five lit and a rare visitor arrives on Sunday.</p>
+      <p class="rule">7 embers · 1 rest ember / week · ≥5 lit → Sunday visitor</p>
+    </section>
+  </div>
+  <div class="flow" role="region" aria-label="A typical day in numbers" tabindex="0">
+    <table style="width:100%;border-collapse:collapse;min-width:560px;font-size:14px">
+      <caption style="text-align:left;font-weight:700;padding:4px 6px 10px">One ordinary day, 8,200 steps and 330 active kcal, gives you</caption>
+      <thead><tr style="text-align:left;color:var(--muted);font-family:var(--f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.05em"><th style="padding:6px">Moment</th><th style="padding:6px">How often</th><th style="padding:6px">Length</th><th style="padding:6px">What it costs you</th></tr></thead>
+      <tbody>
+        <tr style="border-top:1px solid var(--line)"><td style="padding:8px 6px">Kin to catch</td><td style="padding:8px 6px;font-variant-numeric:tabular-nums">11 + 1 rare</td><td style="padding:8px 6px">5–10 s each</td><td style="padding:8px 6px">a nest each</td></tr>
+        <tr style="border-top:1px solid var(--line)"><td style="padding:8px 6px">Nests woven</td><td style="padding:8px 6px;font-variant-numeric:tabular-nums">8</td><td style="padding:8px 6px">none</td><td style="padding:8px 6px">they come from walking</td></tr>
+        <tr style="border-top:1px solid var(--line)"><td style="padding:8px 6px">Waystones to crack</td><td style="padding:8px 6px;font-variant-numeric:tabular-nums">7</td><td style="padding:8px 6px">3 taps</td><td style="padding:8px 6px">nothing</td></tr>
+        <tr style="border-top:1px solid var(--line)"><td style="padding:8px 6px">Ember to light</td><td style="padding:8px 6px;font-variant-numeric:tabular-nums">1</td><td style="padding:8px 6px">1.2 s hold</td><td style="padding:8px 6px">nothing</td></tr>
+      </tbody>
+    </table>
+    <p style="margin:10px 6px 4px;font-size:13.5px;color:var(--muted)">You're three nests short of catching everything on an average day. Walking closes the gap: a 10-minute walk adds about 1,100 steps, 1.5 kin and one nest.</p>
+  </div>
+</section>
+
+<section class="doc" id="rewards" aria-labelledby="rw-h">
+  <p class="eyebrow">Seven short rewards</p>
+  <h2 id="rw-h">Every interaction pays off in under ten seconds</h2>
+  <p class="intro">People open a walking app for a few seconds between other things. Each moment below is complete in that time, has its own haptic signature, and has one job in the habit loop. Press <b>Play it</b> to see each one in the prototype.</p>
+  <div class="rewards">
+    <article class="rw">
+      <div class="rw-top"><h3>Welcome back</h3><div class="rw-meta"><span class="chip time">2 s</span><span class="chip hap">tick per waystone</span></div></div>
+      <p>Open the app after a walk and the steps you took pour onto the trail. The counter rolls up, your buddy walks the path, each waystone you passed lights with a tick, and new bushes pop up where kin are waiting.</p>
+      <p class="why"><b>Why:</b> step data arrives late and silently. Replaying it turns a number you never saw change into a walk you can watch.</p>
+      <button class="rw-play" type="button" data-play="stepin">Play it</button>
+    </article>
+    <article class="rw">
+      <div class="rw-top"><h3>Flick a nest</h3><div class="rw-meta"><span class="chip time">5–10 s</span><span class="chip hap">release · wiggles · success</span></div></div>
+      <p>Press the nest and flick it up. Speed sets the distance, a sideways flick adds curve, and a kin that pauses to blink is easier to catch. A throw that falls short rolls back for free.</p>
+      <p class="why"><b>Why:</b> you control the aim and luck decides the rest. That mix of skill and chance makes a catch feel earned and keeps it surprising, with nothing for sale.</p>
+      <button class="rw-play" type="button" data-play="throw">Play it</button>
+    </article>
+    <article class="rw">
+      <div class="rw-top"><h3>Crack a waystone</h3><div class="rw-meta"><span class="chip time">3 taps</span><span class="chip hap">light → medium → heavy</span></div></div>
+      <p>Each waystone you reach glows. Three taps crack it open: a spare nest, a scent trail that makes your next kin uncommon, a field note about an undiscovered kin, or a treat for your buddy.</p>
+      <p class="why"><b>Why:</b> the first stones sit close together, so every day starts with quick wins. Progress that has already begun is the progress people finish.</p>
+      <button class="rw-play" type="button" data-play="crack">Play it</button>
+    </article>
+    <article class="rw">
+      <div class="rw-top"><h3>Reach the summit</h3><div class="rw-meta"><span class="chip time">3 s</span><span class="chip hap">success</span></div></div>
+      <p>Crossing your goal floods the screen with warm light, the number lands like a stamp, and the rare kin you've seen as a silhouette all day comes down to meet you.</p>
+      <p class="why"><b>Why:</b> showing the prize from the first step makes the last thousand steps feel shortest. People speed up as a goal gets close; the summit uses that pull.</p>
+      <button class="rw-play" type="button" data-play="goal">Play it</button>
+    </article>
+    <article class="rw">
+      <div class="rw-top"><h3>Your buddy asks</h3><div class="rw-meta"><span class="chip time">one glance</span><span class="chip hap">light</span></div></div>
+      <p>After a long still stretch, your buddy peeks in from the edge with one concrete offer: "The next waystone is 620 steps away. That's about 6 minutes. Walk with me?" Saying yes starts a 10-minute stroll with an uncommon kin at the end.</p>
+      <p class="why"><b>Why:</b> a small, specific plan beats a vague target. Steps are turned into minutes, and the reward is named before you stand up. There is no guilt and no red badge.</p>
+      <button class="rw-play" type="button" data-play="nudge">Play it</button>
+    </article>
+    <article class="rw">
+      <div class="rw-top"><h3>Light the ember</h3><div class="rw-meta"><span class="chip time">1.2 s hold</span><span class="chip hap">rising buzz → success</span></div></div>
+      <p>On a goal day, hold the button and today's ember catches: a spark, a rising buzz, then a steady flame in the weekly lantern. Your Sunday visitor waits in the middle as a silhouette until five embers burn.</p>
+      <p class="why"><b>Why:</b> losing something you already hold motivates more than winning the same thing. The lantern starts the week full of ember slots and you protect them, with one free miss so a single bad day never breaks the week.</p>
+      <button class="rw-play" type="button" data-play="ember">Play it</button>
+    </article>
+    <article class="rw">
+      <div class="rw-top"><h3>Stamp the journal</h3><div class="rw-meta"><span class="chip time">1 s</span><span class="chip hap">medium thud</span></div></div>
+      <p>A new kin lands in the field journal with an ink stamp, and its page remembers the walk: "Found Thursday at 4,820 steps, Perfect throw". Any kin you've found can become your buddy and walk the trail with you.</p>
+      <p class="why"><b>Why:</b> a collection gives each walk a lasting trace. The entry records when and how far you walked, so the journal doubles as a diary of your walks.</p>
+      <button class="rw-play" type="button" data-play="stamp">Play it</button>
+    </article>
+  </div>
+</section>
+
+<section class="doc" id="research" aria-labelledby="rs-h">
+  <p class="eyebrow">Research</p>
+  <h2 id="rs-h">What the evidence says, and what Trailkin does about it</h2>
+  <p class="intro">Location games proved that play can get people walking. They also showed the effect fades, and that a game pulling people into streets has a cost. Each design decision here answers a specific finding.</p>
+  <div class="findings">
+    <article class="finding">
+      <div><div class="num">+955 steps</div><h3>The boost is real, then fades</h3><p>Pokémon GO players walked about 955 more steps a day in their first week. By week six they were back to where they started.</p><p class="src">Howe et al., BMJ 2016 · <a href="https://www.smithsonianmag.com/smart-news/pokemon-go-craze-had-health-benefits-little-while-180961486/">summary</a></p></div>
+      <div class="so"><b>So in Trailkin</b>Nothing depends on novelty. Rarity is tied to your own goal and your week, the buddy is a kin you chose, and each day takes seconds, not sessions.</div>
+    </article>
+    <article class="finding">
+      <div><div class="num">+25 %</div><h3>Games reach people health apps don't</h3><p>Engaged players added about 1,473 steps a day, over 25 % more than before, and the game reached low-activity people that leading health apps mostly missed.</p><p class="src">Althoff, White &amp; Horvitz, JMIR 2016 · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5174727">paper</a></p></div>
+      <div class="so"><b>So in Trailkin</b>Your goal starts from your own recent days: the median of the last 14 plus 10 %, raised by at most 500 steps a week. A beginner's summit is reachable on day one.</div>
+    </article>
+    <article class="finding">
+      <div><div class="num">+920 steps</div><h3>Points you can lose work, and competition lasts</h3><p>In the STEP UP trial, adults who started each week with points and lost some for every missed goal walked about 920 more steps a day. The competitive version was the only one still ahead after the game ended.</p><p class="src">Patel et al., JAMA Internal Medicine 2019 · <a href="https://pubmed.ncbi.nlm.nih.gov/31498375/">abstract</a></p></div>
+      <div class="so"><b>So in Trailkin</b>The weekly lantern is framed as loss: seven embers to protect. A friendly two-person "trail race" is the next feature on the roadmap.</div>
+    </article>
+    <article class="finding">
+      <div><div class="num">34 % vs 19 %</div><h3>A head start gets finished</h3><p>Car-wash cards needing 8 stamps, or 10 with 2 already stamped, demand the same effort. The pre-stamped card was completed almost twice as often.</p><p class="src">Nunes &amp; Drèze, Journal of Consumer Research 2006 · <a href="https://www.coglode.com/nuggets/endowed-progress-effect">summary</a></p></div>
+      <div class="so"><b>So in Trailkin</b>Waystones are front-loaded. The first two come at 500 and 1,200 steps, so most days you've passed two before breakfast is over.</div>
+    </article>
+    <article class="finding">
+      <div><div class="num">+26.5 %</div><h3>Location play has a safety cost</h3><p>After launch, crashes within 100 m of PokéStops in one Indiana county rose 26.5 % more than elsewhere (working paper).</p><p class="src">Faccio &amp; McConnell, 2017 · <a href="https://www.businessinsider.in/maybe-you-shouldnt-catch-em-all-a-new-study-links-pokemon-go-to-traffic-deaths-injuries-and-vehicle-damage/articleshow/61827150.cms">coverage</a></p></div>
+      <div class="so"><b>So in Trailkin</b>No map, no location, no timers. Kin wait on the trail indefinitely, and throwing pauses while your step cadence says you're walking. You play when you stop.</div>
+    </article>
+    <article class="finding">
+      <div><div class="num">8,000</div><h3>The right target is not 10,000</h3><p>Across 15 cohorts and 47,471 adults, mortality risk kept falling up to about 6,000–8,000 steps a day for people over 60, and 8,000–10,000 for younger adults.</p><p class="src">Paluch et al., Lancet Public Health 2022 · <a href="https://discovery.ucl.ac.uk/id/eprint/10170017/1/1-s2.0-S2468266721003029-main.pdf">paper</a></p></div>
+      <div class="so"><b>So in Trailkin</b>The default summit is 8,000 steps and the adaptive goal stops climbing at 10,000. Past that, the game rewards consistency, not more steps.</div>
+    </article>
+  </div>
+  <div class="refuse">
+    <div><h3>No pay-to-catch</h3><p>Nests come only from active calories. There is nothing to buy that a walk can't give you.</p></div>
+    <div><h3>No streak that resets to zero</h3><p>A missed day costs one ember, and the first miss each week is free. The week never falls apart over a sick day.</p></div>
+    <div><h3>Steps for every body</h3><p>Wheelchair pushes from Health Connect and HealthKit count as steps, and goals adapt to anyone's baseline.</p></div>
+  </div>
+</section>
+
+<section class="doc" id="flutter" aria-labelledby="fl-h">
+  <p class="eyebrow">Flutter</p>
+  <h2 id="fl-h">How it becomes an APK</h2>
+  <p class="intro">The prototype is built from the same pieces the Flutter app needs: a data layer for steps and calories, a pure-Dart economy, a few painters and one physics simulation. Your band already syncs to Health Connect through Mi Fitness, so Trailkin can read the same step and calorie records with no extra setup.</p>
+  <div class="fl-grid">
+    <section>
+      <h3>Data: Health Connect is the source of truth</h3>
+      <p>Daily totals come from Health Connect on Android and HealthKit on iOS through the <code>health</code> package. The live phone sensor is used only to animate steps during a session, never added to the totals, so nothing is counted twice.</p>
+      <pre class="code"><code>class ActivityRepository {
+  final _health = Health();
+
+  Future&lt;void&gt; init() async {
+    await _health.configure();
+    await _health.requestAuthorization(
+      [HealthDataType.STEPS, HealthDataType.ACTIVE_ENERGY_BURNED],
+      permissions: [HealthDataAccess.READ, HealthDataAccess.READ],
+    );
+  }
+
+  Future&lt;DayActivity&gt; today() async {
+    final now = DateTime.now();
+    final midnight = DateTime(now.year, now.month, now.day);
+    final steps = await _health.getTotalStepsInInterval(midnight, now) ?? 0;
+    final energy = await _health.getHealthDataFromTypes(
+      types: [HealthDataType.ACTIVE_ENERGY_BURNED],
+      startTime: midnight, endTime: now,
+    );
+    final kcal = _health.removeDuplicates(energy).fold&lt;double&gt;(0,
+        (sum, p) =&gt; sum + (p.value as NumericHealthValue).numericValue.toDouble());
+    return DayActivity(steps: steps, activeKcal: kcal.round());
+  }
+}</code></pre>
+    </section>
+    <section>
+      <h3>Economy: pure Dart, fully testable</h3>
+      <p>Every rule from "The loop" lives in one immutable class with no Flutter imports. Unit tests replay whole weeks in milliseconds, and the rules can be tuned remotely without a release.</p>
+      <pre class="code"><code>@immutable
+class TrailRules {
+  const TrailRules({this.spawnEvery = 700, this.kcalPerNest = 40,
+      this.maxWaiting = 6, this.wayFractions = const [
+        .0625, .15, .25, .375, .5, .625, .775, 1.0]});
+  final int spawnEvery, kcalPerNest, maxWaiting;
+  final List&lt;double&gt; wayFractions;
+}
+
+class TrailEconomy {
+  TrailEconomy(this.rules, this.state);
+  final TrailRules rules;
+  TrailState state;
+
+  /// Applies new totals and returns what happened, for the step-in animation.
+  StepInEvents apply(DayActivity a) {
+    final spawns = &lt;Encounter&gt;[];
+    while ((state.spawned + 1) * rules.spawnEvery &lt;= a.steps) {
+      state = state.copyWith(spawned: state.spawned + 1);
+      if (state.waiting.length &lt; rules.maxWaiting) {
+        spawns.add(Encounter(pick(a.steps / state.goal), at: state.spawned * rules.spawnEvery));
+      }
+    }
+    final crossed = state.steps &lt; state.goal &amp;&amp; a.steps &gt;= state.goal;
+    state = state.copyWith(steps: a.steps, kcal: a.activeKcal,
+        waiting: [...state.waiting, ...spawns]);
+    return StepInEvents(spawns: spawns, goalCrossed: crossed);
+  }
+
+  int get nests =&gt; state.kcal ~/ rules.kcalPerNest + state.bonusNests - state.usedNests;
+}</code></pre>
+    </section>
+    <section>
+      <h3>The throw: one simulation, one painter</h3>
+      <p>The flick's release velocity becomes a small 3D flight: depth, height, drift and curve. A <code>Ticker</code> steps it, a <code>CustomPainter</code> draws it, and the landing point decides the accuracy word.</p>
+      <pre class="code"><code>class NestFlight {
+  NestFlight(Velocity v)
+      : vz = (-v.pixelsPerSecond.dy / 1800).clamp(0.0, 1.4),
+        vx = v.pixelsPerSecond.dx / 900,
+        curve = v.pixelsPerSecond.dx.sign * .35;
+  final double vz, vx, curve;
+  double z = 0, x = 0, y = 0, t = 0;
+
+  bool step(double dt) {                  // true while airborne
+    t += dt;
+    z += vz * dt;                          // depth into the scene, 0..1
+    x += (vx + curve * t) * dt;            // drift, plus the curve's pull
+    y = 1.8 * z * (1 - z);              // parabola peaking mid-flight
+    return z &lt; 1 &amp;&amp; vz &gt; .25;
+  }
+}
+
+GestureDetector(
+  onPanEnd: (d) {
+    if (d.velocity.pixelsPerSecond.dy &gt; -600) return _rollBack(); // too soft: free
+    HapticFeedback.lightImpact();
+    setState(() =&gt; _flight = NestFlight(d.velocity));
+    _ticker.start();
+  },
+  child: CustomPaint(painter: MeadowPainter(kin: kin, flight: _flight, t: _t)),
+);</code></pre>
+    </section>
+    <section>
+      <h3>Nudges and safety</h3>
+      <ul>
+        <li><b>Background check:</b> <code>workmanager</code> runs every 15 minutes, reads Health Connect and decides whether anything is worth saying. At most two notifications a day, never in quiet hours.</li>
+        <li><b>The buddy nudge</b> fires only after 2 hours with fewer than 250 steps, and always names a concrete distance and reward: "Mossbit found a bush 600 steps away".</li>
+        <li><b>Walking detection</b> uses the step-cadence stream: more than 15 steps in 20 s means moving, so the encounter screen pauses throwing.</li>
+        <li><b>Haptics</b> use the same vocabulary as the prototype: <code>selectionClick</code> for ticks, <code>lightImpact</code> for throws and wiggles, a two-beat success for catches.</li>
+        <li><b>Accessibility:</b> every gesture has a button twin (a well-aimed throw on Enter). Kin and stones are <code>Semantics</code> nodes. Reduced motion swaps flights for fades.</li>
+      </ul>
+    </section>
+    <section class="wide">
+      <h3>Project layout and packages</h3>
+      <pre class="code"><code>lib/
+  data/activity_repository.dart   // health: steps + active kcal (Health Connect / HealthKit)
+  data/cadence.dart               // pedometer stream → walking / still, for safety only
+  game/rules.dart                 // TrailRules: every tunable number
+  game/economy.dart               // TrailEconomy: spawns, nests, rarity, embers (pure Dart)
+  game/species.dart               // 12 kin: name, tier, palette, shape parameters
+  ui/trail/trail_painter.dart     // meadow, path, waystones, bushes, buddy
+  ui/encounter/meadow_painter.dart
+  ui/encounter/nest_flight.dart   // throw simulation
+  ui/journal/, ui/lantern/        // grid + sheet, weekly lantern with hold-to-light
+  ui/kin/kin_painter.dart         // procedural creatures: one painter, 12 parameter sets
+  background/nudges.dart          // workmanager task + flutter_local_notifications
+test/economy_test.dart            // replays a full week of fixtures
+
+dependencies:
+  health: ^13.0.0                 // Health Connect + HealthKit
+  pedometer: ^4.0.0               // live cadence only
+  workmanager: ^0.5.2
+  flutter_local_notifications: ^18.0.0
+  shared_preferences: ^2.3.0      // game state; drift if history grows</code></pre>
+    </section>
+  </div>
+</section>
