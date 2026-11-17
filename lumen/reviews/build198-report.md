@@ -78,7 +78,7 @@ long test:    CHECKS: 64 right, 3 wrong, of 67 (the usual 3, all "measured: no a
 - **Its `classes.dex` has:** `usualGap`, "at the very top" and "at the very bottom".
 - **Its `libapp.so` has:** "Prism build 198", "The fan, never squeezed" and the new checks.
 - sha256 `3696ad8fd8db2d95fb74eed8b2c3cbf6c84375679c9af2c654c556eeb77b6a48`, 18,878,922 bytes.
-- Link: added once it is pushed and checked.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/fcd31400081f193f0b4475eecf89fe1af3661729/lumen/releases/prism-build-198.apk
 
 ## Where I could be wrong
 
