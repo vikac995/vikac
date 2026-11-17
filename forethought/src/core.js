@@ -183,7 +183,7 @@ FT.drag = (el, h, opt = {}) => {
     if (s || (e.pointerType === 'mouse' && e.button !== 0)) return;
     if (h.filter && !h.filter(e)) return;
     const [x, y] = local(e);
-    s = { id: e.pointerId, x, y, x0: x, y0: y, dx: 0, dy: 0, vx: 0, vy: 0, t: 0, t0: e.timeStamp, moved: false, cancelled: false, hist: [[e.timeStamp, x, y]], type: e.pointerType };
+    s = { id: e.pointerId, x, y, x0: x, y0: y, cx0: e.clientX, cy0: e.clientY, dx: 0, dy: 0, vx: 0, vy: 0, t: 0, t0: e.timeStamp, moved: false, cancelled: false, hist: [[e.timeStamp, e.clientX, e.clientY]], type: e.pointerType };
     if (h.start && h.start(s, e) === false) { s = null; return; }
     try { el.setPointerCapture(e.pointerId); } catch (err) { /* ok */ }
     if (opt.preventDefault !== false && e.pointerType === 'mouse') e.preventDefault();
@@ -191,11 +191,11 @@ FT.drag = (el, h, opt = {}) => {
   const move = e => {
     if (!s || e.pointerId !== s.id) return;
     const [x, y] = local(e);
-    s.x = x; s.y = y; s.dx = x - s.x0; s.dy = y - s.y0; s.t = e.timeStamp - s.t0;
-    s.hist.push([e.timeStamp, x, y]);
+    s.x = x; s.y = y; s.dx = e.clientX - s.cx0; s.dy = e.clientY - s.cy0; s.t = e.timeStamp - s.t0;
+    s.hist.push([e.timeStamp, e.clientX, e.clientY]);
     while (s.hist.length > 2 && e.timeStamp - s.hist[0][0] > 90) s.hist.shift();
     const a = s.hist[0], dtv = (e.timeStamp - a[0]) / 1000;
-    if (dtv > 0.004) { s.vx = (x - a[1]) / dtv; s.vy = (y - a[2]) / dtv; }
+    if (dtv > 0.004) { s.vx = (e.clientX - a[1]) / dtv; s.vy = (e.clientY - a[2]) / dtv; }
     if (!s.moved && Math.hypot(s.dx, s.dy) > slop) s.moved = true;
     h.move && h.move(s, e);
   };
