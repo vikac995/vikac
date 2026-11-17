@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 199 (17 November 2026)
+
+**File:** `releases/prism-build-199.apk`
+
+Needs Play Protect paused to install. Can be installed over build 198.
+
+**The Sidekick no longer rests over the gesture bar.** Carried to the bottom of the screen, it now settles with a clear gap above the gesture bar (or the navigation buttons), never on it. A Sidekick you'd left right at the bottom moves up a little when it comes back.
+
+**Next:** the Sidekick's own app list.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 198 (17 November 2026)
 
 **File:** `releases/prism-build-198.apk`

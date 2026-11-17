@@ -7138,6 +7138,35 @@ class _ShellState extends State<Shell>
           s['lens'] == true && s['guest'] == true,
           'shown ${s['lens']}',
         );
+        // (199) Carried right down to the bottom at its side and let go: it rests with its window's
+        // bottom 48 points above the navigation bar (the gesture bar, or the buttons), never over it.
+        s = await press(
+          'sidekick let go at the very bottom, at the side',
+          <Offset>[Offset(sc.width * 0.18, sc.height - 4)],
+          legMs: 700,
+          endMs: 200,
+          settleMs: 1500,
+        );
+        await Robot.wait(900);
+        s = await where();
+        {
+          final Map<Object?, Object?> lim = s['restLimits'] is Map
+              ? s['restLimits']! as Map<Object?, Object?>
+              : const <Object?, Object?>{};
+          final List<double> mid = midOf(s);
+          final double win = numOf(lim['window']);
+          final double bottom = mid[1] + win / 2;
+          final double lowest = numOf(lim['lowestBottom']);
+          final double navTop = numOf(lim['screenH']) - numOf(lim['nav']);
+          t.check(
+            'sidekick: carried to the very bottom and let go, it rests 48 points above the navigation bar, never over it',
+            s['lens'] == true &&
+                !bottom.isNaN &&
+                (bottom - lowest).abs() <= 2 &&
+                bottom <= navTop - 46,
+            'its window\'s bottom at ${bottom.toStringAsFixed(1)} (the lowest it may be ${lowest.toStringAsFixed(1)}); the navigation bar from ${navTop.toStringAsFixed(1)} (${numOf(lim['nav']).toStringAsFixed(1)} tall, the screen ${numOf(lim['screenH']).toStringAsFixed(1)}); its window\'s offset ${numOf(lim['offY']).toStringAsFixed(1)}',
+          );
+        }
         // From 193 the Sidekick has no cross: carried or flung anywhere, it only moves. It is sent
         // away only from its settings panel's "Dismiss". (Where its cross was in 190 to 192: the
         // top, in the middle.)

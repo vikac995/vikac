@@ -121,6 +121,11 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
   as soon as it is let go, its blobs come out again round where it is going, while it glides there
   (from 194; 192 waited until it was still). Not if it was tucked away (a tucked Sidekick has no
   fan). A tap still only closes them.
+- **How high and low it rests** (from 199): its window at least 48 points below the status bar, and
+  its bottom at least 48 points above the navigation bar (the gesture bar or the buttons), on the
+  screen: never over either. (Until 199 the lowest was counted from the screen's full height in its
+  window's own place, which begins under the status bar, and it could rest over the gesture bar.)
+  Left lower by an earlier build, it rises to the lowest as it comes back.
 - **Its spot is always kept from Android's Back swipe** at the edge (from 194): its own window and
   strip ask for it, and so do its menu and its panel while they are open (Android ignores a window's
   request where another touchable window lies over it, and these cover the whole screen): its window

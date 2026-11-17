@@ -2506,6 +2506,19 @@ class Floater(val timer: Boolean) {
             m["lensMid"] = listOf((it[0] / d.density).toDouble(), (it[1] / d.density).toDouble())
             m["lensRadius"] = (it[2] / d.density).toDouble()
         }
+        // (199) Where the Sidekick may rest, on the screen, in points: the screen's height, the
+        // navigation bar's, the lowest its window's bottom may be, its window's size, and its
+        // window's measured offset from where it was asked to be.
+        view?.let { v ->
+            val (screenH, nav) = v.screenAndNav()
+            m["restLimits"] = hashMapOf(
+                "screenH" to (screenH / d.density).toDouble(),
+                "nav" to (nav / d.density).toDouble(),
+                "lowestBottom" to (v.lowestBottom() / d.density).toDouble(),
+                "window" to (v.lp.height / d.density).toDouble(),
+                "offY" to (v.windowOffY() / d.density).toDouble(),
+            )
+        }
         m["forwards"] = PrismScreen.forwards
         // (What Android's side keeps that could grow: the blobs' pictures decoded, and the recorder's lines.)
         m["iconsCached"] = icons.size
@@ -3415,6 +3428,8 @@ class Floater(val timer: Boolean) {
             wm(context).addView(v, lp)
             lensAdds++
             view = v
+            // (199) Left lower, by an earlier build, than it may rest now: once laid out, it rises.
+            if (!timer) v.post { v.keepAboveBars() }
             // It arrives with a short bounce: a little small, then just past its size and back.
             // It can be touched from the first moment; the bounce is only how it is drawn.
             // (Not one that is being put down from Prism: that one must be exactly where and as
@@ -6174,17 +6189,74 @@ class Floater(val timer: Boolean) {
 
         /**
          * The highest and lowest its window may rest, in its window's own place (`lp.y`), for a
-         * window [h] tall: 48 points from the top and the bottom of the screen as Android gives it.
-         * (One place for all three ways it comes to rest, and the fan's test, from 198.)
+         * window [h] tall. (One place for all three ways it comes to rest, and the fan's test, 198.)
+         * - **The highest:** 48 points below where its window's place begins (under the status bar).
+         * - **The lowest (199):** its window's bottom 48 points above the navigation bar (the gesture
+         *   bar, or the buttons), on the screen. Until 199 it was 48 points from the bottom of the
+         *   screen's full height, counted in its window's own place, which begins below the status
+         *   bar: so it could come down about 40 points lower, over the gesture bar (the owner's
+         *   screenshot).
          */
         fun restTopMost(): Float = 48 * dp
-        fun restBottomMost(h: Int): Float = Math.max(48 * dp, resources.displayMetrics.heightPixels - h - 48 * dp)
+        fun restBottomMost(h: Int): Float = Math.max(restTopMost(), lowestBottom() - h - windowOffY())
+
+        /** The lowest its window's bottom may be, on the screen: 48 points above the navigation bar. */
+        fun lowestBottom(): Float {
+            val (screenH, nav) = screenAndNav()
+            return screenH - nav - 48 * dp
+        }
+
+        /**
+         * The screen's whole height and the navigation bar's at its bottom, in pixels: from this
+         * window's own insets where it has them, otherwise from the largest window Android allows.
+         */
+        fun screenAndNav(): Pair<Float, Float> {
+            var screenH = resources.displayMetrics.heightPixels.toFloat()
+            var nav = 0f
+            if (Build.VERSION.SDK_INT >= 30) {
+                try {
+                    val m = (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).maximumWindowMetrics
+                    screenH = m.bounds.height().toFloat()
+                    nav = m.windowInsets.getInsets(android.view.WindowInsets.Type.navigationBars()).bottom.toFloat()
+                } catch (e: Exception) {}
+                try {
+                    rootWindowInsets?.getInsets(android.view.WindowInsets.Type.navigationBars())?.bottom?.let { if (it > 0) nav = it.toFloat() }
+                } catch (e: Exception) {}
+            }
+            return screenH to nav
+        }
+
+        // (Its window's offset, as last measured: kept for when it cannot be measured.)
+        private var offMeasured = Float.NaN
 
         /** How far its window's own place (`lp.y`) is from the screen's top, up and down: measured. */
         fun windowOffY(): Float {
-            val at = IntArray(2)
-            getLocationOnScreen(at)
-            return at[1] - (1f - scaleY) * height / 2f - lp.y
+            if (isAttachedToWindow && height > 0) {
+                val at = IntArray(2)
+                getLocationOnScreen(at)
+                offMeasured = at[1] - (1f - scaleY) * height / 2f - lp.y
+                return offMeasured
+            }
+            if (!offMeasured.isNaN()) return offMeasured
+            // (Not laid out yet: the status bar's height, which is what it has been on every phone.)
+            return try {
+                if (Build.VERSION.SDK_INT >= 30) {
+                    (context.getSystemService(Context.WINDOW_SERVICE) as android.view.WindowManager).maximumWindowMetrics
+                        .windowInsets.getInsets(android.view.WindowInsets.Type.statusBars()).top.toFloat()
+                } else 0f
+            } catch (e: Exception) {
+                0f
+            }
+        }
+
+        /** Brought back where it was last left, but lower than it may rest now (199): it rises to the lowest. */
+        fun keepAboveBars() {
+            if (tucked || docked) return
+            val most = restBottomMost(lp.height)
+            if (lp.y > most + 1) {
+                Trail.add("$who: it was left lower than it may rest now (above the navigation bar): moved up ${((lp.y - most) / dp).toInt()} points")
+                glideTo(lp.x.toFloat(), most, 220)
+            }
         }
 
         /** Where its window's left edge is when it rests at that side (for the fan's test, 191). */
