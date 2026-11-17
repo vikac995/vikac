@@ -105,8 +105,11 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
 - **The Sidekick's fan and its names** (from 191, the owner's choice in the mock-up
   https://claude.ai/artifact/7b5NvRHX4jVK8UVKfEQjoh):
   - **The fan turns away from corners,** so its blobs keep their normal spacing, never overlap, and
-    stay clear of the screen's edges and of Prism's bar. Only where no turn fits is the arc made a
-    little larger (its blobs closer round it, so they keep their spacing).
+    stay clear of the screen's edges and of Prism's bar. Only where no turn fits is the arc made
+    larger (its blobs closer round it, so they keep their spacing), up to 2.2 times (from 198; 1.4
+    until then, which did not fit with the Sidekick very low in Prism). **Blobs never overlap and are
+    never nearer than usual:** where nothing fits at all, the whole fan is moved onto the screen as
+    one (until 198 each blob was pushed on on its own, onto its neighbours).
   - **Each name sits on the far side of its blob,** along the line from the Sidekick's middle
     through the blob (left of it on the right side, right of it on the left), on a soft dark pill. At
     most about one and a half blobs wide, ending in "…"; kept on the screen and off Prism's bar. A

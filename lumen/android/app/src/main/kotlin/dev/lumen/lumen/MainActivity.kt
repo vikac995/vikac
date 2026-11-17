@@ -1844,11 +1844,20 @@ class Floater(val timer: Boolean) {
         val items = blobs
         val texts = items.map { if (it.kind == "empty") "" else it.name }
         val out = ArrayList<HashMap<String, Any?>>()
+        // (198) Where the Sidekick's middle is, on the screen, at the highest and the lowest it may
+        // really rest: from the same limits its let-go uses, and where its window really is. (Until
+        // 198 "low" was 80% of the way down, kept 48 points off the screen's bottom here, and never
+        // as low as it can really rest: so the fan's test passed while the owner's fan overlapped.)
+        val offY = v.windowOffY()
+        val topCy = v.restTopMost() + offY + v.lp.height / 2f
+        val bottomCy = v.restBottomMost(v.lp.height) + offY + v.lp.height / 2f
         for (right in listOf(false, true)) {
-            for ((where, f) in listOf("high" to 0.15f, "in the middle" to 0.5f, "low" to 0.8f)) {
+            for ((where, f) in listOf("at the very top" to -1f, "high" to 0.15f, "in the middle" to 0.5f, "low" to 0.8f, "at the very bottom" to 2f)) {
                 val cx = v.restLeft(right) + win / 2f
-                val cy = (f * h).coerceIn(48 * dp + win / 2f, h - 48 * dp - win / 2f)
+                val cy = (f * h).coerceIn(topCy, bottomCy)
                 val fan = FanLayout.lay(w, h, cx, cy, lensR, dp, items.size, blobNames, bar)
+                // (As the menu shows it: moved in as one where nothing fits, 198.)
+                FanLayout.intoBounds(fan.x, fan.y, FanLayout.bounds(w, h, dp, bar))
                 val badges = items.mapIndexed { i, b -> if (b.kind == "empty") null else FanLayout.badgeRect(fan.x[i], fan.y[i], badgeHalf(b, dp), dp) }
                 val screen = android.graphics.RectF(6 * dp, 30 * dp, w - 6 * dp, (bar ?: (h - 6 * dp)) - 4 * dp)
                 val names = if (blobNames) FanLayout.names(cx, cy, lensR, fan.x, fan.y, texts, badges, screen, dp, pillH,
@@ -1859,6 +1868,9 @@ class Floater(val timer: Boolean) {
                 g["turned"] = Math.round(fan.turned).toInt()
                 g["grown"] = Math.round(fan.grown * 100) / 100.0
                 g["names"] = names.map { it.text }
+                g["cy"] = Math.round(cy / dp * 10) / 10.0
+                g["usualGap"] = Math.round(FanLayout.usualGap(lensR, dp, blobNames) / dp * 10) / 10.0
+                g["fits"] = fan.overflow == 0f
                 out.add(g)
             }
         }
@@ -3721,6 +3733,9 @@ class Floater(val timer: Boolean) {
             m["turned"] = Math.round(turned).toInt()
             m["grown"] = Math.round(grown * 100) / 100.0
             m["names"] = nameLayout().map { it.text }
+            // (198) The usual gap between two neighbours, and where the Sidekick's middle is, up and down.
+            m["usualGap"] = Math.round(FanLayout.usualGap(lensR, dp, blobNames) / dp * 10) / 10.0
+            m["cy"] = Math.round((cy + offY) / dp * 10) / 10.0
             return m
         }
 
@@ -3869,20 +3884,25 @@ class Floater(val timer: Boolean) {
          * the fan, with the seat [open] among them left empty if there is one.
          */
         private fun seats(without: Int, open: Int = -1) {
-            // (Kept inside where a blob may be, as a last resort: the fan is laid out to fit, 191.)
-            val bounds = FanLayout.bounds(width.toFloat(), height.toFloat(), dp, barHere())
-            val left = bounds.left
-            val right = bounds.right
-            val top = bounds.top
-            val bottom = bounds.bottom
             val count = (if (without in 0 until n) n - 1 else n) + (if (open >= 0) 1 else 0)
             var j = 0
             for (i in 0 until n) {
                 if (i == without) continue
                 val a = angle(axis, (if (open >= 0 && j >= open) j + 1 else j) - (count - 1) / 2f)
-                seatX[i] = (cx + reach * Math.cos(a).toFloat()).coerceIn(left, right)
-                seatY[i] = (cy + reach * Math.sin(a).toFloat()).coerceIn(top, bottom)
+                seatX[i] = cx + reach * Math.cos(a).toFloat()
+                seatY[i] = cy + reach * Math.sin(a).toFloat()
                 j++
+            }
+            // (Kept inside where a blob may be, as a last resort: the fan is laid out to fit, 191.
+            // From 198 the whole fan is moved in as one, keeping its spacing; until then each seat
+            // was pushed in on its own, and could land on its neighbour.)
+            val keep = (0 until n).filter { it != without }
+            val xs = FloatArray(keep.size) { seatX[keep[it]] }
+            val ys = FloatArray(keep.size) { seatY[keep[it]] }
+            FanLayout.intoBounds(xs, ys, FanLayout.bounds(width.toFloat(), height.toFloat(), dp, barHere()))
+            for ((k, i) in keep.withIndex()) {
+                seatX[i] = xs[k]
+                seatY[i] = ys[k]
             }
         }
 
@@ -5103,7 +5123,7 @@ class Floater(val timer: Boolean) {
             val margin = 8 * dp
             val w = lp.width; val h = lp.height
             val tx = if (lp.x + w / 2f < screen.widthPixels / 2f) margin else screen.widthPixels - w - margin
-            val ty = lp.y.toFloat().coerceIn(48 * dp, Math.max(48 * dp, screen.heightPixels - h - 48 * dp))
+            val ty = lp.y.toFloat().coerceIn(restTopMost(), restBottomMost(h))
             if (Math.abs(tx - lp.x) < 1.5f && Math.abs(ty - lp.y) < 1.5f) return
             glideTo(tx, ty, 220)
         }
@@ -5626,7 +5646,7 @@ class Floater(val timer: Boolean) {
             tuckRight = right
             target?.held = false
             target?.fall()
-            val y = lp.y.toFloat().coerceIn(48 * dp, Math.max(48 * dp, screen.heightPixels - lp.height - 48 * dp))
+            val y = lp.y.toFloat().coerceIn(restTopMost(), restBottomMost(lp.height))
             glideTo(parkedX(right), y, 260)
             openGrip(context, y.toInt())
         }
@@ -6152,6 +6172,21 @@ class Floater(val timer: Boolean) {
         /** Where it is going, in its window's own place, while it springs there after a let-go; null otherwise (194). */
         fun restTarget(): FloatArray? = if (springing && !leaving) floatArrayOf(tx, ty) else null
 
+        /**
+         * The highest and lowest its window may rest, in its window's own place (`lp.y`), for a
+         * window [h] tall: 48 points from the top and the bottom of the screen as Android gives it.
+         * (One place for all three ways it comes to rest, and the fan's test, from 198.)
+         */
+        fun restTopMost(): Float = 48 * dp
+        fun restBottomMost(h: Int): Float = Math.max(48 * dp, resources.displayMetrics.heightPixels - h - 48 * dp)
+
+        /** How far its window's own place (`lp.y`) is from the screen's top, up and down: measured. */
+        fun windowOffY(): Float {
+            val at = IntArray(2)
+            getLocationOnScreen(at)
+            return at[1] - (1f - scaleY) * height / 2f - lp.y
+        }
+
         /** Where its window's left edge is when it rests at that side (for the fan's test, 191). */
         fun restLeft(right: Boolean): Float =
             if (right) resources.displayMetrics.widthPixels - lp.width - edgeGap() else edgeGap()
@@ -6326,7 +6361,7 @@ class Floater(val timer: Boolean) {
                 target?.held = true
             } else {
                 tx = if (coastX + w / 2f < screen.widthPixels / 2f) margin else screen.widthPixels - w - margin
-                ty = coastY.coerceIn(48 * dp, Math.max(48 * dp, screen.heightPixels - h - 48 * dp))
+                ty = coastY.coerceIn(restTopMost(), restBottomMost(h))
                 target?.held = false
                 target?.fall()
             }

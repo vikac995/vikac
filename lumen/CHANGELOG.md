@@ -1,5 +1,18 @@
 # Lumen changelog
 
+## Prism, build 198 (17 November 2026)
+
+**File:** `releases/prism-build-198.apk`
+
+Needs Play Protect paused to install. Can be installed over build 197.
+
+**From your screenshot: the Sidekick's blobs no longer pile up when it rests very low.** With the Sidekick low at the edge in Prism, its fan didn't fit above Prism's bar, and the blobs that didn't fit were pushed onto their neighbours. Now the fan opens a little wider there, so every blob keeps its usual space. Its blobs never overlap anywhere.
+
+**Next (199):** the Sidekick will no longer rest over the gesture bar.
+
+**Checked:** it compiles, both sides; in my preview: the button test, 81 of 83 (the usual Android-only miss and phone-only skip); the long test, 64 of 67 with the usual 3 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 197 (17 November 2026)
 
 **File:** `releases/prism-build-197.apk`

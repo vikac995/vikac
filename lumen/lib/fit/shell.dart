@@ -5245,13 +5245,21 @@ class _ShellState extends State<Shell>
             if (w.isNotEmpty) {
               wrongs.add('${g['where']}: ${w.join(', ')}');
             }
+            // (198) Its blobs at least as far apart as usual, wherever it rests: never squeezed.
+            final double bb = (g['blobBlob'] as num?)?.toDouble() ?? double.nan,
+                usual = (g['usualGap'] as num?)?.toDouble() ?? double.nan;
+            if (!bb.isNaN && !usual.isNaN && bb < usual - 0.5) {
+              wrongs.add(
+                '${g['where']}: blobs ${bb.toStringAsFixed(1)} apart, less than the usual ${usual.toStringAsFixed(1)}',
+              );
+            }
             said.add(
-              '${g['where']} ${l.isNaN ? '?' : l.toStringAsFixed(1)} (turned ${g['turned']}°, ${g['grown']}×)',
+              '${g['where']} at ${g['cy']} ${l.isNaN ? '?' : l.toStringAsFixed(1)} (blobs ${bb.isNaN ? '?' : bb.toStringAsFixed(1)} apart, turned ${g['turned']}°, ${g['grown']}×${g['fits'] == false ? ', moved in as one' : ''})',
             );
           }
           t.check(
-            'sidekick: its fan at six places, high, in the middle and low on each side: no blob, name, badge or the Sidekick on another, nothing off the screen or on Prism\'s bar',
-            places.length == 6 && wrongs.isEmpty && least >= 0,
+            'sidekick: its fan at ten places, from the very top to the very bottom it may rest on each side: blobs as far apart as usual, no blob, name, badge or the Sidekick on another, nothing off the screen or on Prism\'s bar',
+            places.length == 10 && wrongs.isEmpty && least >= 0,
             '${wrongs.isEmpty ? 'clear everywhere' : wrongs.join(' | ')}; the smallest gap ${least.isFinite ? least.toStringAsFixed(1) : '?'} points; ${said.join('; ')}; names ${fc['blobNames'] == true ? 'on' : 'off'}',
           );
           await t.lens(<String, Object?>{'op': 'sidekick', 'keys': sideTest});
@@ -5284,10 +5292,14 @@ class _ShellState extends State<Shell>
             final Map<String, Object?> geo = await menu('geometry');
             final List<Object?> w =
                 (geo['wrong'] as List<Object?>?) ?? const <Object?>[];
+            final bool spaced =
+                geo['blobBlob'] is! num ||
+                geo['usualGap'] is! num ||
+                (geo['blobBlob']! as num) >= (geo['usualGap']! as num) - 0.5;
             t.check(
-              'sidekick: its open menu: no blob, name, badge or the Sidekick on another, nothing off the screen or on Prism\'s bar',
-              geo['least'] is num && w.isEmpty,
-              '${w.isEmpty ? 'clear' : w.join(', ')}; the smallest gap ${geo['least']} points (blob to blob ${geo['blobBlob']}, name to blob ${geo['nameBlob']}, name to badge ${geo['nameBadge']}, name to the Sidekick ${geo['nameSidekick']}, to the edge ${geo['edge']}, to Prism\'s bar ${geo['bar']}); turned ${geo['turned']}°, ${geo['grown']}×; names ${geo['names']}',
+              'sidekick: its open menu: blobs as far apart as usual, no blob, name, badge or the Sidekick on another, nothing off the screen or on Prism\'s bar',
+              geo['least'] is num && w.isEmpty && spaced,
+              '${w.isEmpty ? 'clear' : w.join(', ')}; blobs ${geo['blobBlob']} apart (usual ${geo['usualGap']}), the Sidekick at ${geo['cy']}; the smallest gap ${geo['least']} points (blob to blob ${geo['blobBlob']}, name to blob ${geo['nameBlob']}, name to badge ${geo['nameBadge']}, name to the Sidekick ${geo['nameSidekick']}, to the edge ${geo['edge']}, to Prism\'s bar ${geo['bar']}); turned ${geo['turned']}°, ${geo['grown']}×; names ${geo['names']}',
             );
           }
           // Only one menu open at a time (188, the owner's choice). With the Sidekick's blobs out,

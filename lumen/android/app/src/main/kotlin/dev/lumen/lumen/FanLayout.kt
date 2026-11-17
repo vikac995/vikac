@@ -15,6 +15,11 @@ import android.graphics.RectF
  *   is more room. Made smaller only if no larger one fits either (smaller, with the same spacing,
  *   it needs more room, not less). Until 191 the seats were pushed onto the screen one by one, and
  *   near a corner two could end up on the same spot.
+ * - **Up to 2.2 times as large** (from 198; 1.4 until then): with the Sidekick very low in a corner,
+ *   in Prism above its bar, nothing up to 1.4 fitted, and the menu's last resort pushed each blob
+ *   that was off the screen back onto it on its own, onto its neighbours (the owner's screenshot).
+ * - **The last resort** (nothing fits at all) moves the whole fan as one onto the screen
+ *   ([intoBounds]), so its blobs keep their spacing and never overlap (from 198).
  * - **Each name** sits on the far side of its blob, along the line from the Sidekick's middle
  *   through the blob (left of it on the right side, right of it on the left, above it for a spot
  *   at the bottom later). At most about one and a half blobs wide, ending in "…"; pushed back onto
@@ -77,7 +82,7 @@ internal object FanLayout {
         val xs = FloatArray(n)
         val ys = FloatArray(n)
         var best: Fan? = null
-        for (k in floatArrayOf(1f, 1.1f, 1.2f, 1.3f, 1.4f, 0.9f, 0.8f)) {
+        for (k in floatArrayOf(1f, 1.1f, 1.2f, 1.3f, 1.4f, 1.5f, 1.6f, 1.7f, 1.8f, 1.9f, 2f, 2.2f, 0.9f, 0.8f)) {
             val r = r0 * k
             // (Never so near that a blob would touch the Sidekick.)
             if (r < lensR + (BLOB_R + 12) * dp) continue
@@ -103,6 +108,35 @@ internal object FanLayout {
             }
         }
         return best ?: Fan(inward, r0, s0, xs, ys, 0f, 0.0, 1f)
+    }
+
+    /**
+     * The last resort, where no fan fits (198): the whole fan moved as one, up or down and side to
+     * side, as far as it must to lie within [b]. Its blobs keep their spacing, so none can ever lie
+     * on another. (Until 198 each was pushed in on its own, and could end up on its neighbour.)
+     */
+    fun intoBounds(xs: FloatArray, ys: FloatArray, b: RectF, count: Int = xs.size) {
+        if (count == 0) return
+        var minX = Float.MAX_VALUE; var maxX = -Float.MAX_VALUE
+        var minY = Float.MAX_VALUE; var maxY = -Float.MAX_VALUE
+        for (i in 0 until count) {
+            minX = Math.min(minX, xs[i]); maxX = Math.max(maxX, xs[i])
+            minY = Math.min(minY, ys[i]); maxY = Math.max(maxY, ys[i])
+        }
+        val dx = if (minX < b.left) b.left - minX else if (maxX > b.right) b.right - maxX else 0f
+        val dy = if (maxY > b.bottom) b.bottom - maxY else if (minY < b.top) b.top - minY else 0f
+        if (dx == 0f && dy == 0f) return
+        for (i in 0 until count) {
+            xs[i] += dx
+            ys[i] += dy
+        }
+    }
+
+    /** The usual gap between two neighbouring blobs (edge to edge), in pixels: the same at any size of arc. */
+    fun usualGap(lensR: Float, dp: Float, names: Boolean): Float {
+        val r0 = normalReach(lensR, dp, names)
+        val s0 = normalStep(r0, dp, names)
+        return 2 * r0 * Math.sin(Math.PI * s0 / 2).toFloat() - 2 * BLOB_R * dp
     }
 
     // ---- The names.
