@@ -84,6 +84,11 @@ function ring(c, x, y, rx, ry, half, a = 1) {
   c.restore();
 }
 
+/* Remember how the player last interacted, so focus rings only appear for keyboard users. */
+let lastInput = 'pointer';
+addEventListener('keydown', () => { lastInput = 'key'; }, true);
+addEventListener('pointerdown', () => { lastInput = 'pointer'; }, true);
+
 /* ---------- open ---------- */
 function open(container, opts) {
   if (!document.getElementById('tk-enc-style')) document.head.append(TK.h('style', { id: 'tk-enc-style' }, CSS));
@@ -183,7 +188,7 @@ function open(container, opts) {
 
   /* panels */
   let panel = null;
-  function showPanel(node) { closePanel(); panel = node; layer.append(node); const b = node.querySelector('button'); b && setTimeout(() => b.focus(), 60); }
+  function showPanel(node) { closePanel(); panel = node; layer.append(node); const b = node.querySelector('button'); if (b && lastInput === 'key') setTimeout(() => b.focus({ preventScroll: true }), 60); }
   function closePanel() { if (panel) { panel.remove(); panel = null; } }
   function outOfNests() {
     const b = TK.h('button', { class: 'tke-btn', type: 'button', onclick: () => finish(false) }, 'Back to the trail');
@@ -236,7 +241,7 @@ function open(container, opts) {
     start(s) {
       if (phase !== 'idle' || walking() || !alive) return false;
       if (nestsLeft() <= 0) { outOfNests(); return false; }
-      dragging = true; phase = 'drag'; keyAim = false;
+      dragging = true; phase = 'drag'; keyAim = false; hint.style.opacity = '0';
       TK.haptic('select'); TK.sfx('tick');
       dragPos = { x: restX(), y: restY() };
     },
@@ -544,7 +549,7 @@ function open(container, opts) {
   }
 
   layer.__dbg = () => ({ phase, zt: flight.zt, gx1: flight.gx1, kinGx: kin.gx, label, willCatch, throws, result });
-  setTimeout(() => nestBtn.focus({ preventScroll: true }), 80);
+  if (lastInput === 'key') setTimeout(() => nestBtn.focus({ preventScroll: true }), 80);
   TK.announce(`${sp.name} is here. ${TK.tierLabel(sp.tier)}. ${nestsLeft()} nests. Flick the nest upward, or press Space to throw.`);
   return { close: () => finish(false), el: layer };
 }
