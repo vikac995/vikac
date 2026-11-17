@@ -86,7 +86,7 @@ long test:    CHECKS: 68 right, 3 wrong, of 71 (the usual 3, all "measured: no a
   field focused".
 - **Its `libapp.so` has:** "Prism build 202", "Search the Sidekick's app list" and the new checks.
 - sha256 `e8d581ea6671e6d0925442e691171c875a11815678d17a8e1f41da5970ff7efc`, 18,960,842 bytes.
-- Link: added once it is pushed and checked.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/8b219cfe6d75c3a23d243e14d7ef0480e14bf629/lumen/releases/prism-build-202.apk
 
 ## Where I could be wrong
 
