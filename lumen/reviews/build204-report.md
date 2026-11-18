@@ -91,7 +91,7 @@ long test:    CHECKS: 68 right, 3 wrong, of 71 (the usual 3, all "measured: no a
 - **Its `classes.dex` has:** `badgesOuter`, `badgesCounted` and "facing the Sidekick".
 - **Its `libapp.so` has:** "Prism build 204", "Badges on the outer side" and the new check.
 - sha256 `43fe24732c7e1edc4192e382cd5e6073164b5653d402432fa222d74a24dd5597`, 18,960,842 bytes.
-- Link: added once it is pushed and checked.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/3adeb977effddc42b87fcef21b8d42ef8478288e/lumen/releases/prism-build-204.apk
 
 ## Where I could be wrong
 
