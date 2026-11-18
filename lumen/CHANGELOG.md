@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 203 (18 November 2026)
+
+**File:** `releases/prism-build-203.apk`
+
+Needs Play Protect paused to install. Can be installed over build 202.
+
+**The magnifying glass a quarter smaller**, as you asked: about half the screen's width now, instead of two thirds. It still rides clear of your thumb, scaled to match.
+
+**Checked:** in my preview, the button test, 84 of 86 (the usual Android-only miss and phone-only skip); the long test, 68 of 71 with the usual 3 misses; every glass check passes.
+**Not checked:** on a phone.
+
 ## Prism, build 202 (17 November 2026)
 
 **File:** `releases/prism-build-202.apk`

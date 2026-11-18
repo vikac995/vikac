@@ -2398,13 +2398,13 @@ class _ShellState extends State<Shell>
   );
   double _sheetWeight = 81.8, _sheetSeconds = 90;
 
-  // The lens: the button, carried. See Lumen R51. (2.5 times as wide from build 197, the owner's
-  // choice: 107.5 until 196.)
-  static const double _lensSize = 268.75;
+  // The lens: the button, carried. See Lumen R51. (1.875 times as wide as until 196, 107.5: the
+  // owner's choice in 203, a quarter smaller than 197's 2.5 times.)
+  static const double _lensSize = 201.5625;
 
-  // How far above the finger it rides, so that the thumb does not cover it: scaled with it from
-  // build 197 (62 until 196), so the finger stays just under its edge, never over its middle.
-  static const double _lensRide = 155;
+  // How far above the finger it rides, so that the thumb does not cover it: scaled with it (62
+  // until 196, 155 in 197 to 202), so the finger stays just under its edge, never over its middle.
+  static const double _lensRide = 116.25;
 
   /// Where a finger goes for the glass to come over [lensAt] (for the tests): [_lensRide] under
   /// it, kept on the screen.
