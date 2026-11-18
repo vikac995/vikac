@@ -65,7 +65,7 @@ about the phone. Only the phone's long test can.
 - `Prism build 203`, `0.164.0+231`, built from the final code. Name `Prism`, package `dev.lumen.prism`.
 - **Its `libapp.so` has** "Prism build 203" and "The glass a quarter smaller".
 - sha256 `c5efa3b5e732f2b0adc47163a608a67e9d436612606dda05a7ace6c143229706`, 18,960,842 bytes.
-- Link: added once it is pushed and checked.
+- Link (checked: answers 200, same sha256): https://github.com/vikac995/vikac/raw/ee100fb5824526276d994507f48fdef42bb43a17/lumen/releases/prism-build-203.apk
 
 ## Where I could be wrong
 
