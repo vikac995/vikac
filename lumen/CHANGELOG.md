@@ -1,5 +1,16 @@
 # Lumen changelog
 
+## Prism, build 204 (18 November 2026)
+
+**File:** `releases/prism-build-204.apk`
+
+Needs Play Protect paused to install. Can be installed over build 203.
+
+**Notification numbers on the outer side**, as you asked: a blob's badge now sits on its corner away from the Sidekick (upper left when the Sidekick is on the right, upper right when it's on the left), the same side as its name, and never on its name or another blob. A name that would meet the badge sits beside its blob instead. Prism's own blobs do the same: away from the button.
+
+**Checked:** it compiles, both sides; worked through on paper for both sides at four heights; in my preview: the button test, 84 of 86 (the usual Android-only miss and phone-only skip); the long test, 68 of 71 with the usual 3 misses.
+**Not checked:** on a phone.
+
 ## Prism, build 203 (18 November 2026)
 
 **File:** `releases/prism-build-203.apk`

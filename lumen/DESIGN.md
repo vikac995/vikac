@@ -115,6 +115,13 @@ The same action always gives the same buzz (`lib/core/haptics.dart`).
     most about one and a half blobs wide, ending in "…"; kept on the screen and off Prism's bar. A
     name never covers a blob, a badge, the Sidekick or another name; blobs and badges are always
     drawn over names.
+  - **Each badge (its notifications' number) sits on its blob's outer side** (from 204, the owner's
+    choice): the blob's corner nearest the way away from the Sidekick's middle, as its name is. From
+    a Sidekick on the right, upper left; from one on the left, upper right. It never covers its own
+    name, another blob or the Sidekick: a name that would meet it goes beside its blob instead.
+    Prism's own blobs do the same from its button: a blob left of the button wears its badge on its
+    upper left, one right of it (or straight above) on its upper right. (Until 204 every badge was on
+    the upper right, which on the right side faced the Sidekick.)
 - **The Sidekick can be dragged with its blobs out** (from 192, the owner's request): a drag that
   begins on it (its glass and 6 points round it) folds the blobs back in at once, the usual close,
   and carries it, following the finger exactly as at any other time. Let go, it settles as always;

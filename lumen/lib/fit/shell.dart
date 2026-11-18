@@ -1986,6 +1986,11 @@ class _ShellState extends State<Shell>
     };
   }
 
+  /// Whether a blob's badge goes on its upper left (204): on its outer side, away from the
+  /// button. [dir] is from the button's middle to the blob: a blob to the left of the button wears
+  /// it on the left; one to the right, or straight above, on the right. (Its name is under it.)
+  static bool _badgeLeft(Offset dir) => dir.dx < -1;
+
   /// The small number on an app's blob: how many notifications it has, on the colour opposite
   /// the app's own, with a dark edge that cuts it clear of the blob.
   Widget _noteBadge(int i) {
@@ -5239,6 +5244,43 @@ class _ShellState extends State<Shell>
             places.length == 10 && wrongs.isEmpty && least >= 0,
             '${wrongs.isEmpty ? 'clear everywhere' : wrongs.join(' | ')}; the smallest gap ${least.isFinite ? least.toStringAsFixed(1) : '?'} points; ${said.join('; ')}; names ${fc['blobNames'] == true ? 'on' : 'off'}',
           );
+          // (204) Badges on each blob's outer side, away from the Sidekick, on both sides: a
+          // badge (a stand-in where an app has no notifications now) on every blob at the ten
+          // places, none on its own name, another blob or the Sidekick.
+          {
+            final List<String> bad = <String>[];
+            final List<String> per = <String>[];
+            int left = 0, right = 0;
+            for (final Object? o in places) {
+              final Map<Object?, Object?> g = o is Map
+                  ? o
+                  : const <Object?, Object?>{};
+              final String where0 = '${g['where']}';
+              final int counted = (g['badgesCounted'] as num?)?.toInt() ?? 0,
+                  outer = (g['badgesOuter'] as num?)?.toInt() ?? 0;
+              final double bb =
+                      (g['badgeBlob'] as num?)?.toDouble() ?? double.infinity,
+                  nb = (g['nameBadge'] as num?)?.toDouble() ?? double.infinity;
+              if (where0.startsWith('left')) {
+                left += counted;
+              } else {
+                right += counted;
+              }
+              if (outer != counted || bb < 0 || nb < 0) {
+                bad.add(
+                  '$where0: $outer of $counted outward, nearest other blob or the Sidekick ${bb.isFinite ? bb.toStringAsFixed(1) : '-'}, nearest name ${nb.isFinite ? nb.toStringAsFixed(1) : '-'}',
+                );
+              }
+              per.add(
+                '$where0 $outer/$counted out${nb.isFinite ? ', name ${nb.toStringAsFixed(1)} away' : ''}',
+              );
+            }
+            t.check(
+              'sidekick: in its fan on both sides, every badge is on its blob\'s outer side, away from the Sidekick, never on its name, another blob or the Sidekick',
+              places.length == 10 && left > 0 && right > 0 && bad.isEmpty,
+              '${bad.isEmpty ? 'all clear' : bad.join(' | ')}; badges on the left $left, on the right $right; ${per.join('; ')}',
+            );
+          }
           await t.lens(<String, Object?>{'op': 'sidekick', 'keys': sideTest});
           final String? late = await picturesIn('the test\'s menu was set');
           // (Test only.) The test starts from a known state: if the Sidekick is tucked away, it
@@ -10398,13 +10440,20 @@ class _ShellState extends State<Shell>
                                               ],
                                             )
                                           : (_blobNotes(i) > 0 && p > 0.9
-                                                // An app with notifications wears their number.
+                                                // An app with notifications wears their number:
+                                                // on its outer side, away from the button (204;
+                                                // until then always on its upper right).
                                                 ? Stack(
                                                     clipBehavior: Clip.none,
                                                     children: <Widget>[
                                                       _blobDisc(i),
                                                       Positioned(
-                                                        right: -4,
+                                                        left: _badgeLeft(dir)
+                                                            ? -4
+                                                            : null,
+                                                        right: _badgeLeft(dir)
+                                                            ? null
+                                                            : -4,
                                                         top: -4,
                                                         child: _noteBadge(i),
                                                       ),

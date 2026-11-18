@@ -147,8 +147,28 @@ internal object FanLayout {
     /** The box a badge takes, round its middle at [bx], [by] (a blob's upper right), [half] wide each way; null for none. */
     class Badge(val rect: RectF?)
 
-    fun badgeRect(bx: Float, by: Float, halfW: Float, dp: Float): RectF? =
-        if (halfW <= 0f) null else RectF(bx + 22 * dp - halfW, by - 22 * dp - (10.5f + 1.8f) * dp, bx + 22 * dp + halfW, by - 22 * dp + (10.5f + 1.8f) * dp)
+    /**
+     * Where a blob's badge goes (204): on the blob's corner nearest the way away from the
+     * Sidekick's middle at [cx], [cy] (as its name is, on its far side), 22 points out each way.
+     * From a Sidekick on the right its blobs are up and to the left of it, so their badges are on
+     * their upper left; from one on the left, their upper right. Until 204 always the upper right:
+     * on the right side, facing the Sidekick. Straight above or below it, on the side away from
+     * the screen's edge it is at ([onRight]).
+     */
+    fun badgeCenter(bx: Float, by: Float, cx: Float, cy: Float, onRight: Boolean, dp: Float): FloatArray {
+        val dx = bx - cx
+        val dy = by - cy
+        val sx = if (Math.abs(dx) < 1f) (if (onRight) -1f else 1f) else Math.signum(dx)
+        val sy = if (Math.abs(dy) < 1f) -1f else Math.signum(dy)
+        return floatArrayOf(bx + sx * 22 * dp, by + sy * 22 * dp)
+    }
+
+    fun badgeRect(bx: Float, by: Float, cx: Float, cy: Float, onRight: Boolean, halfW: Float, dp: Float): RectF? {
+        if (halfW <= 0f) return null
+        val c = badgeCenter(bx, by, cx, cy, onRight, dp)
+        val hh = (10.5f + 1.8f) * dp
+        return RectF(c[0] - halfW, c[1] - hh, c[0] + halfW, c[1] + hh)
+    }
 
     private fun rectCircleGap(r: RectF, x: Float, y: Float, rad: Float): Float {
         val nx = x.coerceIn(r.left, r.right)
@@ -256,7 +276,28 @@ internal object FanLayout {
         var nameName = Float.MAX_VALUE
         var edge = Float.MAX_VALUE
         var bar = Float.MAX_VALUE
+        // (204) Badges: how near one comes to another blob (not its own) or the Sidekick, and
+        // whether each lies on its blob's outer side, away from the Sidekick's middle.
+        var badgeBlob = Float.MAX_VALUE
+        var badgesOuter = 0
+        var badgesCounted = 0
         val wrong = ArrayList<String>()
+        for ((i, b) in badges.withIndex()) {
+            if (b == null || i >= n) continue
+            badgesCounted++
+            val ox = b.centerX() - xs[i]
+            val oy = b.centerY() - ys[i]
+            if (ox * (xs[i] - cx) + oy * (ys[i] - cy) > 0f) badgesOuter++ else wrong.add("badge ${i + 1} facing the Sidekick")
+            for (j in 0 until n) {
+                if (j == i) continue
+                val g = rectCircleGap(b, xs[j], ys[j], r)
+                badgeBlob = Math.min(badgeBlob, g)
+                if (g < 0) wrong.add("badge ${i + 1} on blob ${j + 1}")
+            }
+            val gs = rectCircleGap(b, cx, cy, lensR)
+            badgeBlob = Math.min(badgeBlob, gs)
+            if (gs < 0) wrong.add("badge ${i + 1} on the Sidekick")
+        }
         for (i in 0 until n) {
             for (j in i + 1 until n) {
                 val g = Math.hypot((xs[i] - xs[j]).toDouble(), (ys[i] - ys[j]).toDouble()).toFloat() - 2 * r
@@ -302,6 +343,9 @@ internal object FanLayout {
             "edge" to pts(edge),
             "bar" to pts(bar),
             "least" to pts(all),
+            "badgeBlob" to pts(badgeBlob),
+            "badgesOuter" to badgesOuter,
+            "badgesCounted" to badgesCounted,
             "wrong" to wrong,
         )
     }

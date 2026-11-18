@@ -1860,7 +1860,13 @@ class Floater(val timer: Boolean) {
                 val fan = FanLayout.lay(w, h, cx, cy, lensR, dp, items.size, blobNames, bar)
                 // (As the menu shows it: moved in as one where nothing fits, 198.)
                 FanLayout.intoBounds(fan.x, fan.y, FanLayout.bounds(w, h, dp, bar))
-                val badges = items.mapIndexed { i, b -> if (b.kind == "empty") null else FanLayout.badgeRect(fan.x[i], fan.y[i], badgeHalf(b, dp), dp) }
+                // (204) A badge on every blob with something in it (a stand-in where it has no
+                // notifications now), so that where badges go is checked whatever is waiting.
+                val standIn = 12.3f * dp
+                val badges = items.mapIndexed { i, b ->
+                    if (b.kind == "empty") null
+                    else FanLayout.badgeRect(fan.x[i], fan.y[i], cx, cy, right, badgeHalf(b, dp).takeIf { it > 0f } ?: standIn, dp)
+                }
                 val screen = android.graphics.RectF(6 * dp, 30 * dp, w - 6 * dp, (bar ?: (h - 6 * dp)) - 4 * dp)
                 val names = if (blobNames) FanLayout.names(cx, cy, lensR, fan.x, fan.y, texts, badges, screen, dp, pillH,
                     { t, cap -> android.text.TextUtils.ellipsize(t, paint, Math.max(0f, cap), android.text.TextUtils.TruncateAt.END).toString() },
@@ -3717,7 +3723,7 @@ class Floater(val timer: Boolean) {
         private val pillH get() = (names.fontMetrics.let { it.descent - it.ascent } + 6 * dp)
 
         private fun badgeRects(): List<android.graphics.RectF?> = (0 until n).map {
-            if (items[it].kind == "empty") null else FanLayout.badgeRect(restX[it], restY[it], badgeHalf(items[it], dp), dp)
+            if (items[it].kind == "empty") null else FanLayout.badgeRect(restX[it], restY[it], cx, cy, cx > width / 2f, badgeHalf(items[it], dp), dp)
         }
 
         private fun nameLayout(): Array<FanLayout.Name> {
@@ -4220,7 +4226,11 @@ class Floater(val timer: Boolean) {
                 }
                 canvas.restore()
                 // Once it is out: how many notifications it has. Not while the blobs are being changed.
-                if (!editing && menuFor < 0 && p >= 0.9f && i != flying && i != dragging && items[i].kind != "empty") paintBadge(canvas, items[i], bx + 22 * dp, by - 22 * dp, dp)
+                if (!editing && menuFor < 0 && p >= 0.9f && i != flying && i != dragging && items[i].kind != "empty") {
+                    // (204) On its outer side, away from the Sidekick (see FanLayout.badgeCenter).
+                    val at = FanLayout.badgeCenter(bx, by, cx, cy, cx > width / 2f, dp)
+                    paintBadge(canvas, items[i], at[0], at[1], dp)
+                }
             }
             // A held blob's small menu, over everything.
             paintPop(canvas)
